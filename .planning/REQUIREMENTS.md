@@ -181,22 +181,105 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Mapped to phases during roadmap creation. Initial mapping below; roadmapper agent finalizes during Step 8.
+Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion merged to 9 phases: Deliberation Layer (DEL) and Podcast Section (POD) combined into Phase 9 — both are issue-page UI completion with no ordering dependency between them.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FND-01 → FND-04 | Phase 1 | Pending |
-| WEB-01 → WEB-16 | Phase 2 | Pending |
-| CVX-01 → CVX-05 | Phase 3 | Pending |
-| PIP-01 → PIP-12 | Phase 4 | Pending |
-| AGT-01 → AGT-18 | Phase 5 | Pending |
-| PDF-01 → PDF-04 | Phase 6 | Pending |
-| WHK-01 → WHK-08 | Phase 6 | Pending |
-| GAM-01 → GAM-06 | Phase 7 | Pending |
-| CMR-01 → CMR-10 | Phase 8 | Pending |
-| DEL-01 → DEL-06 | Phase 9 | Pending |
-| POD-01 → POD-03 | Phase 10 | Pending |
-| OPS-01 → OPS-03 | Phase 4 | Pending |
+| FND-01 | Phase 1: Sanity Foundation | Pending |
+| FND-02 | Phase 1: Sanity Foundation | Pending |
+| FND-03 | Phase 1: Sanity Foundation | Pending |
+| FND-04 | Phase 1: Sanity Foundation | Pending |
+| WEB-01 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-02 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-03 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-04 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-05 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-06 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-07 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-08 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-09 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-10 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-11 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-12 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-13 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-14 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-15 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-16 | Phase 2: Web Shell + Theme Engine | Pending |
+| CVX-01 | Phase 3: Convex Deployment | Pending |
+| CVX-02 | Phase 3: Convex Deployment | Pending |
+| CVX-03 | Phase 3: Convex Deployment | Pending |
+| CVX-04 | Phase 3: Convex Deployment | Pending |
+| CVX-05 | Phase 3: Convex Deployment | Pending |
+| PIP-01 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-02 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-03 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-04 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-05 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-06 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-07 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-08 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-09 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-10 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-11 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-12 | Phase 4: Pipeline Skeleton | Pending |
+| OPS-01 | Phase 4: Pipeline Skeleton | Pending |
+| OPS-02 | Phase 4: Pipeline Skeleton | Pending |
+| OPS-03 | Phase 4: Pipeline Skeleton | Pending |
+| AGT-01 | Phase 5: Agent Quality | Pending |
+| AGT-02 | Phase 5: Agent Quality | Pending |
+| AGT-03 | Phase 5: Agent Quality | Pending |
+| AGT-04 | Phase 5: Agent Quality | Pending |
+| AGT-05 | Phase 5: Agent Quality | Pending |
+| AGT-06 | Phase 5: Agent Quality | Pending |
+| AGT-07 | Phase 5: Agent Quality | Pending |
+| AGT-08 | Phase 5: Agent Quality | Pending |
+| AGT-09 | Phase 5: Agent Quality | Pending |
+| AGT-10 | Phase 5: Agent Quality | Pending |
+| AGT-11 | Phase 5: Agent Quality | Pending |
+| AGT-12 | Phase 5: Agent Quality | Pending |
+| AGT-13 | Phase 5: Agent Quality | Pending |
+| AGT-14 | Phase 5: Agent Quality | Pending |
+| AGT-15 | Phase 5: Agent Quality | Pending |
+| AGT-16 | Phase 5: Agent Quality | Pending |
+| AGT-17 | Phase 5: Agent Quality | Pending |
+| AGT-18 | Phase 5: Agent Quality | Pending |
+| PDF-01 | Phase 6: PDF + Webhook Chain | Pending |
+| PDF-02 | Phase 6: PDF + Webhook Chain | Pending |
+| PDF-03 | Phase 6: PDF + Webhook Chain | Pending |
+| PDF-04 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-01 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-02 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-03 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-04 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-05 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-06 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-07 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-08 | Phase 6: PDF + Webhook Chain | Pending |
+| GAM-01 | Phase 7: Game Rendering | Pending |
+| GAM-02 | Phase 7: Game Rendering | Pending |
+| GAM-03 | Phase 7: Game Rendering | Pending |
+| GAM-04 | Phase 7: Game Rendering | Pending |
+| GAM-05 | Phase 7: Game Rendering | Pending |
+| GAM-06 | Phase 7: Game Rendering | Pending |
+| CMR-01 | Phase 8: Stripe / Commerce | Pending |
+| CMR-02 | Phase 8: Stripe / Commerce | Pending |
+| CMR-03 | Phase 8: Stripe / Commerce | Pending |
+| CMR-04 | Phase 8: Stripe / Commerce | Pending |
+| CMR-05 | Phase 8: Stripe / Commerce | Pending |
+| CMR-06 | Phase 8: Stripe / Commerce | Pending |
+| CMR-07 | Phase 8: Stripe / Commerce | Pending |
+| CMR-08 | Phase 8: Stripe / Commerce | Pending |
+| CMR-09 | Phase 8: Stripe / Commerce | Pending |
+| CMR-10 | Phase 8: Stripe / Commerce | Pending |
+| DEL-01 | Phase 9: Issue Page Completion | Pending |
+| DEL-02 | Phase 9: Issue Page Completion | Pending |
+| DEL-03 | Phase 9: Issue Page Completion | Pending |
+| DEL-04 | Phase 9: Issue Page Completion | Pending |
+| DEL-05 | Phase 9: Issue Page Completion | Pending |
+| DEL-06 | Phase 9: Issue Page Completion | Pending |
+| POD-01 | Phase 9: Issue Page Completion | Pending |
+| POD-02 | Phase 9: Issue Page Completion | Pending |
+| POD-03 | Phase 9: Issue Page Completion | Pending |
 
 **Coverage:**
 - v1 requirements: 80 total
@@ -205,4 +288,4 @@ Mapped to phases during roadmap creation. Initial mapping below; roadmapper agen
 
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-05-09 after initial definition*
+*Last updated: 2026-05-09 — traceability finalized after roadmap creation (9-phase structure)*
