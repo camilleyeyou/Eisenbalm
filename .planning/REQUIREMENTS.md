@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Foundation (Sanity)
 
-- [ ] **FND-01**: Sanity Studio renders all schema types (`charity`, `weeklyIssue`, `agentProfile`) with every field editable
+- [x] **FND-01**: Sanity Studio renders all schema types (`charity`, `weeklyIssue`, `agentProfile`) with every field editable
 - [ ] **FND-02**: Sanity v5 TypeGen generates TypeScript types from schemas + GROQ queries on every build
 - [ ] **FND-03**: One `agentProfile` document is seeded for each of the 14 named agents (calibrator, scout, advocate, editor, researcher, origin-story, problem-statement, founder-bio, case-study, game, bonus, design, qa, publisher)
 - [ ] **FND-04**: Andrew can log into Sanity Studio, edit any field of a `weeklyIssue` draft, and save changes
@@ -185,7 +185,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FND-01 | Phase 1: Sanity Foundation | Pending |
+| FND-01 | Phase 1: Sanity Foundation | Complete |
 | FND-02 | Phase 1: Sanity Foundation | Pending |
 | FND-03 | Phase 1: Sanity Foundation | Pending |
 | FND-04 | Phase 1: Sanity Foundation | Pending |
