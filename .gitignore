@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+.turbo/
+
+# Sanity
+apps/studio/dist/
+apps/studio/.sanity/
+# NOTE: apps/studio/sanity.types.ts is checked in (per D-08, D-14) — do NOT ignore it.
+
+# Environment files (gitignored except .env.example)
+.env
+.env.*
+!.env.example
+!apps/studio/.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
