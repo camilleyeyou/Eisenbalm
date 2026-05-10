@@ -1,0 +1,19 @@
+{
+  "name": "eisenbalm",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Eisenbalm Dispatch — weekly editorial site, multi-agent pipeline, one-product commerce",
+  "packageManager": "pnpm@9.15.4",
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": {
+    "node": ">=18.18.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev:studio": "pnpm --filter studio dev",
+    "build:studio": "pnpm --filter studio build",
+    "deploy:studio": "pnpm --filter studio deploy",
+    "typegen": "pnpm --filter studio typegen",
+    "seed:agents": "pnpm --filter studio seed:agents"
+  }
+}
