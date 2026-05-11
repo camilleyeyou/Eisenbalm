@@ -11,6 +11,7 @@ build/
 # Sanity
 apps/studio/dist/
 apps/studio/.sanity/
+apps/studio/schema.json
 # NOTE: apps/studio/sanity.types.ts is checked in (per D-08, D-14) — do NOT ignore it.
 
 # Environment files (gitignored except .env.example)

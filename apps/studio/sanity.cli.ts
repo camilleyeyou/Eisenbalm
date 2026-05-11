@@ -8,10 +8,21 @@ export default defineCliConfig({
     projectId,
     dataset,
   },
-  // Sanity v5 TypeGen — finalized in Plan 05.
-  // Plan 05 adds the explicit `schema: { path: './schema.json' }` block that
-  // `sanity schema extract` reads, then `sanity typegen generate` consumes
-  // schema.json and emits apps/studio/sanity.types.ts.
-  // Files: schema.json (intermediate, gitignored)
-  //        sanity.types.ts (committed per D-08, D-14).
+  // ─── Sanity v5 TypeGen ────────────────────────────────────────────
+  // `pnpm schema:extract` runs `sanity schema extract --enforce-required-fields`,
+  // which reads `schema.path` below and writes apps/studio/schema.json
+  // (gitignored intermediate artifact).
+  //
+  // `pnpm typegen` runs schema:extract first (per package.json) then
+  // `sanity typegen generate`, which reads schema.json and emits
+  // apps/studio/sanity.types.ts to the package root (Sanity's default
+  // typegen output location — no separate config needed).
+  //
+  // The generated sanity.types.ts is committed to git (per D-08, D-14)
+  // so CI/dev parity is guaranteed. schema.json is an intermediate
+  // build artifact and is gitignored.
+  schema: {
+    path: './schema.json',
+  },
+  graphql: [],
 })
