@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-01-repo-bootstrap-PLAN.md
-last_updated: "2026-05-10T00:07:20.009Z"
+stopped_at: Completed 01-04-workspace-placeholders-PLAN.md
+last_updated: "2026-05-11T13:27:50.829Z"
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 01 (sanity-foundation) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: 2 of 7
 
 *Updated after each plan completion*
 | Phase 01 P01 | 1 | 3 tasks | 4 files |
+| Phase 01 P04 | 5 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,8 @@ Recent decisions affecting current work:
 - Roadmap: Phase 8 (Stripe) is independent of Phases 3-7; can begin immediately after Phase 2 closes
 - Roadmap: Phases 6 and 7 both depend only on Phase 5 and can be planned/executed in parallel after Phase 5
 - [Phase 01]: pnpm pinned at 9.15.4 (current 9.x LTS); convex/ excluded from workspace globs (stays at root); apps/studio/.env.example deferred to Plan 03; sanity.types.ts preserved from gitignore (D-08)
+- [Phase 01]: packages/shared uses source-resolution (.ts main/types) — no build step needed for placeholder content before Plan 05 wires TypeGen
+- [Phase 01]: packages/pipeline has no @eisenbalm/shared dep — Python pipeline consumes Sanity types via HTTP API, not npm (cross-language type sharing is Phase 4 concern)
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T00:07:20.004Z
-Stopped at: Completed 01-01-repo-bootstrap-PLAN.md
+Last session: 2026-05-11T13:27:50.825Z
+Stopped at: Completed 01-04-workspace-placeholders-PLAN.md
 Resume file: None
