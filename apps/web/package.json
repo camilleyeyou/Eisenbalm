@@ -1,0 +1,12 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js 15 reader frontend — placeholder. Real scaffolding lands in Phase 2.",
+  "scripts": {
+    "dev": "echo \"apps/web is a Phase 2 placeholder. Scaffold lands in Phase 2.\" && exit 0"
+  },
+  "dependencies": {
+    "@eisenbalm/shared": "workspace:*"
+  }
+}
