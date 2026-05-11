@@ -1,0 +1,30 @@
+{
+  "name": "studio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sanity Studio for The Eisenbalm Dispatch",
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev",
+    "start": "sanity start",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "deploy-graphql": "sanity graphql deploy",
+    "schema:extract": "sanity schema extract --enforce-required-fields",
+    "typegen": "pnpm schema:extract && sanity typegen generate",
+    "seed:agents": "tsx scripts/seed-agents.ts"
+  },
+  "dependencies": {
+    "@sanity/client": "^7.22.0",
+    "@sanity/vision": "^5.24.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sanity": "^5.24.0",
+    "styled-components": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
