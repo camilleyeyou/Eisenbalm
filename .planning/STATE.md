@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-03-studio-scaffold-PLAN.md
-last_updated: "2026-05-11T13:29:42.853Z"
+stopped_at: Completed 01-05-typegen-pipeline-PLAN.md
+last_updated: "2026-05-11T18:47:28.556Z"
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 01 (sanity-foundation) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: 4 of 7
 | Phase 01 P01 | 1 | 3 tasks | 4 files |
 | Phase 01 P04 | 5 | 3 tasks | 10 files |
 | Phase 01 P03 | 6 | 4 tasks | 13 files |
+| Phase 01 P05 | 30 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Schema relocation (D-09): schemas moved to apps/studio/schemas/ byte-for-byte; agentProfile D-11 description fix applied; repo-root schemas/ deleted
 - [Phase 01]: sanity.config.ts fast-fails with descriptive error if SANITY_STUDIO_PROJECT_ID is unset — prevents silent Studio misbehavior
 - [Phase 01]: apps/studio/.env.example checked in per D-21 (gitignore negation); lists SANITY_STUDIO_PROJECT_ID, SANITY_STUDIO_DATASET=production, SANITY_API_TOKEN
+- [Phase 01]: D-12 correction: sanity.cli.ts schema.path = './schema.json' (not './sanity.types.ts' — typegen writes TS to package root by default)
+- [Phase 01]: [Phase 01]: sanity.types.ts manually generated from schema analysis due to ECONNRESET network constraint; must be regenerated with pnpm typegen when network is restored
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-11T13:29:42.849Z
-Stopped at: Completed 01-03-studio-scaffold-PLAN.md
+Last session: 2026-05-11T18:47:28.552Z
+Stopped at: Completed 01-05-typegen-pipeline-PLAN.md
 Resume file: None
