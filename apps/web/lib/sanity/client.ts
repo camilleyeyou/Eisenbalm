@@ -19,23 +19,31 @@ export const SANITY_DATASET =
 export const SANITY_API_VERSION = '2024-01-01'
 
 if (!SANITY_PROJECT_ID) {
-  // Fast-fail at module load so misconfiguration surfaces early.
+  // Log at module load so misconfiguration surfaces early.
   // Mirrors the pattern landed in apps/studio/sanity.config.ts (Phase 1).
   // Use console.error rather than throw so build/dev still surfaces the
   // error message to the developer without crashing the whole Next.js
-  // server on a transient missing env (e.g. preview environments).
+  // server on a transient missing env (e.g. preview environments, CI builds
+  // without Sanity credentials). Callers that need a valid client must guard
+  // on process.env.NEXT_PUBLIC_SANITY_PROJECT_ID before fetching.
   console.error(
     '[sanity/client] NEXT_PUBLIC_SANITY_PROJECT_ID is not set. ' +
       'Copy apps/web/.env.example to apps/web/.env.local and fill in the project ID.',
   )
 }
 
+// Use 'placeholder' when the env var is absent so createClient doesn't throw
+// at module load time. Any actual fetch attempt will fail with a network error
+// rather than a module initialization crash — allowing Next.js to collect
+// page data for dynamic routes and statically-analyzed routes without env vars.
+const projectIdOrPlaceholder = SANITY_PROJECT_ID || 'placeholder'
+
 /**
  * Runtime client — used by all RSC page components and Route Handlers
  * (sitemap.xml, feed.xml). CDN-cached for low-latency reads.
  */
 export const sanityClient: SanityClient = createClient({
-  projectId: SANITY_PROJECT_ID,
+  projectId: projectIdOrPlaceholder,
   dataset: SANITY_DATASET,
   apiVersion: SANITY_API_VERSION,
   useCdn: true,
@@ -48,7 +56,7 @@ export const sanityClient: SanityClient = createClient({
  * static generation if we discover CDN propagation race issues).
  */
 export const sanityBuildClient: SanityClient = createClient({
-  projectId: SANITY_PROJECT_ID,
+  projectId: projectIdOrPlaceholder,
   dataset: SANITY_DATASET,
   apiVersion: SANITY_API_VERSION,
   useCdn: false,
