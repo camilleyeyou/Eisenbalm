@@ -25,12 +25,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **WEB-07**: Theme color values are validated as 6-digit hex strings before injection (CSS injection prevention)
 - [x] **WEB-08**: Theme injection uses `element.style.setProperty(...)` (not template-literal CSS strings)
 - [x] **WEB-09**: Theme color combinations are checked for WCAG AA contrast at render time; degraded fallback applied if contrast fails
-- [ ] **WEB-10**: Each issue page emits `schema.org/Article` JSON-LD with charity name, founder, publish date, author=Jesse
-- [ ] **WEB-11**: Each issue page emits Open Graph + Twitter card meta tags
+- [x] **WEB-10**: Each issue page emits `schema.org/Article` JSON-LD with charity name, founder, publish date, author=Jesse
+- [x] **WEB-11**: Each issue page emits Open Graph + Twitter card meta tags
 - [ ] **WEB-12**: An XML sitemap at `/sitemap.xml` lists all published issues and charity pages
 - [ ] **WEB-13**: An RSS feed at `/feed.xml` lists all published issues
-- [ ] **WEB-14**: Each issue page has a print stylesheet that renders cleanly without theme color background
-- [ ] **WEB-15**: Each issue page shows estimated reading time computed from total section word count
+- [x] **WEB-14**: Each issue page has a print stylesheet that renders cleanly without theme color background
+- [x] **WEB-15**: Each issue page shows estimated reading time computed from total section word count
 - [ ] **WEB-16**: Each issue section has an anchor copy-link button
 
 ### Convex (deployed schema + functions)
@@ -198,12 +198,12 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | WEB-07 | Phase 2: Web Shell + Theme Engine | Complete |
 | WEB-08 | Phase 2: Web Shell + Theme Engine | Complete |
 | WEB-09 | Phase 2: Web Shell + Theme Engine | Complete |
-| WEB-10 | Phase 2: Web Shell + Theme Engine | Pending |
-| WEB-11 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-10 | Phase 2: Web Shell + Theme Engine | Complete |
+| WEB-11 | Phase 2: Web Shell + Theme Engine | Complete |
 | WEB-12 | Phase 2: Web Shell + Theme Engine | Pending |
 | WEB-13 | Phase 2: Web Shell + Theme Engine | Pending |
-| WEB-14 | Phase 2: Web Shell + Theme Engine | Pending |
-| WEB-15 | Phase 2: Web Shell + Theme Engine | Pending |
+| WEB-14 | Phase 2: Web Shell + Theme Engine | Complete |
+| WEB-15 | Phase 2: Web Shell + Theme Engine | Complete |
 | WEB-16 | Phase 2: Web Shell + Theme Engine | Pending |
 | CVX-01 | Phase 3: Convex Deployment | Pending |
 | CVX-02 | Phase 3: Convex Deployment | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-01-web-bootstrap-PLAN.md
-last_updated: "2026-05-12T03:47:24.968Z"
+stopped_at: Completed 02-05-root-layout-globals-PLAN.md
+last_updated: "2026-05-12T04:07:31.454Z"
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 02 (web-shell-theme-engine) — EXECUTING
-Plan: 5 of 11
+Plan: 6 of 11
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 5 of 11
 | Phase 02 P04 | 2 | 3 tasks | 4 files |
 | Phase 02 P01 | 6 | 3 tasks | 8 files |
 | Phase 02-web-shell-theme-engine P03 | 4 | 2 tasks | 2 files |
+| Phase 02 P05 | 987 | 8 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 02]: tsconfig.moduleResolution: Bundler overrides NodeNext from base — required for Next 15 App Router + Tailwind v4 compatibility
 - [Phase 02-web-shell-theme-engine]: validateHex returns string|null rather than boolean so callers can use the value directly without double-lookup
 - [Phase 02-web-shell-theme-engine]: WCAG fallback applies to bg+text only; primary+accent retain validated values since they are not body-text colors
+- [Phase 02]: shadcn CLI v3 is fully interactive; hand-wrote button+tooltip primitives and installed transitive deps manually
+- [Phase 02]: Reading time uses 238 WPM per UI-SPEC (overrides CONTEXT.md D-24 200 WPM reference — UI-SPEC is locked)
+- [Phase 02]: Globals.css includes shadcn variable shim (--background, --foreground) to prevent button/tooltip color miss
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T03:47:24.963Z
-Stopped at: Completed 02-01-web-bootstrap-PLAN.md
+Last session: 2026-05-12T04:07:31.449Z
+Stopped at: Completed 02-05-root-layout-globals-PLAN.md
 Resume file: None
