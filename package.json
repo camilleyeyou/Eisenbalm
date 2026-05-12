@@ -15,6 +15,10 @@
     "deploy:studio": "pnpm --filter studio deploy",
     "typegen": "pnpm --filter studio typegen",
     "seed:agents": "pnpm --filter studio seed:agents",
-    "seed:demo": "pnpm --filter studio seed:demo"
+    "seed:demo": "pnpm --filter studio seed:demo",
+    "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build",
+    "lint:web": "pnpm --filter web lint",
+    "typecheck:web": "pnpm --filter web typecheck"
   }
 }
