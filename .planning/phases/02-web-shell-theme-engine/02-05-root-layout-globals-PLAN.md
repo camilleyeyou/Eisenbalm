@@ -1,0 +1,950 @@
+---
+phase: 02-web-shell-theme-engine
+plan: 05
+type: execute
+wave: 2
+depends_on: ["02-01", "02-02", "02-03"]
+files_modified:
+  - apps/web/app/layout.tsx
+  - apps/web/app/globals.css
+  - apps/web/app/not-found.tsx
+  - apps/web/app/error.tsx
+  - apps/web/components/SiteHeader.tsx
+  - apps/web/components/SiteFooter.tsx
+  - apps/web/components/JsonLd.tsx
+  - apps/web/lib/reading-time.ts
+  - apps/web/lib/site.ts
+  - apps/web/lib/format.ts
+autonomous: true
+requirements: [WEB-01, WEB-05, WEB-10, WEB-11, WEB-14, WEB-15]
+must_haves:
+  truths:
+    - "Root layout renders with brand default theme + 3 font CSS variables (--font-display, --font-body, --font-ui) loaded via next/font/google"
+    - "Tailwind v4 @theme directives wire CSS variables (--color-bg, --color-text, --color-primary, --color-accent, --font-display, --font-body, --font-ui)"
+    - "Print stylesheet hides site chrome (header, footer, shop callout, slots, anchor buttons) and forces black-on-white serif output"
+    - "/not-found shows Jesse-voice copy 'This page does not exist.'"
+    - "<SiteHeader> + <SiteFooter> render on every page with wordmark + nav links + footer copyright"
+    - "<JsonLd> server component embeds <script type=\"application/ld+json\"> safely"
+    - "Reading time helper computes minutes from Portable Text arrays using 200 WPM rounded up"
+  artifacts:
+    - path: apps/web/app/layout.tsx
+      provides: "Root layout: html lang, fonts, default theme via serializeThemeCss(null), SiteHeader, SiteFooter, generateMetadata defaults"
+    - path: apps/web/app/globals.css
+      provides: "Tailwind v4 @theme variables, default CSS variable values, @media print rules per UI-SPEC D-26"
+      contains: "@import 'tailwindcss', @theme, @media print"
+    - path: apps/web/app/not-found.tsx
+      provides: "Not-found page: 'This page does not exist.'"
+    - path: apps/web/app/error.tsx
+      provides: "Error boundary: 'This issue could not be loaded. Try refreshing.'"
+    - path: apps/web/components/SiteHeader.tsx
+      provides: "Wordmark + nav (Archive | Charities | About | Shop); mobile hamburger uses lucide Menu/X"
+    - path: apps/web/components/SiteFooter.tsx
+      provides: "Footer: dispatch wordmark muted, copyright line, legal links"
+    - path: apps/web/components/JsonLd.tsx
+      provides: "Server component <script type='application/ld+json'> with safe JSON.stringify"
+    - path: apps/web/lib/reading-time.ts
+      provides: "readingTime(blocks): number — 200 WPM rounded up from concatenated Portable Text"
+      exports: ["readingTime", "countWords"]
+    - path: apps/web/lib/site.ts
+      provides: "SITE_NAME, SITE_DESCRIPTION, getSiteUrl() helper"
+    - path: apps/web/lib/format.ts
+      provides: "formatIssueDate, formatIssueLabel, formatMonthYear"
+  key_links:
+    - from: apps/web/app/layout.tsx
+      to: apps/web/lib/theme.ts (serializeThemeCss)
+      via: "inline <style> in <head> for default palette"
+      pattern: "serializeThemeCss\\(null\\)"
+    - from: apps/web/app/globals.css
+      to: Tailwind v4 + CSS variables defined on :root
+      via: "@theme directive"
+      pattern: "@theme"
+    - from: apps/web/components/JsonLd.tsx
+      to: <script type="application/ld+json">
+      via: "JSON.stringify with safe replacer"
+      pattern: "application/ld\\+json"
+---
+
+<objective>
+Land the root layout, global stylesheet, default fonts, foundation components (header, footer, JSON-LD wrapper, not-found, error boundary), and shared utility helpers (reading time, site constants, date formatting). After this plan, `pnpm dev:web` boots without crashing and renders the brand-default chrome on any route (even with empty `app/page.tsx` — Plan 02-09 will add the homepage).
+
+Purpose: Provides everything every Wave 3 route depends on. The print stylesheet (WEB-14), default theme + fonts (WEB-06 default path), reading-time helper (WEB-15), JSON-LD primitive (WEB-10), and OG metadata defaults (WEB-11) all live here so Wave 3 plans focus on route content, not infrastructure.
+Output: A functioning chrome — header, footer, default theme, fonts, print rules, error boundaries.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/STATE.md
+@.planning/phases/02-web-shell-theme-engine/02-CONTEXT.md
+@.planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md
+@CLAUDE.md
+@apps/web/lib/theme.ts
+@apps/web/lib/sanity/client.ts
+@apps/web/lib/sanity/types.ts
+
+<interfaces>
+<!-- Imports from earlier plans (Wave 1): -->
+- import { BRAND_DEFAULTS, serializeThemeCss } from '@/lib/theme'
+- import type { IssueTheme } from '@/lib/sanity/types'
+
+<!-- UI-SPEC LOCKED constants used in this plan: -->
+
+CSS variables defined on :root (UI-SPEC Color System):
+  --color-bg, --color-surface, --color-text, --color-text-muted,
+  --color-primary, --color-accent, --color-border
+  --font-display, --font-body, --font-ui
+
+Tailwind v4 @theme mappings (UI-SPEC Typography):
+  --font-display, --font-body, --font-ui — usable as `font-display`, `font-body`, `font-ui` classes
+
+Site nav links (UI-SPEC §16 SiteHeader):
+  Archive | Charities | About | Shop  (title case; no punctuation)
+
+Wordmark (UI-SPEC §16):
+  "The Eisenbalm Dispatch" — UI font 14px semibold uppercase letter-spacing 0.08em
+
+Footer (UI-SPEC §17):
+  Left:    "The Eisenbalm Dispatch" (muted)
+  Center:  "© {year} Jesse A. Eisenbalm. All proceeds go to the featured charity."
+  Right:   /legal/privacy and /legal/terms links
+
+Print stylesheet (UI-SPEC §"Print Stylesheet" + D-26):
+  Hide: header, footer, shop callout, anchor buttons, game/deliberation/podcast slots, audio
+  Show: editorial prose, IssueHero
+  Body: 12pt, headlines 18pt, black-on-white serif (Georgia fallback)
+  Links: black with underline; a::after { content: " (" attr(href) ")"; }
+
+Not-found copy (UI-SPEC Copywriting Contract):
+  "This page does not exist."  (Next.js not-found.tsx)
+
+Error boundary copy (UI-SPEC Copywriting Contract):
+  "This issue could not be loaded. Try refreshing."  (error.tsx)
+
+Reading time formula (WEB-15 + UI-SPEC §"Reading Time"):
+  238 words/minute (UI-SPEC value — note this overrides the CONTEXT.md D-24 "200 WPM"
+  reference; UI-SPEC is the LOCKED design contract per Phase 2 mode).
+  Rounded UP to nearest integer.
+  Excluded: game description, podcast description, section headlines, charity metadata.
+  Counted: originStory.body, problemStatement.body, founderBio.body, caseStudy.body, bonus.body
+
+Default Google Fonts to load via next/font/google (UI-SPEC):
+  - Playfair Display (display)
+  - Lora (body)
+  - Inter (UI — never themed)
+
+OG default image: apps/web/public/og-default.png (1200x630; Plan 02-10 ships placeholder)
+</interfaces>
+</context>
+
+<tasks>
+
+<task type="auto">
+  <name>Task 1: Create apps/web/app/globals.css with Tailwind v4 + default theme variables + print stylesheet</name>
+  <read_first>
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md (Color System, Typography, Print Stylesheet sections)
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-05, D-26)
+    - apps/web/lib/theme.ts (BRAND_DEFAULTS values to mirror as CSS variables)
+  </read_first>
+  <files>apps/web/app/globals.css</files>
+  <action>
+    Create `apps/web/app/globals.css`:
+
+    ```css
+    @import "tailwindcss";
+
+    /**
+     * Tailwind v4 @theme — wires CSS variables into the Tailwind class system.
+     * Classes available: bg-bg, text-text, text-muted, bg-surface, border-border,
+     *                    text-primary, text-accent, font-display, font-body, font-ui.
+     *
+     * The variable VALUES live in :root below (and are overridden per-issue by
+     * apps/web/lib/theme.ts on issue pages).
+     */
+    @theme {
+      --color-bg: var(--color-bg);
+      --color-surface: var(--color-surface);
+      --color-text: var(--color-text);
+      --color-text-muted: var(--color-text-muted);
+      --color-primary: var(--color-primary);
+      --color-accent: var(--color-accent);
+      --color-border: var(--color-border);
+
+      --font-display: var(--font-display);
+      --font-body: var(--font-body);
+      --font-ui: var(--font-ui);
+    }
+
+    /**
+     * Brand default palette. Values mirror apps/web/lib/theme.ts BRAND_DEFAULTS.
+     * Per-issue themes override --color-bg, --color-text, --color-primary,
+     * --color-accent, --font-display, --font-body via inline <style> in
+     * /issue/[slug]/layout.tsx. --color-surface, --color-text-muted, and
+     * --color-border are DERIVED via color-mix() so DesignAgent only emits 4 hex.
+     */
+    :root {
+      /* Brand defaults — overridden on issue pages */
+      --color-bg: #FAFAF8;
+      --color-text: #1A1A18;
+      --color-primary: #2D5016;
+      --color-accent: #8B1A1A;
+
+      /* Derived (CONTEXT.md UI-SPEC color-mix pattern) */
+      --color-surface: color-mix(in srgb, var(--color-bg) 92%, black 8%);
+      --color-text-muted: color-mix(in srgb, var(--color-text) 60%, transparent);
+      --color-border: color-mix(in srgb, var(--color-text) 12%, transparent);
+
+      /* Font defaults — next/font/google injects the @font-face declarations */
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Lora', Georgia, serif;
+      --font-ui: 'Inter', system-ui, sans-serif;
+    }
+
+    /**
+     * Dark-mode for non-issue pages only (UI-SPEC color section).
+     * Issue pages set their own --color-bg/--color-text via theme injection,
+     * so they ignore prefers-color-scheme.
+     */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #1A1A18;
+        --color-text: #FAFAF8;
+        --color-surface: #252520;
+      }
+    }
+
+    /* Base typography & layout */
+    html {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 18px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    /* Focus ring (UI-SPEC Accessibility Contract) */
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    /**
+     * Print stylesheet — UI-SPEC §"Print Stylesheet" + D-26.
+     * Hide site chrome; keep editorial prose; force black-on-white serif.
+     */
+    @media print {
+      /* Hide chrome and non-print elements */
+      [data-print-hide="true"],
+      header[data-site-header],
+      footer[data-site-footer],
+      [data-shop-callout],
+      [data-anchor-copy],
+      [data-game-slot],
+      [data-deliberation-slot],
+      [data-podcast-slot],
+      audio {
+        display: none !important;
+      }
+
+      /* Black on white; no theme bleed */
+      html, body {
+        background: white !important;
+        color: black !important;
+      }
+
+      /* Fallback serif when web fonts don't load in print context */
+      html {
+        font-family: Georgia, "Times New Roman", serif !important;
+        font-size: 12pt;
+        line-height: 1.5;
+      }
+
+      h1, h2, h3 {
+        font-family: Georgia, serif !important;
+      }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 18pt; }
+      h3 { font-size: 14pt; }
+
+      /* Links: black with underline; print URL after text */
+      a {
+        color: black !important;
+        text-decoration: underline;
+      }
+
+      a[href]:not([href^="#"])::after {
+        content: " (" attr(href) ")";
+        font-size: 0.85em;
+      }
+    }
+    ```
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      test -f apps/web/app/globals.css && \
+      grep -q '@import "tailwindcss"' apps/web/app/globals.css && \
+      grep -q '@theme' apps/web/app/globals.css && \
+      grep -q -- '--color-bg' apps/web/app/globals.css && \
+      grep -q -- '--color-primary' apps/web/app/globals.css && \
+      grep -q -- '--color-accent' apps/web/app/globals.css && \
+      grep -q -- '--color-text' apps/web/app/globals.css && \
+      grep -q -- '--font-display' apps/web/app/globals.css && \
+      grep -q -- '--font-body' apps/web/app/globals.css && \
+      grep -q -- '--font-ui' apps/web/app/globals.css && \
+      grep -q '#FAFAF8' apps/web/app/globals.css && \
+      grep -q '#1A1A18' apps/web/app/globals.css && \
+      grep -q '#2D5016' apps/web/app/globals.css && \
+      grep -q '#8B1A1A' apps/web/app/globals.css && \
+      grep -q '@media print' apps/web/app/globals.css && \
+      grep -q 'color-mix' apps/web/app/globals.css
+    </automated>
+  </verify>
+  <done>
+    `globals.css` imports Tailwind v4, declares @theme variable bindings, sets brand default values on :root, derives --color-surface/--color-text-muted/--color-border via color-mix, includes the dark-mode override for non-issue pages, and ships the print stylesheet hiding chrome with black-on-white serif fallback.
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 2: Create apps/web/lib/site.ts + lib/format.ts + lib/reading-time.ts</name>
+  <read_first>
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md (Reading Time section, Copywriting Contract)
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-24)
+    - apps/web/lib/sanity/types.ts (Issue + IssueSection shapes)
+  </read_first>
+  <files>apps/web/lib/site.ts, apps/web/lib/format.ts, apps/web/lib/reading-time.ts</files>
+  <action>
+    1. Create `apps/web/lib/site.ts`:
+
+       ```typescript
+       /**
+        * Site-level constants. Used by metadata, sitemap, RSS, JSON-LD.
+        */
+       export const SITE_NAME = 'The Eisenbalm Dispatch'
+       export const SITE_AUTHOR = 'Jesse A. Eisenbalm'
+       export const SITE_DESCRIPTION =
+         'A weekly editorial on one obscure charity. One product. 100% donated.'
+
+       /**
+        * Read the canonical site URL from env. Falls back to localhost for dev.
+        * Plan 02-01 documents this var in apps/web/.env.example.
+        */
+       export function getSiteUrl(): string {
+         const raw = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+         return raw && raw.length > 0 ? raw : 'http://localhost:3000'
+       }
+       ```
+
+    2. Create `apps/web/lib/format.ts`:
+
+       ```typescript
+       /**
+        * Date formatters per UI-SPEC Copywriting Contract.
+        *   - Full date:  "June 5, 2025"            (formatIssueDate)
+        *   - Month/year: "June 2025"               (formatMonthYear)
+        *   - Issue hero label: "Issue 1 — June 5, 2025"  (formatIssueLabel)
+        *
+        * Locale fixed to en-US — UI-SPEC notes "English-only" for v1.
+        */
+
+       function parseDate(input: string | Date): Date | null {
+         if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input
+         if (typeof input !== 'string' || input.length === 0) return null
+         const d = new Date(input)
+         return Number.isNaN(d.getTime()) ? null : d
+       }
+
+       export function formatIssueDate(input: string | Date): string {
+         const d = parseDate(input)
+         if (!d) return ''
+         return d.toLocaleDateString('en-US', {
+           year: 'numeric',
+           month: 'long',
+           day: 'numeric',
+           timeZone: 'UTC', // Sanity stores date-only; avoid TZ drift.
+         })
+       }
+
+       export function formatMonthYear(input: string | Date): string {
+         const d = parseDate(input)
+         if (!d) return ''
+         return d.toLocaleDateString('en-US', {
+           year: 'numeric',
+           month: 'long',
+           timeZone: 'UTC',
+         })
+       }
+
+       export function formatIssueLabel(issueNumber: number, publishDate: string | Date): string {
+         const date = formatIssueDate(publishDate)
+         return date ? `Issue ${issueNumber} — ${date}` : `Issue ${issueNumber}`
+       }
+       ```
+
+    3. Create `apps/web/lib/reading-time.ts`:
+
+       ```typescript
+       /**
+        * Estimated reading time for an issue.
+        *
+        * Per UI-SPEC §"Reading Time" (LOCKED): 238 words/minute, rounded UP.
+        * Counts text nodes in: originStory.body, problemStatement.body,
+        * founderBio.body, caseStudy.body, bonus.body. EXCLUDES headlines,
+        * game/podcast descriptions, charity metadata.
+        */
+       import type { PortableTextBlock } from '@portabletext/react'
+
+       export const WORDS_PER_MINUTE = 238
+
+       /**
+        * Count words across one or more Portable Text arrays.
+        * Each block's children spans are concatenated, then whitespace-split.
+        */
+       export function countWords(
+         ...sources: Array<PortableTextBlock[] | null | undefined>
+       ): number {
+         let words = 0
+         for (const blocks of sources) {
+           if (!blocks) continue
+           for (const block of blocks) {
+             if (!block || (block as { _type?: string })._type !== 'block') continue
+             const children = (block as { children?: Array<{ text?: string }> }).children
+             if (!Array.isArray(children)) continue
+             for (const child of children) {
+               if (typeof child?.text !== 'string') continue
+               const trimmed = child.text.trim()
+               if (!trimmed) continue
+               words += trimmed.split(/\s+/u).length
+             }
+           }
+         }
+         return words
+       }
+
+       /**
+        * Reading time in minutes, rounded up. Returns 1 minimum (never 0) when
+        * any words are present.
+        */
+       export function readingTime(
+         ...sources: Array<PortableTextBlock[] | null | undefined>
+       ): number {
+         const words = countWords(...sources)
+         if (words === 0) return 0
+         return Math.max(1, Math.ceil(words / WORDS_PER_MINUTE))
+       }
+       ```
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      test -f apps/web/lib/site.ts && \
+      test -f apps/web/lib/format.ts && \
+      test -f apps/web/lib/reading-time.ts && \
+      grep -q "SITE_NAME = 'The Eisenbalm Dispatch'" apps/web/lib/site.ts && \
+      grep -q "SITE_AUTHOR = 'Jesse A. Eisenbalm'" apps/web/lib/site.ts && \
+      grep -q "getSiteUrl" apps/web/lib/site.ts && \
+      grep -q "formatIssueDate" apps/web/lib/format.ts && \
+      grep -q "formatIssueLabel" apps/web/lib/format.ts && \
+      grep -q "formatMonthYear" apps/web/lib/format.ts && \
+      grep -q "WORDS_PER_MINUTE = 238" apps/web/lib/reading-time.ts && \
+      grep -q "export function readingTime" apps/web/lib/reading-time.ts && \
+      grep -q "export function countWords" apps/web/lib/reading-time.ts && \
+      grep -q "Math.ceil" apps/web/lib/reading-time.ts
+    </automated>
+  </verify>
+  <done>
+    Three helper modules exist. `SITE_NAME`, `SITE_AUTHOR`, `SITE_DESCRIPTION`, `getSiteUrl()` from site.ts. Three date formatters from format.ts. `readingTime()` + `countWords()` from reading-time.ts using the locked 238 WPM rule.
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 3: Create apps/web/components/JsonLd.tsx (safe structured-data injector)</name>
+  <read_first>
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §"SEO + Structured Data" (JSON-LD shape)
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-22)
+  </read_first>
+  <files>apps/web/components/JsonLd.tsx</files>
+  <action>
+    Create `apps/web/components/JsonLd.tsx`:
+
+    ```typescript
+    /**
+     * Server component for embedding JSON-LD structured data.
+     *
+     * Usage:
+     *   <JsonLd data={{ '@context': 'https://schema.org', '@type': 'Article', ... }} />
+     *
+     * Safety: JSON.stringify with a replacer that escapes "</" sequences to
+     * prevent script-tag breakout (the only realistic injection vector inside
+     * a <script type="application/ld+json"> body).
+     */
+
+    type JsonLdData = Record<string, unknown> | Array<Record<string, unknown>>
+
+    function safeJsonLdString(data: JsonLdData): string {
+      // Escape "</" → "<\/" so a malicious payload cannot close the script tag.
+      return JSON.stringify(data).replace(/</g, '\\u003c')
+    }
+
+    export function JsonLd({ data }: { data: JsonLdData }) {
+      return (
+        <script
+          type="application/ld+json"
+          // dangerouslySetInnerHTML is required: <script> children must be a
+          // string, not React children. Content is JSON-only and pre-escaped
+          // by safeJsonLdString.
+          dangerouslySetInnerHTML={{ __html: safeJsonLdString(data) }}
+        />
+      )
+    }
+    ```
+
+    `dangerouslySetInnerHTML` is acceptable here because (a) the content is JSON-only, (b) `<` characters are escaped to `<` so the JSON can never contain a `</script>` close tag, and (c) the caller is expected to pass typed Schema.org data, not user input. Wave 3 issue page passes charity/issue fields after they've been read from Sanity (the source of truth).
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      test -f apps/web/components/JsonLd.tsx && \
+      grep -q 'application/ld+json' apps/web/components/JsonLd.tsx && \
+      grep -q 'export function JsonLd' apps/web/components/JsonLd.tsx && \
+      grep -q '\\\\u003c' apps/web/components/JsonLd.tsx && \
+      grep -q 'dangerouslySetInnerHTML' apps/web/components/JsonLd.tsx
+    </automated>
+  </verify>
+  <done>
+    `<JsonLd data={...} />` renders a `<script type="application/ld+json">` whose payload escapes `<` to `<`, preventing script-tag breakout regardless of input.
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 4: Create apps/web/components/SiteHeader.tsx + SiteFooter.tsx</name>
+  <read_first>
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §16 SiteHeader, §17 SiteFooter
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md (Copywriting Contract — exact strings)
+  </read_first>
+  <files>apps/web/components/SiteHeader.tsx, apps/web/components/SiteFooter.tsx</files>
+  <action>
+    1. Create `apps/web/components/SiteHeader.tsx` — minimal RSC version. The mobile hamburger overlay would require client state, which is fine to ship as a client component INSIDE the header, but Phase 2 keeps it simple: a CSS-only responsive nav. Phase 5/9 can wire interactive overlay if needed.
+
+       ```typescript
+       /**
+        * SiteHeader — wordmark + nav. UI-SPEC §16.
+        * Renders on every page. Not sticky (UI-SPEC: editorial content is primary).
+        */
+       import Link from 'next/link'
+
+       const NAV = [
+         { href: '/archive', label: 'Archive' },
+         { href: '/charities', label: 'Charities' },
+         { href: '/about', label: 'About' },
+         { href: '/shop', label: 'Shop' },
+       ] as const
+
+       export function SiteHeader() {
+         return (
+           <header
+             data-site-header
+             className="border-b border-[color:var(--color-border)] font-ui"
+             aria-label="Site navigation"
+           >
+             <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 md:px-6 lg:px-8 py-6">
+               <Link
+                 href="/"
+                 className="text-[14px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-text)]"
+               >
+                 The Eisenbalm Dispatch
+               </Link>
+               <nav aria-label="Primary">
+                 <ul className="flex items-center gap-6">
+                   {NAV.map((item) => (
+                     <li key={item.href}>
+                       <Link
+                         href={item.href}
+                         className="text-[14px] text-[color:var(--color-text)] hover:text-[color:var(--color-accent)] underline-offset-4"
+                       >
+                         {item.label}
+                       </Link>
+                     </li>
+                   ))}
+                 </ul>
+               </nav>
+             </div>
+           </header>
+         )
+       }
+       ```
+
+       NOTE: The `data-site-header` attribute is used by the print stylesheet selector to hide this on print.
+
+    2. Create `apps/web/components/SiteFooter.tsx`:
+
+       ```typescript
+       /**
+        * SiteFooter — wordmark, copyright, legal links. UI-SPEC §17.
+        * Single row desktop; stacked mobile.
+        */
+       import Link from 'next/link'
+
+       export function SiteFooter() {
+         const year = new Date().getUTCFullYear()
+         return (
+           <footer
+             data-site-footer
+             className="mt-auto border-t border-[color:var(--color-border)] font-ui text-[14px] text-[color:var(--color-text-muted)]"
+             aria-label="Site footer"
+           >
+             <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-3 px-4 md:px-6 lg:px-8 py-8 md:flex-row md:justify-between">
+               <span>The Eisenbalm Dispatch</span>
+               <span className="text-center">
+                 © {year} Jesse A. Eisenbalm. All proceeds go to the featured charity.
+               </span>
+               <nav aria-label="Legal" className="flex gap-4">
+                 <Link href="/legal/privacy" className="hover:text-[color:var(--color-text)]">
+                   Privacy
+                 </Link>
+                 <Link href="/legal/terms" className="hover:text-[color:var(--color-text)]">
+                   Terms
+                 </Link>
+               </nav>
+             </div>
+           </footer>
+         )
+       }
+       ```
+
+       NOTE: `/legal/privacy` and `/legal/terms` routes are NOT in Phase 2 (Phase 8 owns them). The footer links exist; Andrew can leave 404 on those for Phase 2 close — the smoke test (Plan 02-11) will not require the legal pages to resolve. This is acceptable because Phase 8 is the immediate next phase that needs them.
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      test -f apps/web/components/SiteHeader.tsx && \
+      test -f apps/web/components/SiteFooter.tsx && \
+      grep -q "The Eisenbalm Dispatch" apps/web/components/SiteHeader.tsx && \
+      grep -q "Archive" apps/web/components/SiteHeader.tsx && \
+      grep -q "Charities" apps/web/components/SiteHeader.tsx && \
+      grep -q "About" apps/web/components/SiteHeader.tsx && \
+      grep -q "Shop" apps/web/components/SiteHeader.tsx && \
+      grep -q "data-site-header" apps/web/components/SiteHeader.tsx && \
+      grep -q "Jesse A. Eisenbalm" apps/web/components/SiteFooter.tsx && \
+      grep -q "All proceeds go to the featured charity" apps/web/components/SiteFooter.tsx && \
+      grep -q "data-site-footer" apps/web/components/SiteFooter.tsx && \
+      grep -q "/legal/privacy" apps/web/components/SiteFooter.tsx && \
+      grep -q "/legal/terms" apps/web/components/SiteFooter.tsx
+    </automated>
+  </verify>
+  <done>
+    Header renders wordmark + 4 nav links per UI-SPEC §16. Footer renders 3-zone layout per UI-SPEC §17. Both carry `data-site-header` / `data-site-footer` attributes the print stylesheet selectors target. Copyright year is dynamic. No exclamation marks anywhere.
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 5: Create apps/web/app/layout.tsx — root layout with fonts + default theme</name>
+  <read_first>
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md (Typography, Default Google Font Set)
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-09, D-11)
+    - apps/web/lib/theme.ts (BRAND_DEFAULTS, serializeThemeCss)
+    - apps/web/lib/site.ts (SITE_NAME, SITE_DESCRIPTION, getSiteUrl)
+  </read_first>
+  <files>apps/web/app/layout.tsx</files>
+  <action>
+    Create `apps/web/app/layout.tsx`:
+
+    ```typescript
+    /**
+     * Root layout. UI-SPEC Typography + Color System.
+     *
+     * Loads the three default fonts via next/font/google as CSS variables.
+     * Renders SiteHeader + SiteFooter. Inlines default theme via
+     * serializeThemeCss(null) — issue pages override with their own theme.
+     */
+    import type { Metadata, Viewport } from 'next'
+    import { Playfair_Display, Lora, Inter } from 'next/font/google'
+    import { SiteHeader } from '@/components/SiteHeader'
+    import { SiteFooter } from '@/components/SiteFooter'
+    import { serializeThemeCss } from '@/lib/theme'
+    import { SITE_NAME, SITE_DESCRIPTION, getSiteUrl } from '@/lib/site'
+    import './globals.css'
+
+    // ─── Fonts (next/font/google → CSS variables) ─────────────────────────────
+
+    const fontDisplay = Playfair_Display({
+      subsets: ['latin'],
+      display: 'swap',
+      variable: '--font-display-loaded',
+      weight: ['600'],
+    })
+
+    const fontBody = Lora({
+      subsets: ['latin'],
+      display: 'swap',
+      variable: '--font-body-loaded',
+      weight: ['400'],
+    })
+
+    const fontUi = Inter({
+      subsets: ['latin'],
+      display: 'swap',
+      variable: '--font-ui-loaded',
+      weight: ['400', '600'],
+    })
+
+    // ─── Site-level metadata ──────────────────────────────────────────────────
+
+    export const metadata: Metadata = {
+      metadataBase: new URL(getSiteUrl()),
+      title: {
+        default: SITE_NAME,
+        template: `%s — ${SITE_NAME}`,
+      },
+      description: SITE_DESCRIPTION,
+      openGraph: {
+        type: 'website',
+        siteName: SITE_NAME,
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        url: '/',
+        images: [
+          {
+            url: '/og-default.png',
+            width: 1200,
+            height: 630,
+            alt: SITE_NAME,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        images: ['/og-default.png'],
+      },
+      robots: { index: true, follow: true },
+    }
+
+    export const viewport: Viewport = {
+      themeColor: '#FAFAF8',
+      colorScheme: 'light',
+    }
+
+    // ─── Layout ────────────────────────────────────────────────────────────────
+
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      // Default theme variables — issue layout overrides on /issue/[slug].
+      const defaultThemeCss = serializeThemeCss(null)
+
+      return (
+        <html
+          lang="en"
+          className={`${fontDisplay.variable} ${fontBody.variable} ${fontUi.variable}`}
+        >
+          <head>
+            {/*
+              Inline <style> with the brand default theme. Issue layouts emit
+              their own <style> after this one, overriding the variables.
+              This avoids FOUC even before client JS runs.
+            */}
+            <style
+              // Content is built entirely from validated values inside
+              // serializeThemeCss — no user input.
+              dangerouslySetInnerHTML={{ __html: defaultThemeCss }}
+            />
+          </head>
+          <body className="flex min-h-screen flex-col font-body text-[color:var(--color-text)]">
+            <SiteHeader />
+            <main className="flex-1" id="main">
+              {children}
+            </main>
+            <SiteFooter />
+          </body>
+        </html>
+      )
+    }
+    ```
+
+    Notes:
+    - next/font/google injects `@font-face` rules and assigns CSS variables. Phase 2 chooses to bind those to internal names (`--font-display-loaded` etc.) and the brand variables (`--font-display` etc.) are set in `globals.css` `:root` with a `'Playfair Display', Georgia, serif` fallback chain. This keeps the @theme bindings stable across per-issue theme injection.
+    - `metadataBase` resolves all relative URLs (OG images, canonical, sitemap) against `NEXT_PUBLIC_SITE_URL`.
+    - viewport themeColor uses the brand default; per-issue override is browser chrome-only and not required for Phase 2.
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      test -f apps/web/app/layout.tsx && \
+      grep -q "Playfair_Display" apps/web/app/layout.tsx && \
+      grep -q "Lora" apps/web/app/layout.tsx && \
+      grep -q "Inter" apps/web/app/layout.tsx && \
+      grep -q "next/font/google" apps/web/app/layout.tsx && \
+      grep -q "SiteHeader" apps/web/app/layout.tsx && \
+      grep -q "SiteFooter" apps/web/app/layout.tsx && \
+      grep -q "serializeThemeCss" apps/web/app/layout.tsx && \
+      grep -q "metadataBase" apps/web/app/layout.tsx && \
+      grep -q "og-default.png" apps/web/app/layout.tsx && \
+      grep -q "summary_large_image" apps/web/app/layout.tsx && \
+      grep -q 'html$' apps/web/app/layout.tsx || grep -q '<html' apps/web/app/layout.tsx
+    </automated>
+  </verify>
+  <done>
+    Root layout loads Playfair Display + Lora + Inter via next/font/google. Renders SiteHeader/SiteFooter wrapping children. Inlines default theme via `serializeThemeCss(null)`. Sets site-level OG + Twitter metadata pointing at the default OG image (which Plan 02-10 ships).
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 6: Create apps/web/app/not-found.tsx + error.tsx</name>
+  <read_first>
+    - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md (Copywriting Contract — error/empty state copy)
+  </read_first>
+  <files>apps/web/app/not-found.tsx, apps/web/app/error.tsx</files>
+  <action>
+    1. Create `apps/web/app/not-found.tsx`:
+
+       ```typescript
+       import Link from 'next/link'
+
+       export default function NotFound() {
+         return (
+           <section className="mx-auto max-w-[680px] px-4 md:px-6 lg:px-8 py-16">
+             <h1 className="font-display text-[28px] md:text-[36px] font-semibold leading-tight text-[color:var(--color-text)]">
+               This page does not exist.
+             </h1>
+             <p className="mt-6 font-body text-[18px] text-[color:var(--color-text)]">
+               Try the{' '}
+               <Link href="/archive" className="underline underline-offset-4 hover:text-[color:var(--color-accent)]">
+                 archive
+               </Link>
+               .
+             </p>
+           </section>
+         )
+       }
+       ```
+
+    2. Create `apps/web/app/error.tsx` (client component — Next.js error boundaries must be client):
+
+       ```typescript
+       'use client'
+
+       export default function ErrorBoundary({
+         error,
+         reset,
+       }: {
+         error: Error & { digest?: string }
+         reset: () => void
+       }) {
+         return (
+           <section className="mx-auto max-w-[680px] px-4 md:px-6 lg:px-8 py-16">
+             <h1 className="font-display text-[28px] md:text-[36px] font-semibold leading-tight text-[color:var(--color-text)]">
+               This issue could not be loaded.
+             </h1>
+             <p className="mt-6 font-body text-[18px] text-[color:var(--color-text)]">
+               Try refreshing.
+             </p>
+             <button
+               type="button"
+               onClick={reset}
+               className="mt-6 font-ui text-[14px] underline underline-offset-4 hover:text-[color:var(--color-accent)]"
+             >
+               Try again
+             </button>
+           </section>
+         )
+       }
+       ```
+
+       Both copy strings match UI-SPEC Copywriting Contract:
+       - "This page does not exist."
+       - "This issue could not be loaded. Try refreshing." (split here into headline + body for readability; semantically identical)
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      test -f apps/web/app/not-found.tsx && \
+      test -f apps/web/app/error.tsx && \
+      grep -q "This page does not exist" apps/web/app/not-found.tsx && \
+      grep -q "This issue could not be loaded" apps/web/app/error.tsx && \
+      grep -q "'use client'" apps/web/app/error.tsx
+    </automated>
+  </verify>
+  <done>
+    not-found.tsx ships the Jesse-voice "This page does not exist." copy with a link to /archive. error.tsx is a client component implementing Next.js error boundary with the "Try refreshing" message.
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 7: Verify the chrome boots — pnpm typecheck + smoke build</name>
+  <read_first>
+    - apps/web/tsconfig.json (include paths)
+    - apps/web/package.json (typecheck script)
+  </read_first>
+  <files></files>
+  <action>
+    1. Run `pnpm --filter web typecheck` from repo root. Expected exit 0. If errors surface, fix them by tightening types in the files created above — DO NOT relax `tsconfig.base.json` strict settings.
+
+    2. Run `pnpm --filter web build` from repo root. Next 15 will:
+       - Compile globals.css (Tailwind v4 + @theme)
+       - Statically generate `/_not-found`
+       - Try to generate `/` — which will fail because Plan 02-09 hasn't shipped `app/page.tsx` yet. EXPECTED.
+       - If Next refuses to build because `app/page.tsx` is missing, create a stub at `apps/web/app/page.tsx`:
+
+         ```typescript
+         export default function HomePlaceholder() {
+           return null
+         }
+         ```
+
+         Plan 02-09 will replace this. Document the stub-then-replace pattern in the SUMMARY.
+
+    3. If build succeeds, smoke check: `pnpm dev:web` for a few seconds, curl `http://localhost:3000/_not-found` (or any path), verify the response includes "This page does not exist." Then kill the dev server.
+
+    The full route smoke test happens in Plan 02-11. Here we only confirm the chrome compiles and renders.
+  </action>
+  <verify>
+    <automated>
+      cd /Users/user/Desktop/Eisenbalm && \
+      pnpm --filter web typecheck 2>&1 | tail -3 && \
+      # If app/page.tsx doesn't exist, create the stub (idempotent):
+      test -f apps/web/app/page.tsx || printf 'export default function HomePlaceholder() {\n  return null\n}\n' > apps/web/app/page.tsx && \
+      pnpm --filter web build 2>&1 | tail -10
+    </automated>
+  </verify>
+  <done>
+    `pnpm --filter web typecheck` exits 0. `pnpm --filter web build` completes (with at most a `/` placeholder warning that Plan 02-09 resolves). If a stub `app/page.tsx` was created, it's documented in the SUMMARY for Plan 02-09 to overwrite.
+  </done>
+</task>
+
+</tasks>
+
+<verification>
+- globals.css loads Tailwind v4 with @theme bindings and brand default :root values
+- next/font/google loads Playfair Display + Lora + Inter as CSS variables
+- SiteHeader + SiteFooter render on every page
+- /not-found renders the locked Jesse-voice copy
+- /error renders the error boundary
+- pnpm --filter web typecheck exits 0
+- pnpm --filter web build completes
+</verification>
+
+<success_criteria>
+- WEB-05 partial: about page layout shell is reusable (full about page lands in Plan 02-09)
+- WEB-10 primitive ready: <JsonLd> safely embeds structured data
+- WEB-11 site-level: OG + Twitter defaults in root metadata
+- WEB-14: print stylesheet hides chrome and forces black-on-white serif
+- WEB-15: reading-time.ts ready for issue page consumption
+- Print rule selectors (data-site-header, data-anchor-copy, etc.) align with the attributes that Wave 3 components will emit
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/02-web-shell-theme-engine/02-05-root-layout-globals-SUMMARY.md` recording: font variables used by Tailwind @theme, print-hide data attributes downstream components must emit, the exact text of not-found / error copy, and whether a stub `app/page.tsx` was created (so Plan 02-09 overwrites it).
+</output>
