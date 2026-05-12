@@ -57,9 +57,9 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 02-04-demo-content-seed-PLAN.md — Idempotent demo charity + published issue seed (warm-cream theme for theme-engine visibility)
 - [x] 02-05-root-layout-globals-PLAN.md — Root layout + globals.css + Tailwind v4 @theme + print stylesheet + SiteHeader/SiteFooter + JsonLd + reading-time + not-found + error
 - [ ] 02-06-issue-route-PLAN.md — /issue/[slug] 10-section render + theme injection + JSON-LD Article + reading time + anchor copy + slot placeholders
-- [ ] 02-07-archive-route-PLAN.md — /archive list with client-side search + sort + ArchiveItem
+- [x] 02-07-archive-route-PLAN.md — /archive list with client-side search + sort + ArchiveItem
 - [ ] 02-08-charities-routes-PLAN.md — /charities + /charities/[slug] with JSON-LD NGO + external link safety
-- [ ] 02-09-home-about-shop-PLAN.md — Homepage redirect + empty state + /about placeholder + /shop Phase 2 shell
+- [x] 02-09-home-about-shop-PLAN.md — Homepage redirect + empty state + /about placeholder + /shop Phase 2 shell
 - [ ] 02-10-sitemap-rss-og-PLAN.md — sitemap.ts (dynamic) + feed.xml Route Handler (RSS 2.0) + robots.txt + og-default.png placeholder
 - [ ] 02-11-readme-and-smoke-test-PLAN.md — apps/web/README.md onboarding doc + Andrew's manual WEB-* smoke test (autonomous: false)
 **UI hint**: yes
@@ -160,7 +160,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Sanity Foundation | 7/7 | In Progress | 2026-05-11 |
-| 2. Web Shell + Theme Engine | 5/11 | In Progress|  |
+| 2. Web Shell + Theme Engine | 7/11 | In Progress|  |
 | 3. Convex Deployment | 0/TBD | Not started | - |
 | 4. Pipeline Skeleton | 0/TBD | Not started | - |
 | 5. Agent Quality | 0/TBD | Not started | - |
