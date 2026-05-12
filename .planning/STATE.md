@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-04-demo-content-seed-PLAN.md
-last_updated: "2026-05-12T03:45:10.985Z"
+stopped_at: Completed 02-01-web-bootstrap-PLAN.md
+last_updated: "2026-05-12T03:47:24.968Z"
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 9
+  completed_plans: 11
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 02 (web-shell-theme-engine) — EXECUTING
-Plan: 3 of 11
+Plan: 5 of 11
 
 ## Performance Metrics
 
@@ -53,6 +53,8 @@ Plan: 3 of 11
 | Phase 01 P06 | 3 | 2 tasks | 2 files |
 | Phase 02-web-shell-theme-engine P02-02 | 196 | 4 tasks | 4 files |
 | Phase 02 P04 | 2 | 3 tasks | 4 files |
+| Phase 02 P01 | 6 | 3 tasks | 8 files |
+| Phase 02-web-shell-theme-engine P03 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +80,10 @@ Recent decisions affecting current work:
 - [Phase 02-02]: defineLive deferred to Phase 9: CONTEXT.md D-16 keeps Convex out of Phase 2; GROQ result types hand-written against projections (not TypeGen GA) for Wave 3 immediate type safety
 - [Phase 02]: seed:demo not executed automatically — production dataset write deferred to Andrew or engineer via pnpm seed:demo
 - [Phase 02]: Demo issue uses bonusType jingle to exercise empty sunoAudioUrl empty-state path in Plan 02-06
+- [Phase 02]: lucide-react pinned to ^1.14.0 (plan specified ^0.450.0 which does not exist on npm; bumped to current stable)
+- [Phase 02]: tsconfig.moduleResolution: Bundler overrides NodeNext from base — required for Next 15 App Router + Tailwind v4 compatibility
+- [Phase 02-web-shell-theme-engine]: validateHex returns string|null rather than boolean so callers can use the value directly without double-lookup
+- [Phase 02-web-shell-theme-engine]: WCAG fallback applies to bg+text only; primary+accent retain validated values since they are not body-text colors
 
 ### Pending Todos
 
@@ -92,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T03:45:10.980Z
-Stopped at: Completed 02-04-demo-content-seed-PLAN.md
+Last session: 2026-05-12T03:47:24.963Z
+Stopped at: Completed 02-01-web-bootstrap-PLAN.md
 Resume file: None
