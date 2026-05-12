@@ -14,16 +14,20 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+**Foundation (Phase 1 — 2026-05-11)**
+- ✓ Sanity v5 Studio renders all schema types (`charity`, `weeklyIssue`, `agentProfile`) with all fields editable — verified live in `6h1vd9mf/production`
+- ✓ Sanity TypeGen produces `apps/studio/sanity.types.ts` (Charity / WeeklyIssue / AgentProfile / AllSanitySchemaTypes), re-exported via `packages/shared/src/sanity-types.ts`
+- ✓ All 14 canonical agent profiles seeded with deterministic `agent-{agentId}` IDs (idempotent createOrReplace)
+- ✓ Andrew can create and save a `weeklyIssue` draft with no schema validation error
+- ✓ pnpm monorepo skeleton: `apps/{studio,web}` + `packages/{shared,pipeline}` workspaces resolve
+- ✓ `agentProfile.ts` agentId list reconciled to brief's canonical 14 (D-11)
 
 ### Active
 
 <!-- Hypotheses until shipped. Grouped by build-brief sequence. -->
 
 **Foundation**
-- [ ] Sanity Studio renders all schema types (`charity`, `weeklyIssue`, `agentProfile`) with all fields editable
-- [ ] One `agentProfile` document seeded per agent (calibrator, scout, advocate, editor, researcher, origin-story, problem-statement, founder-bio, case-study, game, bonus, design, qa, publisher)
-- [ ] Convex schema deployed and reachable from web app
+- [ ] Convex schema deployed and reachable from web app (Phase 3)
 
 **Web shell (reads from Sanity, displays mock issue)**
 - [ ] Reader can land on `/` and be redirected/routed to the latest published issue
@@ -127,7 +131,8 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Lock the stack (Next/Sanity/Convex/FastAPI/LangGraph/OpenRouter/Supabase/Stripe/WeasyPrint) | Brief explicitly: "do not substitute." Avoids stack-shopping rabbit holes during build. | — Pending |
+| Lock the stack (Next/Sanity/Convex/FastAPI/LangGraph/OpenRouter/Supabase/Stripe/WeasyPrint) | Brief explicitly: "do not substitute." Avoids stack-shopping rabbit holes during build. | ✓ Good (Phase 1) |
+| Sanity v5 (not brief's v3) | Brief was written before v5 stabilized; v5 is current stable with TypeGen GA + React 19. | ✓ Good (Phase 1) |
 | Three datastores (Sanity canonical, Convex live, Supabase pipeline state) | Each store has a distinct role; merging would compromise either editorial workflow or real-time observability. | — Pending |
 | Andrew is the only publish gate | Brief: editorial control over what ships. Trades cadence robustness for brand integrity. | — Pending |
 | 9 named agents (not "an LLM call") | Each agent has a profile in Sanity (`agentProfile`) and shows up by name in the deliberation UI. The agents are part of the editorial product, not infrastructure. | — Pending |
@@ -155,4 +160,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 after initialization*
+*Last updated: 2026-05-11 after Phase 1 (Sanity Foundation) completion*
