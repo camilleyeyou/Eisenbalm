@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-08-charities-routes-PLAN.md
-last_updated: "2026-05-12T04:15:08.952Z"
+stopped_at: Completed 02-06-issue-route-PLAN.md
+last_updated: "2026-05-12T04:18:25.385Z"
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 02 (web-shell-theme-engine) — EXECUTING
-Plan: 9 of 11
+Plan: 10 of 11
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Plan: 9 of 11
 | Phase 02 P07 | 12 | 3 tasks | 4 files |
 | Phase 02-web-shell-theme-engine P09 | 8 | 4 tasks | 4 files |
 | Phase 02-web-shell-theme-engine P08 | 179 | 4 tasks | 4 files |
+| Phase 02 P06 | 7m | 7 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Recent decisions affecting current work:
 - [Phase 02-web-shell-theme-engine]: ShopCallout accepts optional charityName prop — fallback to generic copy when null
 - [Phase 02-web-shell-theme-engine]: NGO JSON-LD omits null fields via spread conditionals; foundingDate cast to String() per schema.org spec
 - [Phase 02-web-shell-theme-engine]: Filtering UI on /charities deferred to v2 per UI-SPEC (dataset < 50 entries)
+- [Phase 02-06]: Used details/summary for deliberation accordion (zero-JS progressive enhancement) instead of shadcn Accordion
+- [Phase 02-06]: GameSlot iframe hidden in Phase 2 but sandbox='allow-scripts' correct from day 1; Phase 7 surfaces after validator lands
 
 ### Pending Todos
 
@@ -110,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T04:15:08.946Z
-Stopped at: Completed 02-08-charities-routes-PLAN.md
+Last session: 2026-05-12T04:18:25.380Z
+Stopped at: Completed 02-06-issue-route-PLAN.md
 Resume file: None
