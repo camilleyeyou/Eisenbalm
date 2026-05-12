@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-web-shell-theme-engine/02-09-home-about-shop-PLAN.md
-last_updated: "2026-05-12T04:13:49.468Z"
+stopped_at: Completed 02-08-charities-routes-PLAN.md
+last_updated: "2026-05-12T04:15:08.952Z"
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 18
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 02 (web-shell-theme-engine) — EXECUTING
-Plan: 8 of 11
+Plan: 9 of 11
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 8 of 11
 | Phase 02 P05 | 987 | 8 tasks | 17 files |
 | Phase 02 P07 | 12 | 3 tasks | 4 files |
 | Phase 02-web-shell-theme-engine P09 | 8 | 4 tasks | 4 files |
+| Phase 02-web-shell-theme-engine P08 | 179 | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Empty-list state in RSC; empty-search state in client ArchiveList — clean RSC/client boundary
 - [Phase 02-web-shell-theme-engine]: Inline QUERY_LATEST_CHARITY_NAME in shop/page.tsx — single consumer, Phase 8 rewrites page
 - [Phase 02-web-shell-theme-engine]: ShopCallout accepts optional charityName prop — fallback to generic copy when null
+- [Phase 02-web-shell-theme-engine]: NGO JSON-LD omits null fields via spread conditionals; foundingDate cast to String() per schema.org spec
+- [Phase 02-web-shell-theme-engine]: Filtering UI on /charities deferred to v2 per UI-SPEC (dataset < 50 entries)
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T04:13:49.463Z
-Stopped at: Completed 02-web-shell-theme-engine/02-09-home-about-shop-PLAN.md
+Last session: 2026-05-12T04:15:08.946Z
+Stopped at: Completed 02-08-charities-routes-PLAN.md
 Resume file: None
