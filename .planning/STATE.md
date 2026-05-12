@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-07-archive-route-PLAN.md
-last_updated: "2026-05-12T04:13:39.384Z"
+stopped_at: Completed 02-web-shell-theme-engine/02-09-home-about-shop-PLAN.md
+last_updated: "2026-05-12T04:13:49.468Z"
 progress:
   total_phases: 9
   completed_phases: 1
@@ -91,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Reading time uses 238 WPM per UI-SPEC (overrides CONTEXT.md D-24 200 WPM reference — UI-SPEC is locked)
 - [Phase 02]: Globals.css includes shadcn variable shim (--background, --foreground) to prevent button/tooltip color miss
 - [Phase 02]: Empty-list state in RSC; empty-search state in client ArchiveList — clean RSC/client boundary
+- [Phase 02-web-shell-theme-engine]: Inline QUERY_LATEST_CHARITY_NAME in shop/page.tsx — single consumer, Phase 8 rewrites page
+- [Phase 02-web-shell-theme-engine]: ShopCallout accepts optional charityName prop — fallback to generic copy when null
 
 ### Pending Todos
 
@@ -105,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T04:13:25.944Z
-Stopped at: Completed 02-07-archive-route-PLAN.md
+Last session: 2026-05-12T04:13:49.463Z
+Stopped at: Completed 02-web-shell-theme-engine/02-09-home-about-shop-PLAN.md
 Resume file: None
