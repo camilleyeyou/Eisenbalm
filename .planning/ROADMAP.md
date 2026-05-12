@@ -11,7 +11,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [ ] **Phase 1: Sanity Foundation** - Wire existing schemas into a live Sanity v5 Studio with TypeGen, seeded agent profiles, and Andrew's editorial access
-- [ ] **Phase 2: Web Shell + Theme Engine** - All reader-facing routes on Next.js 15 reading from Sanity, with secure per-issue CSS-variable theming and full SEO metadata
+- [x] **Phase 2: Web Shell + Theme Engine** - All reader-facing routes on Next.js 15 reading from Sanity, with secure per-issue CSS-variable theming and full SEO metadata
 - [ ] **Phase 3: Convex Deployment** - Deploy schema, wire all query/mutation functions, provision keys, and verify empty-table subscriptions from the web app
 - [ ] **Phase 4: Pipeline Skeleton** - FastAPI on Railway with the full LangGraph graph wired, all 14 stub agents, runId discipline, three-datastore writes, and Editor gate 1 interrupt validated cheaply before LLM cost
 - [ ] **Phase 5: Agent Quality** - Replace every stub with a real LLM-driven agent; enforce voice isolation, factual verification, bonus branching, hex/font validation, and Jesse-voice QA rubric
@@ -61,7 +61,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 02-08-charities-routes-PLAN.md — /charities + /charities/[slug] with JSON-LD NGO + external link safety
 - [x] 02-09-home-about-shop-PLAN.md — Homepage redirect + empty state + /about placeholder + /shop Phase 2 shell
 - [x] 02-10-sitemap-rss-og-PLAN.md — sitemap.ts (dynamic) + feed.xml Route Handler (RSS 2.0) + robots.txt + og-default.png placeholder
-- [ ] 02-11-readme-and-smoke-test-PLAN.md — apps/web/README.md onboarding doc + Andrew's manual WEB-* smoke test (autonomous: false)
+- [x] 02-11-readme-and-smoke-test-PLAN.md — apps/web/README.md onboarding doc + Andrew's manual WEB-* smoke test (autonomous: false)
 **UI hint**: yes
 
 ### Phase 3: Convex Deployment
@@ -160,7 +160,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Sanity Foundation | 7/7 | In Progress | 2026-05-11 |
-| 2. Web Shell + Theme Engine | 10/11 | In Progress|  |
+| 2. Web Shell + Theme Engine | 11/11 | Complete | 2026-05-12 |
 | 3. Convex Deployment | 0/TBD | Not started | - |
 | 4. Pipeline Skeleton | 0/TBD | Not started | - |
 | 5. Agent Quality | 0/TBD | Not started | - |
