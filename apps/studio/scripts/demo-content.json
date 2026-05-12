@@ -1,0 +1,64 @@
+{
+  "charity": {
+    "name": "The Quiet Foundation",
+    "slug": "the-quiet-foundation",
+    "location": "Gallup, NM",
+    "website": "https://example.org/quiet-foundation",
+    "foundingYear": 1987,
+    "assetRange": "$250K–$500K",
+    "focusArea": "Rural acoustic preservation",
+    "missionStatement": "The Quiet Foundation preserves quiet places in the rural United States by measuring ambient sound and intervening when human noise crosses a documented threshold.",
+    "scoutNotes": "Founded by a former NOAA acoustician who realized federal noise regulations stop at 65 decibels. Operates a fleet of seven calibrated microphones across the Four Corners region. Has never accepted federal funding."
+  },
+  "issue": {
+    "issueNumber": 1,
+    "publishDate": "2026-06-05",
+    "status": "published",
+    "bonusType": "jingle",
+    "theme": {
+      "primaryColor": "#14213D",
+      "accentColor": "#FCA311",
+      "backgroundColor": "#F5EEDC",
+      "textColor": "#1A1A18",
+      "fontDisplay": "DM Serif Display",
+      "fontBody": "Merriweather",
+      "visualDirection": "Warm cream paper stock. Deep navy headlines. The accent appears once — on the shop button. Nothing decorative."
+    },
+    "originStory": {
+      "headline": "She drove to a place where the only sound was wind",
+      "body": "Margaret Holloway worked at NOAA for nineteen years measuring weather data. In 2014 she took a sabbatical and drove a calibrated microphone to a clearing in McKinley County. The sound floor was thirteen decibels. She submitted a memo. The memo went nowhere. She founded The Quiet Foundation eight months later."
+    },
+    "problemStatement": {
+      "headline": "Federal noise regulations stop at sixty-five decibels",
+      "body": "The Environmental Protection Agency monitors noise above sixty-five decibels in populated areas. Nothing in the federal code addresses what happens to a place that is naturally quieter than that. A natural sound floor of thirteen decibels can rise to thirty-five over a decade — measurable as a four-fold increase in ambient pressure — and remain entirely legal. The Quiet Foundation documents this by parking calibrated microphones in undocumented quiet zones for thirty-day intervals."
+    },
+    "founderBio": {
+      "headline": "Margaret Holloway",
+      "body": "Holloway is a senior fellow at the Acoustical Society of America. She holds a PhD in atmospheric physics from Colorado State. She has published twelve papers on the propagation of low-frequency sound across high-elevation desert. She lives in Gallup. She does not give interviews."
+    },
+    "caseStudy": {
+      "subjectName": "Chaco Culture National Historical Park",
+      "headline": "A measurable victory in San Juan County",
+      "body": "In 2019 the Foundation deployed three microphones at the perimeter of Chaco Culture National Historical Park. Over forty-five days they documented a fourteen-decibel rise in ambient sound correlated with a regional helicopter tourism contract. The data was provided to the National Park Service. The contract was not renewed."
+    },
+    "game": {
+      "headline": "How quiet can you stand it",
+      "description": "Move the cursor to keep the sound meter below thirty-five decibels for sixty seconds.",
+      "embedCode": "<div style=\"font-family:monospace;padding:24px;background:#F5EEDC;color:#1A1A18\"><p>Phase 7 wires the interactive game. This is a placeholder render only.</p></div>"
+    },
+    "bonus": {
+      "headline": "A jingle for The Quiet Foundation",
+      "lyrics": "Drive past the city limits / past the last good signal / past the last gas station / where the air stops humming / where the road stops talking / The Quiet Foundation is listening.",
+      "sunoPrompt": "Sparse acoustic guitar. Single voice, no harmony. Sixty-second runtime. No drums.",
+      "sunoAudioUrl": ""
+    },
+    "podcast": {
+      "podcastDescription": "Phase 9 will wire the NotebookLM audio player here. The transcript field is populated by the pipeline.",
+      "deliberationTranscript": "Scout proposed three candidates: a rural literacy nonprofit in West Virginia, an acoustic preservation organization in New Mexico, and a community microgrid co-op in Vermont. Advocate scored the acoustic preservation organization highest because its work is measurable, its scope is bounded, and its founder is on record refusing federal funding. Editor selected it on the strength of the original NOAA memo."
+    },
+    "selectionDeliberation": {
+      "editorDecision": "Selected on the strength of measurability and the founder's refusal of federal funding. The runner-up was a rural literacy nonprofit in West Virginia.",
+      "runnerUpNotes": "The literacy nonprofit was strong but lacked the documentary record this issue needs. Returns to the queue for a future issue."
+    }
+  }
+}
