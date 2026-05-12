@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 2 context gathered
-last_updated: "2026-05-12T02:55:55.550Z"
+status: Ready to execute
+stopped_at: Completed 02-web-shell-theme-engine/02-02-sanity-reader-PLAN.md
+last_updated: "2026-05-12T03:45:05.057Z"
 progress:
   total_phases: 9
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 18
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 01 — sanity-foundation
+**Current focus:** Phase 02 — web-shell-theme-engine
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (web-shell-theme-engine) — EXECUTING
+Plan: 3 of 11
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ Plan: Not started
 | Phase 01 P03 | 6 | 4 tasks | 13 files |
 | Phase 01 P05 | 30 | 3 tasks | 4 files |
 | Phase 01 P06 | 3 | 2 tasks | 2 files |
+| Phase 02-web-shell-theme-engine P02-02 | 196 | 4 tasks | 4 files |
+| Phase 02 P04 | 2 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -73,6 +75,7 @@ Recent decisions affecting current work:
 - [Phase 01]: D-17/D-18 seeding: deterministic _id agent-{agentId} with createOrReplace; agents.json holds copy for non-dev editing; seed executed live against 6h1vd9mf/production (14/14, idempotent confirmed)
 - [Phase 01 Plan 07]: Cloud deploy URL not captured — Andrew's local smoke test against production dataset satisfied all four FND criteria; deploy deferred to Andrew's discretion
 - [Phase 01 Plan 07]: Plan 06 follow-up fix committed (75b4a08): tsx --env-file=.env.local required for seed:agents to load .env.local in user shell context
+- [Phase 02-02]: defineLive deferred to Phase 9: CONTEXT.md D-16 keeps Convex out of Phase 2; GROQ result types hand-written against projections (not TypeGen GA) for Wave 3 immediate type safety
 
 ### Pending Todos
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T02:55:55.544Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md
+Last session: 2026-05-12T03:44:57.793Z
+Stopped at: Completed 02-web-shell-theme-engine/02-02-sanity-reader-PLAN.md
+Resume file: None
