@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/**
+ * Tailwind v4 @theme — wires CSS variables into the Tailwind class system.
+ * Classes available: bg-bg, text-text, text-muted, bg-surface, border-border,
+ *                    text-primary, text-accent, font-display, font-body, font-ui.
+ *
+ * The variable VALUES live in :root below (and are overridden per-issue by
+ * apps/web/lib/theme.ts on issue pages).
+ */
+@theme {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-border: var(--color-border);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-ui: var(--font-ui);
+}
+
+/**
+ * Brand default palette. Values mirror apps/web/lib/theme.ts BRAND_DEFAULTS.
+ * Per-issue themes override --color-bg, --color-text, --color-primary,
+ * --color-accent, --font-display, --font-body via inline <style> in
+ * /issue/[slug]/layout.tsx. --color-surface, --color-text-muted, and
+ * --color-border are DERIVED via color-mix() so DesignAgent only emits 4 hex.
+ */
+:root {
+  /* Brand defaults — overridden on issue pages */
+  --color-bg: #FAFAF8;
+  --color-text: #1A1A18;
+  --color-primary: #2D5016;
+  --color-accent: #8B1A1A;
+
+  /* Derived (color-mix pattern) */
+  --color-surface: color-mix(in srgb, var(--color-bg) 92%, black 8%);
+  --color-text-muted: color-mix(in srgb, var(--color-text) 60%, transparent);
+  --color-border: color-mix(in srgb, var(--color-text) 12%, transparent);
+
+  /* Font defaults — next/font/google injects the @font-face declarations */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Lora', Georgia, serif;
+  --font-ui: 'Inter', system-ui, sans-serif;
+}
+
+/**
+ * Dark-mode for non-issue pages only (UI-SPEC color section).
+ * Issue pages set their own --color-bg/--color-text via theme injection,
+ * so they ignore prefers-color-scheme.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1A1A18;
+    --color-text: #FAFAF8;
+    --color-surface: #252520;
+  }
+}
+
+/* Base typography & layout */
+html {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+nav, button {
+  font-family: var(--font-ui);
+}
+
+/* Focus ring (UI-SPEC Accessibility Contract) */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/**
+ * Print stylesheet — UI-SPEC §"Print Stylesheet" + D-26.
+ * Hide site chrome; keep editorial prose; force black-on-white serif.
+ */
+@media print {
+  /* Hide chrome and non-print elements */
+  [data-print-hide="true"],
+  [data-site-header],
+  [data-site-footer],
+  [data-shop-callout],
+  [data-anchor-copy],
+  [data-game-slot],
+  [data-deliberation-slot],
+  [data-podcast-slot],
+  audio {
+    display: none !important;
+  }
+
+  /* Black on white; no theme bleed */
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Fallback serif when web fonts don't load in print context */
+  html {
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3 {
+    font-family: Georgia, serif !important;
+  }
+
+  h1 { font-size: 22pt; }
+  h2 { font-size: 18pt; }
+  h3 { font-size: 14pt; }
+
+  /* Links: black with underline; print URL after text */
+  a {
+    color: black !important;
+    text-decoration: underline;
+  }
+
+  a[href]:not([href^="#"])::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+  }
+}
+
+/* Shim: map shadcn's expected variable names to our UI-SPEC names */
+:root {
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-bg);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-bg);
+  --border: var(--color-border);
+  --muted: var(--color-surface);
+  --muted-foreground: var(--color-text-muted);
+  --ring: var(--color-accent);
+}
