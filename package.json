@@ -14,6 +14,7 @@
     "build:studio": "pnpm --filter studio build",
     "deploy:studio": "pnpm --filter studio deploy",
     "typegen": "pnpm --filter studio typegen",
-    "seed:agents": "pnpm --filter studio seed:agents"
+    "seed:agents": "pnpm --filter studio seed:agents",
+    "seed:demo": "pnpm --filter studio seed:demo"
   }
 }
