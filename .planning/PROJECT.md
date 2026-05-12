@@ -22,6 +22,16 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 - ✓ pnpm monorepo skeleton: `apps/{studio,web}` + `packages/{shared,pipeline}` workspaces resolve
 - ✓ `agentProfile.ts` agentId list reconciled to brief's canonical 14 (D-11)
 
+**Web Shell + Theme Engine (Phase 2 — 2026-05-12)**
+- ✓ All 7 reader routes resolve: `/`, `/issue/[slug]`, `/archive`, `/charities`, `/charities/[slug]`, `/about`, `/shop` (shell)
+- ✓ Issue page renders the 10 sections in locked order with slot placeholders for game / deliberation / podcast (Phases 7 / 9)
+- ✓ Per-issue theme injected as CSS variables with hex regex validation + font whitelist + WCAG AA contrast fallback + `setProperty`-only (security-correct)
+- ✓ Two-layer theme injection: server `serializeThemeCss()` inline `<style>` for FOUC + client `<ThemeApplier>` re-validation on hydration
+- ✓ SEO surface: schema.org/Article JSON-LD, OG + Twitter cards, `/sitemap.xml`, `/feed.xml` (RSS 2.0), `/robots.txt`, og-default.png placeholder
+- ✓ Reading time (238 WPM), anchor copy-link buttons (shadcn Tooltip + 1.5s fade), print stylesheet (no theme bleed)
+- ✓ Demo content seed script (`pnpm seed:demo` → "The Quiet Foundation" + Issue 1) idempotent via deterministic `_id`s
+- ✓ Andrew confirmed all 16 WEB-* requirements via smoke test
+
 ### Active
 
 <!-- Hypotheses until shipped. Grouped by build-brief sequence. -->
@@ -133,6 +143,10 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 |----------|-----------|---------|
 | Lock the stack (Next/Sanity/Convex/FastAPI/LangGraph/OpenRouter/Supabase/Stripe/WeasyPrint) | Brief explicitly: "do not substitute." Avoids stack-shopping rabbit holes during build. | ✓ Good (Phase 1) |
 | Sanity v5 (not brief's v3) | Brief was written before v5 stabilized; v5 is current stable with TypeGen GA + React 19. | ✓ Good (Phase 1) |
+| Next.js 15.3.x (not 16) | `next-sanity@^12.4.5` has documented overage bug on Next.js 16; @cache-components tag forbidden. | ✓ Good (Phase 2) |
+| Tailwind v4 with `@theme` directives | Native CSS-variable theming pairs cleanly with per-issue theme injection. | ✓ Good (Phase 2) |
+| shadcn primitives (button + tooltip) for shop/anchor only; editorial surfaces all custom | Official registry only, no third-party. Custom editorial keeps magazine feel. | ✓ Good (Phase 2) |
+| Two-layer theme injection (server `<style>` + client ThemeApplier) | Server prevents FOUC; client re-validates on hydration as defense-in-depth. | ✓ Good (Phase 2) |
 | Three datastores (Sanity canonical, Convex live, Supabase pipeline state) | Each store has a distinct role; merging would compromise either editorial workflow or real-time observability. | — Pending |
 | Andrew is the only publish gate | Brief: editorial control over what ships. Trades cadence robustness for brand integrity. | — Pending |
 | 9 named agents (not "an LLM call") | Each agent has a profile in Sanity (`agentProfile`) and shows up by name in the deliberation UI. The agents are part of the editorial product, not infrastructure. | — Pending |
@@ -160,4 +174,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 after Phase 1 (Sanity Foundation) completion*
+*Last updated: 2026-05-12 after Phase 2 (Web Shell + Theme Engine) completion*
