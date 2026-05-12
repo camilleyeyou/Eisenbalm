@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-06-agent-seed-PLAN.md
-last_updated: "2026-05-12T01:11:57.778Z"
+stopped_at: "Completed 01-07-readme-and-smoke-test-PLAN.md — Phase 01 all 7/7 plans done"
+last_updated: "2026-05-11T00:00:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 
 ## Current Position
 
-Phase: 01 (sanity-foundation) — EXECUTING
-Plan: 6 of 7
+Phase: 01 (sanity-foundation) — COMPLETE (7/7 plans done)
+Plan: 7 of 7 — COMPLETE
 
 ## Performance Metrics
 
@@ -71,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 01]: D-12 correction: sanity.cli.ts schema.path = './schema.json' (not './sanity.types.ts' — typegen writes TS to package root by default)
 - [Phase 01]: [Phase 01]: sanity.types.ts manually generated from schema analysis due to ECONNRESET network constraint; must be regenerated with pnpm typegen when network is restored
 - [Phase 01]: D-17/D-18 seeding: deterministic _id agent-{agentId} with createOrReplace; agents.json holds copy for non-dev editing; seed executed live against 6h1vd9mf/production (14/14, idempotent confirmed)
+- [Phase 01 Plan 07]: Cloud deploy URL not captured — Andrew's local smoke test against production dataset satisfied all four FND criteria; deploy deferred to Andrew's discretion
+- [Phase 01 Plan 07]: Plan 06 follow-up fix committed (75b4a08): tsx --env-file=.env.local required for seed:agents to load .env.local in user shell context
 
 ### Pending Todos
 
@@ -85,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T01:11:57.773Z
-Stopped at: Completed 01-06-agent-seed-PLAN.md
+Last session: 2026-05-11T00:00:00.000Z
+Stopped at: Completed 01-07-readme-and-smoke-test-PLAN.md — Phase 01 complete (7/7)
 Resume file: None
