@@ -433,8 +433,8 @@ test('applyTheme: valid theme sets custom values', () => {
   assert.equal(el.style.props['--color-text'],    '#FAFAF8')
   assert.equal(el.style.props['--color-primary'], '#112233')
   assert.equal(el.style.props['--color-accent'],  '#445566')
-  assert.ok(el.style.props['--font-display'].includes('Merriweather'))
-  assert.ok(el.style.props['--font-body'].includes('Lora'))
+  assert.ok((el.style.props['--font-display'] ?? '').includes('Merriweather'))
+  assert.ok((el.style.props['--font-body'] ?? '').includes('Lora'))
 })
 
 test('applyTheme: low-contrast pair reverts bg+text to brand defaults', () => {
