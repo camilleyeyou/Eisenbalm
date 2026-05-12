@@ -60,7 +60,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 02-07-archive-route-PLAN.md — /archive list with client-side search + sort + ArchiveItem
 - [x] 02-08-charities-routes-PLAN.md — /charities + /charities/[slug] with JSON-LD NGO + external link safety
 - [x] 02-09-home-about-shop-PLAN.md — Homepage redirect + empty state + /about placeholder + /shop Phase 2 shell
-- [ ] 02-10-sitemap-rss-og-PLAN.md — sitemap.ts (dynamic) + feed.xml Route Handler (RSS 2.0) + robots.txt + og-default.png placeholder
+- [x] 02-10-sitemap-rss-og-PLAN.md — sitemap.ts (dynamic) + feed.xml Route Handler (RSS 2.0) + robots.txt + og-default.png placeholder
 - [ ] 02-11-readme-and-smoke-test-PLAN.md — apps/web/README.md onboarding doc + Andrew's manual WEB-* smoke test (autonomous: false)
 **UI hint**: yes
 
@@ -160,7 +160,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Sanity Foundation | 7/7 | In Progress | 2026-05-11 |
-| 2. Web Shell + Theme Engine | 9/11 | In Progress|  |
+| 2. Web Shell + Theme Engine | 10/11 | In Progress|  |
 | 3. Convex Deployment | 0/TBD | Not started | - |
 | 4. Pipeline Skeleton | 0/TBD | Not started | - |
 | 5. Agent Quality | 0/TBD | Not started | - |
