@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-web-shell-theme-engine/02-02-sanity-reader-PLAN.md
-last_updated: "2026-05-12T03:45:05.057Z"
+stopped_at: Completed 02-04-demo-content-seed-PLAN.md
+last_updated: "2026-05-12T03:45:10.985Z"
 progress:
   total_phases: 9
   completed_phases: 1
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 01 Plan 07]: Cloud deploy URL not captured — Andrew's local smoke test against production dataset satisfied all four FND criteria; deploy deferred to Andrew's discretion
 - [Phase 01 Plan 07]: Plan 06 follow-up fix committed (75b4a08): tsx --env-file=.env.local required for seed:agents to load .env.local in user shell context
 - [Phase 02-02]: defineLive deferred to Phase 9: CONTEXT.md D-16 keeps Convex out of Phase 2; GROQ result types hand-written against projections (not TypeGen GA) for Wave 3 immediate type safety
+- [Phase 02]: seed:demo not executed automatically — production dataset write deferred to Andrew or engineer via pnpm seed:demo
+- [Phase 02]: Demo issue uses bonusType jingle to exercise empty sunoAudioUrl empty-state path in Plan 02-06
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T03:44:57.793Z
-Stopped at: Completed 02-web-shell-theme-engine/02-02-sanity-reader-PLAN.md
+Last session: 2026-05-12T03:45:10.980Z
+Stopped at: Completed 02-04-demo-content-seed-PLAN.md
 Resume file: None
