@@ -38,7 +38,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 01-04-workspace-placeholders-PLAN.md — packages/shared (with Sanity-types re-export hook) plus apps/web and packages/pipeline placeholders
 - [x] 01-05-typegen-pipeline-PLAN.md — Wire Sanity TypeGen end-to-end and re-export through @eisenbalm/shared
 - [x] 01-06-agent-seed-PLAN.md — Idempotent seed of all 14 canonical agentProfile documents
-- [ ] 01-07-readme-and-smoke-test-PLAN.md — apps/studio/README.md onboarding doc + Andrew's end-to-end smoke test
+- [x] 01-07-readme-and-smoke-test-PLAN.md — apps/studio/README.md onboarding doc + Andrew's end-to-end smoke test
 
 ### Phase 2: Web Shell + Theme Engine
 **Goal**: A reader can navigate all issue pages, the archive, the charity database, and the about page; each issue page applies a per-issue theme via validated CSS variables; the site emits correct SEO metadata, JSON-LD, sitemap, and RSS feed
@@ -148,7 +148,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Sanity Foundation | 4/7 | In Progress|  |
+| 1. Sanity Foundation | 7/7 | In Progress | 2026-05-11 |
 | 2. Web Shell + Theme Engine | 0/TBD | Not started | - |
 | 3. Convex Deployment | 0/TBD | Not started | - |
 | 4. Pipeline Skeleton | 0/TBD | Not started | - |
