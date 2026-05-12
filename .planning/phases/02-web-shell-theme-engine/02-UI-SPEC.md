@@ -50,7 +50,7 @@ All decisions below are pre-populated from upstream artifacts. No CONTEXT.md fro
 
 | Decision | Value | Source / Rationale |
 |----------|-------|-------------------|
-| Next.js version | 15.3.x (NOT 16) | STACK.md: next-sanity@^11 has 4-10x overage bug on Next.js 16 |
+| Next.js version | 15.3.x (NOT 16) | STACK.md: next-sanity@^12.4.5 is stable on Next.js 15; the SanityLive 4-10x overage bug affects next-sanity when used with Next.js 16, not 15 |
 | Tailwind version | 4.3.0 | STACK.md: latest stable; v4 supports CSS-variable `@theme` natively |
 | Font loading strategy | `next/font/google` for runtime; base64 `@font-face` for WeasyPrint (Phase 6) | See Typography section; Phase 6 reuses the same font names |
 | Theme injection module | `apps/web/lib/theme.ts` exports `applyTheme(el, theme)` | Called from issue layout component on mount |
@@ -61,6 +61,7 @@ All decisions below are pre-populated from upstream artifacts. No CONTEXT.md fro
 | Portable text renderer | `@portabletext/react` | STACK.md |
 | Archive search | Client-side filter (full list fetched once, filtered in React state) | FEATURES.md: "small dataset, fetched once" |
 | Dark mode | Respect `prefers-color-scheme` on non-issue pages ONLY; issue pages are fully theme-controlled | FEATURES.md anti-pattern |
+| next-sanity version | ^12.4.5 (NOT the @cache-components pre-release tag) | STACK.md — v12 is stable on Next 15; cache-components is experimental for Next 16 and must be avoided |
 
 ---
 
@@ -311,11 +312,11 @@ Every component specified below includes: what it renders, which Sanity fields i
 - Mission statement (Body font, 18px, regular) — truncated to 3 lines with CSS `-webkit-line-clamp: 3`
 - Estimated reading time (UI font, 14px, muted) — positioned right of focus area
 - Publish date (UI font, 14px, muted) — formatted as "Issue {number} — {Month Day, Year}"
-- PDF download link (UI font, 14px, primary color) — "Download the problem framework" — only rendered when `problemPdfUrl` is non-null
+- PDF download link (UI font, 14px, primary color) — "Download the problem framework" — only rendered when `problemPdfUrl` (GROQ projection of `problemPdf.asset->url`) is non-null
 
 **Sanity fields consumed (from QUERY_ISSUE_BY_SLUG):**
 - `charity.name`, `charity.focusArea`, `charity.location`, `charity.foundingYear`, `charity.missionStatement`
-- `issueNumber`, `publishDate`, `problemPdfUrl`
+- `issueNumber`, `publishDate`, `problemPdfUrl` — note: `problemPdfUrl` is a GROQ projection (`"problemPdfUrl": problemPdf.asset->url` in `QUERY_ISSUE_BY_SLUG`); it is not a flat schema field. The schema field is `problemPdf` (type `file`). The component references the projected name `problemPdfUrl`.
 
 **States:**
 - Default: all fields present
@@ -454,8 +455,8 @@ Phase 2 renders the collapsed accordion shell only. Phase 9 wires Convex subscri
 Phase 2 renders the slot. Phase 9 wires the audio player.
 
 **States:**
-- `podcast.audioUrl` null (expected in Phase 2): "Audio coming soon." (UI font 14px muted, centered in slot)
-- `podcast.audioUrl` present: render `<audio controls src={audioUrl} aria-label="Podcast episode">` + `podcast.podcastDescription` below player
+- `podcast.audioUrl` null (expected in Phase 2; schema field is `podcast.audioFile`, type `file`; GROQ projection in `QUERY_ISSUE_BY_SLUG` exposes it as `podcast.audioUrl` via `"audioUrl": audioFile.asset->url`): "Audio coming soon." (UI font 14px muted, centered in slot)
+- `podcast.audioUrl` present (projected name; underlying schema field: `podcast.audioFile.asset->url`): render `<audio controls src={audioUrl} aria-label="Podcast episode">` + `podcast.podcastDescription` below player. Note: this is a Phase 2 placeholder slot — Phase 9 wires the live audio player (POD-01..POD-03).
 - `podcast.deliberationTranscript` present: collapsible "Read the deliberation transcript" toggle below player (or below "Audio coming soon" if no audio)
 
 **Slot minimum height:** 80px (accommodates label + empty state message without layout jump when audio loads)
@@ -522,6 +523,7 @@ Phase 2 renders the slot. Phase 9 wires the audio player.
 - Focus area (UI font 14px, muted) — e.g., "Animal welfare"
 - Location (UI font 14px, muted) — e.g., "Chicago, IL"
 - Publish date (UI font 14px, muted) — "Month YYYY"
+- Asset range (UI font 12px, muted) — rendered below location as e.g. "$100K–$1M assets" if present; gives the archive item the Fortune 500 gravity weight the brand demands
 - Bonus type badge: text only, no colored pill — "Big Budget" / "Jingle" / "Spec Ad" (UI font 12px, muted, uppercase)
 
 **Layout:** Single column list, 1px border bottom between items, 24px (lg) vertical padding per item.
@@ -530,7 +532,7 @@ Phase 2 renders the slot. Phase 9 wires the audio player.
 
 **Sanity fields consumed (from QUERY_ARCHIVE):**
 - `issueNumber`, `publishDate`, `slug`, `bonusType`
-- `charity.{ name, slug, location, focusArea, assetRange }`
+- `charity.{ name, slug, location, focusArea, assetRange }` — `assetRange` is rendered (see Renders above); all five fields are consumed
 
 ---
 
@@ -561,7 +563,7 @@ Phase 2 renders the slot. Phase 9 wires the audio player.
 - Location (UI font 14px, muted)
 - Focus area (UI font 14px, muted)
 - Mission statement (Body font 18px, regular) — truncated to 2 lines
-- "Featured in Issue {N}" link if `featuredIn` non-null; omit if null
+- "Featured in Issue {N}" link if `firstFeaturedIn` non-null; omit if null — GROQ projection: `firstFeaturedIn->{ issueNumber, slug }` from `QUERY_ALL_CHARITIES`; the projected key in the query result is `featuredIn` (see API_CONTRACTS.md §1.4)
 
 **Layout:** Same single-column list pattern as archive. 1px border-bottom, 24px vertical padding.
 
@@ -583,7 +585,9 @@ Phase 2 renders the slot. Phase 9 wires the audio player.
 - Charity Navigator link: "View on Charity Navigator" — if `charityNavigatorUrl` non-null
 - GuideStar link: "View on Candid" — if `guidestarUrl` non-null
 - Scout notes (Body font 18px, regular) — rendered under label "About this charity" (UI font 14px muted uppercase)
-- Featured issue block (if `featuredIn` non-null): "This charity was featured in Issue {N} ({Month YYYY})" — links to issue
+- Featured issue block (if `firstFeaturedIn` non-null): "This charity was featured in Issue {N} ({Month YYYY})" — links to issue; `firstFeaturedIn` is the schema field name, projected as `featuredIn` in `QUERY_CHARITY_BY_SLUG` (see API_CONTRACTS.md §1.5)
+
+**Sanity fields consumed:** `charity.{ name, slug, location, focusArea, foundingYear, assetRange, missionStatement, website, charityNavigatorUrl, guidestarUrl, scoutNotes, firstFeaturedIn->{ issueNumber, publishDate, slug } }` (from `QUERY_CHARITY_BY_SLUG`; the schema field is `firstFeaturedIn`, projected as `featuredIn` in the query result — see API_CONTRACTS.md §1.5).
 
 **JSON-LD:** `schema.org/NGO` per WEB-10 (see SEO section)
 
@@ -640,6 +644,8 @@ Phase 2 renders the slot. Phase 9 wires the audio player.
 
 **Active state:** Current page link underlined, `--color-text` (no color change — underline only).
 
+**Weight note:** "semibold" in the wordmark = font-weight: 600 (matches the Display heading weight; no third weight is introduced).
+
 ---
 
 ### 17. `<SiteFooter>` — Footer
@@ -692,6 +698,8 @@ Phase 2 renders the slot. Phase 9 wires the audio player.
 **Theme injection:** `applyTheme(document.documentElement, issue.theme)` called in a `useEffect` in the issue layout component (`apps/web/app/issue/[slug]/layout.tsx`). Runs client-side after Server Component renders. CSS variables are set before browser paint via `<style>` tag injection in the `<head>` as well — executor may implement either pattern; the `<style>` tag injection avoids FOUC.
 
 **Recommended FOUC prevention:** Inject a `<style>` tag in the Server Component `<head>` with validated CSS variables as static strings. Fall back to default palette if validation fails server-side. Client-side `useEffect` handles dynamic font loading only.
+
+**Visual anchor:** The charity name (Display font, 36px) is the primary visual anchor and is rendered as the `<h1>`; all other elements defer to it in hierarchy.
 
 **GROQ query:** `QUERY_ISSUE_BY_SLUG`
 
