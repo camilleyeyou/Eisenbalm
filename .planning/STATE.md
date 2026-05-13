@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Plan 03-03 complete — 5 Convex function files committed (one per table); codegen verified; ready for Plan 03-04 deploy
-last_updated: "2026-05-13T17:17:11.421Z"
+stopped_at: Plans 03-03 + 03-04 complete; Convex backend live (dev modest-magpie-797), _generated/ committed, ready for web wiring
+last_updated: "2026-05-13T17:20:23.050Z"
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 26
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Project State
@@ -121,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T17:17:02.381Z
-Stopped at: Plan 03-03 complete — 5 Convex function files committed (one per table); codegen verified; ready for Plan 03-04 deploy
-Resume file: None
+Last session: 2026-05-13T17:20:23.046Z
+Stopped at: Plans 03-03 + 03-04 complete; Convex backend live (dev modest-magpie-797), _generated/ committed, ready for web wiring
+Resume file: .planning/phases/03-convex-deployment/03-05-web-convex-wiring-PLAN.md
