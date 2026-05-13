@@ -9,6 +9,11 @@
  *
  * Exclusion: /api/, drafts, in-review — implicit: QUERY_ARCHIVE filters
  * on status == "published" and QUERY_ALL_CHARITIES returns approved charities.
+ * Exclusion: /_debug/* — this file only emits the hardcoded `staticEntries`
+ * list (5 entries) plus issue + charity URLs from GROQ. The /_debug/convex
+ * route (Phase 3, removed in Phase 9) is intentionally not in any of those
+ * sources, so it cannot leak into the sitemap. Also covered by
+ * `Disallow: /_debug/` in apps/web/public/robots.txt.
  */
 import type { MetadataRoute } from 'next'
 import { sanityClient } from '@/lib/sanity/client'
@@ -43,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sanityClient.fetch<CharityListItem[]>(QUERY_ALL_CHARITIES),
   ])
 
+  // Exclusion: do not list /_debug/* routes (Phase 3 D-18)
   const staticEntries: MetadataRoute.Sitemap = [
     {
       url: `${base}/`,

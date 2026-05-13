@@ -9,6 +9,10 @@
  * the canonical archive projection in API_CONTRACTS.md §1.3.
  * Keeping QUERY_ARCHIVE byte-for-byte aligned with the contract is the
  * higher priority.
+ *
+ * Exclusion: /_debug/* — this handler only emits published weeklyIssue items
+ * from QUERY_FEED. The /_debug/convex route (Phase 3, removed in Phase 9)
+ * is not a weeklyIssue and cannot appear here.
  */
 import { groq } from 'next-sanity'
 import { sanityClient } from '@/lib/sanity/client'
@@ -68,6 +72,7 @@ function toRfc822(input: string): string {
 
 export async function GET() {
   const base = getSiteUrl()
+  // Exclusion: do not list /_debug/* routes (Phase 3 D-18)
 
   // Guard: return a minimal valid RSS channel when Sanity credentials are absent
   // (CI builds, unconfigured preview environments).
