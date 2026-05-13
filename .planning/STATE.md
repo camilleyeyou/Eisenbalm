@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Plan 03-05 complete; ConvexClientProvider mounted in apps/web root layout, @convex/* alias wired, convex@1.38.0 installed; ready for Plan 03-06 (/_debug/convex page + sitemap/robots exclusions)
-last_updated: "2026-05-13T17:30:06.172Z"
+stopped_at: Plan 03-06 complete; /_debug/convex evidence route live (HTTP 200, table renders 5 rows), folder uses %5Fdebug Next.js escape, robots/sitemap/feed exclusion markers in place, Phase 9 cleanup contract locked; ready for Plan 03-07 (documentation)
+last_updated: "2026-05-13T17:41:11.930Z"
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 26
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 03 (convex-deployment) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Plan: 6 of 8
 | Phase 03 P01 | 3 | 3 tasks | 7 files |
 | Phase 03-convex-deployment P03 | 7 | 5 tasks | 5 files |
 | Phase 03-convex-deployment P05 | 6 | 4 tasks | 4 files |
+| Phase 03-convex-deployment P06 | 7 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 03]: convex/ promoted to pnpm workspace @eisenbalm/convex with convex@^1.38.0 pin (D-01, D-05); _generated/ explicitly preserved by convex/.gitignore (D-08); both .env.example files document NEXT_PUBLIC_CONVEX_URL + CONVEX_DEPLOY_KEY with explicit security wording (D-20, D-21)
 - [Phase 03-convex-deployment]: Plan 03-03: Five Convex query/mutation files written byte-for-byte from API_CONTRACTS §4.1-4.5 (D-10); v.literal enums match schema.ts verbatim (D-11); Date.now() injected server-side on all inserts (D-12); pipelineRuns.updateStatus throws on missing run (D-13); codegen verified via convex dev --once; _generated/ NOT committed (Plan 03-04 owns)
 - [Phase 03-convex-deployment]: Plan 03-05: Module-scope ConvexReactClient construction in 'use client' wrapper (one websocket per browser session, no per-render leak); D-16 fallback renders children unwrapped when NEXT_PUBLIC_CONVEX_URL is missing — verified by stripping env var and running pnpm build (exits 0 with all 13 routes generated); @convex/* path alias resolves under Next 15 Bundler resolution
+- [Phase 03-convex-deployment]: Plan 03-06: Next.js 15 App Router private-folder mismatch (Pitfall 7 inverted): literal _debug folder is excluded from routing regardless of page.tsx presence — renamed source folder to %5Fdebug per Next docs %5F-escape so URL stays /_debug/convex; all URL-based contracts (robots.txt, sitemap/feed markers, Plan 03-08 smoke URL) unchanged
+- [Phase 03-convex-deployment]: Plan 03-06: /_debug/convex page uses inline <meta name='robots' content='noindex,nofollow'> in JSX rather than metadata export — Client Components don't run metadata exports but inline <meta> elements are surfaced to <head> by Next.js
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T17:30:06.167Z
-Stopped at: Plan 03-05 complete; ConvexClientProvider mounted in apps/web root layout, @convex/* alias wired, convex@1.38.0 installed; ready for Plan 03-06 (/_debug/convex page + sitemap/robots exclusions)
+Last session: 2026-05-13T17:41:11.925Z
+Stopped at: Plan 03-06 complete; /_debug/convex evidence route live (HTTP 200, table renders 5 rows), folder uses %5Fdebug Next.js escape, robots/sitemap/feed exclusion markers in place, Phase 9 cleanup contract locked; ready for Plan 03-07 (documentation)
 Resume file: None
