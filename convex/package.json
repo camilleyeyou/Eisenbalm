@@ -1,0 +1,18 @@
+{
+  "name": "@eisenbalm/convex",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Convex schema + queries + mutations for The Eisenbalm Dispatch pipeline",
+  "scripts": {
+    "dev": "convex dev",
+    "dev:once": "convex dev --once",
+    "deploy": "convex deploy",
+    "codegen": "convex codegen",
+    "dashboard": "convex dashboard",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "convex": "^1.38.0",
+    "typescript": "^5.6.0"
+  }
+}

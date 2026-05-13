@@ -1,0 +1,7 @@
+# Convex CLI local config — NEVER commit (contains deployment URL + deploy key)
+.env.local
+.env
+
+# DO commit _generated/ so types travel with the repo (project D-08 — mirrors
+# Phase 1 D-14 sanity.types.ts pattern). If you find yourself adding a
+# `_generated/` rule below, stop and re-read .planning/phases/03-convex-deployment/03-CONTEXT.md D-08.
