@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /_next/
+Disallow: /_debug/
 
 Sitemap: https://eisenbalm.com/sitemap.xml
