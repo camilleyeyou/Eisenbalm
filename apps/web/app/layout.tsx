@@ -12,6 +12,7 @@ import { Playfair_Display, Lora, Inter } from 'next/font/google'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider'
 import { serializeThemeCss } from '@/lib/theme'
 import { SITE_NAME, SITE_DESCRIPTION, getSiteUrl } from '@/lib/site'
 import './globals.css'
@@ -105,13 +106,15 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col font-body text-[color:var(--color-text)]">
-        <TooltipProvider delayDuration={0}>
-          <SiteHeader />
-          <main className="flex-1" id="main">
-            {children}
-          </main>
-          <SiteFooter />
-        </TooltipProvider>
+        <ConvexClientProvider>
+          <TooltipProvider delayDuration={0}>
+            <SiteHeader />
+            <main className="flex-1" id="main">
+              {children}
+            </main>
+            <SiteFooter />
+          </TooltipProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   )
