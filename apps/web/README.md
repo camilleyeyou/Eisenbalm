@@ -21,6 +21,7 @@
 | `/sitemap.xml` | `app/sitemap.ts` | Static pages + all published issues + all charities. ISR 60s. |
 | `/feed.xml` | `app/feed.xml/route.ts` | RSS 2.0. Item description is the charity mission statement (no full body — site is a destination). |
 | `/robots.txt` | `public/robots.txt` | Allows `/`. Disallows `/api/` and `/_next/`. |
+| `/_debug/convex` | `convex/*.ts` queries | **Phase 3 evidence only. Removed in Phase 9.** Hidden — not in nav, sitemap, or RSS. `Disallow: /_debug/` in robots.txt. Calls all 5 byRunId queries with synthetic runId `phase-3-smoke-test`. |
 
 ---
 
@@ -69,6 +70,8 @@ Defined in `apps/web/.env.example` (committed) and `apps/web/.env.local` (gitign
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | yes | `6h1vd9mf` | Sanity project ID. Public dataset — safe to expose. |
 | `NEXT_PUBLIC_SANITY_DATASET` | yes | `production` | Dataset name. |
 | `NEXT_PUBLIC_SITE_URL` | yes | `http://localhost:3000` | Base URL for sitemap.xml, feed.xml, JSON-LD canonical, and OG images. Set to `https://eisenbalm.com` (or your chosen domain) in Vercel. |
+| `NEXT_PUBLIC_CONVEX_URL` | yes (when Convex is configured) | _none_ | Public Convex deployment URL (e.g. `https://adjective-animal-NNN.convex.cloud`). Web app uses it to construct `ConvexReactClient`. Set after running `pnpm --filter @eisenbalm/convex exec convex dev --once --configure`. When missing, the provider falls back to passing children through (no Convex subscriptions) — the rest of the site still renders. |
+| `CONVEX_DEPLOY_KEY` | no (web app does not need it) | _none_ | **SECRET. NEVER commit. NEVER expose via NEXT_PUBLIC_*.** Convex Deploy Key (`dev:...` in Phase 3, `prod:...` after Andrew promotes the deployment). Used by `convex deploy` (CI / Vercel build step) and by the Phase 4 pipeline's HTTP API mutation calls. Kept in `apps/web/.env.local` for local HTTP API smoke tests. |
 
 No write token is needed for the web app at runtime. Phase 8 adds Stripe env vars to this list.
 
@@ -154,6 +157,55 @@ Each issue section has an `id` attribute (e.g., `<section id="origin-story">`). 
 
 Computed from concatenated Portable Text body fields (origin story + problem + founder bio + case study + bonus body). Rate: 238 WPM (UI-SPEC). Rounded up to nearest minute. Returns 0 for empty content. Helper: [`apps/web/lib/reading-time.ts`](./lib/reading-time.ts).
 
+## Convex
+
+Phase 3 (2026-05) wired the web app to a Convex deployment. The Convex backend hosts the deliberation stream (5 tables — `pipelineRuns`, `deliberationEvents`, `agentVotes`, `qaCorrections`, `pitchLog`) and exposes 5 `byRunId` queries plus insertion mutations.
+
+See [`convex/README.md`](../../convex/README.md) for the canonical Convex onboarding doc. The summary below is everything `apps/web` needs to know.
+
+### Provider mount
+
+[`apps/web/components/providers/ConvexClientProvider.tsx`](./components/providers/ConvexClientProvider.tsx) is a `'use client'` wrapper that constructs `new ConvexReactClient(NEXT_PUBLIC_CONVEX_URL)` at module scope (one websocket per browser session — never re-create per render). It is mounted in [`apps/web/app/layout.tsx`](./app/layout.tsx) so every descendant Client Component can call `useQuery`. The root layout remains a Server Component.
+
+When `NEXT_PUBLIC_CONVEX_URL` is missing (e.g. Vercel preview deploys before Convex is provisioned), the provider passes children through without wrapping — the rest of the site renders, but any descendant calling `useQuery` will throw with a clear "no provider" message. This matches the pattern in [`apps/web/lib/sanity/client.ts`](./lib/sanity/client.ts) (placeholder projectId fallback, `useCdn: true` runtime client).
+
+### Type imports
+
+Convex's generated `api` object lives at `convex/_generated/api.{ts,d.ts}` (committed to git per project decision D-08 — mirrors Phase 1's `sanity.types.ts` posture). The [`apps/web/tsconfig.json`](./tsconfig.json) `paths` block aliases `@convex/*` → `../../convex/*`, so consumers `import { api } from '@convex/_generated/api'`.
+
+### `/_debug/convex` (Phase 3 only — removed in Phase 9)
+
+[`apps/web/app/%5Fdebug/convex/page.tsx`](./app/%5Fdebug/convex/page.tsx) is Phase 3's CVX-05 evidence surface. It calls all five `byRunId` queries with a synthetic `runId: "phase-3-smoke-test"` and renders a five-row table. Visit it locally at http://localhost:3000/_debug/convex.
+
+> On-disk note: the folder is literally `%5Fdebug` (URL-encoded underscore) because Next.js 15's App Router treats any folder starting with a literal `_` as private and excludes it from routing. Using `%5F` in the folder name escapes the underscore so the served URL is the expected `/_debug/convex`. See Plan 03-06 deviation. The CONVEX_DEPLOY_KEY in `.env.local` is currently in `dev:` form (not `prod:`) per Plan 03-02 Deviation 1; the type does not change `apps/web`'s behavior.
+
+The file carries a `TODO(Phase 9):` cleanup comment. Phase 9 (Issue Page Completion) will:
+
+1. Delete `apps/web/app/%5Fdebug/convex/page.tsx`
+2. Delete `apps/web/app/%5Fdebug/` if no other debug routes were added
+3. Remove the `Disallow: /_debug/` line from `apps/web/public/robots.txt`
+4. Drop this section from `apps/web/README.md` and the matching section in `convex/README.md`
+
+Until then, the route exists as an empty-state checkpoint Andrew can hit to confirm the Convex pathway is alive without polluting the production site. It is excluded from `sitemap.xml` and `feed.xml` (those files only emit known editorial routes) and `Disallow:`-ed in `robots.txt`. The page also emits `<meta name="robots" content="noindex,nofollow">` for defense in depth.
+
+### Vercel env provisioning (manual, D-22)
+
+When the `apps/web` Vercel project exists (Phase 2 did not require it), Andrew runs:
+
+```bash
+cd apps/web
+npx vercel env add NEXT_PUBLIC_CONVEX_URL production
+npx vercel env add CONVEX_DEPLOY_KEY production
+```
+
+The plan does NOT automate this — env provisioning to remote services is Andrew's manual responsibility per D-22 (mirrors Phase 2 D-27).
+
+### What happens in Phase 9
+
+[`apps/web/components/issue/DeliberationSlot.tsx`](./components/issue/DeliberationSlot.tsx) — Phase 2's collapsed `<details>` placeholder — will gain `useQuery` calls against the issue's `runId` (fetched from Sanity via `QUERY_ISSUE_RUN_ID` in [`apps/web/lib/sanity/queries.ts`](./lib/sanity/queries.ts), already wired in Phase 2). The five queries flow into agent identity cards, advocate score bars, QA severity badges, and a pitch log timeline.
+
+Phase 3 leaves `DeliberationSlot.tsx` untouched. The provider scaffolding is what Phase 9 will plug into.
+
 ### SEO and structured data
 
 - `generateMetadata()` per page emits OG + Twitter card tags.
@@ -190,7 +242,7 @@ The following land in later phases:
 | Feature | Phase |
 |---|---|
 | Stripe / checkout / `/shop/thank-you` | Phase 8 |
-| Convex deliberation live subscriptions | Phase 9 |
+| Live `<DeliberationSlot>` Convex subscriptions (uses Phase 3's infrastructure) | Phase 9 |
 | Game iframe validator + real game content | Phase 7 |
 | Real podcast player | Phase 9 |
 | LangGraph pipeline | Phase 4 |
