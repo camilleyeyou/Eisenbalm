@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 3 context gathered (auto mode)
-last_updated: "2026-05-12T23:28:12.629Z"
+status: Ready to execute
+stopped_at: Completed 03-01-convex-workspace-bootstrap-PLAN.md
+last_updated: "2026-05-13T00:12:04.282Z"
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 18
-  completed_plans: 18
+  total_plans: 26
+  completed_plans: 19
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 02 — web-shell-theme-engine
+**Current focus:** Phase 03 — convex-deployment
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
+Phase: 03 (convex-deployment) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Plan: Not started
 | Phase 02-web-shell-theme-engine P08 | 179 | 4 tasks | 4 files |
 | Phase 02 P06 | 7m | 7 tasks | 13 files |
 | Phase 02 P10 | 18 | 4 tasks | 5 files |
+| Phase 03 P01 | 3 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,7 @@ Recent decisions affecting current work:
 - [Phase 02]: QUERY_FEED is inline in feed.xml/route.ts (not in canonical queries.ts) to avoid mutating API_CONTRACTS.md §1.3 shape
 - [Phase 02]: client.ts uses placeholder projectId fallback so createClient does not throw at module load in unconfigured builds
 - [Phase 02]: og-default.png is a 1200x630 off-white placeholder PNG; Andrew replaces with real brand artwork before launch
+- [Phase 03]: convex/ promoted to pnpm workspace @eisenbalm/convex with convex@^1.38.0 pin (D-01, D-05); _generated/ explicitly preserved by convex/.gitignore (D-08); both .env.example files document NEXT_PUBLIC_CONVEX_URL + CONVEX_DEPLOY_KEY with explicit security wording (D-20, D-21)
 
 ### Pending Todos
 
@@ -117,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T23:28:12.620Z
-Stopped at: Phase 3 context gathered (auto mode)
-Resume file: .planning/phases/03-convex-deployment/03-CONTEXT.md
+Last session: 2026-05-13T00:12:04.277Z
+Stopped at: Completed 03-01-convex-workspace-bootstrap-PLAN.md
+Resume file: None
