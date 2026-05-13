@@ -36,8 +36,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Convex (deployed schema + functions)
 
 - [x] **CVX-01**: Convex deploys with the existing `convex/schema.ts` (tables: `pipelineRuns`, `deliberationEvents`, `agentVotes`, `qaCorrections`, `pitchLog`)
-- [ ] **CVX-02**: Convex query functions exist for `pipelineRuns.byRunId`, `pitchLog.byRunId`, `agentVotes.byRunId`, `qaCorrections.byRunId`, `deliberationEvents.byRunId`
-- [ ] **CVX-03**: Convex mutation functions exist for inserting a `pipelineRun`, appending `pitchLog` entries, appending `agentVotes`, appending `qaCorrections`, appending `deliberationEvents`
+- [x] **CVX-02**: Convex query functions exist for `pipelineRuns.byRunId`, `pitchLog.byRunId`, `agentVotes.byRunId`, `qaCorrections.byRunId`, `deliberationEvents.byRunId`
+- [x] **CVX-03**: Convex mutation functions exist for inserting a `pipelineRun`, appending `pitchLog` entries, appending `agentVotes`, appending `qaCorrections`, appending `deliberationEvents`
 - [ ] **CVX-04**: `CONVEX_DEPLOY_KEY` is provisioned and stored in Vercel + Railway environment configurations
 - [ ] **CVX-05**: Web app `useQuery` subscriptions to all five Convex queries return empty arrays without errors when no data exists
 
@@ -206,8 +206,8 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | WEB-15 | Phase 2: Web Shell + Theme Engine | Complete |
 | WEB-16 | Phase 2: Web Shell + Theme Engine | Complete |
 | CVX-01 | Phase 3: Convex Deployment | Complete |
-| CVX-02 | Phase 3: Convex Deployment | Pending |
-| CVX-03 | Phase 3: Convex Deployment | Pending |
+| CVX-02 | Phase 3: Convex Deployment | Complete |
+| CVX-03 | Phase 3: Convex Deployment | Complete |
 | CVX-04 | Phase 3: Convex Deployment | Pending |
 | CVX-05 | Phase 3: Convex Deployment | Pending |
 | PIP-01 | Phase 4: Pipeline Skeleton | Pending |

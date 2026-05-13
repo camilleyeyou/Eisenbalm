@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Plan 03-02 complete — Convex deployment provisioned (modest-magpie-797 dev), wiring ready for Wave 3
-last_updated: "2026-05-13T17:11:20.710Z"
+stopped_at: Plan 03-03 complete — 5 Convex function files committed (one per table); codegen verified; ready for Plan 03-04 deploy
+last_updated: "2026-05-13T17:17:11.421Z"
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 26
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 03 (convex-deployment) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Plan: 2 of 8
 | Phase 02 P06 | 7m | 7 tasks | 13 files |
 | Phase 02 P10 | 18 | 4 tasks | 5 files |
 | Phase 03 P01 | 3 | 3 tasks | 7 files |
+| Phase 03-convex-deployment P03 | 7 | 5 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,7 @@ Recent decisions affecting current work:
 - [Phase 02]: client.ts uses placeholder projectId fallback so createClient does not throw at module load in unconfigured builds
 - [Phase 02]: og-default.png is a 1200x630 off-white placeholder PNG; Andrew replaces with real brand artwork before launch
 - [Phase 03]: convex/ promoted to pnpm workspace @eisenbalm/convex with convex@^1.38.0 pin (D-01, D-05); _generated/ explicitly preserved by convex/.gitignore (D-08); both .env.example files document NEXT_PUBLIC_CONVEX_URL + CONVEX_DEPLOY_KEY with explicit security wording (D-20, D-21)
+- [Phase 03-convex-deployment]: Plan 03-03: Five Convex query/mutation files written byte-for-byte from API_CONTRACTS §4.1-4.5 (D-10); v.literal enums match schema.ts verbatim (D-11); Date.now() injected server-side on all inserts (D-12); pipelineRuns.updateStatus throws on missing run (D-13); codegen verified via convex dev --once; _generated/ NOT committed (Plan 03-04 owns)
 
 ### Pending Todos
 
@@ -119,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T17:11:20.702Z
-Stopped at: Plan 03-02 complete — Convex deployment provisioned (modest-magpie-797 dev), wiring ready for Wave 3
-Resume file: .planning/phases/03-convex-deployment/03-03-query-mutation-functions-PLAN.md
+Last session: 2026-05-13T17:17:02.381Z
+Stopped at: Plan 03-03 complete — 5 Convex function files committed (one per table); codegen verified; ready for Plan 03-04 deploy
+Resume file: None
