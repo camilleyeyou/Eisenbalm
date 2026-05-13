@@ -19,6 +19,10 @@
     "dev:web": "pnpm --filter web dev",
     "build:web": "pnpm --filter web build",
     "lint:web": "pnpm --filter web lint",
-    "typecheck:web": "pnpm --filter web typecheck"
+    "typecheck:web": "pnpm --filter web typecheck",
+    "dev:convex": "pnpm --filter @eisenbalm/convex dev",
+    "deploy:convex": "pnpm --filter @eisenbalm/convex deploy",
+    "codegen:convex": "pnpm --filter @eisenbalm/convex codegen",
+    "typecheck:convex": "pnpm --filter @eisenbalm/convex typecheck"
   }
 }
