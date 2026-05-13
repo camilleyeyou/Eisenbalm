@@ -17,7 +17,8 @@
     "isolatedModules": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@convex/*": ["../../convex/*"]
     }
   },
   "include": [
