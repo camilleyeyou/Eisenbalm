@@ -79,7 +79,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 03-04-codegen-and-deploy-PLAN.md — `convex deploy` pushes schema + functions; commits convex/_generated/ (autonomous: false)
 - [x] 03-05-web-convex-wiring-PLAN.md — apps/web Convex dep, @convex/* TS alias, ConvexClientProvider mount with D-16 fallback
 - [x] 03-06-debug-route-and-exclusions-PLAN.md — /_debug/convex evidence route + robots.txt + sitemap/RSS exclusions + TODO(Phase 9)
-- [ ] 03-07-documentation-PLAN.md — convex/README.md (new) + apps/web/README.md Convex section + Phase 9 cleanup contract
+- [x] 03-07-documentation-PLAN.md — convex/README.md (new) + apps/web/README.md Convex section + Phase 9 cleanup contract
 - [ ] 03-08-smoke-test-PLAN.md — Andrew runs end-of-phase 6-step smoke test (autonomous: false)
 
 ### Phase 4: Pipeline Skeleton
@@ -169,7 +169,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 |-------|----------------|--------|-----------|
 | 1. Sanity Foundation | 7/7 | In Progress | 2026-05-11 |
 | 2. Web Shell + Theme Engine | 11/11 | Complete | 2026-05-12 |
-| 3. Convex Deployment | 0/8 | Not started | - |
+| 3. Convex Deployment | 7/8 | In Progress | - |
 | 4. Pipeline Skeleton | 0/TBD | Not started | - |
 | 5. Agent Quality | 0/TBD | Not started | - |
 | 6. PDF + Webhook Chain | 0/TBD | Not started | - |
