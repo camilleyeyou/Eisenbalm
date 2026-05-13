@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Plans 03-03 + 03-04 complete; Convex backend live (dev modest-magpie-797), _generated/ committed, ready for web wiring
-last_updated: "2026-05-13T17:20:23.050Z"
+stopped_at: Plan 03-05 complete; ConvexClientProvider mounted in apps/web root layout, @convex/* alias wired, convex@1.38.0 installed; ready for Plan 03-06 (/_debug/convex page + sitemap/robots exclusions)
+last_updated: "2026-05-13T17:30:06.172Z"
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 26
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 03 (convex-deployment) — EXECUTING
-Plan: 3 of 8
+Plan: 6 of 8
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Plan: 3 of 8
 | Phase 02 P10 | 18 | 4 tasks | 5 files |
 | Phase 03 P01 | 3 | 3 tasks | 7 files |
 | Phase 03-convex-deployment P03 | 7 | 5 tasks | 5 files |
+| Phase 03-convex-deployment P05 | 6 | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,7 @@ Recent decisions affecting current work:
 - [Phase 02]: og-default.png is a 1200x630 off-white placeholder PNG; Andrew replaces with real brand artwork before launch
 - [Phase 03]: convex/ promoted to pnpm workspace @eisenbalm/convex with convex@^1.38.0 pin (D-01, D-05); _generated/ explicitly preserved by convex/.gitignore (D-08); both .env.example files document NEXT_PUBLIC_CONVEX_URL + CONVEX_DEPLOY_KEY with explicit security wording (D-20, D-21)
 - [Phase 03-convex-deployment]: Plan 03-03: Five Convex query/mutation files written byte-for-byte from API_CONTRACTS §4.1-4.5 (D-10); v.literal enums match schema.ts verbatim (D-11); Date.now() injected server-side on all inserts (D-12); pipelineRuns.updateStatus throws on missing run (D-13); codegen verified via convex dev --once; _generated/ NOT committed (Plan 03-04 owns)
+- [Phase 03-convex-deployment]: Plan 03-05: Module-scope ConvexReactClient construction in 'use client' wrapper (one websocket per browser session, no per-render leak); D-16 fallback renders children unwrapped when NEXT_PUBLIC_CONVEX_URL is missing — verified by stripping env var and running pnpm build (exits 0 with all 13 routes generated); @convex/* path alias resolves under Next 15 Bundler resolution
 
 ### Pending Todos
 
@@ -121,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T17:20:23.046Z
-Stopped at: Plans 03-03 + 03-04 complete; Convex backend live (dev modest-magpie-797), _generated/ committed, ready for web wiring
-Resume file: .planning/phases/03-convex-deployment/03-05-web-convex-wiring-PLAN.md
+Last session: 2026-05-13T17:30:06.167Z
+Stopped at: Plan 03-05 complete; ConvexClientProvider mounted in apps/web root layout, @convex/* alias wired, convex@1.38.0 installed; ready for Plan 03-06 (/_debug/convex page + sitemap/robots exclusions)
+Resume file: None
