@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-06-stub-fixtures-and-wrapper-PLAN.md
-last_updated: "2026-05-14T02:48:07.198Z"
+stopped_at: Completed 04-08-graph-builder-and-checkpointer-PLAN.md
+last_updated: "2026-05-14T02:59:02.162Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 32
+  completed_plans: 33
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 04 (pipeline-skeleton) — EXECUTING
-Plan: 4 of 12
+Plan: 5 of 12
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Plan: 4 of 12
 | Phase 04-pipeline-skeleton P05 | 3 | 2 tasks | 9 files |
 | Phase 04 P02 | 5min | 5 tasks | 9 files |
 | Phase 04 P06 | 12 | 3 tasks | 5 files |
+| Phase 04-pipeline-skeleton P04-08 | 6min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,10 @@ Recent decisions affecting current work:
 - [Phase 04]: Plan 04-02: Convex client branches on body.get('status') != 'success' for error detection (HTTP 200 + status field — Pitfall 7), not on response.status_code. Auth header is 'Convex {KEY}', NOT Bearer.
 - [Phase 04]: Plan 04-06: @agent_node decorator signature is locked (kwargs-only: name, emit_event, payload_builder, max_tool_calls); Phase 5 only changes agent function bodies. Emit happens AFTER fn returns so interrupt() resume re-runs are idempotent.
 - [Phase 04]: Plan 04-06: 15 fixture functions (Editor split into gate-1 + final per CONTEXT D-05) reuse Phase 2 demo charity 'The Quiet Foundation' so stub runs don't pollute the charity database; Calibrator hardcoded to bonusType='bigBudget' per CONTEXT D-16.
+- [Phase 04-pipeline-skeleton]: validate_sections placed under agents/ (not graph/) — co-locates all graph nodes while remaining structurally distinct (no @agent_node decorator, no deliberation event, no agentId)
+- [Phase 04-pipeline-skeleton]: Pattern A plain multi-target add_edge for 7-writer fan-out (no Send API, no Annotated reducers) — Phase 4 has a fixed 7 writers each mutating a distinct DispatchState field
+- [Phase 04-pipeline-skeleton]: Dual AsyncPostgresSaver patterns coexist: cli.py uses from_conn_string async-with (one-shot DDL), graph/checkpointer.py uses AsyncConnectionPool + AsyncPostgresSaver(pool) (long-lived lifespan)
+- [Phase 04-pipeline-skeleton]: Defensive psycopg pool kwargs (prepare_threshold=None, autocommit=True, row_factory=dict_row) — degrades gracefully if env ever points at Supabase transaction pooler instead of session pooler (Pitfall 1)
 
 ### Pending Todos
 
@@ -148,6 +153,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:48:07.192Z
-Stopped at: Completed 04-06-stub-fixtures-and-wrapper-PLAN.md
+Last session: 2026-05-14T02:59:02.157Z
+Stopped at: Completed 04-08-graph-builder-and-checkpointer-PLAN.md
 Resume file: None

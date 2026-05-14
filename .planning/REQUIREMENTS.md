@@ -51,7 +51,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **PIP-06**: An integration test asserts that after a stub run, `weeklyIssue.pipelineMetadata.runId` on Sanity equals the `runId` on every Convex row for that run
 - [x] **PIP-07**: Pipeline writes a complete `weeklyIssue` draft to Sanity at end of run (status=`draft`), creating or upserting referenced `charity` documents idempotently via deterministic `_id`
 - [ ] **PIP-08**: Pipeline writes `pipelineRuns` (run start), `deliberationEvents` (per agent event), `agentVotes` (Advocate scores), `qaCorrections` (QA findings), and `pitchLog` (Scout candidates) to Convex during the run
-- [ ] **PIP-09**: LangGraph state is checkpointed to Supabase Postgres via `AsyncPostgresSaver`; `checkpointer.setup()` runs once at deploy time, not on every startup
+- [x] **PIP-09**: LangGraph state is checkpointed to Supabase Postgres via `AsyncPostgresSaver`; `checkpointer.setup()` runs once at deploy time, not on every startup
 - [ ] **PIP-10**: Editor gate 1 calls `interrupt()` when no winner can be selected; LangGraph pauses, surfaces a pause state to Convex (`pipelineRuns.status = "awaiting-review"`), and resumes via a `POST /run/{runId}/resume` endpoint that re-injects the checkpoint
 - [x] **PIP-11**: Per-run cost is logged (token count + USD per agent + total) to Convex `pipelineRuns.cost`
 - [x] **PIP-12**: Pipeline duration (start to draft-written) is tracked on `pipelineRuns.durationMs`
@@ -218,7 +218,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | PIP-06 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-07 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-08 | Phase 4: Pipeline Skeleton | Pending |
-| PIP-09 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-09 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-10 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-11 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-12 | Phase 4: Pipeline Skeleton | Complete |
