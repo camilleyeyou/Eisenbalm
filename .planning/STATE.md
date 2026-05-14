@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-03-convex-schema-patch-PLAN.md (parallel executor)
-last_updated: "2026-05-14T02:35:51.452Z"
+stopped_at: Completed 04-05-pytest-infrastructure-PLAN.md
+last_updated: "2026-05-14T02:37:12.879Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 29
+  completed_plans: 31
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 04 (pipeline-skeleton) — EXECUTING
-Plan: 2 of 12
+Plan: 3 of 12
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Plan: 2 of 12
 | Phase 04-pipeline-skeleton P01 | 4 | 4 tasks | 12 files |
 | Phase 04-pipeline-skeleton P04 | 6 | 2 tasks | 2 files |
 | Phase 04-pipeline-skeleton P03 | 3m | 4 tasks | 4 files |
+| Phase 04-pipeline-skeleton P05 | 3 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,9 @@ Recent decisions affecting current work:
 - [Phase 04-pipeline-skeleton]: Plan 04-01: .env.example documents transaction-pooler (port 6543) and direct-connection variants as WRONG with full rationale (Pitfalls 1+2) — defensive onboarding so engineers don't pick the broken URL format
 - [Phase 04-pipeline-skeleton]: Plan 04-04: pipelineMetadata.cost added as type 'text' (JSON-stringified) mirroring modelVersions; pnpm typegen succeeded on first attempt — no manual fallback needed; @eisenbalm/shared pre-existing tsc errors out of scope
 - [Phase 04-pipeline-skeleton]: Plan 04-03: Pushed Convex patch to dev deployment (modest-magpie-797) via 'convex dev --once' rather than prod (wonderful-wolverine-947); dev is the deployment all consumers actually use per Phase 3 D-04 / Plan 03-02 Deviation 1, and 'convex deploy' requires interactive prod confirmation.
+- [Phase 04-pipeline-skeleton]: Plan 04-05: Adopted research §10 ASGITransport in-process client verbatim — Plan 10 consumes conftest.py as-is, no fixture modifications needed
+- [Phase 04-pipeline-skeleton]: Plan 04-05: Defensive fixture skips on missing env vars — REQUIRED_ENV_VARS tuple, first-missing wins skip reason; pytest stays green from day one across all Wave 1-3 commits
+- [Phase 04-pipeline-skeleton]: Plan 04-05: Editor split into 2 parametrize cases (editor_gate_1, editor_final) — PIP-04 test produces 15 cases not 14, matches CONTEXT D-05 gate-1+final convention
 
 ### Pending Todos
 
@@ -137,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:35:46.938Z
-Stopped at: Completed 04-03-convex-schema-patch-PLAN.md (parallel executor)
+Last session: 2026-05-14T02:36:51.375Z
+Stopped at: Completed 04-05-pytest-infrastructure-PLAN.md
 Resume file: None
