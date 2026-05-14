@@ -1,0 +1,16 @@
+# packages/pipeline/railway.toml
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "uvicorn eisenbalm_pipeline.api.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Phase 4: one-time setup runs as preDeployCommand (CONTEXT D-12).
+# Idempotent — safe to run on every deploy. Requires SUPABASE_POSTGRES_URL
+# to be set via `railway variables set` BEFORE first deploy (D-29, D-30).
+preDeployCommand = ["python -m eisenbalm_pipeline.cli setup-checkpointer"]
