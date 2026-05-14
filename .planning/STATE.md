@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-08-graph-builder-and-checkpointer-PLAN.md
-last_updated: "2026-05-14T02:59:02.162Z"
+stopped_at: Completed 04-07-stub-agents-PLAN.md (parallel with 04-08)
+last_updated: "2026-05-14T03:00:18.643Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 33
+  completed_plans: 34
 ---
 
 # Project State
@@ -73,6 +73,7 @@ Plan: 5 of 12
 | Phase 04 P02 | 5min | 5 tasks | 9 files |
 | Phase 04 P06 | 12 | 3 tasks | 5 files |
 | Phase 04-pipeline-skeleton P04-08 | 6min | 4 tasks | 4 files |
+| Phase 04 P07 | 8min | 6 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,9 @@ Recent decisions affecting current work:
 - [Phase 04-pipeline-skeleton]: Pattern A plain multi-target add_edge for 7-writer fan-out (no Send API, no Annotated reducers) — Phase 4 has a fixed 7 writers each mutating a distinct DispatchState field
 - [Phase 04-pipeline-skeleton]: Dual AsyncPostgresSaver patterns coexist: cli.py uses from_conn_string async-with (one-shot DDL), graph/checkpointer.py uses AsyncConnectionPool + AsyncPostgresSaver(pool) (long-lived lifespan)
 - [Phase 04-pipeline-skeleton]: Defensive psycopg pool kwargs (prepare_threshold=None, autocommit=True, row_factory=dict_row) — degrades gracefully if env ever points at Supabase transaction pooler instead of session pooler (Pitfall 1)
+- [Phase 04]: Editor gate 1 places idempotent pipelineRuns:updateStatus BEFORE interrupt() and non-idempotent pitchLog:markSelected AFTER interrupt() resolves (research §2 anti-pattern compliance)
+- [Phase 04]: _force_fail_agent test toggle handled centrally by @agent_node wrapper, not duplicated in every agent body
+- [Phase 04]: Publisher does NOT manually write status='failed' on Sanity exception — wrapper's generic failure path handles it with CONTEXT D-27 errorMessage format (avoid double-write)
 
 ### Pending Todos
 
@@ -153,6 +157,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:59:02.157Z
-Stopped at: Completed 04-08-graph-builder-and-checkpointer-PLAN.md
+Last session: 2026-05-14T03:00:09.967Z
+Stopped at: Completed 04-07-stub-agents-PLAN.md (parallel with 04-08)
 Resume file: None
