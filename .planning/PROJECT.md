@@ -32,12 +32,20 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 - ✓ Demo content seed script (`pnpm seed:demo` → "The Quiet Foundation" + Issue 1) idempotent via deterministic `_id`s
 - ✓ Andrew confirmed all 16 WEB-* requirements via smoke test
 
+**Convex Deployment (Phase 3 — 2026-05-13)**
+- ✓ Convex deployment `modest-magpie-797` live (dev tier as v1 single environment) with all 5 tables (`pipelineRuns`, `pitchLog`, `deliberationEvents`, `agentVotes`, `qaCorrections`) and 11 query/mutation functions deployed
+- ✓ `convex/` promoted to `@eisenbalm/convex` workspace; `convex@^1.38.0` pinned; `convex/_generated/` committed (mirrors Phase 1 sanity-types pattern)
+- ✓ Five function files byte-for-byte match `docs/API_CONTRACTS.md §4.1-4.5` (server-side `Date.now()` timestamps, `v.literal()` enum unions matching schema, `updateStatus` throws on missing run)
+- ✓ `apps/web` Convex wiring: dep, `@convex/*` TS alias, `ConvexClientProvider` mounted in root layout with no-op fallback for missing env (D-16)
+- ✓ `/_debug/convex` evidence route renders 5-row table proving `useQuery` returns `[]`/`null` against empty tables without error; live reactivity confirmed via dashboard insert → page update
+- ✓ HTTP API mutation pathway verified (`Authorization: Convex <key>` works against `/api/mutation`) — Phase 4 Python pipeline unblocked
+- ✓ Three-layer exclusion contract for `/_debug/*`: `robots.txt` Disallow, sitemap+RSS comment markers, page-level `noindex,nofollow` meta
+- ✓ Phase 9 cleanup contract locked in 4 greppable locations (page TODO + 2 READMEs + convex/README footer)
+- ✓ Andrew confirmed all 5 CVX-* requirements via 5-step smoke test (CVX-04 Vercel/Railway provisioning documented but deferred — projects don't yet exist)
+
 ### Active
 
 <!-- Hypotheses until shipped. Grouped by build-brief sequence. -->
-
-**Foundation**
-- [ ] Convex schema deployed and reachable from web app (Phase 3)
 
 **Web shell (reads from Sanity, displays mock issue)**
 - [ ] Reader can land on `/` and be redirected/routed to the latest published issue
