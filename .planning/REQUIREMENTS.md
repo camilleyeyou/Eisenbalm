@@ -47,9 +47,9 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **PIP-02**: FastAPI exposes `POST /run/weekly` that triggers a new pipeline run and returns `{runId}`
 - [ ] **PIP-03**: LangGraph graph wires all agents in the brief's exact sequence: Calibrator → Scout → Advocate → Editor[gate 1] → Researcher → fan-out{OriginStory, Problem, FounderBio, CaseStudy, Game, Bonus, Design} → QA → Editor[final] → Publisher
 - [ ] **PIP-04**: Each agent's stub returns a structurally valid LangGraph state matching the contract in `docs/API_CONTRACTS.md §7`
-- [ ] **PIP-05**: `runId` is generated exactly once at pipeline start and threaded into every Convex write and the `weeklyIssue.pipelineMetadata.runId` field on Sanity
+- [x] **PIP-05**: `runId` is generated exactly once at pipeline start and threaded into every Convex write and the `weeklyIssue.pipelineMetadata.runId` field on Sanity
 - [ ] **PIP-06**: An integration test asserts that after a stub run, `weeklyIssue.pipelineMetadata.runId` on Sanity equals the `runId` on every Convex row for that run
-- [ ] **PIP-07**: Pipeline writes a complete `weeklyIssue` draft to Sanity at end of run (status=`draft`), creating or upserting referenced `charity` documents idempotently via deterministic `_id`
+- [x] **PIP-07**: Pipeline writes a complete `weeklyIssue` draft to Sanity at end of run (status=`draft`), creating or upserting referenced `charity` documents idempotently via deterministic `_id`
 - [ ] **PIP-08**: Pipeline writes `pipelineRuns` (run start), `deliberationEvents` (per agent event), `agentVotes` (Advocate scores), `qaCorrections` (QA findings), and `pitchLog` (Scout candidates) to Convex during the run
 - [ ] **PIP-09**: LangGraph state is checkpointed to Supabase Postgres via `AsyncPostgresSaver`; `checkpointer.setup()` runs once at deploy time, not on every startup
 - [ ] **PIP-10**: Editor gate 1 calls `interrupt()` when no winner can be selected; LangGraph pauses, surfaces a pause state to Convex (`pipelineRuns.status = "awaiting-review"`), and resumes via a `POST /run/{runId}/resume` endpoint that re-injects the checkpoint
@@ -214,9 +214,9 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | PIP-02 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-03 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-04 | Phase 4: Pipeline Skeleton | Pending |
-| PIP-05 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-05 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-06 | Phase 4: Pipeline Skeleton | Pending |
-| PIP-07 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-07 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-08 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-09 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-10 | Phase 4: Pipeline Skeleton | Pending |

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-05-pytest-infrastructure-PLAN.md
-last_updated: "2026-05-14T02:37:12.879Z"
+stopped_at: Completed 04-02-dispatch-state-and-lib-modules-PLAN.md
+last_updated: "2026-05-14T02:37:28.123Z"
 progress:
   total_phases: 9
   completed_phases: 3
@@ -70,6 +70,7 @@ Plan: 3 of 12
 | Phase 04-pipeline-skeleton P04 | 6 | 2 tasks | 2 files |
 | Phase 04-pipeline-skeleton P03 | 3m | 4 tasks | 4 files |
 | Phase 04-pipeline-skeleton P05 | 3 | 2 tasks | 9 files |
+| Phase 04 P02 | 5min | 5 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,9 @@ Recent decisions affecting current work:
 - [Phase 04-pipeline-skeleton]: Plan 04-05: Adopted research §10 ASGITransport in-process client verbatim — Plan 10 consumes conftest.py as-is, no fixture modifications needed
 - [Phase 04-pipeline-skeleton]: Plan 04-05: Defensive fixture skips on missing env vars — REQUIRED_ENV_VARS tuple, first-missing wins skip reason; pytest stays green from day one across all Wave 1-3 commits
 - [Phase 04-pipeline-skeleton]: Plan 04-05: Editor split into 2 parametrize cases (editor_gate_1, editor_final) — PIP-04 test produces 15 cases not 14, matches CONTEXT D-05 gate-1+final convention
+- [Phase 04]: Plan 04-02: DispatchState matches API_CONTRACTS §7 verbatim plus two underscore-prefixed test toggles (_force_no_winner, _force_fail_agent). API_CONTRACTS not amended.
+- [Phase 04]: Plan 04-02: set_charity_first_featured uses Sanity-native setIfMissing (atomic) rather than API_CONTRACTS §2.5's GET-check-set pattern — same observable result, no extra round-trip.
+- [Phase 04]: Plan 04-02: Convex client branches on body.get('status') != 'success' for error detection (HTTP 200 + status field — Pitfall 7), not on response.status_code. Auth header is 'Convex {KEY}', NOT Bearer.
 
 ### Pending Todos
 
@@ -141,6 +145,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:36:51.375Z
-Stopped at: Completed 04-05-pytest-infrastructure-PLAN.md
+Last session: 2026-05-14T02:37:17.980Z
+Stopped at: Completed 04-02-dispatch-state-and-lib-modules-PLAN.md
 Resume file: None
