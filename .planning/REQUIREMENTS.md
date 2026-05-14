@@ -48,7 +48,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **PIP-03**: LangGraph graph wires all agents in the brief's exact sequence: Calibrator → Scout → Advocate → Editor[gate 1] → Researcher → fan-out{OriginStory, Problem, FounderBio, CaseStudy, Game, Bonus, Design} → QA → Editor[final] → Publisher
 - [x] **PIP-04**: Each agent's stub returns a structurally valid LangGraph state matching the contract in `docs/API_CONTRACTS.md §7`
 - [x] **PIP-05**: `runId` is generated exactly once at pipeline start and threaded into every Convex write and the `weeklyIssue.pipelineMetadata.runId` field on Sanity
-- [ ] **PIP-06**: An integration test asserts that after a stub run, `weeklyIssue.pipelineMetadata.runId` on Sanity equals the `runId` on every Convex row for that run
+- [x] **PIP-06**: An integration test asserts that after a stub run, `weeklyIssue.pipelineMetadata.runId` on Sanity equals the `runId` on every Convex row for that run
 - [x] **PIP-07**: Pipeline writes a complete `weeklyIssue` draft to Sanity at end of run (status=`draft`), creating or upserting referenced `charity` documents idempotently via deterministic `_id`
 - [x] **PIP-08**: Pipeline writes `pipelineRuns` (run start), `deliberationEvents` (per agent event), `agentVotes` (Advocate scores), `qaCorrections` (QA findings), and `pitchLog` (Scout candidates) to Convex during the run
 - [x] **PIP-09**: LangGraph state is checkpointed to Supabase Postgres via `AsyncPostgresSaver`; `checkpointer.setup()` runs once at deploy time, not on every startup
@@ -134,7 +134,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Operations / Observability
 
-- [ ] **OPS-01**: Pipeline failures (any agent raises) write a `pipelineRuns.status = "failed"` row with the failed agent ID and error message; Andrew can view in Convex
+- [x] **OPS-01**: Pipeline failures (any agent raises) write a `pipelineRuns.status = "failed"` row with the failed agent ID and error message; Andrew can view in Convex
 - [x] **OPS-02**: A `/run/{runId}/status` endpoint returns the current pipeline state for monitoring
 - [x] **OPS-03**: Per-run cost summary is visible in Sanity Studio on the `weeklyIssue` draft (read-only field rendered from Convex `pipelineRuns.cost`)
 
@@ -215,14 +215,14 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | PIP-03 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-04 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-05 | Phase 4: Pipeline Skeleton | Complete |
-| PIP-06 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-06 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-07 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-08 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-09 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-10 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-11 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-12 | Phase 4: Pipeline Skeleton | Complete |
-| OPS-01 | Phase 4: Pipeline Skeleton | Pending |
+| OPS-01 | Phase 4: Pipeline Skeleton | Complete |
 | OPS-02 | Phase 4: Pipeline Skeleton | Complete |
 | OPS-03 | Phase 4: Pipeline Skeleton | Complete |
 | AGT-01 | Phase 5: Agent Quality | Pending |
