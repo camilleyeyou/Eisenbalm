@@ -36,6 +36,9 @@ export const updateStatus = mutation({
     ),
     completedAt: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
+    // ── Phase 4 additions (CONTEXT D-22, D-23, D-39) ────────────────────
+    durationMs: v.optional(v.number()),
+    cost: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const run = await ctx.db
