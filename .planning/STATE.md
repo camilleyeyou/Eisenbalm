@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-10-integration-tests-PLAN.md
-last_updated: "2026-05-14T16:53:38.319Z"
+stopped_at: Completed 04-11-documentation-PLAN.md
+last_updated: "2026-05-14T17:00:04.492Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 36
+  completed_plans: 37
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 04 (pipeline-skeleton) — EXECUTING
-Plan: 7 of 12
+Plan: 8 of 12
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Plan: 7 of 12
 | Phase 04 P07 | 8min | 6 tasks | 15 files |
 | Phase 04 P09 | 9 | 4 tasks | 5 files |
 | Phase 04-pipeline-skeleton P10 | 15 | 4 tasks | 6 files |
+| Phase 04-pipeline-skeleton P11 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Plan 04-09: asyncio.create_task chosen over FastAPI BackgroundTasks (CONTEXT D-06 planner discretion; research §3 + Pitfall 4 — BackgroundTasks cancels on client disconnect, can strand pipelineRuns.status='running'). Tasks strong-ref'd in app.state.background_tasks with add_done_callback(discard).
 - [Phase 04]: Plan 04-09: FastAPI lifespan degrades gracefully — missing SUPABASE_POSTGRES_URL or unreachable Supabase logs a warning and boots with app.state.graph=None so /healthz responds and the test-suite import succeeds; /run/weekly + /run/{runId}/resume return 503 via _require_graph guard.
 - [Phase 04]: Plan 04-09: _require_trigger_secret skips the X-Pipeline-Trigger-Secret check (logged warning) when PIPELINE_TRIGGER_SECRET is unset, so local dev works without provisioning the secret; enforced 401 in any environment that sets it.
+- [Phase 04-pipeline-skeleton]: Plan 04-11: packages/pipeline/README.md rewritten as canonical onboarding doc (CONTEXT D-40) — env var table, Supabase session-pooler sharp-edge warning (5432 vs 6543 vs IPv6 direct), one-time setup-checkpointer, verbatim CONTEXT D-42 smoke test that Plan 12 follows; apps/web/README.md amended (additive) noting CONVEX_DEPLOY_KEY shared with Railway pipeline; root .env.example verified complete, no edit needed
 
 ### Pending Todos
 
@@ -162,6 +164,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T16:53:38.313Z
-Stopped at: Completed 04-10-integration-tests-PLAN.md
+Last session: 2026-05-14T16:59:52.328Z
+Stopped at: Completed 04-11-documentation-PLAN.md
 Resume file: None
