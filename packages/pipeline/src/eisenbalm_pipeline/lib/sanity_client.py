@@ -1,0 +1,285 @@
+"""Sanity write client — raw httpx (no maintained Python SDK per research §5).
+
+API base: ``https://{PROJECT_ID}.api.sanity.io/v2024-01-01``
+Auth: ``Authorization: Bearer {SANITY_API_TOKEN}``
+Mutation endpoint: ``POST /data/mutate/{dataset}``
+Asset upload: ``POST /assets/files/{dataset}?filename=...``
+
+Source: docs/API_CONTRACTS.md §2 + 04-RESEARCH.md §5.
+"""
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timezone
+from typing import Any, Optional
+
+from httpx import AsyncClient
+from slugify import slugify
+
+from eisenbalm_pipeline.lib.portable_text import text_to_portable_text
+
+API_VERSION = "v2024-01-01"
+
+
+def _dataset() -> str:
+    return os.environ.get("NEXT_PUBLIC_SANITY_DATASET", "production")
+
+
+def _auth_headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {os.environ['SANITY_API_TOKEN']}",
+        "Content-Type": "application/json",
+    }
+
+
+async def write_charity(http: AsyncClient, charity: dict) -> str:
+    """Idempotent createOrReplace for a charity document. Returns _id.
+
+    Deterministic _id = ``charity-{slugify(name)}`` — CONTEXT D-19.
+    """
+    slug = slugify(charity["name"])
+    doc_id = f"charity-{slug}"
+
+    doc: dict[str, Any] = {
+        "_type": "charity",
+        "_id": doc_id,
+        "name": charity["name"],
+        "slug": {"_type": "slug", "current": slug},
+        "location": charity.get("location", ""),
+        "website": charity.get("website", ""),
+        "charityNavigatorUrl": charity.get("charityNavigatorUrl"),
+        "guidestarUrl": charity.get("guidestarUrl"),
+        "foundingYear": charity.get("foundingYear"),
+        "assetRange": charity.get("assetRange", ""),
+        "focusArea": charity.get("focusArea", ""),
+        "missionStatement": charity.get("missionStatement", ""),
+        "scoutNotes": charity.get("scoutSummary", ""),
+    }
+    # Drop None-valued optional fields so Sanity doesn't try to store null.
+    doc = {k: v for k, v in doc.items() if v is not None}
+
+    r = await http.post(
+        f"/{API_VERSION}/data/mutate/{_dataset()}",
+        json={"mutations": [{"createOrReplace": doc}]},
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+    return doc_id
+
+
+def _build_bonus(state: dict) -> dict:
+    """Mirror API_CONTRACTS §2.2 _build_bonus.
+
+    For ``jingle`` bonus type, include lyrics + sunoPrompt (sunoAudioUrl
+    intentionally omitted — Andrew populates after Suno generation).
+    """
+    bonus = state.get("bonus") or {}
+    bonus_type = (state.get("style_brief") or {}).get("bonusType")
+    result: dict[str, Any] = {
+        "headline": bonus.get("headline", ""),
+        "body": text_to_portable_text(bonus.get("body", "")),
+    }
+    if bonus_type == "jingle":
+        result["lyrics"] = bonus.get("lyrics", "")
+        result["sunoPrompt"] = bonus.get("sunoPrompt", "")
+        # sunoAudioUrl intentionally omitted — Andrew populates
+    return result
+
+
+def _build_podcast_description(state: dict) -> str:
+    """Placeholder until Phase 9 wires real podcast description logic."""
+    charity_name = (state.get("winning_charity") or {}).get("name", "")
+    return (
+        f"Pipeline deliberation transcript for the issue spotlighting "
+        f"{charity_name}."
+    )
+
+
+async def write_issue_draft(
+    http: AsyncClient,
+    state: dict,
+    cost_payload: Optional[dict] = None,
+) -> str:
+    """One write at pipeline end. Returns Sanity _id.
+
+    ``cost_payload`` is JSON-stringified into ``pipelineMetadata.cost`` per
+    CONTEXT D-22 (mirrors modelVersions). Falls back to empty cost shape.
+
+    Source: docs/API_CONTRACTS.md §2.2.
+    """
+    issue_id = f"issue-{state['issue_number']}"
+    candidates = state.get("candidates") or []
+    completed_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    doc: dict[str, Any] = {
+        "_type": "weeklyIssue",
+        "_id": issue_id,
+        "issueNumber": state["issue_number"],
+        "slug": {"_type": "slug", "current": f"issue-{state['issue_number']}"},
+        "publishDate": state["publish_date"],
+        "status": "draft",
+        "bonusType": (state.get("style_brief") or {}).get("bonusType"),
+        "charity": {
+            "_type": "reference",
+            "_ref": state["winning_charity_sanity_id"],
+        },
+        "theme": state.get("theme") or {},
+        "originStory": {
+            "headline": (state.get("origin_story") or {}).get("headline", ""),
+            "body": text_to_portable_text(
+                (state.get("origin_story") or {}).get("body", "")
+            ),
+        },
+        "problemStatement": {
+            "headline": (state.get("problem_statement") or {}).get("headline", ""),
+            "body": text_to_portable_text(
+                (state.get("problem_statement") or {}).get("body", "")
+            ),
+        },
+        "founderBio": {
+            "headline": (state.get("founder_bio") or {}).get("headline", ""),
+            "body": text_to_portable_text(
+                (state.get("founder_bio") or {}).get("body", "")
+            ),
+        },
+        "caseStudy": {
+            "subjectName": (state.get("case_study") or {}).get("subjectName", ""),
+            "headline": (state.get("case_study") or {}).get("headline", ""),
+            "body": text_to_portable_text(
+                (state.get("case_study") or {}).get("body", "")
+            ),
+        },
+        "game": {
+            "headline": (state.get("game") or {}).get("headline", ""),
+            "description": (state.get("game") or {}).get("description", ""),
+            "embedCode": (state.get("game") or {}).get("embedCode", ""),
+        },
+        "bonus": _build_bonus(state),
+        "podcast": {
+            "deliberationTranscript": state.get("deliberation_transcript", ""),
+            "podcastDescription": _build_podcast_description(state),
+        },
+        "selectionDeliberation": {
+            "candidates": [
+                {
+                    "_key": f"candidate-{i}",
+                    "charity": {
+                        "_type": "reference",
+                        "_ref": f"charity-{slugify(c['name'])}",
+                    },
+                    "scoutSummary": c.get("scoutSummary", ""),
+                    "advocateArgument": c.get("advocateArgument", ""),
+                    "advocateScore": c.get("advocateScore"),
+                }
+                for i, c in enumerate(candidates)
+            ],
+            "editorDecision": state.get("editor_decision", ""),
+            "runnerUpNotes": state.get("runner_up_notes", ""),
+        },
+        "pipelineMetadata": {
+            "runId": state["run_id"],
+            "startedAt": state.get("pipeline_started_at"),
+            "completedAt": completed_iso,
+            "modelVersions": json.dumps(state.get("model_versions", {})),
+            # CONTEXT D-22 + D-24: JSON-stringified cost summary.
+            # Plan 04 (Sanity schema patch) adds the `cost` text field.
+            "cost": json.dumps(cost_payload or {"total": 0.0, "agents": {}}),
+        },
+    }
+
+    r = await http.post(
+        f"/{API_VERSION}/data/mutate/{_dataset()}",
+        json={"mutations": [{"createOrReplace": doc}]},
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+    return issue_id
+
+
+async def upload_pdf_to_issue(
+    http: AsyncClient,
+    issue_id: str,
+    pdf_bytes: bytes,
+    issue_number: int,
+) -> None:
+    """Phase 6 contract — Phase 4 stub Publisher does NOT call this.
+
+    Function shipped here so Phase 6 only needs to wire it from
+    publisher.py.
+
+    Source: 04-RESEARCH.md §5 + docs/API_CONTRACTS.md §2.3.
+    """
+    filename = f"dispatch-issue-{issue_number}-problem-statement.pdf"
+
+    # 1) Upload the binary
+    r = await http.post(
+        f"/{API_VERSION}/assets/files/{_dataset()}",
+        params={"filename": filename},
+        content=pdf_bytes,
+        headers={
+            "Authorization": f"Bearer {os.environ['SANITY_API_TOKEN']}",
+            "Content-Type": "application/pdf",
+        },
+    )
+    r.raise_for_status()
+    asset_id = r.json()["document"]["_id"]
+
+    # 2) Patch the issue to reference the asset
+    r = await http.post(
+        f"/{API_VERSION}/data/mutate/{_dataset()}",
+        json={
+            "mutations": [
+                {
+                    "patch": {
+                        "id": issue_id,
+                        "set": {
+                            "problemPdf": {
+                                "_type": "file",
+                                "asset": {"_type": "reference", "_ref": asset_id},
+                            }
+                        },
+                    }
+                }
+            ]
+        },
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+
+
+async def set_charity_first_featured(
+    http: AsyncClient, charity_id: str, issue_id: str
+) -> None:
+    """Publisher-only call. See API_CONTRACTS §2.5.
+
+    Phase 4 stub Publisher does NOT invoke this (the issue isn't actually
+    published yet).
+
+    Implementation note: uses ``setIfMissing`` rather than API_CONTRACTS
+    §2.5's "get + check + set" pattern. ``setIfMissing`` is the
+    Sanity-native atomic equivalent: only writes the field if it's not
+    already present. Safer under concurrent re-runs and avoids the
+    extra GET round-trip. Documented in 04-02 SUMMARY (Claude's
+    discretion).
+    """
+    r = await http.post(
+        f"/{API_VERSION}/data/mutate/{_dataset()}",
+        json={
+            "mutations": [
+                {
+                    "patch": {
+                        "id": charity_id,
+                        "setIfMissing": {
+                            "firstFeaturedIn": {
+                                "_type": "reference",
+                                "_ref": issue_id,
+                            }
+                        },
+                    }
+                }
+            ]
+        },
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
