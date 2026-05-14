@@ -25,6 +25,19 @@ Do not modify `schema.ts` field names without checking [`docs/API_CONTRACTS.md`]
 
 ---
 
+## Phase 4 additions (Pipeline Skeleton)
+
+Two optional fields were added to the `pipelineRuns` table:
+
+- `durationMs: v.optional(v.number())` — pipeline wall-clock duration in ms (PIP-12).
+- `cost: v.optional(v.string())` — JSON-stringified per-agent cost summary (PIP-11 + OPS-03). The string mirrors the `modelVersions` pattern; nested object validation may come in Phase 5 (CONTEXT D-22).
+
+Both fields are also accepted by `pipelineRuns:updateStatus` mutation args.
+
+See [`.planning/phases/04-pipeline-skeleton/04-CONTEXT.md`](../.planning/phases/04-pipeline-skeleton/04-CONTEXT.md) D-22, D-23, D-39 for the full context.
+
+---
+
 ## Function files
 
 One file per table — five files total. Filenames are the API surface: `convex/pipelineRuns.ts` produces `api.pipelineRuns.byRunId`, etc. Each file is a verbatim copy of `docs/API_CONTRACTS.md` §4.
