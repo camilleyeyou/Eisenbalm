@@ -206,6 +206,10 @@ The plan does NOT automate this — env provisioning to remote services is Andre
 
 Phase 3 leaves `DeliberationSlot.tsx` untouched. The provider scaffolding is what Phase 9 will plug into.
 
+### Shared with the pipeline (Phase 4)
+
+> **Phase 4 note:** `CONVEX_DEPLOY_KEY` is also used by the FastAPI pipeline on Railway (`packages/pipeline/`). It's the same value in both environments — provision it in Vercel for the web app AND in Railway for the pipeline service. Both write to the same Convex deployment. See [`packages/pipeline/README.md`](../../packages/pipeline/README.md) for pipeline-side env var details.
+
 ### SEO and structured data
 
 - `generateMetadata()` per page emits OG + Twitter card tags.
