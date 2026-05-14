@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-02-dispatch-state-and-lib-modules-PLAN.md
-last_updated: "2026-05-14T02:37:28.123Z"
+stopped_at: Completed 04-06-stub-fixtures-and-wrapper-PLAN.md
+last_updated: "2026-05-14T02:48:07.198Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 31
+  completed_plans: 32
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 04 (pipeline-skeleton) — EXECUTING
-Plan: 3 of 12
+Plan: 4 of 12
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Plan: 3 of 12
 | Phase 04-pipeline-skeleton P03 | 3m | 4 tasks | 4 files |
 | Phase 04-pipeline-skeleton P05 | 3 | 2 tasks | 9 files |
 | Phase 04 P02 | 5min | 5 tasks | 9 files |
+| Phase 04 P06 | 12 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -131,6 +132,8 @@ Recent decisions affecting current work:
 - [Phase 04]: Plan 04-02: DispatchState matches API_CONTRACTS §7 verbatim plus two underscore-prefixed test toggles (_force_no_winner, _force_fail_agent). API_CONTRACTS not amended.
 - [Phase 04]: Plan 04-02: set_charity_first_featured uses Sanity-native setIfMissing (atomic) rather than API_CONTRACTS §2.5's GET-check-set pattern — same observable result, no extra round-trip.
 - [Phase 04]: Plan 04-02: Convex client branches on body.get('status') != 'success' for error detection (HTTP 200 + status field — Pitfall 7), not on response.status_code. Auth header is 'Convex {KEY}', NOT Bearer.
+- [Phase 04]: Plan 04-06: @agent_node decorator signature is locked (kwargs-only: name, emit_event, payload_builder, max_tool_calls); Phase 5 only changes agent function bodies. Emit happens AFTER fn returns so interrupt() resume re-runs are idempotent.
+- [Phase 04]: Plan 04-06: 15 fixture functions (Editor split into gate-1 + final per CONTEXT D-05) reuse Phase 2 demo charity 'The Quiet Foundation' so stub runs don't pollute the charity database; Calibrator hardcoded to bonusType='bigBudget' per CONTEXT D-16.
 
 ### Pending Todos
 
@@ -145,6 +148,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:37:17.980Z
-Stopped at: Completed 04-02-dispatch-state-and-lib-modules-PLAN.md
+Last session: 2026-05-14T02:48:07.192Z
+Stopped at: Completed 04-06-stub-fixtures-and-wrapper-PLAN.md
 Resume file: None
