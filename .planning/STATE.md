@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-07-stub-agents-PLAN.md (parallel with 04-08)
-last_updated: "2026-05-14T03:00:18.643Z"
+stopped_at: Completed 04-09-fastapi-app-and-routers-PLAN.md
+last_updated: "2026-05-14T11:22:15.059Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 34
+  completed_plans: 35
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 04 (pipeline-skeleton) — EXECUTING
-Plan: 5 of 12
+Plan: 6 of 12
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Plan: 5 of 12
 | Phase 04 P06 | 12 | 3 tasks | 5 files |
 | Phase 04-pipeline-skeleton P04-08 | 6min | 4 tasks | 4 files |
 | Phase 04 P07 | 8min | 6 tasks | 15 files |
+| Phase 04 P09 | 9 | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -143,6 +144,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Editor gate 1 places idempotent pipelineRuns:updateStatus BEFORE interrupt() and non-idempotent pitchLog:markSelected AFTER interrupt() resolves (research §2 anti-pattern compliance)
 - [Phase 04]: _force_fail_agent test toggle handled centrally by @agent_node wrapper, not duplicated in every agent body
 - [Phase 04]: Publisher does NOT manually write status='failed' on Sanity exception — wrapper's generic failure path handles it with CONTEXT D-27 errorMessage format (avoid double-write)
+- [Phase 04]: Plan 04-09: asyncio.create_task chosen over FastAPI BackgroundTasks (CONTEXT D-06 planner discretion; research §3 + Pitfall 4 — BackgroundTasks cancels on client disconnect, can strand pipelineRuns.status='running'). Tasks strong-ref'd in app.state.background_tasks with add_done_callback(discard).
+- [Phase 04]: Plan 04-09: FastAPI lifespan degrades gracefully — missing SUPABASE_POSTGRES_URL or unreachable Supabase logs a warning and boots with app.state.graph=None so /healthz responds and the test-suite import succeeds; /run/weekly + /run/{runId}/resume return 503 via _require_graph guard.
+- [Phase 04]: Plan 04-09: _require_trigger_secret skips the X-Pipeline-Trigger-Secret check (logged warning) when PIPELINE_TRIGGER_SECRET is unset, so local dev works without provisioning the secret; enforced 401 in any environment that sets it.
 
 ### Pending Todos
 
@@ -157,6 +161,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T03:00:09.967Z
-Stopped at: Completed 04-07-stub-agents-PLAN.md (parallel with 04-08)
+Last session: 2026-05-14T11:22:01.300Z
+Stopped at: Completed 04-09-fastapi-app-and-routers-PLAN.md
 Resume file: None
