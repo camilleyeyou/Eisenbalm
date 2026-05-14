@@ -1,0 +1,27 @@
+# Local virtualenv
+.venv/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local env
+.env
+.env.local
+
+# Tests (not needed in production image)
+tests/
+
+# Docs / planning artifacts
+docs/
+.planning/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
