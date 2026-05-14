@@ -5,6 +5,7 @@ type: execute
 wave: 2
 depends_on:
   - "04-02"
+  - "04-03"
   - "04-06"
 files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/graph/builder.py

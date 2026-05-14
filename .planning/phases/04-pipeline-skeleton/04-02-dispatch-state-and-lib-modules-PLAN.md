@@ -18,6 +18,7 @@ files_modified:
 autonomous: true
 requirements:
   - PIP-05
+  - PIP-07
 must_haves:
   truths:
     - "`DispatchState` TypedDict matches API_CONTRACTS §7 verbatim — every field name and nested TypedDict shape locked"
