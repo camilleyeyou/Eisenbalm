@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-01-python-project-bootstrap-PLAN.md
-last_updated: "2026-05-14T02:28:31.545Z"
+stopped_at: Completed 04-04-sanity-schema-patch-PLAN.md
+last_updated: "2026-05-14T02:34:27.635Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 38
-  completed_plans: 27
+  completed_plans: 28
 ---
 
 # Project State
@@ -67,6 +67,7 @@ Plan: 2 of 12
 | Phase 03-convex-deployment P06 | 7 | 3 tasks | 4 files |
 | Phase 03-convex-deployment P07 | 4 | 2 tasks | 2 files |
 | Phase 04-pipeline-skeleton P01 | 4 | 4 tasks | 12 files |
+| Phase 04-pipeline-skeleton P04 | 6 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,7 @@ Recent decisions affecting current work:
 - [Phase 04-pipeline-skeleton]: Plan 04-01: Added research §1 sub-deps (langgraph-checkpoint-postgres==3.1.0, psycopg[binary]>=3.2,<4) that CONTEXT D-04 omits — required by AsyncPostgresSaver
 - [Phase 04-pipeline-skeleton]: Plan 04-01: railway.toml uses preDeployCommand=['python -m eisenbalm_pipeline.cli setup-checkpointer'] (RESEARCH §9, CONTEXT D-12) — idempotent, runs once per deploy in actual Docker image vs railway run fallback
 - [Phase 04-pipeline-skeleton]: Plan 04-01: .env.example documents transaction-pooler (port 6543) and direct-connection variants as WRONG with full rationale (Pitfalls 1+2) — defensive onboarding so engineers don't pick the broken URL format
+- [Phase 04-pipeline-skeleton]: Plan 04-04: pipelineMetadata.cost added as type 'text' (JSON-stringified) mirroring modelVersions; pnpm typegen succeeded on first attempt — no manual fallback needed; @eisenbalm/shared pre-existing tsc errors out of scope
 
 ### Pending Todos
 
@@ -133,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:28:31.540Z
-Stopped at: Completed 04-01-python-project-bootstrap-PLAN.md
+Last session: 2026-05-14T02:34:21.571Z
+Stopped at: Completed 04-04-sanity-schema-patch-PLAN.md
 Resume file: None

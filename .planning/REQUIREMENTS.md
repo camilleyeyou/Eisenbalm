@@ -136,7 +136,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 - [ ] **OPS-01**: Pipeline failures (any agent raises) write a `pipelineRuns.status = "failed"` row with the failed agent ID and error message; Andrew can view in Convex
 - [ ] **OPS-02**: A `/run/{runId}/status` endpoint returns the current pipeline state for monitoring
-- [ ] **OPS-03**: Per-run cost summary is visible in Sanity Studio on the `weeklyIssue` draft (read-only field rendered from Convex `pipelineRuns.cost`)
+- [x] **OPS-03**: Per-run cost summary is visible in Sanity Studio on the `weeklyIssue` draft (read-only field rendered from Convex `pipelineRuns.cost`)
 
 ## v2 Requirements
 
@@ -224,7 +224,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | PIP-12 | Phase 4: Pipeline Skeleton | Pending |
 | OPS-01 | Phase 4: Pipeline Skeleton | Pending |
 | OPS-02 | Phase 4: Pipeline Skeleton | Pending |
-| OPS-03 | Phase 4: Pipeline Skeleton | Pending |
+| OPS-03 | Phase 4: Pipeline Skeleton | Complete |
 | AGT-01 | Phase 5: Agent Quality | Pending |
 | AGT-02 | Phase 5: Agent Quality | Pending |
 | AGT-03 | Phase 5: Agent Quality | Pending |
