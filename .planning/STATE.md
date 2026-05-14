@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 4 context gathered (auto mode)
-last_updated: "2026-05-14T01:18:19.302Z"
+status: Ready to execute
+stopped_at: Completed 04-01-python-project-bootstrap-PLAN.md
+last_updated: "2026-05-14T02:28:31.545Z"
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 26
-  completed_plans: 26
+  total_plans: 38
+  completed_plans: 27
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 03 — convex-deployment
+**Current focus:** Phase 04 — pipeline-skeleton
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 04 (pipeline-skeleton) — EXECUTING
+Plan: 2 of 12
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Plan: Not started
 | Phase 03-convex-deployment P05 | 6 | 4 tasks | 4 files |
 | Phase 03-convex-deployment P06 | 7 | 3 tasks | 4 files |
 | Phase 03-convex-deployment P07 | 4 | 2 tasks | 2 files |
+| Phase 04-pipeline-skeleton P01 | 4 | 4 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,9 @@ Recent decisions affecting current work:
 - [Phase 03-convex-deployment]: Plan 03-06: /_debug/convex page uses inline <meta name='robots' content='noindex,nofollow'> in JSX rather than metadata export — Client Components don't run metadata exports but inline <meta> elements are surfaced to <head> by Next.js
 - [Phase 03-convex-deployment]: Plan 03-07: convex/README.md documents the dev: (not prod:) form of CONVEX_DEPLOY_KEY per Plan 03-02 Deviation 1; both READMEs document the %5Fdebug Next.js 15 private-folder escape so future engineers don't 'fix' it back to _debug; Phase 9 cleanup contract is locked in 4 redundant locations (page.tsx TODO + both READMEs + convex/README.md footer)
 - [Phase 03-convex-deployment]: Plan 03-07: PRIMARY placement used for ## Convex section in apps/web/README.md (after ### Reading time, before ### SEO and structured data — both anchors verified to exist); accepted side effect that this terminates ## Architecture notes earlier than Phase 2 layout
+- [Phase 04-pipeline-skeleton]: Plan 04-01: Added research §1 sub-deps (langgraph-checkpoint-postgres==3.1.0, psycopg[binary]>=3.2,<4) that CONTEXT D-04 omits — required by AsyncPostgresSaver
+- [Phase 04-pipeline-skeleton]: Plan 04-01: railway.toml uses preDeployCommand=['python -m eisenbalm_pipeline.cli setup-checkpointer'] (RESEARCH §9, CONTEXT D-12) — idempotent, runs once per deploy in actual Docker image vs railway run fallback
+- [Phase 04-pipeline-skeleton]: Plan 04-01: .env.example documents transaction-pooler (port 6543) and direct-connection variants as WRONG with full rationale (Pitfalls 1+2) — defensive onboarding so engineers don't pick the broken URL format
 
 ### Pending Todos
 
@@ -129,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T01:18:19.295Z
-Stopped at: Phase 4 context gathered (auto mode)
-Resume file: .planning/phases/04-pipeline-skeleton/04-CONTEXT.md
+Last session: 2026-05-14T02:28:31.540Z
+Stopped at: Completed 04-01-python-project-bootstrap-PLAN.md
+Resume file: None

@@ -43,7 +43,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Pipeline Skeleton (LangGraph + 14 stub agents)
 
-- [ ] **PIP-01**: FastAPI app builds and deploys to Railway via custom Dockerfile (with WeasyPrint system deps pre-installed)
+- [x] **PIP-01**: FastAPI app builds and deploys to Railway via custom Dockerfile (with WeasyPrint system deps pre-installed)
 - [ ] **PIP-02**: FastAPI exposes `POST /run/weekly` that triggers a new pipeline run and returns `{runId}`
 - [ ] **PIP-03**: LangGraph graph wires all agents in the brief's exact sequence: Calibrator → Scout → Advocate → Editor[gate 1] → Researcher → fan-out{OriginStory, Problem, FounderBio, CaseStudy, Game, Bonus, Design} → QA → Editor[final] → Publisher
 - [ ] **PIP-04**: Each agent's stub returns a structurally valid LangGraph state matching the contract in `docs/API_CONTRACTS.md §7`
@@ -210,7 +210,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | CVX-03 | Phase 3: Convex Deployment | Complete |
 | CVX-04 | Phase 3: Convex Deployment | Complete |
 | CVX-05 | Phase 3: Convex Deployment | Complete |
-| PIP-01 | Phase 4: Pipeline Skeleton | Pending |
+| PIP-01 | Phase 4: Pipeline Skeleton | Complete |
 | PIP-02 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-03 | Phase 4: Pipeline Skeleton | Pending |
 | PIP-04 | Phase 4: Pipeline Skeleton | Pending |
