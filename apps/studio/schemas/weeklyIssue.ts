@@ -344,6 +344,14 @@ export default defineType({
           rows: 2,
           description: 'JSON: which model was used for which agent',
         }),
+        // ── Phase 4 addition (CONTEXT D-22, D-24, OPS-03) ─────────────────────
+        defineField({
+          name: 'cost',
+          title: 'Run Cost (JSON)',
+          type: 'text',
+          rows: 4,
+          description: 'JSON: per-agent token + USD cost summary. Mirrors Convex pipelineRuns.cost. Read-only for Andrew.',
+        }),
       ],
     }),
   ],
