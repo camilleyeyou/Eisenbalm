@@ -248,6 +248,30 @@ async def upload_pdf_to_issue(
     r.raise_for_status()
 
 
+# ── Module-level shared client (mirrors convex_client._CLIENT pattern) ────
+# The FastAPI lifespan (Plan 09) constructs the shared AsyncClient and calls
+# set_client() once at startup. Agents use get_client() to retrieve it
+# rather than constructing a new client per call.
+
+_CLIENT: Optional[AsyncClient] = None
+
+
+def set_client(client: AsyncClient) -> None:
+    """Register the shared Sanity AsyncClient. Called from FastAPI lifespan."""
+    global _CLIENT
+    _CLIENT = client
+
+
+def get_client() -> AsyncClient:
+    """Return the registered shared Sanity AsyncClient; raise if unset."""
+    if _CLIENT is None:
+        raise RuntimeError(
+            "Sanity client not registered. "
+            "FastAPI lifespan must call set_client(http) at startup."
+        )
+    return _CLIENT
+
+
 async def set_charity_first_featured(
     http: AsyncClient, charity_id: str, issue_id: str
 ) -> None:
