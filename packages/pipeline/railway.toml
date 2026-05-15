@@ -4,7 +4,10 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn eisenbalm_pipeline.api.main:app --host 0.0.0.0 --port $PORT"
+# startCommand intentionally omitted — Dockerfile CMD uses shell form
+# with ${PORT:-8000} which Railway expands at runtime. Setting a
+# startCommand here would override the Dockerfile CMD and Railway does
+# not run it through a shell, so $PORT stays a literal string.
 healthcheckPath = "/healthz"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
