@@ -44,5 +44,5 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
 EXPOSE 8000
-CMD ["uvicorn", "eisenbalm_pipeline.api.main:app", \
-     "--host", "0.0.0.0", "--port", "8000"]
+# Use shell form so ${PORT:-8000} expands at runtime (Railway sets $PORT).
+CMD uvicorn eisenbalm_pipeline.api.main:app --host 0.0.0.0 --port ${PORT:-8000}
