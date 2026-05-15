@@ -72,4 +72,4 @@ async def advocate(state: DispatchState) -> DispatchState:
             },
         )
 
-    return {**state, **update}
+    return update

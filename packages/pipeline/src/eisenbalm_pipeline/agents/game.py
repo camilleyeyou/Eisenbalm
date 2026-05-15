@@ -26,4 +26,4 @@ def _game_payload(state: DispatchState) -> dict:
     payload_builder=_game_payload,
 )
 async def game(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.game_output()}
+    return fixtures.game_output()

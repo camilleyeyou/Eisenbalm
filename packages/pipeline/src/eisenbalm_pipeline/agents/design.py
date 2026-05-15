@@ -30,4 +30,4 @@ def _design_payload(state: DispatchState) -> dict:
     payload_builder=_design_payload,
 )
 async def design(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.design_output()}
+    return fixtures.design_output()

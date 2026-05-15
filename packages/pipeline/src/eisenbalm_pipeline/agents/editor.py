@@ -144,4 +144,4 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
     payload_builder=_editor_final_payload,
 )
 async def editor_final(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.editor_final_output()}
+    return fixtures.editor_final_output()

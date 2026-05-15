@@ -15,4 +15,4 @@ from eisenbalm_pipeline.stubs import fixtures
 
 @agent_node(name="calibrator", emit_event=None)
 async def calibrator(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.calibrator_output()}
+    return fixtures.calibrator_output()

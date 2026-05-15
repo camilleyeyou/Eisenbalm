@@ -23,4 +23,4 @@ def _case_study_payload(state: DispatchState) -> dict:
     payload_builder=_case_study_payload,
 )
 async def case_study(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.case_study_output()}
+    return fixtures.case_study_output()

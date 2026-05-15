@@ -24,4 +24,4 @@ def _qa_payload(state: DispatchState) -> dict:
 
 @agent_node(name="qa", emit_event="qa-correction", payload_builder=_qa_payload)
 async def qa(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.qa_output()}
+    return fixtures.qa_output()

@@ -17,4 +17,4 @@ from eisenbalm_pipeline.stubs import fixtures
 
 @agent_node(name="researcher", emit_event=None, max_tool_calls=12)
 async def researcher(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.research_output()}
+    return fixtures.research_output()

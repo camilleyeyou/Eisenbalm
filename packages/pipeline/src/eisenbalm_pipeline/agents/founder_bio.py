@@ -22,4 +22,4 @@ def _founder_bio_payload(state: DispatchState) -> dict:
     payload_builder=_founder_bio_payload,
 )
 async def founder_bio(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.founder_bio_output()}
+    return fixtures.founder_bio_output()

@@ -66,4 +66,4 @@ async def scout(state: DispatchState) -> DispatchState:
             },
         )
 
-    return {**state, **update}
+    return update

@@ -26,4 +26,4 @@ def _problem_payload(state: DispatchState) -> dict:
     payload_builder=_problem_payload,
 )
 async def problem(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.problem_output()}
+    return fixtures.problem_output()

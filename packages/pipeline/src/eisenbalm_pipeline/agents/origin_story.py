@@ -28,4 +28,4 @@ def _origin_story_payload(state: DispatchState) -> dict:
     payload_builder=_origin_story_payload,
 )
 async def origin_story(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.origin_story_output()}
+    return fixtures.origin_story_output()

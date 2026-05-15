@@ -28,4 +28,4 @@ def _bonus_payload(state: DispatchState) -> dict:
     payload_builder=_bonus_payload,
 )
 async def bonus(state: DispatchState) -> DispatchState:
-    return {**state, **fixtures.bonus_output()}
+    return fixtures.bonus_output()
