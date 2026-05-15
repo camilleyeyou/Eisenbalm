@@ -27,6 +27,8 @@ import logging
 import time
 from typing import Any, Awaitable, Callable, Optional
 
+from langgraph.errors import GraphInterrupt
+
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.cost import record_cost
@@ -124,6 +126,15 @@ def agent_node(
                     duration_ms=duration_ms,
                 )
                 return new_state
+
+            except GraphInterrupt:
+                # NOT a failure — graph is pausing for human-in-the-loop.
+                # Editor gate 1 already wrote status='awaiting-review' to
+                # Convex BEFORE calling interrupt() (CONTEXT D-13 +
+                # research §2 idempotency-before-interrupt). LangGraph
+                # checkpoints state via the AsyncPostgresSaver; resume
+                # re-runs this node from the top. Do NOT touch Convex.
+                raise
 
             except Exception as e:
                 # CONTEXT D-27: f'{agentId}: {ExceptionClass}: {msg}'
