@@ -13,16 +13,12 @@ COPY --from=ghcr.io/astral-sh/uv:0.5.10 /uv /bin/uv
 WORKDIR /app
 
 # Install Python deps first for layer caching
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    uv sync --frozen --no-dev --no-install-project
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy source, install project
 COPY src/ ./src/
-COPY pyproject.toml uv.lock README.md ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # ── Runtime stage ────────────────────────────────────────────────
 FROM python:3.11-slim-bookworm AS runtime
