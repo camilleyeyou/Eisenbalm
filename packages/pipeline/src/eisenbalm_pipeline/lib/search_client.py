@@ -113,23 +113,56 @@ async def web_search(query: str, *, max_results: int = 5) -> list[SearchResult]:
 
     wrapper = _get_wrapper()
 
-    # langchain_tavily.TavilySearch exposes .ainvoke(query) returning
-    # {"results": [...]}; TavilySearchAPIWrapper exposes .aresults(query, max_results);
-    # tavily-python TavilyClient exposes .search(query) (sync) — wrap in to_thread.
+    # Different Tavily wrapper versions return different shapes:
+    #   - langchain_tavily.TavilySearch.ainvoke({"query":...}) → may return
+    #     a dict {"results": [...]} OR a JSON-formatted string OR a list,
+    #     depending on version (Plan 05-15 live-run regression: 0.2.18
+    #     returned an unexpected shape that fell through to []).
+    #   - TavilySearchAPIWrapper.aresults(query, k) → list[dict] directly.
+    #   - tavily-python TavilyClient.search(query) (sync) → dict
+    #     {"results": [...]}.
     raw_list: list[dict] = []
     try:
-        # Detect interface heuristically.
         if hasattr(wrapper, "ainvoke") and callable(getattr(wrapper, "ainvoke")):
-            raw = await wrapper.ainvoke({"query": query, "max_results": max_results})
-            raw_list = raw.get("results", []) if isinstance(raw, dict) else []
+            raw = await wrapper.ainvoke({"query": query})
         elif hasattr(wrapper, "aresults") and callable(getattr(wrapper, "aresults")):
-            raw_list = await wrapper.aresults(query, max_results=max_results)
+            raw = await wrapper.aresults(query, max_results=max_results)
         elif hasattr(wrapper, "search") and callable(getattr(wrapper, "search")):
             raw = await asyncio.to_thread(wrapper.search, query, max_results=max_results)
-            raw_list = raw.get("results", []) if isinstance(raw, dict) else []
         else:
             log.error("search_client: unknown Tavily client interface on %r", type(wrapper))
             return []
+
+        # Tolerant unwrap: handle dict-with-results, bare list, or JSON string.
+        if isinstance(raw, dict):
+            raw_list = raw.get("results", []) or []
+        elif isinstance(raw, list):
+            raw_list = raw
+        elif isinstance(raw, str):
+            import json
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    raw_list = parsed.get("results", []) or []
+                elif isinstance(parsed, list):
+                    raw_list = parsed
+            except json.JSONDecodeError:
+                log.warning(
+                    "Tavily returned string but not JSON (query=%r, first 200 chars: %r)",
+                    query, raw[:200],
+                )
+                raw_list = []
+        else:
+            log.warning(
+                "Tavily returned unexpected shape %s (query=%r)",
+                type(raw).__name__, query,
+            )
+            raw_list = []
+
+        log.info(
+            "Tavily search complete: query=%r results=%d",
+            query, len(raw_list),
+        )
     except Exception as exc:  # noqa: BLE001 — network errors must not crash agents
         log.warning("Tavily search failed (query=%r): %r", query, exc)
         return []

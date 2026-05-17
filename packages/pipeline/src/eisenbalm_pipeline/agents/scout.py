@@ -24,7 +24,7 @@ import logging
 import os
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
@@ -72,8 +72,20 @@ class ScoutBatchOutput(BaseModel):
 
     candidates: list[CharityCandidate] = Field(
         default_factory=list,
-        description="3-5 candidate charities (AGT-03)",
+        description="3-5 candidate charities (AGT-03) — MUST emit at least 1",
     )
+
+    @field_validator("candidates")
+    @classmethod
+    def _at_least_one(cls, v: list) -> list:
+        # AGT-03 contract: Scout must surface candidates. minItems can't live
+        # in the JSON schema (Anthropic rejects it), so enforced post-parse.
+        # Empty list triggers acomplete's regenerate-once retry.
+        if not v:
+            raise ValueError(
+                "Scout must surface at least 1 candidate (got 0)"
+            )
+        return v
 
 
 # ── Dedup helpers (AGT-04) ───────────────────────────────────────────────
