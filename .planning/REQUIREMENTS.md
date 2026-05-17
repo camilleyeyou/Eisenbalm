@@ -63,7 +63,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **AGT-03**: Scout uses Tavily web search and returns 3-5 candidates (`{name, location, website, assetRange, focusArea, missionStatement, scoutSummary, whyOverlooked}`); writes each to Convex `pitchLog` as it finds them; respects an iteration limit (max N tool calls) to contain cost
 - [x] **AGT-04**: Scout candidates exclude charities already featured (cross-checked against Sanity `charity` documents)
 - [x] **AGT-05**: Advocate produces an argument and 1-10 score for every Scout candidate; writes each to Convex `deliberationEvents` as `advocate-argument`
-- [ ] **AGT-06**: Editor (gate 1) selects exactly one winner with `editorDecision`, `runnerUpNotes`, and a structured `deliberationTranscript`; writes `editor-decision` event to Convex
+- [x] **AGT-06**: Editor (gate 1) selects exactly one winner with `editorDecision`, `runnerUpNotes`, and a structured `deliberationTranscript`; writes `editor-decision` event to Convex
 - [x] **AGT-07**: Researcher returns a structured research object including `founderName` AND a `founderNameSourceUrl` field that points to the charity's own website confirming the name; if no source URL is found, `founderNameVerified=false` and downstream FounderBioWriter falls back to anonymous framing
 - [x] **AGT-08**: A post-Researcher verification step fetches the charity's website (`httpx`) and string-searches for `founderName`; if not found, sets `founderNameVerified=false`
 - [x] **AGT-09**: CaseStudyWriter requires `subjectNameVerified=true` (same source-confirmation pattern); falls back to anonymous framing if not verified
@@ -230,7 +230,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | AGT-03 | Phase 5: Agent Quality | Complete |
 | AGT-04 | Phase 5: Agent Quality | Complete |
 | AGT-05 | Phase 5: Agent Quality | Complete |
-| AGT-06 | Phase 5: Agent Quality | Pending |
+| AGT-06 | Phase 5: Agent Quality | Complete |
 | AGT-07 | Phase 5: Agent Quality | Complete |
 | AGT-08 | Phase 5: Agent Quality | Complete |
 | AGT-09 | Phase 5: Agent Quality | Complete |

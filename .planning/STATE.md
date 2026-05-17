@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
 stopped_at: Completed 05-agent-quality-08-PLAN.md (Editor gate-1 real Opus body; AGT-06+AGT-17 satisfied)
-last_updated: "2026-05-17T18:25:34.845Z"
+last_updated: "2026-05-17T18:26:08.909Z"
 progress:
   total_phases: 9
   completed_phases: 4
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 7 of 15
+Plan: 8 of 15
 
 ## Performance Metrics
 
@@ -172,6 +172,9 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-07 (Advocate): vote='for' enforced (not 'yes' from plan prose) — Convex schema validator + API_CONTRACTS §3.5 win per CLAUDE.md precedence. Score field NOT in agentVotes (schema has no score column); recoverable from deliberationEvents payload
 - [Phase 05-agent-quality]: Plan 05-07 (Advocate): Single Haiku call over all candidates (not per-candidate) — cost containment per CONTEXT D-08; AdvocateOutput Pydantic enforces score 1-10 + 2-4 keyStrengths at parse time
 - [Phase 05-agent-quality]: Plan 05-06: GROQ load implemented inline via raw httpx GET (lib/sanity_client.py has no groq_query helper yet); pattern can be promoted to lib when Plan 05-09 Researcher needs reads. AgentToolCallLimitExceeded raised pre-loop (BEFORE the 9th tool call) with introspectable .agent_id/.attempts/.limit; tests assert all three. featured_charity_keys persisted as sorted list[str] (NOT set) for JSON-safe LangGraph checkpoint per RESEARCH Pitfall 7. acomplete call site adapted to kwargs-only signature (plan template showed positional form).
+- [Phase 05-agent-quality]: Plan 05-08: 5 Rule-3 deviations from plan text (acomplete kwargs-only, function name editor_gate_1 vs editor_gate1, data source state['candidates'] vs nonexistent state['advocate_votes'], LangGraph interrupt() requires runnable context for tests, GraphInterrupt(interrupts=()) signature). All fixed inline — plan-vs-codebase mismatches, no architectural change. Function name editor_gate_1 (with underscore) preserved; llm_config key editor_gate1 (no underscore) used for acomplete agent_id.
+- [Phase 05-agent-quality]: Plan 05-08: Markdown deliberationTranscript template (# Issue header, ## Scout Findings, ## Advocate Arguments, ## Editor Reasoning, ## Decision) is load-bearing — required for V2-02 NotebookLM manual podcast export. Format asserted as substring in test_transcript_format.
+- [Phase 05-agent-quality]: Plan 05-08: AGT-17 modelVersions write pattern inherited verbatim from Plan 05-05 Calibrator. Two-name convention coexists: function name editor_gate_1 (Python import path, used by graph/builder.py), llm_config key editor_gate1 (acomplete agent_id), Sanity agentProfile.agentId editor (@agent_node name).
 
 ### Pending Todos
 
