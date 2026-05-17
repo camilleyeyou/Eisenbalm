@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-05-PLAN.md (Calibrator real implementation; AGT-01/02/17 satisfied; modelVersions pattern landed for downstream voice-critical agents)
-last_updated: "2026-05-17T18:22:23.319Z"
+stopped_at: Completed 05-agent-quality-06-PLAN.md (Scout real Tavily implementation; AGT-03/04/18 mechanically proven; 5 tests pass)
+last_updated: "2026-05-17T18:24:15.706Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 43
+  completed_plans: 45
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 5 of 15
+Plan: 7 of 15
 
 ## Performance Metrics
 
@@ -82,6 +82,8 @@ Plan: 5 of 15
 | Phase 05-agent-quality P03 | 24min | 7 tasks | 7 files |
 | Phase 05-agent-quality P04 | 11min | 3 tasks | 25 files |
 | Phase 05-agent-quality P05 | 12min | 2 tasks | 3 files |
+| Phase 05-agent-quality P07 | 4 | 2 tasks | 3 files |
+| Phase 05-agent-quality P06 | 4min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -166,6 +168,9 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-05: First voice-critical agent body landed (Calibrator). AGT-17 modelVersions write pattern established — model_versions = dict(state.get('model_versions') or {}); model_versions[agent_id] = usage['resolved_model']. Plans 05-08 (editor_gate1) and 05-13 (qa + editor_final) inherit verbatim.
 - [Phase 05-agent-quality]: Plan 05-05: lib/sanity_client.groq_query() helper landed — single read-only GROQ call site. Module-level shared AsyncClient fast-path with one-shot fallback for unit tests + direct agent calls. Plan 05-06 Scout dedup query reuses.
 - [Phase 05-agent-quality]: Plan 05-05: Pydantic StyleBriefOutput uses field defaults (default='', default_factory=list, bonusType='bigBudget') so Pydantic.model_construct() succeeds in stub mode (FakeOpenRouterClient skips validation). Real-mode validation still rejects malformed LLM JSON via with_structured_output. Pattern applies to all voice-critical agents using response_format.
+- [Phase 05-agent-quality]: Plan 05-07 (Advocate): vote='for' enforced (not 'yes' from plan prose) — Convex schema validator + API_CONTRACTS §3.5 win per CLAUDE.md precedence. Score field NOT in agentVotes (schema has no score column); recoverable from deliberationEvents payload
+- [Phase 05-agent-quality]: Plan 05-07 (Advocate): Single Haiku call over all candidates (not per-candidate) — cost containment per CONTEXT D-08; AdvocateOutput Pydantic enforces score 1-10 + 2-4 keyStrengths at parse time
+- [Phase 05-agent-quality]: Plan 05-06: GROQ load implemented inline via raw httpx GET (lib/sanity_client.py has no groq_query helper yet); pattern can be promoted to lib when Plan 05-09 Researcher needs reads. AgentToolCallLimitExceeded raised pre-loop (BEFORE the 9th tool call) with introspectable .agent_id/.attempts/.limit; tests assert all three. featured_charity_keys persisted as sorted list[str] (NOT set) for JSON-safe LangGraph checkpoint per RESEARCH Pitfall 7. acomplete call site adapted to kwargs-only signature (plan template showed positional form).
 
 ### Pending Todos
 
@@ -180,6 +185,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:22:23.314Z
-Stopped at: Completed 05-agent-quality-05-PLAN.md (Calibrator real implementation; AGT-01/02/17 satisfied; modelVersions pattern landed for downstream voice-critical agents)
+Last session: 2026-05-17T18:24:15.700Z
+Stopped at: Completed 05-agent-quality-06-PLAN.md (Scout real Tavily implementation; AGT-03/04/18 mechanically proven; 5 tests pass)
 Resume file: None
