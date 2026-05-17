@@ -272,6 +272,54 @@ def get_client() -> AsyncClient:
     return _CLIENT
 
 
+async def groq_query(query: str, *, params: Optional[dict] = None) -> list[dict]:
+    """Read-only GROQ query against the configured Sanity dataset.
+
+    Phase 5 Calibrator (Plan 05-05) + Scout (Plan 05-06) use this to read
+    previously-published issues + previously-featured charities.
+
+    Uses the module-level shared AsyncClient if registered; otherwise
+    constructs a one-shot AsyncClient against the API host. The one-shot
+    path is used in unit tests / agent code that runs outside the FastAPI
+    lifespan. Tolerates Sanity unreachability — agents catch and fall back.
+
+    Returns the ``result`` array from the Sanity Query API response.
+    """
+    project = os.environ.get("NEXT_PUBLIC_SANITY_PROJECT_ID")
+    dataset = _dataset()
+    token = os.environ.get("SANITY_API_TOKEN")
+
+    if not project:
+        raise RuntimeError(
+            "NEXT_PUBLIC_SANITY_PROJECT_ID not set — cannot query Sanity"
+        )
+
+    path = f"/{API_VERSION}/data/query/{dataset}"
+    request_params: dict[str, Any] = {"query": query}
+    if params:
+        for k, v in params.items():
+            request_params[f"${k}"] = json.dumps(v)
+
+    headers: dict[str, str] = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    # Prefer the registered shared client (FastAPI lifespan path); fall back
+    # to a one-shot AsyncClient for direct agent + unit-test calls.
+    if _CLIENT is not None:
+        r = await _CLIENT.get(path, params=request_params, headers=headers)
+    else:
+        async with AsyncClient(
+            base_url=f"https://{project}.api.sanity.io",
+            timeout=15.0,
+        ) as http:
+            r = await http.get(path, params=request_params, headers=headers)
+
+    r.raise_for_status()
+    body = r.json()
+    return body.get("result") or []
+
+
 async def set_charity_first_featured(
     http: AsyncClient, charity_id: str, issue_id: str
 ) -> None:
