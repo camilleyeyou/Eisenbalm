@@ -43,9 +43,7 @@ class StyleBriefOutput(BaseModel):
     )
     constraints: list[str] = Field(
         default_factory=list,
-        min_length=3,
-        max_length=5,
-        description="3-5 specific rules this week",
+        description="3-5 specific rules this week (emit between 3 and 5 items)",
     )
     bonusType: Literal["bigBudget", "jingle", "specAd"] = "bigBudget"
     visualDirection: str = Field(

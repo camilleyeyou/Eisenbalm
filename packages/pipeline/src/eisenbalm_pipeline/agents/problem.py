@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
@@ -41,10 +41,23 @@ class PdfContent(BaseModel):
     problemStatement: str = Field(default="", description="<=150 words")
     keyDataPoints: list[KeyDataPoint] = Field(
         default_factory=lambda: [KeyDataPoint(), KeyDataPoint(), KeyDataPoint()],
-        min_length=3,
-        max_length=3,
+        description="exactly 3 keyDataPoints (Phase 6 PDF layout depends on count=3)",
     )
     interventionMechanism: str = Field(default="", description="<=100 words")
+
+    @field_validator("keyDataPoints")
+    @classmethod
+    def _exactly_three(cls, v: list[KeyDataPoint]) -> list[KeyDataPoint]:
+        # Phase 6 contract enforced in Python (NOT JSON schema): Anthropic's
+        # structured-output schema validator rejects minItems/maxItems != 0/1
+        # (Plan 05-15 first-real-run regression). Equivalent validation runs
+        # here after parse-time so contract still holds without breaking the
+        # provider call.
+        if len(v) != 3:
+            raise ValueError(
+                f"keyDataPoints must have exactly 3 items (got {len(v)})"
+            )
+        return v
 
 
 class ProblemOutput(BaseModel):

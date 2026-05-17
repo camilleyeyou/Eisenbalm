@@ -43,7 +43,10 @@ class AdvocateVote(BaseModel):
     argument: str = Field(
         description="150-250 word argument for this charity in Jesse voice",
     )
-    keyStrengths: list[str] = Field(min_length=2, max_length=4)
+    keyStrengths: list[str] = Field(
+        default_factory=list,
+        description="2-4 key strengths of this charity",
+    )
     primaryConcern: str
 
 

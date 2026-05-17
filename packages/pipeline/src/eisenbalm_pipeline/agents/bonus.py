@@ -43,7 +43,8 @@ class BigBudgetBonus(BaseModel):
     headline: str = ""
     body: str = Field(default="", description="200-400 words on concept")
     storyboards: list[Storyboard] = Field(
-        default_factory=list, min_length=3, max_length=5,
+        default_factory=list,
+        description="3-5 storyboards per D-19",
     )
 
 

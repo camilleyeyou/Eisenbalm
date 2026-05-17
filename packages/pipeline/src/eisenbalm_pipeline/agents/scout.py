@@ -70,7 +70,10 @@ class CharityCandidate(BaseModel):
 class ScoutBatchOutput(BaseModel):
     """Top-level shape returned by the LLM after parsing Tavily results."""
 
-    candidates: list[CharityCandidate] = Field(min_length=3, max_length=5)
+    candidates: list[CharityCandidate] = Field(
+        default_factory=list,
+        description="3-5 candidate charities (AGT-03)",
+    )
 
 
 # ── Dedup helpers (AGT-04) ───────────────────────────────────────────────
