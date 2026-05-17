@@ -35,6 +35,8 @@ export default defineSchema({
       v.literal('qa-correction'),      // QA flagged and corrected something
       v.literal('editor-final'),       // Editor final approved
       v.literal('publisher-deploy'),   // Publisher built and deployed
+      v.literal('cost-warning'),                // Phase 5 D-08: CostRecorder soft-warn at 70% of PIPELINE_COST_CAP_USD
+      v.literal('agent-tool-limit-exceeded'),   // Phase 5 D-21: max_tool_calls overrun on Scout/Researcher
     ),
     payload: v.string(),         // JSON string — structure varies by eventType
     charityId: v.optional(v.string()), // Sanity charity _id, for candidate-specific events
@@ -65,17 +67,29 @@ export default defineSchema({
   // as a record of what QA caught and why
   qaCorrections: defineTable({
     runId: v.string(),
-    sectionName: v.string(),     // which editorial section
-    fieldName: v.string(),       // which field within the section
-    original: v.string(),        // what the agent wrote
-    corrected: v.string(),       // what QA changed it to
-    reason: v.string(),          // why QA flagged it
+    agentId: v.optional(v.string()),         // Phase 5 D-01: always 'qa' for new rows
+    sectionName: v.string(),                  // which editorial section
+    fieldName: v.optional(v.string()),        // Phase 5 unused; legacy compat (Phase 4 rewrite-shape)
+    original: v.optional(v.string()),         // Phase 5 unused; legacy compat
+    corrected: v.optional(v.string()),        // Phase 5 unused (D-02 annotation-only); legacy compat
+    reason: v.string(),                       // Phase 5 maps Pydantic `reason` directly into this
     severity: v.union(
-      v.literal('minor'),        // word choice, tone
-      v.literal('moderate'),     // factual issue, voice drift
-      v.literal('major'),        // values violation, accuracy failure
+      v.literal('info'),                     // Phase 5 D-01: minor suggestion; Andrew may ignore
+      v.literal('warning'),                  // Phase 5 D-01: borderline; Andrew should review
+      v.literal('error'),                    // Phase 5 D-01: clear voice/factual violation; Andrew must review
     ),
-    accepted: v.boolean(),       // whether Editor final accepted the correction
+    accepted: v.boolean(),                    // Phase 5 writes `false` on every row; Andrew flips in Phase 9
+    // ── New Phase 5 fields (D-01 LLM-judge structured output) ─────────────
+    axis: v.optional(v.union(
+      v.literal('gravity'),
+      v.literal('sentiment'),
+      v.literal('irony-signaling'),
+      v.literal('precision'),
+      v.literal('cross-section-consistency'),
+      v.literal('hard-rule'),                // Layer-1 deterministic findings
+    )),
+    quotedSpan: v.optional(v.string()),       // exact offending text
+    suggestedFix: v.optional(v.string()),     // concrete alternative
     timestamp: v.number(),
   })
     .index('by_runId', ['runId'])
