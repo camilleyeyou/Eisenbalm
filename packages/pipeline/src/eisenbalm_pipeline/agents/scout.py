@@ -110,7 +110,19 @@ async def _load_featured_keys() -> list[str]:
     returns [] — first-run safety. Scout still writes new charities; the
     dedup just doesn't filter anything.
     """
-    query = '*[_type == "charity"]{ name, "slug": slug.current, website }'
+    # AGT-04: dedup against FEATURED charities only (those referenced by a
+    # PUBLISHED weeklyIssue). Earlier draft queried `*[_type == "charity"]`
+    # which pulled every charity ever written to Sanity, including those from
+    # failed or test runs that never reached publish. Live-run regression
+    # caught by Plan 05-15 smoke (issue 999): after 4 retries the LLM kept
+    # suggesting the same well-known obscure charities, the dedup matched all
+    # of them as "already in Sanity", surviving collapsed to [], and Editor
+    # gate-1 failed. Now the dedup query joins through weeklyIssue.charity ref
+    # so only actually-featured charities count.
+    query = (
+        '*[_type == "weeklyIssue" && status == "published" && defined(charity)]'
+        '.charity->{ name, "slug": slug.current, website }'
+    )
 
     try:
         http = get_sanity_http()
