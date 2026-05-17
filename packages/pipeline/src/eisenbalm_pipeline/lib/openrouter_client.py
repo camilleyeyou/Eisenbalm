@@ -86,10 +86,23 @@ def _build_chat_model(agent_id: str) -> Any:
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
 
+    # D-22.1: pin OpenRouter to Anthropic for all anthropic/* models so it never
+    # routes to Amazon Bedrock or Google Vertex (those don't support OpenAI-style
+    # response_format, breaking structured output). Live-mode regression caught
+    # by Plan 05-15 first-real-run: Calibrator failed with "output_config.format:
+    # Extra inputs are not permitted" when OpenRouter fell back to Bedrock.
+    extra_body: dict[str, Any] = {}
+    if model_id.startswith("anthropic/"):
+        extra_body["provider"] = {
+            "order": ["Anthropic"],
+            "allow_fallbacks": False,
+        }
+
     return ChatOpenAI(
         model=model_id,
         openai_api_base="https://openrouter.ai/api/v1",
         openai_api_key=os.environ["OPENROUTER_API_KEY"],
+        extra_body=extra_body,
         **kwargs,
     )
 
