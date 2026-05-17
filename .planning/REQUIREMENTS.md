@@ -58,7 +58,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Agent Quality (voice-critical + factual safety)
 
-- [ ] **AGT-01**: Calibrator returns a `styleBrief` with `voice` constants imported from a hardcoded module (NOT regenerated per call); selects `bonusType` (bigBudget | jingle | specAd) that does NOT match the previous issue's `bonusType`
+- [x] **AGT-01**: Calibrator returns a `styleBrief` with `voice` constants imported from a hardcoded module (NOT regenerated per call); selects `bonusType` (bigBudget | jingle | specAd) that does NOT match the previous issue's `bonusType`
 - [x] **AGT-02**: Calibrator output is stored on `weeklyIssue.calibratorBrief` for Andrew's review
 - [x] **AGT-03**: Scout uses Tavily web search and returns 3-5 candidates (`{name, location, website, assetRange, focusArea, missionStatement, scoutSummary, whyOverlooked}`); writes each to Convex `pitchLog` as it finds them; respects an iteration limit (max N tool calls) to contain cost
 - [x] **AGT-04**: Scout candidates exclude charities already featured (cross-checked against Sanity `charity` documents)
@@ -225,7 +225,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | OPS-01 | Phase 4: Pipeline Skeleton | Complete |
 | OPS-02 | Phase 4: Pipeline Skeleton | Complete |
 | OPS-03 | Phase 4: Pipeline Skeleton | Complete |
-| AGT-01 | Phase 5: Agent Quality | Pending |
+| AGT-01 | Phase 5: Agent Quality | Complete |
 | AGT-02 | Phase 5: Agent Quality | Complete |
 | AGT-03 | Phase 5: Agent Quality | Complete |
 | AGT-04 | Phase 5: Agent Quality | Complete |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-04-PLAN.md (Wave 0 test infrastructure + font whitelist; D-16 blocker resolved)
-last_updated: "2026-05-17T18:12:35.279Z"
+stopped_at: Completed 05-agent-quality-05-PLAN.md (Calibrator real implementation; AGT-01/02/17 satisfied; modelVersions pattern landed for downstream voice-critical agents)
+last_updated: "2026-05-17T18:22:23.319Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 42
+  completed_plans: 43
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 4 of 15
+Plan: 5 of 15
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Plan: 4 of 15
 | Phase 05-agent-quality P01 | 10min | 4 tasks | 3 files |
 | Phase 05-agent-quality P03 | 24min | 7 tasks | 7 files |
 | Phase 05-agent-quality P04 | 11min | 3 tasks | 25 files |
+| Phase 05-agent-quality P05 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,9 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-03 open TODO: with_structured_output token capture is approximate (zeros recorded on structured-output path because langchain-openai 1.2.1 doesn't expose usage_metadata on the wrapper). Plain-text acomplete path captures full input_tokens/output_tokens from result.usage_metadata. Plan 05-14 real-mode integration test should measure Sonnet vs. Haiku reliability and figure out include_raw=True or a metadata-capture sidechannel.
 - [Phase 05-agent-quality]: Plan 05-04: agents/design.py promoted to agents/design/ package — __init__.py preserves Phase 4 stub body verbatim so graph/builder import contract is unchanged; agents/design/font_whitelist.py ships candidate list with TODO(Andrew) marker (D-16 blocker removed from critical path; final approval moves to Plan 05-15)
 - [Phase 05-agent-quality]: Plan 05-04: Wave 0 test surface (21 skeletons + 6 mock fixtures) ships skip-marked; implementing plans (05-05..05-14) unskip + add assertions atomically. pytest --collect-only collects 68 tests with zero import errors throughout phase
+- [Phase 05-agent-quality]: Plan 05-05: First voice-critical agent body landed (Calibrator). AGT-17 modelVersions write pattern established — model_versions = dict(state.get('model_versions') or {}); model_versions[agent_id] = usage['resolved_model']. Plans 05-08 (editor_gate1) and 05-13 (qa + editor_final) inherit verbatim.
+- [Phase 05-agent-quality]: Plan 05-05: lib/sanity_client.groq_query() helper landed — single read-only GROQ call site. Module-level shared AsyncClient fast-path with one-shot fallback for unit tests + direct agent calls. Plan 05-06 Scout dedup query reuses.
+- [Phase 05-agent-quality]: Plan 05-05: Pydantic StyleBriefOutput uses field defaults (default='', default_factory=list, bonusType='bigBudget') so Pydantic.model_construct() succeeds in stub mode (FakeOpenRouterClient skips validation). Real-mode validation still rejects malformed LLM JSON via with_structured_output. Pattern applies to all voice-critical agents using response_format.
 
 ### Pending Todos
 
@@ -176,6 +180,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:12:35.275Z
-Stopped at: Completed 05-agent-quality-04-PLAN.md (Wave 0 test infrastructure + font whitelist; D-16 blocker resolved)
+Last session: 2026-05-17T18:22:23.314Z
+Stopped at: Completed 05-agent-quality-05-PLAN.md (Calibrator real implementation; AGT-01/02/17 satisfied; modelVersions pattern landed for downstream voice-critical agents)
 Resume file: None
