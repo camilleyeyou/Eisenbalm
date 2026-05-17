@@ -1,8 +1,10 @@
-"""Phase 5 Editor — gate 1 (Opus via OpenRouter; voice-critical) + final stub.
+"""Phase 5 Editor — gate 1 (Opus via OpenRouter; voice-critical) + final.
 
 Phase 5 Plan 05-08 implements gate 1 (winner selection + interrupt).
 Phase 5 Plan 05-13 implements final (consumes QA + emits editor-final).
-The ``editor_final`` body below remains the Phase 4 stub until Plan 05-13.
+Both gate-1 and final live in this module by design — they share the Opus
+sampling tier and the VOICE_CONSTRAINTS block; the @agent_node wrapper
+routes them through the same wrapper code.
 
 gate 1 responsibilities (AGT-06, AGT-17, D-18):
   1. Read state['candidates'] — each has advocateScore + advocateArgument
@@ -44,7 +46,6 @@ from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
-from eisenbalm_pipeline.stubs import fixtures
 
 
 # D-18 thresholds — single source of truth.
@@ -411,7 +412,68 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
     }
 
 
-# ── Editor Final (post-QA) — Phase 4 stub; Plan 05-13 replaces ───────────
+# ── Editor Final (Plan 05-13: real Opus implementation) ─────────────────
+
+
+class EditorFinalOutput(BaseModel):
+    """AGT-16 LLM output — a single advisory memo string.
+
+    Editor Final is advisory only (D-02): it consumes ``state['qa_corrections']``
+    and writes a 100-300 word memo for Andrew describing what QA found and
+    what to review before publishing. It does NOT rewrite any section. It
+    does NOT reject the draft. The Sanity draft Andrew sees is whatever the
+    section writers produced — Editor Final adds context, not edits.
+    """
+
+    editorFinalNotes: str = Field(
+        description=(
+            "100-300 word memo for Andrew describing QA findings and "
+            "recommended review priorities. Advisory only — Editor Final "
+            "does NOT rewrite any section."
+        )
+    )
+
+
+def _build_editor_final_messages(state: DispatchState) -> list[dict]:
+    """Assemble the Editor Final message list.
+
+    System prompt embeds Editor Final's advisory mandate verbatim from
+    RESEARCH §"Editor Final" (D-02 / AGT-16). User prompt carries the QA
+    corrections JSON + the section headlines so Editor can refer to each
+    section by name.
+    """
+    qa_corrections = state.get("qa_corrections") or []
+    # Pull section headlines from the writer outputs Andrew will see.
+    section_headlines = {
+        "origin_story":  (state.get("origin_story") or {}).get("headline", ""),
+        "problem":       (state.get("problem_statement") or {}).get("headline", ""),
+        "founder_bio":   (state.get("founder_bio") or {}).get("headline", ""),
+        "case_study":    (state.get("case_study") or {}).get("headline", ""),
+        "game":          (state.get("game") or {}).get("headline", ""),
+        "bonus":         (state.get("bonus") or {}).get("headline", ""),
+    }
+    system = (
+        "You are the Editor for The Eisenbalm Dispatch. Review the QA "
+        "report and write any connective copy needed to unify the issue.\n\n"
+        "VOICE CONSTRAINTS (non-negotiable for your memo):\n"
+        f"{VOICE_CONSTRAINTS}\n\n"
+        "Your task:\n"
+        "1. Read the QA findings. Note severity 'error' items first.\n"
+        "2. Write editorFinalNotes: a 100-300 word memo to Andrew "
+        "describing what QA found, what you recommend he review before "
+        "publishing, and any connective context across sections.\n"
+        "3. Do NOT rewrite any section. Do NOT reject the draft. "
+        "The draft goes to Andrew as-is. Your notes are advisory only."
+    )
+    user = (
+        f"QA FINDINGS:\n{json.dumps(qa_corrections, indent=2)}\n\n"
+        f"SECTION HEADLINES:\n{json.dumps(section_headlines, indent=2)}\n\n"
+        "Return JSON EditorFinalOutput with editorFinalNotes (100-300 words)."
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
 
 
 @agent_node(
@@ -420,9 +482,44 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
     payload_builder=_editor_final_payload,
 )
 async def editor_final(state: DispatchState) -> DispatchState:
-    """PHASE 4 STUB — Plan 05-13 owns the real implementation.
+    """AGT-16: advisory memo only. Never rewrites; never rejects.
 
-    DO NOT modify this body in Plan 05-08. Editor Final consumes QA output
-    and emits the editor-final event; that surface is reserved for 05-13.
+    Reads ``state['qa_corrections']`` + section headlines, calls Opus
+    (pinned via lib/llm_config.MODEL_BY_AGENT['editor_final']), writes
+    ``state['editor_final_notes']`` and records the resolved model into
+    ``state['model_versions']['editor_final']`` (AGT-17).
+
+    Always returns success state (D-04). The @agent_node wrapper emits
+    one deliberationEvents row with eventType='editor-final' on success.
     """
-    return fixtures.editor_final_output()
+    run_id = state["run_id"]
+    messages = _build_editor_final_messages(state)
+    out_obj, usage = await acomplete(
+        agent_id="editor_final",
+        run_id=run_id,
+        messages=messages,
+        response_format=EditorFinalOutput,
+    )
+
+    # Normalize the response (real mode: Pydantic instance; stub mode: dict
+    # or model_construct'd empty instance with editorFinalNotes='').
+    if isinstance(out_obj, EditorFinalOutput):
+        notes = out_obj.editorFinalNotes
+    elif isinstance(out_obj, dict):
+        notes = out_obj.get("editorFinalNotes", "")
+    elif hasattr(out_obj, "editorFinalNotes"):
+        notes = out_obj.editorFinalNotes or ""
+    else:
+        # Defensive fallback — keep the pipeline running even if the LLM
+        # response is malformed; QA never blocks the draft (D-04) so
+        # Editor Final shouldn't block it either.
+        notes = ""
+
+    model_versions = dict(state.get("model_versions") or {})
+    model_versions["editor_final"] = usage["resolved_model"]
+
+    return {
+        **state,
+        "editor_final_notes": notes,
+        "model_versions": model_versions,
+    }
