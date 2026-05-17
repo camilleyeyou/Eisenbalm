@@ -12,10 +12,30 @@ the values, not the structure.
 """
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
+import os
 import threading
 import time
 from typing import Optional, TypedDict
+
+from eisenbalm_pipeline.lib.errors import CostCapExceeded
+
+log = logging.getLogger(__name__)
+
+__all__ = [
+    "AgentCost",
+    "CostRecorder",
+    "CostCapExceeded",  # re-exported from lib.errors for caller convenience
+    "begin_run",
+    "record_cost",
+    "get_cost_payload",
+    "get_duration_ms",
+    "end_run",
+    "cost_payload_to_json",
+    "get_recorder",
+]
 
 
 class AgentCost(TypedDict):
@@ -33,6 +53,21 @@ _store_lock = threading.Lock()
 
 # Wall-clock start times keyed by run_id (CONTEXT D-23).
 _start_times: dict[str, float] = {}
+
+# Module-level dedup for cost-warning emissions (D-08 — one warn per run).
+_warned_runs: set[str] = set()
+
+
+def get_recorder(run_id: str) -> "CostRecorder":
+    """Return a CostRecorder bound to ``run_id``.
+
+    Phase 5 ``lib.openrouter_client.acomplete`` calls this on every LLM
+    invocation; the recorder shares the module-level ``_store`` keyed by
+    run_id so token totals accumulate correctly across calls.
+    """
+    r = CostRecorder(run_id)
+    r._warned = run_id in _warned_runs
+    return r
 
 
 def begin_run(run_id: str) -> None:
@@ -149,6 +184,9 @@ class CostRecorder:
         self.run_id = run_id
         self.payload: dict = {}
         self.duration_ms: Optional[int] = None
+        # Phase 5 D-08 additions
+        self._warned: bool = False
+        self._last_agent: str = "unknown"
 
     def __enter__(self) -> "CostRecorder":
         begin_run(self.run_id)
@@ -163,6 +201,7 @@ class CostRecorder:
         usd: float = 0.0,
         duration_ms: int = 0,
     ) -> None:
+        self._last_agent = agent_name
         record_cost(
             self.run_id,
             agent_name,
@@ -171,6 +210,55 @@ class CostRecorder:
             usd=usd,
             duration_ms=duration_ms,
         )
+
+    async def check_cap(self) -> None:
+        """Soft-warn at 70% of PIPELINE_COST_CAP_USD; hard-raise at 100% (D-08).
+
+        Called by ``lib.openrouter_client.acomplete`` after every LLM call.
+        Reads env vars on each call so test fixtures can monkeypatch.
+
+        Raises:
+            CostCapExceeded: when cumulative USD >= cap. Caller's
+                ``@agent_node`` wrapper translates this into
+                ``pipelineRuns.status='failed'``.
+        """
+        cap = float(os.environ.get("PIPELINE_COST_CAP_USD", "10.0"))
+        warn_pct = float(os.environ.get("PIPELINE_COST_WARN_PCT", "0.7"))
+
+        # Total USD = sum across all per-agent records for this run_id.
+        payload = get_cost_payload(self.run_id)
+        total = payload.get("total", 0.0)
+
+        if total >= cap:
+            # 3-arg constructor (Plan 05-03 Task 1) — preserves total/cap/agent
+            # as introspectable attributes on the exception.
+            raise CostCapExceeded(total, cap, self._last_agent)
+
+        if total >= cap * warn_pct and not self._warned:
+            self._warned = True
+            _warned_runs.add(self.run_id)
+            # Fire-and-forget Convex emit. Import inline to avoid circular
+            # dependency between lib.cost and lib.convex_client at module-load.
+            try:
+                from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
+                payload_json = json.dumps({
+                    "totalUsd": total,
+                    "percentOfCap": (total / cap) if cap > 0 else 0.0,
+                    "perAgent": payload.get("agents", {}),
+                    "capUsd": cap,
+                })
+                # Don't await — the warn shouldn't slow the LLM call path.
+                asyncio.create_task(convex_mutation_safe(
+                    "deliberationEvents:insert",
+                    {
+                        "runId": self.run_id,
+                        "agentId": "cost-monitor",
+                        "eventType": "cost-warning",
+                        "payload": payload_json,
+                    },
+                ))
+            except Exception as exc:  # noqa: BLE001 — never let warn emission break the call
+                log.warning("cost-warning emission failed: %r", exc)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.payload, self.duration_ms = end_run(self.run_id)
