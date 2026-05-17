@@ -68,8 +68,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **AGT-08**: A post-Researcher verification step fetches the charity's website (`httpx`) and string-searches for `founderName`; if not found, sets `founderNameVerified=false`
 - [x] **AGT-09**: CaseStudyWriter requires `subjectNameVerified=true` (same source-confirmation pattern); falls back to anonymous framing if not verified
 - [ ] **AGT-10**: OriginStoryWriter, ProblemWriter, FounderBioWriter, CaseStudyWriter each receive a structurally isolated `voiceConstraints` block (not concatenated with prior agent state); output passes a Jesse-voice rubric in QA
-- [ ] **AGT-11**: BonusWriter branches on `bonusType` and emits the corresponding shape: bigBudget→`{headline, body, storyboards[]}`, jingle→`{headline, body, lyrics, sunoPrompt}` (sunoAudioUrl empty), specAd→`{headline, body}`
-- [ ] **AGT-12**: GameWriter emits `{headline, description, embedCode}` where `embedCode` is self-contained HTML/JS with no external CDN URLs and no `<script src=...>` references
+- [x] **AGT-11**: BonusWriter branches on `bonusType` and emits the corresponding shape: bigBudget→`{headline, body, storyboards[]}`, jingle→`{headline, body, lyrics, sunoPrompt}` (sunoAudioUrl empty), specAd→`{headline, body}`
+- [x] **AGT-12**: GameWriter emits `{headline, description, embedCode}` where `embedCode` is self-contained HTML/JS with no external CDN URLs and no `<script src=...>` references
 - [x] **AGT-13**: DesignAgent emits `{primaryColor, accentColor, backgroundColor, textColor}` as 6-digit hex strings; values are validated before being written to Sanity
 - [x] **AGT-14**: DesignAgent emits `{fontDisplay, fontBody}` from a curated whitelist of approved Google Fonts (web + WeasyPrint compatible); whitelist is enforced at write time
 - [ ] **AGT-15**: QA agent reviews all section content against a Jesse-voice rubric and factual accuracy; writes corrections to Convex `qaCorrections` with severity (info | warning | error) and acceptance status
@@ -235,8 +235,8 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | AGT-08 | Phase 5: Agent Quality | Complete |
 | AGT-09 | Phase 5: Agent Quality | Complete |
 | AGT-10 | Phase 5: Agent Quality | Pending |
-| AGT-11 | Phase 5: Agent Quality | Pending |
-| AGT-12 | Phase 5: Agent Quality | Pending |
+| AGT-11 | Phase 5: Agent Quality | Complete |
+| AGT-12 | Phase 5: Agent Quality | Complete |
 | AGT-13 | Phase 5: Agent Quality | Complete |
 | AGT-14 | Phase 5: Agent Quality | Complete |
 | AGT-15 | Phase 5: Agent Quality | Pending |

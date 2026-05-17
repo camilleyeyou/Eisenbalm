@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-09-PLAN.md (Researcher Tavily body + verify_research node + graph wiring; AGT-07/08/09/18 satisfied)
-last_updated: "2026-05-17T18:39:24.029Z"
+stopped_at: "Completed 05-agent-quality-12-PLAN.md (DesignAgent: Haiku + WCAG-AA + font whitelist + regenerate-once + SAFE_THEME fallback with qaCorrections warning; AGT-13/14/17 satisfied)"
+last_updated: "2026-05-17T18:50:26.257Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 47
+  completed_plans: 49
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 9 of 15
+Plan: 11 of 15
 
 ## Performance Metrics
 
@@ -86,6 +86,8 @@ Plan: 9 of 15
 | Phase 05-agent-quality P06 | 4min | 2 tasks | 2 files |
 | Phase 05-agent-quality P08 | 7 | 2 tasks | 2 files |
 | Phase 05-agent-quality P09 | 10min | 5 tasks | 5 files |
+| Phase 05-agent-quality P11 | 5min | 3 tasks | 5 files |
+| Phase 05-agent-quality P12 | 9min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -178,6 +180,10 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-08: AGT-17 modelVersions write pattern inherited verbatim from Plan 05-05 Calibrator. Two-name convention coexists: function name editor_gate_1 (Python import path, used by graph/builder.py), llm_config key editor_gate1 (acomplete agent_id), Sanity agentProfile.agentId editor (@agent_node name).
 - [Phase 05-agent-quality]: Plan 05-09: Researcher emits names + source URLs; standalone non-@agent_node verify_research node inserted between Researcher and parallel fan-out. acomplete kwargs+run_id signature mismatch in plan (5/5 plans so far) — systemic plan-quality issue; future Phase 5 plans must grep acomplete( before publishing. ResearchOutputModel uses field defaults (matches StyleBriefOutput pattern) so model_construct() succeeds in stub mode.
 - [Phase 05-agent-quality]: Plan 05-09: verify_research is a standalone async node (no @agent_node decorator, no LLM call, no deliberationEvents emission, no cost recording). It runs sequentially before the 7 parallel section writers — single bottleneck. Conservative posture: ANY httpx error (timeout, 4xx/5xx, SSL, DNS, parse failure) collapses to verified=False. Researcher does NOT clear founderName when unverified — Plan 05-10 writers null it out at prompt-assembly time.
+- [Phase 05-agent-quality]: Plan 05-11 (Bonus + Game): BonusWriter routes on state['style_brief']['bonusType'] to one of three internal prompt builders (D-19); each branch tags out_dict['bonusType']=bonus_type onto the emitted dict for downstream Studio/Publisher/QA routing. JingleBonus enforces sunoAudioUrl='' at body level after Pydantic parse (V2-01 deferred — Andrew fills manually). All Pydantic shapes (BigBudgetBonus + JingleBonus + SpecAdBonus + Storyboard + GameOutput) have field defaults on every scalar for stub-mode model_construct() safety.
+- [Phase 05-agent-quality]: Plan 05-11 (Bonus + Game): FORBIDDEN_CONSTRUCTS declared as module-level string in agents/game.py — 10 deny-list entries verbatim per D-20 (<script src, <link href, fetch(, XMLHttpRequest, window.parent, window.top, document.cookie, localStorage, eval(, import(). Phase 7's renderer-level validator can import the constant directly for single-source-of-truth. Phase 5 ships prompt-level defense only; no embedCode validation in Phase 5.
+- [Phase 05-agent-quality]: Plan 05-11 (Bonus + Game): acomplete kwargs-only signature mismatch with plan template is now 6 of 6 voice-critical/writer plans (05-05, 05-06, 05-07, 05-08, 05-09, 05-11). Fixed inline — used agent_id=, run_id=, messages=, response_format= kwargs throughout. Plans 05-10/05-12/05-13 should grep acomplete( in researcher.py before publishing action blocks.
+- [Phase 05-agent-quality]: Plan 05-12 (DesignAgent): real body lives in agents/design/__init__.py (Plan 05-04 package shell), not agents/design.py — plan template predated Plan 05-04 promotion; ThemeOutput Pydantic has 6 LLM-emitted fields, visualDirection is carried from style_brief; fallback uses FALLBACK_FONT_DISPLAY/BODY constants (not SAFE_THEME fonts) so the post-fallback theme always passes the whitelist; qaCorrections:insert uses Convex-validator-correct keys (sectionName/reason/accepted=false), not plan template's section/reasoning/acceptance
 
 ### Pending Todos
 
@@ -192,6 +198,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:39:24.024Z
-Stopped at: Completed 05-agent-quality-09-PLAN.md (Researcher Tavily body + verify_research node + graph wiring; AGT-07/08/09/18 satisfied)
+Last session: 2026-05-17T18:50:19.903Z
+Stopped at: Completed 05-agent-quality-12-PLAN.md (DesignAgent: Haiku + WCAG-AA + font whitelist + regenerate-once + SAFE_THEME fallback with qaCorrections warning; AGT-13/14/17 satisfied)
 Resume file: None
