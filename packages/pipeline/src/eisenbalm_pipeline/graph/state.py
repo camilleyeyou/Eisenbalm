@@ -6,10 +6,31 @@ field names without checking API_CONTRACTS.md first."
 
 The only additions to DispatchState beyond §7 are two underscore-prefixed
 test-only toggles at the end (see research §"Open Questions" Q3).
+
+Plan 05-14 (AGT-17 wiring): ``model_versions`` is wrapped with an
+``Annotated`` dict-merge reducer so the 7 parallel section writers can each
+contribute their own ``{agent_id: resolved_model}`` entry without racing on
+the shared key. The field shape (``dict[str, str]``) is unchanged — only the
+LangGraph reducer is added.
 """
 from __future__ import annotations
 
-from typing import Literal, NotRequired, Optional, TypedDict
+from typing import Annotated, Literal, NotRequired, Optional, TypedDict
+
+
+def _merge_model_versions(
+    left: Optional[dict[str, str]],
+    right: Optional[dict[str, str]],
+) -> dict[str, str]:
+    """LangGraph reducer for the ``model_versions`` field.
+
+    Merges two dicts; ``right`` wins on key collisions (newer agent run
+    overwrites). ``None`` operands are treated as empty dicts. The graph
+    invokes this on every parallel-branch write to ``model_versions`` so the
+    7-way fan-out (origin_story, problem, founder_bio, case_study, game,
+    bonus, design) merges cleanly into a single observability surface.
+    """
+    return {**(left or {}), **(right or {})}
 
 
 class StyleBrief(TypedDict):
@@ -133,7 +154,15 @@ class DispatchState(TypedDict):
 
     # ── Pipeline output ────────────────────────────────────────────────────────
     sanity_issue_id: Optional[str]              # set after writing draft to Sanity
-    model_versions: Optional[dict[str, str]]    # agent_id -> model name
+    # AGT-17: 7 parallel section writers each contribute one entry; the
+    # Annotated dict-merge reducer (above) merges branches in the fan-in
+    # super-step. Sequential agents (calibrator, scout, advocate, editor_gate1,
+    # researcher, qa, editor_final, publisher) write to the same field; the
+    # reducer's right-wins behavior is fine for the sequential path because
+    # each agent writes its own unique key.
+    model_versions: Annotated[
+        Optional[dict[str, str]], _merge_model_versions
+    ]                                           # agent_id -> model name
 
     # ── Phase 5 additions ─────────────────────────────────────────────────────
     featured_charity_keys: Optional[list[str]]   # AGT-04: Scout dedup keys (list NOT set — JSON-serializable for LangGraph checkpoint per RESEARCH Pitfall 7)

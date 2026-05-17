@@ -108,13 +108,18 @@ async def advocate(state: DispatchState) -> DispatchState:
         response_format=AdvocateOutput,
     )
 
-    # `out_obj` is normally an AdvocateOutput (real mode) or AdvocateOutput
-    # built via model_construct (stub mode). Tolerate both attribute access
-    # and dict-style access defensively.
-    votes_raw = (
-        out_obj.votes if hasattr(out_obj, "votes")
-        else out_obj["votes"]
-    )
+    # `out_obj` is normally an AdvocateOutput (real mode). Stub-mode
+    # ``acomplete`` returns ``response_format.model_construct()`` which
+    # SKIPS field defaults — so ``hasattr(out_obj, 'votes')`` is False
+    # when stub-mode kicks in (votes is a required field without default).
+    # Tolerate all three shapes (Pydantic instance, dict, model_construct
+    # empty shell) before defaulting to an empty list.
+    if hasattr(out_obj, "votes"):
+        votes_raw = out_obj.votes
+    elif isinstance(out_obj, dict):
+        votes_raw = out_obj.get("votes", [])
+    else:
+        votes_raw = []
 
     votes_serialized: list[dict] = []
     for v_raw in votes_raw or []:

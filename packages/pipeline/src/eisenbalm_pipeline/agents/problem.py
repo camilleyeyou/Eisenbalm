@@ -103,12 +103,11 @@ async def problem(state: DispatchState) -> DispatchState:
             },
         }
 
-    # AGT-17: record resolved model.
-    model_versions = dict(state.get("model_versions") or {})
-    model_versions["problem"] = usage["resolved_model"]
-
+    # AGT-17: parallel writers each contribute their OWN key to
+    # model_versions. The DispatchState Annotated reducer (state.py)
+    # merges all 7 fan-out branches into the same dict. Returning only
+    # owned keys avoids the InvalidUpdate race on shared keys (Phase 4-12 fix).
     return {
-        **state,
         "problem_statement": out_dict,
-        "model_versions": model_versions,
+        "model_versions": {"problem": usage["resolved_model"]},
     }

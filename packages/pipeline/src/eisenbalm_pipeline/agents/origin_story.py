@@ -76,12 +76,11 @@ async def origin_story(state: DispatchState) -> DispatchState:
     else:
         out_dict = {"headline": "", "body": ""}
 
-    # AGT-17: record resolved model into state['model_versions'].
-    model_versions = dict(state.get("model_versions") or {})
-    model_versions["origin_story"] = usage["resolved_model"]
-
+    # AGT-17: parallel writers each contribute their OWN key to
+    # model_versions; the DispatchState Annotated reducer merges across
+    # the 7 fan-out branches. Returning only owned keys (no **state)
+    # avoids the InvalidUpdate race on shared keys (Phase 4-12 fix).
     return {
-        **state,
         "origin_story": out_dict,
-        "model_versions": model_versions,
+        "model_versions": {"origin_story": usage["resolved_model"]},
     }
