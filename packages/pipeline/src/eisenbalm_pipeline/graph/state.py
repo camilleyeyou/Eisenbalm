@@ -9,7 +9,7 @@ test-only toggles at the end (see research §"Open Questions" Q3).
 """
 from __future__ import annotations
 
-from typing import Literal, Optional, TypedDict
+from typing import Literal, NotRequired, Optional, TypedDict
 
 
 class StyleBrief(TypedDict):
@@ -44,6 +44,16 @@ class ResearchOutput(TypedDict):
     caseStudyOutcome: str               # what happened to them
     verifiedFacts: list[str]            # fact-checked claims with sources
     sources: list[str]                  # URLs used
+    # ── Phase 5 additions (AGT-07, AGT-08, AGT-09, AGT-10) ─────────────────
+    # All NotRequired: Researcher may emit None when no source found.
+    # verify_research sets *Verified booleans after Researcher returns.
+    founderNameSourceUrl: NotRequired[Optional[str]]   # AGT-07: URL where founderName was found
+    founderNameVerified: NotRequired[bool]             # AGT-08: set by verify_research node
+    founderRole: NotRequired[str]                      # D-12 fallback role e.g. "founder", "executive director"
+    subjectName: NotRequired[Optional[str]]            # AGT-09 case study subject name
+    subjectNameSourceUrl: NotRequired[Optional[str]]   # AGT-09 verification source
+    subjectNameVerified: NotRequired[bool]             # AGT-09: set by verify_research node
+    subjectRole: NotRequired[str]                      # D-12 fallback role e.g. "a parent", "a program participant"
 
 
 class SectionContent(TypedDict):
@@ -86,7 +96,7 @@ class QACorrection(TypedDict):
     original: str
     corrected: str
     reason: str
-    severity: Literal['minor', 'moderate', 'major']
+    severity: Literal['info', 'warning', 'error']  # Phase 5 D-01: aligned with Convex qaCorrections.severity patch
     accepted: bool                      # set by Editor final
 
 
@@ -124,6 +134,9 @@ class DispatchState(TypedDict):
     # ── Pipeline output ────────────────────────────────────────────────────────
     sanity_issue_id: Optional[str]              # set after writing draft to Sanity
     model_versions: Optional[dict[str, str]]    # agent_id -> model name
+
+    # ── Phase 5 additions ─────────────────────────────────────────────────────
+    featured_charity_keys: Optional[list[str]]   # AGT-04: Scout dedup keys (list NOT set — JSON-serializable for LangGraph checkpoint per RESEARCH Pitfall 7)
 
     # ── Error handling ─────────────────────────────────────────────────────────
     error: Optional[str]
