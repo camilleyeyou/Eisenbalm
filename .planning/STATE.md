@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: "Completed 05-03-lib-modules-PLAN.md (7 lib modules: errors, llm_config, voice, cost extension, openrouter_client, search_client, wcag)"
-last_updated: "2026-05-17T18:10:43.994Z"
+stopped_at: Completed 05-agent-quality-04-PLAN.md (Wave 0 test infrastructure + font whitelist; D-16 blocker resolved)
+last_updated: "2026-05-17T18:12:35.279Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 41
+  completed_plans: 42
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 3 of 15
+Plan: 4 of 15
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Plan: 3 of 15
 | Phase 05-agent-quality P02 | 3 | 3 tasks | 4 files |
 | Phase 05-agent-quality P01 | 10min | 4 tasks | 3 files |
 | Phase 05-agent-quality P03 | 24min | 7 tasks | 7 files |
+| Phase 05-agent-quality P04 | 11min | 3 tasks | 25 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,8 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-01 close-out (retroactive): Convex schema patched in lockstep across schema.ts + insert mutation validators; deliberationEvents.eventType extended to 9 literals (adds cost-warning, agent-tool-limit-exceeded); qaCorrections refactored to Phase 5 annotation-only shape (severity info|warning|error; 4 new optional fields agentId/axis/quotedSpan/suggestedFix; legacy fieldName/original/corrected demoted to optional); dev deploy modest-magpie-797 verified clean via pnpm --filter @eisenbalm/convex dev:once
 - [Phase 05-agent-quality]: Plan 05-03: 7 lib modules land (errors, llm_config, voice, openrouter_client, search_client, wcag; cost.py additively extended). Single LLM call site (acomplete), single web-search call site (web_search), single section-prompt assembler (build_section_writer_prompt with kwargs-only AGT-09 signature). WCAG 0.03928 threshold matches apps/web/lib/theme.ts byte-for-byte. Phase 4 cost.py surface preserved.
 - [Phase 05-agent-quality]: Plan 05-03 open TODO: with_structured_output token capture is approximate (zeros recorded on structured-output path because langchain-openai 1.2.1 doesn't expose usage_metadata on the wrapper). Plain-text acomplete path captures full input_tokens/output_tokens from result.usage_metadata. Plan 05-14 real-mode integration test should measure Sonnet vs. Haiku reliability and figure out include_raw=True or a metadata-capture sidechannel.
+- [Phase 05-agent-quality]: Plan 05-04: agents/design.py promoted to agents/design/ package — __init__.py preserves Phase 4 stub body verbatim so graph/builder import contract is unchanged; agents/design/font_whitelist.py ships candidate list with TODO(Andrew) marker (D-16 blocker removed from critical path; final approval moves to Plan 05-15)
+- [Phase 05-agent-quality]: Plan 05-04: Wave 0 test surface (21 skeletons + 6 mock fixtures) ships skip-marked; implementing plans (05-05..05-14) unskip + add assertions atomically. pytest --collect-only collects 68 tests with zero import errors throughout phase
 
 ### Pending Todos
 
@@ -173,6 +176,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:10:43.989Z
-Stopped at: Completed 05-03-lib-modules-PLAN.md (7 lib modules: errors, llm_config, voice, cost extension, openrouter_client, search_client, wcag)
+Last session: 2026-05-17T18:12:35.275Z
+Stopped at: Completed 05-agent-quality-04-PLAN.md (Wave 0 test infrastructure + font whitelist; D-16 blocker resolved)
 Resume file: None

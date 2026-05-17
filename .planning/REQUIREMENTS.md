@@ -71,7 +71,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **AGT-11**: BonusWriter branches on `bonusType` and emits the corresponding shape: bigBudget→`{headline, body, storyboards[]}`, jingle→`{headline, body, lyrics, sunoPrompt}` (sunoAudioUrl empty), specAd→`{headline, body}`
 - [ ] **AGT-12**: GameWriter emits `{headline, description, embedCode}` where `embedCode` is self-contained HTML/JS with no external CDN URLs and no `<script src=...>` references
 - [x] **AGT-13**: DesignAgent emits `{primaryColor, accentColor, backgroundColor, textColor}` as 6-digit hex strings; values are validated before being written to Sanity
-- [ ] **AGT-14**: DesignAgent emits `{fontDisplay, fontBody}` from a curated whitelist of approved Google Fonts (web + WeasyPrint compatible); whitelist is enforced at write time
+- [x] **AGT-14**: DesignAgent emits `{fontDisplay, fontBody}` from a curated whitelist of approved Google Fonts (web + WeasyPrint compatible); whitelist is enforced at write time
 - [ ] **AGT-15**: QA agent reviews all section content against a Jesse-voice rubric and factual accuracy; writes corrections to Convex `qaCorrections` with severity (info | warning | error) and acceptance status
 - [ ] **AGT-16**: Editor Final reviews QA output, makes final sequencing decisions, writes any connective copy needed, and emits `editor-final` event to Convex
 - [x] **AGT-17**: Voice-critical agents (Calibrator, Editor, Editor Final, QA) use pinned OpenRouter model versions (model+revision string)
@@ -238,7 +238,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | AGT-11 | Phase 5: Agent Quality | Pending |
 | AGT-12 | Phase 5: Agent Quality | Pending |
 | AGT-13 | Phase 5: Agent Quality | Complete |
-| AGT-14 | Phase 5: Agent Quality | Pending |
+| AGT-14 | Phase 5: Agent Quality | Complete |
 | AGT-15 | Phase 5: Agent Quality | Pending |
 | AGT-16 | Phase 5: Agent Quality | Pending |
 | AGT-17 | Phase 5: Agent Quality | Complete |
