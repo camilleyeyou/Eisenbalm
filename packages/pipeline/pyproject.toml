@@ -15,6 +15,9 @@ dependencies = [
   "langchain-openai==1.2.1",
   "supabase==2.30.0",
   "python-slugify==8.0.4",
+  "tavily-python==0.7.24",       # Phase 5 D-09 — REST client (fallback if langchain-tavily import fails)
+  "langchain-tavily==0.2.18",    # Phase 5 D-09 — preferred LangChain Tavily integration
+  "selectolax==0.4.9",           # Phase 5 D-11 — fast HTML-to-text for agents/verify.py
 ]
 
 [dependency-groups]
