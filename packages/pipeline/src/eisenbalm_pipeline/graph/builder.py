@@ -58,6 +58,7 @@ from eisenbalm_pipeline.agents.qa import qa
 from eisenbalm_pipeline.agents.researcher import researcher
 from eisenbalm_pipeline.agents.scout import scout
 from eisenbalm_pipeline.agents.validate import validate_sections
+from eisenbalm_pipeline.agents.verify import verify_research
 from eisenbalm_pipeline.graph.state import DispatchState
 
 
@@ -96,6 +97,11 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_node("editor_gate_1", editor_gate_1)
     builder.add_node("researcher", researcher)
 
+    # Phase 5 D-11: standalone non-LLM verification step between Researcher
+    # and the parallel section-writer fan-out. Sets *Verified booleans on
+    # state['research'] so downstream writers can branch on verification.
+    builder.add_node("verify_research", verify_research)
+
     # 7 parallel section writers.
     builder.add_node("origin_story", origin_story)
     builder.add_node("problem", problem)
@@ -118,10 +124,16 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_edge("advocate", "editor_gate_1")
     builder.add_edge("editor_gate_1", "researcher")
 
+    # Phase 5 D-11: insert verify_research between Researcher and the fan-out.
+    # verify_research fetches founderNameSourceUrl / subjectNameSourceUrl,
+    # sets *Verified bools, and is a single bottleneck before the parallel
+    # section writers consume state['research'].
+    builder.add_edge("researcher", "verify_research")
+
     # Fan-out: 7 parallel writers — Pattern A (plain multi-target edges,
     # no reducer needed because each writer mutates a distinct field).
     for writer in SECTION_WRITERS:
-        builder.add_edge("researcher", writer)
+        builder.add_edge("verify_research", writer)
         builder.add_edge(writer, "validate_sections")
 
     # Sequential post-fan-in edges.
