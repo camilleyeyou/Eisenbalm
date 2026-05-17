@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: "Completed 05-agent-quality-12-PLAN.md (DesignAgent: Haiku + WCAG-AA + font whitelist + regenerate-once + SAFE_THEME fallback with qaCorrections warning; AGT-13/14/17 satisfied)"
-last_updated: "2026-05-17T18:50:26.257Z"
+stopped_at: Completed 05-agent-quality-10-PLAN.md (4 section writers Sonnet-driven; AGT-09 voice isolation + AGT-10 verified/anonymous branching + Phase 6 pdfContent contract)
+last_updated: "2026-05-17T18:53:27.364Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 49
+  completed_plans: 50
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 11 of 15
+Plan: 12 of 15
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ Plan: 11 of 15
 | Phase 05-agent-quality P09 | 10min | 5 tasks | 5 files |
 | Phase 05-agent-quality P11 | 5min | 3 tasks | 5 files |
 | Phase 05-agent-quality P12 | 9min | 2 tasks | 2 files |
+| Phase 05-agent-quality P10 | 12min | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -184,6 +185,9 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-11 (Bonus + Game): FORBIDDEN_CONSTRUCTS declared as module-level string in agents/game.py — 10 deny-list entries verbatim per D-20 (<script src, <link href, fetch(, XMLHttpRequest, window.parent, window.top, document.cookie, localStorage, eval(, import(). Phase 7's renderer-level validator can import the constant directly for single-source-of-truth. Phase 5 ships prompt-level defense only; no embedCode validation in Phase 5.
 - [Phase 05-agent-quality]: Plan 05-11 (Bonus + Game): acomplete kwargs-only signature mismatch with plan template is now 6 of 6 voice-critical/writer plans (05-05, 05-06, 05-07, 05-08, 05-09, 05-11). Fixed inline — used agent_id=, run_id=, messages=, response_format= kwargs throughout. Plans 05-10/05-12/05-13 should grep acomplete( in researcher.py before publishing action blocks.
 - [Phase 05-agent-quality]: Plan 05-12 (DesignAgent): real body lives in agents/design/__init__.py (Plan 05-04 package shell), not agents/design.py — plan template predated Plan 05-04 promotion; ThemeOutput Pydantic has 6 LLM-emitted fields, visualDirection is carried from style_brief; fallback uses FALLBACK_FONT_DISPLAY/BODY constants (not SAFE_THEME fonts) so the post-fallback theme always passes the whitelist; qaCorrections:insert uses Convex-validator-correct keys (sectionName/reason/accepted=false), not plan template's section/reasoning/acceptance
+- [Phase 05-agent-quality]: Plan 05-10: 4 section writers (origin_story, problem, founder_bio, case_study) now Sonnet-driven via single call site to build_section_writer_prompt; FounderBio + CaseStudy branch on *Verified booleans with _select_guidance_and_scrub helper that scrubs *Name to None when unverified (RESEARCH Pitfall 5). State field is problem_statement (not problem) per DispatchState §7 / validate_sections.REQUIRED_FIELDS — agent_id 'problem' (MODEL_BY_AGENT key) and state field 'problem_statement' coexist (two-name convention).
+- [Phase 05-agent-quality]: Plan 05-10: PdfContent Pydantic model locks Phase 6 WeasyPrint contract — exactly 3 keyDataPoints (min_length=3, max_length=3), locked field names problemStatement/keyDataPoints/interventionMechanism, locked KeyDataPoint subfields stat/source. Phase 6 (Publisher) reads this through the Sanity JSON round-trip without rework.
+- [Phase 05-agent-quality]: Plan 05-10: Voice isolation enforced 2x — single call site to build_section_writer_prompt per writer + dedicated test_*_voice_isolation tests that patch the helper with side_effect=_capture, pollute state with sibling sections, and assert kwargs ⊆ {section_id, section_title, section_guidance, charity, research, style_brief}. Pattern is reusable for BonusWriter + GameWriter (Plan 05-11) if those agents call build_section_writer_prompt.
 
 ### Pending Todos
 
@@ -198,6 +202,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:50:19.903Z
-Stopped at: Completed 05-agent-quality-12-PLAN.md (DesignAgent: Haiku + WCAG-AA + font whitelist + regenerate-once + SAFE_THEME fallback with qaCorrections warning; AGT-13/14/17 satisfied)
+Last session: 2026-05-17T18:53:27.359Z
+Stopped at: Completed 05-agent-quality-10-PLAN.md (4 section writers Sonnet-driven; AGT-09 voice isolation + AGT-10 verified/anonymous branching + Phase 6 pdfContent contract)
 Resume file: None
