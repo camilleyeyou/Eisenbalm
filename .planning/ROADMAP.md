@@ -183,7 +183,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 2. Web Shell + Theme Engine | 11/11 | Complete | 2026-05-12 |
 | 3. Convex Deployment | 7/8 | In Progress | - |
 | 4. Pipeline Skeleton | 0/12 | Not started | - |
-| 5. Agent Quality | 0/TBD | Not started | - |
+| 5. Agent Quality | 2/15 | In Progress|  |
 | 6. PDF + Webhook Chain | 0/TBD | Not started | - |
 | 7. Game Rendering | 0/TBD | Not started | - |
 | 8. Stripe / Commerce | 0/TBD | Not started | - |

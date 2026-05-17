@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-02-PLAN.md
-last_updated: "2026-05-17T17:32:07.572Z"
+stopped_at: Completed 05-agent-quality-01-PLAN.md (retroactive close-out after Andrew dev Convex deploy)
+last_updated: "2026-05-17T17:56:00.902Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 39
+  completed_plans: 40
 ---
 
 # Project State
@@ -78,6 +78,7 @@ Plan: 2 of 15
 | Phase 04-pipeline-skeleton P10 | 15 | 4 tasks | 6 files |
 | Phase 04-pipeline-skeleton P11 | 3min | 2 tasks | 2 files |
 | Phase 05-agent-quality P02 | 3 | 3 tasks | 4 files |
+| Phase 05-agent-quality P01 | 10min | 4 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -154,6 +155,7 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Canonical langchain-tavily import at 0.2.18 is 'from langchain_tavily import TavilySearch' — Plan 05-03 search_client.py uses directly, no fallback wiring needed
 - [Phase 05-agent-quality]: ResearchOutput uses NotRequired[Optional[T]] (PEP 655 Python 3.11) for 7 new verification fields rather than class splitting — simpler, single-file edit
 - [Phase 05-agent-quality]: EISENBALM_STUB_MODE=false documented in .env.example as Phase 5 default, but runtime default flip deferred to Plan 05-14 — keeps onboarding doc aligned with target state
+- [Phase 05-agent-quality]: Plan 05-01 close-out (retroactive): Convex schema patched in lockstep across schema.ts + insert mutation validators; deliberationEvents.eventType extended to 9 literals (adds cost-warning, agent-tool-limit-exceeded); qaCorrections refactored to Phase 5 annotation-only shape (severity info|warning|error; 4 new optional fields agentId/axis/quotedSpan/suggestedFix; legacy fieldName/original/corrected demoted to optional); dev deploy modest-magpie-797 verified clean via pnpm --filter @eisenbalm/convex dev:once
 
 ### Pending Todos
 
@@ -168,6 +170,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T17:32:07.566Z
-Stopped at: Completed 05-agent-quality-02-PLAN.md
+Last session: 2026-05-17T17:55:58.649Z
+Stopped at: Completed 05-agent-quality-01-PLAN.md (retroactive close-out after Andrew dev Convex deploy)
 Resume file: None
