@@ -63,7 +63,7 @@ class EditorDecision(BaseModel):
 
     winnerName: str = Field(description="LLM's preferred winner name.")
     confidence: float = Field(
-        ge=0.0, le=1.0, description="Editor confidence in the pick (0.0-1.0)."
+        description="Editor confidence in the pick — float between 0.0 and 1.0."
     )
     requiresHumanInput: bool = Field(
         description=(
