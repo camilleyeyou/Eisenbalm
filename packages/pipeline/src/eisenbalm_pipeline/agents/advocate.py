@@ -1,75 +1,170 @@
-"""Stub Advocate — scores each Scout candidate and writes per-candidate events.
+"""Phase 5 Advocate — scores each Scout candidate (Haiku via OpenRouter).
 
-CONTEXT D-18 step 4 (canonical write order). For each scored candidate:
+Replaces Phase 4 stub. Responsibilities:
 
-  1. Convex ``agentVotes:insert`` (vote='for', reasoning=advocateArgument)
-  2. Convex ``deliberationEvents:insert`` (eventType='advocate-argument',
-     payload={charityName, argument, score})
+  1. Receive state['candidates'] from Scout (Plan 05-06).
+  2. Call OpenRouter (Haiku, low-temp) ONCE over all candidates.
+  3. Parse AdvocateOutput Pydantic (list of AdvocateVote).
+  4. For each vote: write one agentVotes:insert row + one
+     deliberationEvents:insert with eventType='advocate-argument'.
+  5. Record resolved model into state['model_versions']['advocate'] (AGT-17).
 
-Because the wrapper's ``emit_event`` mechanism emits ONE deliberation event
-per agent execution (not per candidate), Advocate emits per-candidate events
-EXPLICITLY inside the body and sets ``emit_event=None`` on the wrapper.
-Phase 5 may revisit if a single summary event becomes preferable for the UX.
+emit_event=None: per-candidate events are emitted manually inside the body
+(one row per vote). The @agent_node decorator's single emission is suppressed
+because Advocate is fundamentally per-candidate.
+
+Per-candidate Convex shapes are canonical per:
+  - docs/API_CONTRACTS.md §3.5 (agentVotes:insert) — vote='for', includes charityName
+  - docs/API_CONTRACTS.md §3.4 (deliberationEvents:insert) — eventType='advocate-argument'
+
+The Convex agentVotes validator union is ('for' | 'against' | 'abstain');
+Advocate always emits 'for' since the agent's role is to advocate. (Plan
+05-07 text references 'yes' — superseded here by the canonical schema per
+CLAUDE.md "do not modify field names without checking API_CONTRACTS.md".)
 """
 from __future__ import annotations
 
 import json
 
+from pydantic import BaseModel, Field
 from slugify import slugify
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
-from eisenbalm_pipeline.stubs import fixtures
+from eisenbalm_pipeline.lib.openrouter_client import acomplete
+
+
+class AdvocateVote(BaseModel):
+    """AGT-05 per-candidate Pydantic shape (RESEARCH §Advocate lines 447-453)."""
+
+    charityName: str
+    score: int = Field(ge=1, le=10)
+    argument: str = Field(
+        description="150-250 word argument for this charity in Jesse voice",
+    )
+    keyStrengths: list[str] = Field(min_length=2, max_length=4)
+    primaryConcern: str
+
+
+class AdvocateOutput(BaseModel):
+    """Top-level shape returned by the LLM."""
+
+    votes: list[AdvocateVote]
+
+
+def _build_messages(*, candidates: list[dict]) -> list[dict]:
+    """System prompt embeds Advocate's voice + scoring rule.
+
+    Sourced from RESEARCH §Advocate lines 434-445 + lib/voice.py constraints.
+    Kept short: Haiku rewards a tight prompt.
+    """
+    candidates_json = json.dumps(candidates, indent=2, default=str)
+    system = (
+        "You are the Advocate for The Eisenbalm Dispatch. Score each Scout "
+        "candidate 1-10 with a written argument. Surface the case for each "
+        "charity without editorializing. Dry. Precise. Serious. No winking. "
+        "No exclamation marks. Treat every charity with Fortune-500 gravity.\n\n"
+        "For each candidate output:\n"
+        "  - score (int, 1-10)\n"
+        "  - argument (150-250 words, Jesse voice)\n"
+        "  - keyStrengths (2-4 items)\n"
+        "  - primaryConcern (one sentence)"
+    )
+    user = (
+        f"CANDIDATES (Scout output, JSON):\n{candidates_json}\n\n"
+        "Return JSON AdvocateOutput with field `votes` (one AdvocateVote "
+        "per candidate, same order as input)."
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
 
 
 def _charity_id_for(name: str) -> str:
-    """Deterministic Sanity charity _id (matches lib/sanity_client:write_charity)."""
+    """Deterministic Sanity charity _id (matches lib/sanity_client:write_charity).
+
+    Scout already wrote the same row under this _id; Advocate just re-derives
+    for the agentVotes/deliberationEvents charityId field. Phase 1 D-17 +
+    Phase 4 D-18 deterministic-_id pattern.
+
+    Uses python-slugify (same library Scout uses), so casing, spaces, and
+    punctuation collapse to a stable kebab-cased slug.
+    """
     return f"charity-{slugify(name)}"
 
 
 @agent_node(name="advocate", emit_event=None)
 async def advocate(state: DispatchState) -> DispatchState:
-    candidates_in = state.get("candidates") or []
     run_id = state["run_id"]
+    candidates = state.get("candidates") or []
 
-    # fixtures.advocate_scored mutates candidates with advocateScore +
-    # advocateArgument fields filled in.
-    update = fixtures.advocate_scored(candidates_in)
-    scored = update["candidates"]
+    messages = _build_messages(candidates=candidates)
+    out_obj, usage = await acomplete(
+        agent_id="advocate",
+        run_id=run_id,
+        messages=messages,
+        response_format=AdvocateOutput,
+    )
 
-    for candidate in scored:
-        charity_id = _charity_id_for(candidate["name"])
+    # `out_obj` is normally an AdvocateOutput (real mode) or AdvocateOutput
+    # built via model_construct (stub mode). Tolerate both attribute access
+    # and dict-style access defensively.
+    votes_raw = (
+        out_obj.votes if hasattr(out_obj, "votes")
+        else out_obj["votes"]
+    )
 
-        # 1. agentVotes:insert (API_CONTRACTS §3.5)
+    votes_serialized: list[dict] = []
+    for v_raw in votes_raw or []:
+        v = (
+            v_raw if isinstance(v_raw, AdvocateVote)
+            else AdvocateVote(**v_raw)
+        )
+        charity_id = _charity_id_for(v.charityName)
+
+        # 1. agentVotes:insert (API_CONTRACTS §3.5). Convex schema requires
+        #    vote='for' | 'against' | 'abstain' + charityName denormalized.
         await convex_mutation_safe(
             "agentVotes:insert",
             {
                 "runId": run_id,
                 "agentId": "advocate",
                 "charityId": charity_id,
-                "charityName": candidate["name"],
+                "charityName": v.charityName,
                 "vote": "for",
-                "reasoning": candidate["advocateArgument"],
+                "reasoning": v.argument,
             },
         )
 
-        # 2. deliberationEvents:insert (API_CONTRACTS §3.4 — advocate-argument)
+        # 2. deliberationEvents:insert with eventType='advocate-argument'
+        #    (API_CONTRACTS §3.4; Plan 05-01 patched union accepts this).
         await convex_mutation_safe(
             "deliberationEvents:insert",
             {
                 "runId": run_id,
                 "agentId": "advocate",
                 "eventType": "advocate-argument",
+                "payload": json.dumps({
+                    "charityName": v.charityName,
+                    "score": v.score,
+                    "argument": v.argument,
+                    "keyStrengths": v.keyStrengths,
+                    "primaryConcern": v.primaryConcern,
+                }),
                 "charityId": charity_id,
-                "payload": json.dumps(
-                    {
-                        "charityName": candidate["name"],
-                        "argument": candidate["advocateArgument"],
-                        "score": candidate["advocateScore"],
-                    }
-                ),
             },
         )
 
-    return update
+        votes_serialized.append(v.model_dump())
+
+    # AGT-17: record resolved model into state['model_versions']['advocate'].
+    model_versions = dict(state.get("model_versions") or {})
+    model_versions["advocate"] = usage["resolved_model"]
+
+    return {
+        **state,
+        "advocate_votes": votes_serialized,
+        "model_versions": model_versions,
+    }
