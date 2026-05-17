@@ -40,6 +40,8 @@ export const insert = mutation({
       v.literal('qa-correction'),
       v.literal('editor-final'),
       v.literal('publisher-deploy'),
+      v.literal('cost-warning'),                // Phase 5 D-08
+      v.literal('agent-tool-limit-exceeded'),   // Phase 5 D-21
     ),
     payload: v.string(),
     charityId: v.optional(v.string()),
