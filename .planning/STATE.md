@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 5 context gathered
-last_updated: "2026-05-15T19:46:15.365Z"
+status: Ready to execute
+stopped_at: Completed 05-agent-quality-02-PLAN.md
+last_updated: "2026-05-17T17:32:07.572Z"
 progress:
   total_phases: 9
   completed_phases: 4
-  total_plans: 38
-  completed_plans: 38
+  total_plans: 53
+  completed_plans: 39
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 04 — pipeline-skeleton
+**Current focus:** Phase 05 — agent-quality
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (agent-quality) — EXECUTING
+Plan: 2 of 15
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Plan: Not started
 | Phase 04 P09 | 9 | 4 tasks | 5 files |
 | Phase 04-pipeline-skeleton P10 | 15 | 4 tasks | 6 files |
 | Phase 04-pipeline-skeleton P11 | 3min | 2 tasks | 2 files |
+| Phase 05-agent-quality P02 | 3 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Plan 04-09: FastAPI lifespan degrades gracefully — missing SUPABASE_POSTGRES_URL or unreachable Supabase logs a warning and boots with app.state.graph=None so /healthz responds and the test-suite import succeeds; /run/weekly + /run/{runId}/resume return 503 via _require_graph guard.
 - [Phase 04]: Plan 04-09: _require_trigger_secret skips the X-Pipeline-Trigger-Secret check (logged warning) when PIPELINE_TRIGGER_SECRET is unset, so local dev works without provisioning the secret; enforced 401 in any environment that sets it.
 - [Phase 04-pipeline-skeleton]: Plan 04-11: packages/pipeline/README.md rewritten as canonical onboarding doc (CONTEXT D-40) — env var table, Supabase session-pooler sharp-edge warning (5432 vs 6543 vs IPv6 direct), one-time setup-checkpointer, verbatim CONTEXT D-42 smoke test that Plan 12 follows; apps/web/README.md amended (additive) noting CONVEX_DEPLOY_KEY shared with Railway pipeline; root .env.example verified complete, no edit needed
+- [Phase 05-agent-quality]: Canonical langchain-tavily import at 0.2.18 is 'from langchain_tavily import TavilySearch' — Plan 05-03 search_client.py uses directly, no fallback wiring needed
+- [Phase 05-agent-quality]: ResearchOutput uses NotRequired[Optional[T]] (PEP 655 Python 3.11) for 7 new verification fields rather than class splitting — simpler, single-file edit
+- [Phase 05-agent-quality]: EISENBALM_STUB_MODE=false documented in .env.example as Phase 5 default, but runtime default flip deferred to Plan 05-14 — keeps onboarding doc aligned with target state
 
 ### Pending Todos
 
@@ -164,6 +168,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T19:46:15.356Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-agent-quality/05-CONTEXT.md
+Last session: 2026-05-17T17:32:07.566Z
+Stopped at: Completed 05-agent-quality-02-PLAN.md
+Resume file: None

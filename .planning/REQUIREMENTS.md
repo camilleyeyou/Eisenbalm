@@ -60,12 +60,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 - [ ] **AGT-01**: Calibrator returns a `styleBrief` with `voice` constants imported from a hardcoded module (NOT regenerated per call); selects `bonusType` (bigBudget | jingle | specAd) that does NOT match the previous issue's `bonusType`
 - [ ] **AGT-02**: Calibrator output is stored on `weeklyIssue.calibratorBrief` for Andrew's review
-- [ ] **AGT-03**: Scout uses Tavily web search and returns 3-5 candidates (`{name, location, website, assetRange, focusArea, missionStatement, scoutSummary, whyOverlooked}`); writes each to Convex `pitchLog` as it finds them; respects an iteration limit (max N tool calls) to contain cost
-- [ ] **AGT-04**: Scout candidates exclude charities already featured (cross-checked against Sanity `charity` documents)
+- [x] **AGT-03**: Scout uses Tavily web search and returns 3-5 candidates (`{name, location, website, assetRange, focusArea, missionStatement, scoutSummary, whyOverlooked}`); writes each to Convex `pitchLog` as it finds them; respects an iteration limit (max N tool calls) to contain cost
+- [x] **AGT-04**: Scout candidates exclude charities already featured (cross-checked against Sanity `charity` documents)
 - [ ] **AGT-05**: Advocate produces an argument and 1-10 score for every Scout candidate; writes each to Convex `deliberationEvents` as `advocate-argument`
 - [ ] **AGT-06**: Editor (gate 1) selects exactly one winner with `editorDecision`, `runnerUpNotes`, and a structured `deliberationTranscript`; writes `editor-decision` event to Convex
-- [ ] **AGT-07**: Researcher returns a structured research object including `founderName` AND a `founderNameSourceUrl` field that points to the charity's own website confirming the name; if no source URL is found, `founderNameVerified=false` and downstream FounderBioWriter falls back to anonymous framing
-- [ ] **AGT-08**: A post-Researcher verification step fetches the charity's website (`httpx`) and string-searches for `founderName`; if not found, sets `founderNameVerified=false`
+- [x] **AGT-07**: Researcher returns a structured research object including `founderName` AND a `founderNameSourceUrl` field that points to the charity's own website confirming the name; if no source URL is found, `founderNameVerified=false` and downstream FounderBioWriter falls back to anonymous framing
+- [x] **AGT-08**: A post-Researcher verification step fetches the charity's website (`httpx`) and string-searches for `founderName`; if not found, sets `founderNameVerified=false`
 - [ ] **AGT-09**: CaseStudyWriter requires `subjectNameVerified=true` (same source-confirmation pattern); falls back to anonymous framing if not verified
 - [ ] **AGT-10**: OriginStoryWriter, ProblemWriter, FounderBioWriter, CaseStudyWriter each receive a structurally isolated `voiceConstraints` block (not concatenated with prior agent state); output passes a Jesse-voice rubric in QA
 - [ ] **AGT-11**: BonusWriter branches on `bonusType` and emits the corresponding shape: bigBudget→`{headline, body, storyboards[]}`, jingle→`{headline, body, lyrics, sunoPrompt}` (sunoAudioUrl empty), specAd→`{headline, body}`
@@ -74,7 +74,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **AGT-14**: DesignAgent emits `{fontDisplay, fontBody}` from a curated whitelist of approved Google Fonts (web + WeasyPrint compatible); whitelist is enforced at write time
 - [ ] **AGT-15**: QA agent reviews all section content against a Jesse-voice rubric and factual accuracy; writes corrections to Convex `qaCorrections` with severity (info | warning | error) and acceptance status
 - [ ] **AGT-16**: Editor Final reviews QA output, makes final sequencing decisions, writes any connective copy needed, and emits `editor-final` event to Convex
-- [ ] **AGT-17**: Voice-critical agents (Calibrator, Editor, Editor Final, QA) use pinned OpenRouter model versions (model+revision string)
+- [x] **AGT-17**: Voice-critical agents (Calibrator, Editor, Editor Final, QA) use pinned OpenRouter model versions (model+revision string)
 - [ ] **AGT-18**: An iteration limit is enforced on every agent that uses tool-calling (Scout, Researcher); exceeding it raises a controlled error written to `deliberationEvents` rather than silent loop
 
 ### PDF Generation + Publisher
@@ -227,12 +227,12 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | OPS-03 | Phase 4: Pipeline Skeleton | Complete |
 | AGT-01 | Phase 5: Agent Quality | Pending |
 | AGT-02 | Phase 5: Agent Quality | Pending |
-| AGT-03 | Phase 5: Agent Quality | Pending |
-| AGT-04 | Phase 5: Agent Quality | Pending |
+| AGT-03 | Phase 5: Agent Quality | Complete |
+| AGT-04 | Phase 5: Agent Quality | Complete |
 | AGT-05 | Phase 5: Agent Quality | Pending |
 | AGT-06 | Phase 5: Agent Quality | Pending |
-| AGT-07 | Phase 5: Agent Quality | Pending |
-| AGT-08 | Phase 5: Agent Quality | Pending |
+| AGT-07 | Phase 5: Agent Quality | Complete |
+| AGT-08 | Phase 5: Agent Quality | Complete |
 | AGT-09 | Phase 5: Agent Quality | Pending |
 | AGT-10 | Phase 5: Agent Quality | Pending |
 | AGT-11 | Phase 5: Agent Quality | Pending |
@@ -241,7 +241,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | AGT-14 | Phase 5: Agent Quality | Pending |
 | AGT-15 | Phase 5: Agent Quality | Pending |
 | AGT-16 | Phase 5: Agent Quality | Pending |
-| AGT-17 | Phase 5: Agent Quality | Pending |
+| AGT-17 | Phase 5: Agent Quality | Complete |
 | AGT-18 | Phase 5: Agent Quality | Pending |
 | PDF-01 | Phase 6: PDF + Webhook Chain | Pending |
 | PDF-02 | Phase 6: PDF + Webhook Chain | Pending |
