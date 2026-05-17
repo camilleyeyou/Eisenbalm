@@ -182,3 +182,110 @@ async def sanity_get_issue() -> Callable[[int], Awaitable[Optional[dict]]]:
             return docs[0] if docs else None
 
         yield _get
+
+
+# ── Phase 5 mock fixtures (added by Plan 05-04) ───────────────────────────
+#
+# These fixtures are pure unit-test mocks. They do NOT require any env vars
+# and do NOT skip — every Wave 1-3 agent test consumes them directly.
+# Source: 05-VALIDATION.md Wave 0 Requirements + 05-RESEARCH.md §Validation
+# Architecture.
+
+from unittest.mock import AsyncMock, MagicMock  # noqa: E402  (intentional late import)
+
+
+@pytest.fixture
+def mock_convex_mutation():
+    """Patch lib.convex_client.convex_mutation_safe to record calls.
+
+    Returns an AsyncMock. Tests assert on call_args_list to verify
+    the right mutation name + payload was issued.
+    """
+    mock = AsyncMock(return_value={"status": "success"})
+    return mock
+
+
+@pytest.fixture
+def mock_sanity_write_charity():
+    """Patch lib.sanity_client.write_charity. Returns deterministic _id."""
+    mock = AsyncMock(side_effect=lambda http, c: f"charity-{c['name'].lower().replace(' ', '-')}")
+    return mock
+
+
+@pytest.fixture
+def mock_openrouter_acomplete():
+    """Patch lib.openrouter_client.acomplete with a canned response.
+
+    Tests set .return_value or .side_effect to control content + usage.
+    Default returns the empty-string content + zero tokens (cost cap safe).
+    """
+    mock = AsyncMock(return_value=("", {
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "usd": 0.0,
+        "resolved_model": "anthropic/claude-opus-4-7",
+    }))
+    return mock
+
+
+@pytest.fixture
+def mock_tavily_search():
+    """Patch lib.search_client.web_search. Returns 3 fake SearchResult-shaped dicts."""
+    mock = AsyncMock(return_value=[
+        {"url": "https://example.org/about", "title": "Example Charity", "content": "...", "score": 0.9},
+        {"url": "https://example2.org/about", "title": "Another Charity", "content": "...", "score": 0.8},
+        {"url": "https://example3.org/about", "title": "Third Charity", "content": "...", "score": 0.7},
+    ])
+    return mock
+
+
+@pytest.fixture
+def mock_httpx_get():
+    """Patch httpx.AsyncClient.get for verify_research tests.
+
+    Default returns 200 OK with HTML containing 'Jane Doe' for substring matching.
+    """
+    response = MagicMock()
+    response.text = "<html><body>About us. Founded by Jane Doe in 2003.</body></html>"
+    response.raise_for_status = MagicMock(return_value=None)
+    mock = AsyncMock(return_value=response)
+    return mock
+
+
+@pytest.fixture
+def sample_dispatch_state():
+    """Minimal DispatchState dict for unit-test assembly."""
+    return {
+        "run_id": "test-run-id-0001",
+        "issue_number": 42,
+        "publish_date": "2026-05-21",
+        "pipeline_started_at": "2026-05-21T10:00:00Z",
+        "style_brief": {
+            "voice": "Jesse",
+            "constraints": ["No exclamation marks", "No sentimentality"],
+            "bonusType": "bigBudget",
+            "visualDirection": "Warm cream and oxblood",
+            "previousBonusTypes": ["jingle"],
+        },
+        "winning_charity": {
+            "name": "Example Charity",
+            "location": "Maine, USA",
+            "website": "https://example.org",
+            "missionStatement": "We help people.",
+            "assetRange": "$100K–$500K",
+            "focusArea": "Education",
+        },
+        "research": {
+            "summary": "Founded 2003 by Jane Doe...",
+            "founderName": "Jane Doe",
+            "founderRole": "founder",
+            "founderNameSourceUrl": "https://example.org/about",
+            "founderNameVerified": True,
+            "subjectName": "Alex Smith",
+            "subjectRole": "a parent",
+            "subjectNameSourceUrl": "https://example.org/stories/alex",
+            "subjectNameVerified": True,
+        },
+        "featured_charity_keys": [],
+        "model_versions": {},
+    }
