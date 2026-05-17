@@ -72,8 +72,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **AGT-12**: GameWriter emits `{headline, description, embedCode}` where `embedCode` is self-contained HTML/JS with no external CDN URLs and no `<script src=...>` references
 - [x] **AGT-13**: DesignAgent emits `{primaryColor, accentColor, backgroundColor, textColor}` as 6-digit hex strings; values are validated before being written to Sanity
 - [x] **AGT-14**: DesignAgent emits `{fontDisplay, fontBody}` from a curated whitelist of approved Google Fonts (web + WeasyPrint compatible); whitelist is enforced at write time
-- [ ] **AGT-15**: QA agent reviews all section content against a Jesse-voice rubric and factual accuracy; writes corrections to Convex `qaCorrections` with severity (info | warning | error) and acceptance status
-- [ ] **AGT-16**: Editor Final reviews QA output, makes final sequencing decisions, writes any connective copy needed, and emits `editor-final` event to Convex
+- [x] **AGT-15**: QA agent reviews all section content against a Jesse-voice rubric and factual accuracy; writes corrections to Convex `qaCorrections` with severity (info | warning | error) and acceptance status
+- [x] **AGT-16**: Editor Final reviews QA output, makes final sequencing decisions, writes any connective copy needed, and emits `editor-final` event to Convex
 - [x] **AGT-17**: Voice-critical agents (Calibrator, Editor, Editor Final, QA) use pinned OpenRouter model versions (model+revision string)
 - [x] **AGT-18**: An iteration limit is enforced on every agent that uses tool-calling (Scout, Researcher); exceeding it raises a controlled error written to `deliberationEvents` rather than silent loop
 
@@ -239,8 +239,8 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | AGT-12 | Phase 5: Agent Quality | Complete |
 | AGT-13 | Phase 5: Agent Quality | Complete |
 | AGT-14 | Phase 5: Agent Quality | Complete |
-| AGT-15 | Phase 5: Agent Quality | Pending |
-| AGT-16 | Phase 5: Agent Quality | Pending |
+| AGT-15 | Phase 5: Agent Quality | Complete |
+| AGT-16 | Phase 5: Agent Quality | Complete |
 | AGT-17 | Phase 5: Agent Quality | Complete |
 | AGT-18 | Phase 5: Agent Quality | Complete |
 | PDF-01 | Phase 6: PDF + Webhook Chain | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-10-PLAN.md (4 section writers Sonnet-driven; AGT-09 voice isolation + AGT-10 verified/anonymous branching + Phase 6 pdfContent contract)
-last_updated: "2026-05-17T18:53:27.364Z"
+stopped_at: Completed 05-agent-quality-13-PLAN.md (two-layer QA rubric + real Editor Final advisory pass; agents/qa.py promoted to qa/ package; 24 new tests; AGT-15+AGT-16+AGT-17 complete)
+last_updated: "2026-05-17T19:10:50.145Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 50
+  completed_plans: 51
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 12 of 15
+Plan: 13 of 15
 
 ## Performance Metrics
 
@@ -89,6 +89,7 @@ Plan: 12 of 15
 | Phase 05-agent-quality P11 | 5min | 3 tasks | 5 files |
 | Phase 05-agent-quality P12 | 9min | 2 tasks | 2 files |
 | Phase 05-agent-quality P10 | 12min | 5 tasks | 8 files |
+| Phase 05-agent-quality P13 | 10min | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -188,6 +189,7 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-10: 4 section writers (origin_story, problem, founder_bio, case_study) now Sonnet-driven via single call site to build_section_writer_prompt; FounderBio + CaseStudy branch on *Verified booleans with _select_guidance_and_scrub helper that scrubs *Name to None when unverified (RESEARCH Pitfall 5). State field is problem_statement (not problem) per DispatchState §7 / validate_sections.REQUIRED_FIELDS — agent_id 'problem' (MODEL_BY_AGENT key) and state field 'problem_statement' coexist (two-name convention).
 - [Phase 05-agent-quality]: Plan 05-10: PdfContent Pydantic model locks Phase 6 WeasyPrint contract — exactly 3 keyDataPoints (min_length=3, max_length=3), locked field names problemStatement/keyDataPoints/interventionMechanism, locked KeyDataPoint subfields stat/source. Phase 6 (Publisher) reads this through the Sanity JSON round-trip without rework.
 - [Phase 05-agent-quality]: Plan 05-10: Voice isolation enforced 2x — single call site to build_section_writer_prompt per writer + dedicated test_*_voice_isolation tests that patch the helper with side_effect=_capture, pollute state with sibling sections, and assert kwargs ⊆ {section_id, section_title, section_guidance, charity, research, style_brief}. Pattern is reusable for BonusWriter + GameWriter (Plan 05-11) if those agents call build_section_writer_prompt.
+- [Phase 05-agent-quality]: Plan 05-13 (QA + Editor Final): agents/qa.py stub promoted to agents/qa/ package (mirrors design.py→design/ from Plan 05-04). Orchestrator at agents/qa/__init__.py combines Layer-1 deterministic predicates (axis overridden to 'hard-rule' at the orchestrator) + Layer-2 single-Opus-call LLM-as-judge. QA is annotation-only (D-02): NEVER mutates section state, NEVER raises on findings. Editor Final replaces fixtures stub with real Opus advisory memo; system prompt contains explicit 'Do NOT rewrite' + 'Do NOT reject' guards. acomplete kwargs-only mismatch (7th time in Phase 5 — systemic plan template issue) fixed inline. State field problem_statement → QA section ID 'problem' (Plan 05-10 two-name convention). Editor Final response normalization handles three shapes defensively — pipeline never blocks on malformed response.
 
 ### Pending Todos
 
@@ -202,6 +204,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:53:27.359Z
-Stopped at: Completed 05-agent-quality-10-PLAN.md (4 section writers Sonnet-driven; AGT-09 voice isolation + AGT-10 verified/anonymous branching + Phase 6 pdfContent contract)
+Last session: 2026-05-17T19:10:50.140Z
+Stopped at: Completed 05-agent-quality-13-PLAN.md (two-layer QA rubric + real Editor Final advisory pass; agents/qa.py promoted to qa/ package; 24 new tests; AGT-15+AGT-16+AGT-17 complete)
 Resume file: None
