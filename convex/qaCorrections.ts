@@ -15,17 +15,28 @@ export const byRunId = query({
 export const insert = mutation({
   args: {
     runId: v.string(),
+    agentId: v.optional(v.string()),
     sectionName: v.string(),
-    fieldName: v.string(),
-    original: v.string(),
-    corrected: v.string(),
+    fieldName: v.optional(v.string()),        // legacy compat (Phase 4 rewrite-shape)
+    original: v.optional(v.string()),         // legacy compat
+    corrected: v.optional(v.string()),        // legacy compat (D-02 annotation-only)
     reason: v.string(),
     severity: v.union(
-      v.literal('minor'),
-      v.literal('moderate'),
-      v.literal('major'),
+      v.literal('info'),
+      v.literal('warning'),
+      v.literal('error'),
     ),
-    accepted: v.boolean(),
+    accepted: v.boolean(),                    // Phase 5 writes `false`
+    axis: v.optional(v.union(
+      v.literal('gravity'),
+      v.literal('sentiment'),
+      v.literal('irony-signaling'),
+      v.literal('precision'),
+      v.literal('cross-section-consistency'),
+      v.literal('hard-rule'),
+    )),
+    quotedSpan: v.optional(v.string()),
+    suggestedFix: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert('qaCorrections', {
