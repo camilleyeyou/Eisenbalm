@@ -126,6 +126,8 @@ async def advocate(state: DispatchState) -> DispatchState:
 
         # 1. agentVotes:insert (API_CONTRACTS §3.5). Convex schema requires
         #    vote='for' | 'against' | 'abstain' + charityName denormalized.
+        #    Score is NOT a Convex agentVotes field — it lives on the
+        #    deliberation event payload below.
         await convex_mutation_safe(
             "agentVotes:insert",
             {
