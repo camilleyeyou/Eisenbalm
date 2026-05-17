@@ -32,6 +32,7 @@ from langgraph.errors import GraphInterrupt
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.cost import record_cost
+from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
 
 log = logging.getLogger(__name__)
 
@@ -134,6 +135,50 @@ def agent_node(
                 # research §2 idempotency-before-interrupt). LangGraph
                 # checkpoints state via the AsyncPostgresSaver; resume
                 # re-runs this node from the top. Do NOT touch Convex.
+                raise
+
+            except AgentToolCallLimitExceeded as e:
+                # AGT-18 / D-21 (Plan 05-14): emit a dedicated
+                # deliberationEvents row with eventType='agent-tool-limit-exceeded'
+                # BEFORE falling through to the generic failure write. The
+                # event row gives Andrew + the deliberation UI a typed
+                # signal that the agent overran its tool budget vs. some
+                # other kind of failure. Event emission is best-effort — a
+                # transient Convex error here must not mask the underlying
+                # RuntimeError on the failure path.
+                try:
+                    await convex_mutation_safe(
+                        "deliberationEvents:insert",
+                        {
+                            "runId": run_id,
+                            "agentId": name,
+                            "eventType": "agent-tool-limit-exceeded",
+                            "payload": json.dumps({
+                                "agentId": getattr(e, "agent_id", name),
+                                "attempts": getattr(e, "attempts", None),
+                                "limit": getattr(
+                                    e, "limit", max_tool_calls,
+                                ),
+                                "message": str(e),
+                            }),
+                        },
+                    )
+                except Exception as emit_exc:  # noqa: BLE001 — best-effort
+                    log.warning(
+                        "agent-tool-limit-exceeded event emit failed: %r",
+                        emit_exc,
+                    )
+                error_msg = f"{name}: {type(e).__name__}: {e}"
+                log.exception("Agent %s raised: %s", name, error_msg)
+                await convex_mutation_safe(
+                    "pipelineRuns:updateStatus",
+                    {
+                        "runId": run_id,
+                        "status": "failed",
+                        "completedAt": int(time.time() * 1000),
+                        "errorMessage": error_msg,
+                    },
+                )
                 raise
 
             except Exception as e:
