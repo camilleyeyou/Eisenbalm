@@ -1,8 +1,11 @@
-"""Stub DesignAgent — Phase 4 (CONTEXT D-18 step 7).
+"""Phase 5 DesignAgent submodules. font_whitelist requires Andrew approval (D-16).
 
-Payload includes the resolved hex colors and fonts so the deliberation
-accordion can render a small theme preview without re-querying state.
-Phase 5 will enforce hex + Google-font validation (AGT-13, AGT-14).
+Plan 05-04 establishes this directory as a package so font_whitelist.py can
+ship before Plan 05-12 fills in the real DesignAgent body. The stub `design`
+node from Phase 4 (CONTEXT D-18 step 7) is preserved here verbatim so
+`from eisenbalm_pipeline.agents.design import design` resolves through the
+package layer; Plan 05-12 replaces the body with the real implementation that
+imports + enforces font_whitelist.FONT_WHITELIST and lib.wcag.validate_theme.
 """
 from __future__ import annotations
 
