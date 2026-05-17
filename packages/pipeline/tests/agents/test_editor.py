@@ -168,6 +168,18 @@ async def test_winner_selection_deterministic() -> None:
     assert "**Winner:** HighOrg" in result["deliberation_transcript"]
 
 
+def _interrupt_raises_graph_interrupt(*args, **kwargs) -> None:
+    """Stub for langgraph.types.interrupt outside of a runnable context.
+
+    Real LangGraph interrupt() reads configurable state via a contextvar that
+    is only set inside a CompiledStateGraph invocation. Outside that
+    context, calling interrupt() raises RuntimeError. For unit-test purposes
+    we mock interrupt to raise GraphInterrupt directly — the wrapper's
+    GraphInterrupt handler is what we are exercising, not LangGraph itself.
+    """
+    raise GraphInterrupt(())
+
+
 @pytest.mark.asyncio
 async def test_interrupt_threshold_triggers() -> None:
     """AGT-06: narrow gap + low confidence + requiresHumanInput=True triggers interrupt.
@@ -200,6 +212,9 @@ async def test_interrupt_threshold_triggers() -> None:
         ),
     ), patch(
         "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.interrupt",
+        _interrupt_raises_graph_interrupt,
     ):
         with pytest.raises(GraphInterrupt):
             await editor_gate_1(state)
