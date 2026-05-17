@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-08-PLAN.md (Editor gate-1 real Opus body; AGT-06+AGT-17 satisfied)
-last_updated: "2026-05-17T18:26:08.909Z"
+stopped_at: Completed 05-agent-quality-09-PLAN.md (Researcher Tavily body + verify_research node + graph wiring; AGT-07/08/09/18 satisfied)
+last_updated: "2026-05-17T18:39:24.029Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 46
+  completed_plans: 47
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 8 of 15
+Plan: 9 of 15
 
 ## Performance Metrics
 
@@ -85,6 +85,7 @@ Plan: 8 of 15
 | Phase 05-agent-quality P07 | 4 | 2 tasks | 3 files |
 | Phase 05-agent-quality P06 | 4min | 2 tasks | 2 files |
 | Phase 05-agent-quality P08 | 7 | 2 tasks | 2 files |
+| Phase 05-agent-quality P09 | 10min | 5 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -175,6 +176,8 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-08: 5 Rule-3 deviations from plan text (acomplete kwargs-only, function name editor_gate_1 vs editor_gate1, data source state['candidates'] vs nonexistent state['advocate_votes'], LangGraph interrupt() requires runnable context for tests, GraphInterrupt(interrupts=()) signature). All fixed inline — plan-vs-codebase mismatches, no architectural change. Function name editor_gate_1 (with underscore) preserved; llm_config key editor_gate1 (no underscore) used for acomplete agent_id.
 - [Phase 05-agent-quality]: Plan 05-08: Markdown deliberationTranscript template (# Issue header, ## Scout Findings, ## Advocate Arguments, ## Editor Reasoning, ## Decision) is load-bearing — required for V2-02 NotebookLM manual podcast export. Format asserted as substring in test_transcript_format.
 - [Phase 05-agent-quality]: Plan 05-08: AGT-17 modelVersions write pattern inherited verbatim from Plan 05-05 Calibrator. Two-name convention coexists: function name editor_gate_1 (Python import path, used by graph/builder.py), llm_config key editor_gate1 (acomplete agent_id), Sanity agentProfile.agentId editor (@agent_node name).
+- [Phase 05-agent-quality]: Plan 05-09: Researcher emits names + source URLs; standalone non-@agent_node verify_research node inserted between Researcher and parallel fan-out. acomplete kwargs+run_id signature mismatch in plan (5/5 plans so far) — systemic plan-quality issue; future Phase 5 plans must grep acomplete( before publishing. ResearchOutputModel uses field defaults (matches StyleBriefOutput pattern) so model_construct() succeeds in stub mode.
+- [Phase 05-agent-quality]: Plan 05-09: verify_research is a standalone async node (no @agent_node decorator, no LLM call, no deliberationEvents emission, no cost recording). It runs sequentially before the 7 parallel section writers — single bottleneck. Conservative posture: ANY httpx error (timeout, 4xx/5xx, SSL, DNS, parse failure) collapses to verified=False. Researcher does NOT clear founderName when unverified — Plan 05-10 writers null it out at prompt-assembly time.
 
 ### Pending Todos
 
@@ -189,6 +192,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T18:25:34.840Z
-Stopped at: Completed 05-agent-quality-08-PLAN.md (Editor gate-1 real Opus body; AGT-06+AGT-17 satisfied)
+Last session: 2026-05-17T18:39:24.024Z
+Stopped at: Completed 05-agent-quality-09-PLAN.md (Researcher Tavily body + verify_research node + graph wiring; AGT-07/08/09/18 satisfied)
 Resume file: None
