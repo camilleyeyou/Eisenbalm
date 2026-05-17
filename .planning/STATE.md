@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-13-PLAN.md (two-layer QA rubric + real Editor Final advisory pass; agents/qa.py promoted to qa/ package; 24 new tests; AGT-15+AGT-16+AGT-17 complete)
-last_updated: "2026-05-17T19:10:50.145Z"
+stopped_at: Completed 05-agent-quality-14-PLAN.md (real-mode integration test + cost-cap + tool-limit tests; D-22 stub-mode default flipped; Phase 4-12 parallel-writer fix re-applied; AGT-17 model_versions Annotated reducer)
+last_updated: "2026-05-17T19:37:18.093Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 53
-  completed_plans: 51
+  completed_plans: 52
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 13 of 15
+Plan: 14 of 15
 
 ## Performance Metrics
 
@@ -90,6 +90,7 @@ Plan: 13 of 15
 | Phase 05-agent-quality P12 | 9min | 2 tasks | 2 files |
 | Phase 05-agent-quality P10 | 12min | 5 tasks | 8 files |
 | Phase 05-agent-quality P13 | 10min | 5 tasks | 8 files |
+| Phase 05-agent-quality P14 | 17min | 4 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -190,6 +191,11 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-10: PdfContent Pydantic model locks Phase 6 WeasyPrint contract — exactly 3 keyDataPoints (min_length=3, max_length=3), locked field names problemStatement/keyDataPoints/interventionMechanism, locked KeyDataPoint subfields stat/source. Phase 6 (Publisher) reads this through the Sanity JSON round-trip without rework.
 - [Phase 05-agent-quality]: Plan 05-10: Voice isolation enforced 2x — single call site to build_section_writer_prompt per writer + dedicated test_*_voice_isolation tests that patch the helper with side_effect=_capture, pollute state with sibling sections, and assert kwargs ⊆ {section_id, section_title, section_guidance, charity, research, style_brief}. Pattern is reusable for BonusWriter + GameWriter (Plan 05-11) if those agents call build_section_writer_prompt.
 - [Phase 05-agent-quality]: Plan 05-13 (QA + Editor Final): agents/qa.py stub promoted to agents/qa/ package (mirrors design.py→design/ from Plan 05-04). Orchestrator at agents/qa/__init__.py combines Layer-1 deterministic predicates (axis overridden to 'hard-rule' at the orchestrator) + Layer-2 single-Opus-call LLM-as-judge. QA is annotation-only (D-02): NEVER mutates section state, NEVER raises on findings. Editor Final replaces fixtures stub with real Opus advisory memo; system prompt contains explicit 'Do NOT rewrite' + 'Do NOT reject' guards. acomplete kwargs-only mismatch (7th time in Phase 5 — systemic plan template issue) fixed inline. State field problem_statement → QA section ID 'problem' (Plan 05-10 two-name convention). Editor Final response normalization handles three shapes defensively — pipeline never blocks on malformed response.
+- [Phase 05-agent-quality]: Phase 4-12 parallel-writer regression fixed in Plan 05-14 — 7 fan-out section writers return ONLY owned fields (no **state); Plan 05-10/11/12 inadvertently reintroduced **state when replacing stubs with LLM bodies
+- [Phase 05-agent-quality]: AGT-17 model_versions race solved with Annotated[dict, _merge_model_versions] reducer on DispatchState — 7 parallel writers each contribute one key, sequential agents unaffected
+- [Phase 05-agent-quality]: D-22 default flip: canonical is_stub_mode() consolidated into lib/openrouter_client.py with default 'false'; stubs/fake_openrouter.is_stub_mode re-exports via lazy import for BC
+- [Phase 05-agent-quality]: AGT-18 wrapper observability: @agent_node has a typed except branch for AgentToolCallLimitExceeded — emits deliberationEvents:insert with eventType='agent-tool-limit-exceeded' BEFORE status='failed' so polling consumers don't close the run before reading the typed event
+- [Phase 05-agent-quality]: Phase 5 stub-mode is for unit-test isolation, not e2e: per-agent stub paths covered by each agent's own test file (128 passed); full-graph stub-mode test was scope-reshaped to acomplete-boundary regression because Phase 5 agent bodies consume structured LLM output and model_construct empty defaults don't propagate
 
 ### Pending Todos
 
@@ -204,6 +210,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T19:10:50.140Z
-Stopped at: Completed 05-agent-quality-13-PLAN.md (two-layer QA rubric + real Editor Final advisory pass; agents/qa.py promoted to qa/ package; 24 new tests; AGT-15+AGT-16+AGT-17 complete)
+Last session: 2026-05-17T19:37:03.014Z
+Stopped at: Completed 05-agent-quality-14-PLAN.md (real-mode integration test + cost-cap + tool-limit tests; D-22 stub-mode default flipped; Phase 4-12 parallel-writer fix re-applied; AGT-17 model_versions Annotated reducer)
 Resume file: None
