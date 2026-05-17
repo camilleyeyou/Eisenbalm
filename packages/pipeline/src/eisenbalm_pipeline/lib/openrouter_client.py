@@ -8,8 +8,14 @@ Captures the resolved model ID from OpenRouter's response_metadata into
 Honors ``EISENBALM_STUB_MODE`` (D-22):
   - true (Phase 4 PIP-06 regression): delegates to FakeOpenRouterClient,
     records 0 tokens / $0, returns canned content.
-  - false (Phase 5 default once Plan 05-17 flips runtime default):
-    hits OpenRouter live via langchain-openai ChatOpenAI.
+  - false (Phase 5 runtime default, flipped in Plan 05-14): hits OpenRouter
+    live via langchain-openai ChatOpenAI.
+
+Plan 05-14 (D-22) consolidation: ``is_stub_mode()`` lives in THIS module —
+``stubs/fake_openrouter.py`` re-exports it for callers (e.g. ``lib/search_client.py``)
+that import from there for historical reasons. There is exactly ONE place
+where the env-var default ``"false"`` lives: the ``is_stub_mode()`` body
+immediately below.
 
 Structured output strategy (D-14): when ``response_format`` is a Pydantic
 BaseModel subclass, uses ``ChatOpenAI.with_structured_output(...)`` with a
@@ -30,12 +36,31 @@ from eisenbalm_pipeline.lib.llm_config import (
     SAMPLING_BY_AGENT,
     MAX_TOKENS_BY_AGENT,
 )
-from eisenbalm_pipeline.stubs.fake_openrouter import (
-    FakeOpenRouterClient,
-    is_stub_mode,
-)
 
 log = logging.getLogger(__name__)
+
+
+# ── EISENBALM_STUB_MODE (D-22 — canonical location, Plan 05-14 flip) ────
+
+
+def is_stub_mode() -> bool:
+    """Return True iff ``EISENBALM_STUB_MODE`` resolves to truthy.
+
+    Plan 05-14 (D-22) flips the default from ``"true"`` → ``"false"``: real
+    mode is now the default. Setting ``EISENBALM_STUB_MODE=true`` explicitly
+    still routes through ``stubs/fake_openrouter.FakeOpenRouterClient`` and
+    preserves the Phase 4 PIP-06 regression smoke.
+
+    Canonical location: this module. ``stubs/fake_openrouter.is_stub_mode``
+    re-exports this function so older callers (e.g. ``lib/search_client.py``)
+    keep working without import-path churn.
+    """
+    return os.environ.get("EISENBALM_STUB_MODE", "false").lower() == "true"
+
+
+# Lazy import to keep stub-mode tests free of FakeOpenRouterClient overhead
+# until they actually need it.
+from eisenbalm_pipeline.stubs.fake_openrouter import FakeOpenRouterClient  # noqa: E402
 
 
 # ── Real-mode helpers ───────────────────────────────────────────────────

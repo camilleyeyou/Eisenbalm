@@ -1,20 +1,23 @@
 """Fake OpenRouter client — Phase 5 swap point (CONTEXT D-17).
 
 Phase 4 agents never instantiate this — they directly return stubs/fixtures.
-Phase 5 will:
+Phase 5 wired the toggle in ``lib/openrouter_client.py``:
 
-  1. Create ``lib/openrouter_client.py`` with the real ChatOpenAI instance.
-  2. Add an ``EISENBALM_STUB_MODE`` branch that returns this fake client when
-     the env var is ``'true'``.
-  3. Agents call ``await client.acomplete(...)`` regardless of stub-or-real;
-     the toggle lives in the client construction, not in agent code.
+  1. ``lib/openrouter_client.py`` owns the canonical ``is_stub_mode()``
+     (Plan 05-14 D-22 consolidation — single default ``"false"`` line).
+  2. When ``is_stub_mode()`` returns True, ``acomplete`` delegates to
+     ``FakeOpenRouterClient`` below.
+  3. Agents call ``await acomplete(...)`` regardless of stub-or-real; the
+     toggle lives in the client construction, not in agent code.
+
+This module re-exports ``is_stub_mode`` for backward compatibility with
+callers that imported from here historically (e.g. ``lib/search_client.py``).
 
 Cost contract: every fake call records 0 tokens + $0 USD via lib/cost
 (CONTEXT D-22 stub-mode contract). The fake client never hits the network.
 """
 from __future__ import annotations
 
-import os
 from typing import Any
 
 
@@ -44,7 +47,14 @@ class FakeOpenRouterClient:
 
 
 def is_stub_mode() -> bool:
-    """Helper used by Phase 5's ``lib/openrouter_client.py`` to decide which
-    client to return. Phase 4 default: ``True`` (CONTEXT D-17).
+    """Re-export of the canonical ``is_stub_mode`` from
+    ``lib/openrouter_client.py`` (Plan 05-14 D-22 consolidation).
+
+    Older modules (notably ``lib/search_client.py``) import from here. This
+    indirection keeps imports stable while the canonical default value
+    lives in exactly one place: ``lib/openrouter_client.py``.
     """
-    return os.environ.get("EISENBALM_STUB_MODE", "true").lower() == "true"
+    # Lazy import to break the import cycle (lib/openrouter_client imports
+    # FakeOpenRouterClient from this module).
+    from eisenbalm_pipeline.lib.openrouter_client import is_stub_mode as _canonical
+    return _canonical()
