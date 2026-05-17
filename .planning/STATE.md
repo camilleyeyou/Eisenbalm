@@ -203,7 +203,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 5] Font whitelist (~25 fonts safe for web + WeasyPrint) must be approved by Andrew or designer before Phase 5 closes — DesignAgent cannot be finalized without it
+- [RESOLVED 2026-05-17] [Phase 5] Font whitelist approved by Andrew — 11 display + 11 body fonts (17 unique). Rejected Josefin Serif, Zilla Slab, Roboto Slab, Noto Sans during review. D-16 cleared.
 - [Phase 6] Andrew must configure Stripe product, price ID, and shipping rates in the Stripe dashboard before Phase 8 code can complete
 - [Phase 2] `/about` page copy not specified in brief; Andrew must provide before Phase 2 closes
 - [Phase 5] Per-run LLM cost baseline unknown until first real OpenRouter runs; alert threshold to be set after baseline measured

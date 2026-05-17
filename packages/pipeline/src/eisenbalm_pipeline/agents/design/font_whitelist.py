@@ -1,17 +1,18 @@
-"""Phase 5 D-16 — DesignAgent font whitelist (candidate list pending Andrew approval).
+"""Andrew-approved font whitelist (D-16 resolved 2026-05-17).
 
-TODO(Andrew): approve or revise this candidate list BEFORE Phase 5 closes.
-Each font must be:
+# Approved by Andrew 2026-05-17
+
+Each font is:
   1. Available on Google Fonts (SIL Open Font License or equivalent)
   2. Renderable by WeasyPrint on Ubuntu fontconfig (Phase 6 PDF generation)
   3. Compatible with Phase 2 theme engine validators (apps/web/lib/theme.ts)
+  4. Editorial/Fortune-500-serious in feel (no novelty/decorative faces)
 
-Phase 2 already approved 6 fonts; this file extends the list with 19 candidates.
-The fallback defaults (FALLBACK_FONT_DISPLAY, FALLBACK_FONT_BODY) are Phase 2-approved
-so DesignAgent fallback path is safe even before Andrew approves the extended list.
-
-Plan 05-15 (Wave 8) is where Andrew reviews and signs off on the extended candidates
-before the phase closes.
+Rejected from the Phase 5 candidate list during Andrew's review:
+  - Josefin Serif (geometric/decorative — too contemporary for Jesse voice)
+  - Zilla Slab (industrial slab — reads zine-y rather than editorial)
+  - Roboto Slab (same concern as Zilla Slab)
+  - Noto Sans (generic body sans — Inter is the canonical choice)
 """
 from __future__ import annotations
 
@@ -22,14 +23,12 @@ WHITELIST_DISPLAY: list[str] = [
     "Cormorant Garamond",
     "Merriweather",
     "DM Serif Display",
-    # ── Phase 5 candidates — Andrew approval pending ──────────────
+    # ── Phase 5 — Andrew approved 2026-05-17 ──────────────────────
     "Libre Baskerville",
     "EB Garamond",
     "Crimson Text",
     "Spectral",
     "Source Serif Pro",
-    "Josefin Serif",
-    "Zilla Slab",
     "Bitter",
 ]
 
@@ -38,23 +37,20 @@ WHITELIST_BODY: list[str] = [
     "Inter",
     "Lora",
     "Merriweather",
-    # ── Phase 5 candidates — Andrew approval pending ──────────────
+    # ── Phase 5 — Andrew approved 2026-05-17 ──────────────────────
     "Source Serif Pro",
     "Libre Baskerville",
     "EB Garamond",
     "Crimson Text",
     "PT Serif",
     "Noto Serif",
-    "Roboto Slab",
     "IBM Plex Serif",
-    "Noto Sans",
 ]
 
 # Union set for O(1) membership check in agents/design.py validation.
 FONT_WHITELIST: set[str] = set(WHITELIST_DISPLAY + WHITELIST_BODY)
 
 # D-16 fallback defaults — used when DesignAgent regenerates twice and still
-# emits an unapproved font. Both are Phase 2-approved so the fallback is safe
-# even before Andrew reviews the extended candidate list.
+# emits an unapproved font. Both are Phase 2-approved so the fallback is safe.
 FALLBACK_FONT_DISPLAY: str = "Playfair Display"
 FALLBACK_FONT_BODY: str = "Source Serif Pro"
