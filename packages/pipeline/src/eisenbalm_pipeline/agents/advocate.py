@@ -39,7 +39,7 @@ class AdvocateVote(BaseModel):
     """AGT-05 per-candidate Pydantic shape (RESEARCH §Advocate lines 447-453)."""
 
     charityName: str
-    score: int = Field(ge=1, le=10)
+    score: int = Field(description="integer 1-10, where 10 is strongest case")
     argument: str = Field(
         description="150-250 word argument for this charity in Jesse voice",
     )

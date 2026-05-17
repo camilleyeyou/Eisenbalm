@@ -30,7 +30,7 @@ from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 class Storyboard(BaseModel):
     """One shot in a bigBudget storyboard array."""
 
-    shotNumber: int = Field(default=1, ge=1)
+    shotNumber: int = Field(default=1, description="1-based shot index (must be >= 1)")
     description: str = Field(
         default="",
         description="50-100 words of precise visual/audio direction",
