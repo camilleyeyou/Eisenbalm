@@ -206,7 +206,47 @@ None yet.
 - [RESOLVED 2026-05-17] [Phase 5] Font whitelist approved by Andrew — 11 display + 11 body fonts (17 unique). Rejected Josefin Serif, Zilla Slab, Roboto Slab, Noto Sans during review. D-16 cleared.
 - [Phase 6] Andrew must configure Stripe product, price ID, and shipping rates in the Stripe dashboard before Phase 8 code can complete
 - [Phase 2] `/about` page copy not specified in brief; Andrew must provide before Phase 2 closes
-- [Phase 5] Per-run LLM cost baseline unknown until first real OpenRouter runs; alert threshold to be set after baseline measured
+- [PARTIAL 2026-05-18] [Phase 5] First real-mode end-to-end pipeline run succeeded on issue 999 (runId 96ab834e96214671859322044a4b4683, duration 155s, status='awaiting-review', Sanity content approved by Andrew). Cost tracking returned $0 across all agents because langchain-openai's `with_structured_output` does NOT expose `usage_metadata` to the wrapper — known TODO from Plan 05-03 SUMMARY. PIPELINE_COST_CAP_USD stays at $10 placeholder; actual baseline measurement deferred to Phase 6 once cost tracking is fixed (either via `include_raw=True` or a sidechannel usage capture).
+- [Phase 6 carryover] Fix langchain-openai cost-metadata capture so PIPELINE_COST_CAP_USD can actually enforce. Currently all per-agent USD readings are $0 in production because structured-output calls don't surface token counts through the wrapper.
+
+## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
+
+- runId: 96ab834e96214671859322044a4b4683
+- issueNumber: 999 (test draft)
+- Total duration: 155s (2m35s)
+- Final status: `awaiting-review` (expected end state — Andrew reviews in Sanity Studio before publishing)
+- Cost: ALL agents reported $0.00 — see "PARTIAL" entry in Blockers above; known langchain-openai `with_structured_output` metadata bug
+- Per-agent durations (real wall-clock, not cost):
+  - calibrator: 11.3s
+  - scout: 10.9s
+  - advocate: 12.3s
+  - editor (gate-1): 30.9s
+  - researcher: 32.7s
+  - design: 6.7s (parallel)
+  - bonus: 14.4s (parallel)
+  - case_study: 20.0s (parallel)
+  - founder_bio: 20.3s (parallel)
+  - origin_story: 21.4s (parallel)
+  - problem: 32.4s (parallel)
+  - game: 49.8s (parallel — longest section writer)
+  - qa: 5.4s (one combined LLM call across all sections per D-03)
+  - editor_final: <1s reported
+- QA Layer-1 + Layer-2 findings: 0 (zero corrections written; Jesse voice held mechanically)
+- qaCorrections rows for this run: 0
+- Soft-warn fired? No (cost recording is $0)
+- Cap (PIPELINE_COST_CAP_USD): $10.00 — unchanged from default; cannot be data-tuned until cost tracking is fixed
+- Decision: keep cap at $10 placeholder; revisit in Phase 6 after metadata fix
+- Sanity draft inspection: APPROVED by Andrew 2026-05-18 — all 8 sections populated, Jesse voice held
+- Real spend: non-zero (OpenRouter Anthropic + Tavily searches happened) but not currently recoverable from pipeline data; check OpenRouter dashboard for actual USD
+
+**Live-run fixes landed during Plan 05-15 smoke** (7 commits, all on master):
+- `3e79392` Provider routing pin (Anthropic-only for anthropic/* models)
+- `5498ce8` Remove min_length/max_length from 5 Pydantic models
+- `ee5126f` Remove ge/le from integer Field constraints (advocate.score, bonus.shotNumber)
+- `501af14` Scout dedup queries only PUBLISHED weeklyIssue.charity refs (AGT-04)
+- `7374263` Tolerant Tavily return-shape unwrap + Scout candidates field_validator
+- `08bd953` Remove ge/le from EditorDecision.confidence (number constraints)
+- All caught in production by Plan 05-15 smoke test; pre-existing defects that would have shipped without this step
 
 ## Session Continuity
 
