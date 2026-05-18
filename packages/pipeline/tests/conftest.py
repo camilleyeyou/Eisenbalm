@@ -289,3 +289,78 @@ def sample_dispatch_state():
         "featured_charity_keys": [],
         "model_versions": {},
     }
+
+
+# ── Phase 6 — Sanity webhook signature helper ─────────────────────────────
+# Mirror of lib/sanity_webhook.verify_sanity_signature so tests can generate
+# valid headers without round-tripping through the live verifier.
+
+import base64
+import hashlib
+import hmac as _hmac_mod  # noqa: E402 — intentional late import
+
+
+def encode_sanity_signature(body: bytes, ts_ms: int, secret: str) -> str:
+    """Produce a valid `sanity-webhook-signature` header for tests.
+
+    Algorithm (mirrors @sanity/webhook v5+ src/signature.ts):
+        payload   = f"{ts_ms}.".encode("utf-8") + body
+        signature = base64url_no_pad(HMAC_SHA256(secret_utf8, payload))
+        header    = f"t={ts_ms},v1={signature}"
+    """
+    payload = f"{ts_ms}.".encode("utf-8") + body
+    mac = _hmac_mod.new(secret.encode("utf-8"), payload, hashlib.sha256).digest()
+    sig = base64.urlsafe_b64encode(mac).rstrip(b"=").decode("ascii")
+    return f"t={ts_ms},v1={sig}"
+
+
+@pytest.fixture
+def sanity_signature_encoder():
+    """Pytest fixture wrapper around encode_sanity_signature."""
+    return encode_sanity_signature
+
+
+# ── Phase 6 — webhook_idempotency table cleanup ───────────────────────────
+
+
+@pytest.fixture
+async def webhook_idempotency_clean():
+    """TRUNCATE webhook_idempotency before each test that needs a clean slate.
+
+    Skips if SUPABASE_POSTGRES_URL is unset. Plan 06-03 lands the table via the
+    setup-webhook-idempotency CLI; until then TRUNCATE may fail silently.
+    """
+    missing = _missing_env()
+    if missing:
+        pytest.skip(f"Required env var not set: {missing}")
+    from psycopg_pool import AsyncConnectionPool  # noqa: WPS433
+    db_url = os.environ["SUPABASE_POSTGRES_URL"]
+    pool = AsyncConnectionPool(
+        db_url,
+        max_size=2,
+        kwargs={"autocommit": True, "prepare_threshold": None},
+        open=False,
+    )
+    await pool.open()
+    try:
+        async with pool.connection() as conn, conn.cursor() as cur:
+            try:
+                await cur.execute("TRUNCATE TABLE webhook_idempotency")
+            except Exception:  # noqa: BLE001 — table may not yet exist pre-06-03
+                pass
+        yield pool
+    finally:
+        await pool.close()
+
+
+# ── Phase 6 — vercel deploy hook stub fixture ─────────────────────────────
+
+
+@pytest.fixture
+def mock_vercel_trigger():
+    """Patch lib.vercel_client.trigger_vercel_deploy. Returns dict marker.
+
+    Tests assert on call_count to verify the deploy hook fired exactly once.
+    """
+    mock = AsyncMock(return_value={"job": {"id": "test-job-id", "state": "READY", "createdAt": 1}})
+    return mock
