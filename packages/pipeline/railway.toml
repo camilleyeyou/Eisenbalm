@@ -13,7 +13,11 @@ healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
-# Phase 4: one-time setup runs as preDeployCommand (CONTEXT D-12).
-# Idempotent — safe to run on every deploy. Requires SUPABASE_POSTGRES_URL
-# to be set via `railway variables set` BEFORE first deploy (D-29, D-30).
-preDeployCommand = ["python -m eisenbalm_pipeline.cli setup-checkpointer"]
+# Phase 4 + Phase 6: idempotent DDL on every deploy. The list-form runs the
+# items in order; both subcommands are safe under concurrent invocation
+# (Postgres advisory lock for checkpoints; CREATE TABLE IF NOT EXISTS for
+# webhook_idempotency).
+preDeployCommand = [
+    "python -m eisenbalm_pipeline.cli setup-checkpointer",
+    "python -m eisenbalm_pipeline.cli setup-webhook-idempotency",
+]
