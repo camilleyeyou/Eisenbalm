@@ -82,18 +82,18 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **PDF-01**: Publisher renders Problem Statement to PDF via WeasyPrint using `weeklyIssue.problemStatement.pdfContent` and the issue's theme colors/fonts
 - [x] **PDF-02**: PDF templates use base64-inlined `@font-face` declarations (NOT HTTP-loaded Google Fonts); fonts come from the Phase 5 whitelist
 - [x] **PDF-03**: Generated PDF uploads to Sanity as an asset and is set on `weeklyIssue.problemPdf`
-- [ ] **PDF-04**: PDF download button on `/issue/[slug]` links to `weeklyIssue.problemPdf.asset->url`
+- [x] **PDF-04**: PDF download button on `/issue/[slug]` links to `weeklyIssue.problemPdf.asset->url`
 
 ### Webhook Chain (Sanity → Publisher → Vercel)
 
-- [ ] **WHK-01**: Sanity webhook fires on `_type == "weeklyIssue" && status == "published"` to a Publisher endpoint on Railway
+- [x] **WHK-01**: Sanity webhook fires on `_type == "weeklyIssue" && status == "published"` to a Publisher endpoint on Railway
 - [x] **WHK-02**: Publisher endpoint verifies the webhook HMAC signature against `SANITY_WEBHOOK_SECRET` using the raw request body (`request.body()`)
-- [ ] **WHK-03**: Publisher rejects webhooks where `sanity-transaction-time` is older than 5 minutes
-- [ ] **WHK-04**: Publisher deduplicates webhooks via the `idempotency-key` header and a Supabase `webhook_idempotency` table with a unique constraint
-- [ ] **WHK-05**: Publisher waits 30 seconds before triggering the Vercel deploy hook (Sanity CDN propagation)
-- [ ] **WHK-06**: Publisher uses `useCdn: false` on the Sanity client when fetching content for PDF generation (build-time correctness)
-- [ ] **WHK-07**: Publisher updates `pipelineRuns.status` to `complete` and writes a `publisher-deploy` event to Convex
-- [ ] **WHK-08**: A manual `POST /run/{runId}/publish` endpoint exists as a fallback re-trigger when the Sanity webhook fails to deliver
+- [x] **WHK-03**: Publisher rejects webhooks where `sanity-transaction-time` is older than 5 minutes
+- [x] **WHK-04**: Publisher deduplicates webhooks via the `idempotency-key` header and a Supabase `webhook_idempotency` table with a unique constraint
+- [x] **WHK-05**: Publisher waits 30 seconds before triggering the Vercel deploy hook (Sanity CDN propagation)
+- [x] **WHK-06**: Publisher uses `useCdn: false` on the Sanity client when fetching content for PDF generation (build-time correctness)
+- [x] **WHK-07**: Publisher updates `pipelineRuns.status` to `complete` and writes a `publisher-deploy` event to Convex
+- [x] **WHK-08**: A manual `POST /run/{runId}/publish` endpoint exists as a fallback re-trigger when the Sanity webhook fails to deliver
 
 ### Game Rendering (sandbox-safe iframe)
 
@@ -246,15 +246,15 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | PDF-01 | Phase 6: PDF + Webhook Chain | Complete |
 | PDF-02 | Phase 6: PDF + Webhook Chain | Complete |
 | PDF-03 | Phase 6: PDF + Webhook Chain | Complete |
-| PDF-04 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-01 | Phase 6: PDF + Webhook Chain | Pending |
+| PDF-04 | Phase 6: PDF + Webhook Chain | Complete |
+| WHK-01 | Phase 6: PDF + Webhook Chain | Complete |
 | WHK-02 | Phase 6: PDF + Webhook Chain | Complete |
-| WHK-03 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-04 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-05 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-06 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-07 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-08 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-03 | Phase 6: PDF + Webhook Chain | Complete |
+| WHK-04 | Phase 6: PDF + Webhook Chain | Complete |
+| WHK-05 | Phase 6: PDF + Webhook Chain | Complete |
+| WHK-06 | Phase 6: PDF + Webhook Chain | Complete |
+| WHK-07 | Phase 6: PDF + Webhook Chain | Complete |
+| WHK-08 | Phase 6: PDF + Webhook Chain | Complete |
 | GAM-01 | Phase 7: Game Rendering | Pending |
 | GAM-02 | Phase 7: Game Rendering | Pending |
 | GAM-03 | Phase 7: Game Rendering | Pending |

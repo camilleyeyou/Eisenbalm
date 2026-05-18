@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06-pdf-generation-webhook-chain-05-PLAN.md (Publisher package promotion + WeasyPrint PDF renderer; 7 tests green)
-last_updated: "2026-05-18T20:18:00.820Z"
+stopped_at: Completed 06-pdf-generation-webhook-chain-07-PLAN.md (webhook + manual_publish wired to _run_publisher; 4 publisher tests pass, 7 env-gated tests skip cleanly)
+last_updated: "2026-05-18T20:38:20.066Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 61
-  completed_plans: 59
+  completed_plans: 60
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 06 (pdf-generation-webhook-chain) — EXECUTING
-Plan: 5 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -96,6 +96,7 @@ Plan: 5 of 8
 | Phase 06-pdf-generation-webhook-chain P02 | 15min | 3 tasks | 4 files |
 | Phase 06-pdf-generation-webhook-chain P03 | 5min | 3 tasks | 10 files |
 | Phase 06-pdf-generation-webhook-chain P5 | 24min | 3 tasks | 7 files |
+| Phase 06 P07 | 12min | 4 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -210,6 +211,11 @@ Recent decisions affecting current work:
 - [Phase 06-pdf-generation-webhook-chain]: Plan 06-03: Font source fallback used (Option B) — Google Fonts /download endpoint returned HTML for our UA, resolved TTF URLs via Google Fonts CSS API and downloaded from fonts.gstatic.com directly; all 4 TTFs verified as valid TrueType binaries
 - [Phase 06-pdf-generation-webhook-chain]: Plan 06-03: setup-webhook-idempotency uses psycopg autocommit + per-statement DDL execution; Supabase session pooler can reject multi-statement DDL wrapped in implicit transactions. Constraint name webhook_idempotency_key_source matches research Pattern 2 verbatim — atomic dedup against Sanity retries.
 - [Phase 06-pdf-generation-webhook-chain]: Plan 06-05: Publisher package promotion + WeasyPrint PDF renderer. publisher.py replaced by publisher/ package (preserves Phase 4 @agent_node body verbatim in __init__.py); pdf.py renders 18.6 KB themed A4 PDF from sample fixtures using base64-inlined Playfair Display + Source Serif Pro TTFs via FontConfiguration; no Google Fonts HTTP loads. PDF font-embedding test deviation: replaced naive bytes-search with FlateDecode-stream decompression + UTF-16-BE search (WeasyPrint 68.1 compresses every object stream including font subsets).
+- [Phase 06]: [Phase 06-07]: agents/publisher/__init__.py exports BOTH the Phase 4 @agent_node publisher (pipeline-end Sanity-write contract) AND the new _run_publisher (webhook-triggered PDF + Vercel chain) — distinct identities, one shared module. Two-name convention prevents parallel implementations of the same Publisher (research Pitfall 7).
+- [Phase 06]: [Phase 06-07]: SignatureExpiredError maps to 410 Gone (not 401) so ops alerting can distinguish clock-skew from tampering; SignatureFormatError + SignatureMismatchError both map to 401.
+- [Phase 06]: [Phase 06-07]: Idempotency-check DB blip logs + proceeds rather than 5xx — Sanity webhook retries aggressively; losing one webhook to a transient DB error is worse than processing a duplicate (Convex updateStatus is idempotent). Missing idempotency-key header also proceeds (Pitfall 6).
+- [Phase 06]: [Phase 06-07]: When run_id is None (manually-authored draft with no pipeline run), _run_publisher still renders + uploads PDF and fires Vercel, but skips Convex writes — closes 06-RESEARCH Open Question 5.
+- [Phase 06]: [Phase 06-07]: Monkeypatch pattern: patch eisenbalm_pipeline.agents.publisher.{asyncio,groq_query,upload_pdf_to_issue,...} at the publisher module's import site (NOT at the canonical home in lib/sanity_client.py etc.) because the publisher uses  at module load — late-binding the canonical module is invisible at the consumer's bound name.
 
 ### Pending Todos
 
@@ -265,6 +271,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-18T20:18:00.814Z
-Stopped at: Completed 06-pdf-generation-webhook-chain-05-PLAN.md (Publisher package promotion + WeasyPrint PDF renderer; 7 tests green)
+Last session: 2026-05-18T20:37:01.246Z
+Stopped at: Completed 06-pdf-generation-webhook-chain-07-PLAN.md (webhook + manual_publish wired to _run_publisher; 4 publisher tests pass, 7 env-gated tests skip cleanly)
 Resume file: None
