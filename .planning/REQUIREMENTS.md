@@ -79,7 +79,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### PDF Generation + Publisher
 
-- [ ] **PDF-01**: Publisher renders Problem Statement to PDF via WeasyPrint using `weeklyIssue.problemStatement.pdfContent` and the issue's theme colors/fonts
+- [x] **PDF-01**: Publisher renders Problem Statement to PDF via WeasyPrint using `weeklyIssue.problemStatement.pdfContent` and the issue's theme colors/fonts
 - [ ] **PDF-02**: PDF templates use base64-inlined `@font-face` declarations (NOT HTTP-loaded Google Fonts); fonts come from the Phase 5 whitelist
 - [ ] **PDF-03**: Generated PDF uploads to Sanity as an asset and is set on `weeklyIssue.problemPdf`
 - [ ] **PDF-04**: PDF download button on `/issue/[slug]` links to `weeklyIssue.problemPdf.asset->url`
@@ -243,7 +243,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | AGT-16 | Phase 5: Agent Quality | Complete |
 | AGT-17 | Phase 5: Agent Quality | Complete |
 | AGT-18 | Phase 5: Agent Quality | Complete |
-| PDF-01 | Phase 6: PDF + Webhook Chain | Pending |
+| PDF-01 | Phase 6: PDF + Webhook Chain | Complete |
 | PDF-02 | Phase 6: PDF + Webhook Chain | Pending |
 | PDF-03 | Phase 6: PDF + Webhook Chain | Pending |
 | PDF-04 | Phase 6: PDF + Webhook Chain | Pending |

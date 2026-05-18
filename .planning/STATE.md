@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06-06-api-contracts-doc-update-PLAN.md
-last_updated: "2026-05-18T19:50:28.005Z"
+stopped_at: Completed 06-02-schema-and-writethrough-PLAN.md (Sanity schema + Python write-through + regenerated TypeGen)
+last_updated: "2026-05-18T19:54:43.333Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 61
-  completed_plans: 54
+  completed_plans: 56
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 06 (pdf-generation-webhook-chain) — EXECUTING
-Plan: 2 of 8
+Plan: 4 of 8
 
 ## Performance Metrics
 
@@ -93,6 +93,7 @@ Plan: 2 of 8
 | Phase 05-agent-quality P14 | 17min | 4 tasks | 13 files |
 | Phase 05-agent-quality P15 | ~45min | 3 tasks | 10 files |
 | Phase 06 P06 | 1min | 1 tasks | 1 files |
+| Phase 06-pdf-generation-webhook-chain P02 | 15min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -202,6 +203,8 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: Plan 05-15: D-16 final font whitelist is 17 unique fonts (11 display + 11 body) — Andrew rejected Josefin Serif, Zilla Slab, Roboto Slab, Noto Sans on aesthetic grounds; fallback constants (Playfair Display, Source Serif Pro) preserved verbatim in both whitelists for safe regenerate-once-then-fallback semantics.
 - [Phase 05-agent-quality]: Plan 05-15 smoke caught 7 production defects (Anthropic provider routing, 4 separate Pydantic constraint families incompatible with OpenRouter→Anthropic schema translation, Scout AGT-04 dedup filtering drafts, Tavily return-shape drift) — all fixed inline with fix(05-15) prefix while smoke continued; pre-existing defects from plans 05-05..05-13 that mocks could not surface.
 - [Phase 06]: Plan 06-06: API_CONTRACTS §5.3 amended — wrong sha256=hex signature algorithm replaced with verified t={ms},v1={base64url} from @sanity/webhook v5+; cross-reference to lib/sanity_webhook.py (Plan 06-04) added. Strikethrough rendered as blockquote+bold-prefix callout (markdown strikethrough on multiline code blocks renders broken in GitHub UI). No collateral edits to §5.1/§5.2/§5.4.
+- [Phase 06-pdf-generation-webhook-chain]: Plan 06-02: pdfContent contract enforced at THREE layers — Phase 5 ProblemWriter Pydantic (field_validator), Python write boundary (_build_pdf_content normalizes to 3 keyDataPoints with _key), Sanity schema (Rule.length(3)). Andrew can edit stats/sources in Studio without re-running the pipeline (Open Question 5 closed)
+- [Phase 06-pdf-generation-webhook-chain]: Plan 06-02: editorialSection factory replaced with inline defineField only for problemStatement; originStory and founderBio still use the factory — minimal surface change, factory pattern preserved for future editorial sections that don't need pdfContent
 
 ### Pending Todos
 
@@ -257,6 +260,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-18T19:50:27.999Z
-Stopped at: Completed 06-06-api-contracts-doc-update-PLAN.md
+Last session: 2026-05-18T19:54:29.118Z
+Stopped at: Completed 06-02-schema-and-writethrough-PLAN.md (Sanity schema + Python write-through + regenerated TypeGen)
 Resume file: None
