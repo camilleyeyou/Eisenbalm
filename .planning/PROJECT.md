@@ -182,4 +182,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-12 after Phase 2 (Web Shell + Theme Engine) completion*
+*Last updated: 2026-05-18 after Phase 5 (Agent Quality) completion — all 14 stub agents replaced by real LLM-driven implementations; first real-mode end-to-end run succeeded on issue 999 (155s, awaiting-review, Andrew-approved Sanity content, 0 QA violations); 7 production defects caught and fixed during Plan 05-15 smoke test. One carry-forward to Phase 6: langchain-openai `with_structured_output` does not expose usage_metadata, so PIPELINE_COST_CAP_USD enforcement is non-functional until the metadata capture is fixed.*
