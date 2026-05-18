@@ -18,6 +18,8 @@ dependencies = [
   "tavily-python==0.7.24",       # Phase 5 D-09 — REST client (fallback if langchain-tavily import fails)
   "langchain-tavily==0.2.18",    # Phase 5 D-09 — preferred LangChain Tavily integration
   "selectolax==0.4.9",           # Phase 5 D-11 — fast HTML-to-text for agents/verify.py
+  "weasyprint==68.1",            # Phase 6 PDF-01 — HTML→PDF renderer
+  "jinja2==3.1.6",               # Phase 6 PDF-01 — HTML template engine
 ]
 
 [dependency-groups]
