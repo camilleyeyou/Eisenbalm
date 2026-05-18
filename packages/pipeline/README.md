@@ -385,3 +385,102 @@ Resolved model IDs (OpenRouter's snapshot pin, e.g. `anthropic/claude-opus-4-7-2
 ### Approved font whitelist (D-16)
 
 DesignAgent picks fonts only from `src/eisenbalm_pipeline/agents/design/font_whitelist.py`. The whitelist is human-curated by Andrew (see Plan 05-15 Task 2 for the approval marker convention); the agent has no override path. Out-of-whitelist outputs trigger one regenerate, then fall back to `FALLBACK_FONT_DISPLAY` / `FALLBACK_FONT_BODY` constants in the same file.
+
+---
+
+## Phase 6 — PDF Generation + Webhook Chain
+
+Phase 6 closes the loop between Andrew publishing in Sanity Studio and a live deployed issue on Vercel:
+
+1. Andrew flips `weeklyIssue.status` from `draft` → `published` in Studio.
+2. Sanity fires a webhook to Railway: `POST <RAILWAY_URL>/webhook/sanity-publish`.
+3. Pipeline verifies HMAC signature + age + idempotency-key, returns 200 immediately.
+4. In the background: GROQ-fetch issue, render Problem Statement PDF with WeasyPrint, upload to Sanity, sleep 30s for CDN propagation, fire Vercel deploy hook.
+5. Convex `pipelineRuns.status` → `complete`; `publisher-deploy` event written.
+6. Vercel rebuilds the site; reader visiting `/issue/[slug]` sees the new PDF download button.
+
+### Required env vars (Phase 6 additions)
+
+```bash
+# Sanity webhook signing secret — see Sanity Studio → API → Webhooks
+SANITY_WEBHOOK_SECRET=<32-byte-random>
+
+# Vercel deploy hook URL — see Vercel project → Settings → Git → Deploy Hooks
+# CRITICAL: per-environment URLs — staging Railway must NEVER point at the
+# production hook (Pitfall 10 in 06-RESEARCH).
+VERCEL_DEPLOY_HOOK_URL=https://api.vercel.com/v1/integrations/deploy/<hook-id>
+```
+
+The Phase 4/5 env vars are still required (`SUPABASE_POSTGRES_URL`, `NEXT_PUBLIC_CONVEX_URL`, `CONVEX_DEPLOY_KEY`, `NEXT_PUBLIC_SANITY_PROJECT_ID`, `SANITY_API_TOKEN`, `OPENROUTER_API_KEY`, `PIPELINE_TRIGGER_SECRET`).
+
+### One-time setup
+
+`railway.toml`'s `preDeployCommand` runs both DDL migrations idempotently on every deploy:
+
+```toml
+preDeployCommand = [
+  "python -m eisenbalm_pipeline.cli setup-checkpointer",
+  "python -m eisenbalm_pipeline.cli setup-webhook-idempotency",
+]
+```
+
+Local setup mirrors that:
+
+```bash
+cd packages/pipeline
+uv run python -m eisenbalm_pipeline.cli setup-checkpointer
+uv run python -m eisenbalm_pipeline.cli setup-webhook-idempotency
+```
+
+### Configuring the Sanity webhook (Andrew, one-time per dataset)
+
+1. In Sanity Studio: **API → Webhooks → Add webhook**.
+2. **Name:** `Eisenbalm Publisher` (production) or `Eisenbalm Publisher (dev)` (dev dataset).
+3. **URL:** `https://<your-railway-domain>/webhook/sanity-publish`.
+4. **Trigger on:** `Create`, `Update` (NOT Delete).
+5. **Filter:** `_type == "weeklyIssue" && status == "published"`.
+6. **Projection:** `{_id, _type, status, issueNumber, "runId": pipelineMetadata.runId}`.
+7. **HTTP method:** `POST`.
+8. **HTTP headers:** none required (Sanity automatically sends `sanity-webhook-signature` + `idempotency-key`).
+9. **Secret:** generate a 32-byte random string; paste here AND set as `SANITY_WEBHOOK_SECRET` in Railway env.
+10. **Save**, then click **"Send test"** — confirm Railway logs show "Webhook scheduled Publisher".
+
+### Manual fallback (WHK-08)
+
+If the Sanity webhook fails to deliver (network blip, secret rotation, etc.), Andrew can trigger the same Publisher chain by hand via the manual fallback endpoint:
+
+```bash
+curl -X POST \
+  -H "X-Pipeline-Trigger-Secret: $PIPELINE_TRIGGER_SECRET" \
+  "https://<your-railway-domain>/run/<runId>/publish"
+```
+
+`<runId>` is the `pipelineMetadata.runId` field on the Sanity draft. The pipeline looks up the issue via GROQ filter on `pipelineMetadata.runId == $runId` and runs the same Publisher coroutine the webhook does.
+
+### Expected timings
+
+| Step | Duration |
+|------|----------|
+| Webhook signature verify + idempotency check | < 50ms |
+| GROQ fetch issue from Sanity | 100-500ms |
+| WeasyPrint render PDF | 1-3 seconds |
+| Sanity asset upload + patch | 500ms-2s |
+| CDN propagation sleep | 30 seconds (fixed, WHK-05) |
+| Vercel deploy hook POST | 200-500ms |
+| Convex updateStatus + publisher-deploy | 100-300ms |
+| **Total publisher chain wall-clock** | **~35-40 seconds** |
+| Vercel build + deploy after hook fires | 1-3 minutes (visible in Vercel dashboard) |
+
+### Troubleshooting
+
+- **401 on every webhook**: SANITY_WEBHOOK_SECRET mismatch between Sanity and Railway. Regenerate in Sanity dashboard; update Railway env.
+- **410 on every webhook**: clock skew. Run `date` on Railway and your dev box; if > 5 minutes off, NTP is broken.
+- **PDF renders without theme fonts (DejaVu fallback)**: `FontConfiguration` wasn't passed to `write_pdf` (Pitfall 2) OR the requested font family is not vendored. Check `packages/pipeline/fonts/` and `agents/design/font_whitelist.py`.
+- **`problemPdf` field is empty after publish**: check Railway logs for "Publisher: PDF uploaded" — if missing, the chain crashed BEFORE upload. Look for the previous log line to identify the crash point.
+- **Vercel deploys but old content shows**: CDN propagation took longer than 30s. Manual refresh after another 30s, OR increase `CDN_PROPAGATION_DELAY_SEC` in `agents/publisher/__init__.py`.
+- **Manual fallback returns 404**: no Sanity issue exists with `pipelineMetadata.runId == <runId>`. Either the runId is wrong, or the pipeline never wrote the draft (Phase 4 contract). Inspect Sanity Studio directly.
+- **Vercel never receives a deploy after a successful upload**: confirm `VERCEL_DEPLOY_HOOK_URL` is set in Railway env AND points at the *production* hook for the current environment (Pitfall 10) — a stale staging hook will succeed-silently with the wrong project.
+
+### Phase 6 dependencies on Phase 5 carryovers
+
+Phase 5 closed with a known TODO: `langchain-openai` `with_structured_output` does not surface `usage_metadata`, so per-run cost readings are $0 even on real runs. This is NOT blocking for Phase 6 (cost tracking is an ops concern, not a publishing concern), but the carryover stays on the Phase 6 sprint board — see STATE.md Blockers section "[Phase 6 carryover] Fix langchain-openai cost-metadata capture."
