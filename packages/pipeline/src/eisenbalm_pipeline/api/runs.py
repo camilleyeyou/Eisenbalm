@@ -250,23 +250,63 @@ async def resume_run(
     return {"runId": run_id, "resumed": True}
 
 
-# ── POST /run/{run_id}/publish — manual fallback stub (Phase 6 hardens) ──
+# ── POST /run/{run_id}/publish — WHK-08 manual fallback (real) ───────────
 
 @router.post("/run/{run_id}/publish")
 async def manual_publish(request: Request, run_id: str) -> dict:
-    """Manual fallback re-trigger (CONTEXT D-05 + WHK-08).
+    """Manual fallback re-trigger (WHK-08).
 
-    Phase 4 stub: returns 200 with a marker payload. Phase 6 wires this to
-    invoke the Publisher node directly (re-runs PDF generation + Vercel deploy
-    hook fire even when the Sanity webhook fails to fire).
+    The Sanity webhook handler is the primary trigger for the Publisher.
+    This endpoint is the manual re-fire path used when:
+      - Sanity webhook failed to deliver (network blip)
+      - Webhook signature secret rotated and Sanity has stale cache
+      - Andrew wants to re-render a PDF after editing pdfContent in Studio
+
+    Looks up the Sanity issue document by `pipelineMetadata.runId == $runId`
+    (the Sanity-side authoritative store), then invokes the SAME _run_publisher
+    coroutine the webhook calls — there is exactly one Publisher implementation
+    (research Pitfall 7).
     """
     _require_trigger_secret(request)
-    log.info("Manual publish requested for runId=%s — Phase 6 stub", run_id)
+    log.info("Manual publish requested for runId=%s", run_id)
+
+    # Import here to avoid circular import at module load (agents/publisher
+    # imports sanity_client; api/runs.py imports convex_client; lib modules
+    # may transitively touch the FastAPI router).
+    from eisenbalm_pipeline.agents.publisher import (
+        QUERY_ISSUE_BY_RUN_ID,
+        _run_publisher,
+    )
+    from eisenbalm_pipeline.lib.sanity_client import groq_query
+
+    # GROQ filter `*[...][0]` returns one object (or null) — groq_query's
+    # contract is "list of results", so it returns [{}] or [].
+    result = await groq_query(QUERY_ISSUE_BY_RUN_ID, params={"runId": run_id})
+    issue = None
+    if isinstance(result, list) and result:
+        issue = result[0]
+    elif isinstance(result, dict):
+        issue = result
+    if not issue or not issue.get("_id"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No Sanity weeklyIssue found for runId={run_id}",
+        )
+
+    task = asyncio.create_task(
+        _run_publisher(
+            request.app,
+            issue_id=issue["_id"],
+            issue_number=issue["issueNumber"],
+            run_id=run_id,
+        )
+    )
+    request.app.state.background_tasks.add(task)
+    task.add_done_callback(request.app.state.background_tasks.discard)
+
     return {
         "runId": run_id,
-        "phase4Stub": True,
-        "note": (
-            "POST /run/{runId}/publish is a Phase 4 endpoint stub. "
-            "Phase 6 wires the real PDF generation + Vercel deploy hook."
-        ),
+        "issueId": issue["_id"],
+        "issueNumber": issue["issueNumber"],
+        "scheduled": True,
     }
