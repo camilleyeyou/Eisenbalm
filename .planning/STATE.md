@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06-02-schema-and-writethrough-PLAN.md (Sanity schema + Python write-through + regenerated TypeGen)
-last_updated: "2026-05-18T19:54:43.333Z"
+stopped_at: Completed 06-pdf-generation-webhook-chain-05-PLAN.md (Publisher package promotion + WeasyPrint PDF renderer; 7 tests green)
+last_updated: "2026-05-18T20:18:00.820Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 61
-  completed_plans: 56
+  completed_plans: 59
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 06 (pdf-generation-webhook-chain) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 
 ## Performance Metrics
 
@@ -94,6 +94,8 @@ Plan: 4 of 8
 | Phase 05-agent-quality P15 | ~45min | 3 tasks | 10 files |
 | Phase 06 P06 | 1min | 1 tasks | 1 files |
 | Phase 06-pdf-generation-webhook-chain P02 | 15min | 3 tasks | 4 files |
+| Phase 06-pdf-generation-webhook-chain P03 | 5min | 3 tasks | 10 files |
+| Phase 06-pdf-generation-webhook-chain P5 | 24min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -205,6 +207,9 @@ Recent decisions affecting current work:
 - [Phase 06]: Plan 06-06: API_CONTRACTS §5.3 amended — wrong sha256=hex signature algorithm replaced with verified t={ms},v1={base64url} from @sanity/webhook v5+; cross-reference to lib/sanity_webhook.py (Plan 06-04) added. Strikethrough rendered as blockquote+bold-prefix callout (markdown strikethrough on multiline code blocks renders broken in GitHub UI). No collateral edits to §5.1/§5.2/§5.4.
 - [Phase 06-pdf-generation-webhook-chain]: Plan 06-02: pdfContent contract enforced at THREE layers — Phase 5 ProblemWriter Pydantic (field_validator), Python write boundary (_build_pdf_content normalizes to 3 keyDataPoints with _key), Sanity schema (Rule.length(3)). Andrew can edit stats/sources in Studio without re-running the pipeline (Open Question 5 closed)
 - [Phase 06-pdf-generation-webhook-chain]: Plan 06-02: editorialSection factory replaced with inline defineField only for problemStatement; originStory and founderBio still use the factory — minimal surface change, factory pattern preserved for future editorial sections that don't need pdfContent
+- [Phase 06-pdf-generation-webhook-chain]: Plan 06-03: Font source fallback used (Option B) — Google Fonts /download endpoint returned HTML for our UA, resolved TTF URLs via Google Fonts CSS API and downloaded from fonts.gstatic.com directly; all 4 TTFs verified as valid TrueType binaries
+- [Phase 06-pdf-generation-webhook-chain]: Plan 06-03: setup-webhook-idempotency uses psycopg autocommit + per-statement DDL execution; Supabase session pooler can reject multi-statement DDL wrapped in implicit transactions. Constraint name webhook_idempotency_key_source matches research Pattern 2 verbatim — atomic dedup against Sanity retries.
+- [Phase 06-pdf-generation-webhook-chain]: Plan 06-05: Publisher package promotion + WeasyPrint PDF renderer. publisher.py replaced by publisher/ package (preserves Phase 4 @agent_node body verbatim in __init__.py); pdf.py renders 18.6 KB themed A4 PDF from sample fixtures using base64-inlined Playfair Display + Source Serif Pro TTFs via FontConfiguration; no Google Fonts HTTP loads. PDF font-embedding test deviation: replaced naive bytes-search with FlateDecode-stream decompression + UTF-16-BE search (WeasyPrint 68.1 compresses every object stream including font subsets).
 
 ### Pending Todos
 
@@ -260,6 +265,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-18T19:54:29.118Z
-Stopped at: Completed 06-02-schema-and-writethrough-PLAN.md (Sanity schema + Python write-through + regenerated TypeGen)
+Last session: 2026-05-18T20:18:00.814Z
+Stopped at: Completed 06-pdf-generation-webhook-chain-05-PLAN.md (Publisher package promotion + WeasyPrint PDF renderer; 7 tests green)
 Resume file: None

@@ -192,7 +192,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 3. Convex Deployment | 7/8 | In Progress | - |
 | 4. Pipeline Skeleton | 0/12 | Not started | - |
 | 5. Agent Quality | 15/15 | Complete | 2026-05-18 |
-| 6. PDF + Webhook Chain | 0/8 | In Progress | - |
+| 6. PDF + Webhook Chain | 6/8 | In Progress | - |
 | 7. Game Rendering | 0/TBD | Not started | - |
 | 8. Stripe / Commerce | 0/TBD | Not started | - |
 | 9. Issue Page Completion | 0/TBD | Not started | - |
