@@ -139,6 +139,15 @@ export type WeeklyIssue = {
       _type: "block";
       _key: string;
     }>;
+    pdfContent?: {
+      problemStatement?: string;
+      keyDataPoints?: Array<{
+        stat?: string;
+        source?: string;
+        _key: string;
+      }>;
+      interventionMechanism?: string;
+    };
   };
   problemPdf?: {
     asset?: SanityFileAssetReference;
