@@ -71,9 +71,11 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 - [ ] QA agent reviews voice/factual accuracy/tone and writes corrections to `qaCorrections` with severity + acceptance status
 - [ ] DesignAgent emits valid hex colors and valid Google Fonts names for the per-issue theme
 
-**PDF generation**
-- [ ] Publisher renders the Problem Statement to PDF via WeasyPrint (or Playwright) using `problemStatement.pdfContent`, themed to the issue's colors/fonts
-- [ ] PDF uploads back to Sanity as `weeklyIssue.problemPdf` and is downloadable from the issue page
+**PDF generation** (validated in Phase 6 — pending Andrew live-infra smoke)
+- ✓ Publisher renders the Problem Statement to PDF via WeasyPrint using `problemStatement.pdfContent`, themed to the issue's colors/fonts (base64-inlined Playfair Display + Source Serif Pro, no Google Fonts HTTP) — `agents/publisher/pdf.py`
+- ✓ PDF uploads back to Sanity as `weeklyIssue.problemPdf` via `upload_pdf_to_issue`; `/issue/[slug]` renders "Download the problem framework" link when `problemPdfUrl` is non-null — verified by unit tests + sample 18.6 KB PDF render
+- ✓ Sanity webhook on publish triggers Publisher with corrected `t={ms},v1={base64url}` HMAC verification, 5-minute symmetric age check, Supabase idempotency-key dedup, 30s sleep before Vercel deploy hook, Convex `pipelineRuns.status='complete'` write — 12 requirements (PDF-01..04, WHK-01..08) marked Complete in REQUIREMENTS.md
+- ⚠ End-to-end Andrew publish on live Railway + Sanity + Vercel + Supabase — 4 items persisted to `06-HUMAN-UAT.md`; smoke script documented in `packages/pipeline/README.md` § Phase 6
 
 **Game rendering**
 - [ ] GameWriter outputs self-contained HTML/JS (no external CDN, no dependencies) that renders inside `<iframe srcdoc={embedCode} sandbox="allow-scripts">`
@@ -182,4 +184,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-18 after Phase 5 (Agent Quality) completion — all 14 stub agents replaced by real LLM-driven implementations; first real-mode end-to-end run succeeded on issue 999 (155s, awaiting-review, Andrew-approved Sanity content, 0 QA violations); 7 production defects caught and fixed during Plan 05-15 smoke test. One carry-forward to Phase 6: langchain-openai `with_structured_output` does not expose usage_metadata, so PIPELINE_COST_CAP_USD enforcement is non-functional until the metadata capture is fixed.*
+*Last updated: 2026-05-18 after Phase 6 (PDF Generation + Webhook Chain) completion — Publisher now renders themed Problem Statement PDFs via WeasyPrint with base64-bundled fonts (Playfair Display + Source Serif Pro), uploads to Sanity as `weeklyIssue.problemPdf`, and the full Sanity → Railway → Vercel webhook chain is wired with corrected `t={ms},v1={base64url}` HMAC (replacing the incorrect `sha256=hex` in API_CONTRACTS §5.3), 5-minute symmetric age check, Supabase atomic `INSERT ON CONFLICT` idempotency-key dedup, 30s CDN sleep before Vercel deploy hook, and manual `POST /run/{runId}/publish` fallback. 12 requirements (PDF-01..04, WHK-01..08) marked Complete. 156 tests pass, 28 skipped (env-gated). Four end-to-end behaviors (live Andrew publish, tampered HMAC against live Railway, real 30s gap, live Supabase dedup) persisted to `06-HUMAN-UAT.md` for Andrew's smoke against deployed infrastructure. Phase 5 carryover (`langchain-openai` cost-metadata capture) remains deferred.*
