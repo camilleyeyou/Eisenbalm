@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-agent-quality-14-PLAN.md (real-mode integration test + cost-cap + tool-limit tests; D-22 stub-mode default flipped; Phase 4-12 parallel-writer fix re-applied; AGT-17 model_versions Annotated reducer)
-last_updated: "2026-05-17T19:37:18.093Z"
+stopped_at: "Completed 05-agent-quality-15-PLAN.md (Andrew smoke + docs; Phase 5 closes pending verification; carry-forward: langchain-openai cost-metadata gap for Phase 6)"
+last_updated: "2026-05-18T15:19:46.632Z"
 progress:
   total_phases: 9
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 53
-  completed_plans: 52
+  completed_plans: 53
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 05 (agent-quality) — EXECUTING
-Plan: 14 of 15
+Plan: 15 of 15
 
 ## Performance Metrics
 
@@ -91,6 +91,7 @@ Plan: 14 of 15
 | Phase 05-agent-quality P10 | 12min | 5 tasks | 8 files |
 | Phase 05-agent-quality P13 | 10min | 5 tasks | 8 files |
 | Phase 05-agent-quality P14 | 17min | 4 tasks | 13 files |
+| Phase 05-agent-quality P15 | ~45min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,9 @@ Recent decisions affecting current work:
 - [Phase 05-agent-quality]: D-22 default flip: canonical is_stub_mode() consolidated into lib/openrouter_client.py with default 'false'; stubs/fake_openrouter.is_stub_mode re-exports via lazy import for BC
 - [Phase 05-agent-quality]: AGT-18 wrapper observability: @agent_node has a typed except branch for AgentToolCallLimitExceeded — emits deliberationEvents:insert with eventType='agent-tool-limit-exceeded' BEFORE status='failed' so polling consumers don't close the run before reading the typed event
 - [Phase 05-agent-quality]: Phase 5 stub-mode is for unit-test isolation, not e2e: per-agent stub paths covered by each agent's own test file (128 passed); full-graph stub-mode test was scope-reshaped to acomplete-boundary regression because Phase 5 agent bodies consume structured LLM output and model_construct empty defaults don't propagate
+- [Phase 05-agent-quality]: Plan 05-15: Cost baseline intentionally recorded as zero with carry-forward to Phase 6 rather than blocking phase close on a langchain-openai with_structured_output metadata fix — Andrew content review is the binding gate this phase, cost containment is Phase 6+ ops concern.
+- [Phase 05-agent-quality]: Plan 05-15: D-16 final font whitelist is 17 unique fonts (11 display + 11 body) — Andrew rejected Josefin Serif, Zilla Slab, Roboto Slab, Noto Sans on aesthetic grounds; fallback constants (Playfair Display, Source Serif Pro) preserved verbatim in both whitelists for safe regenerate-once-then-fallback semantics.
+- [Phase 05-agent-quality]: Plan 05-15 smoke caught 7 production defects (Anthropic provider routing, 4 separate Pydantic constraint families incompatible with OpenRouter→Anthropic schema translation, Scout AGT-04 dedup filtering drafts, Tavily return-shape drift) — all fixed inline with fix(05-15) prefix while smoke continued; pre-existing defects from plans 05-05..05-13 that mocks could not surface.
 
 ### Pending Todos
 
@@ -240,6 +244,7 @@ None yet.
 - Real spend: non-zero (OpenRouter Anthropic + Tavily searches happened) but not currently recoverable from pipeline data; check OpenRouter dashboard for actual USD
 
 **Live-run fixes landed during Plan 05-15 smoke** (7 commits, all on master):
+
 - `3e79392` Provider routing pin (Anthropic-only for anthropic/* models)
 - `5498ce8` Remove min_length/max_length from 5 Pydantic models
 - `ee5126f` Remove ge/le from integer Field constraints (advocate.score, bonus.shotNumber)
@@ -250,6 +255,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T19:37:03.014Z
-Stopped at: Completed 05-agent-quality-14-PLAN.md (real-mode integration test + cost-cap + tool-limit tests; D-22 stub-mode default flipped; Phase 4-12 parallel-writer fix re-applied; AGT-17 model_versions Annotated reducer)
+Last session: 2026-05-18T15:19:22.205Z
+Stopped at: Completed 05-agent-quality-15-PLAN.md (Andrew smoke + docs; Phase 5 closes pending verification; carry-forward: langchain-openai cost-metadata gap for Phase 6)
 Resume file: None
