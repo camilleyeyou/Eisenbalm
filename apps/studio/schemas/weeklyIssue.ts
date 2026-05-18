@@ -120,11 +120,66 @@ export default defineType({
       'Origin Story',
       'The weird, specific moment someone said "I guess I\'m doing this now." Not the polished About page version.'
     ),
-    editorialSection(
-      'problemStatement',
-      'The Problem They\'re Solving',
-      'Stated plainly and precisely. No sentiment. Just: here is the broken thing, here is how small the fix actually is.'
-    ),
+    defineField({
+      name: 'problemStatement',
+      title: "The Problem They're Solving",
+      type: 'object',
+      description: 'Stated plainly and precisely. No sentiment. Just: here is the broken thing, here is how small the fix actually is.',
+      fields: [
+        defineField({
+          name: 'headline',
+          title: 'Headline',
+          type: 'string',
+          validation: Rule => Rule.required(),
+        }),
+        defineField({
+          name: 'body',
+          title: 'Body',
+          type: 'array',
+          of: [{ type: 'block' }],
+          validation: Rule => Rule.required(),
+        }),
+        // ─── PDF source content (Phase 6 — WeasyPrint renderer reads from here) ──
+        defineField({
+          name: 'pdfContent',
+          title: 'PDF Content (source for problemPdf)',
+          type: 'object',
+          description:
+            'Structured source for the Problem Statement PDF. The WeasyPrint renderer reads this exact shape; field names match the Phase 5 ProblemWriter Pydantic contract. Andrew may edit stats/sources here without re-running the pipeline.',
+          fields: [
+            defineField({
+              name: 'problemStatement',
+              title: 'Problem Statement (PDF summary, <=150 words)',
+              type: 'text',
+              rows: 6,
+            }),
+            defineField({
+              name: 'keyDataPoints',
+              title: 'Key Data Points (exactly 3)',
+              type: 'array',
+              of: [
+                {
+                  type: 'object',
+                  fields: [
+                    defineField({ name: 'stat', title: 'Statistic', type: 'string' }),
+                    defineField({ name: 'source', title: 'Source', type: 'string' }),
+                  ],
+                  preview: { select: { title: 'stat', subtitle: 'source' } },
+                },
+              ],
+              validation: Rule =>
+                Rule.length(3).error('keyDataPoints must contain exactly 3 entries (Phase 6 PDF layout depends on it)'),
+            }),
+            defineField({
+              name: 'interventionMechanism',
+              title: 'Intervention Mechanism (<=100 words)',
+              type: 'text',
+              rows: 4,
+            }),
+          ],
+        }),
+      ],
+    }),
     defineField({
       name: 'problemPdf',
       title: 'Problem Statement PDF',
