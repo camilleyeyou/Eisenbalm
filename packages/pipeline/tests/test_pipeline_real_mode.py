@@ -561,3 +561,96 @@ async def test_real_mode_default_routes_through_chat_model(monkeypatch) -> None:
         "Plan 05-14 D-22 flip: EISENBALM_STUB_MODE default MUST be 'false' "
         "so real mode is the new default."
     )
+
+
+# ── Phase 6: real-mode Publisher integration test ────────────────────────
+
+
+@pytest.mark.skipif(
+    os.environ.get("PHASE6_REAL_MODE", "").lower() != "true",
+    reason="Phase 6 real-mode test — set PHASE6_REAL_MODE=true to enable",
+)
+@pytest.mark.asyncio
+async def test_phase_6_publisher_against_phase_5_draft():
+    """Real-mode end-to-end Publisher test (opt-in).
+
+    Runs the Publisher coroutine against the existing Phase 5 draft on Sanity
+    (runId 96ab834e96214671859322044a4b4683, issue 999) WITHOUT firing the
+    Sanity webhook. Confirms:
+      - PDF generation succeeds against real Sanity data
+      - upload_pdf_to_issue actually writes to Sanity
+      - weeklyIssue.problemPdf.asset is populated after the run
+
+    The Convex update + Vercel deploy hook are skipped (mocked) so the test
+    does NOT trigger an actual production deploy.
+
+    Run with:
+        PHASE6_REAL_MODE=true \\
+        SUPABASE_POSTGRES_URL=... \\
+        NEXT_PUBLIC_SANITY_PROJECT_ID=... \\
+        SANITY_API_TOKEN=... \\
+        uv run pytest tests/test_pipeline_real_mode.py::test_phase_6_publisher_against_phase_5_draft -xvs
+    """
+    from unittest.mock import AsyncMock, MagicMock
+
+    import httpx
+
+    from eisenbalm_pipeline.agents.publisher import _run_publisher
+    from eisenbalm_pipeline.lib.sanity_client import groq_query, set_client
+
+    # Phase 5 baseline run — captured in STATE.md "Phase 5 First-Real-Run".
+    RUN_ID = "96ab834e96214671859322044a4b4683"
+    ISSUE_NUMBER = 999
+    ISSUE_ID = f"issue-{ISSUE_NUMBER}"
+
+    project = os.environ["NEXT_PUBLIC_SANITY_PROJECT_ID"]
+    sanity_http = httpx.AsyncClient(
+        base_url=f"https://{project}.api.sanity.io", timeout=30.0
+    )
+    set_client(sanity_http)
+
+    # Confirm the draft exists in Sanity before running Publisher.
+    pre_check = await groq_query(
+        '*[_type == "weeklyIssue" && _id == $id][0]{_id, issueNumber, "hasPdfContent": defined(problemStatement.pdfContent)}',
+        params={"id": ISSUE_ID},
+    )
+    if not pre_check or (isinstance(pre_check, list) and not pre_check):
+        pytest.skip(f"Phase 5 baseline draft {ISSUE_ID} not on this Sanity dataset")
+
+    # Build a mock app with only the attributes _run_publisher reads.
+    app = MagicMock()
+    app.state = MagicMock()
+    app.state.pool = None
+    app.state.background_tasks = set()
+    app.state.convex_http = MagicMock(spec=httpx.AsyncClient)
+
+    try:
+        # Patch the slow + deploy-triggering pieces.
+        import eisenbalm_pipeline.agents.publisher as pub_mod
+        original_sleep = pub_mod.asyncio.sleep
+        original_vercel = pub_mod.trigger_vercel_deploy
+        original_convex = pub_mod.convex_mutation_safe
+        pub_mod.asyncio.sleep = AsyncMock(return_value=None)
+        pub_mod.trigger_vercel_deploy = AsyncMock(return_value={"job": {"id": "test", "state": "READY", "createdAt": 1}})
+        pub_mod.convex_mutation_safe = AsyncMock(return_value={"status": "success"})
+
+        try:
+            await _run_publisher(app, issue_id=ISSUE_ID, issue_number=ISSUE_NUMBER, run_id=RUN_ID)
+        finally:
+            pub_mod.asyncio.sleep = original_sleep
+            pub_mod.trigger_vercel_deploy = original_vercel
+            pub_mod.convex_mutation_safe = original_convex
+
+        # Verify the Sanity write actually happened: query the issue back and
+        # check problemPdf.asset is populated.
+        post_check = await groq_query(
+            '*[_type == "weeklyIssue" && _id == $id][0]{"hasAsset": defined(problemPdf.asset)}',
+            params={"id": ISSUE_ID},
+        )
+        post = post_check[0] if isinstance(post_check, list) and post_check else post_check
+        assert post and post.get("hasAsset") is True, (
+            f"weeklyIssue.problemPdf.asset is NOT populated after Publisher run; "
+            f"post-check result: {post_check}"
+        )
+    finally:
+        await sanity_http.aclose()
