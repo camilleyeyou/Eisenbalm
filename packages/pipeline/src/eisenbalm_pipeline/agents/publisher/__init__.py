@@ -82,3 +82,172 @@ async def publisher(state: DispatchState) -> DispatchState:
         **state,
         "sanity_issue_id": issue_id,
     }
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Phase 6: webhook-driven Publisher path (_run_publisher).
+#
+# Distinct from the @agent_node publisher above:
+#   - @agent_node publisher: runs at PIPELINE END (in the LangGraph), writes
+#     the draft to Sanity, flips status='awaiting-review'. This is the Phase 4
+#     contract, unchanged by Phase 6.
+#   - _run_publisher: runs when Andrew PUBLISHES the draft (via webhook OR
+#     manual /run/{runId}/publish). Reads the now-published doc back from
+#     Sanity, renders the PDF, uploads it, sleeps 30s, fires Vercel deploy,
+#     flips Convex pipelineRuns.status='complete'.
+#
+# A single _run_publisher implementation is the keystone of WHK-08 (manual
+# fallback) — both api/webhooks.py and api/runs.py invoke this same coroutine
+# (Pitfall 7).
+# ──────────────────────────────────────────────────────────────────────────
+
+import asyncio
+import logging
+
+from eisenbalm_pipeline.agents.publisher.pdf import render_problem_statement_pdf
+from eisenbalm_pipeline.lib.sanity_client import (
+    groq_query,
+    upload_pdf_to_issue,
+)
+from eisenbalm_pipeline.lib.vercel_client import trigger_vercel_deploy
+
+log = logging.getLogger(__name__)
+
+# GROQ projections — colocated with _run_publisher so the read shape lives
+# next to the consumer. WHK-06: lib/sanity_client.groq_query targets
+# *.api.sanity.io (NOT *.apicdn.sanity.io), so useCdn=False is satisfied by
+# the client's base URL.
+QUERY_ISSUE_FOR_PUBLISH = (
+    '*[_type == "weeklyIssue" && _id == $id][0]{ '
+    '_id, '
+    'issueNumber, '
+    '"charityName": charity->name, '
+    'theme{primaryColor, accentColor, backgroundColor, textColor, '
+    '      fontDisplay, fontBody, visualDirection}, '
+    '"pdfContent": problemStatement.pdfContent{problemStatement, '
+    '              keyDataPoints[]{stat, source}, interventionMechanism} '
+    '}'
+)
+
+# WHK-08 lookup: manual fallback receives only the runId; Sanity is the source
+# of truth for which issue that runId produced.
+QUERY_ISSUE_BY_RUN_ID = (
+    '*[_type == "weeklyIssue" && pipelineMetadata.runId == $runId][0]{ '
+    '_id, '
+    'issueNumber '
+    '}'
+)
+
+# WHK-05: Sanity CDN propagation delay before firing Vercel deploy hook.
+CDN_PROPAGATION_DELAY_SEC: float = 30.0
+
+
+async def _run_publisher(
+    app,
+    *,
+    issue_id: str,
+    issue_number: int,
+    run_id: str | None,
+) -> None:
+    """Single Publisher coroutine — invoked by webhook AND manual fallback.
+
+    Pipeline:
+      1. GROQ-fetch the issue with useCdn=False (WHK-06).
+      2. WeasyPrint-render the Problem Statement PDF (PDF-01, PDF-02).
+      3. Upload PDF to Sanity + patch problemPdf (PDF-03).
+      4. asyncio.sleep(30) — Sanity CDN propagation (WHK-05).
+      5. POST Vercel deploy hook (WHK-05).
+      6. Convex pipelineRuns:updateStatus('complete') + deliberationEvents
+         publisher-deploy (WHK-07).
+
+    Convex writes are non-blocking (convex_mutation_safe swallows errors per
+    CLAUDE.md "Cross-Cutting Concerns"). PDF-render and Sanity-upload
+    failures halt the chain (CLAUDE.md "Sanity failure halts the pipeline").
+
+    runId is optional (Open Question 5 in 06-RESEARCH): manually-authored
+    drafts have no pipeline run; the Convex step is skipped if run_id is
+    None — the PDF still publishes and Vercel still deploys.
+    """
+    log.info(
+        "Publisher start: issue_id=%s issue_number=%s run_id=%s",
+        issue_id, issue_number, run_id,
+    )
+
+    # 1. WHK-06: GROQ fetch (non-CDN — groq_query targets *.api.sanity.io).
+    rows = await groq_query(QUERY_ISSUE_FOR_PUBLISH, params={"id": issue_id})
+    # GROQ filter `*[...][0]` returns a single doc, but groq_query wraps the
+    # API response's .result, which may be a list (most common) or a single
+    # dict depending on projection. Normalize both shapes.
+    if isinstance(rows, list):
+        issue = rows[0] if rows else None
+    elif isinstance(rows, dict):
+        issue = rows
+    else:
+        issue = None
+    if not issue:
+        raise RuntimeError(f"Publisher: issue {issue_id} not found in Sanity")
+
+    # 2. PDF-01 + PDF-02: render with theme + pdfContent.
+    pdf_bytes = render_problem_statement_pdf(
+        issue_number=issue["issueNumber"],
+        charity_name=issue.get("charityName") or "Untitled Charity",
+        pdf_content=issue.get("pdfContent") or {},
+        theme=issue.get("theme") or {},
+    )
+    log.info("Publisher: PDF rendered (%d bytes)", len(pdf_bytes))
+
+    # 3. PDF-03: upload to Sanity + patch problemPdf.
+    sanity_http = get_sanity_http()
+    await upload_pdf_to_issue(
+        sanity_http,
+        issue_id=issue_id,
+        pdf_bytes=pdf_bytes,
+        issue_number=issue["issueNumber"],
+    )
+    log.info("Publisher: PDF uploaded + problemPdf patched on Sanity.")
+
+    # 4. WHK-05: wait for Sanity CDN propagation (30s) BEFORE Vercel deploy.
+    await asyncio.sleep(CDN_PROPAGATION_DELAY_SEC)
+
+    # 5. WHK-05: trigger Vercel deploy hook.
+    # Vercel deploy hook URL is absolute — base_url of the reused client
+    # doesn't matter. Prefer the lifespan-registered convex_http (always an
+    # httpx.AsyncClient) to avoid constructing a new client per fire.
+    vercel_http = getattr(app.state, "convex_http", None) or get_sanity_http()
+    deploy_response = await trigger_vercel_deploy(vercel_http)
+    log.info("Publisher: Vercel deploy triggered — %s", deploy_response)
+
+    # 6. WHK-07: Convex pipelineRuns:updateStatus + publisher-deploy event.
+    if run_id is None:
+        log.info(
+            "Publisher: run_id is None (manually-authored issue) — skipping "
+            "Convex updates."
+        )
+        return
+    now_ms = int(time.time() * 1000)
+    await convex_mutation_safe(
+        "pipelineRuns:updateStatus",
+        {
+            "runId": run_id,
+            "status": "complete",
+            "completedAt": now_ms,
+        },
+    )
+    await convex_mutation_safe(
+        "deliberationEvents:insert",
+        {
+            "runId": run_id,
+            "agentId": "publisher",
+            "eventType": "publisher-deploy",
+            "payload": str({
+                "issueId": issue_id,
+                "issueNumber": issue["issueNumber"],
+                "deploy": deploy_response,
+            }),
+            "timestamp": now_ms,
+        },
+    )
+    log.info(
+        "Publisher: Convex writes complete (status=complete, "
+        "publisher-deploy emitted)."
+    )
