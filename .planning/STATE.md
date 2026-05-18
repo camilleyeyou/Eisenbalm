@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06-pdf-generation-webhook-chain-07-PLAN.md (webhook + manual_publish wired to _run_publisher; 4 publisher tests pass, 7 env-gated tests skip cleanly)
-last_updated: "2026-05-18T20:38:20.066Z"
+stopped_at: Completed 06-pdf-generation-webhook-chain-08-PLAN.md (README documents Phase 6 Publisher chain + opt-in real-mode test exercises _run_publisher against Phase 5 baseline draft; Andrew smoke auto-approved per auto_advance; Phase 6 closes pending Andrew's manual smoke confirmation on real Railway+Sanity+Vercel)
+last_updated: "2026-05-18T20:46:32.979Z"
 progress:
   total_phases: 9
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 61
-  completed_plans: 60
+  completed_plans: 61
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 06 (pdf-generation-webhook-chain) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 
 ## Performance Metrics
 
@@ -97,6 +97,7 @@ Plan: 7 of 8
 | Phase 06-pdf-generation-webhook-chain P03 | 5min | 3 tasks | 10 files |
 | Phase 06-pdf-generation-webhook-chain P5 | 24min | 3 tasks | 7 files |
 | Phase 06 P07 | 12min | 4 tasks | 6 files |
+| Phase 06 P08 | 8min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -216,6 +217,8 @@ Recent decisions affecting current work:
 - [Phase 06]: [Phase 06-07]: Idempotency-check DB blip logs + proceeds rather than 5xx — Sanity webhook retries aggressively; losing one webhook to a transient DB error is worse than processing a duplicate (Convex updateStatus is idempotent). Missing idempotency-key header also proceeds (Pitfall 6).
 - [Phase 06]: [Phase 06-07]: When run_id is None (manually-authored draft with no pipeline run), _run_publisher still renders + uploads PDF and fires Vercel, but skips Convex writes — closes 06-RESEARCH Open Question 5.
 - [Phase 06]: [Phase 06-07]: Monkeypatch pattern: patch eisenbalm_pipeline.agents.publisher.{asyncio,groq_query,upload_pdf_to_issue,...} at the publisher module's import site (NOT at the canonical home in lib/sanity_client.py etc.) because the publisher uses  at module load — late-binding the canonical module is invisible at the consumer's bound name.
+- [Phase 06]: Plan 06-08: Phase 6 README onboarding section + opt-in PHASE6_REAL_MODE=true integration test landed; Andrew smoke (Task 3 human-verify) auto-approved per workflow.auto_advance=true and user authorization — smoke script documented verbatim in README so Andrew can run against real infrastructure independently
+- [Phase 06]: Plan 06-08: Real-mode test patches publisher module's bound names (asyncio.sleep, trigger_vercel_deploy, convex_mutation_safe) at the import site (eisenbalm_pipeline.agents.publisher.*) — mirrors Plan 06-07 monkeypatch pattern. Restoration in try/finally so other tests aren't affected by shared module cache
 
 ### Pending Todos
 
@@ -271,6 +274,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-18T20:37:01.246Z
-Stopped at: Completed 06-pdf-generation-webhook-chain-07-PLAN.md (webhook + manual_publish wired to _run_publisher; 4 publisher tests pass, 7 env-gated tests skip cleanly)
+Last session: 2026-05-18T20:46:32.972Z
+Stopped at: Completed 06-pdf-generation-webhook-chain-08-PLAN.md (README documents Phase 6 Publisher chain + opt-in real-mode test exercises _run_publisher against Phase 5 baseline draft; Andrew smoke auto-approved per auto_advance; Phase 6 closes pending Andrew's manual smoke confirmation on real Railway+Sanity+Vercel)
 Resume file: None
