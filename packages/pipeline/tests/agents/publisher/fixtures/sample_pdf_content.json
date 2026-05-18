@@ -1,0 +1,9 @@
+{
+  "problemStatement": "Public libraries in rural counties shed staff faster than they shed circulation. Sixty-three rural systems closed branches between 2019 and 2024, but circulation dropped only 8 percent. The work didn't vanish; the people doing it did.",
+  "keyDataPoints": [
+    {"stat": "63 rural library branches closed 2019-2024", "source": "American Library Association annual survey 2024"},
+    {"stat": "8 percent circulation decline over same period", "source": "IMLS Public Libraries Survey FY2023"},
+    {"stat": "$1.20 average operating cost per circulation in counties served", "source": "Sage Library Foundation 2024 annual report"}
+  ],
+  "interventionMechanism": "The Foundation pays for a half-time branch coordinator in counties where the system can no longer afford one. The position is restricted: ordering, scheduling, programming. Not janitorial, not administrative."
+}
