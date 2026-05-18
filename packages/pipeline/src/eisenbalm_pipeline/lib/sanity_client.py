@@ -87,6 +87,53 @@ def _build_bonus(state: dict) -> dict:
     return result
 
 
+def _build_pdf_content(state: dict) -> dict:
+    """Phase 6 (PDF-01) — pass pdfContent from state through to Sanity.
+
+    Shape locked by agents/problem.py::PdfContent:
+      - problemStatement: str  (<=150 words)
+      - keyDataPoints: [{stat, source}] * 3 (EXACTLY 3 — Phase 6 PDF layout
+        + Sanity Rule.length(3) validator both enforce this)
+      - interventionMechanism: str  (<=100 words)
+
+    Defensive default: if state['problem_statement']['pdfContent'] is missing
+    (e.g., manually-authored draft, or pre-Phase 5 stub data), emit a 3-empty-
+    item shape so the Sanity write doesn't reject.
+    """
+    section = state.get("problem_statement") or {}
+    raw_pdf = section.get("pdfContent") if isinstance(section, dict) else None
+    if isinstance(raw_pdf, dict):
+        key_data_points = raw_pdf.get("keyDataPoints") or []
+        # Normalize to exactly 3 items: truncate excess, pad missing with empties.
+        normalized: list[dict] = []
+        for i in range(3):
+            if i < len(key_data_points) and isinstance(key_data_points[i], dict):
+                normalized.append(
+                    {
+                        "_key": f"kdp-{i}",
+                        "stat": key_data_points[i].get("stat", ""),
+                        "source": key_data_points[i].get("source", ""),
+                    }
+                )
+            else:
+                normalized.append({"_key": f"kdp-{i}", "stat": "", "source": ""})
+        return {
+            "problemStatement": raw_pdf.get("problemStatement", ""),
+            "keyDataPoints": normalized,
+            "interventionMechanism": raw_pdf.get("interventionMechanism", ""),
+        }
+    # No pdfContent in state — default empty 3-item shape.
+    return {
+        "problemStatement": "",
+        "keyDataPoints": [
+            {"_key": "kdp-0", "stat": "", "source": ""},
+            {"_key": "kdp-1", "stat": "", "source": ""},
+            {"_key": "kdp-2", "stat": "", "source": ""},
+        ],
+        "interventionMechanism": "",
+    }
+
+
 def _build_podcast_description(state: dict) -> str:
     """Placeholder until Phase 9 wires real podcast description logic."""
     charity_name = (state.get("winning_charity") or {}).get("name", "")
@@ -136,6 +183,12 @@ async def write_issue_draft(
             "body": text_to_portable_text(
                 (state.get("problem_statement") or {}).get("body", "")
             ),
+            # Phase 6 (PDF-01): pdfContent is the structured source for the
+            # WeasyPrint renderer in agents/publisher/pdf.py. Field names match
+            # agents/problem.py::PdfContent verbatim. Default to a 3-empty-item
+            # shape so Sanity's Rule.length(3) validator passes even for
+            # manually-authored drafts (Open Question 5).
+            "pdfContent": _build_pdf_content(state),
         },
         "founderBio": {
             "headline": (state.get("founder_bio") or {}).get("headline", ""),
