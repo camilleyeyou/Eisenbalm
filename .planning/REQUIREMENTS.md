@@ -87,7 +87,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Webhook Chain (Sanity → Publisher → Vercel)
 
 - [ ] **WHK-01**: Sanity webhook fires on `_type == "weeklyIssue" && status == "published"` to a Publisher endpoint on Railway
-- [ ] **WHK-02**: Publisher endpoint verifies the webhook HMAC signature against `SANITY_WEBHOOK_SECRET` using the raw request body (`request.body()`)
+- [x] **WHK-02**: Publisher endpoint verifies the webhook HMAC signature against `SANITY_WEBHOOK_SECRET` using the raw request body (`request.body()`)
 - [ ] **WHK-03**: Publisher rejects webhooks where `sanity-transaction-time` is older than 5 minutes
 - [ ] **WHK-04**: Publisher deduplicates webhooks via the `idempotency-key` header and a Supabase `webhook_idempotency` table with a unique constraint
 - [ ] **WHK-05**: Publisher waits 30 seconds before triggering the Vercel deploy hook (Sanity CDN propagation)
@@ -248,7 +248,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | PDF-03 | Phase 6: PDF + Webhook Chain | Pending |
 | PDF-04 | Phase 6: PDF + Webhook Chain | Pending |
 | WHK-01 | Phase 6: PDF + Webhook Chain | Pending |
-| WHK-02 | Phase 6: PDF + Webhook Chain | Pending |
+| WHK-02 | Phase 6: PDF + Webhook Chain | Complete |
 | WHK-03 | Phase 6: PDF + Webhook Chain | Pending |
 | WHK-04 | Phase 6: PDF + Webhook Chain | Pending |
 | WHK-05 | Phase 6: PDF + Webhook Chain | Pending |
