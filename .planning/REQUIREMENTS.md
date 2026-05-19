@@ -107,15 +107,15 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Stripe / Commerce
 
 - [ ] **CMR-01**: Reader can view the lip balm product at `/shop` with current charity callout (server-rendered, no client flicker)
-- [ ] **CMR-02**: Reader can complete a checkout via Stripe Checkout (custom integration via `checkout.sessions.create()`)
+- [x] **CMR-02**: Reader can complete a checkout via Stripe Checkout (custom integration via `checkout.sessions.create()`)
 - [ ] **CMR-03**: Reader lands on `/shop/thank-you` after successful checkout (static, no DB query)
-- [ ] **CMR-04**: Stripe webhook handler verifies signature using raw body (`request.text()`) and the Stripe webhook secret
+- [x] **CMR-04**: Stripe webhook handler verifies signature using raw body (`request.text()`) and the Stripe webhook secret
 - [ ] **CMR-05**: Stripe webhook signature verification has NO development-mode bypass; signature is always required
-- [ ] **CMR-06**: Stripe webhook handler is idempotent on `event.id` (deduplicates retries)
+- [x] **CMR-06**: Stripe webhook handler is idempotent on `event.id` (deduplicates retries)
 - [ ] **CMR-07**: A privacy policy page exists at `/legal/privacy` (Stripe TOS + GDPR/CCPA compliance)
 - [ ] **CMR-08**: A terms-of-service page exists at `/legal/terms`
 - [ ] **CMR-09**: A persistent shop callout appears at the bottom of every issue page (one sentence + button — NO banner, NO modal, NO popup, NO countdown)
-- [ ] **CMR-10**: Stripe shipping rates are configured in the Stripe dashboard and applied at checkout
+- [x] **CMR-10**: Stripe shipping rates are configured in the Stripe dashboard and applied at checkout
 
 ### Deliberation Layer (live Convex UI)
 
@@ -262,15 +262,15 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | GAM-05 | Phase 7: Game Rendering | Complete |
 | GAM-06 | Phase 7: Game Rendering | Complete |
 | CMR-01 | Phase 8: Stripe / Commerce | Pending |
-| CMR-02 | Phase 8: Stripe / Commerce | Pending |
+| CMR-02 | Phase 8: Stripe / Commerce | Complete |
 | CMR-03 | Phase 8: Stripe / Commerce | Pending |
-| CMR-04 | Phase 8: Stripe / Commerce | Pending |
+| CMR-04 | Phase 8: Stripe / Commerce | Complete |
 | CMR-05 | Phase 8: Stripe / Commerce | Pending |
-| CMR-06 | Phase 8: Stripe / Commerce | Pending |
+| CMR-06 | Phase 8: Stripe / Commerce | Complete |
 | CMR-07 | Phase 8: Stripe / Commerce | Pending |
 | CMR-08 | Phase 8: Stripe / Commerce | Pending |
 | CMR-09 | Phase 8: Stripe / Commerce | Pending |
-| CMR-10 | Phase 8: Stripe / Commerce | Pending |
+| CMR-10 | Phase 8: Stripe / Commerce | Complete |
 | DEL-01 | Phase 9: Issue Page Completion | Pending |
 | DEL-02 | Phase 9: Issue Page Completion | Pending |
 | DEL-03 | Phase 9: Issue Page Completion | Pending |

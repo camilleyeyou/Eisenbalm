@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 08-01-test-infrastructure-PLAN.md (8 Wave 0 Vitest test files; CMR-05 tripwire + CMR-04/06 unit tests + CMR-01/03/07/08/09 source-scans)
-last_updated: "2026-05-19T10:06:13.082Z"
+stopped_at: Completed 08-03-schema-and-deps-PLAN.md (stripe@21.0.1 + Convex stripeEvents/stripeOrders tables deployed)
+last_updated: "2026-05-19T10:16:10.910Z"
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 74
-  completed_plans: 67
+  completed_plans: 68
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 08 (stripe-commerce) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 
 ## Performance Metrics
 
@@ -104,6 +104,7 @@ Plan: 2 of 8
 | Phase 07 P04 | 7min | 2 tasks | 1 files |
 | Phase 07-game-rendering P05 | 10min | 2 tasks | 1 files |
 | Phase 08-stripe-commerce P01 | 25min | 2 tasks | 8 files |
+| Phase 08-stripe-commerce P08-03 | 6min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -240,6 +241,10 @@ Recent decisions affecting current work:
 - [Phase 07-game-rendering]: Plan 07-05: README documentation complete (apps/web/README.md +200 lines Phase 7 section); GAM-05+GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator; canonical pnpm filter is --filter web (matches package.json name); --filter apps/web is path-form equivalent in pnpm 9.x
 - [Phase 08-stripe-commerce]: Plan 08-01: 8 Wave 0 Vitest test files land — CMR-05 FORBIDDEN_BYPASS regex array mirrors RESEARCH §Pattern 7 verbatim (5 patterns); CMR-09 test strips block + line comments before banner/modal/popup/countdown scan so Phase 2 docstring prose doesn't trip the regex; all unit tests use vi.doMock + dynamic await import() inside it() bodies so files load when stripe SDK and route handlers are absent
 - [Phase 08-stripe-commerce]: Plan 08-01: Wave 0 sentinel confirmed — 10 test files total (2 Phase 7 + 8 Phase 8), 66 tests, 37 pass / 29 fail. CMR-09 passes 5/5 (Phase 2 ShopCallout inheritance). Other 7 Phase 8 files fail at runtime because target route handlers + stripe npm package don't exist yet; Plans 08-04 through 08-07 drive each green one-by-one.
+- [Phase 08-stripe-commerce]: Plan 08-03: stripe@^21.0.0 pin (resolved 21.0.1) — latest 22.1.1 is only 13d old (below RESEARCH 30d threshold); 21.x first published 2026-03-26 (54d stable). apiVersion pin deferred to Plan 08-05.
+- [Phase 08-stripe-commerce]: Plan 08-03: stripeEvents.claim returns literal-union { firstTime: true } | { firstTime: false } via 'as const' for caller type-narrowing without runtime guard; Convex per-table serialization makes withIndex.first + insert atomic (CMR-06).
+- [Phase 08-stripe-commerce]: Plan 08-03: stripeOrders writes are best-effort behind STRIPE_RECORD_ORDERS=true flag; webhook returns 200 to Stripe even if audit insert fails (RESEARCH Open Question 2 + Pitfall 7).
+- [Phase 08-stripe-commerce]: Plan 08-03: @stripe/stripe-js intentionally NOT installed — hosted Checkout flow does window.location.href = session.url without Elements (RESEARCH §Standard Stack §Supporting). NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY documented as RESERVED for V2.
 
 ### Pending Todos
 
@@ -295,6 +300,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T10:06:13.073Z
-Stopped at: Completed 08-01-test-infrastructure-PLAN.md (8 Wave 0 Vitest test files; CMR-05 tripwire + CMR-04/06 unit tests + CMR-01/03/07/08/09 source-scans)
+Last session: 2026-05-19T10:15:58.451Z
+Stopped at: Completed 08-03-schema-and-deps-PLAN.md (stripe@21.0.1 + Convex stripeEvents/stripeOrders tables deployed)
 Resume file: None
