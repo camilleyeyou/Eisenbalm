@@ -1,25 +1,88 @@
+'use client'
+
 /**
  * Game slot. UI-SPEC §4.
  * Container: editorial wide (860px). Anchor ID: #game.
  *
- * Phase 2: renders the placeholder slot for all states.
- * Phase 7 will wire the real iframe with the full sandbox validator.
+ * Phase 7: real iframe with sandbox validator + CSP injection.
  *
- * The iframe is included here WITH the correct security attribute
- * (sandbox="allow-scripts" — never allow-same-origin) so the security
- * contract is correct from Phase 2, before Phase 7 hardens the validator.
+ * Security contract (LOCKED — GAM-01, GAM-03):
+ *   sandbox="allow-scripts"  ALWAYS
+ *   sandbox MUST NEVER include the same-origin escape token (it would
+ *   defeat the sandbox; the embedded page could rewrite its own
+ *   sandbox attribute).
+ *   __tests__/game-sandbox.test.ts is the source-scan tripwire (Plan 07-04)
+ *   that fails the build if the forbidden token literal appears in
+ *   this file.
  *
- * Fixed height: 360px desktop, 280px mobile.
- * Slot message: "Interactive version of this section is loading."
+ * Rendering decision tree:
+ *   1. game === null               → "Game coming soon." placeholder (no iframe)
+ *   2. game.embedCode invalid      → <GameFallback /> ("Game unavailable.")
+ *                                    + one-shot Convex qaCorrections.insert write
+ *   3. game.embedCode valid        → <iframe srcDoc={injectGameHead(embedCode)} ...>
+ *
+ * The Convex write happens in a useEffect guarded by a useRef so it fires
+ * at most once per component mount even under React Strict Mode double-
+ * invocation in dev. If runId is null (e.g. an issue authored manually
+ * in Sanity Studio without a pipeline run), the write is skipped —
+ * runId is v.string() in the schema; passing undefined throws.
  */
+
+import { useEffect, useRef } from 'react'
+import { useMutation } from 'convex/react'
+
+import { api } from '@convex/_generated/api'
 import type { IssueGame } from '@/lib/sanity/types'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
+import { GameFallback } from '@/components/issue/GameFallback'
+import { injectGameHead, validateEmbedCode } from '@/lib/game-validator'
 
 interface GameSlotProps {
   game: IssueGame
+  runId: string | null
 }
 
-export function GameSlot({ game }: GameSlotProps) {
+export function GameSlot({ game, runId }: GameSlotProps) {
+  const insertQaCorrection = useMutation(api.qaCorrections.insert)
+  const reportedRef = useRef(false)
+
+  // Run the validator once per render. Pure function — no I/O.
+  const validation = game?.embedCode
+    ? validateEmbedCode(game.embedCode)
+    : null
+
+  // Build the srcdoc only when the validator passed.
+  const srcdoc = game?.embedCode && validation?.valid
+    ? injectGameHead(game.embedCode)
+    : null
+
+  // Fire-and-forget Convex write on validation failure. Guarded by:
+  //   - reportedRef (one shot per component mount; survives re-renders)
+  //   - !runId (Issues authored manually in Sanity have no runId — skip)
+  //   - validation.valid (only fire on FAILURE)
+  // Andrew sees the row in the Phase 9 deliberation layer where
+  // agentId='game-validator' will be color-coded by severity='error'.
+  useEffect(() => {
+    if (!validation || validation.valid) return
+    if (reportedRef.current) return
+    if (!runId) return
+    reportedRef.current = true
+    insertQaCorrection({
+      runId,
+      sectionName: 'game',
+      reason: `Game validator rejected embedCode: ${validation.reason}`,
+      severity: 'error',
+      accepted: false,
+      agentId: 'game-validator',
+      axis: 'hard-rule',
+    }).catch((err) => {
+      // Convex write failures must not break the page render. Log to
+      // browser console so Andrew can investigate; the fallback UI is
+      // already on-screen regardless.
+      console.error('[GameSlot] qaCorrections.insert failed', err)
+    })
+  }, [validation, runId, insertQaCorrection])
+
   return (
     <section
       id="game"
@@ -56,38 +119,35 @@ export function GameSlot({ game }: GameSlotProps) {
 
       {/*
        * Game frame area.
-       * Phase 2: always shows placeholder with the slot message.
-       * Phase 7: swaps to a real iframe after sandbox validator is in place.
-       *
-       * When embedCode is present but Phase 7 hasn't landed, we show the
-       * placeholder rather than unsanitized embed code. The iframe element
-       * below uses sandbox="allow-scripts" (never allow-same-origin) per
-       * critical rule #8. Phase 7 hardens this with the full validator.
+       * Container styles MUST NOT change — Phase 2 sized this to
+       * 280px mobile / 360px desktop with overflow-hidden to clip
+       * any internal game content that exceeds the box. GAM-06 mobile
+       * substrate is provided by injectGameHead's CSS reset.
        */}
       <div className="relative h-[280px] w-full overflow-hidden rounded border border-[color:var(--color-border,#e5e7eb)] bg-[color:var(--color-surface,var(--color-bg))] sm:h-[360px]">
-        {/* Phase 2 placeholder — always shown; Phase 7 replaces with iframe */}
-        <div className="flex h-full items-center justify-center px-8">
-          <p className="text-center font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
-            Interactive version of this section is loading.
-          </p>
-        </div>
-        {/*
-         * Hidden iframe stub — correct sandbox in place for Phase 7.
-         * Kept hidden in Phase 2 since embedCode has not been validated
-         * by the Phase 7 validator yet. DO NOT remove sandbox="allow-scripts".
-         */}
-        {game?.embedCode && (
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // The iframe is intentionally hidden (display:none) in Phase 2.
-          // Phase 7 will surface it after the sandbox validator is wired.
+        {srcdoc ? (
+          // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
+          // The sandbox attribute below uses exactly one token. The
+          // Vitest source-scan test in __tests__/game-sandbox.test.ts
+          // fails the build if any forbidden escape token appears in
+          // this file.
           <iframe
-            style={{ display: 'none' }}
-            // SECURITY: allow-scripts only — never allow-same-origin
             sandbox="allow-scripts"
-            srcDoc={game.embedCode}
-            title={game.headline ?? 'Game'}
+            srcDoc={srcdoc}
+            title={game?.headline ?? 'Game'}
             className="absolute inset-0 h-full w-full border-none"
           />
+        ) : game?.embedCode ? (
+          // Validator rejected embedCode — show fallback. The Convex
+          // write is fired by the useEffect above (one shot per mount).
+          <GameFallback />
+        ) : (
+          // No game on this issue — empty-state placeholder.
+          <div className="flex h-full items-center justify-center px-8">
+            <p className="text-center font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
+              Game coming soon.
+            </p>
+          </div>
         )}
       </div>
 
