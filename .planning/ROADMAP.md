@@ -147,7 +147,12 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   1. An iframe rendering GameWriter output on any issue page uses exactly `sandbox="allow-scripts"` (never `allow-same-origin`); a codebase-level ESLint rule or test fails if `allow-same-origin` appears anywhere in the game rendering component
   2. The automated validator rejects embedCode containing any of: `window.parent`, `top.`, `parent.`, `fetch(`, `XMLHttpRequest`, `document.cookie`, `document.domain`, external `<script src=...>`, external `<link href=...>`; a CSP `<meta>` tag restricting external resources is injected into every srcdoc
   3. A game produced by GameWriter renders correctly at 360px viewport width without horizontal scroll or broken layout; when the validator rejects a game, the issue page shows "Game unavailable" and a `qaCorrections` entry is written to Convex with the rejection reason
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 07-01-test-infrastructure-PLAN.md — Wave 0: install Vitest + vite-tsconfig-paths, add test:unit script, seed empty test stubs (no GAM-* — prerequisite infra for Plans 02/03/04)
+- [ ] 07-02-validator-and-csp-PLAN.md — Wave 1: apps/web/lib/game-validator.ts (BANNED_PATTERNS, GAME_CSP_POLICY, validateEmbedCode, injectGameHead) + full unit tests (GAM-02, GAM-04, GAM-06 substrate)
+- [ ] 07-03-gameslot-wiring-PLAN.md — Wave 1: convert GameSlot.tsx to Client Component, conditional iframe/fallback render, useRef-guarded Convex qaCorrections write, thread issue.runId from page.tsx (GAM-01, GAM-05, GAM-06)
+- [ ] 07-04-sandbox-source-scan-PLAN.md — Wave 1: Vitest source-scan tripwire that fails if allow-same-origin appears anywhere in GameSlot.tsx (GAM-03)
+- [ ] 07-05-readme-and-smoke-test-PLAN.md — Wave 2: apps/web/README.md Phase 7 section + Andrew's manual GAM-05/GAM-06 smoke (autonomous: false)
 **Research flag**: Phase 7 — Automated HTML/JS validator for LLM-generated game output (novel problem; no off-the-shelf validator exists for this iframe sandbox threat model)
 **UI hint**: yes
 
@@ -193,6 +198,6 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 4. Pipeline Skeleton | 0/12 | Not started | - |
 | 5. Agent Quality | 15/15 | Complete | 2026-05-18 |
 | 6. PDF + Webhook Chain | 6/8 | In Progress | - |
-| 7. Game Rendering | 0/TBD | Not started | - |
+| 7. Game Rendering | 0/5 | Planned | - |
 | 8. Stripe / Commerce | 0/TBD | Not started | - |
 | 9. Issue Page Completion | 0/TBD | Not started | - |
