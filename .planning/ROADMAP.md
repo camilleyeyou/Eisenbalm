@@ -164,7 +164,15 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   1. A reader lands on `/shop`, sees the lip balm product with the current charity callout rendered server-side (no client-side loading flicker), and can click through to a Stripe Checkout session; after completing payment they land on `/shop/thank-you` (no DB query on that page)
   2. Sending a Stripe webhook with a forged signature returns a non-200 response and no order processing occurs; sending the same `event.id` twice triggers order handling exactly once; there is no code path that bypasses signature verification regardless of environment variable
   3. The shop callout (one sentence + button) appears at the bottom of every issue page with no banner, no modal, no popup, no countdown timer; `/legal/privacy` and `/legal/terms` pages exist and load without 404
-**Plans**: TBD
+**Plans**: 8 plans
+- [x] 08-01-test-infrastructure-PLAN.md — Wave 0 Vitest stubs (8 files) for CMR-01..CMR-10
+- [ ] 08-02-stripe-dashboard-checkpoint-PLAN.md — Andrew creates Stripe Product, Price, Shipping Rate, Webhook Endpoint, populates apps/web/.env.local (autonomous: false)
+- [ ] 08-03-schema-and-deps-PLAN.md — Convex stripeEvents + stripeOrders tables + claim/insert mutations; install stripe@<pinned-major>; document env vars
+- [ ] 08-04-stripe-client-and-checkout-api-PLAN.md — lib/stripe/{server,constants}.ts + /api/checkout/create-session route + BuyButton Client Component (CMR-02, CMR-10)
+- [ ] 08-05-webhook-handler-and-idempotency-PLAN.md — /api/stripe/webhook route with raw-body signature verify + Convex claim atomic dedup + source-scan tripwire (CMR-04, CMR-05, CMR-06)
+- [ ] 08-06-shop-page-rewrite-PLAN.md — Replace Phase 2 placeholder with server-rendered /shop + dynamic charity callout (CMR-01)
+- [ ] 08-07-thank-you-and-legal-pages-PLAN.md — /shop/thank-you (no DB query) + /legal/privacy + /legal/terms placeholders + STATE.md blocker (CMR-03, CMR-07, CMR-08, CMR-09 reconfirm)
+- [ ] 08-08-readme-and-smoke-test-PLAN.md — apps/web/README.md Phase 8 section + Andrew's manual UAT (autonomous: false)
 **UI hint**: yes
 
 ### Phase 9: Issue Page Completion
@@ -199,5 +207,5 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 5. Agent Quality | 15/15 | Complete | 2026-05-18 |
 | 6. PDF + Webhook Chain | 6/8 | In Progress | - |
 | 7. Game Rendering | 0/5 | Planned | - |
-| 8. Stripe / Commerce | 0/TBD | Not started | - |
+| 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 0/TBD | Not started | - |

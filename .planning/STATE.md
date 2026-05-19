@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 07-05-readme-and-smoke-test-PLAN.md (README documentation done; GAM-05/GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator instruction)
-last_updated: "2026-05-19T08:42:27.365Z"
+status: Ready to execute
+stopped_at: Completed 08-01-test-infrastructure-PLAN.md (8 Wave 0 Vitest test files; CMR-05 tripwire + CMR-04/06 unit tests + CMR-01/03/07/08/09 source-scans)
+last_updated: "2026-05-19T10:06:13.082Z"
 progress:
   total_phases: 9
   completed_phases: 7
-  total_plans: 66
-  completed_plans: 66
+  total_plans: 74
+  completed_plans: 67
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 07 — game-rendering
+**Current focus:** Phase 08 — stripe-commerce
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
+Phase: 08 (stripe-commerce) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -103,6 +103,7 @@ Plan: Not started
 | Phase 07 P03 | 4min | 3 tasks | 3 files |
 | Phase 07 P04 | 7min | 2 tasks | 1 files |
 | Phase 07-game-rendering P05 | 10min | 2 tasks | 1 files |
+| Phase 08-stripe-commerce P01 | 25min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -237,6 +238,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Plan 07-03: issue.runId threaded with ?? null coalesce defensive against future GROQ projection drift (Issue type already string|null from Phase 2; no type edit)
 - [Phase 07]: Plan 07-04: GAM-03 source-scan tripwire landed. 3 assertions (negative + positive + path) in apps/web/__tests__/game-sandbox.test.ts. readFileSync at test runtime — always reflects current GameSlot.tsx. Dry-run regression simulation (sed-mutating sandbox attr) confirmed tripwire fires; GameSlot.tsx restored verbatim. Final state: 27/27 unit tests passing.
 - [Phase 07-game-rendering]: Plan 07-05: README documentation complete (apps/web/README.md +200 lines Phase 7 section); GAM-05+GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator; canonical pnpm filter is --filter web (matches package.json name); --filter apps/web is path-form equivalent in pnpm 9.x
+- [Phase 08-stripe-commerce]: Plan 08-01: 8 Wave 0 Vitest test files land — CMR-05 FORBIDDEN_BYPASS regex array mirrors RESEARCH §Pattern 7 verbatim (5 patterns); CMR-09 test strips block + line comments before banner/modal/popup/countdown scan so Phase 2 docstring prose doesn't trip the regex; all unit tests use vi.doMock + dynamic await import() inside it() bodies so files load when stripe SDK and route handlers are absent
+- [Phase 08-stripe-commerce]: Plan 08-01: Wave 0 sentinel confirmed — 10 test files total (2 Phase 7 + 8 Phase 8), 66 tests, 37 pass / 29 fail. CMR-09 passes 5/5 (Phase 2 ShopCallout inheritance). Other 7 Phase 8 files fail at runtime because target route handlers + stripe npm package don't exist yet; Plans 08-04 through 08-07 drive each green one-by-one.
 
 ### Pending Todos
 
@@ -292,6 +295,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T08:24:54.271Z
-Stopped at: Completed 07-05-readme-and-smoke-test-PLAN.md (README documentation done; GAM-05/GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator instruction)
+Last session: 2026-05-19T10:06:13.073Z
+Stopped at: Completed 08-01-test-infrastructure-PLAN.md (8 Wave 0 Vitest test files; CMR-05 tripwire + CMR-04/06 unit tests + CMR-01/03/07/08/09 source-scans)
 Resume file: None
