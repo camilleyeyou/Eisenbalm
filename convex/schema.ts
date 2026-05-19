@@ -18,6 +18,7 @@ export default defineSchema({
     // ── Phase 4 additions (CONTEXT D-22, D-23, D-39) ────────────────────────
     durationMs: v.optional(v.number()),  // PIP-12: pipeline wall-clock ms
     cost: v.optional(v.string()),         // PIP-11 + OPS-03: JSON-stringified per-agent cost summary
+    awaitingHumanAt: v.optional(v.number()), // PIP-10: Unix ms when Editor gate 1 called interrupt() and paused for Andrew. Enables SLA alerting on stuck runs.
   })
     .index('by_runId', ['runId'])
     .index('by_issueNumber', ['issueNumber']),
