@@ -16,6 +16,7 @@ files_modified:
   - apps/web/components/issue/PodcastSlot.tsx
   - apps/web/components/issue/ShopCallout.tsx
   - apps/web/components/issue/PortableTextRenderer.tsx
+  - apps/web/components/issue/ThemeApplier.tsx
   - apps/web/components/AnchorCopyButton.tsx
 autonomous: true
 requirements: [WEB-02, WEB-06, WEB-07, WEB-08, WEB-09, WEB-10, WEB-11, WEB-14, WEB-15, WEB-16]
@@ -23,7 +24,9 @@ must_haves:
   truths:
     - "/issue/[slug] renders 10 sections in the locked order from UI-SPEC §'/issue/[slug]'"
     - "Per-issue theme is injected via inline <style> with serializeThemeCss() (validated, no FOUC)"
+    - "<ThemeApplier> client component re-runs applyTheme() on hydration as defense-in-depth (CONTEXT.md D-10/D-11)"
     - "Each section has an id (origin-story, problem, founder-bio, case-study, game, bonus, deliberation, podcast) and an <AnchorCopyButton> client-side button"
+    - "<AnchorCopyButton> uses shadcn <Tooltip> (installed in Plan 02-05) to render the 'Copied' feedback per UI-SPEC §9"
     - "JSON-LD schema.org/Article includes charity name, founder, publish date, author=Jesse"
     - "OG + Twitter card tags are emitted via generateMetadata"
     - "Reading time '{N} min read' renders in IssueHero from Portable Text body word count"
@@ -31,10 +34,12 @@ must_haves:
     - "Game / deliberation / podcast slots render the Phase 2 empty-state copy"
   artifacts:
     - path: apps/web/app/issue/[slug]/page.tsx
-      provides: "Full issue RSC: GROQ fetch, generateMetadata, generateStaticParams, 10-section render, JSON-LD"
+      provides: "Full issue RSC: GROQ fetch, generateMetadata, generateStaticParams, 10-section render, JSON-LD, ThemeApplier mount"
       min_lines: 100
     - path: apps/web/app/issue/[slug]/layout.tsx
-      provides: "Inline <style> theme injection before children render (no FOUC); client component re-validates on hydration"
+      provides: "Inline <style> theme injection before children render (no FOUC)"
+    - path: apps/web/components/issue/ThemeApplier.tsx
+      provides: "Client component: useEffect re-runs applyTheme(document.documentElement, theme) on hydration — defense-in-depth per CONTEXT.md D-10/D-11"
     - path: apps/web/components/issue/IssueHero.tsx
       provides: "Charity header: name, location, focus, founding, reading time, publish label, PDF download"
     - path: apps/web/components/issue/EditorialSection.tsx
@@ -50,20 +55,28 @@ must_haves:
     - path: apps/web/components/issue/PodcastSlot.tsx
       provides: "'Audio coming soon.' empty state with collapsible transcript toggle"
     - path: apps/web/components/issue/ShopCallout.tsx
-      provides: "Static one-sentence + 'Buy the lip balm' link (Phase 8 wires Stripe)"
+      provides: "Static one-sentence + 'Buy the lip balm' link (Phase 8 wires Stripe; Plan 02-09 upgrades to shadcn Button)"
     - path: apps/web/components/issue/PortableTextRenderer.tsx
       provides: "@portabletext/react renderer with editorial component map"
     - path: apps/web/components/AnchorCopyButton.tsx
-      provides: "Client component: navigator.clipboard.writeText + 'Copied' state for 1500ms"
+      provides: "Client component: navigator.clipboard.writeText + shadcn <Tooltip> 'Copied' feedback (1500ms)"
   key_links:
     - from: apps/web/app/issue/[slug]/layout.tsx
       to: apps/web/lib/theme.ts (serializeThemeCss)
       via: "inline <style> built from validated theme"
       pattern: "serializeThemeCss\\(.*theme"
+    - from: apps/web/components/issue/ThemeApplier.tsx
+      to: apps/web/lib/theme.ts (applyTheme)
+      via: "useEffect on mount + theme change"
+      pattern: "applyTheme\\("
     - from: apps/web/app/issue/[slug]/page.tsx
       to: apps/web/lib/sanity/queries.ts (QUERY_ISSUE_BY_SLUG)
       via: "sanityClient.fetch with $slug param"
       pattern: "QUERY_ISSUE_BY_SLUG"
+    - from: apps/web/components/AnchorCopyButton.tsx
+      to: apps/web/components/ui/tooltip.tsx (shadcn Tooltip)
+      via: "<Tooltip>/<TooltipTrigger>/<TooltipContent> wrapper for 'Copied' feedback"
+      pattern: "components/ui/tooltip"
     - from: apps/web/components/AnchorCopyButton.tsx
       to: navigator.clipboard.writeText
       via: "client-side onClick"
@@ -75,12 +88,14 @@ must_haves:
 ---
 
 <objective>
-Ship the issue route — the central reader experience. Render `/issue/[slug]` with all 10 sections in the locked UI-SPEC order, inject the per-issue theme via validated CSS variables (no FOUC), compute reading time, emit `schema.org/Article` JSON-LD plus OG/Twitter metadata, and wire every section's anchor-copy button.
+Ship the issue route — the central reader experience. Render `/issue/[slug]` with all 10 sections in the locked UI-SPEC order, inject the per-issue theme via validated CSS variables both server-side (inline `<style>` for FOUC-free first paint) AND client-side (`<ThemeApplier>` defense-in-depth per CONTEXT.md D-10/D-11), compute reading time, emit `schema.org/Article` JSON-LD plus OG/Twitter metadata, and wire every section's anchor-copy button with shadcn `<Tooltip>` "Copied" feedback.
 
-This plan delivers the highest density of WEB-* requirements in Phase 2. Slot placeholders for game (Phase 7), deliberation (Phase 9), and podcast (Phase 9) match UI-SPEC empty-state copy exactly.
+This plan delivers the highest density of WEB-* requirements in Phase 2. Slot placeholders for game (Phase 7), deliberation (Phase 9), and podcast (Phase 9) match UI-SPEC empty-state copy exactly. shadcn `<Tooltip>` is installed by Plan 02-05; this plan only consumes it.
 
 Purpose: This is the magazine. Wave 2 built the chrome; Wave 3's issue route makes the chrome show actual editorial content.
 Output: A fully rendered `/issue/[slug]` page that loads against the demo seed from Plan 02-04 and shows the cream/navy/mustard theme.
+
+**Why 7 tasks (at the warning threshold):** All seven tasks build components in the same `apps/web/components/issue/` namespace against the same UI-SPEC sections. Each task depends on the prior (PortableTextRenderer → EditorialSection → IssueHero → page.tsx etc.) and shares the same UI-SPEC §1-§9 read context. Splitting would force the executor to re-read UI-SPEC and re-establish the section ID/copy contract in each sub-plan. The per-file complexity is low — most tasks are template-following file creation.
 </objective>
 
 <execution_context>
@@ -105,6 +120,7 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
 @apps/web/lib/site.ts
 @apps/web/lib/format.ts
 @apps/web/components/JsonLd.tsx
+@apps/web/components/ui/tooltip.tsx
 
 <interfaces>
 <!-- Section IDs (UI-SPEC §EditorialSection — used by AnchorCopyButton and print rules): -->
@@ -170,29 +186,56 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
 - editorial:       max-width 680px
 - editorial-wide:  max-width 860px
 
-<!-- Theme injection pattern (D-11 + UI-SPEC §"/issue/[slug]"): -->
-- /issue/[slug]/layout.tsx emits <style dangerouslySetInnerHTML={{__html: serializeThemeCss(theme)}} /> in the layout's returned JSX (Next 15 renders this into <head> when nested under root layout's <html>). serializeThemeCss validates every value; safe to inline.
-- The layout fetches the issue's theme via QUERY_ISSUE_BY_SLUG (or a thinner variant) and passes serialized CSS to <style>.
+<!-- Theme injection pattern (CONTEXT.md D-10 + D-11 + UI-SPEC §"/issue/[slug]"): -->
+TWO LAYERS — both required:
+1. SERVER LAYER (FOUC-free first paint): /issue/[slug]/layout.tsx emits
+   <style dangerouslySetInnerHTML={{__html: serializeThemeCss(theme)}} /> in
+   the layout's returned JSX. serializeThemeCss validates every value; safe to inline.
+2. CLIENT LAYER (defense-in-depth re-validation): <ThemeApplier theme={issue.theme} />
+   client component runs applyTheme(document.documentElement, theme) inside useEffect
+   on mount + when theme changes. This is the D-10 requirement: applyTheme runs both
+   server-side (via the inline <style>) AND client-side (this component) so that any
+   client-side mutation that bypasses the inline style still re-validates against the
+   hex regex, font whitelist, and WCAG contrast check.
+
+<!-- shadcn Tooltip pattern (installed by Plan 02-05): -->
+Plan 02-05 installs components/ui/tooltip.tsx (shadcn) and wraps the root layout in
+<TooltipProvider delayDuration={0}>. <AnchorCopyButton> imports:
+  import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+and renders:
+  <Tooltip open={copied}>
+    <TooltipTrigger asChild><button .../></TooltipTrigger>
+    <TooltipContent side="top">Copied</TooltipContent>
+  </Tooltip>
+The `open={copied}` controlled mode makes the tooltip appear only when the local
+state flips, matching UI-SPEC §"Component Inventory": "Delay: 0ms (appears immediately
+on 'Copied' state change, not on hover). Placement: top."
 </interfaces>
 </context>
 
 <tasks>
 
 <task type="auto">
-  <name>Task 1: AnchorCopyButton client component</name>
+  <name>Task 1: AnchorCopyButton client component (with shadcn Tooltip)</name>
   <read_first>
     - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §9 AnchorCopyButton
-    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-25)
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-07 shadcn scope, D-25 anchor copy behavior)
+    - apps/web/components/ui/tooltip.tsx (installed by Plan 02-05 — confirm shape: Tooltip / TooltipTrigger / TooltipContent / TooltipProvider exports)
   </read_first>
   <files>apps/web/components/AnchorCopyButton.tsx</files>
   <action>
-    Create `apps/web/components/AnchorCopyButton.tsx`. Client component. lucide-react Link + Check icons. 1500ms "Copied" state.
+    Create `apps/web/components/AnchorCopyButton.tsx`. Client component. lucide-react `Link` + `Check` icons. 1500ms "Copied" state. Uses shadcn `<Tooltip>` (installed in Plan 02-05) for the "Copied" feedback, per CONTEXT.md D-07 and UI-SPEC §"Component Inventory".
 
     ```typescript
     'use client'
 
     import { useState, useCallback } from 'react'
     import { Link as LinkIcon, Check } from 'lucide-react'
+    import {
+      Tooltip,
+      TooltipTrigger,
+      TooltipContent,
+    } from '@/components/ui/tooltip'
 
     export function AnchorCopyButton({ sectionId }: { sectionId: string }) {
       const [copied, setCopied] = useState(false)
@@ -211,30 +254,34 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
         }
       }, [sectionId])
 
+      // shadcn Tooltip in controlled mode: `open={copied}` makes the tooltip
+      // appear only when state flips to true, matching UI-SPEC §"Component
+      // Inventory": Delay 0ms, on copy state change (not hover). The
+      // <TooltipProvider> is mounted once in the root layout (Plan 02-05).
       return (
-        <button
-          type="button"
-          onClick={handleClick}
-          aria-label="Copy link to this section"
-          data-anchor-copy
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text-muted)] hover:text-[color:var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-accent)] focus-visible:outline-offset-2"
-        >
-          {copied ? (
-            <>
-              <Check size={16} aria-hidden="true" />
-              <span className="sr-only">Copied</span>
-              <span
-                role="status"
-                aria-live="polite"
-                className="pointer-events-none absolute mt-12 rounded bg-[color:var(--color-text)] px-2 py-1 text-[12px] text-[color:var(--color-bg)]"
-              >
-                Copied
-              </span>
-            </>
-          ) : (
-            <LinkIcon size={16} aria-hidden="true" />
-          )}
-        </button>
+        <Tooltip open={copied}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={handleClick}
+              aria-label="Copy link to this section"
+              data-anchor-copy
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text-muted)] hover:text-[color:var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-accent)] focus-visible:outline-offset-2"
+            >
+              {copied ? (
+                <>
+                  <Check size={16} aria-hidden="true" />
+                  <span className="sr-only">Copied</span>
+                </>
+              ) : (
+                <LinkIcon size={16} aria-hidden="true" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" role="status" aria-live="polite">
+            Copied
+          </TooltipContent>
+        </Tooltip>
       )
     }
     ```
@@ -242,7 +289,9 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
     Notes:
     - `data-anchor-copy` is the print-stylesheet selector defined in Plan 02-05 globals.css.
     - 44x44px touch target via `h-11 w-11` (Tailwind 11 = 44px).
-    - The "Copied" tooltip is a simple absolute-positioned span; shadcn `<Tooltip>` is NOT introduced here to keep Phase 2's dep surface minimal. Plan 02-09 will install shadcn primitives if the shop callout button needs them.
+    - Tooltip is CONTROLLED via `open={copied}` — it does NOT respond to hover. This matches UI-SPEC §"Component Inventory": "tooltip appears immediately on 'Copied' state change, not on hover."
+    - `<TooltipTrigger asChild>` lets the button be the trigger element directly (no extra DOM node).
+    - `<TooltipContent role="status" aria-live="polite">` ensures screen readers announce "Copied" without needing the visible tooltip to be focused.
   </action>
   <verify>
     <automated>
@@ -254,11 +303,15 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
       grep -q "Copied" apps/web/components/AnchorCopyButton.tsx && \
       grep -q "data-anchor-copy" apps/web/components/AnchorCopyButton.tsx && \
       grep -q "1500" apps/web/components/AnchorCopyButton.tsx && \
-      grep -q "lucide-react" apps/web/components/AnchorCopyButton.tsx
+      grep -q "lucide-react" apps/web/components/AnchorCopyButton.tsx && \
+      grep -q "@/components/ui/tooltip" apps/web/components/AnchorCopyButton.tsx && \
+      grep -q "TooltipTrigger" apps/web/components/AnchorCopyButton.tsx && \
+      grep -q "TooltipContent" apps/web/components/AnchorCopyButton.tsx && \
+      grep -q "open={copied}" apps/web/components/AnchorCopyButton.tsx
     </automated>
   </verify>
   <done>
-    Client component copies `origin + pathname + #sectionId` to clipboard, shows "Copied" for 1500ms, falls back silently on clipboard API failure, carries the print-hide data attribute.
+    Client component copies `origin + pathname + #sectionId` to clipboard, shows shadcn `<Tooltip>` with "Copied" content for 1500ms via controlled `open={copied}`, falls back silently on clipboard API failure, carries the print-hide data attribute. Imports `<Tooltip>` from `@/components/ui/tooltip` (installed by Plan 02-05).
   </done>
 </task>
 
@@ -520,7 +573,7 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
        }
        ```
 
-    2. `apps/web/components/issue/DeliberationSlot.tsx` (client component because the collapse/expand uses `<details>`/`<summary>` — which works without JS, but if we want chevron rotation we mark client; for Phase 2 just use native `<details>`):
+    2. `apps/web/components/issue/DeliberationSlot.tsx` (uses native `<details>`/`<summary>`):
 
        ```typescript
        import { AnchorCopyButton } from '../AnchorCopyButton'
@@ -652,7 +705,7 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
 </task>
 
 <task type="auto">
-  <name>Task 5: BonusSection — branches on bonusType + ShopCallout</name>
+  <name>Task 5: BonusSection — branches on bonusType + ShopCallout (NOTE: <ShopCallout> upgraded by Plan 02-09 to use shadcn Button)</name>
   <read_first>
     - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §5 BonusSection, §8 ShopCallout
     - apps/studio/schemas/weeklyIssue.ts (bonus object shape)
@@ -745,12 +798,13 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
        }
        ```
 
-       Note: uses `<img>` rather than `next/image` for storyboards in Phase 2 — Sanity-hosted images via `@sanity/image-url` are an option but adding the URL-builder + sizing logic here is scope creep for Phase 2. Wave 3 OG image plan (02-10) ships only the static fallback. Phase 5 (DesignAgent) or Phase 6 (PDF generation) can upgrade to `next/image` if Storyboards become routine.
+       Note: uses `<img>` rather than `next/image` for storyboards in Phase 2 — Sanity-hosted images via `@sanity/image-url` are an option but adding the URL-builder + sizing logic here is scope creep for Phase 2.
 
-    2. `apps/web/components/issue/ShopCallout.tsx`:
+    2. `apps/web/components/issue/ShopCallout.tsx` — this plan ships a baseline using shadcn `<Button asChild>` (installed by Plan 02-05). Plan 02-09 is responsible for the full shop-page button work; here we only need the issue-page-bottom callout. Per CONTEXT.md D-07, shop callout button MUST be the shadcn primitive.
 
        ```typescript
        import Link from 'next/link'
+       import { Button } from '@/components/ui/button'
 
        export function ShopCallout() {
          return (
@@ -763,19 +817,26 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
                  Jesse A. Eisenbalm lip balm. 100% of proceeds go to this week's
                  featured charity.
                </p>
-               <Link
-                 href="/shop"
-                 className="inline-flex h-11 items-center justify-center rounded bg-[color:var(--color-accent)] px-6 font-ui text-[14px] font-semibold text-[color:var(--color-bg)] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[color:var(--color-text)] focus-visible:outline-offset-2"
-               >
-                 Buy the lip balm
-               </Link>
+               {/*
+                 Use shadcn Button via asChild so the underlying element is a
+                 Next.js <Link> (no wrapping <a><button></button></a>).
+                 Button styles come from shadcn defaults; theme-engine CSS
+                 variables override the relevant tokens via the globals.css
+                 shim (if Plan 02-05 installed one).
+               */}
+               <Button asChild size="lg">
+                 <Link href="/shop">Buy the lip balm</Link>
+               </Button>
              </div>
            </section>
          )
        }
        ```
 
-       Plain anchor styled to match shadcn `<Button variant="default">` aesthetics. Plan 02-09 has the option of substituting `shadcn/ui` Button if it lands the shadcn primitives. Phase 2 keeps deps minimal here.
+       Notes:
+       - `<Button asChild>` from shadcn delegates rendering to the child — here, a Next.js `<Link>`. This is the canonical shadcn pattern for "button that's a link."
+       - No shop-specific Tailwind overrides on `<Button>` itself per Blocker 1 fix — it inherits shadcn defaults, themed via the CSS variable shim in globals.css.
+       - `data-shop-callout` is the print-stylesheet selector defined in Plan 02-05 globals.css.
   </action>
   <verify>
     <automated>
@@ -791,133 +852,184 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
       grep -q "Jesse A. Eisenbalm lip balm. 100% of proceeds go to this week's featured charity\." apps/web/components/issue/ShopCallout.tsx && \
       grep -q "Buy the lip balm" apps/web/components/issue/ShopCallout.tsx && \
       grep -q 'data-shop-callout' apps/web/components/issue/ShopCallout.tsx && \
-      grep -q 'href="/shop"' apps/web/components/issue/ShopCallout.tsx
+      grep -q 'href="/shop"' apps/web/components/issue/ShopCallout.tsx && \
+      grep -q "@/components/ui/button" apps/web/components/issue/ShopCallout.tsx && \
+      grep -q "Button asChild" apps/web/components/issue/ShopCallout.tsx
     </automated>
   </verify>
   <done>
-    BonusSection branches by bonusType: bigBudget/specAd use 860px container, jingle uses 680px. Jingle empty-audio state matches UI-SPEC. BigBudget storyboards render in 2-up grid when present. ShopCallout is a static section, NOT a banner, with the locked sentence + "Buy the lip balm" link to /shop.
+    BonusSection branches by bonusType: bigBudget/specAd use 860px container, jingle uses 680px. Jingle empty-audio state matches UI-SPEC. BigBudget storyboards render in 2-up grid when present. ShopCallout uses shadcn `<Button asChild>` wrapping a Next.js `<Link>` to `/shop` (per CONTEXT.md D-07).
   </done>
 </task>
 
 <task type="auto">
-  <name>Task 6: IssueHero (charity header) component</name>
+  <name>Task 6: IssueHero + ThemeApplier (client-side defense-in-depth)</name>
   <read_first>
     - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §1 IssueHero
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-10, D-11 — applyTheme runs both server AND client)
+    - apps/web/lib/theme.ts (applyTheme signature)
     - apps/web/lib/format.ts (formatIssueLabel)
-    - apps/web/lib/sanity/types.ts (Issue + IssueCharity types)
+    - apps/web/lib/sanity/types.ts (Issue + IssueCharity + IssueTheme types)
   </read_first>
-  <files>apps/web/components/issue/IssueHero.tsx</files>
+  <files>apps/web/components/issue/IssueHero.tsx, apps/web/components/issue/ThemeApplier.tsx</files>
   <action>
-    Create `apps/web/components/issue/IssueHero.tsx`:
+    1. Create `apps/web/components/issue/IssueHero.tsx`:
 
-    ```typescript
-    import { formatIssueLabel } from '@/lib/format'
-    import type { IssueCharity } from '@/lib/sanity/types'
+       ```typescript
+       import { formatIssueLabel } from '@/lib/format'
+       import type { IssueCharity } from '@/lib/sanity/types'
 
-    type Props = {
-      issueNumber: number
-      publishDate: string
-      readingTimeMin: number
-      charity: IssueCharity
-      problemPdfUrl: string | null
-    }
+       type Props = {
+         issueNumber: number
+         publishDate: string
+         readingTimeMin: number
+         charity: IssueCharity
+         problemPdfUrl: string | null
+       }
 
-    export function IssueHero({
-      issueNumber,
-      publishDate,
-      readingTimeMin,
-      charity,
-      problemPdfUrl,
-    }: Props) {
-      const issueLabel = formatIssueLabel(issueNumber, publishDate)
+       export function IssueHero({
+         issueNumber,
+         publishDate,
+         readingTimeMin,
+         charity,
+         problemPdfUrl,
+       }: Props) {
+         const issueLabel = formatIssueLabel(issueNumber, publishDate)
 
-      return (
-        <section
-          aria-labelledby="issue-hero-heading"
-          className="border-b border-[color:var(--color-border)] pt-16 pb-12"
-        >
-          <div className="mx-auto max-w-[860px] px-4 md:px-6 lg:px-8">
-            <p className="font-ui text-[14px] uppercase tracking-[0.1em] text-[color:var(--color-text-muted)]">
-              {issueLabel}
-            </p>
-            <h1
-              id="issue-hero-heading"
-              className="mt-4 font-display text-[28px] md:text-[36px] font-semibold leading-[1.15] text-[color:var(--color-text)]"
-            >
-              {charity.name}
-            </h1>
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-ui text-[14px] text-[color:var(--color-text-muted)]">
-              {charity.focusArea ? <span>{charity.focusArea}</span> : null}
-              <span>{charity.location}</span>
-              {charity.foundingYear ? <span>Est. {charity.foundingYear}</span> : null}
-              {readingTimeMin > 0 ? (
-                <span className="md:ml-auto">{readingTimeMin} min read</span>
-              ) : null}
-            </div>
-            {charity.missionStatement ? (
-              <p
-                className="mt-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {charity.missionStatement}
-              </p>
-            ) : null}
-            {problemPdfUrl ? (
-              <a
-                href={problemPdfUrl}
-                className="mt-6 inline-block font-ui text-[14px] underline underline-offset-4 text-[color:var(--color-primary)] hover:text-[color:var(--color-accent)]"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Download the problem framework
-              </a>
-            ) : null}
-          </div>
-        </section>
-      )
-    }
-    ```
+         return (
+           <section
+             aria-labelledby="issue-hero-heading"
+             className="border-b border-[color:var(--color-border)] pt-16 pb-12"
+           >
+             <div className="mx-auto max-w-[860px] px-4 md:px-6 lg:px-8">
+               <p className="font-ui text-[14px] uppercase tracking-[0.1em] text-[color:var(--color-text-muted)]">
+                 {issueLabel}
+               </p>
+               <h1
+                 id="issue-hero-heading"
+                 className="mt-4 font-display text-[28px] md:text-[36px] font-semibold leading-[1.15] text-[color:var(--color-text)]"
+               >
+                 {charity.name}
+               </h1>
+               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-ui text-[14px] text-[color:var(--color-text-muted)]">
+                 {charity.focusArea ? <span>{charity.focusArea}</span> : null}
+                 <span>{charity.location}</span>
+                 {charity.foundingYear ? <span>Est. {charity.foundingYear}</span> : null}
+                 {readingTimeMin > 0 ? (
+                   <span className="md:ml-auto">{readingTimeMin} min read</span>
+                 ) : null}
+               </div>
+               {charity.missionStatement ? (
+                 <p
+                   className="mt-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]"
+                   style={{
+                     display: '-webkit-box',
+                     WebkitLineClamp: 3,
+                     WebkitBoxOrient: 'vertical',
+                     overflow: 'hidden',
+                   }}
+                 >
+                   {charity.missionStatement}
+                 </p>
+               ) : null}
+               {problemPdfUrl ? (
+                 <a
+                   href={problemPdfUrl}
+                   className="mt-6 inline-block font-ui text-[14px] underline underline-offset-4 text-[color:var(--color-primary)] hover:text-[color:var(--color-accent)]"
+                   rel="noopener noreferrer"
+                   target="_blank"
+                 >
+                   Download the problem framework
+                 </a>
+               ) : null}
+             </div>
+           </section>
+         )
+       }
+       ```
+
+    2. Create `apps/web/components/issue/ThemeApplier.tsx` — the CLIENT-SIDE defense-in-depth layer per CONTEXT.md D-10/D-11:
+
+       ```typescript
+       'use client'
+
+       import { useEffect } from 'react'
+       import { applyTheme } from '@/lib/theme'
+       import type { IssueTheme } from '@/lib/sanity/types'
+
+       /**
+        * Defense-in-depth client-side theme re-validation per CONTEXT.md D-10:
+        *   "applyTheme(theme) runs both server-side (via the inline <style> in
+        *    /issue/[slug]/layout.tsx for FOUC prevention) AND client-side on
+        *    hydration."
+        *
+        * The server <style> tag is sufficient for first paint. This component
+        * runs applyTheme() against document.documentElement after hydration,
+        * which:
+        *   1. Re-validates the same hex regex + font whitelist + WCAG contrast
+        *      that the server already validated.
+        *   2. Catches any client-side mutation that bypasses the inline style
+        *      (e.g. browser extensions, devtools tampering, future code paths
+        *      that manipulate :root variables).
+        *   3. Calls element.style.setProperty per validated value — NEVER
+        *      template-literal CSS strings (D-10 step 4).
+        *
+        * Returns null — this component does not render any DOM.
+        */
+       export function ThemeApplier({ theme }: { theme: IssueTheme | null }) {
+         useEffect(() => {
+           if (typeof document === 'undefined') return
+           applyTheme(document.documentElement, theme ?? null)
+         }, [theme])
+         return null
+       }
+       ```
+
+       NOTE: `applyTheme` is exported from `apps/web/lib/theme.ts` (Plan 02-03). Its signature is `applyTheme(element: HTMLElement, theme: IssueTheme | null) => void`. If the actual signature differs, adjust the call — but the executor must NOT modify lib/theme.ts in this plan; that's Plan 02-03's contract.
   </action>
   <verify>
     <automated>
       cd /Users/user/Desktop/Eisenbalm && \
       test -f apps/web/components/issue/IssueHero.tsx && \
+      test -f apps/web/components/issue/ThemeApplier.tsx && \
       grep -q "formatIssueLabel" apps/web/components/issue/IssueHero.tsx && \
       grep -q '{readingTimeMin} min read' apps/web/components/issue/IssueHero.tsx && \
       grep -q "Download the problem framework" apps/web/components/issue/IssueHero.tsx && \
       grep -q "Est. {charity.foundingYear}" apps/web/components/issue/IssueHero.tsx && \
-      grep -q "issue-hero-heading" apps/web/components/issue/IssueHero.tsx
+      grep -q "issue-hero-heading" apps/web/components/issue/IssueHero.tsx && \
+      grep -q "'use client'" apps/web/components/issue/ThemeApplier.tsx && \
+      grep -q "applyTheme" apps/web/components/issue/ThemeApplier.tsx && \
+      grep -q "useEffect" apps/web/components/issue/ThemeApplier.tsx && \
+      grep -q "document.documentElement" apps/web/components/issue/ThemeApplier.tsx
     </automated>
   </verify>
   <done>
-    `<IssueHero>` renders the issue label ("Issue {N} — {Month D, YYYY}"), charity name as <h1>, focus / location / Est. / reading time metadata row, mission statement clamped to 3 lines, optional PDF download link. Hides the Est. line when foundingYear is null, hides PDF link when null.
+    `<IssueHero>` renders the issue label, charity name as <h1>, focus/location/Est./reading time metadata row, mission statement clamped to 3 lines, optional PDF download link. `<ThemeApplier>` is a `'use client'` component that runs `applyTheme(document.documentElement, theme)` inside `useEffect`, providing the client-side defense-in-depth layer required by CONTEXT.md D-10/D-11.
   </done>
 </task>
 
 <task type="auto">
-  <name>Task 7: Issue layout (theme injection) + page (10-section render + JSON-LD + metadata)</name>
+  <name>Task 7: Issue layout (theme injection) + page (10-section render + JSON-LD + metadata + ThemeApplier mount)</name>
   <read_first>
     - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §"/issue/[slug]" page-level spec
-    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-11, D-22)
-    - apps/web/lib/theme.ts (serializeThemeCss, applyTheme — for the optional client guard)
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-10, D-11, D-22)
+    - apps/web/lib/theme.ts (serializeThemeCss, applyTheme)
     - apps/web/lib/sanity/queries.ts (QUERY_ISSUE_BY_SLUG, QUERY_LATEST_ISSUE_SLUG)
     - apps/web/lib/sanity/types.ts (Issue type)
     - docs/API_CONTRACTS.md §1.2 (canonical query shape)
   </read_first>
   <files>apps/web/app/issue/[slug]/layout.tsx, apps/web/app/issue/[slug]/page.tsx</files>
   <action>
-    1. Create `apps/web/app/issue/[slug]/layout.tsx`:
+    1. Create `apps/web/app/issue/[slug]/layout.tsx` (server layer of the two-layer theme injection):
 
        ```typescript
        /**
         * Per-issue layout: injects the theme CSS variables via inline <style> in
-        * the rendered <head>. Falls back to brand defaults if the issue is
-        * missing or has no theme (CONTEXT.md D-11 — FOUC prevention).
+        * the rendered <head>. This is the SERVER-side FOUC-prevention layer
+        * (CONTEXT.md D-11). The client-side defense-in-depth re-validation
+        * happens via <ThemeApplier> mounted inside page.tsx.
+        *
+        * Falls back to brand defaults if the issue is missing or has no theme.
         */
        import { sanityClient } from '@/lib/sanity/client'
        import { groq } from 'next-sanity'
@@ -957,7 +1069,9 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
              {/*
                Inline theme as a server-rendered <style>. The values inside
                serializeThemeCss are pre-validated; safe to embed.
-               Per CONTEXT.md D-11 this is the FOUC-prevention layer.
+               Per CONTEXT.md D-11 this is the FOUC-prevention server layer.
+               The client-side defense-in-depth re-validation lives in
+               <ThemeApplier> inside page.tsx.
              */}
              <style dangerouslySetInnerHTML={{ __html: themeCss }} />
              {children}
@@ -966,9 +1080,7 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
        }
        ```
 
-       NOTE: Next 15 with App Router renders `<style>` returned from a layout into the document `<head>` (or at the position in the tree where it lands; modern browsers handle CSS variables hoisted from either position identically). If a follow-up reveals FOUC, the executor can switch to emitting the `<style>` via `generateMetadata`'s `other: { 'theme-css': ... }` pattern — but the inline-style approach is the recommended one.
-
-    2. Create `apps/web/app/issue/[slug]/page.tsx`. This is the high-density file: 10 sections + JSON-LD + metadata + static params. Around 150 lines.
+    2. Create `apps/web/app/issue/[slug]/page.tsx`. This is the high-density file: 10 sections + JSON-LD + metadata + static params + ThemeApplier mount.
 
        ```typescript
        import type { Metadata } from 'next'
@@ -990,6 +1102,7 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
        import { DeliberationSlot } from '@/components/issue/DeliberationSlot'
        import { PodcastSlot } from '@/components/issue/PodcastSlot'
        import { ShopCallout } from '@/components/issue/ShopCallout'
+       import { ThemeApplier } from '@/components/issue/ThemeApplier'
 
        // ─── Static params ────────────────────────────────────────────────────────
 
@@ -1084,6 +1197,12 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
 
          return (
            <>
+             {/*
+               Client-side theme re-validation (defense-in-depth, CONTEXT.md D-10).
+               Runs alongside the server-rendered inline <style> in layout.tsx.
+             */}
+             <ThemeApplier theme={issue.theme ?? null} />
+
              <JsonLd data={articleLd} />
 
              <IssueHero
@@ -1145,6 +1264,8 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
          )
        }
        ```
+
+       NOTE: If `Issue` type doesn't expose `theme` at the top level (i.e., QUERY_ISSUE_BY_SLUG doesn't project the theme), either (a) extend the query and type to include it, or (b) keep `issue.theme ?? null` to satisfy the ThemeApplier signature; the client-side `applyTheme(null)` will reapply brand defaults. Either path satisfies D-10.
   </action>
   <verify>
     <automated>
@@ -1157,6 +1278,7 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
       grep -q "generateStaticParams" "apps/web/app/issue/[slug]/page.tsx" && \
       grep -q "generateMetadata" "apps/web/app/issue/[slug]/page.tsx" && \
       grep -q "readingTime" "apps/web/app/issue/[slug]/page.tsx" && \
+      grep -q "ThemeApplier" "apps/web/app/issue/[slug]/page.tsx" && \
       grep -q "'@type': 'Article'" "apps/web/app/issue/[slug]/page.tsx" && \
       grep -q "'@type': 'NGO'" "apps/web/app/issue/[slug]/page.tsx" && \
       grep -q "IssueHero" "apps/web/app/issue/[slug]/page.tsx" && \
@@ -1173,31 +1295,35 @@ Output: A fully rendered `/issue/[slug]` page that loads against the demo seed f
     </automated>
   </verify>
   <done>
-    `/issue/[slug]` renders all 10 sections in the locked UI-SPEC order with per-issue theme injection. `generateStaticParams` enumerates all published issues. `generateMetadata` emits OG + Twitter + canonical. `<JsonLd>` includes schema.org/Article with charity, founder=Jesse, publish date. notFound() handles missing slug. Build succeeds.
+    `/issue/[slug]` renders all 10 sections in the locked UI-SPEC order with two-layer theme injection: SERVER inline `<style>` from layout.tsx (FOUC prevention) + CLIENT `<ThemeApplier>` mounted in page.tsx (defense-in-depth re-validation per D-10). `generateStaticParams` enumerates all published issues. `generateMetadata` emits OG + Twitter + canonical. `<JsonLd>` includes schema.org/Article with charity, founder=Jesse, publish date. notFound() handles missing slug. Build succeeds.
   </done>
 </task>
 
 </tasks>
 
 <verification>
-- All 12 files exist
+- All 13 files exist (12 prior + new ThemeApplier.tsx)
 - pnpm --filter web typecheck exits 0
 - pnpm --filter web build completes (with the demo seed in place, `/issue/issue-1` should generate)
 - Section IDs match UI-SPEC: origin-story, problem, founder-bio, case-study, game, bonus, deliberation, podcast
-- Theme injection happens via serializeThemeCss in layout (no template-literal raw insertion)
+- Theme injection happens via serializeThemeCss in layout (server) AND applyTheme in ThemeApplier (client)
+- AnchorCopyButton uses shadcn <Tooltip> (imported from @/components/ui/tooltip, installed by Plan 02-05)
+- ShopCallout uses shadcn <Button asChild> wrapping <Link href="/shop">
 - JSON-LD Article emitted with charity.name, charity.location, charity.website
 </verification>
 
 <success_criteria>
 - WEB-02: 10-section issue page in correct order
-- WEB-06, WEB-07, WEB-08, WEB-09: theme injection via validated CSS variables, setProperty, WCAG fallback (all in lib/theme.ts; layout.tsx uses serializeThemeCss only)
+- WEB-06, WEB-07, WEB-08, WEB-09: theme injection via validated CSS variables, setProperty, WCAG fallback — runs server-side AND client-side (D-10 satisfied)
 - WEB-10: schema.org/Article JSON-LD with charity name + founder + publish date + author
 - WEB-11: OG + Twitter card metadata via generateMetadata
 - WEB-14: every print-hide selector matches (data-anchor-copy, data-game-slot, data-deliberation-slot, data-podcast-slot, data-shop-callout)
 - WEB-15: reading time visible in IssueHero
-- WEB-16: every section has anchor copy button
+- WEB-16: every section has anchor copy button using shadcn Tooltip
+- D-07 honored: shadcn Tooltip used in AnchorCopyButton; shadcn Button used in ShopCallout
+- D-10 honored: applyTheme runs both server (inline style) AND client (ThemeApplier useEffect)
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/02-web-shell-theme-engine/02-06-issue-route-SUMMARY.md` recording: the inline-style theme injection pattern (D-11 implementation), the JSON-LD shape Phase 9 deliberation will extend, the demo issue URL (`/issue/issue-1`), and any deviations from UI-SPEC.
+After completion, create `.planning/phases/02-web-shell-theme-engine/02-06-issue-route-SUMMARY.md` recording: the two-layer theme injection pattern (server `<style>` + client `<ThemeApplier>`), the shadcn Tooltip wiring in AnchorCopyButton (controlled `open={copied}` mode), the shadcn Button asChild pattern in ShopCallout, the JSON-LD shape Phase 9 deliberation will extend, the demo issue URL (`/issue/issue-1`), and any deviations from UI-SPEC.
 </output>

@@ -2,7 +2,7 @@
 phase: 07-game-rendering
 plan: 04
 type: execute
-wave: 1
+wave: 3
 depends_on:
   - "07-01"
   - "07-03"

@@ -13,7 +13,7 @@ must_haves:
   truths:
     - "Andrew can follow apps/web/README.md from scratch to a running dev server in < 5 minutes"
     - "Every WEB-* success criterion has a manual verification step Andrew can perform"
-    - "Theme injection security path is empirically verified: invalid hex falls back, low-contrast falls back"
+    - "Theme injection security path is empirically verified: invalid hex falls back, low-contrast falls back, client-side ThemeApplier re-validates devtools tampering"
     - "Build, typecheck, sitemap.xml, feed.xml, and JSON-LD all confirmed working"
   artifacts:
     - path: apps/web/README.md
@@ -70,6 +70,8 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
    OG + Twitter card tags present
    /sitemap.xml + /feed.xml return valid XML
 5. Print preview of issue page is clean (no theme bleed); reading time visible; anchor copy buttons functional
+6. <ThemeApplier> client-side re-validation: post-hydration devtools tampering with --color-primary
+   triggers a console warning and reapplies the fallback within one tick (CONTEXT.md D-10/D-11)
 
 <!-- Smoke-test mechanics: -->
 - Live dev server at http://localhost:3000
@@ -177,13 +179,16 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
 
     ### Theme engine (security-critical)
 
-    - [`apps/web/lib/theme.ts`](./lib/theme.ts) is the single point where Sanity-supplied colors and fonts become CSS variables. Every value passes a strict hex regex `/^#[0-9a-fA-F]{6}$/` and a font whitelist before injection. Low-contrast pairs (WCAG AA < 4.5:1) fall back to the brand defaults. Theme is injected server-side via `serializeThemeCss()` into a `<style>` tag in the issue layout to avoid FOUC.
+    - [`apps/web/lib/theme.ts`](./lib/theme.ts) is the single point where Sanity-supplied colors and fonts become CSS variables. Every value passes a strict hex regex `/^#[0-9a-fA-F]{6}$/` and a font whitelist before injection. Low-contrast pairs (WCAG AA < 4.5:1) fall back to the brand defaults.
+    - Theme injection runs in TWO layers per CONTEXT.md D-10/D-11:
+      - **Server-side (FOUC prevention):** `serializeThemeCss()` produces an inline `<style>` block in `/issue/[slug]/layout.tsx` for first paint.
+      - **Client-side (defense-in-depth):** `<ThemeApplier>` runs `applyTheme(document.documentElement, theme)` inside `useEffect` on hydration so any post-mount mutation that bypasses the inline style is re-validated.
     - Smoke tests live at [`apps/web/lib/theme.test.ts`](./lib/theme.test.ts).
     - Phase 5's DesignAgent will produce real per-issue themes against this engine. Phase 2 ships a 6-font whitelist that Phase 5 extends after Andrew/designer approval.
 
     ### Routes
 
-    - All routes are Server Components by default. Client components (`AnchorCopyButton`, `ArchiveList`, `error.tsx`) declare `'use client'` at the top.
+    - All routes are Server Components by default. Client components (`AnchorCopyButton`, `ArchiveList`, `ThemeApplier`, `error.tsx`) declare `'use client'` at the top.
     - `/issue/[slug]` uses `generateStaticParams()` against `QUERY_ARCHIVE` so every published issue is statically generated at build time. ISR with `revalidate = 60` keeps content fresh.
     - SEO: `generateMetadata()` per page emits OG + Twitter cards. `<JsonLd>` server component emits `schema.org/Article` (issue pages) and `schema.org/NGO` (charity pages).
 
@@ -247,11 +252,12 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
       grep -q "vercel link" apps/web/README.md && \
       grep -q "NEXT_PUBLIC_SANITY_PROJECT_ID" apps/web/README.md && \
       grep -q "NEXT_PUBLIC_SITE_URL" apps/web/README.md && \
-      grep -q "lib/theme.ts" apps/web/README.md
+      grep -q "lib/theme.ts" apps/web/README.md && \
+      grep -q "ThemeApplier" apps/web/README.md
     </automated>
   </verify>
   <done>
-    apps/web/README.md replaces the Phase 1 placeholder with a real onboarding doc. Sections: status, routes table, prerequisites, setup, scripts, architecture notes (Sanity reader, theme engine, routes, print), Vercel deploy, troubleshooting. Length > 100 lines.
+    apps/web/README.md replaces the Phase 1 placeholder with a real onboarding doc. Sections: status, routes table, prerequisites, setup, scripts, architecture notes (Sanity reader, theme engine with two-layer injection note, routes, print), Vercel deploy, troubleshooting. Length > 100 lines.
   </done>
 </task>
 
@@ -271,11 +277,11 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
     - Sanity reader plumbing (Plan 02-02)
     - Theme engine with hex/font/WCAG validation (Plan 02-03)
     - Demo content seed (Plan 02-04)
-    - Root layout + globals + fonts + print stylesheet + JSON-LD primitive + reading-time helper (Plan 02-05)
-    - Issue route with 10 sections + theme injection + JSON-LD Article (Plan 02-06)
+    - Root layout + globals + fonts + print stylesheet + JSON-LD primitive + reading-time helper + shadcn button/tooltip primitives (Plan 02-05)
+    - Issue route with 10 sections + theme injection (server + client ThemeApplier) + JSON-LD Article + shadcn Tooltip on AnchorCopyButton (Plan 02-06)
     - Archive route with client-side search + sort (Plan 02-07)
     - Charities list + detail with JSON-LD NGO (Plan 02-08)
-    - Homepage redirect + About + Shop shell (Plan 02-09)
+    - Homepage redirect + About + Shop shell (shadcn Button) (Plan 02-09)
     - Sitemap + RSS + robots + OG default image (Plan 02-10)
 
     **Action: Andrew runs the smoke test and writes the result to** `.planning/phases/02-web-shell-theme-engine/02-11-SMOKE-TEST.md`.
@@ -300,7 +306,7 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
     | 5 | WEB-05 | `/about` | Page renders with placeholder copy "The Eisenbalm Dispatch publishes weekly. This page is being written." |
     | 6 | WEB-06 | `/issue/issue-1`, inspect `<head>` | Find inline `<style>` with `:root { --color-bg: #F5EEDC; --color-text: #1A1A18; --color-primary: #14213D; --color-accent: #FCA311; --font-display: 'DM Serif Display', serif; --font-body: 'Merriweather', serif; }` (color/font order may vary). |
     | 7 | WEB-07 | Manual: in Sanity Studio (`pnpm dev:studio`), open the demo issue, change `theme.primaryColor` to `red` (literal string), Save. Refresh `/issue/issue-1`. | Primary color falls back to `#2D5016` (forest green from brand defaults). No crash. Console may show `[theme]` warning. Revert the field afterward. |
-    | 8 | WEB-08 | View source of `/issue/issue-1` | The `<style>` tag content built from `serializeThemeCss` is the only inline theme CSS. No `style="..."` attribute on `<html>` contains theme values. (`applyTheme` would run client-side if used, but Phase 2 uses the server-rendered style tag for FOUC prevention.) |
+    | 8 | WEB-08 | View source of `/issue/issue-1` AND test client-side defense-in-depth | (a) Page source has the `<style>` tag built by `serializeThemeCss` — that's the only inline theme CSS in `<head>` (no template-literal CSS strings, no `style="..."` attribute on `<html>` containing theme values). (b) Open DevTools console on the loaded page and run `document.documentElement.style.setProperty('--color-primary', 'red')` — within one tick the `<ThemeApplier>` `useEffect` should NOT re-run (it only fires on theme prop change), so to force re-validation, navigate to a different page and back, OR reload. After reload, confirm `--color-primary` is the valid theme hex (not `red`). EXTRA: temporarily mutate the rendered `<style>` content via DevTools to inject an invalid hex; reload — `<ThemeApplier>` runs on mount and reapplies validated values via `element.style.setProperty`. A `[theme]` console warning should log when an invalid value was rejected. |
     | 9 | WEB-09 | In Sanity Studio: set `theme.backgroundColor` to `#FFFFFF` and `theme.textColor` to `#CCCCCC` (contrast 1.6:1, fails AA). Save. Refresh page. | Background reverts to `#FAFAF8`, text reverts to `#1A1A18`. No page crash. Revert. |
     | 10 | WEB-10 | View source of `/issue/issue-1` | Find `<script type="application/ld+json">`. JSON includes `"@type":"Article"`, `"headline":"<origin story headline>"`, `"datePublished":"2026-06-05"`, `"author":{"@type":"Organization","name":"Jesse A. Eisenbalm"}`, and `"about":{"@type":"NGO","name":"The Quiet Foundation"...}`. |
     | 11 | WEB-11 | View source of `/issue/issue-1` AND `/archive` | Both have `<meta property="og:title">`, `<meta property="og:image">`, `<meta name="twitter:card" content="summary_large_image">`. |
@@ -308,13 +314,13 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
     | 13 | WEB-13 | `/feed.xml` | Returns RSS 2.0 XML. Channel title is "The Eisenbalm Dispatch". One `<item>` with title "The Quiet Foundation — Issue 1". Try opening in [NetNewsWire](https://netnewswire.com) — the feed should parse. |
     | 14 | WEB-14 | On `/issue/issue-1`, browser `Cmd+P` / `Ctrl+P` to open print preview | Header, footer, anchor buttons, game/deliberation/podcast slots, and shop callout are hidden. Theme background is white. Body text is black serif. |
     | 15 | WEB-15 | `/issue/issue-1` | Reading time visible in the hero metadata row: "{N} min read" (single-digit number for the demo seed; not 0). |
-    | 16 | WEB-16 | On `/issue/issue-1`, click the link icon next to any section label | "Copied" microtext appears briefly. Paste into the address bar — URL ends with `#origin-story` (or whichever section). |
+    | 16 | WEB-16 | On `/issue/issue-1`, click the link icon next to any section label | shadcn `<Tooltip>` shows "Copied" microtext briefly (1500ms). Paste into the address bar — URL ends with `#origin-story` (or whichever section). |
 
     **Extras** (not WEB-* but UI-SPEC):
 
     - Confirm `/not-found` (visit any garbage URL) renders "This page does not exist."
-    - Confirm the shop callout at the bottom of `/issue/issue-1` says "Jesse A. Eisenbalm lip balm. 100% of proceeds go to this week's featured charity." and the button reads "Buy the lip balm" linking to `/shop`.
-    - Confirm `/shop` shows the charity callout: "This week's proceeds benefit The Quiet Foundation."
+    - Confirm the shop callout at the bottom of `/issue/issue-1` says "Jesse A. Eisenbalm lip balm. 100% of proceeds go to this week's featured charity." and the button (shadcn `<Button asChild>`) reads "Buy the lip balm" linking to `/shop`.
+    - Confirm `/shop` shows the charity callout: "This week's proceeds benefit The Quiet Foundation." and the disabled shadcn `<Button>` reads "Coming soon".
 
     **Reporting** (Andrew):
 
@@ -331,15 +337,16 @@ Output: README + a documented smoke-test report (`02-11-SMOKE-TEST.md`).
     </automated>
   </verify>
   <done>
-    `.planning/phases/02-web-shell-theme-engine/02-11-SMOKE-TEST.md` exists with one PASS/FAIL line per WEB-* requirement (16 rows minimum). Andrew has resumed with "approved" (all 16 PASS) OR has listed failures that trigger a gap closure cycle before phase close.
+    `.planning/phases/02-web-shell-theme-engine/02-11-SMOKE-TEST.md` exists with one PASS/FAIL line per WEB-* requirement (16 rows minimum). WEB-08 row specifically verifies BOTH the server-rendered `<style>` tag AND the client-side `<ThemeApplier>` defense-in-depth path (devtools tampering re-validation). Andrew has resumed with "approved" (all 16 PASS) OR has listed failures that trigger a gap closure cycle before phase close.
   </done>
 </task>
 
 </tasks>
 
 <verification>
-- apps/web/README.md replaces placeholder (>100 lines, sections present)
+- apps/web/README.md replaces placeholder (>100 lines, sections present, mentions ThemeApplier two-layer injection)
 - Andrew completes the 16-item smoke test; SMOKE-TEST.md is committed
+- WEB-08 smoke step verifies both server and client theme injection paths
 - Any FAIL items either trigger a gap closure plan or a one-line Edit in this phase before approval
 </verification>
 

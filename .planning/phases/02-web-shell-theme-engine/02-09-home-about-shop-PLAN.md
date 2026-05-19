@@ -17,13 +17,14 @@ must_haves:
     - "/shop renders a static shell with charity-of-the-week callout, 'Coming soon' button (no Stripe in Phase 2)"
     - "All three pages emit OG + Twitter metadata"
     - "Empty-state copy on / matches UI-SPEC Copywriting Contract verbatim"
+    - "shadcn <Button> primitive (installed by Plan 02-05) is the canonical shop CTA — used by the disabled 'Coming soon' button on /shop and by ShopCallout on /issue/[slug] (the latter built in Plan 02-06)"
   artifacts:
     - path: apps/web/app/page.tsx
       provides: "Server component: QUERY_LATEST_ISSUE_SLUG → redirect or empty state"
     - path: apps/web/app/about/page.tsx
       provides: "Static about page with placeholder copy"
     - path: apps/web/app/shop/page.tsx
-      provides: "Static shop shell: charity callout from latest issue + disabled 'Coming soon' button"
+      provides: "Static shop shell: charity callout from latest issue + disabled 'Coming soon' shadcn Button"
   key_links:
     - from: apps/web/app/page.tsx
       to: apps/web/lib/sanity/queries.ts (QUERY_LATEST_ISSUE_SLUG)
@@ -33,13 +34,19 @@ must_haves:
       to: apps/web/lib/sanity/queries.ts (charity callout fetch)
       via: "GROQ fetch for latest issue's charity name"
       pattern: "weeklyIssue.*status.*published"
+    - from: apps/web/app/shop/page.tsx
+      to: apps/web/components/ui/button.tsx (shadcn Button)
+      via: "<Button disabled> for the Phase 2 'Coming soon' CTA"
+      pattern: "components/ui/button"
 ---
 
 <objective>
 Land the three remaining static-ish routes: homepage redirect, about page placeholder, and shop shell. Together with the existing Wave 3 plans these complete WEB-01 (`/` redirect) and WEB-05 (`/about`) plus the Phase 2 shop shell (Phase 8 wires Stripe later).
 
+shadcn `<Button>` is installed by Plan 02-05 (Wave 2). This plan only consumes it — no shadcn init or `add` invocations happen here. Per CONTEXT.md D-07, the "Coming soon" button on `/shop` MUST be the shadcn Button primitive (variant="default" + `disabled`).
+
 Purpose: Ensures every URL listed in CONTEXT.md D-20 resolves without 404. Andrew can click through every nav link by end of Wave 3.
-Output: Three small route files. No new shared components (header/footer + chrome inherited from Wave 2).
+Output: Three small route files. No new shared components (header/footer + chrome inherited from Wave 2; shadcn primitives from Plan 02-05).
 </objective>
 
 <execution_context>
@@ -56,6 +63,7 @@ Output: Three small route files. No new shared components (header/footer + chrom
 @apps/web/lib/sanity/queries.ts
 @apps/web/lib/sanity/types.ts
 @apps/web/lib/site.ts
+@apps/web/components/ui/button.tsx
 
 <interfaces>
 <!-- LOCKED copy strings (UI-SPEC Copywriting Contract): -->
@@ -79,6 +87,12 @@ Output: Three small route files. No new shared components (header/footer + chrom
      inline rather than extending lib/sanity/queries.ts (this is the only
      consumer of "latest issue charity name only" and Phase 8 will replace
      the entire shop page). -->
+
+<!-- shadcn <Button> import (installed by Plan 02-05, scoped per CONTEXT.md D-07): -->
+- import { Button } from '@/components/ui/button'
+- Use variant="default" size="lg" disabled for the Phase 2 "Coming soon" CTA.
+- No shop-specific Tailwind classes on the Button — inherits shadcn defaults
+  themed via the CSS variable shim in globals.css (if installed by Plan 02-05).
 </interfaces>
 </context>
 
@@ -93,7 +107,7 @@ Output: Three small route files. No new shared components (header/footer + chrom
   </read_first>
   <files>apps/web/app/page.tsx</files>
   <action>
-    Overwrite (or create) `apps/web/app/page.tsx`. If Plan 02-05 Task 7 created a `HomePlaceholder` stub, replace it.
+    Overwrite (or create) `apps/web/app/page.tsx`. If Plan 02-05 Task 8 created a `HomePlaceholder` stub, replace it.
 
     ```typescript
     import type { Metadata } from 'next'
@@ -101,13 +115,13 @@ Output: Three small route files. No new shared components (header/footer + chrom
     import { sanityClient } from '@/lib/sanity/client'
     import { QUERY_LATEST_ISSUE_SLUG } from '@/lib/sanity/queries'
     import type { LatestIssueSlug } from '@/lib/sanity/types'
-    import { SITE_NAME, getSiteUrl } from '@/lib/site'
+    import { SITE_NAME, SITE_DESCRIPTION, getSiteUrl } from '@/lib/site'
 
     export const revalidate = 60
 
     export const metadata: Metadata = {
       title: SITE_NAME,
-      description: 'A weekly editorial on one obscure charity. One product. 100% donated.',
+      description: SITE_DESCRIPTION,
       alternates: { canonical: getSiteUrl() },
     }
 
@@ -137,6 +151,7 @@ Output: Three small route files. No new shared components (header/footer + chrom
     - When the demo seed (Plan 02-04) has run, `/` redirects to `/issue/issue-1`.
     - When the seed hasn't run (empty production dataset OR fresh local dev without seed), the empty state renders.
     - No countdown, no email capture (UI-SPEC anti-features).
+    - `SITE_DESCRIPTION` import — Plan 02-05's Task 3 guarantees this export exists.
   </action>
   <verify>
     <automated>
@@ -145,6 +160,7 @@ Output: Three small route files. No new shared components (header/footer + chrom
       grep -q "QUERY_LATEST_ISSUE_SLUG" apps/web/app/page.tsx && \
       grep -q "redirect" apps/web/app/page.tsx && \
       grep -q "The first issue is being prepared. Check back Thursday\." apps/web/app/page.tsx && \
+      grep -q "SITE_DESCRIPTION" apps/web/app/page.tsx && \
       ! grep -q "countdown" apps/web/app/page.tsx && \
       ! grep -q "subscribe" apps/web/app/page.tsx && \
       ! grep -q "newsletter" apps/web/app/page.tsx
@@ -213,20 +229,25 @@ Output: Three small route files. No new shared components (header/footer + chrom
 </task>
 
 <task type="auto">
-  <name>Task 3: apps/web/app/shop/page.tsx — Phase 2 shell with charity callout</name>
+  <name>Task 3: apps/web/app/shop/page.tsx — Phase 2 shell with charity callout (shadcn Button)</name>
   <read_first>
     - .planning/phases/02-web-shell-theme-engine/02-UI-SPEC.md §15 ShopShell + §"/shop"
+    - .planning/phases/02-web-shell-theme-engine/02-CONTEXT.md (D-07 shadcn scope)
     - apps/web/lib/sanity/queries.ts (QUERY_LATEST_ISSUE_SLUG — used as a base for fetching latest charity name)
+    - apps/web/components/ui/button.tsx (installed by Plan 02-05 — confirm Button export)
   </read_first>
   <files>apps/web/app/shop/page.tsx</files>
   <action>
     Create `apps/web/app/shop/page.tsx`. Inline a tiny GROQ query for the latest issue's charity name — the only place that needs this projection, and Phase 8 will rewrite this page anyway, so it doesn't deserve a slot in `lib/sanity/queries.ts`.
+
+    Per CONTEXT.md D-07, the "Coming soon" CTA uses the shadcn `<Button>` primitive installed by Plan 02-05 — not a hand-rolled `<button>` with ad-hoc Tailwind classes. The button is `disabled` in Phase 2; Phase 8 swaps to an enabled Stripe Checkout trigger.
 
     ```typescript
     import type { Metadata } from 'next'
     import { groq } from 'next-sanity'
     import { sanityClient } from '@/lib/sanity/client'
     import { SITE_NAME, getSiteUrl } from '@/lib/site'
+    import { Button } from '@/components/ui/button'
 
     export const revalidate = 60
 
@@ -279,22 +300,29 @@ Output: Three small route files. No new shared components (header/footer + chrom
           <p className="mt-4 font-ui text-[14px] text-[color:var(--color-text-muted)]">
             Product details coming soon.
           </p>
-          <button
+          {/*
+            shadcn Button (installed by Plan 02-05). variant="default" gets us
+            the accent-colored background per UI-SPEC §"Component Inventory".
+            Phase 8 enables this button and wires it to a Stripe Checkout
+            session.
+          */}
+          <Button
             type="button"
             disabled
             aria-disabled="true"
-            className="mt-8 inline-flex h-11 cursor-not-allowed items-center justify-center rounded bg-[color:var(--color-text-muted)] px-6 font-ui text-[14px] font-semibold text-[color:var(--color-bg)] opacity-60"
+            size="lg"
+            className="mt-8"
           >
             Coming soon
-          </button>
+          </Button>
         </section>
       )
     }
     ```
 
     Notes:
-    - Disabled button uses a plain `<button>` — no shadcn primitive added here. Phase 8 introduces the real button + Stripe Checkout flow.
-    - The page doesn't render `<ShopCallout>` (that's per-issue chrome at the bottom of `/issue/[slug]`). `/shop` IS the product page.
+    - `<Button>` comes from shadcn (`@/components/ui/button`) — installed and theme-shimmed by Plan 02-05. No ad-hoc Tailwind on the button itself per Blocker 1 fix: only positioning (`mt-8`) and size (`size="lg"`).
+    - The page doesn't render `<ShopCallout>` (that's per-issue chrome at the bottom of `/issue/[slug]`, built in Plan 02-06). `/shop` IS the product page.
   </action>
   <verify>
     <automated>
@@ -307,12 +335,14 @@ Output: Three small route files. No new shared components (header/footer + chrom
       grep -q "Product details coming soon\." apps/web/app/shop/page.tsx && \
       grep -q "Coming soon" apps/web/app/shop/page.tsx && \
       grep -q "disabled" apps/web/app/shop/page.tsx && \
+      grep -q "@/components/ui/button" apps/web/app/shop/page.tsx && \
+      grep -q "<Button" apps/web/app/shop/page.tsx && \
       pnpm --filter web typecheck 2>&1 | tail -3 && \
       pnpm --filter web build 2>&1 | tail -10
     </automated>
   </verify>
   <done>
-    `/shop` resolves with the locked Phase 2 shell. Charity callout pulls from latest published issue. Button is visibly disabled. typecheck + build succeed.
+    `/shop` resolves with the locked Phase 2 shell. Charity callout pulls from latest published issue. Button is a shadcn `<Button>` (variant="default" by default, size="lg", `disabled`). typecheck + build succeed.
   </done>
 </task>
 
@@ -321,18 +351,19 @@ Output: Three small route files. No new shared components (header/footer + chrom
 <verification>
 - / redirects to /issue/issue-1 when demo seed is in place (or renders empty state otherwise)
 - /about renders with locked placeholder copy
-- /shop renders product shell with dynamic charity callout
+- /shop renders product shell with dynamic charity callout and shadcn Button
 - All three carry canonical URLs and OG metadata
 - typecheck + build pass
+- shadcn Button (installed in Plan 02-05) is the canonical CTA — D-07 honored
 </verification>
 
 <success_criteria>
 - WEB-01: / redirects to latest issue or shows graceful empty state
 - WEB-05: /about resolves with metadata + placeholder copy
-- Phase 2 shop shell satisfies UI-SPEC §15 ShopShell without Stripe wiring
+- Phase 2 shop shell satisfies UI-SPEC §15 ShopShell without Stripe wiring; CTA uses shadcn Button per D-07
 - All UI-SPEC copy strings present verbatim (no exclamation marks, no winking)
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/02-web-shell-theme-engine/02-09-home-about-shop-SUMMARY.md` recording: redirect behavior, empty-state path, the inline shop GROQ projection name (`charityName`), and a reminder that Phase 8 rewrites `app/shop/page.tsx`.
+After completion, create `.planning/phases/02-web-shell-theme-engine/02-09-home-about-shop-SUMMARY.md` recording: redirect behavior, empty-state path, the inline shop GROQ projection name (`charityName`), the shadcn Button usage on /shop (variant + size + disabled state), and a reminder that Phase 8 rewrites `app/shop/page.tsx`.
 </output>

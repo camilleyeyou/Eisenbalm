@@ -2,7 +2,7 @@
 phase: 07-game-rendering
 plan: 03
 type: execute
-wave: 1
+wave: 2
 depends_on:
   - "07-01"
   - "07-02"
@@ -269,7 +269,6 @@ api.qaCorrections.insert({
           // Convex write failures must not break the page render. Log to
           // browser console so Andrew can investigate; the fallback UI is
           // already on-screen regardless.
-          // eslint-disable-next-line no-console
           console.error('[GameSlot] qaCorrections.insert failed', err)
         })
       }, [validation, runId, insertQaCorrection])

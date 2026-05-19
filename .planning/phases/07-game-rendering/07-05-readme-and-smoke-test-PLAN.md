@@ -2,7 +2,7 @@
 phase: 07-game-rendering
 plan: 05
 type: execute
-wave: 2
+wave: 4
 depends_on:
   - "07-02"
   - "07-03"
@@ -387,7 +387,7 @@ Output: Updated `apps/web/README.md` with a Phase 7 section + Andrew's smoke tes
        - [ ] GAM-05 (fallback + Convex write) — manual smoke ✓
        - [ ] GAM-06 (360px mobile) — manual smoke ✓
     6. Any open issues or follow-ups discovered during smoke (e.g. font weight regressions, console warnings, Convex row appearing twice in dev due to Strict Mode).
-    7. Reminder: Phase 7 is COMPLETE when all 6 GAM-* requirements are checked. If any failed during smoke, flag for Plan 07-06 (gap closure) — do NOT mark the phase complete.
+    7. Reminder: Phase 7 is COMPLETE when all 6 GAM-* requirements are checked. If any failed during smoke, open a gap-closure plan via `/gsd:plan-phase 7 --gaps` — do NOT mark the phase complete.
 
     The SUMMARY follows the same format as prior `*-SUMMARY.md` files in the .planning/phases/ tree.
   </action>
