@@ -97,11 +97,11 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Game Rendering (sandbox-safe iframe)
 
-- [ ] **GAM-01**: Issue page renders the game inside `<iframe srcdoc={embedCode} sandbox="allow-scripts">` (NEVER with `allow-same-origin`)
+- [x] **GAM-01**: Issue page renders the game inside `<iframe srcdoc={embedCode} sandbox="allow-scripts">` (NEVER with `allow-same-origin`)
 - [x] **GAM-02**: An automated validator runs on every GameWriter `embedCode` output and rejects any of: `window.parent`, `top.`, `parent.`, `fetch(`, `XMLHttpRequest`, `document.cookie`, `document.domain`, external `<script src=...>` tags, external `<link href=...>` tags
 - [ ] **GAM-03**: An ESLint or codebase-level rule prevents the iframe `sandbox` attribute from including `allow-same-origin`
 - [x] **GAM-04**: A CSP `<meta>` tag is injected into the srcdoc HTML restricting external resources
-- [ ] **GAM-05**: If validation fails, the issue page renders a fallback "Game unavailable" placeholder; Andrew is notified via Convex `qaCorrections`
+- [x] **GAM-05**: If validation fails, the issue page renders a fallback "Game unavailable" placeholder; Andrew is notified via Convex `qaCorrections`
 - [x] **GAM-06**: Game iframe is responsive and renders correctly on mobile (≥360px wide)
 
 ### Stripe / Commerce
@@ -255,11 +255,11 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | WHK-06 | Phase 6: PDF + Webhook Chain | Complete |
 | WHK-07 | Phase 6: PDF + Webhook Chain | Complete |
 | WHK-08 | Phase 6: PDF + Webhook Chain | Complete |
-| GAM-01 | Phase 7: Game Rendering | Pending |
+| GAM-01 | Phase 7: Game Rendering | Complete |
 | GAM-02 | Phase 7: Game Rendering | Complete |
 | GAM-03 | Phase 7: Game Rendering | Pending |
 | GAM-04 | Phase 7: Game Rendering | Complete |
-| GAM-05 | Phase 7: Game Rendering | Pending |
+| GAM-05 | Phase 7: Game Rendering | Complete |
 | GAM-06 | Phase 7: Game Rendering | Complete |
 | CMR-01 | Phase 8: Stripe / Commerce | Pending |
 | CMR-02 | Phase 8: Stripe / Commerce | Pending |

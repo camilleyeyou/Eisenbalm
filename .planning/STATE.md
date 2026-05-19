@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 07-02-validator-and-csp-PLAN.md (game-validator module + 24 vitest assertions covering 13 banned constructs, 9 CSP directives, viewport meta + mobile reset; tsconfig __tests__ include extended)
-last_updated: "2026-05-19T07:42:49.312Z"
+stopped_at: Completed 07-03-gameslot-wiring-PLAN.md (Phase 2 hidden iframe replaced — production iframe with validator + Convex one-shot guard; GameFallback locked-copy component; page.tsx threads runId)
+last_updated: "2026-05-19T07:56:12.304Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 66
-  completed_plans: 63
+  completed_plans: 64
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 07 (game-rendering) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -100,6 +100,7 @@ Plan: 3 of 5
 | Phase 06 P08 | 8min | 3 tasks | 2 files |
 | Phase 07 P01 | 6min | 3 tasks | 5 files |
 | Phase 07 P02 | 8min | 2 tasks | 3 files |
+| Phase 07 P03 | 4min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -227,6 +228,11 @@ Recent decisions affecting current work:
 - [Phase 07]: Plan 07-02: GAME_CSP_POLICY 9-directive string (default-src 'none' + connect-src 'none' + form-action 'none' + ...) is the network/exfil backstop catching obfuscated banned calls (window['fetch'], new Function) that the static deny-list misses
 - [Phase 07]: Plan 07-02 deviation (Rule 3 Blocking): extended apps/web/tsconfig.json include glob with __tests__/**/*.ts so vite-tsconfig-paths resolves @/lib/game-validator alias inside the test file. package.json + vitest.config.ts left to 07-01 per coordination notes
 - [Phase 07]: Plan 07-02: validator + injector are PURE functions (no React, no Convex, no I/O). Plan 07-03 GameSlot owns the Convex deliberationEvents:insert write on validation failure
+- [Phase 07]: Plan 07-03: 'use client' directive placed on line 1 ABOVE the docstring (Next.js requires it as first line; plan acceptance head -1 check confirms)
+- [Phase 07]: Plan 07-03: sandbox security comments use indirect phrasing ('the same-origin escape token') to avoid the literal forbidden token in GameSlot.tsx — Plan 07-04 source-scan tripwire is grep-based, scans raw file content not parsed AST
+- [Phase 07]: Plan 07-03: useRef one-shot guard set BEFORE await/catch — synchronous-path set means Strict Mode double-render and re-render-during-in-flight-mutation both early-return without double-firing the Convex write
+- [Phase 07]: Plan 07-03: Convex qaCorrections.insert args fixed to {runId, sectionName:'game', reason, severity:'error', accepted:false, agentId:'game-validator', axis:'hard-rule'} — legacy fieldName/original/corrected NOT passed; quotedSpan/suggestedFix omitted (pattern match has no position; no automated fix)
+- [Phase 07]: Plan 07-03: issue.runId threaded with ?? null coalesce defensive against future GROQ projection drift (Issue type already string|null from Phase 2; no type edit)
 
 ### Pending Todos
 
@@ -282,6 +288,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T07:42:34.546Z
-Stopped at: Completed 07-02-validator-and-csp-PLAN.md (game-validator module + 24 vitest assertions covering 13 banned constructs, 9 CSP directives, viewport meta + mobile reset; tsconfig __tests__ include extended)
+Last session: 2026-05-19T07:56:12.294Z
+Stopped at: Completed 07-03-gameslot-wiring-PLAN.md (Phase 2 hidden iframe replaced — production iframe with validator + Convex one-shot guard; GameFallback locked-copy component; page.tsx threads runId)
 Resume file: None
