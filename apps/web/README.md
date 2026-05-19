@@ -308,3 +308,203 @@ The demo seed has not been run, or it ran against the wrong project. Confirm `ap
 
 *Phase 2 owner: gsd-planner.*
 *Phase 3 (next): Convex deployment + functions.*
+
+---
+
+## Phase 7 — Game Rendering
+
+Phase 7 wires the iframe game with security validation, CSP injection,
+a "Game unavailable." fallback, and a Convex notification path for Andrew.
+
+### Architecture
+
+| File | Role |
+|------|------|
+| `apps/web/lib/game-validator.ts` | Pure validator + CSP/head injector (no React, no Convex) |
+| `apps/web/components/issue/GameSlot.tsx` | Client Component: validates embedCode, renders iframe or fallback, fires Convex write on failure |
+| `apps/web/components/issue/GameFallback.tsx` | Pure display: "Game unavailable." |
+| `apps/web/__tests__/game-validator.test.ts` | Unit tests: every banned pattern + every CSP directive (GAM-02, GAM-04) |
+| `apps/web/__tests__/game-sandbox.test.ts` | Source-scan tripwire: fails if `allow-same-origin` appears in GameSlot.tsx (GAM-03) |
+
+### Security contract (LOCKED)
+
+The iframe MUST use exactly `sandbox="allow-scripts"`. It must NEVER
+contain `allow-same-origin` — that combination defeats the sandbox
+(the sandboxed page can rewrite its own sandbox attribute via DOM
+manipulation). The Vitest test in `apps/web/__tests__/game-sandbox.test.ts`
+fails the build if `allow-same-origin` appears anywhere in
+`apps/web/components/issue/GameSlot.tsx` (including comments). DO NOT
+weaken or delete that test.
+
+NEVER add allow-same-origin to the iframe sandbox attribute in GameSlot.tsx — the GAM-03 test will fail the build.
+
+### Validator deny-list (mirrors Python FORBIDDEN_CONSTRUCTS)
+
+The frontend deny-list in `apps/web/lib/game-validator.ts`
+(`BANNED_PATTERNS`) mirrors the Python `FORBIDDEN_CONSTRUCTS` constant
+in `packages/pipeline/src/eisenbalm_pipeline/agents/game.py`. Edits to
+either list MUST be mirrored in the other (the frontend cannot import
+from the Python package). Current entries (13):
+
+- `window.parent`, `window.top`, `top.`, `parent.` — parent/top frame access
+- `fetch(`, `XMLHttpRequest` — network requests
+- `document.cookie`, `document.domain` — same-origin policy probes
+- `localStorage` — storage access
+- `eval(`, `import(` — dynamic code execution
+- `<script src="...">`, `<link href="...">` — external resource references
+
+`game-validator.ts` exports four symbols consumed by `GameSlot.tsx`:
+
+- `BANNED_PATTERNS` — the deny-list array (readonly, 13 entries).
+- `GAME_CSP_POLICY` — the 9-directive CSP string.
+- `validateEmbedCode(embedCode: string): { valid: true } | { valid: false; reason: string }` — pure string scan; returns the first matching deny-list entry's label as `reason`.
+- `injectGameHead(embedCode: string): string` — prepends the CSP meta tag, viewport meta, and mobile CSS reset to the embed code, always (never matches `<head>`).
+
+Both functions are pure (no I/O, no React, no Convex). The Convex write on validation failure lives in `GameSlot.tsx`.
+
+### CSP policy
+
+Every game srcdoc has a `<meta http-equiv="Content-Security-Policy">`
+prepended by `injectGameHead`. The policy is exported as
+`GAME_CSP_POLICY` in `apps/web/lib/game-validator.ts`:
+
+```
+default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';
+img-src data:; connect-src 'none'; frame-src 'none'; object-src 'none';
+base-uri 'none'; form-action 'none'
+```
+
+The `connect-src 'none'` directive is the enforcement backstop against
+`fetch()` / `XHR` / `WebSocket` calls that obfuscation might slip past
+the string-match validator.
+
+### Mobile responsiveness (GAM-06)
+
+`injectGameHead` also prepends:
+
+- `<meta name="viewport" content="width=device-width, initial-scale=1">`
+- A CSS reset that sets `box-sizing: border-box` on `*`, `overflow-x: hidden`
+  + `max-width: 100%` on `html, body`, and `max-width: 100% !important;
+  height: auto;` on `canvas, svg, img`.
+
+Combined with the iframe container's `overflow-hidden` (in `GameSlot.tsx`)
+and the fixed heights `h-[280px] sm:h-[360px]`, this prevents the game
+from breaking out of the 360px-wide viewport on mobile.
+
+### Sandbox contract (validator → iframe vs fallback)
+
+`GameSlot.tsx` is a Client Component (`'use client'`) that decides what to render based on a three-way decision:
+
+1. `game === null` — no game on this issue; the slot shows a "Game coming soon." empty state. No iframe, no Convex write.
+2. `validateEmbedCode(game.embedCode).valid === false` — the validator rejected the embed; the slot mounts `<GameFallback />` ("Game unavailable.") AND fires a `qaCorrections.insert` Convex mutation (see below). No iframe.
+3. `validateEmbedCode(game.embedCode).valid === true` — the slot mounts a single `<iframe>` with `sandbox="allow-scripts"`, `srcDoc={injectGameHead(game.embedCode)}`. No fallback, no Convex write.
+
+The iframe sandbox attribute is the literal string `"allow-scripts"` and nothing else. Adding any other token (especially the same-origin escape) trips the GAM-03 source-scan tripwire described above.
+
+### Source-scan tripwire (GAM-03)
+
+`apps/web/__tests__/game-sandbox.test.ts` reads `apps/web/components/issue/GameSlot.tsx` from disk at every test run via `readFileSync`. Three assertions run:
+
+- Negative: `expect(source).not.toContain('allow-same-origin')` — fails the build if any future edit (code OR comment) reintroduces the forbidden token.
+- Positive: `expect(source).toContain('sandbox="allow-scripts"')` — fails if a future edit removes the sandbox attribute entirely.
+- Path: `expect(source.length).toBeGreaterThan(0)` — `readFileSync` raises `ENOENT` before this line runs if `GameSlot.tsx` is moved or renamed, forcing the maintainer to update `GAME_SLOT_PATH` rather than silently lose the guard.
+
+If you rename or relocate `GameSlot.tsx`, update `GAME_SLOT_PATH` in `apps/web/__tests__/game-sandbox.test.ts`. Do not weaken the assertions — ESLint is not configured in `apps/web` (Phase 7 cost decision), so this Vitest source-scan is the only build-time enforcement of the sandbox contract.
+
+### Fallback contract (GAM-05)
+
+When `validateEmbedCode(game.embedCode)` returns `{valid: false}`:
+
+1. `<GameFallback />` renders with the literal copy `Game unavailable.`
+   (period; no exclamation; no "we're sorry"). This is a voice contract
+   — see `CLAUDE.md`.
+2. A `qaCorrections.insert` Convex mutation fires exactly once per
+   component mount (guarded by `useRef`) with shape:
+   ```
+   {
+     runId,                                       // from issue.runId
+     sectionName: 'game',
+     reason: `Game validator rejected embedCode: ${reason}`,
+     severity: 'error',
+     accepted: false,
+     agentId: 'game-validator',
+     axis: 'hard-rule',
+   }
+   ```
+3. If `runId` is `null` (issue authored manually in Sanity without a
+   pipeline run), the Convex write is skipped — `runId` is `v.string()`
+   in the schema; passing undefined throws. The fallback UI still renders.
+
+Andrew sees the row in the Phase 9 deliberation layer where
+`agentId='game-validator'` is color-coded by `severity='error'`.
+
+### Running the tests
+
+The web workspace is named `web` in `apps/web/package.json` (not `apps/web` — that is the path, not the package name). pnpm's `--filter` flag takes the package name:
+
+```bash
+pnpm --filter web test:unit                       # full Vitest suite, < 10s
+pnpm --filter web test:unit game-validator        # validator + CSP tests only
+pnpm --filter web test:unit game-sandbox          # source-scan tripwire only
+```
+
+If you see the workspace path `pnpm --filter apps/web test:unit` in older docs or commit messages, treat it as a typo — `pnpm` resolves `--filter` against the `name` field, not the directory. Use `--filter web`. The npm script uses `vitest run` (not bare `vitest`) so there is no watch mode in CI.
+
+Expected final state: `Test Files 2 passed (2), Tests 27 passed (27)`.
+
+### Andrew's manual smoke test
+
+Two requirements need a real browser + real Convex deployment:
+
+**GAM-06 — 360px mobile rendering** (against the current published issue):
+
+1. Open the current published issue at `https://<vercel-domain>/issue/<latest-slug>`
+   (or `http://localhost:3000/issue/<latest-slug>` in dev).
+2. In Chrome DevTools, set viewport to 360 x 640.
+3. Scroll to the `#game` section.
+4. Confirm:
+   - The iframe container shows no horizontal scrollbar.
+   - The game content is not clipped beyond the rounded container.
+   - The "THE GAME" label + headline + description above the iframe
+     are readable without horizontal scroll.
+
+**GAM-05 — Validation failure → Convex write + fallback UI**:
+
+1. In Sanity Studio, create a fixture `weeklyIssue` draft with a `game`
+   object whose `embedCode` field contains the literal string
+   `document.cookie` (e.g. `<script>document.cookie</script>`).
+2. Publish the draft (or set status to `published` if your Studio
+   workflow requires it).
+3. Open the issue at `/issue/<fixture-slug>` in a browser.
+4. Confirm in the browser:
+   - The game section shows `Game unavailable.` (NOT the iframe).
+   - No JavaScript errors in the console.
+5. Confirm in the Convex dashboard (`qaCorrections` table):
+   - A row exists with `sectionName='game'`, `severity='error'`,
+     `agentId='game-validator'`, `accepted=false`.
+   - The `reason` field contains "Game validator rejected embedCode:
+     Forbidden construct: cookie access (document.cookie)".
+   - The `runId` matches the issue's `pipelineMetadata.runId`.
+6. Refresh the page; confirm the React `useRef` guard prevents a second
+   row from being written on re-render (the row count for this `runId`
+   + `sectionName='game'` remains 1, OR 2 if React Strict Mode is on in
+   dev — production has Strict Mode off so it stays at 1 per mount).
+
+After the smoke test passes, delete the fixture issue (or set its status
+back to draft) so it does not appear in production.
+
+### What to do if a test fails
+
+- `game-validator.test.ts` red — the deny-list or CSP policy was edited
+  without updating the test fixtures. Fix the test only if the edit was
+  intentional and is mirrored in `packages/pipeline/.../game.py`.
+- `game-sandbox.test.ts` red on the allow-same-origin assertion — an edit
+  reintroduced the forbidden token. Revert the edit; do NOT weaken
+  the test.
+- `game-sandbox.test.ts` red on `sandbox="allow-scripts"` — the iframe
+  was removed or the sandbox attribute was changed. Restore the
+  contract.
+
+### Pnpm command compatibility note
+
+`pnpm --filter apps/web test:unit` is the workspace-path form of the filter (also written `pnpm --filter ./apps/web test:unit`). It will work when pnpm 9.x is invoked from the repo root and the workspace glob matches that path. The canonical name-based form is `pnpm --filter web test:unit` (matches the `name` field in `apps/web/package.json`). Both resolve to the same `test:unit` script (`vitest run`). Phase 7 internal docs use the name-based form; older plan text occasionally uses the path form — they are equivalent in this repo.
