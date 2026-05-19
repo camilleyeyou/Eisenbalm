@@ -13,6 +13,8 @@ import type * as deliberationEvents from "../deliberationEvents.js";
 import type * as pipelineRuns from "../pipelineRuns.js";
 import type * as pitchLog from "../pitchLog.js";
 import type * as qaCorrections from "../qaCorrections.js";
+import type * as stripeEvents from "../stripeEvents.js";
+import type * as stripeOrders from "../stripeOrders.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +28,8 @@ declare const fullApi: ApiFromModules<{
   pipelineRuns: typeof pipelineRuns;
   pitchLog: typeof pitchLog;
   qaCorrections: typeof qaCorrections;
+  stripeEvents: typeof stripeEvents;
+  stripeOrders: typeof stripeOrders;
 }>;
 
 /**

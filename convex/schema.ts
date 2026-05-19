@@ -111,4 +111,33 @@ export default defineSchema({
   })
     .index('by_runId', ['runId'])
     .index('by_runId_and_selected', ['runId', 'selected']),
+
+  // ── Stripe events: idempotency dedup table (Phase 8 — CMR-06) ────────────
+  // One row per unique Stripe event.id we have processed. The unique
+  // by_eventId index + Convex per-table mutation serialization gives us
+  // atomic check-and-insert via the `claim` mutation (see convex/stripeEvents.ts).
+  stripeEvents: defineTable({
+    eventId: v.string(),       // Stripe evt_... — unique per event delivery
+    eventType: v.string(),     // e.g. 'checkout.session.completed'
+    livemode: v.boolean(),     // matches event.livemode from Stripe
+    receivedAt: v.number(),    // Date.now() server-side
+  })
+    .index('by_eventId', ['eventId']),
+
+  // ── Stripe orders: minimal audit trail (Phase 8 — Open Question 2) ───────
+  // Behind STRIPE_RECORD_ORDERS env flag (default 'true'). One row per
+  // checkout.session.completed event we processed. Stripe Dashboard remains
+  // source of truth for orders; this exists so we can answer
+  // "how much went to charity X this week" without paginating Stripe API.
+  stripeOrders: defineTable({
+    sessionId: v.string(),     // cs_test_... or cs_live_...
+    eventId: v.string(),       // evt_... that fulfilled this order
+    amountTotal: v.number(),   // cents (Stripe convention)
+    currency: v.string(),      // 'usd', 'eur', etc.
+    customerEmail: v.optional(v.string()),
+    charitySlug: v.optional(v.string()),  // current charity at click time
+    createdAt: v.number(),     // Date.now() server-side
+  })
+    .index('by_sessionId', ['sessionId'])
+    .index('by_charitySlug_createdAt', ['charitySlug', 'createdAt']),
 })
