@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 08-03-schema-and-deps-PLAN.md (stripe@21.0.1 + Convex stripeEvents/stripeOrders tables deployed)
-last_updated: "2026-05-19T10:16:10.910Z"
+stopped_at: Completed 10-01-fonts-and-globals-PLAN.md
+last_updated: "2026-05-19T12:01:42.240Z"
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 7
-  total_plans: 74
-  completed_plans: 68
+  total_plans: 78
+  completed_plans: 69
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 08 — stripe-commerce
+**Current focus:** Phase 10 — editorial-design-pass
 
 ## Current Position
 
-Phase: 08 (stripe-commerce) — EXECUTING
-Plan: 3 of 8
+Phase: 10 (editorial-design-pass) — EXECUTING
+Plan: 2 of 4 (Plan 10-01 complete; resuming with 10-02)
 
 ## Performance Metrics
 
@@ -105,6 +105,7 @@ Plan: 3 of 8
 | Phase 07-game-rendering P05 | 10min | 2 tasks | 1 files |
 | Phase 08-stripe-commerce P01 | 25min | 2 tasks | 8 files |
 | Phase 08-stripe-commerce P08-03 | 6min | 2 tasks | 7 files |
+| Phase 10-editorial-design-pass P01 | 5min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -245,6 +246,7 @@ Recent decisions affecting current work:
 - [Phase 08-stripe-commerce]: Plan 08-03: stripeEvents.claim returns literal-union { firstTime: true } | { firstTime: false } via 'as const' for caller type-narrowing without runtime guard; Convex per-table serialization makes withIndex.first + insert atomic (CMR-06).
 - [Phase 08-stripe-commerce]: Plan 08-03: stripeOrders writes are best-effort behind STRIPE_RECORD_ORDERS=true flag; webhook returns 200 to Stripe even if audit insert fails (RESEARCH Open Question 2 + Pitfall 7).
 - [Phase 08-stripe-commerce]: Plan 08-03: @stripe/stripe-js intentionally NOT installed — hosted Checkout flow does window.location.href = session.url without Elements (RESEARCH §Standard Stack §Supporting). NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY documented as RESERVED for V2.
+- [Phase 10-editorial-design-pass]: Plan 10-01: Playfair Display weight subsets extended to [400, 600, 700]; Lora extended to [400, 500, 700] with italic style. Five typography utilities (.prose-measure, .drop-cap, .ornament-divider [FLEURON U+2766], .eyebrow, .metadata-block) appended to globals.css behind ═══ banner. All utilities reference --color-* / --font-* CSS variables so Phase 2 per-issue theme injection contract is preserved. No new font loaders; grep -r fonts.googleapis.com apps/web = 0. Phase 8 Wave 0 sentinel tests (29 fail / 37 pass) confirmed unchanged before+after — out-of-scope per SCOPE BOUNDARY rule.
 
 ### Pending Todos
 
@@ -300,6 +302,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T10:15:58.451Z
-Stopped at: Completed 08-03-schema-and-deps-PLAN.md (stripe@21.0.1 + Convex stripeEvents/stripeOrders tables deployed)
+Last session: 2026-05-19T12:01:42.228Z
+Stopped at: Completed 10-01-fonts-and-globals-PLAN.md
 Resume file: None
