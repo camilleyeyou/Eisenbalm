@@ -153,3 +153,108 @@ nav, button {
   --muted-foreground: var(--color-text-muted);
   --ring: var(--color-accent);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Phase 10 — Editorial Design Pass
+   Typography utilities: prose-measure, drop-cap, ornament-divider, eyebrow.
+   Consumed by apps/web/components/issue/* in Plan 10-02. NO color values
+   are hardcoded here — every color references --color-text / --color-accent
+   / --color-primary so per-issue theme injection (Phase 2) still drives palette.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Body prose line-height bumped to >= 1.55 (DES-03). The existing html { line-height: 1.65 }
+   above already satisfies this; this block documents the contract. */
+
+/* .prose-measure
+   Constrains body prose to a comfortable measure on >= 768px screens.
+   Full-width with horizontal padding on mobile. (DES-03) */
+.prose-measure {
+  max-width: 68ch;
+  margin-inline: auto;
+  padding-inline: 1.25rem; /* 20px mobile gutter */
+}
+@media (min-width: 768px) {
+  .prose-measure {
+    padding-inline: 1.5rem; /* 24px desktop gutter */
+  }
+}
+
+/* .drop-cap
+   Apply to a container; styles the first ::first-letter of the first <p>.
+   ~3.5x body size, baseline-aligned with second line, hanging left.
+   Renders correctly on mobile down to 320px (no overflow). (DES-02) */
+.drop-cap > p:first-of-type::first-letter {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 3.5em;
+  line-height: 0.85;
+  float: left;
+  padding-right: 0.08em;
+  padding-top: 0.05em;
+  margin-bottom: -0.1em;
+  color: var(--color-primary);
+}
+@media (max-width: 360px) {
+  /* Slightly smaller drop cap on the narrowest mobile so it doesn't overflow */
+  .drop-cap > p:first-of-type::first-letter {
+    font-size: 3em;
+  }
+}
+
+/* .ornament-divider
+   Between-section separator. NOT a default <hr>. Uses a Unicode ornament
+   (FLEURON U+2766 ❦) centered with consistent vertical rhythm. (DES-04) */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-block: 2.5rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-text);
+  opacity: 0.5;
+  letter-spacing: 0.5em;
+}
+.ornament-divider::before {
+  content: "\2766"; /* ❦ FLEURON */
+}
+
+/* .eyebrow
+   Small-caps section label above section headlines. (DES-04) */
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  opacity: 0.6;
+  display: inline-block;
+  line-height: 1.5;
+}
+
+/* .metadata-block
+   Sidebar / footnote treatment for case-study structured metadata.
+   Smaller type, monospace tabular numerals, delineated panel. (DES-05) */
+.metadata-block {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  opacity: 0.75;
+  border-left: 2px solid var(--color-accent);
+  padding-left: 1rem;
+  margin-block: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.metadata-block dt {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+.metadata-block dd {
+  margin-block: 0.25rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
