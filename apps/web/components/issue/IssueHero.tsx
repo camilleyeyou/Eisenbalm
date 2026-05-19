@@ -1,14 +1,17 @@
 /**
  * Issue hero — charity header at the top of every issue page.
- * UI-SPEC §1. Container: editorial wide (860px).
+ * UI-SPEC §1.
+ *
+ * Phase 10: masthead treatment — larger charity name (44/64), italic byline,
+ * .eyebrow utility for issue label and metadata row, .prose-measure for
+ * column consistency with the editorial body below. DES-01.
  *
  * Renders:
- *   - Charity name (Display, 36px/28px mobile, weight 600) — <h1>
- *   - Focus area + location (UI, 14px, muted)
- *   - Founding year "Est. {year}" (UI, 14px, muted) — omitted if null
- *   - Mission statement (Body, 18px, regular) — 3-line clamp
- *   - Reading time "{N} min read" (UI, 14px, muted)
- *   - Issue label "Issue {N} — {Month D, YYYY}" (UI, 14px, muted)
+ *   - Issue label "Issue {N} — {Month D, YYYY}" (.eyebrow, block)
+ *   - Charity name (Display, 44/64, weight 600, --color-primary) — <h1>
+ *   - "by Jesse A. Eisenbalm" italic byline (Body, 16px, italic)
+ *   - Metadata row (.eyebrow spans): focus area, location, "Est. {year}", "{N} min read"
+ *   - Mission statement (Body, 20px, regular) — 3-line clamp
  *   - PDF download link — only when problemPdfUrl is non-null
  *
  * Voice rules: no exclamation marks. "Est. {year}" never "Est. null".
@@ -49,44 +52,38 @@ export function IssueHero({
   const issueLabel = `Issue ${issueNumber} — ${formatPublishDate(publishDate)}`
 
   return (
-    <header className="mx-auto w-full max-w-[860px] px-4 pb-8 pt-12 sm:px-6 lg:px-8">
-      {/* Issue label */}
-      <p className="mb-4 font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
+    <header className="prose-measure pt-16 pb-10 sm:pt-20">
+      {/* Issue label — eyebrow, occupies its own line */}
+      <p className="eyebrow mb-6 block">
         {issueLabel}
       </p>
 
-      {/* Charity name — primary visual anchor (h1) */}
-      <h1 className="mb-4 font-display text-[28px] font-semibold leading-[1.15] text-[color:var(--color-primary)] sm:text-[36px]">
+      {/* Charity name — primary visual anchor (h1), masthead-scale display */}
+      <h1 className="mb-6 font-display text-[44px] font-semibold leading-[1.05] tracking-[-0.01em] text-[color:var(--color-primary)] sm:text-[64px]">
         {charity.name}
       </h1>
 
-      {/* Metadata row: focus area, location, founding year */}
-      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
-        {charity.focusArea && (
-          <span className="font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
-            {charity.focusArea}
-          </span>
-        )}
-        <span className="font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
-          {charity.location}
-        </span>
+      {/* Masthead byline — body serif italic, full name */}
+      <p className="mb-6 font-body text-[16px] italic leading-[1.55] text-[color:var(--color-text)] opacity-75">
+        by Jesse A. Eisenbalm
+      </p>
+
+      {/* Metadata row: focus area, location, founding year, reading time */}
+      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1">
+        {charity.focusArea && <span className="eyebrow">{charity.focusArea}</span>}
+        <span className="eyebrow">{charity.location}</span>
         {charity.foundingYear != null && (
-          <span className="font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
-            Est. {charity.foundingYear}
-          </span>
+          <span className="eyebrow">Est. {charity.foundingYear}</span>
         )}
-        {/* Reading time — right-aligned on the same row where space allows */}
         {readingTimeMinutes > 0 && (
-          <span className="ml-auto font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
-            {readingTimeMinutes} min read
-          </span>
+          <span className="eyebrow ml-auto">{readingTimeMinutes} min read</span>
         )}
       </div>
 
-      {/* Mission statement — 3-line clamp */}
+      {/* Mission statement — lede-style 20px body, 3-line clamp */}
       {charity.missionStatement && (
         <p
-          className="mb-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] overflow-hidden"
+          className="mb-8 font-body text-[20px] leading-[1.55] text-[color:var(--color-text)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] overflow-hidden"
           aria-label={`Mission: ${charity.missionStatement}`}
         >
           {charity.missionStatement}
