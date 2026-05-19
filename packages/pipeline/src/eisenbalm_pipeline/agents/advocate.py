@@ -173,8 +173,28 @@ async def advocate(state: DispatchState) -> DispatchState:
     model_versions = dict(state.get("model_versions") or {})
     model_versions["advocate"] = usage["resolved_model"]
 
+    # Propagate scores onto state['candidates'] so Editor gate 1's
+    # _sort_candidates_by_score sees real advocateScore values (not 0,
+    # which falls back to alphabetical sort and silently picks the wrong
+    # winner). Found 2026-05-19 during the first multi-charity live run:
+    # all 3 candidates had no scores in state, editor's deterministic
+    # top-score picked alphabetically-first candidate while the LLM
+    # rationale described a different charity entirely (winner field
+    # and rationale text out of sync).
+    score_by_name = {v["charityName"]: v["score"] for v in votes_serialized}
+    arg_by_name = {v["charityName"]: v["argument"] for v in votes_serialized}
+    candidates_with_scores = [
+        {
+            **c,
+            "advocateScore": score_by_name.get(c.get("name"), 0),
+            "advocateArgument": arg_by_name.get(c.get("name"), ""),
+        }
+        for c in candidates
+    ]
+
     return {
         **state,
+        "candidates": candidates_with_scores,
         "advocate_votes": votes_serialized,
         "model_versions": model_versions,
     }
