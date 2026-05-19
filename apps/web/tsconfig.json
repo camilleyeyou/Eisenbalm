@@ -29,6 +29,8 @@
     "components/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx",
     ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules", ".next", "out"]
