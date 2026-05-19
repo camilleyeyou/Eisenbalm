@@ -200,7 +200,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   6. Visual regression: the Phase 7 game iframe still renders inside its sandboxed container with no layout overflow; the shop callout still appears at the bottom (Phase 2 ShopCallout component unchanged); the deliberation accordion stub (if present) still renders without overlap
 **Plans**: 4 plans
 - [x] 10-01-fonts-and-globals-PLAN.md — Lock paired Google Fonts (Playfair Display + Lora) via next/font/google with extended weight subsets; add .prose-measure, .drop-cap, .ornament-divider, .eyebrow, .metadata-block utilities to globals.css
-- [ ] 10-02-issue-page-redesign-PLAN.md — Refactor EditorialSection (lead-prop drop cap), CaseStudySection (.metadata-block dl), IssueHero (masthead), PortableTextRenderer (19px/1.7 body, accent blockquote), and wire `lead` onto Origin Story in page.tsx; ShopCallout + GameSlot byte-unchanged
+- [x] 10-02-issue-page-redesign-PLAN.md — Refactor EditorialSection (lead-prop drop cap), CaseStudySection (.metadata-block dl), IssueHero (masthead), PortableTextRenderer (19px/1.7 body, accent blockquote), and wire `lead` onto Origin Story in page.tsx; ShopCallout + GameSlot byte-unchanged
 - [ ] 10-03-visual-regression-tests-PLAN.md — Source-scan tripwire test __tests__/issue-page-typography.test.ts with 6 describe blocks (one per DES-01..DES-06) following Phase 7 game-sandbox.test.ts pattern
 - [ ] 10-04-readme-and-uat-PLAN.md — apps/web/README.md Phase 10 section + Andrew's manual UAT against deployed issue page (autonomous: false)
 **UI hint**: yes
@@ -227,4 +227,4 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 7. Game Rendering | 0/5 | Planned | - |
 | 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 0/TBD | Not started | - |
-| 10. Editorial Design Pass | 1/4 | In Progress|  |
+| 10. Editorial Design Pass | 2/4 | In Progress|  |
