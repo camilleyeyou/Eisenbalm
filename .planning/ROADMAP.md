@@ -187,10 +187,24 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 10: Editorial Design Pass (Issue Page)
+**Goal**: The issue page reads like a serious editorial magazine (New Yorker / longform reference): serif display + body typography pair via Google Fonts, narrow comfortable measure (~62-68ch) for prose, generous vertical rhythm, a drop cap on the first paragraph of the lead section, ornament/rule dividers between sections, masthead-style metadata block (issue number, date, byline), and footnote-style metadata treatment for the case study — all while preserving Phase 2's per-issue theme injection (charity-driven primary/accent/background/text colors override layout defaults but do not break the typographic hierarchy)
+**Depends on**: Phase 2
+**Requirements**: DES-01, DES-02, DES-03, DES-04, DES-05, DES-06
+**Success Criteria** (what must be TRUE):
+  1. The issue page at `/issue/issue-1` (and any other issue) renders with a serif display headline for the charity name and a serif body face for paragraph text, both loaded from Google Fonts via Next.js `next/font/google` — no FOUT, no client-side font flash; the typographic hierarchy is visible at a glance (display >> section header >> body)
+  2. The lead paragraph of the Origin Story (or the first prose section per the issue) renders with a drop cap (initial letter scaled ~3x, baseline-aligned, hanging if achievable); subsequent paragraphs do not get drop caps; the drop cap renders correctly on mobile (≥320px) without layout collapse
+  3. The body prose column is constrained to a comfortable measure (60-68ch) on screens ≥768px; on mobile it uses full width with proper padding; line-height is generous (≥1.55); paragraphs have proper indent or blank-line separation consistent throughout the page
+  4. Section transitions use an ornament or rule divider (not just a `<hr>` default) and a consistent section-header treatment (e.g. small-caps label + serif title); the case study renders with footnote-style metadata (founded/AUM/focus) visually distinct from prose
+  5. Phase 2's per-issue theme injection still works: the charity's primaryColor/accentColor/backgroundColor/textColor still drive page colors via CSS variables; switching to a different issue with a different theme visibly changes accent colors without breaking the typographic hierarchy or layout
+  6. Visual regression: the Phase 7 game iframe still renders inside its sandboxed container with no layout overflow; the shop callout still appears at the bottom (Phase 2 ShopCallout component unchanged); the deliberation accordion stub (if present) still renders without overlap
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
-Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5-7, post-Phase 2) → 9
+Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5-7, post-Phase 2) → 9 → 10 (Phase 10 depends only on Phase 2, can run any time after 2 — slotted last so design polish lands after functional work)
 
 **Parallelism notes (parallelization=true):**
 - Phase 8 (Stripe) can begin immediately after Phase 2 completes; it does not need to wait for Phases 3-7
@@ -209,3 +223,4 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 7. Game Rendering | 0/5 | Planned | - |
 | 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 0/TBD | Not started | - |
+| 10. Editorial Design Pass | 0/TBD | Not started | - |

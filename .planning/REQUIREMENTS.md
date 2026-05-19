@@ -138,6 +138,15 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **OPS-02**: A `/run/{runId}/status` endpoint returns the current pipeline state for monitoring
 - [x] **OPS-03**: Per-run cost summary is visible in Sanity Studio on the `weeklyIssue` draft (read-only field rendered from Convex `pipelineRuns.cost`)
 
+### Editorial Design Pass (Issue Page)
+
+- [ ] **DES-01**: Issue page uses paired Google Fonts via Next.js `next/font/google` — a serif display face for the charity name + section headers (e.g. Playfair Display, Libre Caslon, Cormorant Garamond, or similar editorial serif) and a serif body face for paragraphs (e.g. Lora, Source Serif 4, EB Garamond, or similar). No client-side font flash (FOUT); fonts are subsetted and self-hosted via the framework.
+- [ ] **DES-02**: The lead paragraph of the first prose section of an issue (typically Origin Story) renders with a drop cap — initial letter scaled ~3x the body size, baseline-aligned with the second line, hanging into the left margin if achievable. Subsequent paragraphs do not get drop caps. Drop cap renders correctly on mobile (≥320px) without breaking layout.
+- [ ] **DES-03**: The body prose column is constrained to a comfortable reading measure (60–68ch) on screens ≥768px; on mobile it uses full width with proper horizontal padding (e.g. 20–24px). Line-height is ≥1.55 for body prose. Paragraph spacing is consistent (either indent or blank-line separation throughout).
+- [ ] **DES-04**: Section transitions use an ornament or rule divider (not the browser default `<hr>`) — e.g. a centered small motif, an asterism (* * *), a Unicode ornament (❦, ❧), or a precise rule with consistent vertical rhythm. Section headers use a consistent visual treatment (e.g. small-caps eyebrow label + serif title).
+- [ ] **DES-05**: The case study's structured metadata (founded/AUM/focus/etc.) renders in a footnote-style or sidebar treatment visually distinct from running prose (e.g. smaller type, monospace numerals, italics, or a delineated metadata block).
+- [ ] **DES-06**: Phase 2's per-issue theme injection still works after the redesign — the charity's `theme.primaryColor`, `theme.accentColor`, `theme.backgroundColor`, and `theme.textColor` from Sanity still drive page colors via CSS variables. Switching from one issue to another with different theme values visibly changes accent colors (links, dividers, section eyebrows) without breaking the typographic hierarchy or the layout.
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
