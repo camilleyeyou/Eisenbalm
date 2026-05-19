@@ -190,12 +190,13 @@ export default async function IssuePage({ params }: PageProps) {
         problemPdfUrl={issue.problemPdfUrl}
       />
 
-      {/* 2. Origin story — id="origin-story" */}
+      {/* 2. Origin story — id="origin-story" (lead = drop cap per DES-02) */}
       <EditorialSection
         id="origin-story"
         label="ORIGIN STORY"
         headline={issue.originStory?.headline}
         body={issue.originStory?.body}
+        lead
       />
 
       {/* 3. Problem statement — id="problem" */}
