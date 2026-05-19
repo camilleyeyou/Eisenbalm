@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 06-pdf-generation-webhook-chain-08-PLAN.md (README documents Phase 6 Publisher chain + opt-in real-mode test exercises _run_publisher against Phase 5 baseline draft; Andrew smoke auto-approved per auto_advance; Phase 6 closes pending Andrew's manual smoke confirmation on real Railway+Sanity+Vercel)
-last_updated: "2026-05-18T20:59:48.401Z"
+status: Ready to execute
+stopped_at: "Completed 07-01-test-infrastructure-PLAN.md (Vitest 3.x installed in apps/web with vite-tsconfig-paths plugin; test:unit npm script + 2 it.todo stub files seeded for Plans 07-02/07-04; 4 todo tests collected, 675ms duration, exit 0)"
+last_updated: "2026-05-19T07:40:30.492Z"
 progress:
   total_phases: 9
   completed_phases: 6
-  total_plans: 61
-  completed_plans: 61
+  total_plans: 66
+  completed_plans: 62
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 06 — pdf-generation-webhook-chain
+**Current focus:** Phase 07 — game-rendering
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
+Phase: 07 (game-rendering) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -98,6 +98,7 @@ Plan: Not started
 | Phase 06-pdf-generation-webhook-chain P5 | 24min | 3 tasks | 7 files |
 | Phase 06 P07 | 12min | 4 tasks | 6 files |
 | Phase 06 P08 | 8min | 3 tasks | 2 files |
+| Phase 07 P01 | 6min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -219,6 +220,7 @@ Recent decisions affecting current work:
 - [Phase 06]: [Phase 06-07]: Monkeypatch pattern: patch eisenbalm_pipeline.agents.publisher.{asyncio,groq_query,upload_pdf_to_issue,...} at the publisher module's import site (NOT at the canonical home in lib/sanity_client.py etc.) because the publisher uses  at module load — late-binding the canonical module is invisible at the consumer's bound name.
 - [Phase 06]: Plan 06-08: Phase 6 README onboarding section + opt-in PHASE6_REAL_MODE=true integration test landed; Andrew smoke (Task 3 human-verify) auto-approved per workflow.auto_advance=true and user authorization — smoke script documented verbatim in README so Andrew can run against real infrastructure independently
 - [Phase 06]: Plan 06-08: Real-mode test patches publisher module's bound names (asyncio.sleep, trigger_vercel_deploy, convex_mutation_safe) at the import site (eisenbalm_pipeline.agents.publisher.*) — mirrors Plan 06-07 monkeypatch pattern. Restoration in try/finally so other tests aren't affected by shared module cache
+- [Phase 07]: Plan 07-01: Vitest 3.x stood up in apps/web; vite-tsconfig-paths plugin resolves @/* and @convex/* aliases; test:unit uses 'vitest run' (no watch mode per 07-VALIDATION.md); pnpm filter token is 'web' (package name), not 'apps/web' (path)
 
 ### Pending Todos
 
@@ -274,6 +276,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-18T20:46:32.972Z
-Stopped at: Completed 06-pdf-generation-webhook-chain-08-PLAN.md (README documents Phase 6 Publisher chain + opt-in real-mode test exercises _run_publisher against Phase 5 baseline draft; Andrew smoke auto-approved per auto_advance; Phase 6 closes pending Andrew's manual smoke confirmation on real Railway+Sanity+Vercel)
+Last session: 2026-05-19T07:40:30.483Z
+Stopped at: Completed 07-01-test-infrastructure-PLAN.md (Vitest 3.x installed in apps/web with vite-tsconfig-paths plugin; test:unit npm script + 2 it.todo stub files seeded for Plans 07-02/07-04; 4 todo tests collected, 675ms duration, exit 0)
 Resume file: None
