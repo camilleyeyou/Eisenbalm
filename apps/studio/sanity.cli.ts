@@ -8,6 +8,9 @@ export default defineCliConfig({
     projectId,
     dataset,
   },
+  deployment: {
+    appId: 'd738z65twme9fhe369spltme',
+  },
   // ─── Sanity v5 TypeGen ────────────────────────────────────────────
   // `pnpm schema:extract` runs `sanity schema extract --enforce-required-fields`,
   // which reads `schema.path` below and writes apps/studio/schema.json
