@@ -222,7 +222,7 @@ export default async function IssuePage({ params }: PageProps) {
       />
 
       {/* 6. Game slot — id="game" */}
-      <GameSlot game={issue.game} />
+      <GameSlot game={issue.game} runId={issue.runId ?? null} />
 
       {/* 7. Bonus section — id="bonus" */}
       <BonusSection bonus={issue.bonus} bonusType={issue.bonusType} />
