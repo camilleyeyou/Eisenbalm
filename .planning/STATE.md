@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: "Completed 07-01-test-infrastructure-PLAN.md (Vitest 3.x installed in apps/web with vite-tsconfig-paths plugin; test:unit npm script + 2 it.todo stub files seeded for Plans 07-02/07-04; 4 todo tests collected, 675ms duration, exit 0)"
-last_updated: "2026-05-19T07:40:30.492Z"
+stopped_at: Completed 07-02-validator-and-csp-PLAN.md (game-validator module + 24 vitest assertions covering 13 banned constructs, 9 CSP directives, viewport meta + mobile reset; tsconfig __tests__ include extended)
+last_updated: "2026-05-19T07:42:49.312Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 66
-  completed_plans: 62
+  completed_plans: 63
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 07 (game-rendering) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -99,6 +99,7 @@ Plan: 2 of 5
 | Phase 06 P07 | 12min | 4 tasks | 6 files |
 | Phase 06 P08 | 8min | 3 tasks | 2 files |
 | Phase 07 P01 | 6min | 3 tasks | 5 files |
+| Phase 07 P02 | 8min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,11 @@ Recent decisions affecting current work:
 - [Phase 06]: Plan 06-08: Phase 6 README onboarding section + opt-in PHASE6_REAL_MODE=true integration test landed; Andrew smoke (Task 3 human-verify) auto-approved per workflow.auto_advance=true and user authorization — smoke script documented verbatim in README so Andrew can run against real infrastructure independently
 - [Phase 06]: Plan 06-08: Real-mode test patches publisher module's bound names (asyncio.sleep, trigger_vercel_deploy, convex_mutation_safe) at the import site (eisenbalm_pipeline.agents.publisher.*) — mirrors Plan 06-07 monkeypatch pattern. Restoration in try/finally so other tests aren't affected by shared module cache
 - [Phase 07]: Plan 07-01: Vitest 3.x stood up in apps/web; vite-tsconfig-paths plugin resolves @/* and @convex/* aliases; test:unit uses 'vitest run' (no watch mode per 07-VALIDATION.md); pnpm filter token is 'web' (package name), not 'apps/web' (path)
+- [Phase 07]: Plan 07-02: 13-entry deny-list (10 mirrored from Python FORBIDDEN_CONSTRUCTS + 3 GAM-02 extras top./parent./document.domain); word-boundary regex (\btop\., \bparent\.) prevents false positives on margin-top/top-tier strings
+- [Phase 07]: Plan 07-02: injectGameHead always prepends (never matches <head>) so CSP applies even when LLM HTML omits <head>; tested via 'handles malformed HTML' assertion
+- [Phase 07]: Plan 07-02: GAME_CSP_POLICY 9-directive string (default-src 'none' + connect-src 'none' + form-action 'none' + ...) is the network/exfil backstop catching obfuscated banned calls (window['fetch'], new Function) that the static deny-list misses
+- [Phase 07]: Plan 07-02 deviation (Rule 3 Blocking): extended apps/web/tsconfig.json include glob with __tests__/**/*.ts so vite-tsconfig-paths resolves @/lib/game-validator alias inside the test file. package.json + vitest.config.ts left to 07-01 per coordination notes
+- [Phase 07]: Plan 07-02: validator + injector are PURE functions (no React, no Convex, no I/O). Plan 07-03 GameSlot owns the Convex deliberationEvents:insert write on validation failure
 
 ### Pending Todos
 
@@ -276,6 +282,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T07:40:30.483Z
-Stopped at: Completed 07-01-test-infrastructure-PLAN.md (Vitest 3.x installed in apps/web with vite-tsconfig-paths plugin; test:unit npm script + 2 it.todo stub files seeded for Plans 07-02/07-04; 4 todo tests collected, 675ms duration, exit 0)
+Last session: 2026-05-19T07:42:34.546Z
+Stopped at: Completed 07-02-validator-and-csp-PLAN.md (game-validator module + 24 vitest assertions covering 13 banned constructs, 9 CSP directives, viewport meta + mobile reset; tsconfig __tests__ include extended)
 Resume file: None
