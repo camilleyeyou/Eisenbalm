@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 07-04-sandbox-source-scan-PLAN.md (GAM-03 codebase-level tripwire — 3 readFileSync assertions; dry-run regression confirmed; 27/27 unit tests passing)
-last_updated: "2026-05-19T08:08:44.951Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 07-05-readme-and-smoke-test-PLAN.md (README documentation done; GAM-05/GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator instruction)
+last_updated: "2026-05-19T08:30:44.389Z"
 progress:
   total_phases: 9
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 66
-  completed_plans: 65
+  completed_plans: 66
 ---
 
 # Project State
@@ -102,6 +102,7 @@ Plan: 5 of 5
 | Phase 07 P02 | 8min | 2 tasks | 3 files |
 | Phase 07 P03 | 4min | 3 tasks | 3 files |
 | Phase 07 P04 | 7min | 2 tasks | 1 files |
+| Phase 07-game-rendering P05 | 10min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -235,6 +236,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Plan 07-03: Convex qaCorrections.insert args fixed to {runId, sectionName:'game', reason, severity:'error', accepted:false, agentId:'game-validator', axis:'hard-rule'} — legacy fieldName/original/corrected NOT passed; quotedSpan/suggestedFix omitted (pattern match has no position; no automated fix)
 - [Phase 07]: Plan 07-03: issue.runId threaded with ?? null coalesce defensive against future GROQ projection drift (Issue type already string|null from Phase 2; no type edit)
 - [Phase 07]: Plan 07-04: GAM-03 source-scan tripwire landed. 3 assertions (negative + positive + path) in apps/web/__tests__/game-sandbox.test.ts. readFileSync at test runtime — always reflects current GameSlot.tsx. Dry-run regression simulation (sed-mutating sandbox attr) confirmed tripwire fires; GameSlot.tsx restored verbatim. Final state: 27/27 unit tests passing.
+- [Phase 07-game-rendering]: Plan 07-05: README documentation complete (apps/web/README.md +200 lines Phase 7 section); GAM-05+GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator; canonical pnpm filter is --filter web (matches package.json name); --filter apps/web is path-form equivalent in pnpm 9.x
 
 ### Pending Todos
 
@@ -290,6 +292,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T08:08:44.942Z
-Stopped at: Completed 07-04-sandbox-source-scan-PLAN.md (GAM-03 codebase-level tripwire — 3 readFileSync assertions; dry-run regression confirmed; 27/27 unit tests passing)
+Last session: 2026-05-19T08:24:54.271Z
+Stopped at: Completed 07-05-readme-and-smoke-test-PLAN.md (README documentation done; GAM-05/GAM-06 manual smoke deferred to HUMAN-UAT per orchestrator instruction)
 Resume file: None
