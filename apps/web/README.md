@@ -508,3 +508,90 @@ back to draft) so it does not appear in production.
 ### Pnpm command compatibility note
 
 `pnpm --filter apps/web test:unit` is the workspace-path form of the filter (also written `pnpm --filter ./apps/web test:unit`). It will work when pnpm 9.x is invoked from the repo root and the workspace glob matches that path. The canonical name-based form is `pnpm --filter web test:unit` (matches the `name` field in `apps/web/package.json`). Both resolve to the same `test:unit` script (`vitest run`). Phase 7 internal docs use the name-based form; older plan text occasionally uses the path form — they are equivalent in this repo.
+
+---
+
+## Phase 10 — Editorial Design Pass
+
+The issue page reads as an editorial magazine, not a SaaS landing page. Phase 10
+locks the typographic hierarchy via five named CSS utilities and one prop on
+`EditorialSection`. To change the look, edit the utilities — not the components.
+
+### Typography stack
+
+- **Display serif** — Playfair Display, loaded via `next/font/google` in
+  `apps/web/app/layout.tsx`. Weights: 400, 600, 700. Used for the charity name
+  (`IssueHero`), all section headlines (`EditorialSection`, `CaseStudySection`),
+  in-prose h2/h3 from Portable Text, and the drop-cap initial letter.
+- **Body serif** — Lora, loaded via `next/font/google`. Weights: 400, 500, 700;
+  styles: normal + italic. Used for paragraph prose (`PortableTextRenderer`),
+  the masthead byline, and blockquotes.
+- **UI sans** — Inter (unchanged from Phase 2). Used for the `.eyebrow` label,
+  `.metadata-block` panels, and site chrome.
+
+`next/font/google` is the ONLY font loader. Never add a
+`<link href="https://fonts.googleapis.com/...">` tag — the source-scan test in
+`apps/web/__tests__/issue-page-typography.test.ts` (DES-01 block) fails the build
+if you do.
+
+### Utility classes (defined in `apps/web/app/globals.css`)
+
+| Utility | Purpose | Where consumed |
+|---|---|---|
+| `.prose-measure` | Constrain prose column to `max-width: 68ch` with mobile padding. | `EditorialSection`, `CaseStudySection`, `IssueHero` |
+| `.drop-cap` | Style the first paragraph's first letter as a 3.5em editorial drop cap. Apply to the WRAPPER div that contains the `<p>` — the selector is `.drop-cap > p:first-of-type::first-letter`. | `PortableTextRenderer` wrapper, gated by `EditorialSection`'s `lead` prop |
+| `.ornament-divider` | Centered FLEURON ❦ glyph used between sections in place of `<hr>`. | Top of every editorial section |
+| `.eyebrow` | Small-caps, letter-spaced UI label above section headlines. | `EditorialSection`, `CaseStudySection`, `IssueHero` |
+| `.metadata-block` | Footnote-style dl/dt/dd panel for structured metadata with accent left-border + tabular numerals. | `CaseStudySection` (subject); slot for future Sanity metadata fields |
+
+All five utilities reference CSS variables (`var(--color-primary)`,
+`var(--color-accent)`, `var(--color-text)`, `var(--font-display)`,
+`var(--font-body)`, `var(--font-ui)`) so per-issue theme injection (Phase 2's
+`serializeThemeCss`) still drives palette without breaking the typographic
+hierarchy.
+
+### The drop cap
+
+Exactly ONE EditorialSection per issue receives `lead`:
+
+```tsx
+<EditorialSection
+  id="origin-story"
+  label="ORIGIN STORY"
+  headline={issue.originStory?.headline}
+  body={issue.originStory?.body}
+  lead
+/>
+```
+
+The `lead` prop adds `drop-cap` as the className on the `PortableTextRenderer`
+wrapper div, which makes the rendered `<p>` a direct child — the
+`.drop-cap > p:first-of-type::first-letter` selector then applies.
+
+To move the drop cap to a different section, move the `lead` prop. To remove
+the drop cap entirely, delete the `lead` prop. The DES-02 source-scan test
+asserts that exactly ONE `lead` occurrence exists in
+`apps/web/app/issue/[slug]/page.tsx`.
+
+### What you must NOT touch (locked artifacts)
+
+- `apps/web/components/issue/ShopCallout.tsx` — Phase 2 + CMR-09 contract. One
+  sentence + one button. No banner, modal, popup, or countdown. Source-scan
+  tripwire: `apps/web/__tests__/issue-page-shop-callout.test.ts`.
+- `apps/web/components/issue/GameSlot.tsx` — Phase 7 GAM-03 contract.
+  `sandbox="allow-scripts"` only; never `allow-same-origin`. Source-scan
+  tripwire: `apps/web/__tests__/game-sandbox.test.ts`.
+- The per-issue theme injection mechanism in `apps/web/app/issue/[slug]/layout.tsx`
+  (`serializeThemeCss` + `ThemeApplier`). Phase 10 utilities consume the
+  `--color-*` variables it emits — do not hardcode hex in component classNames.
+
+### Verifying the redesign
+
+```bash
+pnpm --filter web build
+pnpm --filter web test:unit
+```
+
+The unit suite includes the Phase 10 source-scan tripwire
+(`__tests__/issue-page-typography.test.ts`), which asserts the contracts above.
+If it fails, fix the source — do not weaken the assertions.
