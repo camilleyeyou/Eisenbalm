@@ -258,3 +258,24 @@ nav, button {
   margin-block: 0.25rem 0.75rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WCAG AA — Accessibility conformance pass
+   Neutralizes motion for users who set prefers-reduced-motion: reduce.
+   Covers: DeliberationSlot chevron rotate (transition-transform),
+   prose link opacity fades, and shadcn tooltip zoom (animate-in fade-in-0
+   zoom-in-95). This block touches ONLY animation/transition/scroll
+   properties — never color, layout, sizing, or font.
+   Under a normal (no-preference) motion setting it has zero effect.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
