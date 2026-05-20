@@ -32,7 +32,7 @@ export function SiteHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-[14px] text-[color:var(--color-text)] hover:text-[color:var(--color-accent)] underline-offset-4"
+                  className="inline-flex items-center min-h-11 py-2 text-[14px] text-[color:var(--color-text)] hover:text-[color:var(--color-accent)] underline-offset-4"
                 >
                   {item.label}
                 </Link>

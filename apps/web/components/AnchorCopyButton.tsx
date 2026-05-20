@@ -54,7 +54,7 @@ export function AnchorCopyButton({ sectionId, className }: AnchorCopyButtonProps
           onClick={handleCopy}
           aria-label="Copy link to this section"
           className={[
-            'inline-flex h-6 w-6 items-center justify-center rounded',
+            'inline-flex min-h-11 min-w-11 items-center justify-center rounded',
             'text-[color:var(--color-text-muted,var(--color-text))] opacity-50',
             'transition-opacity hover:opacity-100',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',

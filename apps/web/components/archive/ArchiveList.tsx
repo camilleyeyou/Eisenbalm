@@ -42,8 +42,8 @@ export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
             onClick={() => setOrder('newest')}
             className={
               order === 'newest'
-                ? 'underline underline-offset-4 text-[color:var(--color-text)]'
-                : 'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]'
+                ? 'inline-flex items-center min-h-11 underline underline-offset-4 text-[color:var(--color-text)]'
+                : 'inline-flex items-center min-h-11 text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]'
             }
           >
             Newest first
@@ -53,8 +53,8 @@ export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
             onClick={() => setOrder('oldest')}
             className={
               order === 'oldest'
-                ? 'underline underline-offset-4 text-[color:var(--color-text)]'
-                : 'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]'
+                ? 'inline-flex items-center min-h-11 underline underline-offset-4 text-[color:var(--color-text)]'
+                : 'inline-flex items-center min-h-11 text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]'
             }
           >
             Oldest first

@@ -96,7 +96,7 @@ export function IssueHero({
           href={problemPdfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block font-ui text-[14px] leading-[1.5] text-[color:var(--color-primary)] underline underline-offset-2 transition-opacity hover:opacity-75"
+          className="inline-flex items-center min-h-11 font-ui text-[14px] leading-[1.5] text-[color:var(--color-primary)] underline underline-offset-2 transition-opacity hover:opacity-75"
           download
         >
           Download the problem framework
