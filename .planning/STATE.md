@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
 stopped_at: Completed 10-03-visual-regression-tests-PLAN.md
-last_updated: "2026-05-19T14:41:20.268Z"
+last_updated: "2026-05-20T07:24:59.304Z"
 progress:
   total_phases: 10
   completed_phases: 7
@@ -261,6 +261,12 @@ None yet.
 - [Phase 2] `/about` page copy not specified in brief; Andrew must provide before Phase 2 closes
 - [PARTIAL 2026-05-18] [Phase 5] First real-mode end-to-end pipeline run succeeded on issue 999 (runId 96ab834e96214671859322044a4b4683, duration 155s, status='awaiting-review', Sanity content approved by Andrew). Cost tracking returned $0 across all agents because langchain-openai's `with_structured_output` does NOT expose `usage_metadata` to the wrapper — known TODO from Plan 05-03 SUMMARY. PIPELINE_COST_CAP_USD stays at $10 placeholder; actual baseline measurement deferred to Phase 6 once cost tracking is fixed (either via `include_raw=True` or a sidechannel usage capture).
 - [Phase 6 carryover] Fix langchain-openai cost-metadata capture so PIPELINE_COST_CAP_USD can actually enforce. Currently all per-agent USD readings are $0 in production because structured-output calls don't surface token counts through the wrapper.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260520-0kt | WCAG AA accessibility conformance pass on apps/web (reduced-motion, touch targets, skip-link, main landmark) | 2026-05-20 | 19bf834 | [260520-0kt-wcag-aa-accessibility-conformance-pass-o](./quick/260520-0kt-wcag-aa-accessibility-conformance-pass-o/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
