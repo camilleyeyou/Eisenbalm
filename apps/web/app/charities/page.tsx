@@ -42,9 +42,9 @@ export default async function CharitiesPage() {
     QUERY_ALL_CHARITIES,
   )
 
+  // Single-main-landmark pattern: layout.tsx owns the one <main id="main">;
+  // route pages use <div> so the landmark is never nested (WCAG 1.3.1).
   return (
-    {/* Single-main-landmark pattern: layout.tsx owns the one <main id="main">;
-        route pages use <div> so the landmark is never nested (WCAG 1.3.1). */}
     <div className="mx-auto max-w-[1100px] px-4 md:px-6 lg:px-8 py-12">
       {/* Page title — Display 36px/28px semibold (UI-SPEC list container 1100px) */}
       <h1 className="font-display text-[28px] md:text-[36px] font-semibold leading-[1.15] text-[color:var(--color-text)]">
