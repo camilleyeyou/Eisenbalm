@@ -228,3 +228,19 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 0/TBD | Not started | - |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
+
+## Backlog
+
+### Phase 999.1: UI/UX audit follow-ups (BACKLOG)
+
+**Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)
+- [ ] **Archive pagination** — `apps/web/app/archive` + `components/archive/ArchiveList.tsx` render all issues with no pagination; add pagination/load-more before the weekly archive grows large.
+- [ ] **loading.tsx skeletons** — issue page, archive, charities; prevent content-jumping on slow Sanity reads (Performance pillar).
+- [ ] **/about page copy** — `apps/web/app/about/page.tsx` is a "This page is being written" placeholder; needs Jesse-voice copy. (Cross-ref: already a STATE.md blocker — Andrew must provide /about copy before Phase 2 closes.)
+- [ ] **(minor) _debug/convex duplicate `<main>`** — `apps/web/app/_debug/convex/page.tsx` nests a `<main>` inside the root layout's `<main id="main">`; internal debug route, low priority.
+- [ ] TBD (promote with /gsd:review-backlog when ready)
