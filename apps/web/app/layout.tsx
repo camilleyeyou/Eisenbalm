@@ -115,6 +115,16 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col font-body text-[color:var(--color-text)]">
+        {/* Skip-to-content link — first focusable element per WCAG 2.4.1.
+            Visually hidden via sr-only until keyboard-focused, then revealed
+            with a readable background. Targets <main id="main"> below.
+            The global :focus-visible ring in globals.css applies automatically. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-[color:var(--color-bg)] focus:px-4 focus:py-2 focus:font-ui focus:text-[14px] focus:text-[color:var(--color-text)]"
+        >
+          Skip to content
+        </a>
         <ConvexClientProvider>
           <TooltipProvider delayDuration={0}>
             <SiteHeader />
