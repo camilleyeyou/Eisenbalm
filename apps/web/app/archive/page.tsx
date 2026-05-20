@@ -32,7 +32,7 @@ export default async function ArchivePage() {
   const issues = await sanityClient.fetch<ArchiveIssue[]>(QUERY_ARCHIVE)
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-12 md:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1100px] px-4 py-12 md:px-6 lg:px-8">
       <h1 className="font-display text-[28px] font-semibold leading-[1.15] md:text-[36px]">
         Archive
       </h1>
@@ -48,6 +48,6 @@ export default async function ArchivePage() {
           </p>
         )}
       </div>
-    </main>
+    </div>
   )
 }
