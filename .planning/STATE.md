@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 09-00-validation-test-scaffold-PLAN.md
-last_updated: "2026-05-21T22:30:43.618Z"
+stopped_at: Completed 09-03-podcast-and-agent-route-PLAN.md
+last_updated: "2026-05-21T22:41:09.465Z"
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 84
-  completed_plans: 74
+  completed_plans: 75
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 09 (issue-page-completion) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -109,6 +109,7 @@ Plan: 3 of 6
 | Phase 10-editorial-design-pass P03 | 4min | 1 tasks | 1 files |
 | Phase 09 P01 | 4 | 2 tasks | 5 files |
 | Phase 09 P00 | 5 | 3 tasks | 8 files |
+| Phase 09 P03 | 5 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -255,6 +256,7 @@ Recent decisions affecting current work:
 - [Phase 09]: globals.css :root dark house palette is now the default; prefers-color-scheme dark flip removed; font-display default changed to Cormorant Garamond (already whitelisted)
 - [Phase 09]: readFileSync for non-existent files must be inside each it() callback (not describe.skip body) — Vitest still evaluates describe bodies during collection to register it blocks
 - [Phase 09]: podcast-slot.test.ts split pattern: structural POD-02 assertion (disclosure element exists) un-skipped; label assertion (Read full deliberation transcript) in separate describe.skip until Plan 09-03 updates the label
+- [Phase 09]: QUERY_AGENT_PROFILE_BY_ID defined inline in agents/[agentId]/page.tsx — by-id query is page-local; QUERY_AGENT_PROFILES in queries.ts serves the deliberation layer list
 
 ### Pending Todos
 
@@ -316,6 +318,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-21T22:30:43.609Z
-Stopped at: Completed 09-00-validation-test-scaffold-PLAN.md
+Last session: 2026-05-21T22:41:09.455Z
+Stopped at: Completed 09-03-podcast-and-agent-route-PLAN.md
 Resume file: None
