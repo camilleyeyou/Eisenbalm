@@ -23,8 +23,7 @@ import { resolve } from 'node:path'
 
 import { describe, it, expect } from 'vitest'
 
-// UNSKIP in Plan 09-04
-describe.skip('SiteHeader mobile-nav disclosure', () => {
+describe('SiteHeader mobile-nav disclosure', () => {
   const PATH = resolve(__dirname, '../components/SiteHeader.tsx')
   const source = readFileSync(PATH, 'utf-8')
 

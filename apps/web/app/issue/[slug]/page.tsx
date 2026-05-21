@@ -31,6 +31,8 @@ import { readingTime } from '@/lib/reading-time'
 import { SITE_NAME, SITE_AUTHOR, getSiteUrl } from '@/lib/site'
 
 import { JsonLd } from '@/components/JsonLd'
+import { Atmosphere } from '@/components/issue/Atmosphere'
+import { SectionNavigator } from '@/components/issue/SectionNavigator'
 import { IssueHero } from '@/components/issue/IssueHero'
 import { EditorialSection } from '@/components/issue/EditorialSection'
 import { CaseStudySection } from '@/components/issue/CaseStudySection'
@@ -181,6 +183,11 @@ export default async function IssuePage({ params }: PageProps) {
       {/* JSON-LD (WEB-10) */}
       <JsonLd data={jsonLdData} />
 
+      {/* Atmosphere — fixed decorative layers (aurora/grid/grain/progress).
+          Rendered first in article; position:fixed so placement is non-visual.
+          Decorative only: aria-hidden, pointer-events:none. */}
+      <Atmosphere />
+
       {/* 1. IssueHero */}
       <IssueHero
         charity={issue.charity}
@@ -189,6 +196,10 @@ export default async function IssuePage({ params }: PageProps) {
         readingTimeMinutes={minutes}
         problemPdfUrl={issue.problemPdfUrl}
       />
+
+      {/* Section navigator — 8 cards after hero, before first editorial section.
+          Uses canonical anchor ids. Single landmark: nav aria-label="Sections". */}
+      <SectionNavigator />
 
       {/* 2. Origin story — id="origin-story" (lead = drop cap per DES-02) */}
       <EditorialSection
