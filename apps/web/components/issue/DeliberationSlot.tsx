@@ -1,53 +1,593 @@
+'use client'
+
 /**
- * Deliberation slot. UI-SPEC §Deliberation.
- * Container: editorial wide (860px). Anchor ID: #deliberation.
+ * Deliberation slot. UI-SPEC §Deliberation Contract.
+ * Anchor ID: #deliberation.
  *
- * Phase 2: collapsed accordion with "How this issue was made" trigger.
- * Shows the empty state message — Phase 9 wires Convex subscriptions.
+ * Phase 9: Live Convex deliberation layer.
+ *   - 5 Convex subscriptions, all guarded with the "skip" sentinel when
+ *     runId is null (DEL-01).
+ *   - Collapsed by default via <details>/<summary> (DEL-03).
+ *   - Advocate scores from deliberationEvents advocate-argument payloads,
+ *     never from agentVotes (DEL-02).
+ *   - QA severity colors + text labels (WCAG 1.4.1) (DEL-02).
+ *   - Graceful empty state when no Convex data (DEL-05).
+ *   - SECURITY: pipelineRuns.cost and modelVersions are never accessed
+ *     in this component (DEL-04).
  *
- * Implemented as a <details>/<summary> for zero-JS collapsible
- * (progressive enhancement — JS-free, WCAG-friendly).
- *
- * Voice: "Deliberation data will appear here when the pipeline is connected."
- * (no exclamation marks, no winking)
+ * Voice: dry, precise, no exclamation marks, no winking. (CLAUDE.md)
  */
+
+import { useQuery } from 'convex/react'
+import { api } from '@convex/_generated/api'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
 
-export function DeliberationSlot() {
+// SECURITY: never read run.cost (it contains the model-version map).
+// pipelineRuns.cost is a JSON string containing modelVersions — never read.
+// Only run.status is accessed below (for the live indicator).
+
+// ─── Agent identity map (house persona names — DEL-04) ──────────────────────
+// Maps agentId → { displayName, role }. Never exposes underlying model names.
+// Used for chip labels and /agents/[agentId] links.
+const AGENT_LABELS: Record<string, { displayName: string; role: string }> = {
+  calibrator: { displayName: 'The Calibrator', role: 'Style Director' },
+  scout: { displayName: 'The Scout', role: 'Charity Researcher' },
+  advocate: { displayName: 'The Advocate', role: 'Charity Champion' },
+  editor: { displayName: 'The Editor', role: 'Editorial Director' },
+  researcher: { displayName: 'The Researcher', role: 'Deep Researcher' },
+  'origin-story': { displayName: 'The Narrator', role: 'Origin Story Writer' },
+  'problem-statement': { displayName: 'The Analyst', role: 'Problem Writer' },
+  'founder-bio': { displayName: 'The Profiler', role: 'Founder Bio Writer' },
+  'case-study': { displayName: 'The Documentarian', role: 'Case Study Writer' },
+  game: { displayName: 'The Game Master', role: 'Game Designer' },
+  bonus: { displayName: 'The Bonus Writer', role: 'Bonus Section Writer' },
+  design: { displayName: 'The Designer', role: 'Visual Design Agent' },
+  qa: { displayName: 'The Auditor', role: 'Quality Assurance' },
+  publisher: { displayName: 'The Publisher', role: 'Publishing Agent' },
+  'game-validator': { displayName: 'The Validator', role: 'Game Security Validator' },
+}
+
+function getAgentLabel(agentId: string): { displayName: string; role: string } {
+  if (AGENT_LABELS[agentId]) return AGENT_LABELS[agentId]
+  // Fallback: Title-case the agentId
+  const displayName = agentId
+    .split(/[-_]/)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+  return { displayName, role: 'Agent' }
+}
+
+// ─── QA severity → color + label (DEL-02 — WCAG 1.4.1: color + text) ────────
+// Exactly three severities from convex/schema.ts qaCorrections.severity union.
+const QA_SEVERITY: Record<'info' | 'warning' | 'error', { color: string; label: string }> = {
+  info:    { color: 'var(--color-text-dim)', label: 'Info' },
+  warning: { color: 'var(--color-primary)',  label: 'Warning' },
+  error:   { color: 'var(--color-accent)',   label: 'Error' },
+}
+
+// ─── Agent identity chip color ─────────────────────────────────────────────
+function agentChipStyle(agentId: string): { color: string; backgroundColor: string } {
+  if (agentId === 'scout') {
+    return {
+      color: 'var(--color-scout)',
+      backgroundColor: 'color-mix(in srgb, var(--color-scout) 14%, transparent)',
+    }
+  }
+  if (agentId === 'advocate') {
+    return {
+      color: 'var(--color-advocate)',
+      backgroundColor: 'color-mix(in srgb, var(--color-advocate) 14%, transparent)',
+    }
+  }
+  if (agentId === 'editor') {
+    return {
+      color: 'var(--color-primary)',
+      backgroundColor: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
+    }
+  }
+  return {
+    color: 'var(--color-text-dim)',
+    backgroundColor: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
+  }
+}
+
+// ─── Reduced motion check ────────────────────────────────────────────────────
+const prefersReducedMotion =
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+type Props = { runId: string | null }
+
+export function DeliberationSlot({ runId }: Props) {
+  // DEL-01: All five Convex subscriptions with the "skip" sentinel.
+  // When runId is null, every query gets 'skip' — no subscription, returns undefined.
+  const run         = useQuery(api.pipelineRuns.byRunId,       runId ? { runId } : 'skip')
+  const pitchLog    = useQuery(api.pitchLog.byRunId,           runId ? { runId } : 'skip')
+  const events      = useQuery(api.deliberationEvents.byRunId, runId ? { runId } : 'skip')
+  const votes       = useQuery(api.agentVotes.byRunId,         runId ? { runId } : 'skip')
+  const corrections = useQuery(api.qaCorrections.byRunId,      runId ? { runId } : 'skip')
+
+  // Loading: any query still in-flight (undefined = loading in Convex)
+  const isLoading =
+    runId != null &&
+    [run, pitchLog, events, votes, corrections].some(q => q === undefined)
+
+  // Empty: no runId OR all queries returned nothing
+  const isEmpty =
+    !runId ||
+    (
+      (pitchLog?.length ?? 0) === 0 &&
+      (events?.length ?? 0) === 0 &&
+      (votes?.length ?? 0) === 0 &&
+      (corrections?.length ?? 0) === 0 &&
+      !run
+    )
+
+  // DEL-02: Advocate scores from deliberationEvents advocate-argument payloads.
+  // agentVotes has NO score field — scores live in the event payload JSON.
+  const advocateScores = new Map<string, number | null>()
+  events?.filter(e => e.eventType === 'advocate-argument').forEach(e => {
+    try {
+      const p = JSON.parse(e.payload) as { charityName?: string; score?: number | null }
+      if (p.charityName != null) {
+        advocateScores.set(
+          p.charityName,
+          typeof p.score === 'number' ? p.score : null,
+        )
+      }
+    } catch {
+      // Malformed payload — skip silently
+    }
+  })
+
+  // DEL-02: Editor decision + confidence (graceful — field may not exist)
+  const editorEvent = events?.find(e => e.eventType === 'editor-decision')
+  let editorWinner: string | null = null
+  let editorRationale: string | null = null
+  let editorConfidence: number | null = null
+  if (editorEvent) {
+    try {
+      const p = JSON.parse(editorEvent.payload) as Record<string, unknown>
+      editorWinner = typeof p.winner === 'string' ? p.winner : null
+      editorRationale = typeof p.rationale === 'string' ? p.rationale : null
+      const c = (p.editor_confidence ?? p.confidence)
+      editorConfidence =
+        typeof c === 'number' && c >= 0 && c <= 1 ? c : null
+    } catch {
+      // Malformed payload — skip
+    }
+  }
+
+  // Timeline event → one-liner copy
+  function eventOneLiner(eventType: string, payload: string): string {
+    try {
+      const p = JSON.parse(payload) as Record<string, unknown>
+      switch (eventType) {
+        case 'scout-finding':
+          return `${String(p.charityName ?? 'Candidate')} — surfaced`
+        case 'advocate-argument':
+          return `${String(p.charityName ?? 'Candidate')}: scored`
+        case 'editor-decision':
+          return `Selected ${String(p.winner ?? 'candidate')}`
+        case 'section-draft':
+          return `${String(p.sectionName ?? 'Section')} drafted`
+        case 'qa-correction':
+          return `QA note: ${String(p.reason ?? 'finding recorded')}`
+        case 'editor-final':
+          return 'Editor approved final content'
+        case 'publisher-deploy':
+          return 'Issue published'
+        case 'cost-warning':
+          return 'Pipeline cost threshold reached'
+        case 'agent-tool-limit-exceeded':
+          return `Agent tool limit exceeded`
+        default:
+          return 'Event recorded'
+      }
+    } catch {
+      return 'Event recorded'
+    }
+  }
+
+  // Live indicator
+  const isLive = run?.status === 'running'
+
   return (
     <section
       id="deliberation"
-      className="mx-auto w-full max-w-[860px] px-4 sm:px-6 lg:px-8 print:hidden"
+      className="deliberation-slot mx-auto w-full max-w-[1340px] px-4 sm:px-6 lg:px-8 print:hidden"
     >
       {/* Top divider */}
       <div
-        className="mb-8 h-px bg-[color:var(--color-text)]"
-        style={{ opacity: 0.12 }}
+        className="mb-8 h-px"
+        style={{ backgroundColor: 'var(--color-line-strong)' }}
         aria-hidden="true"
       />
 
-      {/* Collapsed accordion */}
-      <details className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-2 select-none">
-          {/* Accordion trigger — exact copy from UI-SPEC */}
-          <span className="font-ui text-[14px] uppercase leading-[1.5] tracking-[0.1em] text-[color:var(--color-text)] opacity-60 group-open:opacity-100">
+      {/* Collapsed accordion — DEL-03 */}
+      <details className="deliberation-slot group">
+        <summary
+          className="flex cursor-pointer list-none items-center gap-2 select-none py-2 min-h-11"
+          style={{ minHeight: '44px' }}
+        >
+          <span
+            className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
+            style={{ color: 'var(--color-text)' }}
+          >
             How this issue was made
           </span>
           <AnchorCopyButton sectionId="deliberation" />
-          {/* Chevron indicator */}
+          {/* Chevron rotates on open; transition neutralized by reduced-motion guard in globals.css */}
           <span
-            className="ml-auto font-ui text-[14px] text-[color:var(--color-text)] opacity-60 transition-transform group-open:rotate-180"
+            className="ml-auto font-ui text-[11px] transition-transform group-open:rotate-180"
+            style={{ color: 'var(--color-text-dim)' }}
             aria-hidden="true"
           >
             ▾
           </span>
         </summary>
 
-        {/* Empty state body — Phase 9 wires Convex subscriptions here */}
-        <div className="mt-6 pb-2">
-          <p className="font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
-            Deliberation data will appear here when the pipeline is connected.
-          </p>
+        {/* Expanded body */}
+        <div className="mt-6 pb-8">
+          {isLoading ? (
+            // Loading state (DEL-05)
+            <p
+              className="font-body text-[15px] leading-[1.65]"
+              style={{ color: 'var(--color-text-dim)' }}
+            >
+              Loading the deliberation.
+            </p>
+          ) : isEmpty ? (
+            // Empty state (DEL-05) — predates Convex integration or no data
+            <p
+              className="font-body text-[15px] leading-[1.65]"
+              style={{ color: 'var(--color-text-dim)' }}
+            >
+              This issue predates the open deliberation record.
+            </p>
+          ) : (
+            <>
+              {/* Deliberation intro */}
+              <p
+                className="mb-8 font-display text-[clamp(22px,2.6vw,32px)] font-light italic leading-[1.45]"
+                style={{ color: 'var(--color-text-dim)' }}
+              >
+                {pitchLog?.length ? `${pitchLog.length} ${pitchLog.length === 1 ? 'charity was' : 'charities were'} proposed.` : 'Charities were proposed.'}{' '}
+                One was chosen. Here is exactly how that happened.
+              </p>
+
+              {/* Two-column grid: pitch log (left) + timeline + editor + QA (right) */}
+              <div className="grid gap-12 lg:grid-cols-[1fr_1fr]">
+
+                {/* ─── Left column: pitch log ────────────────────────────── */}
+                <div>
+                  <h3
+                    className="mb-4 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
+                    style={{ color: 'var(--color-text-dim)' }}
+                  >
+                    The Scout&apos;s Candidates — Pitch Log
+                  </h3>
+
+                  {pitchLog && pitchLog.length > 0 ? (
+                    <div className="flex flex-col gap-4">
+                      {pitchLog.map(card => {
+                        const score = advocateScores.get(card.charityName)
+                        const hasScore = advocateScores.has(card.charityName)
+                        const scoreValue = hasScore ? score : undefined
+                        return (
+                          <div
+                            key={card._id}
+                            className="rounded p-6"
+                            style={{
+                              backgroundColor: 'var(--color-card)',
+                              borderLeft: card.selected
+                                ? '3px solid var(--color-primary)'
+                                : '3px solid transparent',
+                              boxShadow: card.selected
+                                ? '0 0 12px color-mix(in srgb, var(--color-primary) 18%, transparent)'
+                                : 'none',
+                            }}
+                          >
+                            {/* Charity name + badge row */}
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span
+                                className="font-display text-[17px] font-medium leading-[1.1]"
+                                style={{ color: 'var(--color-text)' }}
+                              >
+                                {card.charityName}
+                              </span>
+                              {card.selected ? (
+                                <span
+                                  className="font-ui text-[10px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
+                                  style={{
+                                    color: 'var(--color-primary)',
+                                    backgroundColor: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
+                                  }}
+                                >
+                                  ★ Selected this week
+                                </span>
+                              ) : (
+                                <span
+                                  className="font-ui text-[10px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
+                                  style={{
+                                    color: 'var(--color-text-dim)',
+                                    backgroundColor: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
+                                  }}
+                                >
+                                  Runner-up
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Location */}
+                            <p
+                              className="mb-1 font-ui text-[11px] leading-[1.5]"
+                              style={{ color: 'var(--color-text-dim)' }}
+                            >
+                              {card.charityLocation}
+                            </p>
+
+                            {/* Scout summary */}
+                            <p
+                              className="mb-3 font-body text-[14px] italic leading-[1.55]"
+                              style={{ color: 'var(--color-text-dim)' }}
+                            >
+                              {card.scoutSummary}
+                            </p>
+
+                            {/* DEL-02: Advocate score bar */}
+                            {hasScore && scoreValue !== null ? (
+                              <div>
+                                <div
+                                  className="mb-1 flex items-center justify-between"
+                                >
+                                  <span
+                                    className="font-ui text-[11px] leading-[1.5]"
+                                    style={{ color: 'var(--color-text-dim)' }}
+                                  >
+                                    Advocate score
+                                  </span>
+                                  <span
+                                    className="font-ui text-[11px] font-medium"
+                                    style={{ color: 'var(--color-primary)' }}
+                                  >
+                                    {scoreValue}/10
+                                  </span>
+                                </div>
+                                <div
+                                  className="h-1.5 w-full overflow-hidden rounded-full"
+                                  style={{ backgroundColor: 'var(--color-line-strong)' }}
+                                >
+                                  <div
+                                    className="h-full rounded-full"
+                                    style={{
+                                      width: `${(scoreValue / 10) * 100}%`,
+                                      backgroundColor: 'var(--color-primary)',
+                                      transition: prefersReducedMotion ? 'none' : 'width 0.6s ease',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            ) : hasScore && scoreValue === null ? (
+                              // Null score — the real Issue 999 case
+                              <p
+                                className="font-ui text-[11px] leading-[1.5]"
+                                style={{ color: 'var(--color-text-dim)' }}
+                              >
+                                Scores did not complete this cycle.
+                              </p>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p
+                      className="font-body text-[15px] leading-[1.65]"
+                      style={{ color: 'var(--color-text-dim)' }}
+                    >
+                      No pitch log entries for this run.
+                    </p>
+                  )}
+                </div>
+
+                {/* ─── Right column: timeline + editor + QA ─────────────── */}
+                <div>
+                  {/* Timeline column label */}
+                  <h3
+                    className="mb-4 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
+                    style={{ color: 'var(--color-text-dim)' }}
+                  >
+                    The Deliberation{isLive && (
+                      <span
+                        className="ml-2 font-ui text-[10px]"
+                        style={{ color: 'var(--color-primary)' }}
+                      >
+                        ● live
+                      </span>
+                    )}
+                  </h3>
+
+                  {/* Event timeline */}
+                  {events && events.length > 0 && (
+                    <div className="mb-8 flex flex-col gap-4">
+                      {events.map(event => {
+                        const { displayName, role } = getAgentLabel(event.agentId)
+                        const chipStyle = agentChipStyle(event.agentId)
+                        const oneLiner = eventOneLiner(event.eventType, event.payload)
+                        return (
+                          <div
+                            key={event._id}
+                            className="flex items-start gap-3"
+                          >
+                            {/* Agent identity chip with /agents/ link */}
+                            <a
+                              href={`/agents/${event.agentId}`}
+                              className="flex-shrink-0 rounded px-2 py-1 font-ui text-[11px] leading-[1.5] no-underline"
+                              style={{
+                                color: chipStyle.color,
+                                backgroundColor: chipStyle.backgroundColor,
+                                minHeight: '44px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'flex-start',
+                                minWidth: '80px',
+                              }}
+                            >
+                              <span className="font-medium">{displayName}</span>
+                              <span style={{ opacity: 0.7 }}>{role}</span>
+                            </a>
+
+                            {/* Event one-liner */}
+                            <p
+                              className="flex-1 font-body text-[15px] leading-[1.65] pt-1"
+                              style={{ color: 'var(--color-text-dim)' }}
+                            >
+                              {oneLiner}
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Editor decision + confidence */}
+                  {editorWinner && (
+                    <div
+                      className="mb-6 rounded p-4"
+                      style={{
+                        backgroundColor: 'var(--color-card)',
+                        borderLeft: '3px solid var(--color-primary)',
+                      }}
+                    >
+                      <p
+                        className="mb-1 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
+                        style={{ color: 'var(--color-text-dim)' }}
+                      >
+                        Editor&apos;s Decision
+                      </p>
+                      <p
+                        className="mb-2 font-display text-[17px] font-medium leading-[1.2]"
+                        style={{ color: 'var(--color-text)' }}
+                      >
+                        {editorWinner}
+                      </p>
+                      {editorRationale && (
+                        <p
+                          className="mb-3 font-body text-[15px] leading-[1.65]"
+                          style={{ color: 'var(--color-text-dim)' }}
+                        >
+                          {editorRationale}
+                        </p>
+                      )}
+
+                      {/* Confidence meter — only render when a finite number is present */}
+                      {editorConfidence !== null && (
+                        <div>
+                          <div className="mb-1 flex items-center justify-between">
+                            <span
+                              className="font-ui text-[11px] leading-[1.5]"
+                              style={{ color: 'var(--color-text-dim)' }}
+                            >
+                              Editor confidence
+                            </span>
+                            <span
+                              className="font-display text-[32px] font-medium leading-[1.1]"
+                              style={{ color: 'var(--color-primary)' }}
+                            >
+                              {Math.round(editorConfidence * 100)}%
+                            </span>
+                          </div>
+                          <div
+                            className="mb-2 h-2 w-full overflow-hidden rounded-full"
+                            style={{ backgroundColor: 'var(--color-line-strong)' }}
+                          >
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${editorConfidence * 100}%`,
+                                backgroundColor: 'var(--color-primary)',
+                                transition: prefersReducedMotion ? 'none' : 'width 0.6s ease',
+                              }}
+                            />
+                          </div>
+
+                          {/* Below-threshold note — DEL note text in --color-text-dim (AA), ember border/icon only */}
+                          {editorConfidence < 0.70 && (
+                            <div
+                              className="mt-2 flex items-start gap-2 rounded-r pl-3"
+                              style={{
+                                borderLeft: '3px solid var(--color-accent)',
+                              }}
+                            >
+                              <p
+                                className="font-body text-[18px] leading-[1.65]"
+                                style={{ color: 'var(--color-text-dim)' }}
+                              >
+                                Below 0.70 threshold — human review flagged.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* QA corrections */}
+                  {corrections && corrections.length > 0 && (
+                    <div>
+                      <h4
+                        className="mb-3 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
+                        style={{ color: 'var(--color-text-dim)' }}
+                      >
+                        QA Findings
+                      </h4>
+                      <div className="flex flex-col gap-3">
+                        {corrections.map(correction => {
+                          const sev = (correction.severity ?? 'info') as 'info' | 'warning' | 'error'
+                          const severityInfo = QA_SEVERITY[sev] ?? QA_SEVERITY.info
+                          return (
+                            <div
+                              key={correction._id}
+                              className="rounded p-4"
+                              style={{ backgroundColor: 'var(--color-card)' }}
+                            >
+                              <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <span
+                                  className="font-ui text-[11px] leading-[1.5]"
+                                  style={{ color: 'var(--color-text-dim)' }}
+                                >
+                                  {correction.sectionName}
+                                </span>
+                                {/* Severity pill — color + text label (WCAG 1.4.1) */}
+                                <span
+                                  className="font-ui text-[10px] uppercase leading-[1.5] tracking-[0.06em] px-2 py-0.5 rounded-sm"
+                                  style={{
+                                    color: severityInfo.color,
+                                    border: `1px solid ${severityInfo.color}`,
+                                  }}
+                                >
+                                  {severityInfo.label}
+                                </span>
+                              </div>
+                              <p
+                                className="font-body text-[14px] leading-[1.55]"
+                                style={{ color: 'var(--color-text-dim)' }}
+                              >
+                                {correction.reason}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </details>
 
