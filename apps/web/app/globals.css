@@ -23,42 +23,54 @@
 }
 
 /**
- * Brand default palette. Values mirror apps/web/lib/theme.ts BRAND_DEFAULTS.
- * Per-issue themes override --color-bg, --color-text, --color-primary,
- * --color-accent, --font-display, --font-body via inline <style> in
- * /issue/[slug]/layout.tsx. --color-surface, --color-text-muted, and
- * --color-border are DERIVED via color-mix() so DesignAgent only emits 4 hex.
+ * Dark HYBRID house defaults (Phase 9).
+ * Issue pages override --color-bg, --color-text, --color-primary,
+ * --color-accent, --font-display, --font-body via serializeThemeCss
+ * injection (apps/web/lib/theme.ts). The dark palette is the DEFAULT,
+ * not a hard lock — a per-issue light theme still wins.
  */
 :root {
-  /* Brand defaults — overridden on issue pages */
-  --color-bg: #FAFAF8;
-  --color-text: #1A1A18;
-  --color-primary: #2D5016;
-  --color-accent: #8B1A1A;
+  /* Dark HYBRID house defaults (Phase 9). Issue pages override
+     --color-bg, --color-text, --color-primary, --color-accent,
+     --font-display, --font-body via serializeThemeCss injection. */
+  --color-bg: #0C0B0A;
+  --color-text: #F0EAD9;
+  --color-primary: #CDA434;
+  --color-accent: #C2502A;
 
-  /* Derived (color-mix pattern) */
-  --color-surface: color-mix(in srgb, var(--color-bg) 92%, black 8%);
-  --color-text-muted: color-mix(in srgb, var(--color-text) 60%, transparent);
-  --color-border: color-mix(in srgb, var(--color-text) 12%, transparent);
+  /* House surfaces (fixed; the dark structure is the house style) */
+  --color-surface: #14110D;
+  --color-card: #1A1611;
+  --color-card-hover: #221D16;
 
-  /* Font defaults — next/font/google injects the @font-face declarations */
-  --font-display: 'Playfair Display', Georgia, serif;
+  /* Secondary text tones — AA-verified on the dark bg (see theme-aa-tones.test.ts) */
+  --color-text-dim: #A89F8A;        /* 7.5:1 — AA at all sizes */
+  --color-text-mute: #938A77;       /* 5.8:1 — AA at all sizes (mockup's cream-mute fails AA — see theme-aa-tones.test.ts) */
+
+  /* Accent-layer derivations (track per-issue --color-primary/--color-accent) */
+  --color-primary-bright: color-mix(in srgb, var(--color-primary) 78%, white 22%);
+  --color-primary-glow: color-mix(in srgb, var(--color-primary) 40%, transparent);
+
+  /* Agent identity colors — HOUSE, never themed */
+  --color-scout: #8A9B7A;           /* 6.6:1 */
+  --color-advocate: #6E92B8;        /* 6.1:1 */
+
+  /* Hairlines / borders (track --color-text) */
+  --color-line: color-mix(in srgb, var(--color-text) 8%, transparent);
+  --color-line-strong: color-mix(in srgb, var(--color-text) 16%, transparent);
+
+  /* Existing derived tokens — keep, but re-point --color-surface is now fixed above.
+     --color-text-muted and --color-border remain as before for back-compat. */
+  --color-text-muted: var(--color-text-mute);
+  --color-border: var(--color-line);
+
+  /* Fonts — pending-font fallbacks. --font-ui stays LOCKED (Inter). */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Lora', Georgia, serif;
   --font-ui: 'Inter', system-ui, sans-serif;
 }
 
-/**
- * Dark-mode for non-issue pages only (UI-SPEC color section).
- * Issue pages set their own --color-bg/--color-text via theme injection,
- * so they ignore prefers-color-scheme.
- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #1A1A18;
-    --color-text: #FAFAF8;
-    --color-surface: #252520;
-  }
-}
+/* Phase 9: house default is dark. The media-query dark flip was removed — issue themes override via injection. */
 
 /* Base typography & layout */
 html {
@@ -103,7 +115,16 @@ nav, button {
   [data-game-slot],
   [data-deliberation-slot],
   [data-podcast-slot],
-  audio {
+  audio,
+  .aurora,
+  .bg-grid,
+  .grain,
+  .progress,
+  .site-nav,
+  .section-navigator,
+  .agent-chip,
+  .confidence-meter,
+  .audio-player {
     display: none !important;
   }
 
