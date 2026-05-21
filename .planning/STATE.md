@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 09-01-css-tokens-and-data-layer-PLAN.md
-last_updated: "2026-05-21T22:29:21.290Z"
+stopped_at: Completed 09-00-validation-test-scaffold-PLAN.md
+last_updated: "2026-05-21T22:30:43.618Z"
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 84
-  completed_plans: 73
+  completed_plans: 74
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 09 (issue-page-completion) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 
 ## Performance Metrics
 
@@ -108,6 +108,7 @@ Plan: 2 of 6
 | Phase 10-editorial-design-pass P01 | 5min | 2 tasks | 2 files |
 | Phase 10-editorial-design-pass P03 | 4min | 1 tasks | 1 files |
 | Phase 09 P01 | 4 | 2 tasks | 5 files |
+| Phase 09 P00 | 5 | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -252,6 +253,8 @@ Recent decisions affecting current work:
 - [Phase 10-editorial-design-pass]: Plan 10-03: 42-assertion source-scan tripwire (6 describe blocks, one per DES-01..DES-06) at apps/web/__tests__/issue-page-typography.test.ts. Mirrors Phase 7 game-sandbox.test.ts pattern (readFileSync + grep, no DOM/render/mock). codeOnly() comment-stripping helper added (3 regex substitutions: block + JSX block + line) so lead-prop count regex matches code-only intent (Plan 10-02 documents lead prop in JSX block comment). 79 pass / 29 fail = 37 pre-existing pass + 42 new + 29 Phase 8 Wave 0 sentinels (out-of-scope per SCOPE BOUNDARY).
 - [Phase 09]: Used #938A77 for --color-text-mute (5.8:1 AA) over mockup's #615B4D (2.9:1 fails AA); locked by theme-aa-tones.test.ts
 - [Phase 09]: globals.css :root dark house palette is now the default; prefers-color-scheme dark flip removed; font-display default changed to Cormorant Garamond (already whitelisted)
+- [Phase 09]: readFileSync for non-existent files must be inside each it() callback (not describe.skip body) — Vitest still evaluates describe bodies during collection to register it blocks
+- [Phase 09]: podcast-slot.test.ts split pattern: structural POD-02 assertion (disclosure element exists) un-skipped; label assertion (Read full deliberation transcript) in separate describe.skip until Plan 09-03 updates the label
 
 ### Pending Todos
 
@@ -313,6 +316,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-21T22:29:21.281Z
-Stopped at: Completed 09-01-css-tokens-and-data-layer-PLAN.md
+Last session: 2026-05-21T22:30:43.609Z
+Stopped at: Completed 09-00-validation-test-scaffold-PLAN.md
 Resume file: None

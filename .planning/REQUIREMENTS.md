@@ -122,15 +122,15 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **DEL-01**: Issue page subscribes via `useQuery` to all five Convex tables filtered by the issue's `runId`
 - [x] **DEL-02**: Deliberation UI renders advocate score bars, QA severity colors, agent identity cards (using `agentProfile` from Sanity), and a pitch log timeline
 - [ ] **DEL-03**: Deliberation UI is collapsed by default; reader can expand to see the deliberation
-- [ ] **DEL-04**: Deliberation UI does NOT expose underlying model names (no "written by Claude" or similar)
-- [ ] **DEL-05**: Deliberation UI shows graceful empty states for issues that predate Convex writes
+- [x] **DEL-04**: Deliberation UI does NOT expose underlying model names (no "written by Claude" or similar)
+- [x] **DEL-05**: Deliberation UI shows graceful empty states for issues that predate Convex writes
 - [x] **DEL-06**: Each agent event in the deliberation links back to the agent's `agentProfile` page
 
 ### Podcast Section
 
-- [ ] **POD-01**: Issue page renders an HTML5 `<audio>` player when `podcast.audioFile` is populated
-- [ ] **POD-02**: Issue page renders a collapsible transcript when `podcast.deliberationTranscript` is populated
-- [ ] **POD-03**: Issue page shows an "Audio coming soon" empty state when `podcast.audioFile` is empty (typical between draft and Andrew uploading the NotebookLM output)
+- [x] **POD-01**: Issue page renders an HTML5 `<audio>` player when `podcast.audioFile` is populated
+- [x] **POD-02**: Issue page renders a collapsible transcript when `podcast.deliberationTranscript` is populated
+- [x] **POD-03**: Issue page shows an "Audio coming soon" empty state when `podcast.audioFile` is empty (typical between draft and Andrew uploading the NotebookLM output)
 
 ### Operations / Observability
 
@@ -283,12 +283,12 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | DEL-01 | Phase 9: Issue Page Completion | Complete |
 | DEL-02 | Phase 9: Issue Page Completion | Complete |
 | DEL-03 | Phase 9: Issue Page Completion | Pending |
-| DEL-04 | Phase 9: Issue Page Completion | Pending |
-| DEL-05 | Phase 9: Issue Page Completion | Pending |
+| DEL-04 | Phase 9: Issue Page Completion | Complete |
+| DEL-05 | Phase 9: Issue Page Completion | Complete |
 | DEL-06 | Phase 9: Issue Page Completion | Complete |
-| POD-01 | Phase 9: Issue Page Completion | Pending |
-| POD-02 | Phase 9: Issue Page Completion | Pending |
-| POD-03 | Phase 9: Issue Page Completion | Pending |
+| POD-01 | Phase 9: Issue Page Completion | Complete |
+| POD-02 | Phase 9: Issue Page Completion | Complete |
+| POD-03 | Phase 9: Issue Page Completion | Complete |
 
 **Coverage:**
 - v1 requirements: 80 total
