@@ -337,7 +337,7 @@ export function DeliberationSlot({ runId }: Props) {
                             </p>
 
                             {/* DEL-02: Advocate score bar */}
-                            {hasScore && scoreValue !== null ? (
+                            {hasScore && typeof scoreValue === 'number' ? (
                               <div>
                                 <div
                                   className="mb-1 flex items-center justify-between"
