@@ -10,15 +10,17 @@ files_modified:
   - apps/web/__tests__/deliberation-qa-severity.test.ts
   - apps/web/__tests__/deliberation-no-model-names.test.ts
   - apps/web/__tests__/deliberation-agent-cards.test.ts
+  - apps/web/__tests__/agents-route.test.ts
+  - apps/web/__tests__/site-header-nav.test.ts
   - apps/web/__tests__/podcast-slot.test.ts
   - apps/web/__tests__/theme-aa-tones.test.ts
 autonomous: true
 requirements: [DEL-01, DEL-02, DEL-04, DEL-05, DEL-06, POD-01, POD-02, POD-03]
 must_haves:
   truths:
-    - "Running the unit suite executes 7 new Phase 9 test files"
+    - "Running the unit suite executes 9 new Phase 9 test files"
     - "theme-aa-tones test passes immediately (asserts house tones against contrastRatio from theme.ts)"
-    - "The 6 deliberation/podcast test files are RED (skipped or failing) until their feature plans land, then go GREEN"
+    - "The deliberation/podcast/agents-route/site-header test files are RED (skipped) until their feature plans land, then go GREEN"
     - "game-sandbox.test.ts stays green throughout"
   artifacts:
     - path: "apps/web/__tests__/deliberation-subscriptions.test.ts"
@@ -34,8 +36,14 @@ must_haves:
       provides: "DEL-04 source-scan tripwire"
       contains: "modelVersions"
     - path: "apps/web/__tests__/deliberation-agent-cards.test.ts"
-      provides: "DEL-06 agentId→href assertions"
+      provides: "DEL-06 agentId→href assertions (chip side)"
       contains: "/agents/"
+    - path: "apps/web/__tests__/agents-route.test.ts"
+      provides: "DEL-06 route-file source-scan (query name, notFound, no model names)"
+      contains: "notFound"
+    - path: "apps/web/__tests__/site-header-nav.test.ts"
+      provides: "Mobile-nav disclosure source-scan (aria-expanded/controls, Escape, Open/Close menu)"
+      contains: "aria-expanded"
     - path: "apps/web/__tests__/podcast-slot.test.ts"
       provides: "POD-01/02/03 source-scan assertions"
       contains: "Audio coming soon."
@@ -50,10 +58,10 @@ must_haves:
 ---
 
 <objective>
-Create the 7 Wave-0 Vitest test files that the Phase 9 feature plans must drive green. This is the validation substrate per 09-VALIDATION.md and 09-RESEARCH.md §Validation Architecture. It establishes the Nyquist feedback signal BEFORE any feature code is written.
+Create the 9 Wave-1 Vitest test files that the Phase 9 feature plans must drive green. This is the validation substrate per 09-VALIDATION.md and 09-RESEARCH.md §Validation Architecture. It establishes the Nyquist feedback signal BEFORE any feature code is written. (This plan is the "test scaffold" wave — VALIDATION.md labels it Wave 1 (test scaffold); the executor coerces wave:0 to wave:1, so it is `wave: 1`.)
 
-Purpose: Every Phase 9 requirement (DEL-01..06, POD-01..03) gets a failing-or-skipped test that its feature plan turns green. The AA-tones test passes immediately because the house palette values are fixed constants.
-Output: 7 new files in apps/web/__tests__/. Six are source-scan / behavior tests for the deliberation + podcast components (RED via pending skip markers until features land); one (theme-aa-tones) is GREEN on creation.
+Purpose: Every Phase 9 requirement (DEL-01..06, POD-01..03) gets a failing-or-skipped test that its feature plan turns green. The AA-tones test passes immediately because the house palette values are fixed constants. The DEL-06 deliverable now has TWO tests — the chip-side href test (deliberation-agent-cards) AND the route-file test (agents-route) — so a missing/broken /agents route or a model-name leak on the profile page is caught. The LOCKED mobile-nav disclosure gets its own source-scan guard (site-header-nav).
+Output: 9 new files in apps/web/__tests__/. Seven are source-scan / behavior tests for the deliberation + podcast + agents-route + site-header surfaces (RED via pending skip markers until features land); one (theme-aa-tones) and one (deliberation-no-model-names) are GREEN on creation.
 </objective>
 
 <execution_context>
@@ -91,6 +99,13 @@ describe('...', () => {
   it('...', () => { expect(source).toContain('...') })
 })
 ```
+
+IMPORTANT — files that do not exist yet: `apps/web/app/agents/[agentId]/page.tsx`
+  does NOT exist until Plan 09-03 creates it. So agents-route.test.ts MUST place its
+  `readFileSync` INSIDE the `describe.skip(...)` callback so collection never throws.
+  `apps/web/components/SiteHeader.tsx` DOES exist but lacks the mobile-nav attrs until
+  Plan 09-04, so site-header-nav.test.ts is `describe.skip` (reading inside the callback
+  is still the safe pattern).
 
 contrastRatio signature (apps/web/lib/theme.ts):
 ```typescript
@@ -177,7 +192,7 @@ For the three skipped files: because `describe.skip` does not execute the body, 
   <action>
 Create three Vitest files. `import { describe, it, expect } from 'vitest'`, `import { readFileSync } from 'node:fs'`, `import { resolve } from 'node:path'`.
 
-1. `deliberation-agent-cards.test.ts` (DEL-06) — `describe.skip('DEL-06: agent identity card links', ...)` with `// UNSKIP in Plan 09-02`. readFileSync DeliberationSlot.tsx inside the callback. Assert source:
+1. `deliberation-agent-cards.test.ts` (DEL-06 — chip side) — `describe.skip('DEL-06: agent identity card links', ...)` with `// UNSKIP in Plan 09-02`. readFileSync DeliberationSlot.tsx inside the callback. Assert source:
    - constructs the agent-profile href: matches `/\/agents\/\$\{[^}]*agentId/` OR contains the literal substring `/agents/` together with `agentId` — concretely `expect(source).toMatch(/\/agents\//)` and `expect(source).toContain('agentId')`
    - renders `displayName` and `role` from the agent profile (contains `displayName` and `role`)
    - does NOT expose a model string (contains neither `modelVersions` nor any of claude/gpt/sonnet/haiku — reuse the same lowercase-not-contain loop as Task 1)
@@ -206,20 +221,59 @@ Create three Vitest files. `import { describe, it, expect } from 'vitest'`, `imp
     - `cd apps/web && npm run test:unit -- __tests__/podcast-slot.test.ts` exits 0 (un-skipped POD-01/03 assertions pass against the current PodcastSlot)
     - `cd apps/web && npm run test:unit` exits 0 over the full suite (no Phase 9 file fails collection; game-sandbox.test.ts still green)
   </acceptance_criteria>
-  <done>All 7 Phase 9 test files exist; theme-aa-tones and podcast-slot (non-skipped portions) and deliberation-no-model-names are green; the full suite passes.</done>
+  <done>deliberation-agent-cards, podcast-slot, and theme-aa-tones test files exist; theme-aa-tones and podcast-slot (non-skipped portions) and deliberation-no-model-names are green; the full suite passes.</done>
+</task>
+
+<task type="auto">
+  <name>Task 3: Create the agents-route and site-header-nav source-scan test files</name>
+  <read_first>
+    - apps/web/__tests__/game-sandbox.test.ts (source-scan pattern; the readFileSync-inside-skip technique)
+    - apps/web/__tests__/issue-page-typography.test.ts (the codeOnly() comment-strip helper to copy for the no-model-names assertions)
+    - apps/web/components/SiteHeader.tsx (EXISTS but currently has NO mobile-nav attrs — confirms site-header-nav must be describe.skip until Plan 09-04)
+    - .planning/phases/09-issue-page-completion/09-CONTEXT.md (LOCKED: mobile nav must NOT disappear; aria-labels "Open menu"/"Close menu"; Escape closes)
+    - .planning/phases/09-issue-page-completion/09-VALIDATION.md (Wave 1 test-scaffold list — these two files must be registered here too)
+  </read_first>
+  <files>apps/web/__tests__/agents-route.test.ts, apps/web/__tests__/site-header-nav.test.ts</files>
+  <action>
+Create two Vitest source-scan files. `import { describe, it, expect } from 'vitest'`, `import { readFileSync } from 'node:fs'`, `import { resolve } from 'node:path'`. Both are `describe.skip` until their feature plans land (the target files either do not exist yet or lack the asserted content), and BOTH place `readFileSync` INSIDE the describe callback so collection never throws.
+
+1. `agents-route.test.ts` (DEL-06 — ROUTE side; the deliverable the chip links to) — `describe.skip('DEL-06: /agents/[agentId] route', ...)` with a `// UNSKIP in Plan 09-03` comment. The target file `apps/web/app/agents/[agentId]/page.tsx` does NOT exist yet, so the `readFileSync` MUST be inside the skipped callback. `const PATH = resolve(__dirname, '../app/agents/[agentId]/page.tsx')`. Inside the callback, `const source = readFileSync(PATH, 'utf-8')`. Copy the 3-substitution `codeOnly()` comment-stripping helper from issue-page-typography.test.ts (block `/\/\*[\s\S]*?\*\//g`, JSX block `/\{\/\*[\s\S]*?\*\/\}/g`, line `/\/\/.*$/gm`). Assert:
+   - (a) the route uses the agent-profile query name: `expect(source).toMatch(/QUERY_AGENT_PROFILE_BY_ID|QUERY_AGENT_PROFILES/)` (Plan 09-03 uses `QUERY_AGENT_PROFILE_BY_ID`)
+   - (b) `expect(source).toContain('notFound(')` (graceful 404 for unknown/synthetic ids)
+   - (c) NO model-name literal in the code path — `for (const m of ['modelversions','claude','sonnet','haiku','gpt','openrouter']) expect(codeOnly(source).toLowerCase()).not.toContain(m)` (case-insensitive, comment-stripped — mirrors game-sandbox.test.ts source-scan style)
+   - (d) `expect(codeOnly(source)).not.toMatch(/run[?.]*\.cost\b/)` (the route must never read pipelineRuns.cost)
+
+2. `site-header-nav.test.ts` (LOCKED mobile-nav disclosure guard) — `describe.skip('SiteHeader mobile-nav disclosure', ...)` with a `// UNSKIP in Plan 09-04` comment. `const PATH = resolve(__dirname, '../components/SiteHeader.tsx')`. Inside the callback, `const source = readFileSync(PATH, 'utf-8')`. Assert source:
+   - contains `aria-expanded`
+   - contains `aria-controls`
+   - contains an Escape-key handler: `expect(source).toMatch(/'Escape'|"Escape"|key === 'Escape'/)`
+   - contains BOTH aria-labels: `expect(source).toContain('Open menu')` and `expect(source).toContain('Close menu')`
+   The current SiteHeader.tsx has none of these, so the skip keeps the suite green until Plan 09-04 unskips and turns it green.
+
+Both files: NO React render, NO jsdom, NO watch flags.
+  </action>
+  <verify>
+    <automated>cd apps/web && npm run test:unit</automated>
+  </verify>
+  <acceptance_criteria>
+    - `apps/web/__tests__/agents-route.test.ts` exists, is `describe.skip`, references `app/agents/[agentId]/page.tsx`, asserts `QUERY_AGENT_PROFILE_BY_ID|QUERY_AGENT_PROFILES`, `notFound(`, and the model-name + `.cost` not-contain loop; readFileSync is INSIDE the skip callback
+    - `apps/web/__tests__/site-header-nav.test.ts` exists, is `describe.skip`, references `components/SiteHeader.tsx`, and asserts `aria-expanded`, `aria-controls`, `Escape`, `Open menu`, `Close menu`; readFileSync is INSIDE the skip callback
+    - `cd apps/web && npm run test:unit` exits 0 (both new files collect as skipped without throwing; full suite green; game-sandbox.test.ts still green)
+  </acceptance_criteria>
+  <done>agents-route.test.ts and site-header-nav.test.ts exist as skipped source-scan guards; collection does not throw on the not-yet-existent route file; full suite green.</done>
 </task>
 
 </tasks>
 
 <verification>
-- `cd apps/web && npm run test:unit` exits 0 with 7 new Phase 9 files collected.
+- `cd apps/web && npm run test:unit` exits 0 with 9 new Phase 9 files collected.
 - `theme-aa-tones.test.ts`, `deliberation-no-model-names.test.ts`, and `podcast-slot.test.ts` (non-skip blocks) pass.
 - `game-sandbox.test.ts` remains green.
-- The four deliberation files use `describe.skip` for behavior not yet implemented and carry an `// UNSKIP in Plan 09-02` (or 09-03) marker.
+- The deliberation, agents-route, and site-header test files use `describe.skip` for behavior not yet implemented and carry an `// UNSKIP in Plan 09-0X` marker; their readFileSync is inside the skip callback so collection never throws (esp. agents-route, whose target file does not exist yet).
 </verification>
 
 <success_criteria>
-- 7 test files exist at the exact paths in files_modified.
+- 9 test files exist at the exact paths in files_modified.
 - No watch-mode flags anywhere (all runs are `vitest run` via `npm run test:unit`).
 - Full suite green; skipped suites collect without throwing.
 </success_criteria>
@@ -227,3 +281,5 @@ Create three Vitest files. `import { describe, it, expect } from 'vitest'`, `imp
 <output>
 After completion, create `.planning/phases/09-issue-page-completion/09-00-SUMMARY.md`.
 </output>
+</content>
+</invoke>

@@ -185,7 +185,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   3. An issue page where `podcast.audioFile` is populated renders an HTML5 audio player and a collapsible transcript; an issue page where `podcast.audioFile` is empty shows "Audio coming soon" without a broken player element
   4. Deliberation events update in real time (within Convex's subscription latency) while the pipeline is running — no page refresh required
 **Plans**: 6 plans
-- [ ] 09-00-validation-test-scaffold-PLAN.md — Wave 0: author the 7 missing Vitest files (deliberation subscriptions/scores/severity/no-model-names/agent-cards, podcast-slot, theme-aa-tones)
+- [ ] 09-00-validation-test-scaffold-PLAN.md — Wave 1 (test scaffold): author the 9 missing Vitest files (deliberation subscriptions/scores/severity/no-model-names/agent-cards, agents-route, site-header-nav, podcast-slot, theme-aa-tones)
 - [ ] 09-01-css-tokens-and-data-layer-PLAN.md — Dark HYBRID house palette in globals.css + print hide-list; QUERY_AGENT_PROFILES + AgentProfile type; pass runId to DeliberationSlot
 - [ ] 09-02-deliberation-layer-PLAN.md — Rewrite DeliberationSlot: 5 live Convex subscriptions (skip-safe), advocate bars, QA severity, editor confidence, persona agent chips, empty state, no model names (DEL-01..05)
 - [ ] 09-03-podcast-and-agent-route-PLAN.md — Dark PodcastSlot (POD-01..03) + minimal /agents/[agentId] route (DEL-06 link target)

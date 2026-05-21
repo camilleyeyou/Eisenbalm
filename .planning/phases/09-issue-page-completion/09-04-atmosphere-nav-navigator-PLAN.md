@@ -151,8 +151,9 @@ NavLinks shape (reuse SiteHeader's NAV array): Archive /archive, Charities /char
     - apps/web/app/layout.tsx (confirms the single <main id="main"> lives here; SiteHeader renders above it; do not add another main)
     - apps/web/app/issue/[slug]/page.tsx (the file being edited — Plan 09-01 set `<DeliberationSlot runId={issue.runId ?? null} />`; preserve it; mount Atmosphere + SectionNavigator)
     - .planning/phases/09-issue-page-completion/09-UI-SPEC.md (§Navigation mobile disclosure requirements; §Copywriting "Buy Lip Balm", mobile-nav aria-labels "Open menu"/"Close menu")
+    - apps/web/__tests__/site-header-nav.test.ts (the mobile-nav source-scan authored skipped in Plan 09-00 — UNSKIP it here once SiteHeader has the disclosure)
   </read_first>
-  <files>apps/web/components/SiteHeader.tsx, apps/web/app/issue/[slug]/page.tsx</files>
+  <files>apps/web/components/SiteHeader.tsx, apps/web/app/issue/[slug]/page.tsx, apps/web/__tests__/site-header-nav.test.ts</files>
   <action>
 1. SiteHeader.tsx — add the mobile disclosure. Convert SiteHeader to a Client Component (`'use client'` line 1) OR keep it server and extract a small `'use client'` `MobileNav` child within the same file. Implementation:
    - Keep `data-site-header`, the wordmark link, and the desktop inline link row (visible ≥960px via `hidden lg:flex` or a `min-[960px]:` utility — the UI-SPEC breakpoint is 960px; Tailwind's `lg` is 1024px, so use an arbitrary `max-[960px]:` / `min-[960px]:` variant or a custom breakpoint class; if arbitrary variants are awkward, use `lg:` consistently and document the 64px delta in a comment).
@@ -166,9 +167,11 @@ NavLinks shape (reuse SiteHeader's NAV array): Archive /archive, Charities /char
    - Render `<Atmosphere />` as the first child inside `<article>` (it is fixed/decorative; placement is non-visual).
    - Render `<SectionNavigator />` immediately AFTER `<IssueHero ... />` and BEFORE the first `<EditorialSection id="origin-story" ... />`.
    - Do NOT add a `<main>`. Do NOT alter the `<DeliberationSlot runId={issue.runId ?? null} />` line. Do NOT alter any other section.
+
+3. In `apps/web/__tests__/site-header-nav.test.ts` (authored skipped in Plan 09-00), change `describe.skip('SiteHeader mobile-nav disclosure', ...)` to `describe(...)` and remove the `// UNSKIP in Plan 09-04` marker so the source-scan runs against the restyled SiteHeader.tsx. The test asserts `aria-expanded`, `aria-controls`, an Escape handler (`'Escape'`), and both `Open menu` / `Close menu` aria-labels. If any assertion fails, FIX SiteHeader.tsx to satisfy the LOCKED mobile-nav contract — do NOT weaken the test. This is the automated guard for the LOCKED "mobile nav must NOT disappear" constraint.
   </action>
   <verify>
-    <automated>cd apps/web && npm run test:unit</automated>
+    <automated>cd apps/web && npm run test:unit -- __tests__/site-header-nav.test.ts</automated>
   </verify>
   <acceptance_criteria>
     - `head -1 apps/web/components/SiteHeader.tsx` is `'use client'` (or the file contains a `'use client'` MobileNav child)
@@ -178,16 +181,18 @@ NavLinks shape (reuse SiteHeader's NAV array): Archive /archive, Charities /char
     - SiteHeader.tsx contains NO `<main` element
     - page.tsx contains `<Atmosphere` and `<SectionNavigator` and STILL contains `<DeliberationSlot runId=`
     - `grep -c "<main" apps/web/app/issue/[slug]/page.tsx` == 0 (the single main is in layout.tsx)
+    - `grep -c "describe.skip" apps/web/__tests__/site-header-nav.test.ts` == 0 (mobile-nav guard unskipped)
+    - `cd apps/web && npm run test:unit -- __tests__/site-header-nav.test.ts` exits 0 (the LOCKED mobile-nav disclosure source-scan is green)
     - `cd apps/web && npm run test:unit` exits 0 (full suite green, including game-sandbox)
   </acceptance_criteria>
-  <done>SiteHeader has a keyboard-operable mobile disclosure that never disappears; Atmosphere + SectionNavigator mounted in page.tsx without adding a second main or disturbing the deliberation prop.</done>
+  <done>SiteHeader has a keyboard-operable mobile disclosure that never disappears (site-header-nav.test.ts unskipped and green); Atmosphere + SectionNavigator mounted in page.tsx without adding a second main or disturbing the deliberation prop.</done>
 </task>
 
 </tasks>
 
 <verification>
 - Atmosphere + SectionNavigator exist; atmosphere motion is reduced-motion-safe and decorative (aria-hidden, pointer-events:none); navigator links use canonical ids; no Google Fonts URL.
-- SiteHeader has a real mobile disclosure (aria-expanded/aria-controls, Escape, ≥44px); print hide-list class present.
+- SiteHeader has a real mobile disclosure (aria-expanded/aria-controls, Escape, ≥44px); print hide-list class present; site-header-nav.test.ts unskipped and green.
 - page.tsx mounts both, keeps a single main and the deliberation runId prop.
 - Full unit suite green; game-sandbox green.
 </verification>

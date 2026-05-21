@@ -2,8 +2,8 @@
 phase: 09-issue-page-completion
 plan: 02
 type: execute
-wave: 2
-depends_on: [01]
+wave: 3
+depends_on: [01, 04]
 files_modified:
   - apps/web/components/issue/DeliberationSlot.tsx
 autonomous: true
@@ -102,13 +102,14 @@ Agent identity colors (UI-SPEC §Agent identity colors — house, not themed):
   Any other agentId → neutral chip: var(--color-text-dim) text on color-mix(var(--color-text) 8%, transparent) bg.
   Cards/chips show agentProfile.displayName + role and LINK to /agents/{agentId} (DEL-06; Plan 09-03 builds that route).
   agentProfile data comes from QUERY_AGENT_PROFILES — fetch it where? DeliberationSlot is a Client Component, so
-  it cannot await a server GROQ fetch. Pass agentProfiles as a prop from page.tsx? page.tsx is owned by Plan 09-04
-  this wave. To avoid a page.tsx file conflict, this plan's DeliberationSlot fetches profiles client-side via the
-  sanity client OR derives the display label from a hardcoded house map keyed by agentId. USE the hardcoded house
+  it cannot await a server GROQ fetch. Pass agentProfiles as a prop from page.tsx? page.tsx is written by Plan 09-01
+  (Wave 1, runId prop) and Plan 09-04 (Wave 2, Atmosphere/SectionNavigator mount); this plan (Wave 3) must NOT touch
+  page.tsx at all. To keep DeliberationSlot's sole file ownership clean, this plan's DeliberationSlot derives the
+  display label from a hardcoded house map keyed by agentId. USE the hardcoded house
   AGENT_LABELS map (calibrator/scout/advocate/editor/researcher/origin-story/problem-statement/founder-bio/case-study/
   game/bonus/design/qa/publisher → displayName + role) so DeliberationSlot needs ZERO new props and ZERO server fetch.
   The link href is always /agents/{agentId} (the agentId from the Convex row). This keeps the no-model-names rule
-  trivially satisfied (the map contains only personas) and avoids the page.tsx ownership conflict with Plan 09-04.
+  trivially satisfied (the map contains only personas) and avoids any page.tsx ownership conflict.
 
 Collapse shell (DEL-03 — keep the existing <details>/<summary> pattern):
   <section id="deliberation" className="...site-nav-excluded... print:hidden">
@@ -227,6 +228,7 @@ Use the EXACT copy strings from the UI-SPEC Copywriting Contract: "How this issu
     - contains the literals `Scores did not complete this cycle.`, `This issue predates the open deliberation record.`, `Below 0.70 threshold — human review flagged.`, `★ Selected this week`, `Runner-up`
     - contains `var(--color-text-dim)`, `var(--color-primary)`, `var(--color-accent)` for the QA severity map and the labels `Info`, `Warning`, `Error`
     - `grep -i "modelversions\|claude\|sonnet\|haiku\| gpt\|openrouter" apps/web/components/issue/DeliberationSlot.tsx` returns NOTHING in the code path (the DEL-04 test, which strips comments, must pass)
+    - `grep -E "run\??\.cost\b" apps/web/components/issue/DeliberationSlot.tsx` returns NOTHING in the code path — `run.cost` (the JSON string carrying modelVersions) is NEVER accessed. The DEL-04 test strips the SECURITY comment line before scanning, so the explanatory `// SECURITY: never read run.cost ...` comment is allowed; only actual `run.cost` ACCESS is forbidden.
     - `cd apps/web && npm run test:unit -- __tests__/deliberation-no-model-names.test.ts` exits 0
     - `cd apps/web && npm run test:unit -- __tests__/game-sandbox.test.ts` exits 0
   </acceptance_criteria>

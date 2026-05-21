@@ -2,8 +2,8 @@
 phase: 09-issue-page-completion
 plan: 05
 type: execute
-wave: 2
-depends_on: [01]
+wave: 3
+depends_on: [01, 04]
 files_modified:
   - apps/web/components/issue/IssueHero.tsx
   - apps/web/components/issue/EditorialSection.tsx

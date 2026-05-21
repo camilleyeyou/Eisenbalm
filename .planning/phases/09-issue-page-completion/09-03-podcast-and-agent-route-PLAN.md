@@ -127,9 +127,10 @@ Use `--color-accent` (ember) for the play affordance/border if you add custom ch
     - apps/web/lib/sanity/types.ts (AgentProfile type from Plan 09-01)
     - apps/studio/schemas/agentProfile.ts (fields: agentId slug, displayName, role, personality, avatar)
     - apps/web/__tests__/podcast-slot.test.ts (the `describe.skip('POD-02: restyled transcript label', ...)` block to unskip)
+    - apps/web/__tests__/agents-route.test.ts (the DEL-06 route source-scan authored in Plan 09-00 — UNSKIP it here once the route exists)
     - .planning/phases/09-issue-page-completion/09-RESEARCH.md (§/agents/[agentId] route — minimal stub; DEL-06)
   </read_first>
-  <files>apps/web/app/agents/[agentId]/page.tsx, apps/web/__tests__/podcast-slot.test.ts</files>
+  <files>apps/web/app/agents/[agentId]/page.tsx, apps/web/__tests__/podcast-slot.test.ts, apps/web/__tests__/agents-route.test.ts</files>
   <action>
 1. Create `apps/web/app/agents/[agentId]/page.tsx` as a Server Component (RSC). Mirror the issue page's RSC fetch pattern.
 
@@ -169,9 +170,11 @@ Constraints:
 - Add a minimal `generateMetadata` returning `{ title: profile.displayName }` (with a fallback title when not found). Import `groq` from `'next-sanity'`, `notFound` from `'next/navigation'`, `sanityClient` from `'@/lib/sanity/client'`.
 
 2. In `apps/web/__tests__/podcast-slot.test.ts`, change the `describe.skip('POD-02: restyled transcript label', ...)` block to `describe(...)` so the `Read full deliberation transcript` assertion runs against the now-restyled PodcastSlot.tsx (Task 1 added that label). Do not weaken any assertion.
+
+3. In `apps/web/__tests__/agents-route.test.ts` (authored skipped in Plan 09-00), change `describe.skip('DEL-06: /agents/[agentId] route', ...)` to `describe(...)` and remove the `// UNSKIP in Plan 09-03` marker so the route source-scan runs against the new `apps/web/app/agents/[agentId]/page.tsx`. If any assertion fails because the route's query name or `notFound(` usage differs from what the test expects, FIX the route source to match the test contract (use `QUERY_AGENT_PROFILE_BY_ID`, call `notFound()`, expose NO model strings, never read `.cost`) — do NOT weaken the test. This is the DEL-06 route-side guard (the chip-side guard lives in deliberation-agent-cards.test.ts, owned by Plan 09-02).
   </action>
   <verify>
-    <automated>cd apps/web && npm run test:unit -- __tests__/podcast-slot.test.ts</automated>
+    <automated>cd apps/web && npm run test:unit -- __tests__/podcast-slot.test.ts __tests__/agents-route.test.ts</automated>
   </verify>
   <acceptance_criteria>
     - `apps/web/app/agents/[agentId]/page.tsx` exists
@@ -180,10 +183,11 @@ Constraints:
     - `grep -i "modelversions\|claude\|sonnet\|haiku\|openrouter\|\.cost\b" apps/web/app/agents/[agentId]/page.tsx` returns NOTHING
     - source contains NO second `<main` element (renders section/article inside the root layout's main)
     - `grep -c "describe.skip" apps/web/__tests__/podcast-slot.test.ts` == 0
-    - `cd apps/web && npm run test:unit -- __tests__/podcast-slot.test.ts` exits 0
+    - `grep -c "describe.skip" apps/web/__tests__/agents-route.test.ts` == 0 (DEL-06 route guard unskipped)
+    - `cd apps/web && npm run test:unit -- __tests__/podcast-slot.test.ts __tests__/agents-route.test.ts` exits 0 (POD-* and the DEL-06 route source-scan green)
     - `cd apps/web && npm run test:unit` exits 0 (full suite)
   </acceptance_criteria>
-  <done>/agents/[agentId] resolves with a model-name-free agentProfile render and 404s gracefully for unknown ids; podcast-slot.test.ts fully unskipped and green.</done>
+  <done>/agents/[agentId] resolves with a model-name-free agentProfile render and 404s gracefully for unknown ids; podcast-slot.test.ts and agents-route.test.ts fully unskipped and green.</done>
 </task>
 
 </tasks>
@@ -191,7 +195,7 @@ Constraints:
 <verification>
 - PodcastSlot dark-restyled, native audio retained, transcript label updated, empty state exact.
 - /agents/[agentId] renders agentProfile data, no model names, notFound() on unknown id, single-main-respecting.
-- podcast-slot.test.ts green; game-sandbox green; full suite green.
+- podcast-slot.test.ts and agents-route.test.ts (DEL-06 route source-scan) green; game-sandbox green; full suite green.
 </verification>
 
 <success_criteria>
