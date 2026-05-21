@@ -229,7 +229,7 @@ export default async function IssuePage({ params }: PageProps) {
       <BonusSection bonus={issue.bonus} bonusType={issue.bonusType} />
 
       {/* 8. Deliberation slot — id="deliberation" */}
-      <DeliberationSlot />
+      <DeliberationSlot runId={issue.runId ?? null} />
 
       {/* 9. Podcast slot — id="podcast" */}
       <PodcastSlot podcast={issue.podcast} />

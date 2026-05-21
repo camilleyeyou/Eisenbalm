@@ -169,3 +169,18 @@ export const QUERY_ISSUE_RUN_ID = groq`
     "runId": pipelineMetadata.runId,
   }
 `
+
+/**
+ * §1.6 — Agent profiles for the deliberation layer (DEL-02, DEL-06).
+ * Called once per issue page render; the named personas (NEVER model names)
+ * back the agent identity cards. Ordered for stable rendering.
+ */
+export const QUERY_AGENT_PROFILES = groq`
+  *[_type == "agentProfile"] | order(agentId.current asc) {
+    "agentId": agentId.current,
+    displayName,
+    role,
+    personality,
+    "avatarUrl": avatar.asset->url
+  }
+`

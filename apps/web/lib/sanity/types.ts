@@ -181,3 +181,13 @@ export type CharityDetail = {
 export type IssueRunId = {
   runId: string | null
 } | null
+
+// ─── §1.6 — Agent profiles (deliberation layer, Phase 9) ───────────────────
+
+export type AgentProfile = {
+  agentId: string         // agentId.current from the Sanity slug
+  displayName: string
+  role: string
+  personality: string | null
+  avatarUrl: string | null
+}
