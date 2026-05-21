@@ -119,12 +119,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Deliberation Layer (live Convex UI)
 
-- [ ] **DEL-01**: Issue page subscribes via `useQuery` to all five Convex tables filtered by the issue's `runId`
-- [ ] **DEL-02**: Deliberation UI renders advocate score bars, QA severity colors, agent identity cards (using `agentProfile` from Sanity), and a pitch log timeline
+- [x] **DEL-01**: Issue page subscribes via `useQuery` to all five Convex tables filtered by the issue's `runId`
+- [x] **DEL-02**: Deliberation UI renders advocate score bars, QA severity colors, agent identity cards (using `agentProfile` from Sanity), and a pitch log timeline
 - [ ] **DEL-03**: Deliberation UI is collapsed by default; reader can expand to see the deliberation
 - [ ] **DEL-04**: Deliberation UI does NOT expose underlying model names (no "written by Claude" or similar)
 - [ ] **DEL-05**: Deliberation UI shows graceful empty states for issues that predate Convex writes
-- [ ] **DEL-06**: Each agent event in the deliberation links back to the agent's `agentProfile` page
+- [x] **DEL-06**: Each agent event in the deliberation links back to the agent's `agentProfile` page
 
 ### Podcast Section
 
@@ -280,12 +280,12 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | CMR-08 | Phase 8: Stripe / Commerce | Pending |
 | CMR-09 | Phase 8: Stripe / Commerce | Pending |
 | CMR-10 | Phase 8: Stripe / Commerce | Complete |
-| DEL-01 | Phase 9: Issue Page Completion | Pending |
-| DEL-02 | Phase 9: Issue Page Completion | Pending |
+| DEL-01 | Phase 9: Issue Page Completion | Complete |
+| DEL-02 | Phase 9: Issue Page Completion | Complete |
 | DEL-03 | Phase 9: Issue Page Completion | Pending |
 | DEL-04 | Phase 9: Issue Page Completion | Pending |
 | DEL-05 | Phase 9: Issue Page Completion | Pending |
-| DEL-06 | Phase 9: Issue Page Completion | Pending |
+| DEL-06 | Phase 9: Issue Page Completion | Complete |
 | POD-01 | Phase 9: Issue Page Completion | Pending |
 | POD-02 | Phase 9: Issue Page Completion | Pending |
 | POD-03 | Phase 9: Issue Page Completion | Pending |
