@@ -1,20 +1,26 @@
 /**
  * Issue hero — charity header at the top of every issue page.
- * UI-SPEC §1.
+ * UI-SPEC §IssueHero.
  *
- * Phase 10: masthead treatment — larger charity name (44/64), italic byline,
- * .eyebrow utility for issue label and metadata row, .prose-measure for
- * column consistency with the editorial body below. DES-01.
+ * Phase 9 restyle: dark editorial treatment with ghost numeral, enlarged
+ * charity h1, italic mission with --color-accent left border, and a
+ * formatted meta row. DES-01.
  *
  * Renders:
- *   - Issue label "Issue {N} — {Month D, YYYY}" (.eyebrow, block)
- *   - Charity name (Display, 44/64, weight 600, --color-primary) — <h1>
- *   - "by Jesse A. Eisenbalm" italic byline (Body, 16px, italic)
- *   - Metadata row (.eyebrow spans): focus area, location, "Est. {year}", "{N} min read"
- *   - Mission statement (Body, 20px, regular) — 3-line clamp
- *   - PDF download link — only when problemPdfUrl is non-null
+ *   - Ghost numeral: issueNumber, aria-hidden, display font,
+ *     clamp(280px,40vw,560px), opacity .025, positioned behind content.
+ *   - Issue eyebrow: "Issue N — Month D, YYYY" (.eyebrow class, --color-primary).
+ *   - Charity name: <h1> display font clamp(56px,10.5vw,148px), weight 400,
+ *     --color-primary with text-shadow glow (--color-primary-glow).
+ *   - "by Jesse A. Eisenbalm" italic byline.
+ *   - Hero mission: display font italic lede, clamp(22px,2.6vw,32px),
+ *     --color-text-dim, with --color-accent left border (2px).
+ *   - Meta row: .eyebrow spans for location, "Est. {year}", "{N} min read".
+ *   - PDF download link — only when problemPdfUrl is non-null.
  *
  * Voice rules: no exclamation marks. "Est. {year}" never "Est. null".
+ * Touch target: PDF link keeps min-h-11 (≥44px). Ghost numeral is aria-hidden
+ * and pointer-events:none (decorative only). No <main>.
  */
 import type { IssueCharity } from '@/lib/sanity/types'
 
@@ -52,56 +58,99 @@ export function IssueHero({
   const issueLabel = `Issue ${issueNumber} — ${formatPublishDate(publishDate)}`
 
   return (
-    <header className="prose-measure pt-16 pb-10 sm:pt-20">
-      {/* Issue label — eyebrow, occupies its own line */}
-      <p className="eyebrow mb-6 block">
-        {issueLabel}
-      </p>
+    <header className="relative mx-auto w-full max-w-[1340px] overflow-hidden px-4 pt-28 pb-16 sm:px-10 sm:pt-36 sm:pb-20">
+      {/*
+       * Ghost numeral — decorative issue number behind hero content.
+       * aria-hidden: purely decorative, no semantic value.
+       * pointer-events:none + user-select:none so it never intercepts
+       * interactions. Opacity is static (no animation — no motion guard needed).
+       */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 right-[2%] -translate-y-1/2 select-none font-display font-light italic leading-[0.8] text-[color:var(--color-text)]"
+        style={{
+          fontSize: 'clamp(280px,40vw,560px)',
+          opacity: 0.025,
+          zIndex: 0,
+        }}
+      >
+        {issueNumber}
+      </span>
 
-      {/* Charity name — primary visual anchor (h1), masthead-scale display */}
-      <h1 className="mb-6 font-display text-[44px] font-semibold leading-[1.05] tracking-[-0.01em] text-[color:var(--color-primary)] sm:text-[64px]">
-        {charity.name}
-      </h1>
+      {/* Hero inner content — sits above ghost numeral */}
+      <div className="relative" style={{ zIndex: 1 }}>
+        {/* Issue label — .eyebrow class with --color-primary accent line prefix */}
+        <p className="eyebrow mb-9 flex items-center gap-[14px] text-[color:var(--color-primary)]">
+          <span className="inline-block h-px w-9 bg-[color:var(--color-primary)]" aria-hidden="true" />
+          {issueLabel}
+        </p>
 
-      {/* Masthead byline — body serif italic, full name */}
-      <p className="mb-6 font-body text-[16px] italic leading-[1.55] text-[color:var(--color-text)] opacity-75">
-        by Jesse A. Eisenbalm
-      </p>
+        {/* Charity name — primary visual anchor (h1), masthead-scale display.
+            Text-shadow glow uses --color-primary-glow for the ambient halo. */}
+        <h1
+          className="mb-10 max-w-[14ch] font-display font-normal leading-[0.92] tracking-[-0.02em] text-[color:var(--color-primary)]"
+          style={{
+            fontSize: 'clamp(56px,10.5vw,148px)',
+            textShadow: '0 0 80px var(--color-primary-glow, rgba(205,164,52,.12))',
+          }}
+        >
+          {charity.name}
+        </h1>
 
-      {/* Metadata row: focus area, location, founding year, reading time */}
-      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1">
-        {charity.focusArea && <span className="eyebrow">{charity.focusArea}</span>}
-        <span className="eyebrow">{charity.location}</span>
-        {charity.foundingYear != null && (
-          <span className="eyebrow">Est. {charity.foundingYear}</span>
+        {/* Masthead byline */}
+        <p className="mb-10 font-body text-[16px] italic leading-[1.55] text-[color:var(--color-text-dim)]">
+          by Jesse A. Eisenbalm
+        </p>
+
+        {/* Hero mission — display font italic lede with --color-accent left border (2px).
+            clamp(22px,2.6vw,32px) per UI-SPEC mission/lede scale. */}
+        {charity.missionStatement && (
+          <p
+            className="mb-10 max-w-[720px] border-l-2 border-[color:var(--color-accent)] pl-6 font-display font-light italic leading-[1.45] text-[color:var(--color-text-dim)]"
+            style={{ fontSize: 'clamp(22px,2.6vw,32px)' }}
+            aria-label={`Mission: ${charity.missionStatement}`}
+          >
+            {charity.missionStatement}
+          </p>
         )}
-        {readingTimeMinutes > 0 && (
-          <span className="eyebrow ml-auto">{readingTimeMinutes} min read</span>
+
+        {/* Meta row — .eyebrow spans separated by hairline borders top+bottom.
+            At least two .eyebrow usages required (DES-04 tripwire). */}
+        <div className="mb-10 flex flex-wrap items-stretch border-t border-b border-[color:var(--color-line)]">
+          {charity.focusArea && (
+            <span className="eyebrow border-r border-[color:var(--color-line)] px-6 py-[18px]">
+              {charity.focusArea}
+            </span>
+          )}
+          <span className="eyebrow border-r border-[color:var(--color-line)] px-6 py-[18px]">
+            {charity.location}
+          </span>
+          {charity.foundingYear != null && (
+            <span className="eyebrow border-r border-[color:var(--color-line)] px-6 py-[18px]">
+              Est. {charity.foundingYear}
+            </span>
+          )}
+          {readingTimeMinutes > 0 && (
+            <span className="eyebrow px-6 py-[18px]">
+              {readingTimeMinutes} min read
+            </span>
+          )}
+        </div>
+
+        {/* PDF download — Phase 6 populates this; omit if null.
+            min-h-11 preserves ≥44px touch target. */}
+        {problemPdfUrl && (
+          <a
+            href={problemPdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center gap-3 border border-[color:var(--color-line-strong)] px-6 py-[14px] font-ui text-[11px] font-medium uppercase leading-[1.5] tracking-[0.08em] text-[color:var(--color-text)] transition-colors hover:border-[color:var(--color-primary)] hover:text-[color:var(--color-primary)]"
+            download
+          >
+            Download the Problem Statement Deck (PDF)
+          </a>
         )}
       </div>
-
-      {/* Mission statement — lede-style 20px body, 3-line clamp */}
-      {charity.missionStatement && (
-        <p
-          className="mb-8 font-body text-[20px] leading-[1.55] text-[color:var(--color-text)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] overflow-hidden"
-          aria-label={`Mission: ${charity.missionStatement}`}
-        >
-          {charity.missionStatement}
-        </p>
-      )}
-
-      {/* PDF download — Phase 6 populates this; omit if null */}
-      {problemPdfUrl && (
-        <a
-          href={problemPdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center min-h-11 font-ui text-[14px] leading-[1.5] text-[color:var(--color-primary)] underline underline-offset-2 transition-opacity hover:opacity-75"
-          download
-        >
-          Download the problem framework
-        </a>
-      )}
     </header>
   )
 }

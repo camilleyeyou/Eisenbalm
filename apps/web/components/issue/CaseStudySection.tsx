@@ -2,14 +2,15 @@
  * Case study section. UI-SPEC §3.
  * Anchor ID: #case-study.
  *
- * Phase 10: structured metadata (subject) renders in a .metadata-block dl panel —
- * footnote-style sidebar visually distinct from running prose. DES-05.
+ * Phase 9 restyle: adopted the dark §-label editorial treatment matching
+ * EditorialSection. Headline upgraded to clamp(38px,5vw,64px) display font,
+ * weight 400. The .metadata-block dl panel (DES-05) retains its --color-accent
+ * left border + tabular-nums footnote-style treatment.
  *
- * Extends the editorial-section pattern with a .metadata-block <dl> panel
- * (Subject → subjectName) rendered between the headline and the body. The
- * panel uses --color-accent for its left border and tabular-nums for any
- * numeric data. When the Sanity schema grows additional fields (e.g.
- * founded, AUM, focus area), they slot into the dl trivially.
+ * LOCKED constraints:
+ *   - id="case-study" — canonical anchor; AnchorCopyButton + SectionNavigator links.
+ *   - .metadata-block class preserved for DES-05 typography test assertions.
+ *   - No <main>. This is a <section>.
  */
 import type { PortableTextBlock } from '@portabletext/react'
 import { PortableTextRenderer } from './PortableTextRenderer'
@@ -27,21 +28,30 @@ export function CaseStudySection({ subjectName, headline, body }: CaseStudySecti
       {/* Section ornament divider (DES-04) */}
       <div className="ornament-divider" aria-hidden="true" />
 
-      {/* Label row */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="eyebrow">CASE STUDY</span>
+      {/* Label row: § glyph in --color-accent + label text in --color-text-mute */}
+      <div className="mb-6 flex items-center gap-2">
+        <div className="flex items-center gap-[0.6em]">
+          <span
+            className="font-ui text-[14px] leading-[1.5] text-[color:var(--color-accent)]"
+            aria-hidden="true"
+          >
+            §
+          </span>
+          <span className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em] text-[color:var(--color-text-mute)]">
+            CASE STUDY
+          </span>
+        </div>
         <AnchorCopyButton sectionId="case-study" />
       </div>
 
-      {/* Headline */}
-      <h2 className="mt-3 mb-6 font-display text-[32px] font-semibold leading-[1.1] tracking-[-0.005em] text-[color:var(--color-primary)] sm:text-[44px]">
+      {/* Section headline — display font, clamp(38px,5vw,64px), weight 400, --color-primary */}
+      <h2 className="mt-3 mb-8 font-display text-[clamp(38px,5vw,64px)] font-normal leading-[1.05] tracking-[-0.015em] text-[color:var(--color-primary)]">
         {headline ?? 'Untitled Section'}
       </h2>
 
       {/* Structured metadata block (DES-05) — footnote-style sidebar
-          rendered ONLY when subjectName is populated. Additional structured
-          fields (founded, AUM, focus area) can be appended to this dl as the
-          Sanity schema grows. */}
+          rendered ONLY when subjectName is populated. --color-accent left border
+          and tabular-nums per metadata-block utility. */}
       {subjectName != null && (
         <dl className="metadata-block" aria-label="Case study metadata">
           <dt>Subject</dt>
@@ -52,7 +62,7 @@ export function CaseStudySection({ subjectName, headline, body }: CaseStudySecti
       {/* Body prose */}
       <PortableTextRenderer value={body} />
 
-      <div className="mt-8" aria-hidden="true" />
+      <div className="mt-10" aria-hidden="true" />
     </section>
   )
 }

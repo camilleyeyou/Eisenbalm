@@ -1,18 +1,20 @@
 /**
  * Reusable editorial prose section. UI-SPEC §2.
  *
- * Phase 10: refactored to consume .eyebrow, .prose-measure, .ornament-divider
- * utilities from globals.css. lead prop opts into .drop-cap on the body.
+ * Phase 9 restyle: adopted the dark §-label editorial treatment per
+ * UI-SPEC §Typography. The section label row now renders a `§` glyph
+ * in --color-accent followed by the label text in --color-text-mute
+ * ui font (replacing the plain .eyebrow class). Headline upgraded to
+ * clamp(38px,5vw,64px) display font at weight 400 per UI-SPEC section
+ * headline scale. Body prose via PortableTextRenderer (19px / 1.85 in
+ * --color-text-dim). Drop-cap lead via .drop-cap on first prose section.
  * DES-02, DES-03, DES-04.
  *
- * Renders:
- *   - .ornament-divider (FLEURON U+2766) above the section
- *   - .eyebrow label + <AnchorCopyButton>
- *   - Headline (Display, 32/44px, weight 600, --color-primary)
- *   - Section body via <PortableTextRenderer> (wrapped in .drop-cap when lead)
- *
- * Used for: originStory, problemStatement, founderBio.
- * id prop sets the <section> element's id for anchor links.
+ * LOCKED constraints:
+ *   - id prop sets <section id> — canonical set (origin-story, problem,
+ *     founder-bio) so AnchorCopyButton and SectionNavigator hrefs keep working.
+ *   - lead prop opts into .drop-cap on the body wrapper.
+ *   - No <main>. This is a <section>.
  */
 import type { PortableTextBlock } from '@portabletext/react'
 import { PortableTextRenderer } from './PortableTextRenderer'
@@ -30,7 +32,7 @@ interface EditorialSectionProps {
   /** Additional className for the section element. */
   className?: string
   /** When true, applies the .drop-cap container to the body, giving the first
-   *  paragraph's first letter a 3.5em drop cap. Set on the first prose section
+   *  paragraph's first letter a drop cap. Set on the first prose section
    *  of an issue (typically Origin Story). DES-02. */
   lead?: boolean
 }
@@ -51,23 +53,33 @@ export function EditorialSection({
       {/* Section ornament divider (DES-04) */}
       <div className="ornament-divider" aria-hidden="true" />
 
-      {/* Label row */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="eyebrow">{label}</span>
+      {/* Label row: § glyph (accent) + label in eyebrow class + anchor button.
+          The eyebrow class provides the ui font, uppercase, and tracking.
+          The § pseudo-prefix uses --color-accent per UI-SPEC §-mark treatment. */}
+      <div className="mb-6 flex items-center gap-2">
+        <div className="flex items-center gap-[0.5em]">
+          <span
+            className="font-ui text-[14px] leading-[1] text-[color:var(--color-accent)]"
+            aria-hidden="true"
+          >
+            §
+          </span>
+          <span className="eyebrow">{label}</span>
+        </div>
         <AnchorCopyButton sectionId={id} />
       </div>
 
-      {/* Headline */}
-      <h2 className="mt-3 mb-8 font-display text-[32px] font-semibold leading-[1.1] tracking-[-0.005em] text-[color:var(--color-primary)] sm:text-[44px]">
+      {/* Section headline — display font, clamp(38px,5vw,64px), weight 400, --color-primary */}
+      <h2 className="mt-3 mb-10 font-display text-[clamp(38px,5vw,64px)] font-normal leading-[1.05] tracking-[-0.015em] text-[color:var(--color-primary)]">
         {headline ?? 'Untitled Section'}
       </h2>
 
-      {/* Body prose — lead section wraps in .drop-cap so the PortableTextRenderer's
-          first <p> is a direct child of the .drop-cap container (selector match). */}
+      {/* Body prose — lead section wraps in .drop-cap so PortableTextRenderer's
+          first <p> is a direct child of .drop-cap and matches the selector. */}
       <PortableTextRenderer value={body} className={lead ? 'drop-cap' : undefined} />
 
       {/* Bottom breathing room */}
-      <div className="mt-8" aria-hidden="true" />
+      <div className="mt-10" aria-hidden="true" />
     </section>
   )
 }
