@@ -18,7 +18,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [ ] **Phase 6: PDF + Webhook Chain** - WeasyPrint PDF from real ProblemWriter output; Sanity-to-Railway webhook with HMAC, age check, idempotency, 30s delay, and Vercel deploy hook
 - [ ] **Phase 7: Game Rendering** - iframe sandbox with automated HTML/JS validator, CSP meta injection, mobile sizing, and render fallback wired to Andrew notification
 - [ ] **Phase 8: Stripe / Commerce** - `/shop` product page, Stripe Checkout, `/shop/thank-you`, raw-body webhook with idempotency, legal pages, and persistent shop callout
-- [ ] **Phase 9: Issue Page Completion** - Live Convex deliberation UI (subscriptions, agent identity cards, collapsed accordion) and podcast audio player + transcript, completing the full reading experience
+- [x] **Phase 9: Issue Page Completion** - Live Convex deliberation UI (subscriptions, agent identity cards, collapsed accordion) and podcast audio player + transcript, completing the full reading experience (completed 2026-05-21)
 
 ## Phase Details
 
@@ -190,7 +190,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 09-02-deliberation-layer-PLAN.md — Rewrite DeliberationSlot: 5 live Convex subscriptions (skip-safe), advocate bars, QA severity, editor confidence, persona agent chips, empty state, no model names (DEL-01..05)
 - [x] 09-03-podcast-and-agent-route-PLAN.md — Dark PodcastSlot (POD-01..03) + minimal /agents/[agentId] route (DEL-06 link target)
 - [x] 09-04-atmosphere-nav-navigator-PLAN.md — Atmosphere layer + SectionNavigator + SiteHeader mobile disclosure; mount in page.tsx (reduced-motion safe, single main)
-- [ ] 09-05-component-restyle-PLAN.md — Dark restyle of Hero/EditorialSection/CaseStudy/PortableText/GameSlot/GameFallback/Bonus/ShopCallout; pull-quote from body blockquote; game sandbox preserved
+- [x] 09-05-component-restyle-PLAN.md — Dark restyle of Hero/EditorialSection/CaseStudy/PortableText/GameSlot/GameFallback/Bonus/ShopCallout; pull-quote from body blockquote; game sandbox preserved
 **UI hint**: yes
 
 ### Phase 10: Editorial Design Pass (Issue Page)
@@ -232,7 +232,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 6. PDF + Webhook Chain | 6/8 | In Progress | - |
 | 7. Game Rendering | 0/5 | Planned | - |
 | 8. Stripe / Commerce | 0/8 | Planned | - |
-| 9. Issue Page Completion | 5/6 | In Progress|  |
+| 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 
 ## Backlog
@@ -241,7 +241,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)
