@@ -19,8 +19,7 @@ import { describe, it, expect } from 'vitest'
 
 const PATH = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
 
-// UNSKIP in Plan 09-02
-describe.skip('DEL-01/DEL-05: DeliberationSlot Convex subscriptions', () => {
+describe('DEL-01/DEL-05: DeliberationSlot Convex subscriptions', () => {
   const source = readFileSync(PATH, 'utf-8')
 
   it('is a Client Component ("use client" directive present)', () => {

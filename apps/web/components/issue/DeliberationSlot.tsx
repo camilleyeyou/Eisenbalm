@@ -12,7 +12,7 @@
  *     never from agentVotes (DEL-02).
  *   - QA severity colors + text labels (WCAG 1.4.1) (DEL-02).
  *   - Graceful empty state when no Convex data (DEL-05).
- *   - SECURITY: pipelineRuns.cost and modelVersions are never accessed
+ *   - SECURITY: pipelineRuns.cost (model-version map) is never accessed
  *     in this component (DEL-04).
  *
  * Voice: dry, precise, no exclamation marks, no winking. (CLAUDE.md)
@@ -23,7 +23,7 @@ import { api } from '@convex/_generated/api'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
 
 // SECURITY: never read run.cost (it contains the model-version map).
-// pipelineRuns.cost is a JSON string containing modelVersions — never read.
+// pipelineRuns.cost is a JSON string — never read.
 // Only run.status is accessed below (for the live indicator).
 
 // ─── Agent identity map (house persona names — DEL-04) ──────────────────────

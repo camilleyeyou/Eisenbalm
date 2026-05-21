@@ -22,8 +22,7 @@ import { describe, it, expect } from 'vitest'
 
 const PATH = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
 
-// UNSKIP in Plan 09-02
-describe.skip('DEL-02: QA severity color map', () => {
+describe('DEL-02: QA severity color map', () => {
   const source = readFileSync(PATH, 'utf-8')
 
   // ─── Schema severity values (info / warning / error) ────────────────────────

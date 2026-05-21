@@ -20,8 +20,7 @@ import { describe, it, expect } from 'vitest'
 
 const PATH = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
 
-// UNSKIP in Plan 09-02
-describe.skip('DEL-06: agent identity card links', () => {
+describe('DEL-06: agent identity card links', () => {
   const source = readFileSync(PATH, 'utf-8')
 
   it('constructs the agent-profile href with /agents/ path segment', () => {

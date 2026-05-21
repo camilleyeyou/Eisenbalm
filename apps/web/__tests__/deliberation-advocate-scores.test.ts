@@ -20,8 +20,7 @@ import { describe, it, expect } from 'vitest'
 
 const PATH = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
 
-// UNSKIP in Plan 09-02
-describe.skip('DEL-02: advocate score extraction', () => {
+describe('DEL-02: advocate score extraction', () => {
   const source = readFileSync(PATH, 'utf-8')
 
   it('keys score extraction on the "advocate-argument" event type', () => {
