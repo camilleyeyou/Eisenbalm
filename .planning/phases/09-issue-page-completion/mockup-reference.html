@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foundation for Black Communities — The Eisenbalm Dispatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+
+:root{
+  --void:#0C0B0A;
+  --panel:#14110D;
+  --card:#1A1611;
+  --card-hi:#221D16;
+  --cream:#F0EAD9;
+  --cream-dim:#A89F8A;
+  --cream-mute:#615B4D;
+  --gold:#CDA434;
+  --gold-bright:#E8C45A;
+  --ember:#C2502A;
+  --sage:#8A9B7A;
+  --azure:#6E92B8;
+  --line:rgba(240,234,217,.08);
+  --line-strong:rgba(240,234,217,.16);
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'Spectral',Georgia,serif;
+  --font-ui:'IBM Plex Mono',monospace;
+}
+
+body{
+  background:var(--void);
+  color:var(--cream);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* ── ATMOSPHERE ───────────────────────────────────── */
+.aurora{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -12%, rgba(205,164,52,.10), transparent 70%),
+    radial-gradient(ellipse 70% 45% at 85% 8%, rgba(194,80,42,.06), transparent 65%),
+    radial-gradient(ellipse 60% 50% at 10% 30%, rgba(110,146,184,.04), transparent 60%);
+  animation:auroraShift 18s ease-in-out infinite alternate;
+}
+@keyframes auroraShift{
+  0%{opacity:.7;transform:translateY(0)}
+  100%{opacity:1;transform:translateY(-2%)}
+}
+.grain{
+  position:fixed;inset:-50%;z-index:9998;pointer-events:none;
+  opacity:.045;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grainShift 0.6s steps(1) infinite;
+}
+@keyframes grainShift{
+  0%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}
+  30%{transform:translate(3%,-2%)}50%{transform:translate(-1%,2%)}
+  70%{transform:translate(2%,3%)}90%{transform:translate(-3%,1%)}
+}
+.bg-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4;
+  background-image:linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:max(120px,8.33vw) 100%;
+  background-position:center;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);
+}
+.wrap{position:relative;z-index:1}
+
+/* ── PROGRESS BAR ─────────────────────────────────── */
+.progress{
+  position:fixed;top:0;left:0;height:2px;z-index:200;
+  background:linear-gradient(90deg,var(--gold),var(--gold-bright));
+  width:0%;box-shadow:0 0 12px var(--gold);
+}
+
+/* ── NAV ──────────────────────────────────────────── */
+nav.site-nav{
+  position:fixed;top:0;left:0;right:0;z-index:150;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 40px;
+  transition:padding .35s,background .35s,backdrop-filter .35s,border-color .35s;
+  border-bottom:1px solid transparent;
+}
+nav.site-nav.scrolled{
+  padding:12px 40px;
+  background:rgba(12,11,10,.82);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-logo{
+  font-family:var(--font-display);font-size:21px;font-weight:500;
+  letter-spacing:.01em;color:var(--cream);text-decoration:none;white-space:nowrap;
+}
+.nav-logo em{color:var(--gold);font-style:italic}
+.nav-right{display:flex;align-items:center;gap:32px}
+.nav-links{display:flex;gap:26px;list-style:none}
+.nav-links a{
+  font-family:var(--font-ui);font-size:11px;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--cream-dim);text-decoration:none;
+  position:relative;transition:color .2s;
+}
+.nav-links a::after{
+  content:'';position:absolute;left:0;bottom:-4px;width:0;height:1px;
+  background:var(--gold);transition:width .25s;
+}
+.nav-links a:hover{color:var(--cream)}
+.nav-links a:hover::after{width:100%}
+.nav-buy{
+  font-family:var(--font-ui);font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--void);background:var(--gold);
+  padding:9px 18px;text-decoration:none;
+  transition:background .2s,box-shadow .2s,transform .2s;
+}
+.nav-buy:hover{background:var(--gold-bright);box-shadow:0 0 24px var(--gold-glow,rgba(205,164,52,.4));transform:translateY(-1px)}
+
+/* ── HERO ─────────────────────────────────────────── */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  max-width:1340px;margin:0 auto;padding:120px 40px 80px;position:relative;
+}
+.hero-ghost{
+  position:absolute;top:50%;right:2%;transform:translateY(-50%);
+  font-family:var(--font-display);font-size:clamp(280px,40vw,560px);
+  font-weight:300;line-height:.8;color:var(--cream);
+  opacity:.025;pointer-events:none;user-select:none;font-style:italic;
+  z-index:0;
+}
+.hero-inner{position:relative;z-index:1}
+.issue-eyebrow{
+  font-family:var(--font-ui);font-size:12px;text-transform:uppercase;
+  letter-spacing:.2em;color:var(--gold);
+  margin-bottom:36px;display:flex;align-items:center;gap:14px;
+  opacity:0;animation:fadeUp .8s .2s forwards;
+}
+.issue-eyebrow::before{content:'';width:36px;height:1px;background:var(--gold)}
+.hero-charity{
+  font-family:var(--font-display);font-weight:400;
+  font-size:clamp(56px,10.5vw,148px);line-height:.92;letter-spacing:-.02em;
+  color:var(--cream);margin-bottom:40px;max-width:14ch;
+  text-shadow:0 0 80px rgba(205,164,52,.12);
+}
+.hero-charity .line{display:block;overflow:hidden}
+.hero-charity .line span{display:block;transform:translateY(110%);animation:lineUp 1.1s cubic-bezier(.16,1,.3,1) forwards}
+.hero-charity .line:nth-child(1) span{animation-delay:.35s}
+.hero-charity .line:nth-child(2) span{animation-delay:.5s}
+.hero-charity em{font-style:italic;color:var(--gold)}
+.hero-mission{
+  font-family:var(--font-display);font-size:clamp(22px,2.6vw,32px);
+  font-style:italic;font-weight:300;line-height:1.45;color:var(--cream-dim);
+  max-width:720px;margin-bottom:48px;padding-left:24px;
+  border-left:2px solid var(--ember);
+  opacity:0;animation:fadeUp 1s .95s forwards;
+}
+.hero-meta{
+  display:flex;flex-wrap:wrap;gap:0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  opacity:0;animation:fadeUp 1s 1.15s forwards;
+}
+.hero-meta-item{
+  font-family:var(--font-ui);font-size:11px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--cream-mute);
+  padding:18px 24px;border-right:1px solid var(--line);
+}
+.hero-meta-item:first-child{padding-left:0}
+.hero-meta-item:last-child{border-right:none}
+.hero-meta-item strong{color:var(--cream);font-weight:500}
+.scroll-cue{
+  position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-ui);font-size:10px;text-transform:uppercase;
+  letter-spacing:.2em;color:var(--cream-mute);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  opacity:0;animation:fadeIn 1s 1.6s forwards;
+}
+.scroll-cue::after{
+  content:'';width:1px;height:40px;
+  background:linear-gradient(var(--gold),transparent);
+  animation:scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse{0%,100%{opacity:.3;transform:scaleY(.6)}50%{opacity:1;transform:scaleY(1)}}
+
+/* ── SECTION NAVIGATOR ───────────────────────────── */
+.section-nav-wrap{max-width:1340px;margin:0 auto;padding:80px 40px}
+.snw-head{display:flex;align-items:baseline;gap:20px;margin-bottom:40px}
+.snw-title{
+  font-family:var(--font-display);font-size:38px;font-style:italic;
+  font-weight:400;color:var(--cream);
+}
+.snw-rule{flex:1;height:1px;background:var(--line)}
+.snw-count{font-family:var(--font-ui);font-size:12px;color:var(--cream-mute);letter-spacing:.1em}
+.section-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.section-card{
+  position:relative;background:var(--card);
+  border:1px solid var(--line);
+  padding:28px 26px 24px;min-height:200px;
+  text-decoration:none;color:var(--cream);
+  display:flex;flex-direction:column;gap:12px;
+  transition:background .3s,border-color .3s,transform .3s,box-shadow .3s;
+  overflow:hidden;will-change:transform;
+}
+.section-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,0%),rgba(205,164,52,.10),transparent 60%);
+  opacity:0;transition:opacity .35s;pointer-events:none;
+}
+.section-card:hover::before{opacity:1}
+.section-card:hover{
+  background:var(--card-hi);border-color:var(--gold);
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.7),0 0 0 1px rgba(205,164,52,.2);
+}
+.sc-top{display:flex;align-items:center;justify-content:space-between}
+.sc-num{font-family:var(--font-ui);font-size:11px;color:var(--gold);letter-spacing:.14em}
+.sc-tag{
+  font-family:var(--font-ui);font-size:9px;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--cream-mute);
+  border:1px solid var(--line-strong);padding:3px 7px;border-radius:2px;
+}
+.sc-name{
+  font-family:var(--font-display);font-size:27px;font-weight:500;
+  line-height:1.05;color:var(--cream);margin-top:auto;
+}
+.sc-desc{font-family:var(--font-body);font-size:13.5px;font-style:italic;color:var(--cream-dim);line-height:1.5}
+.sc-arrow{
+  font-family:var(--font-ui);font-size:11px;color:var(--gold);
+  text-transform:uppercase;letter-spacing:.08em;
+  opacity:0;transform:translateX(-6px);transition:opacity .25s,transform .25s;
+}
+.section-card:hover .sc-arrow{opacity:1;transform:none}
+.section-card.wide{grid-column:span 2}
+.section-card.feature .sc-name{color:var(--gold)}
+
+/* ── ARTICLE ──────────────────────────────────────── */
+.article{max-width:1340px;margin:0 auto;padding:0 40px}
+.article-section{
+  padding:110px 0;border-top:1px solid var(--line);
+  max-width:740px;margin:0 auto;
+}
+.section-label{
+  font-family:var(--font-ui);font-size:11px;text-transform:uppercase;
+  letter-spacing:.18em;color:var(--gold);
+  margin-bottom:28px;display:flex;align-items:center;gap:14px;
+}
+.section-label::before{content:'§';color:var(--ember);font-size:14px}
+.article-headline{
+  font-family:var(--font-display);font-weight:400;
+  font-size:clamp(38px,5vw,64px);line-height:1.05;letter-spacing:-.015em;
+  color:var(--cream);margin-bottom:40px;
+}
+.article-headline em{font-style:italic;color:var(--gold)}
+.article-body{font-family:var(--font-body);font-size:19px;line-height:1.85;color:var(--cream-dim);font-weight:300}
+.article-body p{margin-bottom:26px}
+.article-body p:last-child{margin-bottom:0}
+.article-body.lead>p:first-of-type::first-letter{
+  font-family:var(--font-display);font-size:5.2em;float:left;line-height:.72;
+  margin:.06em .12em 0 0;color:var(--gold);font-weight:500;
+}
+.pull-quote{
+  font-family:var(--font-display);font-size:clamp(26px,3.2vw,38px);
+  font-style:italic;font-weight:300;line-height:1.3;color:var(--cream);
+  margin:48px 0;padding:8px 0 8px 28px;border-left:2px solid var(--gold);
+  text-shadow:0 0 50px rgba(205,164,52,.15);
+}
+.pdf-download{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--font-ui);font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--cream);
+  border:1px solid var(--line-strong);padding:14px 24px;
+  text-decoration:none;margin-top:36px;
+  transition:border-color .2s,color .2s,box-shadow .2s,background .2s;
+}
+.pdf-download:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 0 30px -8px var(--gold)}
+
+/* ── GAME ─────────────────────────────────────────── */
+.game-outer{max-width:1340px;margin:0 auto;padding:110px 40px;border-top:1px solid var(--line)}
+.game-head{display:grid;grid-template-columns:1.4fr 1fr;gap:60px;align-items:end;margin-bottom:48px}
+.game-head-right{font-family:var(--font-body);font-size:15px;font-style:italic;color:var(--cream-mute);line-height:1.7;text-align:right}
+.game-frame{
+  position:relative;background:var(--panel);
+  border:1px solid var(--line-strong);min-height:480px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.game-frame::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(138,155,122,.08),transparent 70%);
+}
+.game-ph{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;padding:60px;position:relative;z-index:1}
+.play-btn{
+  width:88px;height:88px;border-radius:50%;border:1px solid var(--sage);
+  background:rgba(138,155,122,.08);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:transform .3s,background .3s,box-shadow .3s;
+}
+.play-btn::before{
+  content:'';position:absolute;width:88px;height:88px;border-radius:50%;
+  border:1px solid var(--sage);animation:ripple 2.4s ease-out infinite;
+}
+@keyframes ripple{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+.play-btn:hover{transform:scale(1.08);background:rgba(138,155,122,.18);box-shadow:0 0 50px -10px var(--sage)}
+.play-btn svg{width:30px;height:30px;fill:var(--cream);margin-left:5px}
+.game-ph-title{font-family:var(--font-display);font-size:34px;color:var(--cream)}
+.game-ph-desc{font-family:var(--font-body);font-size:14px;font-style:italic;color:var(--cream-mute);max-width:300px;line-height:1.6}
+.game-frame iframe{width:100%;min-height:480px;border:none;position:relative;z-index:2}
+
+/* ── DELIBERATION ─────────────────────────────────── */
+.delib{
+  position:relative;padding:120px 0;
+  border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 0%,rgba(205,164,52,.05),transparent 70%),
+    var(--panel);
+}
+.delib-inner{max-width:1340px;margin:0 auto;padding:0 40px}
+.delib-head{max-width:740px}
+.delib-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:72px;margin-top:56px}
+.col-label{
+  font-family:var(--font-ui);font-size:11px;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--cream-mute);margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.col-label .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold)}
+
+/* Pitch cards */
+.pitch-cards{display:flex;flex-direction:column;gap:14px}
+.pitch-card{
+  position:relative;background:var(--card);border:1px solid var(--line);
+  padding:22px 24px;transition:border-color .3s,transform .3s,background .3s;
+}
+.pitch-card:hover{border-color:var(--line-strong);transform:translateX(4px)}
+.pitch-card.selected{
+  border-color:var(--gold);background:linear-gradient(135deg,rgba(205,164,52,.06),transparent);
+  box-shadow:0 0 40px -12px rgba(205,164,52,.4);
+}
+.pitch-card.selected::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(var(--gold),var(--gold-bright));box-shadow:0 0 12px var(--gold);
+}
+.pc-charity{font-family:var(--font-display);font-size:22px;color:var(--cream);margin-bottom:4px}
+.pc-loc{font-family:var(--font-ui);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--cream-mute);margin-bottom:12px}
+.pc-sum{font-family:var(--font-body);font-size:14px;font-style:italic;color:var(--cream-dim);line-height:1.55}
+.pc-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-ui);font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+  padding:5px 10px;margin-top:14px;
+}
+.pc-badge.win{background:var(--gold);color:var(--void);font-weight:500}
+.pc-badge.run{border:1px solid var(--line-strong);color:var(--cream-mute)}
+
+/* Timeline */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{
+  content:'';position:absolute;left:4px;top:8px;bottom:8px;width:1px;
+  background:linear-gradient(var(--gold),var(--ember),transparent);
+}
+.tl-event{position:relative;padding-bottom:32px}
+.tl-event:last-child{padding-bottom:0}
+.tl-event::before{
+  content:'';position:absolute;left:-28px;top:6px;width:9px;height:9px;border-radius:50%;
+  background:var(--void);border:1px solid var(--gold);box-shadow:0 0 0 3px var(--panel);
+}
+.tl-event.active::before{background:var(--gold);box-shadow:0 0 12px var(--gold),0 0 0 3px var(--panel)}
+.agent-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--font-ui);font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+  padding:5px 10px;margin-bottom:12px;
+}
+.agent-chip .ico{width:6px;height:6px;border-radius:50%}
+.agent-chip.scout{background:rgba(138,155,122,.14);color:var(--sage)}
+.agent-chip.scout .ico{background:var(--sage)}
+.agent-chip.advocate{background:rgba(110,146,184,.14);color:var(--azure)}
+.agent-chip.advocate .ico{background:var(--azure)}
+.agent-chip.editor{background:rgba(205,164,52,.14);color:var(--gold)}
+.agent-chip.editor .ico{background:var(--gold)}
+.tl-text{font-family:var(--font-body);font-size:15px;line-height:1.65;color:var(--cream-dim);font-weight:300}
+.tl-text strong{color:var(--cream);font-weight:500}
+
+/* Confidence meter */
+.confidence{margin-top:20px;padding:18px 20px;background:var(--card);border:1px solid var(--line)}
+.conf-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.conf-label{font-family:var(--font-ui);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--cream-mute)}
+.conf-val{font-family:var(--font-display);font-size:32px;color:var(--gold);font-weight:500}
+.conf-bar{height:3px;background:var(--line-strong);position:relative;overflow:hidden}
+.conf-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--ember),var(--gold));box-shadow:0 0 10px var(--gold);transition:width 1.4s cubic-bezier(.16,1,.3,1)}
+.conf-note{font-family:var(--font-ui);font-size:10px;color:var(--ember);margin-top:10px;letter-spacing:.04em}
+
+.transcript-toggle{
+  font-family:var(--font-ui);font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--cream-mute);background:none;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;padding:0;margin-top:24px;transition:color .2s;
+}
+.transcript-toggle:hover{color:var(--gold)}
+.transcript-toggle::after{content:'↓';transition:transform .3s}
+.transcript-toggle.open::after{transform:rotate(180deg)}
+.transcript-body{
+  max-height:0;overflow:hidden;transition:max-height .5s ease;
+  font-family:var(--font-body);font-size:14px;line-height:1.7;color:var(--cream-dim);
+}
+.transcript-body.open{max-height:1200px;margin-top:20px}
+.transcript-body p{margin-bottom:14px}
+.transcript-body strong{color:var(--gold);font-weight:500}
+
+/* ── PODCAST ──────────────────────────────────────── */
+.podcast{max-width:740px;margin:0 auto;padding:110px 40px;border-top:1px solid var(--line)}
+.audio-player{
+  background:linear-gradient(135deg,var(--card),var(--panel));
+  border:1px solid var(--line-strong);padding:28px;margin:36px 0 24px;
+  display:flex;align-items:center;gap:24px;position:relative;overflow:hidden;
+}
+.audio-player::before{
+  content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(194,80,42,.12),transparent 70%);
+}
+.play-pause{
+  width:56px;height:56px;border-radius:50%;background:var(--ember);
+  border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;position:relative;z-index:1;
+}
+.play-pause:hover{transform:scale(1.06);box-shadow:0 0 30px -6px var(--ember)}
+.play-pause svg{width:20px;height:20px;fill:var(--cream);margin-left:3px}
+.audio-info{flex:1;position:relative;z-index:1}
+.audio-title{font-family:var(--font-ui);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--cream);margin-bottom:12px}
+.audio-bar{height:3px;background:var(--line-strong);cursor:pointer;position:relative}
+.audio-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ember);box-shadow:0 0 8px var(--ember)}
+.audio-time{font-family:var(--font-ui);font-size:11px;color:var(--cream-mute);margin-top:8px}
+
+/* ── SHOP ─────────────────────────────────────────── */
+.shop{
+  position:relative;text-align:center;padding:120px 40px;overflow:hidden;
+  border-top:1px solid var(--line-strong);
+  background:radial-gradient(ellipse 60% 80% at 50% 100%,rgba(205,164,52,.08),transparent 70%);
+}
+.shop-label{font-family:var(--font-ui);font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:var(--gold);margin-bottom:24px}
+.shop-headline{font-family:var(--font-display);font-size:clamp(38px,5.5vw,68px);font-weight:400;line-height:1.05;color:var(--cream);margin-bottom:20px}
+.shop-headline em{font-style:italic;color:var(--gold)}
+.shop-sub{font-family:var(--font-display);font-size:20px;font-style:italic;color:var(--cream-dim);max-width:540px;margin:0 auto 40px;line-height:1.5}
+.shop-btn{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--font-ui);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;
+  background:var(--gold);color:var(--void);padding:18px 40px;text-decoration:none;
+  transition:background .2s,box-shadow .2s,transform .2s;
+}
+.shop-btn:hover{background:var(--gold-bright);box-shadow:0 0 50px -10px var(--gold);transform:translateY(-2px)}
+
+/* ── FOOTER ───────────────────────────────────────── */
+footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;border-top:1px solid var(--line)}
+.footer-logo{font-family:var(--font-display);font-size:18px;font-style:italic;color:var(--cream-dim)}
+.footer-links{display:flex;gap:24px;list-style:none}
+.footer-links a{font-family:var(--font-ui);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--cream-mute);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--gold)}
+.footer-note{font-family:var(--font-ui);font-size:10px;color:var(--cream-mute);text-align:right;line-height:1.6}
+
+/* ── REVEAL ───────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1s cubic-bezier(.16,1,.3,1),transform 1s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal-stagger>*{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal-stagger.in>*{opacity:1;transform:none}
+.reveal-stagger.in>*:nth-child(1){transition-delay:.05s}
+.reveal-stagger.in>*:nth-child(2){transition-delay:.12s}
+.reveal-stagger.in>*:nth-child(3){transition-delay:.19s}
+.reveal-stagger.in>*:nth-child(4){transition-delay:.26s}
+.reveal-stagger.in>*:nth-child(5){transition-delay:.33s}
+.reveal-stagger.in>*:nth-child(6){transition-delay:.4s}
+.reveal-stagger.in>*:nth-child(7){transition-delay:.47s}
+.reveal-stagger.in>*:nth-child(8){transition-delay:.54s}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes lineUp{to{transform:none}}
+
+/* ── RESPONSIVE ───────────────────────────────────── */
+@media(max-width:960px){
+  nav.site-nav{padding:16px 20px}
+  .nav-links{display:none}
+  .hero{padding:100px 20px 80px}
+  .section-nav-wrap{padding:60px 20px}
+  .section-cards{grid-template-columns:repeat(2,1fr)}
+  .article,.game-outer,.delib-inner{padding-left:20px;padding-right:20px}
+  .delib-grid{grid-template-columns:1fr;gap:48px}
+  .game-head{grid-template-columns:1fr;gap:24px}
+  .game-head-right{text-align:left}
+  .podcast{padding:80px 20px}
+  .shop{padding:90px 20px}
+}
+@media(max-width:600px){
+  .section-cards{grid-template-columns:1fr}
+  .section-card.wide{grid-column:span 1}
+  .hero-meta-item{padding:14px 14px;font-size:10px}
+  .audio-player{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="aurora"></div>
+<div class="bg-grid"></div>
+<div class="grain"></div>
+<div class="progress" id="progress"></div>
+
+<div class="wrap">
+
+<!-- NAV -->
+<nav class="site-nav" id="sitenav">
+  <a href="/" class="nav-logo">The Eisenbalm <em>Dispatch</em></a>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="/archive">Archive</a></li>
+      <li><a href="/charities">Charities</a></li>
+      <li><a href="/about">About</a></li>
+    </ul>
+    <a href="/shop" class="nav-buy">Buy Lip Balm</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-ghost">999</div>
+  <div class="hero-inner">
+    <div class="issue-eyebrow">Issue 999 &nbsp;·&nbsp; May 19, 2026 &nbsp;·&nbsp; This Week's Charity</div>
+    <h1 class="hero-charity">
+      <span class="line"><span>Foundation for</span></span>
+      <span class="line"><span><em>Black Communities</em></span></span>
+    </h1>
+    <p class="hero-mission">
+      Support Black-led charities with steady, reliable federal funding to serve
+      communities hit hard by systemic inequity and COVID-19 impacts.
+    </p>
+    <div class="hero-meta">
+      <span class="hero-meta-item"><strong>Canada</strong> · National</span>
+      <span class="hero-meta-item">Est. <strong>2020</strong></span>
+      <span class="hero-meta-item"><strong>$25M</strong> federal mandate</span>
+      <span class="hero-meta-item"><strong>10</strong> min read</span>
+    </div>
+  </div>
+  <div class="scroll-cue">Scroll</div>
+</header>
+
+<!-- SECTION NAVIGATOR -->
+<div class="section-nav-wrap">
+  <div class="snw-head reveal">
+    <span class="snw-title">In this issue</span>
+    <div class="snw-rule"></div>
+    <span class="snw-count">08 SECTIONS</span>
+  </div>
+  <div class="section-cards reveal-stagger" id="navcards">
+
+    <a class="section-card" href="#origin-story" data-target="origin-story">
+      <div class="sc-top"><span class="sc-num">01</span><span class="sc-tag">Story</span></div>
+      <span class="sc-name">Origin Story</span>
+      <span class="sc-desc">The specific moment someone said "I guess I'm doing this now."</span>
+      <span class="sc-arrow">Read →</span>
+    </a>
+
+    <a class="section-card" href="#the-problem" data-target="the-problem">
+      <div class="sc-top"><span class="sc-num">02</span><span class="sc-tag">+ PDF</span></div>
+      <span class="sc-name">The Problem</span>
+      <span class="sc-desc">The funding gap that compounds itself.</span>
+      <span class="sc-arrow">Read →</span>
+    </a>
+
+    <a class="section-card" href="#founder-bio" data-target="founder-bio">
+      <div class="sc-top"><span class="sc-num">03</span><span class="sc-tag">Profile</span></div>
+      <span class="sc-name">Founder</span>
+      <span class="sc-desc">Who built this institution and why it required building.</span>
+      <span class="sc-arrow">Read →</span>
+    </a>
+
+    <a class="section-card" href="#case-study" data-target="case-study">
+      <div class="sc-top"><span class="sc-num">04</span><span class="sc-tag">Proof</span></div>
+      <span class="sc-name">Case Study</span>
+      <span class="sc-desc">One director. One grant. What became possible.</span>
+      <span class="sc-arrow">Read →</span>
+    </a>
+
+    <a class="section-card feature" href="#the-game" data-target="the-game">
+      <div class="sc-top"><span class="sc-num">05</span><span class="sc-tag">Interactive</span></div>
+      <span class="sc-name">Allocate the Fund</span>
+      <span class="sc-desc">A 90-second game about where the money goes.</span>
+      <span class="sc-arrow">Play →</span>
+    </a>
+
+    <a class="section-card" href="#the-bonus" data-target="the-bonus">
+      <div class="sc-top"><span class="sc-num">06</span><span class="sc-tag">Spec Ad</span></div>
+      <span class="sc-name">Big Budget</span>
+      <span class="sc-desc">What a real agency pitch would look like.</span>
+      <span class="sc-arrow">Read →</span>
+    </a>
+
+    <a class="section-card wide feature" href="#deliberation" data-target="deliberation">
+      <div class="sc-top"><span class="sc-num">07</span><span class="sc-tag">The Machine Shows Its Work</span></div>
+      <span class="sc-name">How This Issue Was Made</span>
+      <span class="sc-desc">Watch the Scout surface the candidates, the Advocate argue each case, and the Editor decide — in the open.</span>
+      <span class="sc-arrow">See the deliberation →</span>
+    </a>
+
+    <a class="section-card wide" href="#podcast" data-target="podcast">
+      <div class="sc-top"><span class="sc-num">08</span><span class="sc-tag">Audio</span></div>
+      <span class="sc-name">The Podcast</span>
+      <span class="sc-desc">The deliberation, turned into audio. Listen to the machines argue. Read the full transcript.</span>
+      <span class="sc-arrow">Listen →</span>
+    </a>
+
+  </div>
+</div>
+
+<!-- ARTICLE -->
+<main class="article" id="main">
+
+  <section class="article-section reveal" id="origin-story">
+    <div class="section-label">Origin Story</div>
+    <h2 class="article-headline">A Structural Answer to a <em>Structural Problem</em></h2>
+    <div class="article-body lead">
+      <p>In 2020, the federal government of Canada allocated $25 million to address the disproportionate impact of COVID-19 on Black Canadians. The question was not whether the money was needed. The question was where it would go and who would control its distribution.</p>
+      <p>The Foundation for Black Communities was established to answer that question with precision. It was incorporated as an independent, Black-led philanthropic organization with a single operating premise: that Black communities in Canada are best served by institutions that are accountable to those communities, not adjacent to them.</p>
+      <div class="pull-quote">"A new institution was required — one that held federal dollars, operated with independent governance, and directed funding specifically toward Black-led charities."</div>
+      <p>The founding moment was not a revelation. It was a calculation. Decades of research had documented what Black Canadians already knew from direct experience — that systemic barriers compound across generations. COVID-19 did not create these conditions. It accelerated them and made their consequences impossible to defer.</p>
+    </div>
+  </section>
+
+  <section class="article-section reveal" id="the-problem">
+    <div class="section-label">The Problem</div>
+    <h2 class="article-headline">The Funding Gap That <em>Compounds Itself</em></h2>
+    <div class="article-body lead">
+      <p>Black-led organizations in Canada occupy a structural position that most funding frameworks were not designed to accommodate. They serve communities that carry disproportionate burdens while operating with less institutional capital and narrower access to the federal grant infrastructure that larger organizations navigate with practiced ease.</p>
+      <p>The mechanics of this exclusion are not dramatic. They are administrative. Grant cycles favor organizations with dedicated development staff. Multi-year funding flows disproportionately to organizations with existing relationships inside federal bureaucracies.</p>
+      <div class="pull-quote">"Organizations doing the most targeted work in the most underserved communities receive the least reliable support."</div>
+      <p>COVID-19 accelerated every dimension of this problem. Federal emergency funding moved through existing channels, toward organizations already holding established relationships with government. The gap did not close during the crisis. It widened.</p>
+    </div>
+    <a href="#" class="pdf-download" onclick="return false">↓ &nbsp;Download the Problem Statement Deck (PDF)</a>
+  </section>
+
+  <section class="article-section reveal" id="founder-bio">
+    <div class="section-label">Founder</div>
+    <h2 class="article-headline">The People Who Built <em>What Was Always Owed</em></h2>
+    <div class="article-body lead">
+      <p>The founding leadership of the Foundation for Black Communities does not require introduction by name. This is standard operating procedure for an organization built on institutional permanence rather than individual profile. The work precedes the byline.</p>
+      <p>The founding leadership arrived at this mandate through a diagnosis, not an aspiration. The diagnosis was specific: Black-led organizations in Canada were chronically underfunded, structurally excluded from mainstream philanthropic pipelines, and left to absorb the compounding weight of systemic inequity without the capital infrastructure to do so at scale.</p>
+      <div class="pull-quote">"Designed to outlast the policy window that created the initial funding opportunity."</div>
+      <p>The focus on steady, reliable funding is a design choice with a precise rationale. Intermittent capital forces organizations to optimize for survival rather than service. Reliability is a precondition for effectiveness, not a feature of generosity.</p>
+    </div>
+  </section>
+
+  <section class="article-section reveal" id="case-study">
+    <div class="section-label">Case Study</div>
+    <h2 class="article-headline">The Architecture of <em>Persistence</em></h2>
+    <div class="article-body lead">
+      <p>In the grant review cycle documented by the Foundation, an executive director of Startop submitted materials that clarified something the sector often obscures: the difference between an organization that exists and an organization that functions.</p>
+      <p>What the grant application process surfaces, in cases like this one, is the cost of operating without reliable infrastructure. The executive director did not present a vision document. They presented an organization with demonstrated accountability, a clear service population, and a funding gap that steady capital would close.</p>
+      <div class="pull-quote">"Organizations that plan can hire. Organizations that react cannot retain."</div>
+      <p>For the executive director of Startop, the grant represents access to the kind of unrestricted, multi-year support that allows an organization to plan rather than react. The distinction matters.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- GAME -->
+<section class="game-outer reveal" id="the-game">
+  <div class="section-label">The Game</div>
+  <div class="game-head">
+    <h2 class="article-headline" style="margin:0">Allocate <em>the Fund</em></h2>
+    <div class="game-head-right">A resource allocation game set inside a federal grant cycle. Distribute funding across Black-led organizations facing compounding crises. Each round, a community need and a budget constraint. 60–90 seconds.</div>
+  </div>
+  <div class="game-frame">
+    <div class="game-ph" id="game-ph">
+      <div class="play-btn" onclick="loadGame()"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="game-ph-title">Allocate the Fund</div>
+      <div class="game-ph-desc">Click to play. Where does the money go?</div>
+    </div>
+    <iframe id="game-iframe" style="display:none"></iframe>
+  </div>
+</section>
+
+<!-- BONUS -->
+<main class="article">
+  <section class="article-section reveal" id="the-bonus">
+    <div class="section-label">This Week's Bonus · Spec Ad</div>
+    <h2 class="article-headline">The Infrastructure of Equity <em>Does Not Build Itself</em></h2>
+    <div class="article-body lead">
+      <p><em>Creative direction:</em> The Foundation operates in a space where the language of charity has historically obscured the mechanics of power. The creative direction refuses charity aesthetics entirely. No hands extended. No soft gradients. No stock photography of community members framed as recipients.</p>
+      <p>Instead: a mid-century corporate annual-report layout. Cream stock. One ink-color accent — deep federal blue, the color of institutional permanence. The kind of building that processes funding. The kind that lasts.</p>
+      <div class="pull-quote">"Not a pilot program. Not a response to a moment. It is the long-term infrastructure that was always owed."</div>
+      <p>For decades, Black-led organizations have delivered services that governments underfunded and markets ignored — without the endowments or institutional backing other sectors receive as a matter of course. The Foundation exists to correct that accounting. Fund it accordingly.</p>
+    </div>
+  </section>
+</main>
+
+<!-- DELIBERATION -->
+<section class="delib" id="deliberation">
+  <div class="delib-inner">
+    <div class="delib-head reveal">
+      <div class="section-label">How This Issue Was Made</div>
+      <h2 class="article-headline">The Agents <em>Show Their Work</em></h2>
+      <p style="font-family:var(--font-display);font-size:22px;font-style:italic;color:var(--cream-dim);margin-top:8px">Three charities were proposed. One was chosen. Here is exactly how that happened.</p>
+    </div>
+
+    <div class="delib-grid">
+      <div class="reveal">
+        <div class="col-label"><span class="dot"></span>The Scout's Candidates — Pitch Log</div>
+        <div class="pitch-cards">
+          <div class="pitch-card selected">
+            <div class="pc-charity">Foundation for Black Communities</div>
+            <div class="pc-loc">Canada — National</div>
+            <div class="pc-sum">Advocates for a $200M endowment to fund Black-led charities across Canada. Operates at the intersection of community organizing and philanthropic reform.</div>
+            <span class="pc-badge win">★ Selected this week</span>
+          </div>
+          <div class="pitch-card">
+            <div class="pc-charity">Centre for Social Justice</div>
+            <div class="pc-loc">United Kingdom</div>
+            <div class="pc-sum">Documents how smaller charities with proven track records cannot compete for funding against larger national organizations.</div>
+            <span class="pc-badge run">Runner-up</span>
+          </div>
+          <div class="pitch-card">
+            <div class="pc-charity">Steve Morgan Foundation</div>
+            <div class="pc-loc">United Kingdom</div>
+            <div class="pc-sum">Highlights the inability of grassroots charities to compete on a level playing field with larger organizations.</div>
+            <span class="pc-badge run">Runner-up</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <div class="col-label"><span class="dot"></span>The Deliberation</div>
+        <div class="timeline" id="timeline">
+          <div class="tl-event">
+            <span class="agent-chip scout"><span class="ico"></span>Scout</span>
+            <div class="tl-text">Found <strong>3 candidates</strong> via Charity Navigator and GuideStar. All three operate in the grassroots funding gap. Flagged Foundation for Black Communities for its specific federal mandate and measurable scope.</div>
+          </div>
+          <div class="tl-event">
+            <span class="agent-chip advocate"><span class="ico"></span>Advocate</span>
+            <div class="tl-text">Scores returned <strong>null across all three</strong> this cycle — the process did not complete. The Editor noted this and flagged the issue for human review, proceeding on the dossier record alone.</div>
+          </div>
+          <div class="tl-event active">
+            <span class="agent-chip editor"><span class="ico"></span>Editor · Decision</span>
+            <div class="tl-text">Selected <strong>Foundation for Black Communities</strong> on specificity of mandate: a named target ($200M endowment), a named constituency, a named federal counterparty. The other two shared overlapping mandates and could not be separated on method or scale.</div>
+            <div class="confidence">
+              <div class="conf-row">
+                <span class="conf-label">Editor Confidence</span>
+                <span class="conf-val" id="conf-val">0%</span>
+              </div>
+              <div class="conf-bar"><div class="conf-fill" id="conf-fill"></div></div>
+              <div class="conf-note">⚠ Below 0.70 threshold — human review flagged.</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="transcript-toggle" id="tbtn" onclick="toggleT()">Read full deliberation transcript</button>
+        <div class="transcript-body" id="tbody">
+          <p><strong>Scout Findings.</strong> Centre for Social Justice — research and advocacy documenting funding asymmetry. Foundation for Black Communities — $200M endowment target, federal mandate, Black-led governance. Steve Morgan Foundation — amplifies overlooked community organizations.</p>
+          <p><strong>Editor Reasoning.</strong> Foundation for Black Communities operates with the clearest operational thesis of the three. A $200M endowment target is a specific number attached to a specific population. The Dispatch covers organizations the way a trade publication covers logistics firms: with attention to throughput, governance, and capital structure.</p>
+          <p><strong>Runner-up notes.</strong> The Centre for Social Justice and the Steve Morgan Foundation occupy the same square on the board: UK-based, research-forward, advocating for grassroots funding parity. Both belong in a future issue. Neither is dismissed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PODCAST -->
+<section class="podcast reveal" id="podcast">
+  <div class="section-label">The Podcast</div>
+  <h2 class="article-headline">Listen to the <em>Deliberation</em></h2>
+  <p style="font-family:var(--font-display);font-size:21px;font-style:italic;color:var(--cream-dim);line-height:1.5;margin-top:8px">The agents' argument about which charity to feature, processed through NotebookLM and turned into audio. The machine debates. You listen.</p>
+  <div class="audio-player">
+    <button class="play-pause" id="pbtn" onclick="togglePlay()"><svg viewBox="0 0 24 24" id="picon"><path d="M8 5v14l11-7z"/></svg></button>
+    <div class="audio-info">
+      <div class="audio-title">Issue #999 · Foundation for Black Communities</div>
+      <div class="audio-bar" onclick="scrub(event)"><div class="audio-fill" id="afill"></div></div>
+      <div class="audio-time" id="atime">0:00 / 14:32</div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section class="shop reveal">
+  <div class="shop-label">Jesse A. Eisenbalm</div>
+  <h2 class="shop-headline">Premium lip balm.<br><em>100% to this week's charity.</em></h2>
+  <p class="shop-sub">Not a pledge. Not a percentage. Every dollar from every purchase goes directly to the Foundation for Black Communities.</p>
+  <a href="/shop" class="shop-btn">Buy the Lip Balm →</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">The Eisenbalm Dispatch</div>
+  <ul class="footer-links">
+    <li><a href="/archive">Archive</a></li>
+    <li><a href="/charities">Charities</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/legal/privacy">Privacy</a></li>
+  </ul>
+  <div class="footer-note">© 2026 Jesse A. Eisenbalm<br>All proceeds go to the featured charity.</div>
+</footer>
+
+</div>
+
+<script>
+// Progress + nav
+const prog=document.getElementById('progress'),snav=document.getElementById('sitenav');
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  const pct=(h.scrollTop)/(h.scrollHeight-h.clientHeight)*100;
+  prog.style.width=pct+'%';
+  snav.classList.toggle('scrolled',window.scrollY>40);
+});
+
+// Reveal on scroll
+const io=new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('in');
+      if(e.target.id==='deliberation') animateConfidence();
+      io.unobserve(e.target);
+    }
+  });
+},{threshold:.18});
+document.querySelectorAll('.reveal,.reveal-stagger').forEach(el=>io.observe(el));
+
+// Magnetic glow on nav cards
+document.querySelectorAll('.section-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    card.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+    card.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+  });
+});
+
+// Confidence count-up
+let confDone=false;
+function animateConfidence(){
+  if(confDone)return;confDone=true;
+  document.getElementById('conf-fill').style.width='62%';
+  let v=0;const t=setInterval(()=>{v++;document.getElementById('conf-val').textContent=v+'%';if(v>=62)clearInterval(t);},22);
+}
+
+// Transcript
+function toggleT(){
+  const b=document.getElementById('tbtn'),y=document.getElementById('tbody');
+  b.classList.toggle('open');y.classList.toggle('open');
+  b.firstChild.textContent=b.classList.contains('open')?'Hide transcript ':'Read full deliberation transcript ';
+}
+
+// Audio mock
+let playing=false,progV=0,timer;
+function togglePlay(){
+  playing=!playing;const ic=document.getElementById('picon');
+  if(playing){
+    ic.innerHTML='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    timer=setInterval(()=>{
+      progV=Math.min(progV+.12,100);
+      document.getElementById('afill').style.width=progV+'%';
+      const s=Math.floor(progV*8.72),m=Math.floor(s/60);
+      document.getElementById('atime').textContent=`${m}:${(s%60).toString().padStart(2,'0')} / 14:32`;
+      if(progV>=100){playing=false;clearInterval(timer);ic.innerHTML='<path d="M8 5v14l11-7z"/>';}
+    },100);
+  }else{ic.innerHTML='<path d="M8 5v14l11-7z"/>';clearInterval(timer);}
+}
+function scrub(e){
+  const r=e.currentTarget.getBoundingClientRect();
+  progV=Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100));
+  document.getElementById('afill').style.width=progV+'%';
+}
+
+// Game
+function loadGame(){
+  document.getElementById('game-ph').style.display='none';
+  const f=document.getElementById('game-iframe');f.style.display='block';
+  f.srcdoc=`<html><head><style>body{margin:0;background:#14110D;color:#F0EAD9;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Georgia,serif}.m{text-align:center}h2{font-size:30px;font-weight:400;margin-bottom:10px;color:#CDA434}p{font-size:14px;font-style:italic;color:#A89F8A}</style></head><body><div class="m"><h2>Allocate the Fund</h2><p>Game loads from the pipeline's game.embedCode field.</p></div></body></html>`;
+}
+</script>
+
+</body>
+</html>

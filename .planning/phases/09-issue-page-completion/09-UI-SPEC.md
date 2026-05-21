@@ -1,10 +1,11 @@
 ---
 phase: 9
 slug: issue-page-completion
-status: draft
+status: approved
 shadcn_initialized: true
 preset: "default / neutral (apps/web/components.json)"
 created: 2026-05-21
+reviewed_at: 2026-05-21
 ---
 
 # Phase 9 — UI Design Contract: Issue Page Completion + Visual Redesign
