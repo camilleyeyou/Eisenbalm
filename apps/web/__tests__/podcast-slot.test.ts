@@ -1,16 +1,13 @@
 /**
  * POD-01 / POD-02 / POD-03 — PodcastSlot source-scan.
  *
- * The current Phase 2 PodcastSlot already satisfies POD-01, POD-03,
- * and the structural POD-02 (transcript disclosure element exists).
- * Those assertions are NOT skipped and must stay green through Phase 9
- * restyling (Plan 09-03).
+ * Phase 9 Plan 09-03: all assertions active (no skipped blocks).
  *
- * The POD-02 transcript-LABEL assertion ("Read full deliberation transcript")
- * is in a separate describe.skip: the current label is
- * "Read the deliberation transcript" (without "full"). Plan 09-03 updates it.
+ * POD-01/POD-03 and structural POD-02 (disclosure element) were active since
+ * Phase 2. The POD-02 label assertion ("Read full deliberation transcript")
+ * was unskipped in Plan 09-03 after the label was updated.
  *
- * readFileSync for the un-skipped describe is at module scope (file exists).
+ * readFileSync is at module scope (file exists at scaffold time).
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -58,11 +55,10 @@ describe('POD-01/02/03: PodcastSlot', () => {
   })
 })
 
-// ─── Skipped: POD-02 restyled transcript label — UNSKIP in Plan 09-03 ─────────
-// Current label: "Read the deliberation transcript"
-// Required label after Plan 09-03: "Read full deliberation transcript"
+// ─── POD-02 restyled transcript label (unskipped in Plan 09-03) ──────────────
+// Label updated to "Read full deliberation transcript" by Plan 09-03.
 
-describe.skip('POD-02: restyled transcript label', () => {
+describe('POD-02: restyled transcript label', () => {
   it('POD-02: transcript toggle reads "Read full deliberation transcript"', () => {
     expect(source).toContain('Read full deliberation transcript')
   })

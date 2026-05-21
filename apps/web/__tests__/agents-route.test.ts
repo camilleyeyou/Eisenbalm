@@ -1,11 +1,8 @@
 /**
  * DEL-06 (ROUTE side) — /agents/[agentId] route file source-scan.
  *
- * UNSKIP in Plan 09-03 when apps/web/app/agents/[agentId]/page.tsx is created.
- * The describe.skip keeps this suite green at scaffold time.
- *
- * The target file does NOT exist at scaffold time, so readFileSync is INSIDE
- * the describe.skip callback — collection never throws on the missing file.
+ * Unskipped in Plan 09-03 when apps/web/app/agents/[agentId]/page.tsx was created.
+ * All assertions are active (no skipped blocks).
  *
  * Asserted behaviors (against app/agents/[agentId]/page.tsx source):
  *   DEL-06: Route uses the agent-profile query (QUERY_AGENT_PROFILE_BY_ID or
@@ -34,10 +31,8 @@ function codeOnly(raw: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, '$1')      // line comments (don't eat URL ://)
 }
 
-// UNSKIP in Plan 09-03
-describe.skip('DEL-06: /agents/[agentId] route', () => {
-  // readFileSync is INSIDE each it() callback so describe.skip collection
-  // never reads the not-yet-existing file at collection time.
+describe('DEL-06: /agents/[agentId] route', () => {
+  // readFileSync is inside each it() callback — safe now that the file exists.
   const PATH = resolve(__dirname, '../app/agents/[agentId]/page.tsx')
 
   it('uses the agent-profile query (QUERY_AGENT_PROFILE_BY_ID or QUERY_AGENT_PROFILES)', () => {
