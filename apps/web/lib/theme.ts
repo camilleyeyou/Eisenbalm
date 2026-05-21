@@ -299,9 +299,7 @@ export function serializeThemeCss(theme: IssueTheme): string {
   return [
     ':root {',
     `  --color-accent: ${p.accent};`,
-    `  --color-bg: ${p.bg};`,
     `  --color-primary: ${p.primary};`,
-    `  --color-text: ${p.text};`,
     `  --font-body: '${p.fontBody}', serif;`,
     `  --font-display: '${p.fontDisplay}', serif;`,
     '}',
@@ -342,8 +340,6 @@ export function applyTheme(element: HTMLElement, theme: IssueTheme): void {
     const p = resolvePalette(theme)
 
     // ONLY setProperty. No exceptions. No cssText. No innerHTML.
-    element.style.setProperty('--color-bg',      p.bg)
-    element.style.setProperty('--color-text',    p.text)
     element.style.setProperty('--color-primary', p.primary)
     element.style.setProperty('--color-accent',  p.accent)
     element.style.setProperty('--font-display',  `'${p.fontDisplay}', serif`)
@@ -375,8 +371,6 @@ export function applyTheme(element: HTMLElement, theme: IssueTheme): void {
     console.warn('[theme] applyTheme threw unexpectedly; falling back to brand defaults.', err)
     try {
       // Attempt minimal safe fallback using only BRAND_DEFAULTS.
-      element.style.setProperty('--color-bg',      BRAND_DEFAULTS.bg)
-      element.style.setProperty('--color-text',    BRAND_DEFAULTS.text)
       element.style.setProperty('--color-primary', BRAND_DEFAULTS.primary)
       element.style.setProperty('--color-accent',  BRAND_DEFAULTS.accent)
       element.style.setProperty('--font-display',  `'${BRAND_DEFAULTS.fontDisplay}', serif`)
