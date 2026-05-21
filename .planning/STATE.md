@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: "Quick task 260521-mnz: fixed DeliberationSlot scoreValue build blocker (next build green)"
+stopped_at: "Quick task 260521-n4l: stopped theme injection from overriding bg/text (HYBRID model, dark house palette wins)"
 last_updated: "2026-05-21T23:21:00.000Z"
 progress:
   total_phases: 11
@@ -286,6 +286,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260520-0kt | WCAG AA accessibility conformance pass on apps/web (reduced-motion, touch targets, skip-link, main landmark) | 2026-05-20 | 19bf834 | [260520-0kt-wcag-aa-accessibility-conformance-pass-o](./quick/260520-0kt-wcag-aa-accessibility-conformance-pass-o/) |
 | 260521-mnz | Fix DeliberationSlot scoreValue possibly-undefined production build blocker (Phase 9 deliberation layer) | 2026-05-21 | ac71c83 | [260521-mnz-fix-deliberationslot-scorevalue-possibly](./quick/260521-mnz-fix-deliberationslot-scorevalue-possibly/) |
+| 260521-n4l | Stop theme injection from overriding --color-bg/--color-text (HYBRID model) so dark house palette in globals.css wins the cascade | 2026-05-21 | d20ea6a | [260521-n4l-apply-dark-hybrid-theme-stop-theme-injec](./quick/260521-n4l-apply-dark-hybrid-theme-stop-theme-injec/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
