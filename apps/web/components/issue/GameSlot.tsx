@@ -1,13 +1,13 @@
 'use client'
 
 /**
- * Game slot. UI-SPEC §4.
+ * Game slot. UI-SPEC §Game Contract.
  * Container: editorial wide (860px). Anchor ID: #game.
  *
- * Phase 7: real iframe with sandbox validator + CSP injection.
+ * Phase 9 restyle: dark click-to-load placeholder UX. SECURITY PATH UNCHANGED.
  *
  * Security contract (LOCKED — GAM-01, GAM-03):
- *   sandbox="allow-scripts"  ALWAYS
+ *   sandbox="allow-scripts"  ALWAYS — exactly this one token.
  *   sandbox MUST NEVER include the same-origin escape token (it would
  *   defeat the sandbox; the embedded page could rewrite its own
  *   sandbox attribute).
@@ -19,7 +19,16 @@
  *   1. game === null               → "Game coming soon." placeholder (no iframe)
  *   2. game.embedCode invalid      → <GameFallback /> ("Game unavailable.")
  *                                    + one-shot Convex qaCorrections.insert write
- *   3. game.embedCode valid        → <iframe srcDoc={injectGameHead(embedCode)} ...>
+ *   3. game.embedCode valid        → click-to-load placeholder → on activation,
+ *                                    swap to <iframe sandbox="allow-scripts"
+ *                                    srcDoc={injectGameHead(embedCode)} ...>
+ *
+ * The click-to-load pattern (Phase 9):
+ *   - Renders a dark placeholder with a ripple play button while started===false.
+ *   - On button click, sets started=true which swaps in the validated iframe.
+ *   - The iframe STILL uses injectGameHead(embedCode) — the security path is
+ *     NOT bypassed. Only the visual timing changes (load-on-demand vs eager).
+ *   - The validate-and-report useEffect fires on mount regardless of started state.
  *
  * The Convex write happens in a useEffect guarded by a useRef so it fires
  * at most once per component mount even under React Strict Mode double-
@@ -28,7 +37,7 @@
  * runId is v.string() in the schema; passing undefined throws.
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation } from 'convex/react'
 
 import { api } from '@convex/_generated/api'
@@ -45,6 +54,7 @@ interface GameSlotProps {
 export function GameSlot({ game, runId }: GameSlotProps) {
   const insertQaCorrection = useMutation(api.qaCorrections.insert)
   const reportedRef = useRef(false)
+  const [started, setStarted] = useState(false)
 
   // Run the validator once per render. Pure function — no I/O.
   const validation = game?.embedCode
@@ -86,57 +96,107 @@ export function GameSlot({ game, runId }: GameSlotProps) {
   return (
     <section
       id="game"
-      className="mx-auto w-full max-w-[860px] px-4 sm:px-6 lg:px-8 print:hidden"
+      className="mx-auto w-full max-w-[860px] border-t border-[color:var(--color-line)] px-4 py-16 sm:px-6 lg:px-8 print:hidden"
     >
-      {/* Top divider */}
-      <div
-        className="mb-8 h-px bg-[color:var(--color-text)]"
-        style={{ opacity: 0.12 }}
-        aria-hidden="true"
-      />
-
-      {/* Label row */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="font-ui text-[14px] uppercase leading-[1.5] tracking-[0.1em] text-[color:var(--color-text)] opacity-60">
-          THE GAME
-        </span>
+      {/* Label row: § glyph + "THE GAME" label in --color-text-mute */}
+      <div className="mb-6 flex items-center gap-2">
+        <div className="flex items-center gap-[0.5em]">
+          <span
+            className="font-ui text-[14px] leading-[1] text-[color:var(--color-accent)]"
+            aria-hidden="true"
+          >
+            §
+          </span>
+          <span className="eyebrow">THE GAME</span>
+        </div>
         <AnchorCopyButton sectionId="game" />
       </div>
 
       {/* Optional headline from Sanity */}
       {game?.headline && (
-        <h2 className="mb-4 font-display text-[28px] font-semibold leading-[1.15] text-[color:var(--color-primary)] sm:text-[36px]">
+        <h2 className="mb-4 font-display text-[clamp(38px,5vw,64px)] font-normal leading-[1.05] tracking-[-0.015em] text-[color:var(--color-primary)]">
           {game.headline}
         </h2>
       )}
 
       {/* Optional description */}
       {game?.description && (
-        <p className="mb-4 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
+        <p className="mb-6 font-body text-[19px] font-light leading-[1.7] text-[color:var(--color-text-dim)]">
           {game.description}
         </p>
       )}
 
       {/*
        * Game frame area.
-       * Container styles MUST NOT change — Phase 2 sized this to
-       * 280px mobile / 360px desktop with overflow-hidden to clip
-       * any internal game content that exceeds the box. GAM-06 mobile
-       * substrate is provided by injectGameHead's CSS reset.
+       * Dark --color-surface background with --color-line-strong border.
+       * Height: 280px mobile / 480px desktop (mockup's min-height 480px for desktop).
+       * overflow-hidden clips any internal game content that exceeds the box.
        */}
-      <div className="relative h-[280px] w-full overflow-hidden rounded border border-[color:var(--color-border,#e5e7eb)] bg-[color:var(--color-surface,var(--color-bg))] sm:h-[360px]">
+      <div className="relative h-[280px] w-full overflow-hidden border border-[color:var(--color-line-strong)] bg-[color:var(--color-surface)] sm:h-[480px]">
         {srcdoc ? (
-          // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
-          // The sandbox attribute below uses exactly one token. The
-          // Vitest source-scan test in __tests__/game-sandbox.test.ts
-          // fails the build if any forbidden escape token appears in
-          // this file.
-          <iframe
-            sandbox="allow-scripts"
-            srcDoc={srcdoc}
-            title={game?.headline ?? 'Game'}
-            className="absolute inset-0 h-full w-full border-none"
-          />
+          started ? (
+            // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
+            // The sandbox attribute below uses exactly one token. The
+            // Vitest source-scan test in __tests__/game-sandbox.test.ts
+            // fails the build if any forbidden escape token appears in
+            // this file.
+            <iframe
+              sandbox="allow-scripts"
+              srcDoc={srcdoc}
+              title={game?.headline ?? 'Game'}
+              className="absolute inset-0 h-full w-full border-none"
+            />
+          ) : (
+            // Dark click-to-load placeholder — ripple play button.
+            // On click, sets started=true which swaps in the EXISTING validated iframe.
+            // The security path (validateEmbedCode + injectGameHead) is NOT bypassed.
+            <div className="relative flex h-full flex-col items-center justify-center gap-5 px-16 text-center">
+              {/* Radial glow behind button */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: 'radial-gradient(circle at 50% 50%, rgba(138,155,122,.08), transparent 70%)',
+                }}
+                aria-hidden="true"
+              />
+              {/* Ripple play button — CSS animation; reduced-motion guard in globals.css neutralizes it */}
+              <button
+                type="button"
+                aria-label="Play the game"
+                onClick={() => setStarted(true)}
+                className="relative flex h-[88px] w-[88px] flex-shrink-0 items-center justify-center rounded-full border border-[color:var(--color-scout)] bg-[rgba(138,155,122,0.08)] transition-[background,box-shadow,transform] hover:scale-105 hover:bg-[rgba(138,155,122,0.18)] hover:shadow-[0_0_50px_-10px_var(--color-scout)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-scout)]"
+                style={{ minWidth: '88px', minHeight: '88px' }}
+              >
+                {/* Ripple ring — animate-ping is the Tailwind built-in ripple;
+                    prefers-reduced-motion guard in globals.css neutralizes animation-duration */}
+                <span
+                  className="pointer-events-none absolute h-[88px] w-[88px] animate-ping rounded-full border border-[color:var(--color-scout)] opacity-60"
+                  aria-hidden="true"
+                />
+                {/* Play triangle SVG */}
+                <svg
+                  width="30"
+                  height="30"
+                  viewBox="0 0 30 30"
+                  fill="var(--color-text)"
+                  aria-hidden="true"
+                  style={{ marginLeft: '5px' }}
+                >
+                  <polygon points="6,4 26,15 6,26" />
+                </svg>
+              </button>
+              {game?.headline && (
+                <p className="relative font-display text-[34px] font-normal leading-[1.1] text-[color:var(--color-text)]">
+                  {game.headline}
+                </p>
+              )}
+              {game?.description && (
+                <p className="relative max-w-[300px] font-body text-[14px] italic leading-[1.6] text-[color:var(--color-text-mute)]">
+                  {game.description}
+                </p>
+              )}
+            </div>
+          )
         ) : game?.embedCode ? (
           // Validator rejected embedCode — show fallback. The Convex
           // write is fired by the useEffect above (one shot per mount).
@@ -144,14 +204,14 @@ export function GameSlot({ game, runId }: GameSlotProps) {
         ) : (
           // No game on this issue — empty-state placeholder.
           <div className="flex h-full items-center justify-center px-8">
-            <p className="text-center font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
+            <p className="text-center font-ui text-[14px] leading-[1.5] text-[color:var(--color-text-mute)]">
               Game coming soon.
             </p>
           </div>
         )}
       </div>
 
-      <div className="mt-8" aria-hidden="true" />
+      <div className="mt-10" aria-hidden="true" />
     </section>
   )
 }

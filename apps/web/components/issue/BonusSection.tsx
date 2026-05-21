@@ -1,19 +1,22 @@
 /**
- * Bonus section. UI-SPEC §5.
+ * Bonus section. UI-SPEC §BonusSection.
  * Anchor ID: #bonus.
+ *
+ * Phase 9 restyle: dark editorial treatment matching GameSlot / EditorialSection.
+ * § label prefix + .eyebrow class; headline --color-primary display font;
+ * surfaces use --color-card / --color-line tokens.
+ *
+ * LOCKED constraints:
+ *   - <section id="bonus"> NEVER <main> (single-main rule).
+ *   - bonusType branching preserved (bigBudget / jingle / specAd).
+ *   - Sub-labels exact copy: "BIG BUDGET TREATMENT" / "THE JINGLE" / "THE SPEC AD".
+ *   - Jingle audio element retained.
+ *   - Storyboard <img> stays (next/image conversion is backlog 999.1).
  *
  * Branches on bonusType:
  *   - bigBudget: editorial wide (860px), headline + body + storyboard image grid
  *   - jingle:    editorial (680px), headline + body + lyrics + optional <audio>
  *   - specAd:    editorial (680px), headline + body only
- *
- * Sub-labels (exact copy from UI-SPEC copywriting contract):
- *   bigBudget → "BIG BUDGET TREATMENT"
- *   jingle    → "THE JINGLE"
- *   specAd    → "THE SPEC AD"
- *
- * Voice rules: "The audio for this jingle is being produced. Lyrics below."
- * (no exclamation marks, no winking)
  */
 import type { IssueBonus, BonusType } from '@/lib/sanity/types'
 import { PortableTextRenderer } from './PortableTextRenderer'
@@ -47,10 +50,8 @@ function BigBudgetBonus({ bonus }: BigBudgetBonusProps) {
             const url = sb.asset?.url
             if (!url) return null
             return (
-              <div key={i} className="aspect-video overflow-hidden rounded bg-[color:var(--color-surface,var(--color-bg))]">
-                {/* next/image would be ideal but requires explicit dimensions;
-                    using <img> with object-fit for the Phase 2 scaffold.
-                    Phase 5 can convert to next/image with urlFor dimensions. */}
+              <div key={i} className="aspect-video overflow-hidden rounded border border-[color:var(--color-line)] bg-[color:var(--color-card)]">
+                {/* next/image conversion is backlog item 999.1 — keep <img> with eslint-disable */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={url}
@@ -76,7 +77,7 @@ function JingleBonus({ bonus }: JingleBonusProps) {
       <PortableTextRenderer value={bonus.body} className="mb-6" />
       {bonus.sunoAudioUrl ? (
         <div className="mb-6">
-          {/* HTML5 audio player — Phase 9 upgrades to full player */}
+          {/* HTML5 audio player — native controls; Phase 9 PodcastSlot owns the custom player */}
           <audio
             controls
             src={bonus.sunoAudioUrl}
@@ -87,13 +88,13 @@ function JingleBonus({ bonus }: JingleBonusProps) {
           </audio>
         </div>
       ) : (
-        <p className="mb-6 font-ui text-[14px] leading-[1.5] text-[color:var(--color-text)] opacity-60">
+        <p className="mb-6 font-ui text-[14px] leading-[1.5] text-[color:var(--color-text-mute)]">
           The audio for this jingle is being produced. Lyrics below.
         </p>
       )}
       {bonus.lyrics && (
-        <div className="rounded border border-[color:var(--color-border,#e5e7eb)] bg-[color:var(--color-surface,var(--color-bg))] px-6 py-4">
-          <pre className="whitespace-pre-wrap font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
+        <div className="rounded border border-[color:var(--color-line-strong)] bg-[color:var(--color-card)] px-6 py-5">
+          <pre className="whitespace-pre-wrap font-body text-[18px] leading-[1.65] text-[color:var(--color-text-dim)]">
             {bonus.lyrics}
           </pre>
         </div>
@@ -121,26 +122,33 @@ export function BonusSection({ bonus, bonusType }: BonusSectionProps) {
     <section id="bonus" className={containerClass(bonusType)}>
       {/* Top divider */}
       <div
-        className="mb-8 h-px bg-[color:var(--color-text)]"
-        style={{ opacity: 0.12 }}
+        className="mb-10 h-px bg-[color:var(--color-line)]"
         aria-hidden="true"
       />
 
-      {/* Label row: "THE BONUS" parent label + sub-label + anchor button */}
+      {/* Label row: § + "THE BONUS" parent label + anchor button */}
       <div className="mb-2 flex items-center gap-2">
-        <span className="font-ui text-[14px] uppercase leading-[1.5] tracking-[0.1em] text-[color:var(--color-text)] opacity-60">
-          THE BONUS
-        </span>
+        <div className="flex items-center gap-[0.5em]">
+          <span
+            className="font-ui text-[14px] leading-[1] text-[color:var(--color-accent)]"
+            aria-hidden="true"
+          >
+            §
+          </span>
+          <span className="eyebrow">THE BONUS</span>
+        </div>
         <AnchorCopyButton sectionId="bonus" />
       </div>
-      <div className="mb-4">
-        <span className="font-ui text-[14px] uppercase leading-[1.5] tracking-[0.1em] text-[color:var(--color-text)] opacity-40">
+
+      {/* Sub-label: exact copy (BIG BUDGET TREATMENT / THE JINGLE / THE SPEC AD) */}
+      <div className="mb-6">
+        <span className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em] text-[color:var(--color-text-mute)]">
           {subLabel(bonusType)}
         </span>
       </div>
 
-      {/* Headline */}
-      <h2 className="mb-6 font-display text-[28px] font-semibold leading-[1.15] text-[color:var(--color-primary)] sm:text-[36px]">
+      {/* Headline — display font, --color-primary */}
+      <h2 className="mb-8 font-display text-[clamp(38px,5vw,64px)] font-normal leading-[1.05] tracking-[-0.015em] text-[color:var(--color-primary)]">
         {bonus.headline}
       </h2>
 
@@ -149,7 +157,7 @@ export function BonusSection({ bonus, bonusType }: BonusSectionProps) {
       {bonusType === 'jingle'    && <JingleBonus    bonus={bonus} />}
       {bonusType === 'specAd'    && <SpecAdBonus    bonus={bonus} />}
 
-      <div className="mt-8" aria-hidden="true" />
+      <div className="mt-10" aria-hidden="true" />
     </section>
   )
 }
