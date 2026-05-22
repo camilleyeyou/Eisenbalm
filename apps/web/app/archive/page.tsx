@@ -3,6 +3,7 @@ import { sanityClient } from '@/lib/sanity/client'
 import { QUERY_ARCHIVE } from '@/lib/sanity/queries'
 import type { ArchiveIssue } from '@/lib/sanity/types'
 import { ArchiveList } from '@/components/archive/ArchiveList'
+import { CardSwap } from '@/components/archive/CardSwap'
 import { SITE_NAME, getSiteUrl } from '@/lib/site'
 
 export const revalidate = 60
@@ -39,6 +40,7 @@ export default async function ArchivePage() {
       <p className="mt-2 font-ui text-[14px] text-[color:var(--color-text-muted)]">
         Every issue of The Eisenbalm Dispatch.
       </p>
+      {issues && issues.length > 0 && <CardSwap issues={issues} />}
       <div className="mt-8">
         {issues && issues.length > 0 ? (
           <ArchiveList issues={issues} />
