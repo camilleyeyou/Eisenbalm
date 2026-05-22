@@ -13,6 +13,10 @@
  *   2. Only element.style.setProperty() is used — never cssText, never innerHTML.
  *   3. WCAG AA contrast check runs inside applyTheme(); fallback applied if fails.
  *
+ * MED-02: when suppressed={true}, the useEffect early-returns without calling
+ * applyTheme. globals.css :root dark palette is the sole source of colors/fonts.
+ * The prop is optional so no existing caller needs updating.
+ *
  * Returns null — no DOM output.
  */
 
@@ -22,12 +26,14 @@ import type { IssueTheme } from '@/lib/sanity/types'
 
 interface ThemeApplierProps {
   theme: IssueTheme
+  suppressed?: boolean
 }
 
-export function ThemeApplier({ theme }: ThemeApplierProps) {
+export function ThemeApplier({ theme, suppressed }: ThemeApplierProps) {
   useEffect(() => {
+    if (suppressed) return  // globals.css :root wins; setProperty not called (MED-01/MED-02)
     applyTheme(document.documentElement, theme)
-  }, [theme])
+  }, [theme, suppressed])
 
   return null
 }
