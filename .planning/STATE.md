@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 12-03-web-theme-suppression-PLAN.md
-last_updated: "2026-05-22T17:56:59.772Z"
+stopped_at: Completed 12-04-section-navigator-timeline-PLAN.md
+last_updated: "2026-05-22T18:06:56.303Z"
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 93
-  completed_plans: 85
+  completed_plans: 86
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 12 (machine-editorial-design-adoption-and-designagent-suppression) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -120,6 +120,7 @@ Plan: 4 of 5
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P01 | 45 | 4 tasks | 5 files |
 | Phase 12 P02 | 4 | 3 tasks | 6 files |
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P03 | 10 | 2 tasks | 2 files |
+| Phase 12-machine-editorial-design-adoption-and-designagent-suppression P04 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -292,6 +293,7 @@ Recent decisions affecting current work:
 - [Phase 12]: DesignAgent system prompt uses 'strongly prefer' / 'Target range' soft steering (not hard constraints) so _validate_full whitelist + WCAG remains the binding gate per D-12
 - [Phase 12]: suppressed ? '' : serializeThemeCss(theme) — empty string avoids BRAND_DEFAULTS light palette regression when flag is ON
 - [Phase 12]: suppressed prop is optional (suppressed?: boolean) so no existing ThemeApplier callers need updating
+- [Phase 12]: renderTitle() splits title on italicWord and wraps in <em>; spine fill via --spine-progress CSS var set by scroll listener; activeSection drives both node .active class and READ STATUS percentage
 
 ### Pending Todos
 
@@ -355,6 +357,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T17:56:59.765Z
-Stopped at: Completed 12-03-web-theme-suppression-PLAN.md
+Last session: 2026-05-22T18:06:56.282Z
+Stopped at: Completed 12-04-section-navigator-timeline-PLAN.md
 Resume file: None
