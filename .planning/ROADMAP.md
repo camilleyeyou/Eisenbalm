@@ -251,7 +251,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
-| 11. Archive CardSwap + Motion Polish | 4/4 | Complete   | 2026-05-22 |
+| 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
 
 ## Backlog
 
