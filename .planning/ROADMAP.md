@@ -239,7 +239,12 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. `SectionNavigator` is rebuilt to the chosen board variant (high fidelity) using only FONT_WHITELIST fonts; reduced-motion-safe; ≥44px targets; single `<main>`
   5. `DeliberationSlot` is rebuilt to the chosen board variant with the confidence meter + pitch log; DEL-04 (no model names) and the 5 live Convex subscriptions intact; reduced-motion-safe
   6. No new npm dependencies; FONT_WHITELIST unchanged; `game-sandbox.test.ts` + theme security tests stay green; `pnpm --filter web build` passes; pipeline tests stay green
-**Plans**: TBD (board variant for navigator + deliberation chosen in UI-SPEC step)
+**Plans**: 5 plans
+- [ ] 12-01-wave0-test-stubs-PLAN.md — Wave 0: 4 web source-scan tripwires (anchor ids, reduced-motion, AGENT_LABELS, no-model-names) + theme suppression-contract assertion + 3 pipeline test cases (validate suppressed, suppressed graph, envelope phrase)
+- [ ] 12-02-pipeline-suppression-and-prompt-PLAN.md — Pipeline: builder.py SECTION_WRITERS + validate.py REQUIRED_FIELDS gated on DESIGNAGENT_SUPPRESSED (atomic lockstep) + DesignAgent Machine Editorial prompt envelope (MED-02 pipeline, MED-03)
+- [ ] 12-03-web-theme-suppression-PLAN.md — Web: layout.tsx server-side flag → empty themeCss + ThemeApplier suppressed prop early-return; globals.css :root house palette wins (MED-01, MED-02 web)
+- [ ] 12-04-section-navigator-timeline-PLAN.md — SectionNavigator Vertical Timeline rebuild + Phase 12 globals.css blocks (navigator + flow-line) (MED-04)
+- [ ] 12-05-deliberation-carousel-flow-PLAN.md — DeliberationSlot Carousel & Flow rebuild; 5 Convex subs + AGENT_LABELS + DEL-04 + count-up preserved (MED-05)
 **UI hint**: yes
 
 ## Progress
@@ -266,7 +271,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
-| 12. Machine Editorial Design Adoption | 0/? | Not started | - |
+| 12. Machine Editorial Design Adoption | 0/5 | Planned | - |
 
 ## Backlog
 
