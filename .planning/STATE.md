@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 11-01-wave0-test-stubs-PLAN.md
-last_updated: "2026-05-22T03:40:52.197Z"
+stopped_at: Completed 11-03-issue-hero-clip-path-reveal-PLAN.md
+last_updated: "2026-05-22T03:44:33.404Z"
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 88
-  completed_plans: 79
+  completed_plans: 80
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 11 (archive-cardswap-and-issue-page-motion-polish) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -114,6 +114,7 @@ Plan: 2 of 4
 | Phase 09 P02 | 5 | 2 tasks | 5 files |
 | Phase 09 P05 | 40 | 2 tasks | 8 files |
 | Phase 11 P01 | 5 | 2 tasks | 3 files |
+| Phase 11 P03 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -274,6 +275,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Ripple ring uses Tailwind animate-ping (built-in) to avoid globals.css modification
 - [Phase 11]: opacity regex precision: /opacity:\s*0(?!\.\d)/ avoids false positive from ghost numeral opacity:0.025 in IssueHero pitfall-guard assertion
 - [Phase 11]: Wave 0 test stubs: 3 test files, 19 new RED assertions (Wave 2 turns green), 12 GREEN now; 5 existing tripwires remain GREEN; all CardSwap reads deferred to it() per Ph9 pattern
+- [Phase 11]: opacity:0 and clip-path in @keyframes from{} only — animation-fill-mode:both + globals.css reduced-motion guard (duration 0.01ms) ensures words never trapped invisible
+- [Phase 11]: [Plan 11-03]: <style> tag in Server Component JSX used for component-scoped @keyframes heroWordReveal — React 19/Next 15 hoist pattern, no new CSS file, no dependencies
 
 ### Pending Todos
 
@@ -337,6 +340,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T03:40:52.189Z
-Stopped at: Completed 11-01-wave0-test-stubs-PLAN.md
+Last session: 2026-05-22T03:44:33.394Z
+Stopped at: Completed 11-03-issue-hero-clip-path-reveal-PLAN.md
 Resume file: None
