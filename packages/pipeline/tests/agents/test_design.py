@@ -242,3 +242,38 @@ async def test_double_failure_falls_back_to_safe_theme(
     assert args["severity"] == "warning"
     assert args["runId"] == sample_dispatch_state["run_id"]
     assert args["agentId"] == "design"
+
+
+# ── Phase 12 Wave 0: Machine Editorial envelope stub ──────────────────────
+
+
+@pytest.mark.xfail(
+    reason=(
+        "DesignAgent Machine Editorial envelope phrase lands in Plan 12-02 (MED-03). "
+        "_build_messages() does not yet contain 'Machine Editorial' in its system "
+        "string. Plan 12-02 removes this xfail decorator when it adds the "
+        "AESTHETIC ENVELOPE (Machine Editorial) section to the system prompt."
+    ),
+    strict=False,
+)
+def test_build_messages_contains_machine_editorial_envelope() -> None:
+    """MED-03 Wave-0 stub: DesignAgent system prompt contains 'Machine Editorial'.
+
+    Plan 12-02 adds the AESTHETIC ENVELOPE (Machine Editorial) section to the
+    system string inside _build_messages(). Once that lands, this test turns
+    GREEN and the xfail decorator is removed.
+
+    The exact phrase the prompt must contain is the literal string
+    'Machine Editorial' (the envelope uses 'AESTHETIC ENVELOPE (Machine Editorial)').
+    """
+    from eisenbalm_pipeline.agents.design import _build_messages
+
+    messages = _build_messages(
+        charity={"name": "X"},
+        style_brief={"visualDirection": ""},
+    )
+    system = next(m["content"] for m in messages if m["role"] == "system")
+    assert "Machine Editorial" in system, (
+        f"DesignAgent system prompt must contain 'Machine Editorial' after Plan 12-02; "
+        f"current system prompt starts: {system[:200]!r}"
+    )

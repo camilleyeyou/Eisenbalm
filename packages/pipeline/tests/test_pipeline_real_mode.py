@@ -654,3 +654,68 @@ async def test_phase_6_publisher_against_phase_5_draft():
         )
     finally:
         await sanity_http.aclose()
+
+
+# ── Phase 12 Wave 0: suppressed-graph stub ────────────────────────────────
+
+
+@pytest.mark.xfail(
+    reason=(
+        "SECTION_WRITERS env gate lands in Plan 12-02 (Wave 1). "
+        "builder.py does not yet read DESIGNAGENT_SUPPRESSED at import time. "
+        "Plan 12-02 removes this xfail decorator when it adds the _SUPPRESSED "
+        "gate and drops 'design' from SECTION_WRITERS when suppressed."
+    ),
+    strict=False,
+)
+async def test_design_suppressed_graph_completes_without_theme(
+    initial_state, monkeypatch
+) -> None:
+    """MED-02 Wave-0 stub: full graph completes without state['theme'] when suppressed.
+
+    DESIGNAGENT_SUPPRESSED=true causes builder.py to omit the 'design' node
+    from SECTION_WRITERS and validate.py to drop 'theme' from REQUIRED_FIELDS.
+    Both modules read the env var at MODULE IMPORT TIME (Wave 1 adds the gate),
+    so this test reloads both after setting the env var.
+
+    xfail until Plan 12-02 implements the _SUPPRESSED gates in builder.py and
+    validate.py. Plan 12-02 removes the xfail decorator.
+    """
+    import importlib
+
+    monkeypatch.setenv("DESIGNAGENT_SUPPRESSED", "true")
+    monkeypatch.setenv("EISENBALM_STUB_MODE", "false")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("NEXT_PUBLIC_SANITY_PROJECT_ID", "test-project")
+    monkeypatch.setenv("SANITY_API_TOKEN", "test-token")
+
+    import eisenbalm_pipeline.agents.validate as validate_mod
+    import eisenbalm_pipeline.graph.builder as builder_mod
+
+    importlib.reload(validate_mod)
+    importlib.reload(builder_mod)
+
+    # Post-Wave-1: design node must be absent from SECTION_WRITERS when suppressed.
+    assert "design" not in builder_mod.SECTION_WRITERS
+
+    from contextlib import ExitStack
+
+    with ExitStack() as stack:
+        for cm in _build_patches(stub_mode=False):
+            stack.enter_context(cm)
+        result = await _run_full_graph(initial_state)
+
+    # design node was suppressed — theme never set in state.
+    assert result.get("theme") is None, (
+        "Expected theme to be absent when DESIGNAGENT_SUPPRESSED=true; "
+        f"got: {result.get('theme')!r}"
+    )
+    # Other sections must still complete normally.
+    assert result.get("origin_story", {}).get("body"), "missing origin_story.body"
+    assert result.get("problem_statement", {}).get("body"), "missing problem_statement.body"
+    assert result.get("founder_bio", {}).get("body"), "missing founder_bio.body"
+    assert result.get("case_study", {}).get("body"), "missing case_study.body"
+    assert result.get("game", {}).get("description"), "missing game.description"
+    assert result.get("bonus", {}).get("body"), "missing bonus.body"
+    assert result.get("sanity_issue_id"), "Publisher did not return sanity_issue_id"
