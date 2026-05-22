@@ -147,6 +147,13 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **DES-05**: The case study's structured metadata (founded/AUM/focus/etc.) renders in a footnote-style or sidebar treatment visually distinct from running prose (e.g. smaller type, monospace numerals, italics, or a delineated metadata block).
 - [x] **DES-06**: Phase 2's per-issue theme injection still works after the redesign — the charity's `theme.primaryColor`, `theme.accentColor`, `theme.backgroundColor`, and `theme.textColor` from Sanity still drive page colors via CSS variables. Switching from one issue to another with different theme values visibly changes accent colors (links, dividers, section eyebrows) without breaking the typographic hierarchy or the layout.
 
+### Archive CardSwap + Motion Polish (Phase 11)
+
+- [ ] **ARC-01**: The `/archive` page renders a CSS-3D "CardSwap" component that cycles through real past published issues fetched from Sanity (existing archive GROQ query) — stacked 3D cards auto-advancing on a timer (~6s), pause-on-hover, click-to-open the issue, optional indicator dots, and a "N issues" badge. Each card shows the real issue number, charity name (per-issue accent), one-line mission, date, and read time. No GSAP, no CDN `<script>`, no new npm dependency — CSS perspective/transforms + minimal JS only. Under `prefers-reduced-motion` the auto-cycle is disabled and cards render as a static, keyboard-accessible list.
+- [ ] **MOT-01**: The issue hero charity name reveals line-by-line via a clip-path animation on load; under `prefers-reduced-motion` it renders instantly with no animation.
+- [ ] **MOT-02**: Section-navigator cards show a gold magnetic cursor-follow glow + hover translate; under `prefers-reduced-motion` no JS cursor tracking runs and interactive targets remain ≥44px.
+- [ ] **MOT-03**: The deliberation confidence meter animates 0→its real value on scroll-into-view (final value shown instantly under `prefers-reduced-motion`), and pitch cards use a scroll-snap carousel — without exposing model names (DEL-04) or breaking the live Convex subscriptions.
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -289,10 +296,14 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | POD-01 | Phase 9: Issue Page Completion | Complete |
 | POD-02 | Phase 9: Issue Page Completion | Complete |
 | POD-03 | Phase 9: Issue Page Completion | Complete |
+| ARC-01 | Phase 11: Archive CardSwap + Motion Polish | Not started |
+| MOT-01 | Phase 11: Archive CardSwap + Motion Polish | Not started |
+| MOT-02 | Phase 11: Archive CardSwap + Motion Polish | Not started |
+| MOT-03 | Phase 11: Archive CardSwap + Motion Polish | Not started |
 
 **Coverage:**
-- v1 requirements: 80 total
-- Mapped to phases: 80
+- v1 requirements: 84 total
+- Mapped to phases: 84
 - Unmapped: 0 ✓
 
 ---

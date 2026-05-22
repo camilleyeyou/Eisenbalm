@@ -211,6 +211,19 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 10-04-readme-and-uat-PLAN.md — apps/web/README.md Phase 10 section + Andrew's manual UAT against deployed issue page (autonomous: false) (completed 2026-05-19)
 **UI hint**: yes
 
+### Phase 11: Archive CardSwap + Issue-Page Motion Polish
+**Goal**: The `/archive` page features a CSS-3D "CardSwap" component that cycles through REAL past published issues (from Sanity via the existing archive GROQ query), and the dark issue page gains reduced-motion-safe motion polish drawn from the "Machine Editorial" design language — hero charity-name clip-path reveal, section-navigator magnetic gold cursor-glow, and a deliberation confidence count-up + scroll-snap pitch-card carousel — all data-bound (no hardcoded content) and entirely within the locked constraints: approved fonts only (FONT_WHITELIST unchanged), no new npm dependencies, no CDN scripts, single `<main>`, ≥44px touch targets, WCAG AA, `prefers-reduced-motion` on all motion, and the game-sandbox + theme.ts security contracts untouched
+**Depends on**: Phase 9
+**Requirements**: ARC-01, MOT-01, MOT-02, MOT-03
+**Success Criteria** (what must be TRUE):
+  1. `/archive` shows a CSS-only 3D CardSwap cycling real past issues from Sanity (no GSAP / no CDN / no new deps), pauses on hover, click opens the issue; under `prefers-reduced-motion` it renders a static, keyboard-accessible list with no auto-cycle
+  2. The issue hero charity name reveals via clip-path on load and renders instantly (no animation) under `prefers-reduced-motion`
+  3. Section-navigator cards show the gold magnetic/hover glow with NO JS cursor tracking under `prefers-reduced-motion`; interactive targets stay ≥44px
+  4. The deliberation confidence meter animates 0→its real value on scroll-into-view (final value shown instantly under `prefers-reduced-motion`); pitch cards use scroll-snap; no model names are exposed and the live Convex subscriptions remain intact
+  5. No new npm dependencies are added; FONT_WHITELIST is unchanged; exactly one `<main>` per page; AA contrast holds; `game-sandbox.test.ts` + theme security tests stay green; `pnpm --filter web build` passes
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
@@ -234,6 +247,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
+| 11. Archive CardSwap + Motion Polish | 0/? | Not started | - |
 
 ## Backlog
 

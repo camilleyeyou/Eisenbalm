@@ -116,6 +116,10 @@ Plan: Not started
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 11 added: Archive CardSwap + Issue-Page Motion Polish (CSS-3D archive bound to real Sanity issues + reduced-motion-safe issue-page motion polish). Locked: approved fonts only (no FONT_WHITELIST change), no new npm deps, no CDN scripts, all data-bound. (`gsd-tools phase add` mis-numbered it 1000 because the 999.x backlog parking lot was parsed as the max integer phase; manually corrected to Phase 11.)
+
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
