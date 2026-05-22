@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 12-04-section-navigator-timeline-PLAN.md
-last_updated: "2026-05-22T18:06:56.303Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 12-05-deliberation-carousel-flow-PLAN.md
+last_updated: "2026-05-22T18:16:36.162Z"
 progress:
   total_phases: 13
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 93
-  completed_plans: 86
+  completed_plans: 87
 ---
 
 # Project State
@@ -121,6 +121,7 @@ Plan: 5 of 5
 | Phase 12 P02 | 4 | 3 tasks | 6 files |
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P03 | 10 | 2 tasks | 2 files |
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P04 | 8 | 2 tasks | 2 files |
+| Phase 12 P05 | 5 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -294,6 +295,8 @@ Recent decisions affecting current work:
 - [Phase 12]: suppressed ? '' : serializeThemeCss(theme) — empty string avoids BRAND_DEFAULTS light palette regression when flag is ON
 - [Phase 12]: suppressed prop is optional (suppressed?: boolean) so no existing ThemeApplier callers need updating
 - [Phase 12]: renderTitle() splits title on italicWord and wraps in <em>; spine fill via --spine-progress CSS var set by scroll listener; activeSection drives both node .active class and READ STATUS percentage
+- [Phase 12]: MED-05: Visible event timeline in Zone 2 shows only non-deliberation-phase events; sr-only list provides full timeline for screen readers; scout/advocate/editor events covered by flow-line diagram
+- [Phase 12]: MED-05: editorRationale rendered below confidence meter (not inside flow-line node) to avoid layout overflow on long rationale strings
 
 ### Pending Todos
 
@@ -357,6 +360,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T18:06:56.282Z
-Stopped at: Completed 12-04-section-navigator-timeline-PLAN.md
+Last session: 2026-05-22T18:16:36.155Z
+Stopped at: Completed 12-05-deliberation-carousel-flow-PLAN.md
 Resume file: None
