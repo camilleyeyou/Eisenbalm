@@ -18,6 +18,7 @@
  * Voice: dry, precise, no exclamation marks, no winking. (CLAUDE.md)
  */
 
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
@@ -193,6 +194,44 @@ export function DeliberationSlot({ runId }: Props) {
   // Live indicator
   const isLive = run?.status === 'running'
 
+  // MOT-03: Confidence meter count-up via IntersectionObserver + rAF.
+  // prefersReducedMotion is module-scope (non-reactive) — intentionally omitted from deps.
+  const confidenceSectionRef = useRef<HTMLDivElement>(null)
+  const [displayValue, setDisplayValue] = useState(0)
+  const animatedRef = useRef(false)
+
+  useEffect(() => {
+    if (editorConfidence === null) return
+    const target = Math.round(editorConfidence * 100)
+
+    if (prefersReducedMotion) {
+      setDisplayValue(target)   // Pitfall 4: final value instantly, never 0
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !animatedRef.current) {
+          animatedRef.current = true
+          observer.disconnect()   // Pitfall 3: disconnect after first fire
+          const duration = 1200
+          const start = performance.now()
+          function tick(now: number) {
+            const t = Math.min((now - start) / duration, 1)
+            setDisplayValue(Math.round(t * target))
+            if (t < 1) requestAnimationFrame(tick)
+          }
+          requestAnimationFrame(tick)
+        }
+      },
+      { threshold: 0.4 },
+    )
+    const el = confidenceSectionRef.current
+    if (el) observer.observe(el)
+    return () => observer.disconnect()
+  }, [editorConfidence])
+  // prefersReducedMotion is module-scope (non-reactive) — intentionally omitted from deps
+
   return (
     <section
       id="deliberation"
@@ -270,7 +309,7 @@ export function DeliberationSlot({ runId }: Props) {
                   </h3>
 
                   {pitchLog && pitchLog.length > 0 ? (
-                    <div className="flex flex-col gap-4">
+                    <div className="pitch-card-list" role="list">
                       {pitchLog.map(card => {
                         const score = advocateScores.get(card.charityName)
                         const hasScore = advocateScores.has(card.charityName)
@@ -278,6 +317,8 @@ export function DeliberationSlot({ runId }: Props) {
                         return (
                           <div
                             key={card._id}
+                            role="listitem"
+                            tabIndex={0}
                             className="rounded p-6"
                             style={{
                               backgroundColor: 'var(--color-card)',
@@ -287,6 +328,7 @@ export function DeliberationSlot({ runId }: Props) {
                               boxShadow: card.selected
                                 ? '0 0 12px color-mix(in srgb, var(--color-primary) 18%, transparent)'
                                 : 'none',
+                              minWidth: 0,
                             }}
                           >
                             {/* Charity name + badge row */}
@@ -390,6 +432,7 @@ export function DeliberationSlot({ runId }: Props) {
                       No pitch log entries for this run.
                     </p>
                   )}
+                  <p className="sr-only">Scroll to see more candidates.</p>
                 </div>
 
                 {/* ─── Right column: timeline + editor + QA ─────────────── */}
@@ -485,7 +528,7 @@ export function DeliberationSlot({ runId }: Props) {
 
                       {/* Confidence meter — only render when a finite number is present */}
                       {editorConfidence !== null && (
-                        <div>
+                        <div ref={confidenceSectionRef}>
                           <div className="mb-1 flex items-center justify-between">
                             <span
                               className="font-ui text-[11px] leading-[1.5]"
@@ -496,8 +539,9 @@ export function DeliberationSlot({ runId }: Props) {
                             <span
                               className="font-display text-[32px] font-medium leading-[1.1]"
                               style={{ color: 'var(--color-primary)' }}
+                              aria-live="polite"
                             >
-                              {Math.round(editorConfidence * 100)}%
+                              {displayValue}%
                             </span>
                           </div>
                           <div
@@ -507,7 +551,7 @@ export function DeliberationSlot({ runId }: Props) {
                             <div
                               className="h-full rounded-full"
                               style={{
-                                width: `${editorConfidence * 100}%`,
+                                width: `${displayValue}%`,
                                 backgroundColor: 'var(--color-primary)',
                                 transition: prefersReducedMotion ? 'none' : 'width 0.6s ease',
                               }}
