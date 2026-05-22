@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 11 UI-SPEC approved (6/6 dimensions; 2 non-blocking flags)
-last_updated: "2026-05-22T00:29:23.957Z"
+status: Ready to execute
+stopped_at: Completed 11-01-wave0-test-stubs-PLAN.md
+last_updated: "2026-05-22T03:40:52.197Z"
 progress:
   total_phases: 12
   completed_phases: 9
-  total_plans: 84
-  completed_plans: 78
+  total_plans: 88
+  completed_plans: 79
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 09 — issue-page-completion
+**Current focus:** Phase 11 — archive-cardswap-and-issue-page-motion-polish
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 11 (archive-cardswap-and-issue-page-motion-polish) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -113,6 +113,7 @@ Plan: Not started
 | Phase 09-issue-page-completion P04 | 7 min | 2 tasks | 6 files |
 | Phase 09 P02 | 5 | 2 tasks | 5 files |
 | Phase 09 P05 | 40 | 2 tasks | 8 files |
+| Phase 11 P01 | 5 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -271,6 +272,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Kept .eyebrow class alongside § glyph prefix to satisfy Phase 10 source-scan tripwire (42 assertions)
 - [Phase 09]: GameSlot click-to-load uses useState(started) gating render only; security path (validateEmbedCode + injectGameHead + insertQaCorrection) runs regardless of started state
 - [Phase 09]: Ripple ring uses Tailwind animate-ping (built-in) to avoid globals.css modification
+- [Phase 11]: opacity regex precision: /opacity:\s*0(?!\.\d)/ avoids false positive from ghost numeral opacity:0.025 in IssueHero pitfall-guard assertion
+- [Phase 11]: Wave 0 test stubs: 3 test files, 19 new RED assertions (Wave 2 turns green), 12 GREEN now; 5 existing tripwires remain GREEN; all CardSwap reads deferred to it() per Ph9 pattern
 
 ### Pending Todos
 
@@ -334,6 +337,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T00:29:23.949Z
-Stopped at: Phase 11 UI-SPEC approved (6/6 dimensions; 2 non-blocking flags)
-Resume file: .planning/phases/11-archive-cardswap-and-issue-page-motion-polish/11-UI-SPEC.md
+Last session: 2026-05-22T03:40:52.189Z
+Stopped at: Completed 11-01-wave0-test-stubs-PLAN.md
+Resume file: None

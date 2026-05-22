@@ -222,7 +222,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. The deliberation confidence meter animates 0→its real value on scroll-into-view (final value shown instantly under `prefers-reduced-motion`); pitch cards use scroll-snap; no model names are exposed and the live Convex subscriptions remain intact
   5. No new npm dependencies are added; FONT_WHITELIST is unchanged; exactly one `<main>` per page; AA contrast holds; `game-sandbox.test.ts` + theme security tests stay green; `pnpm --filter web build` passes
 **Plans**: 4 plans
-- [ ] 11-01-wave0-test-stubs-PLAN.md — Wave 0: author 3 source-scan test files (archive-cardswap, issue-hero-motion, motion-polish) encoding ARC-01/MOT-01/MOT-02/MOT-03 + FONT_WHITELIST + no-new-dep contracts (RED until Wave 2)
+- [x] 11-01-wave0-test-stubs-PLAN.md — Wave 0: author 3 source-scan test files (archive-cardswap, issue-hero-motion, motion-polish) encoding ARC-01/MOT-01/MOT-02/MOT-03 + FONT_WHITELIST + no-new-dep contracts (RED until Wave 2)
 - [ ] 11-02-archive-cardswap-PLAN.md — Wave 2: new CSS-3D CardSwap.tsx bound to ArchiveIssue[] + mount above ArchiveList in archive/page.tsx (ARC-01)
 - [ ] 11-03-issue-hero-clip-path-reveal-PLAN.md — Wave 2: IssueHero charity-name word-span @keyframes clip-path reveal, Server-Component-only, reduced-motion-safe (MOT-01)
 - [ ] 11-04-navigator-and-deliberation-motion-PLAN.md — Wave 2: globals.css section-card hover translate + pitch-card scroll-snap; DeliberationSlot confidence count-up (IntersectionObserver+rAF); SectionNavigator early-return preserved (MOT-02, MOT-03)
@@ -251,7 +251,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 8. Stripe / Commerce | 0/8 | Planned | - |
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
-| 11. Archive CardSwap + Motion Polish | 0/4 | Planned | - |
+| 11. Archive CardSwap + Motion Polish | 1/4 | In Progress|  |
 
 ## Backlog
 
@@ -259,7 +259,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 6/6 plans complete
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)
