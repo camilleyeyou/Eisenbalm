@@ -80,14 +80,6 @@ async def test_validate_sections_requires_theme_when_not_suppressed(monkeypatch)
         await validate_mod.validate_sections(state)
 
 
-@pytest.mark.xfail(
-    reason=(
-        "REQUIRED_FIELDS env gate lands in Plan 12-02 (Wave 1). "
-        "validate.py does not yet read DESIGNAGENT_SUPPRESSED at import time. "
-        "Plan 12-02 removes this xfail decorator when it adds the _SUPPRESSED gate."
-    ),
-    strict=False,
-)
 @pytest.mark.asyncio
 async def test_validate_sections_skips_theme_when_suppressed(monkeypatch):
     """validate_sections passes without theme when DESIGNAGENT_SUPPRESSED=true.

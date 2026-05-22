@@ -659,15 +659,6 @@ async def test_phase_6_publisher_against_phase_5_draft():
 # ── Phase 12 Wave 0: suppressed-graph stub ────────────────────────────────
 
 
-@pytest.mark.xfail(
-    reason=(
-        "SECTION_WRITERS env gate lands in Plan 12-02 (Wave 1). "
-        "builder.py does not yet read DESIGNAGENT_SUPPRESSED at import time. "
-        "Plan 12-02 removes this xfail decorator when it adds the _SUPPRESSED "
-        "gate and drops 'design' from SECTION_WRITERS when suppressed."
-    ),
-    strict=False,
-)
 async def test_design_suppressed_graph_completes_without_theme(
     initial_state, monkeypatch
 ) -> None:

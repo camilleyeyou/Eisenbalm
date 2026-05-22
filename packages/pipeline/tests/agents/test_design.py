@@ -247,15 +247,6 @@ async def test_double_failure_falls_back_to_safe_theme(
 # ── Phase 12 Wave 0: Machine Editorial envelope stub ──────────────────────
 
 
-@pytest.mark.xfail(
-    reason=(
-        "DesignAgent Machine Editorial envelope phrase lands in Plan 12-02 (MED-03). "
-        "_build_messages() does not yet contain 'Machine Editorial' in its system "
-        "string. Plan 12-02 removes this xfail decorator when it adds the "
-        "AESTHETIC ENVELOPE (Machine Editorial) section to the system prompt."
-    ),
-    strict=False,
-)
 def test_build_messages_contains_machine_editorial_envelope() -> None:
     """MED-03 Wave-0 stub: DesignAgent system prompt contains 'Machine Editorial'.
 
