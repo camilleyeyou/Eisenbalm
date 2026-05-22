@@ -1,11 +1,12 @@
 ---
 phase: 12
 slug: machine-editorial-design-adoption-and-designagent-suppression
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-22
 revised: 2026-05-22
+reviewed_at: 2026-05-22
 revision_reason: checker-fix — typography collapsed to 4 sizes / 2 weights; 4 non-multiple-of-4 spacing values corrected
 ---
 
