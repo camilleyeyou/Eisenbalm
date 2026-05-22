@@ -86,7 +86,14 @@ export function IssueHero({
         </p>
 
         {/* Charity name — primary visual anchor (h1), masthead-scale display.
-            Text-shadow glow uses --color-primary-glow for the ambient halo. */}
+            Text-shadow glow uses --color-primary-glow for the ambient halo.
+            MOT-01: each word reveals via clip-path + translateY + opacity @keyframes
+            (CSS-only, Server Component safe — no 'use client', no hooks). The
+            animation is component-scoped via a <style> tag (React 19 / Next 15
+            hoist to <head> and deduplicate). opacity:0 and clip-path appear ONLY
+            inside @keyframes from{} — never as base inline styles — so that the
+            globals.css prefers-reduced-motion guard (duration→0.01ms) collapses
+            the animation to instant without leaving words permanently hidden. */}
         <h1
           className="mb-10 max-w-[14ch] font-display font-normal leading-[0.92] tracking-[-0.02em] text-[color:var(--color-primary)]"
           style={{
@@ -94,7 +101,25 @@ export function IssueHero({
             textShadow: '0 0 80px var(--color-primary-glow, rgba(205,164,52,.12))',
           }}
         >
-          {charity.name}
+          <style>{`
+            @keyframes heroWordReveal {
+              from { clip-path: inset(0 0 100% 0); transform: translateY(12px); opacity: 0; }
+              to   { clip-path: inset(0 0 0% 0);   transform: translateY(0);    opacity: 1; }
+            }
+            .hero-word-span {
+              display: inline-block;
+              animation: heroWordReveal 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
+            }
+          `}</style>
+          {charity.name.split(' ').map((word, i, arr) => (
+            <span
+              key={i}
+              className="hero-word-span"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              {word}{i < arr.length - 1 ? ' ' : ''}
+            </span>
+          ))}
         </h1>
 
         {/* Masthead byline */}
