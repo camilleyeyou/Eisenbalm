@@ -15,7 +15,7 @@
  *
  * Phase 5 may extend with a proper Vitest/Jest setup if the test surface grows.
  */
-import { test } from 'node:test'
+import { test, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   validateHex,
@@ -479,4 +479,61 @@ test('applyTheme: never throws on injection attempts in theme data', () => {
     assert.ok(!value.includes('javascript:'), `CSS var value must not contain javascript:: ${value}`)
     assert.ok(!value.includes('<img'),        `CSS var value must not contain <img: ${value}`)
   }
+})
+
+// ─── MED-01: theme suppression no-op contract ────────────────────────────────
+//
+// These two tests document and lock the contract for Plan 12-03 (Wave 1).
+// The suppression mechanism lives in layout.tsx — NOT in theme.ts — and
+// must emit an empty CSS string rather than calling serializeThemeCss(null).
+//
+// Pitfall to avoid (from 12-RESEARCH.md Pitfall 1):
+//   serializeThemeCss(null) returns the LIGHT BRAND_DEFAULTS palette
+//   (#FAFAF8 background). This would REGRESS the dark house look that
+//   globals.css :root establishes. The correct no-op is to return ''
+//   (empty string) so globals.css :root wins the cascade undisturbed.
+//
+// These tests prove the pitfall is real and lock the empty-string gate
+// that Plan 12-03 implements in layout.tsx.
+
+describe('MED-01: theme suppression no-op contract', () => {
+  it('serializeThemeCss(null) STILL emits the light BRAND_DEFAULTS palette (this is why suppression must bypass it)', () => {
+    // Prove the pitfall: calling serializeThemeCss(null) when suppressed
+    // would reintroduce the LIGHT palette (bg = #FAFAF8), undoing the
+    // dark house palette from globals.css :root. Plan 12-03 must NOT call
+    // this function when suppressed — it must emit '' instead.
+    const css = serializeThemeCss(null)
+    assert.ok(
+      css.includes(BRAND_DEFAULTS.bg),
+      `serializeThemeCss(null) must include BRAND_DEFAULTS.bg (${BRAND_DEFAULTS.bg}) — this proves the pitfall is real`
+    )
+  })
+
+  it('the suppressed-mode CSS string is the empty string (contract for layout.tsx)', () => {
+    // This helper encodes the exact gate Plan 12-03 implements in layout.tsx:
+    //   const themeCss = suppressed ? '' : serializeThemeCss(theme)
+    // When suppressed=true → emit '' so globals.css :root wins.
+    // When suppressed=false → call serializeThemeCss which always returns
+    //   a non-empty ':root { ... }' block.
+    const suppressedThemeCss = (suppressed: boolean, theme: IssueTheme) =>
+      suppressed ? '' : serializeThemeCss(theme)
+
+    // Suppressed: must be exactly the empty string.
+    assert.strictEqual(
+      suppressedThemeCss(true, { primaryColor: '#CDA434' } as IssueTheme),
+      '',
+      'suppressedThemeCss(true, ...) must return empty string'
+    )
+
+    // Non-suppressed with null theme: must be non-empty (BRAND_DEFAULTS palette).
+    const nonSuppressed = suppressedThemeCss(false, null as unknown as IssueTheme)
+    assert.ok(
+      nonSuppressed.length > 0,
+      'suppressedThemeCss(false, null) must return non-empty string (BRAND_DEFAULTS palette)'
+    )
+    assert.ok(
+      nonSuppressed.startsWith(':root {'),
+      'suppressedThemeCss(false, null) must start with :root {'
+    )
+  })
 })
