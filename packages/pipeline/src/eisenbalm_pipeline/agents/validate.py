@@ -12,14 +12,19 @@ Source: 04-RESEARCH.md §4 + PITFALLS.md §1.3 + CONTEXT D-14/D-26.
 """
 from __future__ import annotations
 
+import os
 import time
 
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 
+# MED-02: must match graph.builder._SUPPRESSED exactly (lockstep — see Pitfall 2).
+_SUPPRESSED = os.environ.get("DESIGNAGENT_SUPPRESSED", "").lower() in ("1", "true", "yes")
 
 # The 7 DispatchState fields produced by the parallel writers (CONTEXT D-18).
-# Note: Design writes `theme`, not `design`.
+# Note: Design writes `theme`, not `design`. When DESIGNAGENT_SUPPRESSED=true,
+# the design node is dropped from the graph and `theme` is never populated —
+# so we must also drop "theme" from REQUIRED_FIELDS in lockstep.
 REQUIRED_FIELDS: tuple[str, ...] = (
     "origin_story",
     "problem_statement",
@@ -27,7 +32,7 @@ REQUIRED_FIELDS: tuple[str, ...] = (
     "case_study",
     "game",
     "bonus",
-    "theme",
+    *(() if _SUPPRESSED else ("theme",)),
 )
 
 

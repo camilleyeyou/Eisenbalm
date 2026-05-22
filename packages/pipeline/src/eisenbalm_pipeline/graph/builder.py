@@ -39,6 +39,7 @@ Plan 07 and Plan 08 are merged.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
@@ -62,6 +63,11 @@ from eisenbalm_pipeline.agents.verify import verify_research
 from eisenbalm_pipeline.graph.state import DispatchState
 
 
+# MED-02: reversible suppression flag. Read at module-import time so flipping
+# DESIGNAGENT_SUPPRESSED in the Railway dashboard + restart takes effect with
+# no code change. Must stay in lockstep with validate.REQUIRED_FIELDS.
+_SUPPRESSED = os.environ.get("DESIGNAGENT_SUPPRESSED", "").lower() in ("1", "true", "yes")
+
 # 7 parallel section writers — Pattern A multi-target edges. Each writer
 # mutates a DISTINCT DispatchState field (origin_story, problem_statement,
 # founder_bio, case_study, game, bonus, theme — Design writes `theme`),
@@ -75,7 +81,7 @@ SECTION_WRITERS: tuple[str, ...] = (
     "case_study",
     "game",
     "bonus",
-    "design",
+    *(() if _SUPPRESSED else ("design",)),
 )
 
 
@@ -109,7 +115,8 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_node("case_study", case_study)
     builder.add_node("game", game)
     builder.add_node("bonus", bonus)
-    builder.add_node("design", design)
+    if not _SUPPRESSED:
+        builder.add_node("design", design)
 
     # Join + post-parallel sequential.
     builder.add_node("validate_sections", validate_sections)
