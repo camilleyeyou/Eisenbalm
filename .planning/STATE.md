@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 11-02-archive-cardswap-PLAN.md
-last_updated: "2026-05-22T03:45:33.439Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 11-04-navigator-and-deliberation-motion-PLAN.md
+last_updated: "2026-05-22T03:49:55.939Z"
 progress:
   total_phases: 12
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 88
-  completed_plans: 81
+  completed_plans: 82
 ---
 
 # Project State
@@ -116,6 +116,7 @@ Plan: 4 of 4
 | Phase 11 P01 | 5 | 2 tasks | 3 files |
 | Phase 11 P03 | 1 | 1 tasks | 1 files |
 | Phase 11 P02 | 8 | 2 tasks | 2 files |
+| Phase 11 P04 | 8 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -279,6 +280,8 @@ Recent decisions affecting current work:
 - [Phase 11]: opacity:0 and clip-path in @keyframes from{} only — animation-fill-mode:both + globals.css reduced-motion guard (duration 0.01ms) ensures words never trapped invisible
 - [Phase 11]: [Plan 11-03]: <style> tag in Server Component JSX used for component-scoped @keyframes heroWordReveal — React 19/Next 15 hoist pattern, no new CSS file, no dependencies
 - [Phase 11]: Back cards aria-hidden + pointerEvents:none for accessibility; badge uses color-mix() for primary tint
+- [Phase 11]: CSS scroll-snap mobile-first: base .pitch-card-list carries scroll-snap-type so test regex finds it in first block; desktop override via min-width: 960px
+- [Phase 11]: SectionNavigator.tsx byte-unchanged for MOT-02 — hover lift is entirely a globals.css edit; prefersReducedMotion early-return preserved verbatim
 
 ### Pending Todos
 
@@ -342,6 +345,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T03:45:33.433Z
-Stopped at: Completed 11-02-archive-cardswap-PLAN.md
+Last session: 2026-05-22T03:49:55.933Z
+Stopped at: Completed 11-04-navigator-and-deliberation-motion-PLAN.md
 Resume file: None
