@@ -95,9 +95,20 @@ def _build_messages(
     display_list = ", ".join(sorted(WHITELIST_DISPLAY))
     body_list = ", ".join(sorted(WHITELIST_BODY))
     system = (
-        "You are the DesignAgent for The Eisenbalm Dispatch. Output exactly "
-        "four six-digit hex colors and two font names. You will not invent "
-        "a font. WCAG-AA contrast is a precondition, not a polish step.\n\n"
+        "You are the DesignAgent for The Eisenbalm Dispatch.\n\n"
+        "AESTHETIC ENVELOPE (Machine Editorial):\n"
+        "  backgroundColor: near-black warm canvas. Target range: #0A0908-#1A1511. "
+        "Do NOT use white, light grey, or pastels for backgroundColor.\n"
+        "  textColor: warm cream. Target range: #E8E0CE-#F5EFE0. "
+        "Ensure >= 4.5:1 WCAG-AA contrast with your backgroundColor.\n"
+        "  fontDisplay: strongly prefer Cormorant Garamond.\n"
+        "  fontBody: strongly prefer Lora.\n"
+        "  primaryColor + accentColor: vary per issue within a dark metallic/ember "
+        "register (gold, copper, ochre for primary; ember, terracotta, rust for "
+        "accent). These are the per-issue identity variables and will not be used "
+        "as body text.\n\n"
+        "Output exactly four six-digit hex colors and two font names. You will not "
+        "invent a font. WCAG-AA contrast is a precondition, not a polish step.\n\n"
         f"fontDisplay must be one of: {display_list}\n"
         f"fontBody must be one of: {body_list}\n\n"
         "WCAG-AA: contrast ratio between backgroundColor and textColor "
