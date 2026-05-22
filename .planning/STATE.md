@@ -123,6 +123,7 @@ Plan: Not started
 ### Roadmap Evolution
 
 - Phase 11 added: Archive CardSwap + Issue-Page Motion Polish (CSS-3D archive bound to real Sanity issues + reduced-motion-safe issue-page motion polish). Locked: approved fonts only (no FONT_WHITELIST change), no new npm deps, no CDN scripts, all data-bound. (`gsd-tools phase add` mis-numbered it 1000 because the 999.x backlog parking lot was parsed as the max integer phase; manually corrected to Phase 11.)
+- Phase 12 added: Machine Editorial Design Adoption + DesignAgent Suppression (MED-01..MED-05). Lock the site to the single fixed Machine Editorial dark aesthetic (web ignores per-issue theme), suppress the DesignAgent via a reversible config flag (skip `design` LangGraph node) and teach its system prompt the aesthetic, and rebuild SectionNavigator + DeliberationSlot to a chosen superdesign-board variant. Locked decisions: KEEP existing FONT_WHITELIST fonts (Cormorant/Lora/Inter — approximate the board's IBM Plex Mono labels with Inter + wide uppercase letter-spacing; NO Spectral/IBM Plex Mono, theme.ts unchanged); no new npm deps; no CDN; prefers-reduced-motion + single `<main>` + ≥44px + WCAG AA + game-sandbox/theme/DEL-04/5-Convex-subs all preserved. Source: superdesign board "Eisenbalm dispatch". (Again mis-numbered 1000 by `phase add` via the 999.x backlog; manually corrected to Phase 12.) Board variant for navigator + deliberation chosen in the UI-SPEC step.
 
 ### Decisions
 

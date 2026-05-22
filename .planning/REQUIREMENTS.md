@@ -154,6 +154,13 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **MOT-02**: Section-navigator cards show a gold magnetic cursor-follow glow + hover translate; under `prefers-reduced-motion` no JS cursor tracking runs and interactive targets remain ≥44px.
 - [x] **MOT-03**: The deliberation confidence meter animates 0→its real value on scroll-into-view (final value shown instantly under `prefers-reduced-motion`), and pitch cards use a scroll-snap carousel — without exposing model names (DEL-04) or breaking the live Convex subscriptions.
 
+### Machine Editorial Design Adoption (Phase 12)
+- [ ] **MED-01**: The live site renders in a single fixed "Machine Editorial" dark aesthetic — the web app no longer applies per-issue DesignAgent `theme` overrides (colors/fonts); the fixed house dark palette (`#0C0B0A` / `#F0EAD9` / `#CDA434` / `#C2502A`) wins on every issue. The `theme.ts` FONT_WHITELIST + hex/`setProperty`/WCAG security contracts are unchanged. (Intentionally supersedes the DES-06 per-issue color behavior while the DesignAgent is suppressed.)
+- [ ] **MED-02**: A reversible config flag suppresses the DesignAgent — it skips the `design` node in the LangGraph build (packages/pipeline) and makes apps/web ignore per-issue `theme`. Flipping the flag back restores prior per-issue theming with no code change.
+- [ ] **MED-03**: The DesignAgent system prompt encodes the Machine Editorial design language (palette intent + aesthetic constraints) so output stays within the aesthetic when re-enabled; the existing 6-field ThemeOutput, hex/font/WCAG validation, regenerate-once, and SAFE_THEME fallback are unchanged.
+- [ ] **MED-04**: `SectionNavigator` is rebuilt to the chosen superdesign board variant (timeline | masonry | isometric) at high fidelity, using only FONT_WHITELIST fonts (Cormorant Garamond / Lora / Inter; the board's IBM Plex Mono machine-readout labels approximated via Inter + wide uppercase letter-spacing); reduced-motion-safe, ≥44px targets, single `<main>`, WCAG AA.
+- [ ] **MED-05**: `DeliberationSlot` is rebuilt to the chosen board variant (carousel | orbital | brutalist) at high fidelity with the confidence meter + candidate pitch log; DEL-04 (no model names) and the 5 live Convex subscriptions remain intact; reduced-motion-safe.
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -296,10 +303,15 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | POD-01 | Phase 9: Issue Page Completion | Complete |
 | POD-02 | Phase 9: Issue Page Completion | Complete |
 | POD-03 | Phase 9: Issue Page Completion | Complete |
-| ARC-01 | Phase 11: Archive CardSwap + Motion Polish | Not started |
-| MOT-01 | Phase 11: Archive CardSwap + Motion Polish | Not started |
-| MOT-02 | Phase 11: Archive CardSwap + Motion Polish | Not started |
-| MOT-03 | Phase 11: Archive CardSwap + Motion Polish | Not started |
+| ARC-01 | Phase 11: Archive CardSwap + Motion Polish | Complete |
+| MOT-01 | Phase 11: Archive CardSwap + Motion Polish | Complete |
+| MOT-02 | Phase 11: Archive CardSwap + Motion Polish | Complete |
+| MOT-03 | Phase 11: Archive CardSwap + Motion Polish | Complete |
+| MED-01 | Phase 12: Machine Editorial Design Adoption | Not started |
+| MED-02 | Phase 12: Machine Editorial Design Adoption | Not started |
+| MED-03 | Phase 12: Machine Editorial Design Adoption | Not started |
+| MED-04 | Phase 12: Machine Editorial Design Adoption | Not started |
+| MED-05 | Phase 12: Machine Editorial Design Adoption | Not started |
 
 **Coverage:**
 - v1 requirements: 84 total

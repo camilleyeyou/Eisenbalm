@@ -228,6 +228,20 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 11-04-navigator-and-deliberation-motion-PLAN.md — Wave 2: globals.css section-card hover translate + pitch-card scroll-snap; DeliberationSlot confidence count-up (IntersectionObserver+rAF); SectionNavigator early-return preserved (MOT-02, MOT-03)
 **UI hint**: yes
 
+### Phase 12: Machine Editorial Design Adoption + DesignAgent Suppression
+**Goal**: Lock the live site to the single fixed "Machine Editorial" dark aesthetic from the superdesign board (canvas `#0C0B0A`, cream `#F0EAD9`, gold `#CDA434`, ember `#C2502A`) — the web app stops applying per-issue DesignAgent theme overrides and always uses the fixed house dark palette. Rebuild `SectionNavigator` and `DeliberationSlot` to faithfully match a chosen board variant (high-fidelity layout/color/motion) using only existing FONT_WHITELIST fonts (Cormorant Garamond / Lora / Inter — the board's IBM Plex Mono machine-readout labels are approximated with Inter + wide uppercase letter-spacing; NO Spectral/IBM Plex Mono, theme.ts FONT_WHITELIST unchanged). Add a reversible config flag that skips the `design` LangGraph node (packages/pipeline) and makes apps/web ignore per-issue `theme`, and encode the Machine Editorial design language into the DesignAgent system prompt so it generates within this aesthetic when re-enabled ("learn from this design") — all within the locked constraints: `prefers-reduced-motion` on all motion, single `<main>`, ≥44px touch targets, WCAG AA, game-sandbox + theme.ts security contracts untouched, DEL-04 (no model names) + the 5 live Convex subscriptions in DeliberationSlot intact, no new npm dependencies, no CDN scripts. Source design reference: superdesign board "Eisenbalm dispatch" (https://app.superdesign.dev/share/7d2cb9d17c275d5d9d4cfae3cd7d8cc11cdb69c1c9531bcf5d49258ae2fede88).
+**Depends on**: Phase 11
+**Requirements**: MED-01, MED-02, MED-03, MED-04, MED-05
+**Success Criteria** (what must be TRUE):
+  1. Every issue page renders in the single fixed Machine Editorial dark palette — per-issue DesignAgent `theme` no longer changes colors/fonts on the web (the fixed house palette wins)
+  2. A reversible config flag exists that (a) skips the `design` node in the LangGraph build and (b) makes apps/web ignore per-issue `theme`; flipping it back restores prior per-issue theming with no code change
+  3. The DesignAgent system prompt encodes the Machine Editorial design language so re-enabled output stays within the aesthetic; existing hex/font/WCAG validation + SAFE_THEME fallback unchanged
+  4. `SectionNavigator` is rebuilt to the chosen board variant (high fidelity) using only FONT_WHITELIST fonts; reduced-motion-safe; ≥44px targets; single `<main>`
+  5. `DeliberationSlot` is rebuilt to the chosen board variant with the confidence meter + pitch log; DEL-04 (no model names) and the 5 live Convex subscriptions intact; reduced-motion-safe
+  6. No new npm dependencies; FONT_WHITELIST unchanged; `game-sandbox.test.ts` + theme security tests stay green; `pnpm --filter web build` passes; pipeline tests stay green
+**Plans**: TBD (board variant for navigator + deliberation chosen in UI-SPEC step)
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
@@ -252,6 +266,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
+| 12. Machine Editorial Design Adoption | 0/? | Not started | - |
 
 ## Backlog
 
