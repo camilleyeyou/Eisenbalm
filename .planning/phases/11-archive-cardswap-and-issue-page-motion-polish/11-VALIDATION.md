@@ -2,7 +2,7 @@
 phase: 11
 slug: archive-cardswap-and-issue-page-motion-polish
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-05-21
 ---
