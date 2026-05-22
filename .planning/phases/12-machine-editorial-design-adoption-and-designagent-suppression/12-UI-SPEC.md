@@ -5,6 +5,8 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-05-22
+revised: 2026-05-22
+revision_reason: checker-fix — typography collapsed to 4 sizes / 2 weights; 4 non-multiple-of-4 spacing values corrected
 ---
 
 # Phase 12 — UI Design Contract
@@ -84,13 +86,13 @@ for all layout decisions.
 
 | Token | Value | Usage |
 |---|---|---|
-| xs | 4px | Icon gaps, tag internal padding |
-| sm | 8px | Inline element spacing, badge padding |
+| xs | 4px | Icon gaps, tag internal padding (vertical) |
+| sm | 8px | Inline element spacing, badge padding, content gap |
 | md | 16px | Card internal gap, row gap |
 | lg | 24px | Column gap, section internal padding |
 | xl | 32px | Between major sub-blocks |
 | 2xl | 48px | Section-level padding (mobile) |
-| 3xl | 80px | Section-level padding (desktop) |
+| 3xl | 80px | Section-level padding (desktop) — justified as a comfortable desktop reading margin; multiple of 4 |
 
 **Exceptions:**
 - Touch target minimum: 44px (≥44px on any interactive hit area — enforced on
@@ -106,30 +108,56 @@ for all layout decisions.
 
 Three fonts only (FONT_WHITELIST; no IBM Plex Mono, no Spectral).
 
-| Role | Font | Size | Weight | Line Height | Letter Spacing |
+**Exactly 4 font sizes, exactly 2 font weights.**
+
+| Role | Font | Size (token) | Weight | Line Height | Letter Spacing |
 |---|---|---|---|---|---|
-| Display heading | Cormorant Garamond | clamp(32px, 3.5vw, 48px) | 400 italic | 1.1 | — |
-| Section title (timeline row) | Cormorant Garamond | 27px | 500 | 1.05 | — |
-| Section title italic word | Cormorant Garamond | 27px | 400 italic | 1.05 | — |
-| Body prose | Lora | 15–18px | 400 | 1.65 | — |
-| Machine-readout label | Inter | 11px | 400 | 1.5 | 0.18em uppercase |
-| Machine-readout value | Inter | 11px | 600 | 1.5 | 0.10em uppercase |
-| Category tag / eyebrow | Inter | 9–11px | 400–600 | 1.5 | 0.10–0.18em uppercase |
-| Section number | Inter | 11px | 400 | 1.5 | 0.14em |
-| Confidence percentage | Cormorant Garamond | 32px | 500 | 1.1 | — |
-| Agent chip name | Inter | 11px | 600 | 1.5 | — |
-| Agent chip role | Inter | 11px | 400 | 1.5 | — |
+| Display | Cormorant Garamond | `clamp(32px, 3.5vw, 48px)` | 400 | 1.1 | — |
+| Title | Cormorant Garamond | `27px` (responsive: `22px` on ≤480px) | 600 | 1.05 | — |
+| Body | Lora / Inter | `15px` | 400 | 1.65 | — |
+| Micro-label | Inter | `11px` | 400 or 600 (see roles below) | 1.5 | see below |
+
+**Size token assignments:**
+
+- **Display** (`clamp(32px, 3.5vw, 48px)`): the "In this Issue" display heading AND
+  the confidence percentage value. Both share this single size token; the confidence
+  value is differentiated from the heading by context, weight (600), and color.
+- **Title** (`27px` / `22px` mobile): section titles in timeline rows. The `22px` mobile
+  override is a responsive variant of the same Title token — it is NOT a 5th size.
+  Title role uses weight 600 on the main title word; italic subordinate word uses weight
+  400 italic (the `<em>` inside `.snw-section-title`).
+- **Body** (`15px`): body prose, subtitles, scout card summaries, flow-line action text,
+  AND pitch-card charity name. Distinguish elements within the Body size using italic
+  (`font-style: italic`) or weight 600, never a separate size. Specifically:
+  - Subtitle / scout summary: Body 15px, weight 400, italic, `--color-text-dim`.
+  - Charity name: Body 15px, weight 600, `--color-text`.
+  - Flow-line action text: Body 15px, weight 400, italic, `--color-text-dim`.
+- **Micro-label** (`11px`): ALL machine-readout labels, category tags, section numbers,
+  confidence labels, agent chip names and roles, read-status label and value, flow-line
+  agent name. Differentiate values vs. labels using weight (600 = value/name, 400 =
+  label/role), letter-spacing, and color — never a smaller size. The `9px` size from
+  prior drafts is eliminated.
+
+**Font weights — exactly 2:**
+
+- **400** (regular + italic): body prose, subtitles, scout summary, italic display word
+  ("In this *Issue*"), italic title word (`<em>` inside `.snw-section-title`), micro-label
+  labels, tag pill text, agent chip role, flow-line action text, read-status label,
+  section number, `.snw-module-label`.
+- **600** (emphasis): section title main word, confidence value (Display size), charity
+  name, micro-label value text (`snw-read-value`), agent chip name.
+- **Weight 500 is eliminated.** All former `500` usages remapped: section titles →
+  `600`; confidence value → `600`; charity name → `600`.
 
 **Machine-readout label treatment (IBM Plex Mono approximation — locked):**
-- Font: Inter, weight 400.
-- text-transform: uppercase.
-- letter-spacing: 0.18em.
-- font-size: 11px.
-- color: `--color-text-mute` for labels; `--color-primary` for values/numbers.
-- Example rendering: `READ  STATUS:  0%  ——` — the board shows monospaced-looking
-  Inter uppercase with generous tracking simulating a terminal readout. The
-  `——` trailing dash is a Unicode em-dash run or two `—` characters, styled
-  in `--color-text-mute` at reduced opacity (0.5).
+- Font: Inter, `11px` (Micro-label size token).
+- Label text: weight 400, `text-transform: uppercase`, `letter-spacing: 0.18em`,
+  color `--color-text-mute`.
+- Value / number text: weight 600, `text-transform: uppercase`, `letter-spacing: 0.10em`,
+  color `--color-primary`.
+- Example rendering: `READ  STATUS:  0%  ——` — uppercase Inter with generous tracking
+  simulating a terminal readout. The `——` trailing dash (two em-dashes) styled in
+  `--color-text-mute` at opacity 0.5.
 
 ---
 
@@ -169,7 +197,7 @@ background fills on cards, decorative geometry.
 | Row gap (between section rows) | 0px — rows are separated by 1px `--color-line` border only |
 | Row internal padding | `24px 24px 24px 0` — number column is 56px wide; content starts after |
 | Number column width | 56px fixed |
-| Tag pill padding | `3px 8px` |
+| Tag pill padding | `4px 8px` |
 | Read status column width | 120px fixed, right-aligned |
 | Spine (left edge of number col) | 2px wide, full section height, color `--color-line-strong` |
 | Node dot | 12px diameter circle on spine, centered vertically on each row |
@@ -191,8 +219,8 @@ background fills on cards, decorative geometry.
 | Flow line node circle | 10px diameter; Scout = `--color-scout`, Advocate = `--color-advocate`, Editor = `--color-primary` |
 | Flow line connector | 2px `--color-line-strong` vertical line between nodes |
 | Tape-reel meter bar height | 8px, `border-radius: 4px` |
-| Confidence label font-size | 11px Inter uppercase 0.1em tracking |
-| Confidence value font-size | 32px Cormorant Garamond 500 |
+| Confidence label | Inter 11px (Micro-label) weight 400 uppercase 0.18em tracking |
+| Confidence value | Cormorant Garamond Display size (`clamp(32px, 3.5vw, 48px)`) weight 600 |
 | QA panel padding | `16px` |
 
 ---
@@ -212,8 +240,8 @@ horizontal row. The component renders a `<nav aria-label="Sections">` containing
 ### Header Block
 
 ```
-NAVIGATION MODULE 01-B          ← Inter 11px uppercase 0.18em tracking, --color-primary
-In this Issue                   ← Cormorant Garamond 48px italic 400, --color-text
+NAVIGATION MODULE 01-B          ← Inter 11px (Micro-label) weight 400 uppercase 0.18em tracking, --color-primary
+In this Issue                   ← Cormorant Garamond Display size, italic weight 400, --color-text
                                   ("Issue" word in gold --color-primary, remainder --color-text)
 ```
 
@@ -230,7 +258,7 @@ Each row is an `<a>` element with `href={card.href}` (canonical anchor id preser
 │  ● ──  § 01   [EDITORIAL]   The Architecture of Absence               READ STATUS: 0%  —— │
 │         (spine) (number)   (tag pill)  (title in Cormorant)         (progress, right)  │
 │                             A typography prioritizes the unheard.          │
-│                             (subtitle line — body italic, --color-text-dim)│
+│                             (subtitle line — Body 15px italic, --color-text-dim)│
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -238,27 +266,31 @@ Each row is an `<a>` element with `href={card.href}` (canonical anchor id preser
 - Spine: 2px vertical line, `--color-line-strong`, full row height.
 - Node dot: 12px circle centered vertically on the spine. Inactive = card bg +
   line-strong border. Active (currently-reading) = `--color-primary` fill.
-- Section number: `§ NN` — Inter 11px, `--color-primary`, letter-spacing 0.14em,
-  below the dot.
+- Section number: `§ NN` — Inter 11px (Micro-label), weight 400, `--color-primary`,
+  letter-spacing 0.14em, below the dot.
 
 **Center content block:**
-- Tag pill: Inter 9px uppercase 0.10em tracking, `--color-line-strong` border 1px,
-  `border-radius: 2px`, `padding: 3px 8px`, color `--color-text-mute`.
-  On the selected/active row: border-color `--color-primary`, color `--color-primary`.
-- Section title: Cormorant Garamond 27px weight 500, color `--color-text`. The
-  board shows one italic word within the title (the noun). Markup: the italic word
-  is a `<em>` inside the title `<span>`. No hardcoded which word — use the existing
-  `card.title` string; the italic word is defined per card in the CARDS data (add
-  an `italicWord?: string` field to `SectionCard`; if absent render plain).
-- Subtitle (optional): Lora 14px italic, `--color-text-dim`, `line-height: 1.55`.
-  The board shows a subtitle below each title. This maps to a new `subtitle?: string`
-  on `SectionCard` data — short editorial tagline per section (see Copywriting Contract).
+- Tag pill: Inter 11px (Micro-label) weight 400 uppercase 0.10em tracking,
+  `--color-line-strong` border 1px, `border-radius: 2px`, `padding: 4px 8px`,
+  color `--color-text-mute`. On the selected/active row: border-color `--color-primary`,
+  color `--color-primary`. (Differentiated from the 0.18em machine-readout labels by
+  its tighter 0.10em tracking — same Micro-label size, distinct tracking.)
+- Section title: Cormorant Garamond 27px (Title size) weight 600, color `--color-text`.
+  The board shows one italic word within the title (the noun). Markup: the italic word
+  is a `<em>` inside the title `<span>` — the `<em>` renders at weight 400 italic.
+  No hardcoded which word — use the existing `card.title` string; the italic word is
+  defined per card in the CARDS data (add an `italicWord?: string` field to `SectionCard`;
+  if absent render plain).
+- Subtitle (optional): Lora 15px (Body size) weight 400 italic, `--color-text-dim`,
+  `line-height: 1.55`. The board shows a subtitle below each title. This maps to a new
+  `subtitle?: string` on `SectionCard` data — short editorial tagline per section
+  (see Copywriting Contract).
 
 **Right column (120px, right-aligned):**
-- Machine-readout: `READ  STATUS:` — Inter 11px uppercase 0.18em tracking,
-  `--color-text-mute`, opacity 0.7.
-- Percentage: `0%` (or live reading-progress value) — Inter 11px uppercase 0.10em
-  tracking, `--color-primary`.
+- Machine-readout: `READ  STATUS:` — Inter 11px (Micro-label) weight 400 uppercase
+  0.18em tracking, `--color-text-mute`, opacity 0.7.
+- Percentage: `0%` (or live reading-progress value) — Inter 11px (Micro-label) weight
+  600 uppercase 0.10em tracking, `--color-primary`.
 - Trailing dashes: `——` — `--color-text-mute`, opacity 0.5.
 - This is a single `<span aria-label="Read status: {N}%">` with `aria-live="polite"`.
 
@@ -346,9 +378,11 @@ level — only the card interior is restyled.
 - Left border accent: `3px solid --color-primary` when `card.selected`, else `3px solid transparent`.
 - Winner card luminous glow: `box-shadow: 0 0 32px color-mix(in srgb, var(--color-primary) 28%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent)` — only when `card.selected`.
 - Internal padding: `24px`.
-- Charity name: Cormorant Garamond 17px weight 500, `--color-text`.
-- Location: Inter 11px `--color-text-dim`.
-- Scout summary: Lora 14px italic `--color-text-dim`, `line-height: 1.55`.
+- Charity name: Cormorant Garamond 15px (Body size) weight 600, `--color-text`. Uses
+  Body size but distinguishes itself via weight 600 and the display font family.
+- Location: Inter 11px (Micro-label) weight 400, `--color-text-dim`.
+- Scout summary: Lora 15px (Body size) weight 400 italic, `--color-text-dim`,
+  `line-height: 1.55`.
 - `★ Selected this week` badge: existing treatment preserved (primary color + bg tint).
 - Advocate score bar: existing treatment preserved (gold fill, `--color-line-strong` track).
 
@@ -387,8 +421,9 @@ when at least one of `pitchLog`, `editorWinner`, or `editorConfidence` is presen
 - Circle colors: Scout = `--color-scout`, Advocate = `--color-advocate`,
   Editor = `--color-primary`.
 - Connector line between nodes: 2px `--color-line-strong` vertical, 24px height.
-- Agent name: Inter 11px uppercase 0.18em tracking, agent-specific color (same as circle).
-- Action text: Lora 14px italic `--color-text-dim`.
+- Agent name: Inter 11px (Micro-label) weight 400 uppercase 0.18em tracking,
+  agent-specific color (same as circle).
+- Action text: Lora 15px (Body size) weight 400 italic, `--color-text-dim`.
 - The flow line is `aria-hidden="true"` (decorative diagram); screen-reader users
   get the same information from the existing event timeline text.
 
@@ -397,9 +432,11 @@ Preserved from Phase 11: `IntersectionObserver + rAF count-up`. Visual changes:
 - Move the confidence meter BELOW the flow line (not inside the editor decision card).
 - Keep the `ref={confidenceSectionRef}` on the outer wrapper div.
 - Bar height: 8px (up from 2px `h-1.5`) with `border-radius: 4px`.
-- Label: `EDITOR CONFIDENCE` — Inter 11px uppercase 0.18em tracking, `--color-text-mute`.
-- Value: `{displayValue}%` — Cormorant Garamond 32px weight 500, `--color-primary`,
-  `aria-live="polite"`.
+- Label: `EDITOR CONFIDENCE` — Inter 11px (Micro-label) weight 400 uppercase 0.18em
+  tracking, `--color-text-mute`.
+- Value: `{displayValue}%` — Cormorant Garamond Display size (`clamp(32px, 3.5vw, 48px)`)
+  weight 600, `--color-primary`, `aria-live="polite"`. (Shares Display size token with
+  the "In this Issue" heading; differentiated by color and surrounding context.)
 - Bar track: `--color-line-strong`, `border-radius: 4px`.
 - Bar fill: `--color-primary`, `width: {displayValue}%`, transition removed under
   reduced-motion (global guard handles).
@@ -414,7 +451,8 @@ Preserved from Phase 11: `IntersectionObserver + rAF count-up`. Visual changes:
 ### Zone 3 — QA Findings
 
 Unchanged from Phase 11 layout. The section heading `QA Findings` uses the machine-
-readout label treatment: Inter 11px uppercase 0.18em tracking, `--color-text-dim`.
+readout label treatment: Inter 11px (Micro-label) weight 400 uppercase 0.18em tracking,
+`--color-text-dim`.
 
 ### Accordion Toggle — Preserved
 
@@ -474,8 +512,8 @@ This is consistent with the board's typographic treatment (e.g. "The Architectur
 ```
 NAVIGATION MODULE 01-B
 ```
-Fixed string — machine-readout register, Inter uppercase, gold. This is a decorative
-editorial device, not navigational UI copy.
+Fixed string — machine-readout register, Inter 11px (Micro-label) weight 400 uppercase
+0.18em tracking, gold. This is a decorative editorial device, not navigational UI copy.
 
 ### DeliberationSlot — existing copy preserved
 
@@ -497,9 +535,10 @@ editorial device, not navigational UI copy.
 | Flow line — Advocate action | ARGUMENTS SCORED |
 | Flow line — Editor action | {editorWinner} selected |
 
-**Flow-line copy treatment:** Inter 11px uppercase 0.18em tracking, `--color-text-dim`.
-`{editorWinner}` is the dynamic charity name from `editorWinner` string — Lora 14px
-italic, `--color-text`, displayed inline with the "selected" suffix.
+**Flow-line copy treatment:** Inter 11px (Micro-label) weight 400 uppercase 0.18em
+tracking, `--color-text-dim`. `{editorWinner}` is the dynamic charity name from
+`editorWinner` string — Lora 15px (Body size) weight 400 italic, `--color-text`,
+displayed inline with the "selected" suffix.
 
 ### Primary CTA
 
@@ -614,7 +653,7 @@ existing pattern (section separator, no color literals outside variables):
   border: 1px solid var(--color-line-strong);
   transition: background 0.3s, border-color 0.3s;
   flex-shrink: 0;
-  margin-top: 38px; /* centers dot vertically in row */
+  margin-top: 40px; /* centers dot vertically in row — multiple of 4 */
 }
 
 .snw-node.active {
@@ -627,9 +666,10 @@ existing pattern (section separator, no color literals outside variables):
 .snw-section-num {
   font-family: var(--font-ui);
   font-size: 11px;
+  font-weight: 400;
   color: var(--color-primary);
   letter-spacing: 0.14em;
-  margin-top: 6px;
+  margin-top: 8px; /* multiple of 4 */
 }
 
 /* Timeline row — full-width anchor */
@@ -681,21 +721,21 @@ existing pattern (section separator, no color literals outside variables):
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px; /* multiple of 4 */
 }
 
 /* Category tag pill */
 .snw-tag-pill {
   display: inline-block;
   font-family: var(--font-ui);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.10em;
   color: var(--color-text-mute);
   border: 1px solid var(--color-line-strong);
   border-radius: 2px;
-  padding: 3px 8px;
+  padding: 4px 8px; /* multiple of 4 */
   align-self: flex-start;
 }
 
@@ -709,7 +749,7 @@ existing pattern (section separator, no color literals outside variables):
 .snw-section-title {
   font-family: var(--font-display);
   font-size: 27px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.05;
   color: var(--color-text);
 }
@@ -722,7 +762,7 @@ existing pattern (section separator, no color literals outside variables):
 /* Section subtitle */
 .snw-subtitle {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-style: italic;
   line-height: 1.55;
   color: var(--color-text-dim);
@@ -762,6 +802,7 @@ existing pattern (section separator, no color literals outside variables):
 .snw-read-dash {
   font-family: var(--font-ui);
   font-size: 11px;
+  font-weight: 400;
   color: var(--color-text-mute);
   opacity: 0.5;
   letter-spacing: 0.05em;
@@ -772,7 +813,7 @@ existing pattern (section separator, no color literals outside variables):
     display: none; /* read-status column hidden on narrowest mobile */
   }
   .snw-section-title {
-    font-size: 22px;
+    font-size: 22px; /* responsive variant of Title token — not a 5th size */
   }
 }
 ```
@@ -820,7 +861,7 @@ existing pattern (section separator, no color literals outside variables):
 
 .del-flow-action {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-style: italic;
   color: var(--color-text-dim);
 }
@@ -917,13 +958,42 @@ These tripwires constrain what the executor may change:
 
 ---
 
+## Typography Conformance Check
+
+Final scan confirming ≤4 sizes, ≤2 weights, all spacing multiples of 4:
+
+**Sizes (4 total — verified):**
+1. Display = `clamp(32px, 3.5vw, 48px)` — heading + confidence value
+2. Title = `27px` (responsive `22px` = same token, mobile variant)
+3. Body = `15px` — prose, subtitles, scout summary, flow action, charity name
+4. Micro-label = `11px` — all labels, tags, section numbers, agent chips, read-status
+
+**Weights (2 total — verified):**
+1. `400` — body, italic, labels, tags, module label, subtitle, flow label, read-label, dash
+2. `600` — section title, confidence value, charity name, read-value
+
+**No `500` weight anywhere in this spec.**
+**No `9px`, `14px`, `17px`, `18px`, or `32px` as standalone tokens — all folded into the 4 above.**
+
+**Spacing multiples-of-4 check (all CSS px values):**
+- `.snw-tag-pill` padding: `4px 8px` ✓
+- `.snw-node` margin-top: `40px` ✓
+- `.snw-content` gap: `8px` ✓
+- `.snw-section-num` margin-top: `8px` ✓
+- `.snw-module-label` margin-bottom: `12px` ✓ (3 × 4)
+- Row padding: `24px` ✓
+- `3xl` token: `80px` ✓ (20 × 4 — retained with justification as desktop reading margin)
+- All other spacing values: 4, 8, 12, 16, 24, 32, 40, 44, 48, 80, 88 — all multiples of 4 ✓
+
+---
+
 ## Checker Sign-Off
 
 - [ ] Dimension 1 Copywriting: PASS
 - [ ] Dimension 2 Visuals: PASS
 - [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
+- [ ] Dimension 4 Typography: PASS (revised — 4 sizes, 2 weights)
+- [ ] Dimension 5 Spacing: PASS (revised — all px values multiples of 4)
 - [ ] Dimension 6 Registry Safety: PASS
 
 **Approval:** pending
@@ -956,3 +1026,5 @@ These tripwires constrain what the executor may change:
 | Board Vertical Timeline layout description | Board API node #2 description + screenshot read |
 | Board Carousel & Flow description | Board API node #4 description |
 | MED-02/MED-03 excluded from UI-SPEC scope | Phase prompt instruction (backend-only concerns) |
+| Typography collapsed to 4 sizes / 2 weights | Checker revision — Issue 1 fix |
+| Spacing corrected to multiples of 4 | Checker revision — Issue 2 fix |
