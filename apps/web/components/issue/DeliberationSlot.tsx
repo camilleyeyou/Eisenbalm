@@ -15,6 +15,14 @@
  *   - SECURITY: pipelineRuns.cost (model-version map) is never accessed
  *     in this component (DEL-04).
  *
+ * Phase 12 (MED-05): Rebuilt to Carousel & Flow three-zone vertical stack.
+ *   - Zone 1: Horizontal scroll-snap pitch-log carousel (restyled card interiors,
+ *     winner luminous gold glow).
+ *   - Zone 2: Scout→Advocate→Editor flow-line diagram + tape-reel confidence meter.
+ *   - Zone 3: QA findings (logic unchanged).
+ *   - All 5 Convex subscriptions, AGENT_LABELS, DEL-04, and confidence-meter
+ *     IntersectionObserver + rAF count-up preserved byte-compatible.
+ *
  * Voice: dry, precise, no exclamation marks, no winking. (CLAUDE.md)
  */
 
@@ -287,28 +295,29 @@ export function DeliberationSlot({ runId }: Props) {
             </p>
           ) : (
             <>
-              {/* Deliberation intro */}
-              <p
-                className="mb-8 font-display text-[clamp(22px,2.6vw,32px)] font-light italic leading-[1.45]"
-                style={{ color: 'var(--color-text-dim)' }}
-              >
-                {pitchLog?.length ? `${pitchLog.length} ${pitchLog.length === 1 ? 'charity was' : 'charities were'} proposed.` : 'Charities were proposed.'}{' '}
-                One was chosen. Here is exactly how that happened.
-              </p>
+              {/* ── Three-zone vertical stack (MED-05 Carousel & Flow) ─────── */}
 
-              {/* Two-column grid: pitch log (left) + timeline + editor + QA (right) */}
-              <div className="grid gap-12 lg:grid-cols-[1fr_1fr]">
+              {/* ─────────────────────────────────────────────────────────────
+                  ZONE 1 — Horizontal Pitch Log Carousel
+                  ───────────────────────────────────────────────────────────── */}
+              <div className="mb-12">
+                <h3
+                  className="mb-4 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em]"
+                  style={{ color: 'var(--color-text-dim)' }}
+                >
+                  The Scout&apos;s Candidates — Pitch Log
+                  {isLive && (
+                    <span
+                      className="ml-2 font-ui text-[11px]"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      ● live
+                    </span>
+                  )}
+                </h3>
 
-                {/* ─── Left column: pitch log ────────────────────────────── */}
-                <div>
-                  <h3
-                    className="mb-4 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
-                    style={{ color: 'var(--color-text-dim)' }}
-                  >
-                    The Scout&apos;s Candidates — Pitch Log
-                  </h3>
-
-                  {pitchLog && pitchLog.length > 0 ? (
+                {pitchLog && pitchLog.length > 0 ? (
+                  <>
                     <div className="pitch-card-list" role="list">
                       {pitchLog.map(card => {
                         const score = advocateScores.get(card.charityName)
@@ -319,14 +328,15 @@ export function DeliberationSlot({ runId }: Props) {
                             key={card._id}
                             role="listitem"
                             tabIndex={0}
-                            className="rounded p-6"
                             style={{
+                              borderRadius: '4px',
                               backgroundColor: 'var(--color-card)',
+                              padding: '24px',
                               borderLeft: card.selected
                                 ? '3px solid var(--color-primary)'
                                 : '3px solid transparent',
                               boxShadow: card.selected
-                                ? '0 0 12px color-mix(in srgb, var(--color-primary) 18%, transparent)'
+                                ? '0 0 32px color-mix(in srgb, var(--color-primary) 28%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent)'
                                 : 'none',
                               minWidth: 0,
                             }}
@@ -334,14 +344,14 @@ export function DeliberationSlot({ runId }: Props) {
                             {/* Charity name + badge row */}
                             <div className="mb-2 flex flex-wrap items-center gap-2">
                               <span
-                                className="font-display text-[17px] font-medium leading-[1.1]"
+                                className="font-display text-[15px] font-semibold leading-[1.1]"
                                 style={{ color: 'var(--color-text)' }}
                               >
                                 {card.charityName}
                               </span>
                               {card.selected ? (
                                 <span
-                                  className="font-ui text-[10px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
+                                  className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
                                   style={{
                                     color: 'var(--color-primary)',
                                     backgroundColor: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
@@ -351,7 +361,7 @@ export function DeliberationSlot({ runId }: Props) {
                                 </span>
                               ) : (
                                 <span
-                                  className="font-ui text-[10px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
+                                  className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
                                   style={{
                                     color: 'var(--color-text-dim)',
                                     backgroundColor: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
@@ -372,7 +382,7 @@ export function DeliberationSlot({ runId }: Props) {
 
                             {/* Scout summary */}
                             <p
-                              className="mb-3 font-body text-[14px] italic leading-[1.55]"
+                              className="mb-3 font-body text-[15px] italic leading-[1.55]"
                               style={{ color: 'var(--color-text-dim)' }}
                             >
                               {card.scoutSummary}
@@ -424,212 +434,281 @@ export function DeliberationSlot({ runId }: Props) {
                         )
                       })}
                     </div>
-                  ) : (
-                    <p
-                      className="font-body text-[15px] leading-[1.65]"
-                      style={{ color: 'var(--color-text-dim)' }}
-                    >
-                      No pitch log entries for this run.
-                    </p>
-                  )}
-                  <p className="sr-only">Scroll to see more candidates.</p>
-                </div>
-
-                {/* ─── Right column: timeline + editor + QA ─────────────── */}
-                <div>
-                  {/* Timeline column label */}
-                  <h3
-                    className="mb-4 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
+                    <p className="sr-only">Scroll to see more candidates.</p>
+                  </>
+                ) : (
+                  <p
+                    className="font-body text-[15px] leading-[1.65]"
                     style={{ color: 'var(--color-text-dim)' }}
                   >
-                    The Deliberation{isLive && (
-                      <span
-                        className="ml-2 font-ui text-[10px]"
-                        style={{ color: 'var(--color-primary)' }}
-                      >
-                        ● live
-                      </span>
-                    )}
-                  </h3>
+                    No pitch log entries for this run.
+                  </p>
+                )}
+              </div>
 
-                  {/* Event timeline */}
+              {/* ─────────────────────────────────────────────────────────────
+                  ZONE 2 — Scout → Advocate → Editor Flow Line + Confidence Meter
+                  Rendered only when pitchLog, editorWinner, or editorConfidence present.
+                  ───────────────────────────────────────────────────────────── */}
+              {(pitchLog?.length || editorWinner || editorConfidence !== null) && (
+                <div className="mb-12">
+                  {/* Flow line diagram — decorative, screen readers get timeline text */}
+                  <div className="del-flow" aria-hidden="true">
+                    {/* Scout node */}
+                    <div className="del-flow-node">
+                      <div
+                        className="del-flow-circle"
+                        style={{ backgroundColor: 'var(--color-scout)' }}
+                      />
+                      <div>
+                        <span
+                          className="del-flow-label"
+                          style={{ color: 'var(--color-scout)' }}
+                        >
+                          THE SCOUT
+                        </span>
+                        <span
+                          className="del-flow-action ml-2"
+                        >
+                          CANDIDATES FOUND
+                        </span>
+                      </div>
+                    </div>
+                    <div className="del-flow-connector" />
+
+                    {/* Advocate node */}
+                    <div className="del-flow-node">
+                      <div
+                        className="del-flow-circle"
+                        style={{ backgroundColor: 'var(--color-advocate)' }}
+                      />
+                      <div>
+                        <span
+                          className="del-flow-label"
+                          style={{ color: 'var(--color-advocate)' }}
+                        >
+                          THE ADVOCATE
+                        </span>
+                        <span
+                          className="del-flow-action ml-2"
+                        >
+                          ARGUMENTS SCORED
+                        </span>
+                      </div>
+                    </div>
+                    <div className="del-flow-connector" />
+
+                    {/* Editor node */}
+                    <div className="del-flow-node">
+                      <div
+                        className="del-flow-circle"
+                        style={{ backgroundColor: 'var(--color-primary)' }}
+                      />
+                      <div className="flex flex-wrap items-baseline gap-1">
+                        <span
+                          className="del-flow-label"
+                          style={{ color: 'var(--color-primary)' }}
+                        >
+                          THE EDITOR
+                        </span>
+                        {editorWinner ? (
+                          <>
+                            <em
+                              className="font-body text-[15px] not-italic leading-[1.55]"
+                              style={{ color: 'var(--color-text)', fontStyle: 'italic' }}
+                            >
+                              {editorWinner}
+                            </em>
+                            <span className="del-flow-action">selected</span>
+                          </>
+                        ) : (
+                          <span className="del-flow-action">candidate selected</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Event timeline — screen-reader accessible equivalent of flow line */}
                   {events && events.length > 0 && (
-                    <div className="mb-8 flex flex-col gap-4">
-                      {events.map(event => {
-                        const { displayName, role } = getAgentLabel(event.agentId)
-                        const chipStyle = agentChipStyle(event.agentId)
-                        const oneLiner = eventOneLiner(event.eventType, event.payload)
-                        return (
-                          <div
-                            key={event._id}
-                            className="flex items-start gap-3"
-                          >
-                            {/* Agent identity chip with /agents/ link */}
-                            <a
-                              href={`/agents/${event.agentId}`}
-                              className="flex-shrink-0 rounded px-2 py-1 font-ui text-[11px] leading-[1.5] no-underline"
-                              style={{
-                                color: chipStyle.color,
-                                backgroundColor: chipStyle.backgroundColor,
-                                minHeight: '44px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'flex-start',
-                                minWidth: '80px',
-                              }}
-                            >
-                              <span className="font-medium">{displayName}</span>
-                              <span style={{ opacity: 0.7 }}>{role}</span>
-                            </a>
-
-                            {/* Event one-liner */}
-                            <p
-                              className="flex-1 font-body text-[15px] leading-[1.65] pt-1"
-                              style={{ color: 'var(--color-text-dim)' }}
-                            >
-                              {oneLiner}
-                            </p>
-                          </div>
-                        )
-                      })}
+                    <div className="sr-only">
+                      <h4>Deliberation timeline</h4>
+                      <ul>
+                        {events.map(event => {
+                          const { displayName } = getAgentLabel(event.agentId)
+                          return (
+                            <li key={event._id}>
+                              {displayName}: {eventOneLiner(event.eventType, event.payload)}
+                            </li>
+                          )
+                        })}
+                      </ul>
                     </div>
                   )}
 
-                  {/* Editor decision + confidence */}
-                  {editorWinner && (
+                  {/* Confidence meter — below flow line, only when finite 0..1 present */}
+                  {editorConfidence !== null && (
                     <div
-                      className="mb-6 rounded p-4"
-                      style={{
-                        backgroundColor: 'var(--color-card)',
-                        borderLeft: '3px solid var(--color-primary)',
-                      }}
+                      ref={confidenceSectionRef}
+                      className="mx-auto mt-8"
+                      style={{ maxWidth: '640px' }}
                     >
                       <p
-                        className="mb-1 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
-                        style={{ color: 'var(--color-text-dim)' }}
+                        className="mb-2 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em]"
+                        style={{ color: 'var(--color-text-mute)' }}
                       >
-                        Editor&apos;s Decision
+                        EDITOR CONFIDENCE
                       </p>
                       <p
-                        className="mb-2 font-display text-[17px] font-medium leading-[1.2]"
-                        style={{ color: 'var(--color-text)' }}
+                        className="mb-3 font-display font-semibold leading-[1.1]"
+                        style={{
+                          fontSize: 'clamp(32px, 3.5vw, 48px)',
+                          color: 'var(--color-primary)',
+                        }}
+                        aria-live="polite"
                       >
-                        {editorWinner}
+                        {displayValue}%
                       </p>
+                      <div className="del-confidence-bar-track">
+                        <div
+                          className="del-confidence-bar-fill"
+                          style={{
+                            width: `${displayValue}%`,
+                            transition: prefersReducedMotion ? 'none' : undefined,
+                          }}
+                        />
+                      </div>
+
+                      {/* Below-threshold flag */}
+                      {editorConfidence < 0.70 && (
+                        <div
+                          className="mt-4 flex items-start gap-2 rounded-r pl-3"
+                          style={{ borderLeft: '3px solid var(--color-accent)' }}
+                        >
+                          <p
+                            className="font-body text-[15px] leading-[1.65]"
+                            style={{ color: 'var(--color-text-dim)' }}
+                          >
+                            Below 0.70 threshold — human review flagged.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Editor rationale — surfaced below confidence meter */}
                       {editorRationale && (
                         <p
-                          className="mb-3 font-body text-[15px] leading-[1.65]"
+                          className="mt-4 font-body text-[15px] leading-[1.65]"
                           style={{ color: 'var(--color-text-dim)' }}
                         >
                           {editorRationale}
                         </p>
                       )}
-
-                      {/* Confidence meter — only render when a finite number is present */}
-                      {editorConfidence !== null && (
-                        <div ref={confidenceSectionRef}>
-                          <div className="mb-1 flex items-center justify-between">
-                            <span
-                              className="font-ui text-[11px] leading-[1.5]"
-                              style={{ color: 'var(--color-text-dim)' }}
-                            >
-                              Editor confidence
-                            </span>
-                            <span
-                              className="font-display text-[32px] font-medium leading-[1.1]"
-                              style={{ color: 'var(--color-primary)' }}
-                              aria-live="polite"
-                            >
-                              {displayValue}%
-                            </span>
-                          </div>
-                          <div
-                            className="mb-2 h-2 w-full overflow-hidden rounded-full"
-                            style={{ backgroundColor: 'var(--color-line-strong)' }}
-                          >
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${displayValue}%`,
-                                backgroundColor: 'var(--color-primary)',
-                                transition: prefersReducedMotion ? 'none' : 'width 0.6s ease',
-                              }}
-                            />
-                          </div>
-
-                          {/* Below-threshold note — DEL note text in --color-text-dim (AA), ember border/icon only */}
-                          {editorConfidence < 0.70 && (
-                            <div
-                              className="mt-2 flex items-start gap-2 rounded-r pl-3"
-                              style={{
-                                borderLeft: '3px solid var(--color-accent)',
-                              }}
-                            >
-                              <p
-                                className="font-body text-[18px] leading-[1.65]"
-                                style={{ color: 'var(--color-text-dim)' }}
-                              >
-                                Below 0.70 threshold — human review flagged.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
 
-                  {/* QA corrections */}
-                  {corrections && corrections.length > 0 && (
-                    <div>
-                      <h4
-                        className="mb-3 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.1em]"
-                        style={{ color: 'var(--color-text-dim)' }}
-                      >
-                        QA Findings
-                      </h4>
-                      <div className="flex flex-col gap-3">
-                        {corrections.map(correction => {
-                          const sev = (correction.severity ?? 'info') as 'info' | 'warning' | 'error'
-                          const severityInfo = QA_SEVERITY[sev] ?? QA_SEVERITY.info
+                  {/* Visible event timeline (non-sr) for agents not covered by flow line */}
+                  {events && events.length > 0 && (
+                    <div
+                      className="mx-auto mt-8 flex flex-col gap-4"
+                      style={{ maxWidth: '640px' }}
+                    >
+                      {events
+                        .filter(e =>
+                          e.eventType !== 'scout-finding' &&
+                          e.eventType !== 'advocate-argument' &&
+                          e.eventType !== 'editor-decision'
+                        )
+                        .map(event => {
+                          const { displayName, role } = getAgentLabel(event.agentId)
+                          const chipStyle = agentChipStyle(event.agentId)
+                          const oneLiner = eventOneLiner(event.eventType, event.payload)
                           return (
-                            <div
-                              key={correction._id}
-                              className="rounded p-4"
-                              style={{ backgroundColor: 'var(--color-card)' }}
-                            >
-                              <div className="mb-1 flex flex-wrap items-center gap-2">
-                                <span
-                                  className="font-ui text-[11px] leading-[1.5]"
-                                  style={{ color: 'var(--color-text-dim)' }}
-                                >
-                                  {correction.sectionName}
-                                </span>
-                                {/* Severity pill — color + text label (WCAG 1.4.1) */}
-                                <span
-                                  className="font-ui text-[10px] uppercase leading-[1.5] tracking-[0.06em] px-2 py-0.5 rounded-sm"
-                                  style={{
-                                    color: severityInfo.color,
-                                    border: `1px solid ${severityInfo.color}`,
-                                  }}
-                                >
-                                  {severityInfo.label}
-                                </span>
-                              </div>
+                            <div key={event._id} className="flex items-start gap-3">
+                              {/* Agent identity chip with /agents/ link */}
+                              <a
+                                href={`/agents/${event.agentId}`}
+                                className="flex-shrink-0 rounded px-2 py-1 font-ui text-[11px] leading-[1.5] no-underline"
+                                style={{
+                                  color: chipStyle.color,
+                                  backgroundColor: chipStyle.backgroundColor,
+                                  minHeight: '44px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'center',
+                                  alignItems: 'flex-start',
+                                  minWidth: '80px',
+                                }}
+                              >
+                                <span className="font-semibold">{displayName}</span>
+                                <span style={{ opacity: 0.7 }}>{role}</span>
+                              </a>
+
+                              {/* Event one-liner */}
                               <p
-                                className="font-body text-[14px] leading-[1.55]"
+                                className="flex-1 font-body text-[15px] leading-[1.65] pt-1"
                                 style={{ color: 'var(--color-text-dim)' }}
                               >
-                                {correction.reason}
+                                {oneLiner}
                               </p>
                             </div>
                           )
                         })}
-                      </div>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
+
+              {/* ─────────────────────────────────────────────────────────────
+                  ZONE 3 — QA Findings
+                  Logic unchanged from Phase 11.
+                  ───────────────────────────────────────────────────────────── */}
+              {corrections && corrections.length > 0 && (
+                <div>
+                  <h4
+                    className="mb-3 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em]"
+                    style={{ color: 'var(--color-text-dim)' }}
+                  >
+                    QA Findings
+                  </h4>
+                  <div className="flex flex-col gap-3">
+                    {corrections.map(correction => {
+                      const sev = (correction.severity ?? 'info') as 'info' | 'warning' | 'error'
+                      const severityInfo = QA_SEVERITY[sev] ?? QA_SEVERITY.info
+                      return (
+                        <div
+                          key={correction._id}
+                          className="rounded p-4"
+                          style={{ backgroundColor: 'var(--color-card)' }}
+                        >
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <span
+                              className="font-ui text-[11px] leading-[1.5]"
+                              style={{ color: 'var(--color-text-dim)' }}
+                            >
+                              {correction.sectionName}
+                            </span>
+                            {/* Severity pill — color + text label (WCAG 1.4.1) */}
+                            <span
+                              className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.06em] px-2 py-0.5 rounded-sm"
+                              style={{
+                                color: severityInfo.color,
+                                border: `1px solid ${severityInfo.color}`,
+                              }}
+                            >
+                              {severityInfo.label}
+                            </span>
+                          </div>
+                          <p
+                            className="font-body text-[15px] leading-[1.55]"
+                            style={{ color: 'var(--color-text-dim)' }}
+                          >
+                            {correction.reason}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
