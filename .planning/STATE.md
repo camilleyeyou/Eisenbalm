@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-05-22T16:36:23.087Z"
+status: Ready to execute
+stopped_at: Completed 12-01-wave0-test-stubs-PLAN.md
+last_updated: "2026-05-22T17:22:44.737Z"
 progress:
   total_phases: 13
   completed_phases: 10
-  total_plans: 88
-  completed_plans: 82
+  total_plans: 93
+  completed_plans: 83
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 11 — archive-cardswap-and-issue-page-motion-polish
+**Current focus:** Phase 12 — machine-editorial-design-adoption-and-designagent-suppression
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 12 (machine-editorial-design-adoption-and-designagent-suppression) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -117,6 +117,7 @@ Plan: Not started
 | Phase 11 P03 | 1 | 1 tasks | 1 files |
 | Phase 11 P02 | 8 | 2 tasks | 2 files |
 | Phase 11 P04 | 8 | 3 tasks | 2 files |
+| Phase 12-machine-editorial-design-adoption-and-designagent-suppression P01 | 45 | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -283,6 +284,8 @@ Recent decisions affecting current work:
 - [Phase 11]: Back cards aria-hidden + pointerEvents:none for accessibility; badge uses color-mix() for primary tint
 - [Phase 11]: CSS scroll-snap mobile-first: base .pitch-card-list carries scroll-snap-type so test regex finds it in first block; desktop override via min-width: 960px
 - [Phase 11]: SectionNavigator.tsx byte-unchanged for MOT-02 — hover lift is entirely a globals.css edit; prefersReducedMotion early-return preserved verbatim
+- [Phase 12-machine-editorial-design-adoption-and-designagent-suppression]: Wave-0 test-first: xfail stubs encode MED-01..MED-05 contracts before production code; implementing waves (02-05) turn them green
+- [Phase 12-machine-editorial-design-adoption-and-designagent-suppression]: suppressedThemeCss must emit '' not serializeThemeCss(null) — null emits BRAND_DEFAULTS light palette (#FAFAF8) which overrides the dark house palette; suppression code must bypass serializeThemeCss entirely
 
 ### Pending Todos
 
@@ -346,6 +349,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T16:36:23.079Z
-Stopped at: Phase 12 UI-SPEC approved
-Resume file: .planning/phases/12-machine-editorial-design-adoption-and-designagent-suppression/12-UI-SPEC.md
+Last session: 2026-05-22T17:22:44.729Z
+Stopped at: Completed 12-01-wave0-test-stubs-PLAN.md
+Resume file: None
