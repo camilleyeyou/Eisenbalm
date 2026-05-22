@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 12-02-pipeline-suppression-and-prompt-PLAN.md
-last_updated: "2026-05-22T17:30:34.127Z"
+stopped_at: Completed 12-03-web-theme-suppression-PLAN.md
+last_updated: "2026-05-22T17:56:59.772Z"
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 93
-  completed_plans: 84
+  completed_plans: 85
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 12 (machine-editorial-design-adoption-and-designagent-suppression) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -119,6 +119,7 @@ Plan: 3 of 5
 | Phase 11 P04 | 8 | 3 tasks | 2 files |
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P01 | 45 | 4 tasks | 5 files |
 | Phase 12 P02 | 4 | 3 tasks | 6 files |
+| Phase 12-machine-editorial-design-adoption-and-designagent-suppression P03 | 10 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -289,6 +290,8 @@ Recent decisions affecting current work:
 - [Phase 12-machine-editorial-design-adoption-and-designagent-suppression]: suppressedThemeCss must emit '' not serializeThemeCss(null) — null emits BRAND_DEFAULTS light palette (#FAFAF8) which overrides the dark house palette; suppression code must bypass serializeThemeCss entirely
 - [Phase 12]: _SUPPRESSED truthiness expression byte-identical between builder.py and validate.py to prevent lockstep drift
 - [Phase 12]: DesignAgent system prompt uses 'strongly prefer' / 'Target range' soft steering (not hard constraints) so _validate_full whitelist + WCAG remains the binding gate per D-12
+- [Phase 12]: suppressed ? '' : serializeThemeCss(theme) — empty string avoids BRAND_DEFAULTS light palette regression when flag is ON
+- [Phase 12]: suppressed prop is optional (suppressed?: boolean) so no existing ThemeApplier callers need updating
 
 ### Pending Todos
 
@@ -352,6 +355,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T17:30:34.120Z
-Stopped at: Completed 12-02-pipeline-suppression-and-prompt-PLAN.md
+Last session: 2026-05-22T17:56:59.765Z
+Stopped at: Completed 12-03-web-theme-suppression-PLAN.md
 Resume file: None
