@@ -524,6 +524,7 @@ nav, button {
   box-shadow:
     0 24px 60px -20px rgba(0, 0, 0, 0.7),
     0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  transform: translateY(-4px);
 }
 
 /* Wide card: spans 2 columns (deliberation / podcast) */
@@ -601,4 +602,41 @@ nav, button {
 article {
   position: relative;
   z-index: 1;
+}
+
+/* ── PHASE 11 — Archive CardSwap + Motion Polish ─────────────────────────── */
+
+/* MOT-03: Pitch-card scroll-snap carousel (mobile) / vertical list (desktop).
+   Base rule targets narrow screens (<960px) — horizontal snap carousel.
+   Desktop override (≥960px) restores the vertical flex list. */
+.pitch-card-list {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  gap: 16px;
+}
+
+.pitch-card-list::-webkit-scrollbar {
+  display: none;
+}
+
+.pitch-card-list > [role="listitem"] {
+  scroll-snap-align: start;
+  flex: 0 0 85vw;
+  max-width: 400px;
+}
+
+@media (min-width: 960px) {
+  .pitch-card-list {
+    flex-direction: column;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+  .pitch-card-list > [role="listitem"] {
+    flex: unset;
+    max-width: unset;
+  }
 }
