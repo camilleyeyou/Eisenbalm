@@ -271,7 +271,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
-| 12. Machine Editorial Design Adoption | 5/5 | Complete   | 2026-05-22 |
+| 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
 
 ## Backlog
 
