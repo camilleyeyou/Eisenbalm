@@ -172,7 +172,7 @@ Two edits to `apps/web/app/globals.css`. Add a clearly-labeled Phase 11 banner s
 Note: `.pitch-card-list` base is `flex-direction: column` so the ≥960px desktop two-column layout is unchanged (vertical list); the `@media (max-width: 959px)` block switches to the horizontal snap carousel. The child selector targets `[role="listitem"]` — Task 2 adds `role="listitem"` to each pitch card.
   </action>
   <verify>
-    <automated>cd apps/web && pnpm test:unit run __tests__/motion-polish.test.ts 2>&1 | tail -20 && pnpm test:unit run __tests__/theme-aa-tones.test.ts 2>&1 | tail -8</automated>
+    <automated>cd apps/web && pnpm test:unit __tests__/motion-polish.test.ts 2>&1 | tail -20 && pnpm test:unit __tests__/theme-aa-tones.test.ts 2>&1 | tail -8</automated>
   </verify>
   <acceptance_criteria>
     - The `.section-card:hover` rule in `apps/web/app/globals.css` contains `transform: translateY(-4px)` — verify with `grep -A6 "\.section-card:hover" apps/web/app/globals.css | grep "translateY(-4px)"`
@@ -252,7 +252,7 @@ useEffect(() => {
 - After the pitch container closes, add a visually-hidden hint: `<p className="sr-only">Scroll to see more candidates.</p>` (UI-SPEC line 546).
   </action>
   <verify>
-    <automated>cd apps/web && pnpm test:unit run __tests__/motion-polish.test.ts __tests__/deliberation-no-model-names.test.ts __tests__/deliberation-subscriptions.test.ts 2>&1 | tail -30</automated>
+    <automated>cd apps/web && pnpm test:unit __tests__/motion-polish.test.ts __tests__/deliberation-no-model-names.test.ts __tests__/deliberation-subscriptions.test.ts 2>&1 | tail -30</automated>
   </verify>
   <acceptance_criteria>
     - `grep "import { useState, useEffect, useRef } from 'react'" apps/web/components/issue/DeliberationSlot.tsx` matches

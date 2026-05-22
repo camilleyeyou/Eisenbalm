@@ -227,7 +227,7 @@ ZERO hardcoded issue content. Do NOT use any literal "Issue 042", "Project Solit
 NO `<script>` tag, NO `@import`, NO external URL, NO `gsap`/`framer-motion` import.
   </action>
   <verify>
-    <automated>cd apps/web && pnpm test:unit 2>&1 | grep -A2 "ARC-01: CardSwap source-scan"; cd apps/web && pnpm test:unit run __tests__/archive-cardswap.test.ts 2>&1 | tail -20</automated>
+    <automated>cd apps/web && pnpm test:unit 2>&1 | grep -A2 "ARC-01: CardSwap source-scan"; cd apps/web && pnpm test:unit __tests__/archive-cardswap.test.ts 2>&1 | tail -20</automated>
   </verify>
   <acceptance_criteria>
     - `apps/web/components/archive/CardSwap.tsx` exists, line 1 is `'use client'`, ≥90 lines
@@ -266,7 +266,7 @@ The existing `<ArchiveList>` block stays exactly as-is below CardSwap (it is the
 Resulting order inside the wrapper: `<h1>` → `<p>` → `{CardSwap}` → `<div className="mt-8">{ArchiveList | empty state}</div>`.
   </action>
   <verify>
-    <automated>cd apps/web && pnpm test:unit run __tests__/archive-cardswap.test.ts 2>&1 | tail -20 && pnpm --filter web build 2>&1 | tail -15</automated>
+    <automated>cd apps/web && pnpm test:unit __tests__/archive-cardswap.test.ts 2>&1 | tail -20 && pnpm --filter web build 2>&1 | tail -15</automated>
   </verify>
   <acceptance_criteria>
     - `grep "import { CardSwap }" apps/web/app/archive/page.tsx` matches

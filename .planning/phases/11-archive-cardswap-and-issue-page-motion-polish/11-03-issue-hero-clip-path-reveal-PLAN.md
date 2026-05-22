@@ -131,7 +131,7 @@ Do NOT set `opacity: 0`, `clip-path: inset(...)`, or `transform: translateY(...)
 Do not add `aria-hidden` to the spans (the name must remain readable to screen readers — UI-SPEC line 539). The `<h1>` text content is unchanged semantically; only its inline structure changes from one text node to N spans.
   </action>
   <verify>
-    <automated>cd apps/web && pnpm test:unit run __tests__/issue-hero-motion.test.ts 2>&1 | tail -25 && pnpm test:unit run __tests__/issue-page-typography.test.ts 2>&1 | tail -10</automated>
+    <automated>cd apps/web && pnpm test:unit __tests__/issue-hero-motion.test.ts 2>&1 | tail -25 && pnpm test:unit __tests__/issue-page-typography.test.ts 2>&1 | tail -10</automated>
   </verify>
   <acceptance_criteria>
     - `grep "charity.name.split(" apps/web/components/issue/IssueHero.tsx` matches (word split)
@@ -150,8 +150,8 @@ Do not add `aria-hidden` to the spans (the name must remain readable to screen r
 </tasks>
 
 <verification>
-- `pnpm --filter web test:unit run __tests__/issue-hero-motion.test.ts` is GREEN.
-- `pnpm --filter web test:unit run __tests__/issue-page-typography.test.ts` is GREEN (DES-04 eyebrow count ≥2 preserved).
+- `pnpm --filter web test:unit __tests__/issue-hero-motion.test.ts` is GREEN.
+- `pnpm --filter web test:unit __tests__/issue-page-typography.test.ts` is GREEN (DES-04 eyebrow count ≥2 preserved).
 - `pnpm --filter web build` exits 0.
 - Manual (HUMAN-UAT): load /issue/issue-999 — name reveals word-by-word; enable OS Reduce Motion + reload — name appears instantly.
 </verification>
