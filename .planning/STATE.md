@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 12-01-wave0-test-stubs-PLAN.md
-last_updated: "2026-05-22T17:22:44.737Z"
+stopped_at: Completed 12-02-pipeline-suppression-and-prompt-PLAN.md
+last_updated: "2026-05-22T17:30:34.127Z"
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 93
-  completed_plans: 83
+  completed_plans: 84
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 12 (machine-editorial-design-adoption-and-designagent-suppression) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -118,6 +118,7 @@ Plan: 2 of 5
 | Phase 11 P02 | 8 | 2 tasks | 2 files |
 | Phase 11 P04 | 8 | 3 tasks | 2 files |
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P01 | 45 | 4 tasks | 5 files |
+| Phase 12 P02 | 4 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -286,6 +287,8 @@ Recent decisions affecting current work:
 - [Phase 11]: SectionNavigator.tsx byte-unchanged for MOT-02 — hover lift is entirely a globals.css edit; prefersReducedMotion early-return preserved verbatim
 - [Phase 12-machine-editorial-design-adoption-and-designagent-suppression]: Wave-0 test-first: xfail stubs encode MED-01..MED-05 contracts before production code; implementing waves (02-05) turn them green
 - [Phase 12-machine-editorial-design-adoption-and-designagent-suppression]: suppressedThemeCss must emit '' not serializeThemeCss(null) — null emits BRAND_DEFAULTS light palette (#FAFAF8) which overrides the dark house palette; suppression code must bypass serializeThemeCss entirely
+- [Phase 12]: _SUPPRESSED truthiness expression byte-identical between builder.py and validate.py to prevent lockstep drift
+- [Phase 12]: DesignAgent system prompt uses 'strongly prefer' / 'Target range' soft steering (not hard constraints) so _validate_full whitelist + WCAG remains the binding gate per D-12
 
 ### Pending Todos
 
@@ -349,6 +352,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T17:22:44.729Z
-Stopped at: Completed 12-01-wave0-test-stubs-PLAN.md
+Last session: 2026-05-22T17:30:34.120Z
+Stopped at: Completed 12-02-pipeline-suppression-and-prompt-PLAN.md
 Resume file: None
