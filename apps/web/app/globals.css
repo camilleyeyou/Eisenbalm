@@ -640,3 +640,310 @@ article {
     max-width: unset;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PHASE 12 — MACHINE EDITORIAL DESIGN ADOPTION (MED-04 navigator + MED-05 flow)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── SECTION NAVIGATOR — VERTICAL TIMELINE (Phase 12 MED-04) ─────────── */
+
+/* Replace .section-cards grid with .snw-timeline vertical list */
+.snw-timeline {
+  display: flex;
+  flex-direction: column;
+  /* border-top handled by first row */
+}
+
+/* Module label above "In this Issue" heading */
+.snw-module-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+}
+
+/* Updated heading: "In this" plain + "Issue" gold */
+.snw-title-plain {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 3.5vw, 48px);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--color-text);
+}
+
+.snw-title-accent {
+  color: var(--color-primary);
+}
+
+/* Spine container */
+.snw-spine {
+  position: relative;
+  width: 56px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.snw-spine-line {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  top: 0;
+  bottom: 0;
+  background: var(--color-line-strong);
+}
+
+.snw-spine-progress {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  top: 0;
+  background: var(--color-primary);
+  transition: height 0.3s ease;
+}
+
+/* Spine node dot */
+.snw-node {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-card-hover);
+  border: 1px solid var(--color-line-strong);
+  transition: background 0.3s, border-color 0.3s;
+  flex-shrink: 0;
+  margin-top: 40px; /* centers dot vertically in row — multiple of 4 */
+}
+
+.snw-node.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+/* Section number */
+.snw-section-num {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-primary);
+  letter-spacing: 0.14em;
+  margin-top: 8px; /* multiple of 4 */
+}
+
+/* Timeline row — full-width anchor */
+.snw-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  min-height: 88px;
+  padding: 24px 24px 24px 0;
+  border-bottom: 1px solid var(--color-line);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: background 0.3s, border-left-color 0.3s;
+  overflow: hidden;
+}
+
+.snw-row:first-child {
+  border-top: 1px solid var(--color-line);
+}
+
+.snw-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    var(--color-primary-glow),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+
+.snw-row:hover::before {
+  opacity: 1;
+}
+
+.snw-row:hover {
+  background: var(--color-card-hover);
+}
+
+.snw-row.active {
+  border-left: 2px solid var(--color-primary);
+}
+
+/* Row content (tag + title + subtitle) */
+.snw-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* multiple of 4 */
+}
+
+/* Category tag pill */
+.snw-tag-pill {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--color-text-mute);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 2px;
+  padding: 4px 8px; /* multiple of 4 */
+  align-self: flex-start;
+}
+
+.snw-row:hover .snw-tag-pill,
+.snw-row.active .snw-tag-pill {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Section title */
+.snw-section-title {
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--color-text);
+}
+
+.snw-section-title em {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Section subtitle */
+.snw-subtitle {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--color-text-dim);
+}
+
+/* Read status column */
+.snw-read-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  width: 120px;
+  flex-shrink: 0;
+  padding-top: 24px;
+}
+
+.snw-read-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-text-mute);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.snw-read-value {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--color-primary);
+}
+
+.snw-read-dash {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-mute);
+  opacity: 0.5;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 480px) {
+  .snw-read-status {
+    display: none; /* read-status column hidden on narrowest mobile */
+  }
+  .snw-section-title {
+    font-size: 22px; /* responsive variant of Title token — not a 5th size */
+  }
+}
+
+/* ── DELIBERATION FLOW LINE (Phase 12 MED-05) ──────────────────────────── */
+
+.del-flow {
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  margin: 40px auto;
+}
+
+.del-flow-node {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+}
+
+.del-flow-circle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.del-flow-connector {
+  width: 2px;
+  height: 24px;
+  background: var(--color-line-strong);
+  margin-left: 4px; /* aligns connector center with circle center */
+}
+
+.del-flow-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.del-flow-action {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--color-text-dim);
+}
+
+/* Confidence meter — updated from Phase 11 */
+.del-confidence-bar-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-line-strong);
+  overflow: hidden;
+}
+
+.del-confidence-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--color-primary);
+  transition: width 0.6s ease;
+}
+
+/* Winner card luminous glow (applied via inline style in TSX) */
+/* box-shadow: 0 0 32px color-mix(in srgb, var(--color-primary) 28%, transparent),
+              0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent) */
