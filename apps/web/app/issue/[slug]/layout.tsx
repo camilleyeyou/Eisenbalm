@@ -1,6 +1,11 @@
 /**
  * Per-issue layout. CONTEXT.md D-10 / D-11 / D-20.
  *
+ * MED-01/MED-02: when DESIGNAGENT_SUPPRESSED is set, themeCss is '' and
+ * ThemeApplier is suppressed — the globals.css :root house palette is the
+ * sole source of colors/fonts. Flip the env var + redeploy to restore
+ * per-issue theming with no code change.
+ *
  * LAYER 1 — server side (FOUC-free first paint):
  *   Fetches the issue, calls serializeThemeCss(issue.theme), and inlines the
  *   resulting CSS in a <style> tag before children render. This guarantees the
@@ -48,6 +53,9 @@ type ThemeResult = { theme: IssueTheme } | null
 export default async function IssueLayout({ children, params }: IssueLayoutProps) {
   const { slug } = await params
 
+  // MED-02: request-time server read. NEVER NEXT_PUBLIC_ (that bakes at build time).
+  const suppressed = process.env.DESIGNAGENT_SUPPRESSED === 'true'
+
   let theme: IssueTheme = null
   try {
     const result: ThemeResult = await sanityClient.fetch(QUERY_ISSUE_THEME, { slug })
@@ -57,7 +65,9 @@ export default async function IssueLayout({ children, params }: IssueLayoutProps
     // The page will still render; just without the per-issue theme.
   }
 
-  const themeCss = serializeThemeCss(theme)
+  // MED-01: when suppressed, emit empty string so globals.css :root dark palette
+  // wins the cascade. NOT serializeThemeCss(null) — that emits the LIGHT palette.
+  const themeCss = suppressed ? '' : serializeThemeCss(theme)
 
   return (
     <>
@@ -69,8 +79,9 @@ export default async function IssueLayout({ children, params }: IssueLayoutProps
 
       {/*
        * LAYER 2: Client component re-runs applyTheme on hydration.
+       * suppressed={suppressed} short-circuits applyTheme when MED-02 flag is ON.
        */}
-      <ThemeApplier theme={theme} />
+      <ThemeApplier theme={theme} suppressed={suppressed} />
 
       {children}
     </>
