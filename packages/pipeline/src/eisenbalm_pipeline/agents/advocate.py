@@ -173,24 +173,47 @@ async def advocate(state: DispatchState) -> DispatchState:
     model_versions = dict(state.get("model_versions") or {})
     model_versions["advocate"] = usage["resolved_model"]
 
-    # Propagate scores onto state['candidates'] so Editor gate 1's
-    # _sort_candidates_by_score sees real advocateScore values (not 0,
-    # which falls back to alphabetical sort and silently picks the wrong
-    # winner). Found 2026-05-19 during the first multi-charity live run:
-    # all 3 candidates had no scores in state, editor's deterministic
-    # top-score picked alphabetically-first candidate while the LLM
-    # rationale described a different charity entirely (winner field
-    # and rationale text out of sync).
-    score_by_name = {v["charityName"]: v["score"] for v in votes_serialized}
-    arg_by_name = {v["charityName"]: v["argument"] for v in votes_serialized}
-    candidates_with_scores = [
-        {
-            **c,
-            "advocateScore": score_by_name.get(c.get("name"), 0),
-            "advocateArgument": arg_by_name.get(c.get("name"), ""),
+    # Match each Scout candidate to its Advocate vote robustly. The LLM
+    # emits votes under `charityName`, which it may normalize (drop "The",
+    # expand abbreviations, strip punctuation), so EXACT name matching against
+    # Scout's `name` silently misses and collapses every score to 0 — which
+    # makes editor.py's deterministic ranking fall back to an alphabetical
+    # tiebreak and pick the wrong winner. Fix: prefer positional alignment
+    # (the prompt guarantees one vote per candidate in input order); fall back
+    # to a slugified-name map when counts differ.
+    #
+    # Found 2026-05-19 during the first multi-charity live run: all 3
+    # candidates had no scores in state, editor's deterministic top-score
+    # picked alphabetically-first candidate while the LLM rationale described
+    # a different charity entirely (winner field and rationale text out of sync).
+    def _vote_fields(vote: dict | None) -> dict:
+        if not vote:
+            return {
+                "advocateScore": 0,
+                "advocateArgument": "",
+                "keyStrengths": [],
+                "primaryConcern": "",
+            }
+        return {
+            "advocateScore": vote.get("score", 0),
+            "advocateArgument": vote.get("argument", ""),
+            "keyStrengths": vote.get("keyStrengths") or [],
+            "primaryConcern": vote.get("primaryConcern") or "",
         }
-        for c in candidates
-    ]
+
+    if len(votes_serialized) == len(candidates):
+        # PRIMARY: positional alignment (prompt: same order as input).
+        candidates_with_scores = [
+            {**c, **_vote_fields(v)}
+            for c, v in zip(candidates, votes_serialized)
+        ]
+    else:
+        # FALLBACK: slugify-keyed match when the count differs (dropped/added vote).
+        vote_by_slug = {slugify(v["charityName"]): v for v in votes_serialized}
+        candidates_with_scores = [
+            {**c, **_vote_fields(vote_by_slug.get(slugify(c.get("name") or "")))}
+            for c in candidates
+        ]
 
     return {
         **state,
