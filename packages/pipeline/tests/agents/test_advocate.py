@@ -161,3 +161,135 @@ async def test_model_version_recorded(sample_dispatch_state) -> None:
         result = await advocate(sample_dispatch_state)
 
     assert result["model_versions"]["advocate"] == "anthropic/claude-haiku-4-5-20251001"
+
+
+# ── Regression tests for EG3-01: robust vote-to-candidate matching ────────
+
+
+@pytest.mark.asyncio
+async def test_score_attaches_despite_name_normalization(sample_dispatch_state) -> None:
+    """Regression: LLM-normalized charityName must still attach to the right
+    Scout candidate (positional match), not collapse to 0.
+
+    The bug: when the LLM drops "The" from a charity name (e.g. Scout has
+    "The Foo Foundation", LLM emits "Foo Foundation"), EXACT name matching
+    collapses every score to 0 and editor.py falls back to alphabetical
+    tiebreak, picking the wrong winner.
+
+    Fix: positional alignment (primary path) resolves this because the
+    prompt guarantees votes in the same order as the input candidates list.
+    """
+    sample_dispatch_state["candidates"] = [
+        {"name": "The Foo Foundation"},
+        {"name": "Bar Org"},
+    ]
+    out = AdvocateOutput(votes=[
+        AdvocateVote(
+            charityName="Foo Foundation",  # LLM dropped "The"
+            score=9,
+            argument="x" * 200,
+            keyStrengths=["a", "b"],
+            primaryConcern="concern-foo",
+        ),
+        AdvocateVote(
+            charityName="Bar Org",
+            score=4,
+            argument="y" * 200,
+            keyStrengths=["c"],
+            primaryConcern="concern-bar",
+        ),
+    ])
+    with patch(
+        "eisenbalm_pipeline.agents.advocate.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-haiku-4-5",
+        })),
+    ), patch(
+        "eisenbalm_pipeline.agents.advocate.convex_mutation_safe", AsyncMock(),
+    ):
+        result = await advocate(sample_dispatch_state)
+
+    cands = result["candidates"]
+    # Scores land on the RIGHT candidate by position, NON-ZERO.
+    assert cands[0]["name"] == "The Foo Foundation"
+    assert cands[0]["advocateScore"] == 9, (
+        "Score must be 9 (not 0) even though LLM emitted 'Foo Foundation' "
+        "instead of 'The Foo Foundation'"
+    )
+    assert cands[1]["name"] == "Bar Org"
+    assert cands[1]["advocateScore"] == 4
+    # keyStrengths and primaryConcern must propagate onto each candidate dict.
+    assert cands[0]["keyStrengths"] == ["a", "b"]
+    assert cands[0]["primaryConcern"] == "concern-foo"
+    assert cands[1]["keyStrengths"] == ["c"]
+    assert cands[1]["primaryConcern"] == "concern-bar"
+    # advocateArgument also propagated.
+    assert cands[0]["advocateArgument"] == "x" * 200
+    assert cands[1]["advocateArgument"] == "y" * 200
+
+
+@pytest.mark.asyncio
+async def test_slugify_fallback_when_count_differs(sample_dispatch_state) -> None:
+    """Regression: slugify-keyed fallback when len(votes) != len(candidates).
+
+    Force len mismatch by emitting 3 votes for 2 candidates. The fallback
+    branch uses slugify on charityName and candidate name to match; it
+    collapses punctuation/casing/whitespace that positional can't help with.
+
+    Uses normalization slugify actually collapses: punctuation + casing.
+    Scout candidate "A & B!" vs LLM charityName "a b" both slugify to "a-b".
+    """
+    sample_dispatch_state["candidates"] = [
+        {"name": "A & B!"},   # slugify -> "a-b"
+        {"name": "Zeta Org"}, # slugify -> "zeta-org"
+    ]
+    # 3 votes for 2 candidates → fallback branch activates.
+    out = AdvocateOutput(votes=[
+        AdvocateVote(
+            charityName="a b",     # slugify -> "a-b" (matches "A & B!")
+            score=7,
+            argument="p" * 200,
+            keyStrengths=["strength-x"],
+            primaryConcern="concern-ab",
+        ),
+        AdvocateVote(
+            charityName="Zeta Org",  # slugify -> "zeta-org" (exact)
+            score=3,
+            argument="q" * 200,
+            keyStrengths=["strength-y"],
+            primaryConcern="concern-zeta",
+        ),
+        AdvocateVote(
+            charityName="Extra Duplicate",  # extra vote — forces count mismatch
+            score=5,
+            argument="r" * 200,
+            keyStrengths=["strength-z"],
+            primaryConcern="concern-extra",
+        ),
+    ])
+    with patch(
+        "eisenbalm_pipeline.agents.advocate.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-haiku-4-5",
+        })),
+    ), patch(
+        "eisenbalm_pipeline.agents.advocate.convex_mutation_safe", AsyncMock(),
+    ):
+        result = await advocate(sample_dispatch_state)
+
+    cands = result["candidates"]
+    # "A & B!" matches "a b" via slugify (both -> "a-b").
+    assert cands[0]["name"] == "A & B!"
+    assert cands[0]["advocateScore"] == 7, (
+        "Slug fallback must match 'A & B!' to 'a b' (both -> 'a-b') "
+        "and attach score=7, not collapse to 0"
+    )
+    assert cands[0]["keyStrengths"] == ["strength-x"]
+    assert cands[0]["primaryConcern"] == "concern-ab"
+    # "Zeta Org" matches exactly via slug.
+    assert cands[1]["name"] == "Zeta Org"
+    assert cands[1]["advocateScore"] == 3
+    assert cands[1]["keyStrengths"] == ["strength-y"]
+    assert cands[1]["primaryConcern"] == "concern-zeta"
