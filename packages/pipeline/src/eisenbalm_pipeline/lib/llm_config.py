@@ -22,6 +22,7 @@ MODEL_PIN_VOICE_CRITICAL = "anthropic/claude-opus-4-7"
 MODEL_BY_AGENT: dict[str, str] = {
     # Voice-critical (Opus, pinned).
     "calibrator":   MODEL_PIN_VOICE_CRITICAL,
+    "chronicler":   MODEL_PIN_VOICE_CRITICAL,   # Phase 13 — voice-critical persona dialogue
     "editor_gate1": MODEL_PIN_VOICE_CRITICAL,
     "editor_final": MODEL_PIN_VOICE_CRITICAL,
     "qa":           MODEL_PIN_VOICE_CRITICAL,
@@ -42,6 +43,7 @@ MODEL_BY_AGENT: dict[str, str] = {
 # D-07: temperature + top_p per agent. Voice-critical low; writers higher.
 SAMPLING_BY_AGENT: dict[str, dict] = {
     "calibrator":   {"temperature": 0.2, "top_p": 1.0},
+    "chronicler":   {"temperature": 0.4, "top_p": 1.0},  # creative staging but faithful to real scores/names
     "editor_gate1": {"temperature": 0.2, "top_p": 1.0},
     "editor_final": {"temperature": 0.2, "top_p": 1.0},
     "qa":           {"temperature": 0.2, "top_p": 1.0},
