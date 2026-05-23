@@ -250,7 +250,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 ### Phase 13: Deliberation as Conversation
 **Goal**: Transform the issue's deliberation layer from a dry sequential report into a real, engaging multi-turn conversation between the named agents (The Scout, The Advocate, The Editor), faithful to the run's actual findings/scores/decision, rendered chat-style inline on the issue page. Three coupled pieces: (1) a "Chronicler" pass in the pipeline — ONE LLM call that dramatizes the real Scout findings, Advocate scores/arguments, and Editor decision into a Jesse-voice dialogue (chosen over a live multi-turn debate to contain per-run cost and protect the weekly Thu→Thu cadence), whose output becomes the canonical transcript instead of the deterministic template `editor.py` currently overwrites (`_format_deliberation_transcript`); (2) structured dialogue-turn events (ordered speaker + text) so the frontend can render a thread — any new eventType/payload shape must be checked against `docs/API_CONTRACTS.md` first (CLAUDE.md hard rule); (3) a frontend chat-style render replacing the raw-Markdown `<pre>{transcript}</pre>` dump in `apps/web/components/issue/PodcastSlot.tsx` (which shows literal `#`/`##`/`**` and is buried under the podcast disclosure) with a formatted threaded conversation in the main issue flow. The advocate-score 0/10 prerequisite is already fixed (quick task 260523-eg3). Locked constraints: no schema field renames without `docs/API_CONTRACTS.md`; do not regress the `deliberationEvents`/`agentVotes` emission path; reuse `lib/voice.py` VOICE_CONSTRAINTS (Jesse voice non-negotiable); preserve `prefers-reduced-motion`, WCAG AA, single `<main>`, ≥44px touch targets, the 5 live Convex subscriptions, and DEL-04 (no model names); no new npm dependencies; no CDN scripts.
 **Depends on**: Phase 12
-**Requirements**: TBD (defined during planning)
+**Requirements**: DEL-CONV-01, DEL-CONV-02, DEL-CONV-03, DEL-CONV-04, DEL-CONV-05, DEL-CONV-06
 **Success Criteria** (what must be TRUE):
   1. The published deliberation reads as a genuine multi-turn conversation between named agents (Scout / Advocate / Editor), faithful to the run's real findings, advocate scores, and editor decision — not a sectioned report
   2. The conversation renders as a formatted chat thread inline on the issue page: no literal Markdown characters, agent attribution per turn, not buried inside the podcast `<details>` disclosure
@@ -258,7 +258,10 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. A usable transcript form still exists for the V2-02 NotebookLM podcast export
   5. Pipeline cost/latency stays within the weekly cadence budget — exactly one added LLM call (the Chronicler), not a multi-call debate loop
   6. No new npm dependencies; Jesse VOICE_CONSTRAINTS reused; `prefers-reduced-motion` + WCAG AA + single `<main>` + ≥44px + 5 Convex subs + DEL-04 all preserved; `pnpm --filter web build` passes and pipeline tests stay green
-**Plans**: TBD (run /gsd:plan-phase 13 to break down)
+**Plans**: 3 plans
+- [ ] 13-01-contract-and-test-scaffold-PLAN.md — Reconcile docs/API_CONTRACTS.md (§7/§1.2/§2.2) + additive Sanity conversation[] schema field + DispatchState field + 4 Wave 0 test files (DEL-CONV-02, DEL-CONV-03, DEL-CONV-06)
+- [ ] 13-02-chronicler-pipeline-PLAN.md — chronicler @agent_node (single LLM call, faithful turns, D-18 fallback, AGT-17) + llm_config + editor_gate_1->chronicler->researcher rewire + Sanity conversation[] write (DEL-CONV-01, DEL-CONV-02, DEL-CONV-05, DEL-CONV-06)
+- [ ] 13-03-chat-render-PLAN.md — types/GROQ/globals.css conversation thread + DeliberationSlot chat render + page.tsx prop + PodcastSlot <pre> removal (DEL-CONV-04, DEL-CONV-05, DEL-CONV-06)
 **UI hint**: yes
 
 ## Progress
@@ -286,7 +289,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
-| 13. Deliberation as Conversation | 0/? | Not planned | - |
+| 13. Deliberation as Conversation | 0/3 | Planned | - |
 
 ## Backlog
 
