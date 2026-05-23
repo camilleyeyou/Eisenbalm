@@ -259,7 +259,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   5. Pipeline cost/latency stays within the weekly cadence budget — exactly one added LLM call (the Chronicler), not a multi-call debate loop
   6. No new npm dependencies; Jesse VOICE_CONSTRAINTS reused; `prefers-reduced-motion` + WCAG AA + single `<main>` + ≥44px + 5 Convex subs + DEL-04 all preserved; `pnpm --filter web build` passes and pipeline tests stay green
 **Plans**: 3 plans
-- [ ] 13-01-contract-and-test-scaffold-PLAN.md — Reconcile docs/API_CONTRACTS.md (§7/§1.2/§2.2) + additive Sanity conversation[] schema field + DispatchState field + 4 Wave 0 test files (DEL-CONV-02, DEL-CONV-03, DEL-CONV-06)
+- [x] 13-01-contract-and-test-scaffold-PLAN.md — Reconcile docs/API_CONTRACTS.md (§7/§1.2/§2.2) + additive Sanity conversation[] schema field + DispatchState field + 4 Wave 0 test files (DEL-CONV-02, DEL-CONV-03, DEL-CONV-06)
 - [ ] 13-02-chronicler-pipeline-PLAN.md — chronicler @agent_node (single LLM call, faithful turns, D-18 fallback, AGT-17) + llm_config + editor_gate_1->chronicler->researcher rewire + Sanity conversation[] write (DEL-CONV-01, DEL-CONV-02, DEL-CONV-05, DEL-CONV-06)
 - [ ] 13-03-chat-render-PLAN.md — types/GROQ/globals.css conversation thread + DeliberationSlot chat render + page.tsx prop + PodcastSlot <pre> removal (DEL-CONV-04, DEL-CONV-05, DEL-CONV-06)
 **UI hint**: yes
@@ -289,7 +289,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
-| 13. Deliberation as Conversation | 0/3 | Planned | - |
+| 13. Deliberation as Conversation | 1/3 | In Progress|  |
 
 ## Backlog
 
@@ -297,7 +297,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 5/5 plans complete
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 13 context gathered
-last_updated: "2026-05-23T17:53:23.575Z"
+status: Ready to execute
+stopped_at: Completed 13-01-contract-and-test-scaffold-PLAN.md
+last_updated: "2026-05-23T19:20:38.186Z"
 progress:
   total_phases: 14
   completed_phases: 11
-  total_plans: 93
-  completed_plans: 87
+  total_plans: 96
+  completed_plans: 88
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 12 — machine-editorial-design-adoption-and-designagent-suppression
+**Current focus:** Phase 13 — deliberation-as-conversation
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 13 (deliberation-as-conversation) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -122,6 +122,7 @@ Plan: Not started
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P03 | 10 | 2 tasks | 2 files |
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P04 | 8 | 2 tasks | 2 files |
 | Phase 12 P05 | 5 | 1 tasks | 1 files |
+| Phase 13 P01 | 10 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -298,6 +299,9 @@ Recent decisions affecting current work:
 - [Phase 12]: renderTitle() splits title on italicWord and wraps in <em>; spine fill via --spine-progress CSS var set by scroll listener; activeSection drives both node .active class and READ STATUS percentage
 - [Phase 12]: MED-05: Visible event timeline in Zone 2 shows only non-deliberation-phase events; sr-only list provides full timeline for screen readers; scout/advocate/editor events covered by flow-line diagram
 - [Phase 12]: MED-05: editorRationale rendered below confidence meter (not inside flow-line node) to avoid layout overflow on long rationale strings
+- [Phase 13]: selectionDeliberation.conversation[] (not podcast.conversation) — keeps turns co-located with candidates/editorDecision in Sanity Studio; matches D-07 leaning
+- [Phase 13]: Plain string text field for turn text (not Portable Text) — render layer adds formatting; no Markdown stored per D-07
+- [Phase 13]: No Annotated wrapper on deliberation_conversation — single sequential chronicler node writes it; all other Phase 1 fields follow same pattern
 
 ### Pending Todos
 
@@ -362,6 +366,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-23T17:53:23.565Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-deliberation-as-conversation/13-CONTEXT.md
+Last session: 2026-05-23T19:20:38.179Z
+Stopped at: Completed 13-01-contract-and-test-scaffold-PLAN.md
+Resume file: None
