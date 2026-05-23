@@ -56,6 +56,9 @@ Exceptions:
   constraint at the row level (CONTEXT.md D-12).
 - Turn row itself: `min-height: 44px` enforced via explicit inline style on the wrapping
   `<div role="article">` per turn.
+- Speaker chip `margin-top: 2px`: a sub-4px optical-alignment nudge so the 32px chip aligns
+  with the first line of body text. Implementation detail only — NOT a grid unit and not
+  reused as a design token anywhere else.
 
 Source: `DeliberationSlot.tsx` spacing conventions (`px-4`, `gap-3`, `py-3`, `mt-6 pb-8`).
 
