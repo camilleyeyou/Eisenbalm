@@ -13,13 +13,13 @@ files_modified:
   - packages/pipeline/tests/test_sanity_write.py
   - apps/web/__tests__/deliberation-conversation.test.ts
 autonomous: true
-requirements: [DEL-CONV-02, DEL-CONV-03, DEL-CONV-06]
+requirements: [DEL-CONV-01, DEL-CONV-02, DEL-CONV-03, DEL-CONV-06]
 must_haves:
   truths:
     - "docs/API_CONTRACTS.md declares the deliberation_conversation DispatchState field (§7), the conversation[] GROQ read (§1.2), and the conversation[] Sanity write (§2.2)"
     - "The weeklyIssue Sanity schema has an additive selectionDeliberation.conversation[] array of {speaker, text} objects with NO existing field renamed"
     - "DispatchState carries deliberation_conversation: Optional[list[dict]] with a comment citing API_CONTRACTS §7"
-    - "Three new pipeline test files and one web test file exist (Wave 0) covering chronicler turns/faithfulness/fallback, builder wiring, Sanity conversation write, and frontend no-markdown/no-model-names"
+    - "The four Wave 0 test files collect cleanly — `cd packages/pipeline && python -m pytest tests/test_chronicler.py tests/test_builder_wiring.py tests/test_sanity_write.py --collect-only` exits 0, and the full pipeline pytest + web vitest suites are green at the Wave 1 commit"
     - "The existing test_transcript_format and deliberation-no-model-names tripwire are NOT deleted"
   artifacts:
     - path: "docs/API_CONTRACTS.md"
@@ -278,7 +278,7 @@ export type IssueDeliberationTurn = { speaker: string; text: string }
     DO NOT modify or delete packages/pipeline/tests/agents/test_editor.py::test_transcript_format or apps/web/__tests__/deliberation-no-model-names.test.ts (D-18 + DEL-04 — both must survive).
   </action>
   <verify>
-    <automated>cd packages/pipeline && python -m pytest tests/test_chronicler.py tests/test_builder_wiring.py tests/test_sanity_write.py --collect-only -q && cd /Users/user/Desktop/Eisenbalm && pnpm --filter web test:unit deliberation-conversation 2>&1 | tail -5</automated>
+    <automated>cd "$(git rev-parse --show-toplevel)/packages/pipeline" && python -m pytest tests/test_chronicler.py tests/test_builder_wiring.py tests/test_sanity_write.py --collect-only -q && cd "$(git rev-parse --show-toplevel)" && pnpm --filter web test:unit deliberation-conversation 2>&1 | tail -5</automated>
   </verify>
   <acceptance_criteria>
     - `ls packages/pipeline/tests/test_chronicler.py packages/pipeline/tests/test_builder_wiring.py packages/pipeline/tests/test_sanity_write.py` lists all three files
@@ -318,4 +318,5 @@ Full-suite gate after this plan (per 13-VALIDATION.md sampling — run before me
 
 <output>
 After completion, create `.planning/phases/13-deliberation-as-conversation/13-01-SUMMARY.md`
+</output>
 </output>

@@ -12,6 +12,8 @@ files_modified:
   - apps/web/app/issue/[slug]/page.tsx
   - apps/web/components/issue/PodcastSlot.tsx
   - apps/web/__tests__/deliberation-conversation.test.ts
+  - apps/web/__tests__/podcast-slot.test.ts
+  - .planning/ROADMAP.md
 autonomous: true
 requirements: [DEL-CONV-04, DEL-CONV-05, DEL-CONV-06]
 must_haves:
@@ -19,6 +21,7 @@ must_haves:
     - "The deliberation conversation renders as a formatted chat thread at the TOP of the #deliberation section, visible by default (not inside a <details>)"
     - "Each turn shows a per-speaker accent chip + persona name + role + plain-string turn text; no literal Markdown characters are ever rendered and no Markdown parser / dangerouslySetInnerHTML is used"
     - "The raw <pre>{transcript}</pre> dump is removed from PodcastSlot.tsx; the deliberationTranscript field + its GROQ projection are retained (NotebookLM source — D-17)"
+    - "podcast-slot.test.ts asserts the <pre>/<details> transcript render is ABSENT and the <audio> player is PRESENT; ROADMAP.md records that D-10 supersedes POD-02's reader-facing transcript render"
     - "The new conversation field flows GROQ -> types -> page.tsx prop -> DeliberationSlot render"
     - "DEL-04 (no model names), prefers-reduced-motion, WCAG AA, single <main>, ≥44px touch targets, 5 Convex subscriptions all preserved; pnpm --filter web build passes"
   artifacts:
@@ -36,6 +39,12 @@ must_haves:
       contains: "del-conversation"
     - path: "apps/web/components/issue/PodcastSlot.tsx"
       provides: "<pre>{transcript}</pre> block removed; audio + description + empty state retained"
+    - path: "apps/web/__tests__/podcast-slot.test.ts"
+      provides: "POD-02 render assertions flipped to absence; <audio>/empty-state assertions retained"
+      contains: "not.toContain"
+    - path: ".planning/ROADMAP.md"
+      provides: "Phase 13 Supersedes note recording D-10 supersedes POD-02's reader-facing transcript render"
+      contains: "POD-02"
   key_links:
     - from: "apps/web/app/issue/[slug]/page.tsx"
       to: "DeliberationSlot conversation prop"
@@ -60,7 +69,7 @@ This plan (in the exact contract order types → query → CSS → component →
 3. Adds the `.del-conversation*` class block to globals.css (the ONLY new CSS — UI-SPEC CSS Convention Contract).
 4. Extends DeliberationSlot.tsx with a `conversation` prop and a chat-thread render block ABOVE the existing `<details>` machine view — reusing `getAgentLabel` / `agentChipStyle` / `/agents/[agentId]` and the module-scope `prefersReducedMotion` already in the file.
 5. Threads `conversation={issue.selectionDeliberation?.conversation ?? null}` from page.tsx.
-6. Removes the `<pre>{transcript}</pre>` collapsible block from PodcastSlot.tsx, keeping the audio player, description, empty state, and the `deliberationTranscript` field/type (D-17).
+6. Removes the `<pre>{transcript}</pre>` collapsible block from PodcastSlot.tsx (D-10), keeping the audio player, description, empty state, and the `deliberationTranscript` field/type (D-17); flips podcast-slot.test.ts's POD-02 render assertions to absence checks; and records the deliberate POD-02 supersession in ROADMAP.md.
 7. Un-skips the Plan-13-03 render assertions in the Wave 0 web test.
 
 Purpose: surface the conversation as the magazine-quality deliberation read (the signature feature) inline, replacing the buried raw-Markdown blob.
@@ -311,14 +320,16 @@ UI-SPEC locked specifics: thread wrapper class `.del-conversation` (max-width 74
 </task>
 
 <task type="auto">
-  <name>Task 3: Remove the <pre> transcript dump from PodcastSlot.tsx + un-skip the Wave 0 render assertions</name>
-  <files>apps/web/components/issue/PodcastSlot.tsx, apps/web/__tests__/deliberation-conversation.test.ts</files>
+  <name>Task 3: Remove the <pre> transcript dump from PodcastSlot.tsx + flip the POD-02 tests to absence + record the POD-02 supersession + un-skip the Wave 0 render assertions</name>
+  <files>apps/web/components/issue/PodcastSlot.tsx, apps/web/__tests__/podcast-slot.test.ts, apps/web/__tests__/deliberation-conversation.test.ts, .planning/ROADMAP.md</files>
   <read_first>
     - apps/web/components/issue/PodcastSlot.tsx (full file — lines 1-136; specifically lines 96-130 the `{transcript && (<details className="group">...<pre>{transcript}</pre>...</details>)}` block to remove, and lines 29 `const transcript = ...` + 132 the trailing spacer)
-    - apps/web/__tests__/podcast-slot.test.ts (if it exists — confirm POD-02 transcript-disclosure assertions; if it asserts the transcript <details> exists, that assertion must be relaxed/removed in lockstep since D-10 removes it. Read it first; if no such test asserts the <details>, no change needed there)
+    - apps/web/__tests__/podcast-slot.test.ts (full file — Phase 9 leaves ALL assertions active. Lines 39-45 hard-assert `deliberationTranscript` reference + `<details>` presence; lines 61-64 hard-assert the "Read full deliberation transcript" label. Removing the render in PodcastSlot.tsx WILL break these three assertions — they must be flipped to absence checks IN LOCKSTEP, not left conditional.)
     - apps/web/__tests__/deliberation-conversation.test.ts (the Plan-13-03 describe.skip block to un-skip — Plan 01 created it)
+    - .planning/ROADMAP.md (Phase 13 section, lines ~250-265 — add the Supersedes line under the **Requirements** line)
+    - .planning/REQUIREMENTS.md (POD-02 line 132 — confirm exact wording for the cross-reference: "Issue page renders a collapsible transcript when podcast.deliberationTranscript is populated")
     - .planning/phases/13-deliberation-as-conversation/13-UI-SPEC.md (PodcastSlot Removal Contract — exactly what is kept vs removed)
-    - .planning/phases/13-deliberation-as-conversation/13-CONTEXT.md (D-10, D-17)
+    - .planning/phases/13-deliberation-as-conversation/13-CONTEXT.md (D-10 line 86, D-17 lines 113-116)
   </read_first>
   <action>
     A) apps/web/components/issue/PodcastSlot.tsx — REMOVE the entire collapsible transcript block (lines ~96-130):
@@ -334,33 +345,47 @@ UI-SPEC locked specifics: thread wrapper class `.del-conversation` (max-width 74
     Delete that whole `{transcript && ( ... )}` JSX expression. KEEP everything else: the `<audio>` player (POD-01), description text, "Audio coming soon." empty state (POD-03), the `podcast` prop and its shape, and the trailing `<div className="mt-12" aria-hidden="true" />` spacer.
     - The `const transcript = podcast?.deliberationTranscript ?? null` declaration on line ~29 becomes unused after the block removal. Remove that line too (and any now-unused import) so the build has no unused-var lint failure — BUT do NOT remove `deliberationTranscript` from the IssuePodcast type or the GROQ projection (D-17 — those stay; only the render is removed).
 
-    B) apps/web/__tests__/deliberation-conversation.test.ts — remove the `.skip` from the `describe.skip('Plan 13-03 conversation render ...')` block created in Plan 01, turning the four render assertions live (del-conversation present, role="log" present, conversation prop present, no dangerouslySetInnerHTML). These now pass because Task 2 of this plan added them.
+    B) apps/web/__tests__/podcast-slot.test.ts — UNCONDITIONAL rewrite of the POD-02 render assertions (they are currently hard, active assertions that the `<details>`/`deliberationTranscript`/label exist; D-10 removes those renders, so these MUST flip to absence checks regardless of prior state — no "if it exists" branching). Make exactly these edits to the source-scan assertions (the `const source = readFileSync(PATH, 'utf-8')` at line 18 stays):
+       1. Replace the body of `it('POD-02: references deliberationTranscript', ...)` (line ~39-41) so it asserts ABSENCE: rename it to `it('POD-02 (superseded by D-10): PodcastSlot no longer reads deliberationTranscript', () => { expect(source).not.toContain('deliberationTranscript') })`.
+       2. Replace the body of `it('POD-02: uses <details> element for collapsible transcript', ...)` (line ~43-45) so it asserts ABSENCE of both the disclosure and the raw dump: `it('POD-02 (superseded by D-10): no <details>/<pre> transcript render in PodcastSlot', () => { expect(source).not.toContain('<details'); expect(source).not.toContain('<pre') })`.
+       3. Replace the body of `it('POD-02: transcript toggle reads "Read full deliberation transcript"', ...)` (line ~62-64) so it asserts ABSENCE: `it('POD-02 (superseded by D-10): transcript toggle label removed', () => { expect(source).not.toContain('Read full deliberation transcript') })`.
+       4. ADD a positive assertion that the `<audio>` player survives in the SAME describe block (next to the existing POD-01 audio checks) — if not already covered, add `it('POD-01: <audio> player retained after D-10 transcript removal', () => { expect(source).toContain('<audio') })`. (The existing POD-01 `expect(source).toContain('<audio')` at line ~26 already covers this; if you keep that, this added it() is optional — but the suite MUST contain at least one active assertion that `<audio` IS present.)
+       Leave the POD-01 (audio) and POD-03 ("Audio coming soon." with-a-period / no-exclamation) assertions UNCHANGED. Do NOT delete the file. Add a one-line comment at the top of the file noting "POD-02 reader-facing transcript render superseded by Phase 13 D-10; deliberationTranscript data retained for NotebookLM (D-17)."
 
-    C) If apps/web/__tests__/podcast-slot.test.ts asserts the transcript `<details>`/`<pre>` exists (POD-02), update that specific assertion to assert it is ABSENT (the transcript is no longer rendered in PodcastSlot — D-10), keeping the audio-player + empty-state assertions intact. If no such assertion exists, leave the file unchanged. Do NOT delete the whole test file.
+    C) apps/web/__tests__/deliberation-conversation.test.ts — remove the `.skip` from the `describe.skip('Plan 13-03 conversation render ...')` block created in Plan 01, turning the four render assertions live (del-conversation present, role="log" present, conversation prop present, no dangerouslySetInnerHTML). These now pass because Task 2 of this plan added them.
+
+    D) .planning/ROADMAP.md — in the Phase 13 section, immediately after the `**Requirements**: DEL-CONV-01, ...` line (~line 253), add this supersession note line verbatim:
+    ```
+    **Supersedes**: POD-02 (Phase 9 — "Issue page renders a collapsible transcript when podcast.deliberationTranscript is populated"). D-10 removes the reader-facing collapsible-transcript render from PodcastSlot.tsx; the `deliberationTranscript` data (Sanity field + GROQ projection) is retained solely for the V2-02 NotebookLM export (DEL-CONV-05). Readers now see the deliberation as the inline chat thread (DEL-CONV-04) instead of the buried `<pre>` blob.
+    ```
+    This makes the deliberate POD-02 supersession discoverable to a future auditor (the REQUIREMENTS.md POD-02 box stays checked because the underlying data/export still works — only the render moved).
   </action>
   <verify>
-    <automated>pnpm --filter web test:unit && pnpm --filter web build</automated>
+    <automated>grep -i "POD-02" .planning/ROADMAP.md | grep -i "supersede" && pnpm --filter web test:unit && pnpm --filter web build</automated>
   </verify>
   <acceptance_criteria>
     - `grep -c "<pre" apps/web/components/issue/PodcastSlot.tsx` returns 0 (the raw transcript dump is gone)
     - `grep -c "deliberationTranscript" apps/web/components/issue/PodcastSlot.tsx` returns 0 (no longer reads it in render) — while `grep -c "deliberationTranscript" apps/web/lib/sanity/types.ts` is still ≥1 and `grep -c "deliberationTranscript" apps/web/lib/sanity/queries.ts` is still ≥1 (D-17 field/projection retained)
     - `grep -n "<audio" apps/web/components/issue/PodcastSlot.tsx` still returns (POD-01 retained)
     - `grep -n "Audio coming soon." apps/web/components/issue/PodcastSlot.tsx` still returns (POD-03 retained)
+    - In apps/web/__tests__/podcast-slot.test.ts: `grep -c "not.toContain('deliberationTranscript')" apps/web/__tests__/podcast-slot.test.ts` returns ≥1, `grep -c "not.toContain('<details')" apps/web/__tests__/podcast-slot.test.ts` returns ≥1, and `grep -c "toContain('<audio')" apps/web/__tests__/podcast-slot.test.ts` returns ≥1 (audio assertion retained); `grep -c "describe.skip\|it.skip" apps/web/__tests__/podcast-slot.test.ts` returns 0 (no conditional/skipped POD-02 assertion left silently passing)
     - `grep -c "describe.skip" apps/web/__tests__/deliberation-conversation.test.ts` returns 0 (Plan-13-03 block un-skipped)
-    - `pnpm --filter web test:unit` exits 0 (all web tests green, including the now-live conversation render assertions + the never-skipped DEL-04 tripwire)
+    - `grep -i "POD-02" .planning/ROADMAP.md | grep -ic "supersede"` returns ≥1 (the supersession note is present in the Phase 13 section)
+    - `pnpm --filter web test:unit` exits 0 (all web tests green: flipped POD-02 absence assertions, retained POD-01/POD-03, now-live conversation render assertions, never-skipped DEL-04 tripwire)
     - `pnpm --filter web build` exits 0 (no unused-var failure from removed transcript const)
   </acceptance_criteria>
-  <done><pre> transcript dump removed from PodcastSlot; deliberationTranscript field+projection retained (D-17); Wave 0 conversation render assertions live and green; web suite + build green.</done>
+  <done><pre> transcript dump removed from PodcastSlot; podcast-slot.test.ts POD-02 render assertions flipped to unconditional absence checks with the <audio> player still asserted present; ROADMAP.md records the deliberate POD-02 supersession; deliberationTranscript field+projection retained (D-17); Wave 0 conversation render assertions live and green; web suite + build green.</done>
 </task>
 
 </tasks>
 
 <verification>
 Full-suite gate after this plan (13-VALIDATION.md sampling — run before merging Wave 2 web side):
-- `pnpm --filter web test:unit` exits 0 (all Vitest including deliberation-conversation + deliberation-no-model-names tripwire + game-sandbox tripwire)
+- `pnpm --filter web test:unit` exits 0 (all Vitest including deliberation-conversation + deliberation-no-model-names tripwire + game-sandbox tripwire + flipped podcast-slot POD-02 absence assertions)
 - `pnpm --filter web build` exits 0 (TypeScript + Next.js compile)
 - `grep -c "del-conversation" apps/web/app/globals.css` ≥ 4 and `grep -c "del-conversation" apps/web/components/issue/DeliberationSlot.tsx` ≥ 3
 - `grep -c "<pre" apps/web/components/issue/PodcastSlot.tsx` == 0
+- `grep -i "POD-02" .planning/ROADMAP.md | grep -ic "supersede"` ≥ 1
 - Single `<main>` preserved: no new `<main>` introduced in any modified file — `grep -rc "<main" apps/web/components/issue/DeliberationSlot.tsx apps/web/components/issue/PodcastSlot.tsx` == 0
 </verification>
 
@@ -369,9 +394,11 @@ Full-suite gate after this plan (13-VALIDATION.md sampling — run before mergin
 - No literal Markdown rendered; per-turn attribution; reuses agentChipStyle/getAgentLabel/agents links (DEL-CONV-04, success criterion 2+3)
 - conversation flows GROQ -> types -> page prop -> render (DEL-CONV-04, success criterion 3)
 - <pre> dump removed; deliberationTranscript field + GROQ retained for NotebookLM (DEL-CONV-05, success criterion 4)
+- POD-02's reader-facing transcript render deliberately superseded (D-10) and recorded in ROADMAP.md; podcast-slot.test.ts asserts the removal unconditionally (no silent regression)
 - DEL-04 + reduced-motion + WCAG AA + single <main> + ≥44px + 5 Convex subs preserved; build green (DEL-CONV-06, success criterion 6)
 </success_criteria>
 
 <output>
 After completion, create `.planning/phases/13-deliberation-as-conversation/13-03-SUMMARY.md`
+</output>
 </output>

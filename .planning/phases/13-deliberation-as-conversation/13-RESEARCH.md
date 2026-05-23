@@ -654,7 +654,7 @@ All dependencies already available in the project environment:
 | DEL-P13-01 | Chronicler node runs and produces ≥8 well-formed `{speaker, text}` turns | unit (pytest) | `pytest packages/pipeline/tests/test_chronicler.py -x` | ❌ Wave 0 |
 | DEL-P13-02 | Turns are faithful — charity names, scores, winner, editor reasoning all traceable to actual state values passed in | unit (pytest) | `pytest packages/pipeline/tests/test_chronicler.py::test_turn_faithfulness -x` | ❌ Wave 0 |
 | DEL-P13-03 | Fallback fires — when Chronicler raises, `_format_deliberation_transcript` transcript value survives unchanged | unit (pytest) | `pytest packages/pipeline/tests/test_chronicler.py::test_fallback_preserves_transcript -x` | ❌ Wave 0 |
-| DEL-P13-04 | Frontend renders no literal Markdown — `#`, `##`, `**` never appear as rendered text nodes in chat bubbles | unit (vitest, source scan + snapshot) | `pnpm --filter web test --run deliberation-chat` | ❌ Wave 0 |
+| DEL-P13-04 | Frontend renders no literal Markdown — `#`, `##`, `**` never appear as rendered text nodes in chat bubbles | unit (vitest, source scan + snapshot) | `pnpm --filter web test:unit deliberation-conversation` | ❌ Wave 0 |
 | DEL-P13-05 | DEL-04 — no model names anywhere in `DeliberationSlot.tsx` (existing never-skipped tripwire) | unit (vitest) | `pnpm --filter web test --run deliberation-no-model-names` | ✅ exists at `apps/web/__tests__/deliberation-no-model-names.test.ts` |
 | DEL-P13-06 | `pnpm --filter web build` passes (TypeScript + Next.js compilation) | build (smoke) | `pnpm --filter web build` | ✅ infrastructure exists |
 | DEL-P13-07 | `pytest packages/pipeline/` green — `test_transcript_format` exact-header assertions survive (D-18 fallback not deleted) | regression (pytest) | `pytest packages/pipeline/tests/agents/test_editor.py::test_transcript_format -x` | ✅ exists (must not be deleted) |
@@ -671,7 +671,7 @@ All dependencies already available in the project environment:
 - [ ] `packages/pipeline/tests/test_chronicler.py` — covers DEL-P13-01, DEL-P13-02, DEL-P13-03 (unit test with mocked `acomplete`)
 - [ ] `packages/pipeline/tests/test_builder_wiring.py` — covers DEL-P13-08 (source scan asserting `add_edge("editor_gate_1", "chronicler")` and `add_edge("chronicler", "researcher")` present)
 - [ ] `packages/pipeline/tests/test_sanity_write.py::test_conversation_write` — covers DEL-P13-09 (mock sanity client asserting `_key` present on each turn)
-- [ ] `apps/web/__tests__/deliberation-chat.test.ts` — covers DEL-P13-04 (source scan of `DeliberationSlot.tsx` asserting no `#`, `##`, `**` in JSX text nodes or string literals outside of comments)
+- [ ] `apps/web/__tests__/deliberation-conversation.test.ts` — covers DEL-P13-04 (source scan of `DeliberationSlot.tsx` asserting no `#`, `##`, `**` in JSX text nodes or string literals outside of comments)
 
 Existing tests that MUST NOT be deleted:
 - `apps/web/__tests__/deliberation-no-model-names.test.ts` — DEL-04 (DEL-P13-05)
