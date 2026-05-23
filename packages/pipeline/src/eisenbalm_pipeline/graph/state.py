@@ -134,6 +134,7 @@ class DispatchState(TypedDict):
     winning_charity: Optional[CharityCandidate]
     winning_charity_sanity_id: Optional[str]    # set after Sanity write
     deliberation_transcript: Optional[str]      # full Scout+Advocate+Editor text
+    deliberation_conversation: Optional[list[dict]]  # Phase 13 (DEL-CONV): Chronicler turns [{"speaker","text"}] — VERBATIM from docs/API_CONTRACTS.md §7
     editor_decision: Optional[str]              # why this charity won
     runner_up_notes: Optional[str]
 
