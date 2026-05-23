@@ -119,6 +119,7 @@ type LatestIssueSlug = {
     },
     editorDecision,
     runnerUpNotes,
+    conversation[] { speaker, text },   // Phase 13 (DEL-CONV): Chronicler dialogue turns for the chat-thread render
   },
 }
 ```
@@ -375,6 +376,10 @@ def write_issue_draft(state: DispatchState) -> str:
             ],
             'editorDecision': state['editor_decision'],
             'runnerUpNotes': state['runner_up_notes'],
+            'conversation': [   # Phase 13 (DEL-CONV): Chronicler turns; _key required for Sanity array items
+                {'_type': 'object', '_key': f'turn-{i:03d}', 'speaker': t['speaker'], 'text': t['text']}
+                for i, t in enumerate(state.get('deliberation_conversation') or [])
+            ] or None,
         },
 
         'pipelineMetadata': {
@@ -1321,6 +1326,7 @@ class DispatchState(TypedDict):
     winning_charity: Optional[CharityCandidate]
     winning_charity_sanity_id: Optional[str]    # set after Sanity write
     deliberation_transcript: Optional[str]      # full Scout+Advocate+Editor text
+    deliberation_conversation: Optional[list[dict]]   # Phase 13 (DEL-CONV): Chronicler dialogue turns — [{"speaker": "scout|advocate|editor", "text": "plain prose, no Markdown"}]; written by the chronicler node; flattened into deliberation_transcript for the podcast/NotebookLM export
     editor_decision: Optional[str]              # why this charity won
     runner_up_notes: Optional[str]
 
