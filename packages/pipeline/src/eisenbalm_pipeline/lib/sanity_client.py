@@ -229,6 +229,15 @@ async def write_issue_draft(
             ],
             "editorDecision": state.get("editor_decision", ""),
             "runnerUpNotes": state.get("runner_up_notes", ""),
+            "conversation": [
+                {
+                    "_type": "object",
+                    "_key": f"turn-{i:03d}",
+                    "speaker": t["speaker"],
+                    "text": t["text"],
+                }
+                for i, t in enumerate(state.get("deliberation_conversation") or [])
+            ] or None,
         },
         "pipelineMetadata": {
             "runId": state["run_id"],

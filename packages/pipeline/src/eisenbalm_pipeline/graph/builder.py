@@ -48,6 +48,7 @@ from eisenbalm_pipeline.agents.advocate import advocate
 from eisenbalm_pipeline.agents.bonus import bonus
 from eisenbalm_pipeline.agents.calibrator import calibrator
 from eisenbalm_pipeline.agents.case_study import case_study
+from eisenbalm_pipeline.agents.chronicler import chronicler
 from eisenbalm_pipeline.agents.design import design
 from eisenbalm_pipeline.agents.editor import editor_final, editor_gate_1
 from eisenbalm_pipeline.agents.founder_bio import founder_bio
@@ -101,6 +102,7 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_node("scout", scout)
     builder.add_node("advocate", advocate)
     builder.add_node("editor_gate_1", editor_gate_1)
+    builder.add_node("chronicler", chronicler)
     builder.add_node("researcher", researcher)
 
     # Phase 5 D-11: standalone non-LLM verification step between Researcher
@@ -129,7 +131,8 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_edge("calibrator", "scout")
     builder.add_edge("scout", "advocate")
     builder.add_edge("advocate", "editor_gate_1")
-    builder.add_edge("editor_gate_1", "researcher")
+    builder.add_edge("editor_gate_1", "chronicler")
+    builder.add_edge("chronicler", "researcher")
 
     # Phase 5 D-11: insert verify_research between Researcher and the fan-out.
     # verify_research fetches founderNameSourceUrl / subjectNameSourceUrl,
