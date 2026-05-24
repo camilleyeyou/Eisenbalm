@@ -105,10 +105,16 @@ export type IssueDeliberationCandidate = {
   advocateScore: number | null
 }
 
+export type IssueDeliberationTurn = {
+  speaker: string   // "scout" | "advocate" | "editor"
+  text: string
+}
+
 export type IssueDeliberation = {
   candidates: IssueDeliberationCandidate[] | null
   editorDecision: string | null
   runnerUpNotes: string | null
+  conversation: IssueDeliberationTurn[] | null
 } | null
 
 export type Issue = {

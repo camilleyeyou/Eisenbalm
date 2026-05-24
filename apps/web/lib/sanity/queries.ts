@@ -90,6 +90,7 @@ export const QUERY_ISSUE_BY_SLUG = groq`
       },
       editorDecision,
       runnerUpNotes,
+      conversation[] { speaker, text },
     },
   }
 `
