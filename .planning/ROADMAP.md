@@ -262,7 +262,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 **Plans**: 3 plans
 - [x] 13-01-contract-and-test-scaffold-PLAN.md — Reconcile docs/API_CONTRACTS.md (§7/§1.2/§2.2) + additive Sanity conversation[] schema field + DispatchState field + 4 Wave 0 test files (DEL-CONV-02, DEL-CONV-03, DEL-CONV-06)
 - [x] 13-02-chronicler-pipeline-PLAN.md — chronicler @agent_node (single LLM call, faithful turns, D-18 fallback, AGT-17) + llm_config + editor_gate_1->chronicler->researcher rewire + Sanity conversation[] write (DEL-CONV-01, DEL-CONV-02, DEL-CONV-05, DEL-CONV-06)
-- [ ] 13-03-chat-render-PLAN.md — types/GROQ/globals.css conversation thread + DeliberationSlot chat render + page.tsx prop + PodcastSlot <pre> removal (DEL-CONV-04, DEL-CONV-05, DEL-CONV-06)
+- [x] 13-03-chat-render-PLAN.md — types/GROQ/globals.css conversation thread + DeliberationSlot chat render + page.tsx prop + PodcastSlot <pre> removal (DEL-CONV-04, DEL-CONV-05, DEL-CONV-06)
 **UI hint**: yes
 
 ## Progress
@@ -290,7 +290,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
-| 13. Deliberation as Conversation | 2/3 | In Progress|  |
+| 13. Deliberation as Conversation | 3/3 | Complete   | 2026-05-24 |
 
 ## Backlog
 
@@ -298,7 +298,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)
