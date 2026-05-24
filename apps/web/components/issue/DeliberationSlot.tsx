@@ -30,6 +30,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
+import type { IssueDeliberationTurn } from '@/lib/sanity/types'
 
 // SECURITY: never read run.cost (it contains the model-version map).
 // pipelineRuns.cost is a JSON string — never read.
@@ -106,9 +107,9 @@ const prefersReducedMotion =
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // ─── Props ────────────────────────────────────────────────────────────────────
-type Props = { runId: string | null }
+type Props = { runId: string | null; conversation: IssueDeliberationTurn[] | null }
 
-export function DeliberationSlot({ runId }: Props) {
+export function DeliberationSlot({ runId, conversation }: Props) {
   // DEL-01: All five Convex subscriptions with the "skip" sentinel.
   // When runId is null, every query gets 'skip' — no subscription, returns undefined.
   const run         = useQuery(api.pipelineRuns.byRunId,       runId ? { runId } : 'skip')
@@ -251,6 +252,55 @@ export function DeliberationSlot({ runId }: Props) {
         style={{ backgroundColor: 'var(--color-line-strong)' }}
         aria-hidden="true"
       />
+
+      {/* ── Chat-thread conversation render (Phase 13 DEL-CONV-04) ─────────
+          Visible by default. Only rendered when conversation data present.
+          Placement: BEFORE the <details> machine view.
+          turn.text is always rendered as a plain string — never via
+          dangerouslySetInnerHTML or a Markdown parser (D-12).
+          reuses getAgentLabel + agentChipStyle helpers already in scope.   */}
+      {conversation && conversation.length > 0 && (
+        <div className="del-conversation mb-8">
+          <p
+            className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em] mb-6"
+            style={{ color: 'var(--color-text-dim)' }}
+          >
+            The Deliberation
+          </p>
+          <div role="log" aria-label="Deliberation conversation">
+            {conversation.map((turn, i) => {
+              const label = getAgentLabel(turn.speaker)
+              const chip = agentChipStyle(turn.speaker)
+              return (
+                <div className="del-conversation-turn" key={i}>
+                  <a
+                    href={`/agents/${turn.speaker}`}
+                    className="del-conversation-chip"
+                    style={{ color: chip.color, backgroundColor: chip.backgroundColor }}
+                    aria-label={label.displayName}
+                  >
+                    {label.displayName.replace(/^The\s+/, '').charAt(0)}
+                  </a>
+                  <div className="del-conversation-body">
+                    <p
+                      className="font-ui text-[11px] font-semibold leading-[1.5] mb-1"
+                      style={{ color: chip.color }}
+                    >
+                      {label.displayName} — {label.role}
+                    </p>
+                    <p
+                      className="font-body text-[15px] leading-[1.65]"
+                      style={{ color: 'var(--color-text-dim)' }}
+                    >
+                      {turn.text}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Collapsed accordion — DEL-03 */}
       <details className="deliberation-slot group">
