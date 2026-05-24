@@ -1,11 +1,14 @@
 /**
- * POD-01 / POD-02 / POD-03 — PodcastSlot source-scan.
+ * POD-02 reader-facing transcript render superseded by Phase 13 D-10;
+ * deliberationTranscript data retained for NotebookLM (D-17).
+ *
+ * POD-01 / POD-02 (superseded) / POD-03 — PodcastSlot source-scan.
  *
  * Phase 9 Plan 09-03: all assertions active (no skipped blocks).
- *
- * POD-01/POD-03 and structural POD-02 (disclosure element) were active since
- * Phase 2. The POD-02 label assertion ("Read full deliberation transcript")
- * was unskipped in Plan 09-03 after the label was updated.
+ * Phase 13 D-10: POD-02 render assertions flipped to unconditional absence checks.
+ *   The <pre>{transcript}</pre> collapsible block has been removed from
+ *   PodcastSlot.tsx. The deliberationTranscript field + GROQ projection are
+ *   retained (D-17 — NotebookLM source).
  *
  * readFileSync is at module scope (file exists at scaffold time).
  */
@@ -17,9 +20,9 @@ import { describe, it, expect } from 'vitest'
 const PATH = resolve(__dirname, '../components/issue/PodcastSlot.tsx')
 const source = readFileSync(PATH, 'utf-8')
 
-// ─── Un-skipped: POD-01, POD-03, and transcript-structure POD-02 ─────────────
+// ─── Un-skipped: POD-01, POD-03 ──────────────────────────────────────────────
 
-describe('POD-01/02/03: PodcastSlot', () => {
+describe('POD-01/03: PodcastSlot', () => {
   // POD-01: HTML5 audio element gated on audioUrl
 
   it('POD-01: renders an <audio> element', () => {
@@ -34,14 +37,19 @@ describe('POD-01/02/03: PodcastSlot', () => {
     expect(source).toContain('audioUrl')
   })
 
-  // POD-02: collapsible transcript disclosure exists (structural check)
-
-  it('POD-02: references deliberationTranscript', () => {
-    expect(source).toContain('deliberationTranscript')
+  it('POD-01: <audio> player retained after D-10 transcript removal', () => {
+    expect(source).toContain('<audio')
   })
 
-  it('POD-02: uses <details> element for collapsible transcript', () => {
-    expect(source).toContain('<details')
+  // POD-02 (superseded by D-10): reader-facing transcript render removed
+
+  it('POD-02 (superseded by D-10): PodcastSlot no longer reads deliberationTranscript', () => {
+    expect(source).not.toContain('deliberationTranscript')
+  })
+
+  it('POD-02 (superseded by D-10): no <details>/<pre> transcript render in PodcastSlot', () => {
+    expect(source).not.toContain('<details')
+    expect(source).not.toContain('<pre')
   })
 
   // POD-03: empty-state copy is exactly "Audio coming soon." (period, no exclamation)
@@ -55,11 +63,12 @@ describe('POD-01/02/03: PodcastSlot', () => {
   })
 })
 
-// ─── POD-02 restyled transcript label (unskipped in Plan 09-03) ──────────────
-// Label updated to "Read full deliberation transcript" by Plan 09-03.
+// ─── POD-02 restyled transcript label (superseded by D-10) ───────────────────
+// D-10 removes the "Read full deliberation transcript" toggle from PodcastSlot.
+// Readers now see the deliberation as the inline chat thread (DEL-CONV-04).
 
-describe('POD-02: restyled transcript label', () => {
-  it('POD-02: transcript toggle reads "Read full deliberation transcript"', () => {
-    expect(source).toContain('Read full deliberation transcript')
+describe('POD-02 (superseded by D-10): transcript toggle label removed', () => {
+  it('POD-02 (superseded by D-10): transcript toggle label removed', () => {
+    expect(source).not.toContain('Read full deliberation transcript')
   })
 })

@@ -71,7 +71,7 @@ describe('DEL-04 re-assertion: no model names in conversation render path', () =
 // with the chat-thread render. Each assertion below represents a concrete
 // markup / prop contract for the conversation thread.
 
-describe.skip('Plan 13-03 conversation render (un-skip when DeliberationSlot extended)', () => {
+describe('Plan 13-03 conversation render (DeliberationSlot extended in Plan 13-03)', () => {
   it('contains class del-conversation (thread wrapper class for CSS targeting)', () => {
     const src = readFileSync(DELIB_SLOT_PATH, 'utf-8')
     expect(src).toContain('del-conversation')
