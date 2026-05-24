@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 13-01-contract-and-test-scaffold-PLAN.md
-last_updated: "2026-05-23T19:20:38.186Z"
+stopped_at: Completed 13-02-chronicler-pipeline-PLAN.md
+last_updated: "2026-05-24T16:35:50.800Z"
 progress:
   total_phases: 14
   completed_phases: 11
   total_plans: 96
-  completed_plans: 88
+  completed_plans: 89
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 13 (deliberation-as-conversation) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -123,6 +123,7 @@ Plan: 2 of 3
 | Phase 12-machine-editorial-design-adoption-and-designagent-suppression P04 | 8 | 2 tasks | 2 files |
 | Phase 12 P05 | 5 | 1 tasks | 1 files |
 | Phase 13 P01 | 10 | 3 tasks | 7 files |
+| Phase 13-deliberation-as-conversation P02 | 12 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -302,6 +303,9 @@ Recent decisions affecting current work:
 - [Phase 13]: selectionDeliberation.conversation[] (not podcast.conversation) — keeps turns co-located with candidates/editorDecision in Sanity Studio; matches D-07 leaning
 - [Phase 13]: Plain string text field for turn text (not Portable Text) — render layer adds formatting; no Markdown stored per D-07
 - [Phase 13]: No Annotated wrapper on deliberation_conversation — single sequential chronicler node writes it; all other Phase 1 fields follow same pattern
+- [Phase 13-deliberation-as-conversation]: chronicler: emit_event=None — turns are Sanity content, not deliberationEvents (D-06/D-08 confirmed)
+- [Phase 13-deliberation-as-conversation]: chronicler try/except inside function body — @agent_node wrapper never sees exception, run never marked failed (Pitfall 6)
+- [Phase 13-deliberation-as-conversation]: conversation: [...] or None in Sanity write — empty fallback path writes None not [], cleaner for frontend null-guard
 
 ### Pending Todos
 
@@ -366,6 +370,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-23T19:20:38.179Z
-Stopped at: Completed 13-01-contract-and-test-scaffold-PLAN.md
+Last session: 2026-05-24T16:35:50.793Z
+Stopped at: Completed 13-02-chronicler-pipeline-PLAN.md
 Resume file: None
