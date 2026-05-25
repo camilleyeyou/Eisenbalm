@@ -325,17 +325,17 @@ nav, button {
   background:
     radial-gradient(
       ellipse 90% 55% at 50% -12%,
-      color-mix(in srgb, var(--color-primary) 10%, transparent),
+      color-mix(in srgb, var(--color-primary) 5%, transparent),   /* was 10% — halved for light bg (paper, not dark canvas) */
       transparent 70%
     ),
     radial-gradient(
       ellipse 70% 45% at 85% 8%,
-      color-mix(in srgb, var(--color-accent) 6%, transparent),
+      color-mix(in srgb, var(--color-accent) 3%, transparent),    /* was 6% — halved for light bg */
       transparent 65%
     ),
     radial-gradient(
       ellipse 60% 50% at 10% 30%,
-      color-mix(in srgb, var(--color-advocate) 4%, transparent),
+      color-mix(in srgb, var(--color-advocate) 2%, transparent),  /* was 4% — halved for light bg */
       transparent 60%
     );
   animation: auroraShift 18s ease-in-out infinite alternate;
@@ -527,7 +527,7 @@ nav, button {
   background: var(--color-card-hover);
   border-color: var(--color-primary);
   box-shadow:
-    0 24px 60px -20px rgba(0, 0, 0, 0.7),
+    0 8px 32px -8px rgba(90, 75, 50, 0.18),  /* warm sepia shadow — paper-appropriate (was dark elevation shadow) */
     0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
   transform: translateY(-4px);
 }
@@ -558,7 +558,7 @@ nav, button {
 .sc-num {
   font-family: var(--font-ui);
   font-size: 11px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   letter-spacing: 0.14em;
 }
 
@@ -585,7 +585,7 @@ nav, button {
 .sc-arrow {
   font-family: var(--font-ui);
   font-size: 11px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0;
@@ -666,7 +666,7 @@ article {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   margin-bottom: 12px;
 }
 
@@ -680,7 +680,7 @@ article {
 }
 
 .snw-title-accent {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 /* Spine container */
@@ -738,7 +738,7 @@ article {
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 400;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   letter-spacing: 0.14em;
   margin-top: 8px; /* multiple of 4 */
 }
@@ -810,10 +810,16 @@ article {
   align-self: flex-start;
 }
 
+/* Text color: AA-safe gold variant (Plan 14-02 BLOCKER 1 fix — 11px text on light bg) */
+.snw-row:hover .snw-tag-pill,
+.snw-row.active .snw-tag-pill {
+  color: var(--color-primary-text);
+}
+
+/* Border-color: decorative raw gold (border is not text — no AA text requirement) */
 .snw-row:hover .snw-tag-pill,
 .snw-row.active .snw-tag-pill {
   border-color: var(--color-primary);
-  color: var(--color-primary);
 }
 
 /* Section title */
@@ -867,7 +873,7 @@ article {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.10em;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .snw-read-dash {
