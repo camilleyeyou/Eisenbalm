@@ -403,7 +403,7 @@ export function DeliberationSlot({ runId, conversation }: Props) {
                                 <span
                                   className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.08em] px-2 py-0.5 rounded-sm"
                                   style={{
-                                    color: 'var(--color-primary)',
+                                    color: 'var(--color-primary-text)',
                                     backgroundColor: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
                                   }}
                                 >
@@ -612,7 +612,7 @@ export function DeliberationSlot({ runId, conversation }: Props) {
                         className="mb-3 font-display font-semibold leading-[1.1]"
                         style={{
                           fontSize: 'clamp(32px, 3.5vw, 48px)',
-                          color: 'var(--color-primary)',
+                          color: 'var(--color-primary-text)',
                         }}
                         aria-live="polite"
                       >

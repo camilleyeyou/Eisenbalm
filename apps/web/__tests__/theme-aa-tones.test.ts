@@ -308,14 +308,44 @@ describe('Phase 14 source-scan tripwires', () => {
       '"● live" indicator must not use var(--color-primary) as text color'
     ).not.toContain("color: 'var(--color-primary)'")
 
+    // ── "★ Selected this week" badge ───────────────────────────────────────
+    // The 11px badge text sits on a 14% gold-wash bg — raw gold ≈ 2.0:1 fails AA.
+    // Text must use --color-primary-text; the background wash stays raw gold.
+    const selectedIdx = src.indexOf('★ Selected')
+    expect(selectedIdx, '"★ Selected this week" badge must exist in DeliberationSlot').toBeGreaterThan(-1)
+    const selectedContext = src.slice(Math.max(0, selectedIdx - 300), selectedIdx)
+    expect(
+      selectedContext,
+      '"★ Selected this week" badge text must use var(--color-primary-text)'
+    ).toContain("color: 'var(--color-primary-text)'")
+    expect(
+      selectedContext,
+      '"★ Selected this week" badge must not use bare var(--color-primary) as text color'
+    ).not.toContain("color: 'var(--color-primary)'")
+
+    // ── Editor-confidence {displayValue}% numeral ──────────────────────────
+    // Large display numeral (clamp 32–48px) — raw gold 2.24:1 fails AA-large.
+    const displayValIdx = src.indexOf('{displayValue}%')
+    expect(displayValIdx, '{displayValue}% confidence numeral must exist in DeliberationSlot').toBeGreaterThan(-1)
+    const displayValContext = src.slice(Math.max(0, displayValIdx - 300), displayValIdx)
+    expect(
+      displayValContext,
+      'editor-confidence {displayValue}% numeral must use var(--color-primary-text)'
+    ).toContain("color: 'var(--color-primary-text)'")
+    expect(
+      displayValContext,
+      'editor-confidence numeral must not use bare var(--color-primary) as text color'
+    ).not.toContain("color: 'var(--color-primary)'")
+
     // ── Aggregate occurrence counts (belt-and-suspenders) ─────────────────
     // Count occurrences of --color-primary-text in the file.
-    // Editor chip + QA warning + live indicator + advocate-score = ≥4 occurrences.
+    // Editor chip + QA warning + live indicator + advocate-score + selected badge
+    // + confidence numeral = ≥6 occurrences.
     const primaryTextOccurrences = (src.match(/var\(--color-primary-text\)/g) ?? []).length
     expect(
       primaryTextOccurrences,
-      'var(--color-primary-text) must appear ≥4 times (editor chip + QA warning + live indicator + advocate-score)'
-    ).toBeGreaterThanOrEqual(4)
+      'var(--color-primary-text) must appear ≥6 times (editor chip + QA warning + live indicator + advocate-score + selected badge + confidence numeral)'
+    ).toBeGreaterThanOrEqual(6)
 
     // QA error must use --color-accent-text ≥1 time
     const accentTextOccurrences = (src.match(/var\(--color-accent-text\)/g) ?? []).length
