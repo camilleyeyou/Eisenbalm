@@ -209,3 +209,61 @@ async def test_model_versions_recorded() -> None:
         "model_versions['chronicler'] must be set after a successful Chronicler call (AGT-17)."
     )
     assert model_versions["chronicler"] == resolved
+
+
+@pytest.mark.skipif(not CHRONICLER_AVAILABLE, reason="Wave 2: chronicler not yet implemented")
+@pytest.mark.asyncio
+async def test_winner_authoritative_when_editor_decision_diverges() -> None:
+    """CHRON-WINNER-AUTHORITATIVE: when editor_decision names a different charity than
+    the winner, the prompts establish WINNER as the authoritative final pick.
+
+    Asserts at the prompt-construction level: captures acomplete messages and
+    verifies that the WINNER-authority instruction names the winning charity as the
+    selected/final pick, even when editor_decision text favors a different charity.
+    """
+    winner = "Grassroots Poverty Action Network"
+    favored_by_editor = "Community Justice and Accountability Initiative"
+    state = _minimal_state(charity_name=winner, extra={
+        "winning_charity": {"name": winner, "location": "NYC", "advocateScore": 7},
+        "editor_decision": (
+            f"On the tiebreaker, {favored_by_editor} edges ahead — "
+            "its accountability model is the stronger pick."
+        ),
+        "runner_up_notes": f"{favored_by_editor} was a very close second.",
+        # candidates includes BOTH so faithful data is present
+        "candidates": [
+            {"name": winner, "scoutSummary": "Direct cash transfers.",
+             "advocateArgument": "Operationally tight.", "advocateScore": 7},
+            {"name": favored_by_editor, "scoutSummary": "Police oversight.",
+             "advocateArgument": "Strong accountability model.", "advocateScore": 7},
+        ],
+    })
+
+    captured_messages: list[list[dict]] = []
+
+    async def capture_acomplete(**kwargs: object) -> tuple:
+        captured_messages.append(kwargs.get("messages", []))  # type: ignore[arg-type]
+        fake_turns = _make_mock_turns(8)
+        return (_FakeChroniclerOutput(turns=fake_turns), {"resolved_model": "anthropic/claude-opus-4", "tokens_in": 100, "tokens_out": 200, "usd": 0.01})
+
+    with patch("eisenbalm_pipeline.agents.chronicler.acomplete", new=capture_acomplete):
+        await chronicler(state)
+
+    assert captured_messages, "acomplete was never called"
+    # Flatten all message content into one string for assertion
+    all_content = " ".join(
+        msg.get("content", "")
+        for msgs in captured_messages
+        for msg in msgs
+    )
+
+    # WINNER is flagged authoritative and named as the selected/final pick
+    assert "authoritative" in all_content
+    assert f"{winner} is the selected charity" in all_content
+    # editor_decision is explicitly framed as supporting rationale only
+    assert "supporting rationale only" in all_content
+    # both the winner and the editor-favored charity appear (faithful data)
+    assert winner in all_content
+    assert favored_by_editor in all_content
+    # system-prompt rule present
+    assert "WINNER AUTHORITY" in all_content

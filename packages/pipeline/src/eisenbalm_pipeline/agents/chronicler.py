@@ -74,7 +74,14 @@ def _build_system_prompt() -> str:
         "5. Never reference AI, language models, or Jesse's AI nature. "
         "Jesse was born AI. This is not a gimmick.\n"
         "6. Jesse voice every turn. No exclamation marks. No winking.\n"
-        "7. Return valid JSON matching the schema: "
+        "7. WINNER AUTHORITY (non-negotiable): The Editor's final turn must "
+        "conclude that the WINNER named in the data is the selected charity — "
+        "the pick. The WINNER is the authoritative final decision. The EDITOR "
+        "DECISION text is supporting rationale only: the Editor may discuss and "
+        "weigh runners-up, but if the EDITOR DECISION text names a different "
+        "charity as chosen, treat that as the Editor's earlier reasoning and "
+        "still conclude the conversation with the WINNER as the final call.\n"
+        "8. Return valid JSON matching the schema: "
         '{\"turns\": [{\"speaker\": \"scout\", \"text\": \"...\"}]}.'
     )
 
@@ -99,9 +106,22 @@ def _build_user_prompt(
             f"- {name}: Scout found — {summary} | "
             f"Advocate score {score}/10 — {argument}"
         )
-    lines.append(f"\nWINNER: {winning_charity_name}")
-    lines.append(f"\nEDITOR DECISION: {editor_decision}")
+    lines.append(
+        f"\nWINNER (authoritative — the selected charity, the final call): "
+        f"{winning_charity_name}"
+    )
+    lines.append(
+        f"\nEDITOR DECISION (supporting rationale only — may discuss "
+        f"runners-up): {editor_decision}"
+    )
     lines.append(f"\nRUNNER-UP NOTES: {runner_up_notes}")
+    lines.append(
+        f"\nThe Editor's final turn MUST conclude that "
+        f"{winning_charity_name} is the selected charity. If the EDITOR "
+        f"DECISION text above favors a different charity, treat that as the "
+        f"Editor's earlier reasoning and still end with {winning_charity_name} "
+        f"as the pick."
+    )
     lines.append(
         "\n\nStage the above as an 8-16 turn conversation between scout, "
         "advocate, and editor. Each turn: plain prose, no Markdown, no invented "
