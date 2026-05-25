@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 14-04-designagent-envelope-PLAN.md
-last_updated: "2026-05-25T02:49:58.662Z"
+stopped_at: Completed 14-02-globals-retone-PLAN.md
+last_updated: "2026-05-25T03:06:32.416Z"
 progress:
   total_phases: 15
   completed_phases: 12
   total_plans: 100
-  completed_plans: 92
+  completed_plans: 93
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 14 (light-theme-adoption) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -127,6 +127,7 @@ Plan: 3 of 4
 | Phase 13-deliberation-as-conversation P03 | 14 | 3 tasks | 9 files |
 | Phase 14 P01 | 3 | 2 tasks | 1 files |
 | Phase 14-light-theme-adoption P04 | 1 | 1 tasks | 1 files |
+| Phase 14 P02 | 12 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -314,6 +315,9 @@ Recent decisions affecting current work:
 - [Phase 14]: .section-card.feature .sc-name confirmed dead code — conditional tripwire documents this; if render path added the branch flips and requires --color-primary-text
 - [Phase 14]: 3 source-scan tripwires intentionally RED until Plans 02/03; Wave 0 TDD gate serves as contract
 - [Phase 14-light-theme-adoption]: DesignAgent envelope: retained 'Machine Editorial' name + soft-steering tone; primary/accent described as decorative-only on light canvas; no font whitelist change
+- [Phase 14]: Surface hex copied verbatim from 14-UI-SPEC.md (#F2EFE9 / #EDE9E1 / #E5E0D6), NOT the RESEARCH code example (#F0ECE3 / #EDE8DE / #E5DFD3)
+- [Phase 14]: .section-card.feature .sc-name confirmed dead code (no TSX outside __tests__/ renders .section-card or .sc-name); raw gold retained and documented
+- [Phase 14]: .snw-tag-pill hover/active rule split into two consecutive CSS blocks to satisfy source-scan tripwire substring matching (border-color contains color: substring)
 
 ### Pending Todos
 
@@ -379,6 +383,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-25T02:49:58.655Z
-Stopped at: Completed 14-04-designagent-envelope-PLAN.md
+Last session: 2026-05-25T03:06:32.408Z
+Stopped at: Completed 14-02-globals-retone-PLAN.md
 Resume file: None
