@@ -265,6 +265,20 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 13-03-chat-render-PLAN.md — types/GROQ/globals.css conversation thread + DeliberationSlot chat render + page.tsx prop + PodcastSlot <pre> removal (DEL-CONV-04, DEL-CONV-05, DEL-CONV-06)
 **UI hint**: yes
 
+### Phase 14: Light Theme Adoption
+**Goal**: Client rejected the dark theme — retone the site from the fixed "Machine Editorial" DARK aesthetic to a fixed warm-paper LIGHT aesthetic, keeping the same single-fixed-palette architecture (DesignAgent stays suppressed via `DESIGNAGENT_SUPPRESSED`; web still ignores per-issue themes; `theme.ts` validation logic + FONT_WHITELIST unchanged). Retone the house palette in `apps/web/app/globals.css :root`: `--color-bg #FAFAF8` (warm paper), `--color-text #1A1A1A` (near-black ink), keeping brand accents gold `#CDA434` + rust `#C2502A` but darkened where used as text/links so they pass WCAG AA on the light base (gold-as-text fails contrast on white otherwise). This is a full re-tone, not a 4-variable swap: re-derive ALL `--color-*` tokens for a light base (surfaces `#14110D`→light cards, `--color-text-dim`/`-mute`, `--color-scout`/`-advocate` deliberation tones — all currently computed for contrast against the DARK bg and failing AA on white), flip white-ward derivations to black-ward (e.g. `--color-primary-bright` mixes toward white → toward black on light), retune the dark-tuned atmosphere radial-gradient glows / shadows / hairlines so they read on paper, and reconcile dark-built components (SectionNavigator vertical-timeline, DeliberationSlot carousel/flow/tape-reel + agent chips, IssueHero, PodcastSlot, the Phase 13 `.del-conversation*` chat-thread). Update the DesignAgent system prompt's "AESTHETIC ENVELOPE (Machine Editorial)" block (`agents/design`) from dark to light so a re-enabled DesignAgent produces on-brand light themes. Reverses Phase 12 MED-01 (dark palette lock).
+**Depends on**: Phase 13
+**Requirements**: TBD (defined during planning)
+**Success Criteria** (what must be TRUE):
+  1. The live site renders on a warm-paper light base (`--color-bg #FAFAF8`, `--color-text #1A1A1A`) — no dark surfaces remain anywhere (issue page, archive, navigator, deliberation, footer, shop)
+  2. Every text + accent token passes WCAG AA contrast on the NEW light base (gold/rust darkened for text/link use); `theme-aa-tones.test.ts` updated to assert light-base ratios
+  3. Dark-tuned effects are reconciled for paper — atmosphere glows, shadows, hairlines, `--color-primary-bright`, deliberation chips/tape-reel and the `.del-conversation` thread all read correctly and on-brand on light
+  4. The DesignAgent system-prompt aesthetic envelope describes the LIGHT aesthetic (so a re-enabled run is on-brand); suppression flag + per-issue-theme-off architecture unchanged
+  5. Locked constraints preserved: `prefers-reduced-motion`, single `<main>`, ≥44px touch targets, 5 Convex subscriptions, DEL-04 (no model names), game-sandbox security, FONT_WHITELIST (Cormorant/Lora/Inter); no new npm deps; no CDN
+  6. `pnpm --filter web build` passes and all prior tripwire tests stay green (re-tuned where they assert dark tones)
+**Plans**: TBD (run /gsd:plan-phase 14 to break down)
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
@@ -291,6 +305,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
+| 14. Light Theme Adoption | 0/? | Not planned | - |
 
 ## Backlog
 
