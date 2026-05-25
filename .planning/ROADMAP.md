@@ -277,7 +277,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   5. Locked constraints preserved: `prefers-reduced-motion`, single `<main>`, ≥44px touch targets, 5 Convex subscriptions, DEL-04 (no model names), game-sandbox security, FONT_WHITELIST (Cormorant/Lora/Inter); no new npm deps; no CDN
   6. `pnpm --filter web build` passes and all prior tripwire tests stay green (re-tuned where they assert dark tones)
 **Plans**: 4 plans
-- [ ] 14-01-test-gate-update-PLAN.md — Flip theme-aa-tones.test.ts to light-base AA assertions + add the two new -text tokens + 3 source-scan tripwires (Wave 0 gate)
+- [x] 14-01-test-gate-update-PLAN.md — Flip theme-aa-tones.test.ts to light-base AA assertions + add the two new -text tokens + 3 source-scan tripwires (Wave 0 gate)
 - [ ] 14-02-globals-retone-PLAN.md — Re-tone globals.css :root to the light palette + new AA-safe text tokens + black-ward/12% derived tokens + halved aurora + warm paper shadow + 6 small-text gold classes → --color-primary-text
 - [ ] 14-03-deliberation-component-reconcile-PLAN.md — DeliberationSlot editor chip + QA warning/error + editor flow-label → AA-safe -text variants (5 subs / DEL-04 / count-up preserved)
 - [ ] 14-04-designagent-envelope-PLAN.md — DesignAgent AESTHETIC ENVELOPE prose dark→light (prose-only; ThemeOutput/validation/whitelist unchanged)
@@ -309,7 +309,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
-| 14. Light Theme Adoption | 0/4 | Planned | - |
+| 14. Light Theme Adoption | 1/4 | In Progress|  |
 
 ## Backlog
 
@@ -317,7 +317,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 3/3 plans complete
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 13-03-chat-render-PLAN.md
-last_updated: "2026-05-24T17:13:20.984Z"
+status: Ready to execute
+stopped_at: Completed 14-01-PLAN.md (test-gate-update)
+last_updated: "2026-05-25T02:46:04.679Z"
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 12
-  total_plans: 96
-  completed_plans: 90
+  total_plans: 100
+  completed_plans: 91
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 13 — deliberation-as-conversation
+**Current focus:** Phase 14 — light-theme-adoption
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 14 (light-theme-adoption) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -125,6 +125,7 @@ Plan: Not started
 | Phase 13 P01 | 10 | 3 tasks | 7 files |
 | Phase 13-deliberation-as-conversation P02 | 12 | 2 tasks | 4 files |
 | Phase 13-deliberation-as-conversation P03 | 14 | 3 tasks | 9 files |
+| Phase 14 P01 | 3 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -309,6 +310,8 @@ Recent decisions affecting current work:
 - [Phase 13-deliberation-as-conversation]: chronicler try/except inside function body — @agent_node wrapper never sees exception, run never marked failed (Pitfall 6)
 - [Phase 13-deliberation-as-conversation]: conversation: [...] or None in Sanity write — empty fallback path writes None not [], cleaner for frontend null-guard
 - [Phase 13-deliberation-as-conversation]: PodcastSlot.tsx docstring stripped of deliberationTranscript and pre string literals to pass source-scan tests (comments cause false positives in not.toContain assertions)
+- [Phase 14]: .section-card.feature .sc-name confirmed dead code — conditional tripwire documents this; if render path added the branch flips and requires --color-primary-text
+- [Phase 14]: 3 source-scan tripwires intentionally RED until Plans 02/03; Wave 0 TDD gate serves as contract
 
 ### Pending Todos
 
@@ -374,6 +377,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-25T00:46:07Z
-Stopped at: Completed quick task 260524-ojm (Chronicler WINNER AUTHORITY fix)
+Last session: 2026-05-25T02:46:04.671Z
+Stopped at: Completed 14-01-PLAN.md (test-gate-update)
 Resume file: None
