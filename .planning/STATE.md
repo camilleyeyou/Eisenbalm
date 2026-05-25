@@ -329,6 +329,7 @@ None yet.
 | 260521-mnz | Fix DeliberationSlot scoreValue possibly-undefined production build blocker (Phase 9 deliberation layer) | 2026-05-21 | ac71c83 | [260521-mnz-fix-deliberationslot-scorevalue-possibly](./quick/260521-mnz-fix-deliberationslot-scorevalue-possibly/) |
 | 260521-n4l | Stop theme injection from overriding --color-bg/--color-text (HYBRID model) so dark house palette in globals.css wins the cascade | 2026-05-21 | d20ea6a | [260521-n4l-apply-dark-hybrid-theme-stop-theme-injec](./quick/260521-n4l-apply-dark-hybrid-theme-stop-theme-injec/) |
 | 260523-eg3 | Fix Advocate always-0/10 score bug: robust vote-to-candidate matching + propagate keyStrengths/primaryConcern | 2026-05-23 | 18c0e9c | [260523-eg3-fix-advocate-always-0-10-score-bug-robus](./quick/260523-eg3-fix-advocate-always-0-10-score-bug-robus/) |
+| 260524-ojm | Fix Chronicler faithfulness bug: WINNER AUTHORITY prompt fix — editor final turn always names featured charity even when editor_decision favors a runner-up | 2026-05-25 | 3951204 | [260524-ojm-fix-chronicler-faithfulness-bug-delibera](./quick/260524-ojm-fix-chronicler-faithfulness-bug-delibera/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
@@ -372,6 +373,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-24T16:55:50.239Z
-Stopped at: Completed 13-03-chat-render-PLAN.md
+Last session: 2026-05-25T00:46:07Z
+Stopped at: Completed quick task 260524-ojm (Chronicler WINNER AUTHORITY fix)
 Resume file: None
