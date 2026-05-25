@@ -70,9 +70,9 @@ function getAgentLabel(agentId: string): { displayName: string; role: string } {
 // ─── QA severity → color + label (DEL-02 — WCAG 1.4.1: color + text) ────────
 // Exactly three severities from convex/schema.ts qaCorrections.severity union.
 const QA_SEVERITY: Record<'info' | 'warning' | 'error', { color: string; label: string }> = {
-  info:    { color: 'var(--color-text-dim)', label: 'Info' },
-  warning: { color: 'var(--color-primary)',  label: 'Warning' },
-  error:   { color: 'var(--color-accent)',   label: 'Error' },
+  info:    { color: 'var(--color-text-dim)',     label: 'Info' },
+  warning: { color: 'var(--color-primary-text)', label: 'Warning' },
+  error:   { color: 'var(--color-accent-text)',  label: 'Error' },
 }
 
 // ─── Agent identity chip color ─────────────────────────────────────────────
@@ -91,7 +91,7 @@ function agentChipStyle(agentId: string): { color: string; backgroundColor: stri
   }
   if (agentId === 'editor') {
     return {
-      color: 'var(--color-primary)',
+      color: 'var(--color-primary-text)',
       backgroundColor: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
     }
   }
@@ -359,7 +359,7 @@ export function DeliberationSlot({ runId, conversation }: Props) {
                   {isLive && (
                     <span
                       className="ml-2 font-ui text-[11px]"
-                      style={{ color: 'var(--color-primary)' }}
+                      style={{ color: 'var(--color-primary-text)' }}
                     >
                       ● live
                     </span>
@@ -452,7 +452,7 @@ export function DeliberationSlot({ runId, conversation }: Props) {
                                   </span>
                                   <span
                                     className="font-ui text-[11px] font-medium"
-                                    style={{ color: 'var(--color-primary)' }}
+                                    style={{ color: 'var(--color-primary-text)' }}
                                   >
                                     {scoreValue}/10
                                   </span>
@@ -557,7 +557,7 @@ export function DeliberationSlot({ runId, conversation }: Props) {
                       <div className="flex flex-wrap items-baseline gap-1">
                         <span
                           className="del-flow-label"
-                          style={{ color: 'var(--color-primary)' }}
+                          style={{ color: 'var(--color-primary-text)' }}
                         >
                           THE EDITOR
                         </span>
