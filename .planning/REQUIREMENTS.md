@@ -161,6 +161,15 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **MED-04**: `SectionNavigator` is rebuilt to the chosen superdesign board variant (timeline | masonry | isometric) at high fidelity, using only FONT_WHITELIST fonts (Cormorant Garamond / Lora / Inter; the board's IBM Plex Mono machine-readout labels approximated via Inter + wide uppercase letter-spacing); reduced-motion-safe, ≥44px targets, single `<main>`, WCAG AA.
 - [x] **MED-05**: `DeliberationSlot` is rebuilt to the chosen board variant (carousel | orbital | brutalist) at high fidelity with the confidence meter + candidate pitch log; DEL-04 (no model names) and the 5 live Convex subscriptions remain intact; reduced-motion-safe.
 
+### Light Theme Adoption (Phase 14)
+- [ ] **LIGHT-01**: All `--color-*` tokens in `apps/web/app/globals.css :root` emit the locked warm-paper LIGHT palette per 14-UI-SPEC.md (`--color-bg #FAFAF8`, `--color-text #1A1A1A`, surfaces/text-dim/text-mute/scout/advocate re-toned), plus the two NEW AA-safe text tokens `--color-primary-text #7A5C0E` and `--color-accent-text #9B3015`. No dark base/ink literals remain. Reverses Phase 12 MED-01 dark lock; single-fixed-palette architecture unchanged (DesignAgent suppressed, per-issue theming off, theme.ts logic + FONT_WHITELIST untouched).
+- [ ] **LIGHT-02**: `color-mix()` derived tokens are re-expressed for the light base — `--color-primary-bright` mixes toward black (not white), `--color-primary-glow` reduced to 12%, atmosphere `.aurora` radial glows halved to 5/3/2% — so hairlines, glows, and shadows read correctly on paper. (Manual visual verification per 14-VALIDATION.md.)
+- [ ] **LIGHT-03**: `apps/web/__tests__/theme-aa-tones.test.ts` asserts light-base WCAG AA ratios (`DARK_BG`→`LIGHT_BG #FAFAF8`): every text/UI token passes AA on the light base; raw gold `#CDA434` is asserted BELOW AA (decorative-only); the two new -text tokens pass AA; the old dark mute `#938A77` is documented as failing on light.
+- [ ] **LIGHT-04**: Accent-as-text AA-safe variants are used where raw gold/rust render as small text: `DeliberationSlot.tsx` editor agent chip + speaker label + editor flow-label use `--color-primary-text`; QA Warning pill uses `--color-primary-text`; QA Error pill uses `--color-accent-text`. Scout/Advocate chips, 5 Convex subscriptions, DEL-04, and the count-up are preserved.
+- [ ] **LIGHT-05**: `globals.css` small-text gold classes (`.snw-section-num`, `.snw-module-label`, `.snw-read-value`, `.snw-title-accent`, `.sc-num`, `.sc-arrow`) reference `--color-primary-text`; the `.section-card:hover` shadow uses the warm paper shadow `rgba(90,75,50,0.18)` — no `rgba(0,0,0,…)` remains in `.section-card`. (Source-scan tripwires in theme-aa-tones.test.ts.)
+- [ ] **LIGHT-06**: The DesignAgent `agents/design/__init__.py` AESTHETIC ENVELOPE system-prompt block describes the warm-paper LIGHT aesthetic (canvas #FAFAF8, near-black ink #1A1A1A) so a re-enabled DesignAgent produces on-brand light themes. Prose-only — ThemeOutput shape, validation, FONT_WHITELIST, regenerate-once, and SAFE_THEME fallback unchanged. (Manual verification per 14-VALIDATION.md.)
+- [ ] **LIGHT-07**: Regression — all prior tripwire tests stay green (re-tuned where they asserted dark tones: theme-aa-tones, deliberation-no-model-names, deliberation-subscriptions, deliberation-conversation, game-sandbox, podcast-slot) and `pnpm --filter web build` exits 0. Locked constraints preserved: WCAG AA on the new base, prefers-reduced-motion, single `<main>`, ≥44px, 5 Convex subscriptions, DEL-04, game-sandbox security; no new npm deps; no CDN.
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -312,6 +321,13 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | MED-03 | Phase 12: Machine Editorial Design Adoption | Not started |
 | MED-04 | Phase 12: Machine Editorial Design Adoption | Not started |
 | MED-05 | Phase 12: Machine Editorial Design Adoption | Not started |
+| LIGHT-01 | Phase 14: Light Theme Adoption | Not started |
+| LIGHT-02 | Phase 14: Light Theme Adoption | Not started |
+| LIGHT-03 | Phase 14: Light Theme Adoption | Not started |
+| LIGHT-04 | Phase 14: Light Theme Adoption | Not started |
+| LIGHT-05 | Phase 14: Light Theme Adoption | Not started |
+| LIGHT-06 | Phase 14: Light Theme Adoption | Not started |
+| LIGHT-07 | Phase 14: Light Theme Adoption | Not started |
 
 **Coverage:**
 - v1 requirements: 84 total
