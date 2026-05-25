@@ -39,9 +39,10 @@ No CONTEXT.md found for this phase — constraints sourced from ROADMAP.md and 1
 | LIGHT-01 | All `--color-*` tokens in `:root` updated to light-palette values per UI-SPEC table | globals.css `:root` block; exact values from 14-UI-SPEC.md |
 | LIGHT-02 | `color-mix()` derived tokens re-expressed for light bg (bright→darken, glow→reduce) | color-mix direction analysis below |
 | LIGHT-03 | `theme-aa-tones.test.ts` updated: DARK_BG→LIGHT_BG, all assertions reflect new ratios, two new tokens added | Test update table from UI-SPEC; Wave 0 gap resolved |
-| LIGHT-04 | `DeliberationSlot.tsx` `agentChipStyle()` editor branch: `--color-primary` → `--color-primary-text` | Single TSX change; agentChipStyle() analysis below |
-| LIGHT-05 | globals.css small-text CSS classes updated: 11px uses of `--color-primary` → `--color-primary-text` | Identified class list: `.snw-*`, `.sc-*` |
+| LIGHT-04 | `DeliberationSlot.tsx` `agentChipStyle()` editor branch: `--color-primary` → `--color-primary-text` (plus QA warning/error, advocate-score numerals, live indicator) | Single TSX change; agentChipStyle() analysis below |
+| LIGHT-05 | globals.css small-text CSS classes updated: 11px uses of `--color-primary` → `--color-primary-text` (incl. live `.snw-tag-pill` hover/active text) | Identified class list: `.snw-*`, `.sc-*` |
 | LIGHT-06 | DesignAgent system prompt updated: dark-canvas aesthetic → light-paper aesthetic | design/__init__.py text-only update |
+| LIGHT-07 | Build passes + all theme tripwires green (no regression) after the re-tone | `pnpm --filter web build` + `npx vitest run __tests__/theme-aa-tones.test.ts`; gates Plans 02 & 03 (frontmatter requirements) |
 </phase_requirements>
 
 ---
@@ -118,6 +119,8 @@ The entire palette flip happens by replacing values in the single `:root { }` bl
 --color-advocate:      #6E92B8 → #1B4F8A   /* deeper blue */
 ```
 
+> ⚠️ SURFACE-HEX CAVEAT (resolves checker WARNING 4): the surface/card hex shown in THIS code example (`#F0ECE3` / `#EDE8DE` / `#E5DFD3`) are an EARLIER warmer-paper draft. The AUTHORITATIVE values live in 14-UI-SPEC.md §Surface Tokens: `--color-surface #F2EFE9` / `--color-card #EDE9E1` / `--color-card-hover #E5E0D6`. When this example and the UI-SPEC table disagree, the UI-SPEC table WINS. Plans copy surface hex from the UI-SPEC table only.
+
 **New tokens to ADD (not present in dark palette):**
 
 ```css
@@ -175,12 +178,15 @@ These CSS classes use `color: var(--color-primary)` at 11px text — that's 2.24
 .snw-module-label { color: var(--color-primary-text); }  /* was --color-primary */
 .sc-num          { color: var(--color-primary-text); }   /* was --color-primary */
 .sc-arrow        { color: var(--color-primary-text); }   /* was --color-primary */
+/* PLUS (checker BLOCKER 1) the LIVE Phase-12 nav tag-pill hover/active TEXT: */
+.snw-row:hover .snw-tag-pill,
+.snw-row.active .snw-tag-pill { color: var(--color-primary-text); }  /* border-color stays raw gold */
 ```
 
 ### Pattern 5: Single TSX Code Change
 
 **File:** `apps/web/components/issue/DeliberationSlot.tsx`
-**Function:** `agentChipStyle()` editor branch
+**Function:** `agentChipStyle()` editor branch (plus QA warning/error, advocate-score numerals, live indicator per checker BLOCKER 3)
 
 ```typescript
 // CURRENT (fails AA on light — #CDA434 at 11px = 2.24:1 on #FAFAF8)
@@ -200,7 +206,7 @@ if (agentId === 'editor') {
 }
 ```
 
-Note: `chip.color` (which is `agentChipStyle().color`) is used for both the chip span and the speaker name `p` tag in the chat thread. The single function change covers both rendered locations.
+Note: `chip.color` (which is `agentChipStyle().color`) is used for both the chip span and the speaker name `p` tag in the chat thread. The single function change covers both rendered locations. The advocate-score `{scoreValue}/10` numerals (11px) and the "● live" indicator (11px) ALSO render raw gold and are listed under `--color-primary-text` in the UI-SPEC §Accent-as-Text table — Plan 03 changes those too.
 
 ### Pattern 6: Hardcoded Shadow Fix
 
@@ -294,7 +300,7 @@ The existing source-scan tripwire tests in `theme-aa-tones.test.ts` grep for har
 ### Pitfall 2: Missing the 11px Small-Text AA Failure
 **What goes wrong:** Updating `:root` token values but forgetting that CSS classes using `var(--color-primary)` at 11px still fail AA (gold = 2.24:1 on light).
 **Why it happens:** Token auto-resolution makes it look like "everything is fixed". AA pass/fail depends on text size — 4.49:1 passes AA-large but not normal text.
-**How to avoid:** Use `--color-primary-text` (#7A5C0E, 5.97:1) for ALL text < 18px using the gold color. Class list: `.snw-section-num`, `.snw-read-value`, `.snw-title-accent`, `.snw-module-label`, `.sc-num`, `.sc-arrow`.
+**How to avoid:** Use `--color-primary-text` (#7A5C0E, 5.97:1) for ALL text < 18px using the gold color. Class list: `.snw-section-num`, `.snw-read-value`, `.snw-title-accent`, `.snw-module-label`, `.sc-num`, `.sc-arrow`, and the live `.snw-tag-pill` hover/active text.
 **Warning signs:** Vitest test `--color-primary on light bg` assertion fires; SectionNavigator nav labels look faint.
 
 ### Pitfall 3: DESIGNAGENT_SUPPRESSED Contract Break
@@ -318,7 +324,7 @@ The existing source-scan tripwire tests in `theme-aa-tones.test.ts` grep for har
 ### Pitfall 6: QA Severity Warning Gold (Open Question)
 **What:** `QA_SEVERITY.warning` in `DeliberationSlot.tsx` uses `color: 'var(--color-primary)'` for Warning pill border and text at small size.
 **Status:** UI-SPEC Component Reconciliation Summary does NOT flag this — it only flags `agentChipStyle()`. At badge/pill usage the visual prominence may be acceptable. However: if Warning severity text is rendered at < 18px on a `#FAFAF8` or `#EDE8DE` background, it fails AA.
-**Planner decision required:** Determine if QA severity Warning label text is small enough to require `--color-primary-text`, or if the UI-SPEC intentionally left it as decorative gold. If flagged, the fix is identical: `--color-primary` → `--color-primary-text` in the warning branch.
+**Resolution (checker BLOCKER 3):** The Warning pill text renders at 11px — raw gold fails AA. Plan 03 changes `QA_SEVERITY.warning.color` → `--color-primary-text` and `QA_SEVERITY.error.color` → `--color-accent-text`. The advocate-score numerals and the "● live" indicator (also 11px gold) are likewise switched to `--color-primary-text` per the UI-SPEC §Accent-as-Text token table (authoritative over the §Component Reconciliation Summary).
 
 ---
 
@@ -329,11 +335,11 @@ The existing source-scan tripwire tests in `theme-aa-tones.test.ts` grep for har
 ```css
 /* Source: 14-UI-SPEC.md token table — authoritative */
 :root {
-  /* Backgrounds */
+  /* Backgrounds — AUTHORITATIVE hex is the UI-SPEC table (#F2EFE9 / #EDE9E1 / #E5E0D6) */
   --color-bg: #FAFAF8;
-  --color-surface: #F0ECE3;
-  --color-card: #EDE8DE;
-  --color-card-hover: #E5DFD3;
+  --color-surface: #F2EFE9;
+  --color-card: #EDE9E1;
+  --color-card-hover: #E5E0D6;
 
   /* Text */
   --color-text: #1A1A1A;
@@ -437,10 +443,9 @@ describe('CSS token contrast on light background', () => {  // updated describe 
 
 ## Open Questions
 
-1. **QA Severity Warning gold text**
-   - What we know: `QA_SEVERITY.warning.color = 'var(--color-primary)'` in DeliberationSlot.tsx. Gold = 2.24:1 on light bg. UI-SPEC Component Reconciliation Summary does not flag this.
-   - What's unclear: Is this text rendered at < 18px in a context where WCAG normal-text AA applies, or is it decorative badge coloring (AA-large threshold 3:1)?
-   - Recommendation: Planner should inspect Warning pill render size in DeliberationSlot — if text is < 18px/14px bold, add `--color-primary-text` substitution to LIGHT-04 scope.
+1. **QA Severity Warning gold text** — RESOLVED (checker BLOCKER 3)
+   - What we know: `QA_SEVERITY.warning.color = 'var(--color-primary)'` in DeliberationSlot.tsx. Gold = 2.24:1 on light bg. The Warning pill renders at `text-[11px]`.
+   - Resolution: 11px is normal-text size, so it fails AA. Plan 03 switches `QA_SEVERITY.warning` → `--color-primary-text` and `QA_SEVERITY.error` → `--color-accent-text`. The advocate-score numerals and the "● live" indicator (also 11px gold) are switched to `--color-primary-text` per UI-SPEC §Accent-as-Text (authoritative token table).
 
 2. **DesignAgent FONT_WHITELIST mismatch**
    - What we know: `theme.ts` FONT_WHITELIST has 6 entries; `design/__init__.py` has an extended list (~17 entries) for the aesthetic envelope prompt.
@@ -473,9 +478,10 @@ Step 2.6: SKIPPED (no external dependencies — this phase is CSS/TypeScript fil
 | LIGHT-01 | `:root` token values emit correct hex | unit | `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ (needs update) |
 | LIGHT-02 | Derived tokens produce expected visual (color-mix) | manual | Open browser, inspect computed styles | ✅ n/a |
 | LIGHT-03 | All AA contrast assertions pass on LIGHT_BG | unit | `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ (needs update) |
-| LIGHT-04 | Editor chip uses `--color-primary-text` | unit (source scan) | `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ (update scan pattern) |
-| LIGHT-05 | `.snw-*` / `.sc-*` classes use `--color-primary-text` | unit (source scan) | `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ (add scan pattern) |
+| LIGHT-04 | Editor chip / QA / advocate-score / live-indicator use -text variants | unit (source scan) | `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ (update scan pattern) |
+| LIGHT-05 | `.snw-*` / `.sc-*` classes (incl. `.snw-tag-pill`) use `--color-primary-text` | unit (source scan) | `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ (add scan pattern) |
 | LIGHT-06 | DesignAgent prompt references light canvas | manual | `grep '#FAFAF8\|warm paper\|daylight' packages/pipeline/src/eisenbalm_pipeline/agents/design/__init__.py` | ✅ manual |
+| LIGHT-07 | Build passes + all theme tripwires green (no regression) | build + unit | `pnpm --filter web build` && `npx vitest run __tests__/theme-aa-tones.test.ts` | ✅ |
 
 ### Sampling Rate
 
@@ -493,8 +499,9 @@ Required test file changes before implementation can be verified:
 
 Optional source-scan additions (if existing tripwire tests don't cover):
 
-- [ ] Add scan pattern: `--color-primary` in `.snw-*` / `.sc-*` CSS selectors should NOT appear after Phase 14 (should be `--color-primary-text`)
+- [ ] Add scan pattern: `--color-primary` in `.snw-*` / `.sc-*` CSS selectors (incl. `.snw-tag-pill` hover/active text) should NOT appear after Phase 14 (should be `--color-primary-text`)
 - [ ] Add scan pattern: `rgba(0,0,0,` in `.section-card` should NOT appear after Phase 14
+- [ ] Add conditional guard for `.section-card.feature .sc-name` (fixed if rendered, tolerated only if confirmed dead code)
 
 ---
 
@@ -512,7 +519,7 @@ Optional source-scan additions (if existing tripwire tests don't cover):
 
 ### Secondary (MEDIUM confidence)
 - `apps/web/components/issue/IssueHero.tsx` — direct read; confirmed zero hardcoded colors
-- `apps/web/components/issue/SectionNavigator.tsx` — direct read; confirmed zero hardcoded in TSX
+- `apps/web/components/issue/SectionNavigator.tsx` — direct read; confirmed zero hardcoded in TSX (renders `.snw-tag-pill`)
 - `apps/web/components/issue/PodcastSlot.tsx` — direct read; confirmed all tokens
 - `packages/pipeline/src/eisenbalm_pipeline/agents/design/__init__.py` — direct read; confirmed aesthetic envelope location
 
@@ -529,3 +536,4 @@ Optional source-scan additions (if existing tripwire tests don't cover):
 
 **Research date:** 2026-05-24
 **Valid until:** Stable until any of the 4 change-surface files is modified
+</content>
