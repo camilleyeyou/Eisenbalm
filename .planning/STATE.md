@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 14-03-deliberation-component-reconcile-PLAN.md
-last_updated: "2026-05-25T09:36:47.756Z"
+status: Ready to execute
+stopped_at: Completed 08-04-stripe-client-and-checkout-api-PLAN.md
+last_updated: "2026-05-28T16:22:55.604Z"
 progress:
   total_phases: 15
   completed_phases: 13
   total_plans: 100
-  completed_plans: 94
+  completed_plans: 95
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 14 — light-theme-adoption
+**Current focus:** Phase 8 — stripe-commerce
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 8 (stripe-commerce) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -129,6 +129,7 @@ Plan: Not started
 | Phase 14-light-theme-adoption P04 | 1 | 1 tasks | 1 files |
 | Phase 14 P02 | 12 | 2 tasks | 1 files |
 | Phase 14 P03 | 140 | 1 tasks | 1 files |
+| Phase 08 P04 | 7 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -320,6 +321,7 @@ Recent decisions affecting current work:
 - [Phase 14]: .section-card.feature .sc-name confirmed dead code (no TSX outside __tests__/ renders .section-card or .sc-name); raw gold retained and documented
 - [Phase 14]: .snw-tag-pill hover/active rule split into two consecutive CSS blocks to satisfy source-scan tripwire substring matching (border-color contains color: substring)
 - [Phase 14]: Editor .del-flow-label uses --color-primary-text (gold): editor identity is gold throughout the component; UI-SPEC ambiguity between lines 156/157 resolved as gold-correct by checker. Residual selected-badge text on 14% wash out of scope pending UAT.
+- [Phase 08]: STRIPE_API_VERSION pinned to '2025-04-30.basil' (stripe@21.0.1); charitySlug locked into session.metadata at click time not webhook time (Open Question 1 closed); live Stripe smoke deferred to Plan 08-08 UAT
 
 ### Pending Todos
 
@@ -385,6 +387,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-25T03:11:14.240Z
-Stopped at: Completed 14-03-deliberation-component-reconcile-PLAN.md
+Last session: 2026-05-28T16:22:55.595Z
+Stopped at: Completed 08-04-stripe-client-and-checkout-api-PLAN.md
 Resume file: None

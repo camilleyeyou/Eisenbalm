@@ -168,7 +168,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 08-01-test-infrastructure-PLAN.md — Wave 0 Vitest stubs (8 files) for CMR-01..CMR-10
 - [ ] 08-02-stripe-dashboard-checkpoint-PLAN.md — Andrew creates Stripe Product, Price, Shipping Rate, Webhook Endpoint, populates apps/web/.env.local (autonomous: false)
 - [x] 08-03-schema-and-deps-PLAN.md — Convex stripeEvents + stripeOrders tables + claim/insert mutations; install stripe@<pinned-major>; document env vars
-- [ ] 08-04-stripe-client-and-checkout-api-PLAN.md — lib/stripe/{server,constants}.ts + /api/checkout/create-session route + BuyButton Client Component (CMR-02, CMR-10)
+- [x] 08-04-stripe-client-and-checkout-api-PLAN.md — lib/stripe/{server,constants}.ts + /api/checkout/create-session route + BuyButton Client Component (CMR-02, CMR-10)
 - [ ] 08-05-webhook-handler-and-idempotency-PLAN.md — /api/stripe/webhook route with raw-body signature verify + Convex claim atomic dedup + source-scan tripwire (CMR-04, CMR-05, CMR-06)
 - [ ] 08-06-shop-page-rewrite-PLAN.md — Replace Phase 2 placeholder with server-rendered /shop + dynamic charity callout (CMR-01)
 - [ ] 08-07-thank-you-and-legal-pages-PLAN.md — /shop/thank-you (no DB query) + /legal/privacy + /legal/terms placeholders + STATE.md blocker (CMR-03, CMR-07, CMR-08, CMR-09 reconfirm)
@@ -303,7 +303,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 5. Agent Quality | 15/15 | Complete | 2026-05-18 |
 | 6. PDF + Webhook Chain | 6/8 | In Progress | - |
 | 7. Game Rendering | 0/5 | Planned | - |
-| 8. Stripe / Commerce | 0/8 | Planned | - |
+| 8. Stripe / Commerce | 3/8 | In Progress|  |
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
 | 10. Editorial Design Pass | 4/4 | Complete   | 2026-05-19 |
 | 11. Archive CardSwap + Motion Polish | 4/4 | Complete    | 2026-05-22 |
@@ -317,7 +317,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 4/4 plans complete
+**Plans:** 3/8 plans executed
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)
