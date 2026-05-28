@@ -110,7 +110,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **CMR-02**: Reader can complete a checkout via Stripe Checkout (custom integration via `checkout.sessions.create()`)
 - [ ] **CMR-03**: Reader lands on `/shop/thank-you` after successful checkout (static, no DB query)
 - [x] **CMR-04**: Stripe webhook handler verifies signature using raw body (`request.text()`) and the Stripe webhook secret
-- [ ] **CMR-05**: Stripe webhook signature verification has NO development-mode bypass; signature is always required
+- [x] **CMR-05**: Stripe webhook signature verification has NO development-mode bypass; signature is always required
 - [x] **CMR-06**: Stripe webhook handler is idempotent on `event.id` (deduplicates retries)
 - [ ] **CMR-07**: A privacy policy page exists at `/legal/privacy` (Stripe TOS + GDPR/CCPA compliance)
 - [ ] **CMR-08**: A terms-of-service page exists at `/legal/terms`
@@ -297,7 +297,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | CMR-02 | Phase 8: Stripe / Commerce | Complete |
 | CMR-03 | Phase 8: Stripe / Commerce | Pending |
 | CMR-04 | Phase 8: Stripe / Commerce | Complete |
-| CMR-05 | Phase 8: Stripe / Commerce | Pending |
+| CMR-05 | Phase 8: Stripe / Commerce | Complete |
 | CMR-06 | Phase 8: Stripe / Commerce | Complete |
 | CMR-07 | Phase 8: Stripe / Commerce | Pending |
 | CMR-08 | Phase 8: Stripe / Commerce | Pending |

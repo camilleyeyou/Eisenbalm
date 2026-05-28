@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 08-04-stripe-client-and-checkout-api-PLAN.md
-last_updated: "2026-05-28T16:22:55.604Z"
+stopped_at: Completed 08-05-webhook-handler-and-idempotency-PLAN.md
+last_updated: "2026-05-28T16:31:54.099Z"
 progress:
   total_phases: 15
   completed_phases: 13
   total_plans: 100
-  completed_plans: 95
+  completed_plans: 96
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 8 (stripe-commerce) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 
 ## Performance Metrics
 
@@ -130,6 +130,7 @@ Plan: 2 of 8
 | Phase 14 P02 | 12 | 2 tasks | 1 files |
 | Phase 14 P03 | 140 | 1 tasks | 1 files |
 | Phase 08 P04 | 7 | 3 tasks | 4 files |
+| Phase 08-stripe-commerce P05 | 5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -322,6 +323,7 @@ Recent decisions affecting current work:
 - [Phase 14]: .snw-tag-pill hover/active rule split into two consecutive CSS blocks to satisfy source-scan tripwire substring matching (border-color contains color: substring)
 - [Phase 14]: Editor .del-flow-label uses --color-primary-text (gold): editor identity is gold throughout the component; UI-SPEC ambiguity between lines 156/157 resolved as gold-correct by checker. Residual selected-badge text on 14% wash out of scope pending UAT.
 - [Phase 08]: STRIPE_API_VERSION pinned to '2025-04-30.basil' (stripe@21.0.1); charitySlug locked into session.metadata at click time not webhook time (Open Question 1 closed); live Stripe smoke deferred to Plan 08-08 UAT
+- [Phase 08-stripe-commerce]: CMR-05 source-scan tripwire: JSDoc forbidden-pattern strings must be described without embedding the literal strings — raw file read by Vitest would trip the assertions
 
 ### Pending Todos
 
@@ -387,6 +389,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-28T16:22:55.595Z
-Stopped at: Completed 08-04-stripe-client-and-checkout-api-PLAN.md
+Last session: 2026-05-28T16:31:54.091Z
+Stopped at: Completed 08-05-webhook-handler-and-idempotency-PLAN.md
 Resume file: None
