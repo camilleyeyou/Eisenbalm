@@ -106,7 +106,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Stripe / Commerce
 
-- [ ] **CMR-01**: Reader can view the lip balm product at `/shop` with current charity callout (server-rendered, no client flicker)
+- [x] **CMR-01**: Reader can view the lip balm product at `/shop` with current charity callout (server-rendered, no client flicker)
 - [x] **CMR-02**: Reader can complete a checkout via Stripe Checkout (custom integration via `checkout.sessions.create()`)
 - [ ] **CMR-03**: Reader lands on `/shop/thank-you` after successful checkout (static, no DB query)
 - [x] **CMR-04**: Stripe webhook handler verifies signature using raw body (`request.text()`) and the Stripe webhook secret
@@ -293,7 +293,7 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | GAM-04 | Phase 7: Game Rendering | Complete |
 | GAM-05 | Phase 7: Game Rendering | Complete |
 | GAM-06 | Phase 7: Game Rendering | Complete |
-| CMR-01 | Phase 8: Stripe / Commerce | Pending |
+| CMR-01 | Phase 8: Stripe / Commerce | Complete |
 | CMR-02 | Phase 8: Stripe / Commerce | Complete |
 | CMR-03 | Phase 8: Stripe / Commerce | Pending |
 | CMR-04 | Phase 8: Stripe / Commerce | Complete |
