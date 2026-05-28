@@ -80,20 +80,29 @@ Exceptions:
 
 All sizes reference existing CSS variables from Phase 10. No new sizes are introduced.
 
-| Role | Size | Weight | Line Height | Font | Utility class / note |
-|------|------|--------|-------------|------|----------------------|
-| Page display / hero tagline | clamp(40px, 6.5vw, 72px) | 400 | 1.1 | Cormorant Garamond (`--font-display`) | `font-display` Tailwind class |
-| Section headline | clamp(24px, 3.5vw, 36px) | 400 | 1.2 | Cormorant Garamond | `font-display` |
-| Body prose | 18px | 400 | 1.65 | Lora (`--font-body`) | `font-body`; wrap in `.prose-measure` |
-| Feature label (eyebrow) | 12px | 600 | 1.5 | Inter (`--font-ui`) | `.eyebrow` utility class |
-| Price / edition callout | 28px | 400 | 1.2 | Cormorant Garamond | `font-display` |
-| UI label / button | 12px | 500 | 1.5 | Inter | `font-ui`; `uppercase tracking-[0.08em]` |
-| FAQ question | 16px | 600 | 1.4 | Lora | `font-body font-semibold` |
-| FAQ answer | 16px | 400 | 1.65 | Lora | `font-body` |
+### Canonical 4-Tier System
 
-Typography contract:
-- Exactly 4 declared sizes in use: 12px (eyebrow/UI), 16px (FAQ/secondary), 18px (body), 28–72px (display scale via clamp).
-- Exactly 2 weights in use per face: display 400 only; body 400 + 600 (FAQ questions); UI 500 + 600.
+There are EXACTLY 4 type-size tiers on this page. No text element may use a size outside this system.
+
+| Tier | Name | Size | Weight(s) | Line Height | Font | When to use |
+|------|------|------|-----------|-------------|------|-------------|
+| T1 | Label / UI | `12px` | 500 (button), 600 (eyebrow) | 1.5 | Inter (`--font-ui`) | `.eyebrow` labels, UI button text, chevron size |
+| T2 | Secondary | `16px` | 400, 600 | 1.4–1.65 | Lora (`--font-body`) | FAQ questions (600), FAQ answers (400), feature card body, edition sub-notes, footer outro prose, any secondary text that needs quieter weight — use `--color-text-mute` for tone, not a new size |
+| T3 | Body | `18px` | 400 | 1.65 | Lora (`--font-body`) | All prose blocks (positioning paragraph, ingredient story, charity supporting line) |
+| T4 | Display | `clamp(28px, 4vw, 72px)` | 400 | 1.1–1.3 | Cormorant Garamond (`--font-display`) | Hero h1 (`Stop. Breathe. Balm.`), hero sub-tagline (italic, upper midrange of scale), section headlines, product name (`#shop-buy` h2), price/edition callout, dynamic charity line, `#shop-features` card headlines |
+
+**Tier 4 detail — how elements share one clamp scale:**
+The `clamp(28px, 4vw, 72px)` formula is a single continuous scale. Visually different display levels are achieved through a single property change — not separate size values:
+- Hero h1 (`Stop. Breathe. Balm.`): `clamp(28px, 4vw, 72px)` — sits at the upper bound at wide viewports
+- Hero sub-tagline: `clamp(28px, 4vw, 72px)` at a narrower container width (`max-w-xl`) + italic — visually smaller by context, not by a different clamp
+- Section headlines (e.g., `The formula.`): `font-display text-[clamp(28px,4vw,72px)]` — used inside `prose-measure` (68ch), which naturally constrains the visual scale relative to the full-bleed h1
+- Product name / charity line / price callout: same tier, same class; size variation comes from container width, not a new value
+
+**Forbidden:** Do not introduce `clamp(22px,2.8vw,32px)`, `clamp(24px,3.5vw,36px)`, `clamp(28px,4vw,42px)`, standalone `22px`, standalone `14px`, standalone `28px` as a separate value, or any other size outside the 4 tiers above. All previously specced display variants merge into T4.
+
+**Typography contract:**
+- Exactly 4 declared size tiers in use: T1 `12px`, T2 `16px`, T3 `18px`, T4 `clamp(28px,4vw,72px)`.
+- Exactly 2 weights per face: display 400 only; body 400 + 600 (FAQ questions); UI 500 + 600.
 - `.prose-measure` (max-width: 68ch, margins auto) wraps ALL body prose blocks on this page.
 - `.drop-cap` is applied to `#shop-positioning` (the first body paragraph after the hero) — the drop-cap reads as the opening of the product's story, parallel to the lead-section drop cap on issue pages.
 - `.ornament-divider` (❦ FLEURON) appears between: `#shop-positioning` → `#shop-features`, `#shop-features` → `#shop-ingredient-story`, `#shop-ingredient-story` → `#shop-charity`, `#shop-charity` → `#shop-buy`, `#shop-buy` → `#shop-faq`.
@@ -134,6 +143,8 @@ All tokens reference `--color-*` CSS variables from `apps/web/app/globals.css :r
 - `--color-text-dim` on `--color-bg` — 7.55:1, AAA
 - Gold text: ONLY via `--color-primary-text` (#7A5C0E, 5.97:1), never raw `--color-primary`
 
+**Arbitrary-value CSS variable pattern:** When applying `--color-surface` (or any CSS variable) as a Tailwind background class, use the intentional codebase pattern `bg-[color:var(--color-surface)]`. Do NOT substitute a semantic class like `bg-surface` — even if an `@theme` alias exists, the arbitrary-value form is the established project pattern and the executor must match it exactly.
+
 ---
 
 ## Copywriting Contract
@@ -163,7 +174,7 @@ All tokens reference `--color-*` CSS variables from `apps/web/app/globals.css :r
 | Buy section sub-copy | `$8.99 · Release 001 · ships continental US` | TODO(Andrew): confirm price + edition + shipping details |
 | FAQ section headline | `Questions.` | Assumption (declarative, fits register) |
 | FAQ empty state (no charity loaded) | `Proceeds go to our featured charity each week.` | Locked (Phase 8 fallback) |
-| Footer CTA outro | `One product. One cause. This week's charity needs it.` | Assumption — or omit if Andrew prefers; see `#shop-footer-cta` |
+| Footer CTA outro | `One product. This week's charity needs it.` | Assumption — or omit if Andrew prefers; see `#shop-footer-cta` — TODO(Andrew): voice-check this line — "needs it" leans persuasive; consider a more neutral close |
 | Error state (checkout fails) | `console.error` only — no visible error copy per BuyButton contract (voice rules: no toast/modal/banner) | Locked (BuyButton behavior byte-unchanged) |
 
 **Draft copy for `#shop-positioning` paragraph:**
@@ -227,11 +238,11 @@ The page is a single `<main>` element containing these sections in order, top to
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Eyebrow | `<p className="eyebrow">` | `Jesse A. Eisenbalm` | `.eyebrow` — Inter 12px/600/uppercase |
-| Primary tagline (h1) | `<h1>` | `Stop. Breathe. Balm.` | `font-display` clamp(40px,6.5vw,72px), weight 400, `--color-text` |
-| Sub-tagline | `<p>` | `A human-only ritual for an AI-everywhere world.` | `font-display` clamp(22px,2.8vw,32px), italic, weight 400, `--color-text-dim` |
-| First BuyButton | `<BuyButton />` | `Buy the lip balm` | BuyButton component — byte-unchanged; `mt-8` spacing |
-| Price context | `<p>` | `$8.99 — TODO(Andrew): confirm` | `font-body` 16px, `--color-text-mute`; immediately below BuyButton |
+| Eyebrow | `<p className="eyebrow">` | `Jesse A. Eisenbalm` | T1 — Inter 12px/600/uppercase |
+| Primary tagline (h1) | `<h1>` | `Stop. Breathe. Balm.` | T4 — `font-display clamp(28px,4vw,72px)`, weight 400, lh 1.1, `--color-text` |
+| Sub-tagline | `<p>` | `A human-only ritual for an AI-everywhere world.` | T4 — `font-display clamp(28px,4vw,72px)`, italic, weight 400, lh 1.3, `--color-text-dim`; sits inside `max-w-xl` wrapper so the vw multiplier resolves to a visually smaller reading size than the full-bleed h1 |
+| First BuyButton | `<BuyButton />` | `Buy the lip balm` | BuyButton component — byte-unchanged. Wrap in `<div className="mt-8">` if top spacing is needed; do NOT modify the component source or pass spacing props. |
+| Price context | `<p>` | `$8.99 — TODO(Andrew): confirm` | T2 — `font-body` 16px/400/1.5, `--color-text-mute`; immediately below BuyButton wrapper |
 
 **Token usage:** `--color-text` (h1), `--color-text-dim` (sub-tagline), `--color-text-mute` (price line), `--color-primary` (`.eyebrow` tint via class).
 
@@ -258,8 +269,8 @@ The page is a single `<main>` element containing these sections in order, top to
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Section eyebrow | `<p className="eyebrow">` | `The formula.` | `.eyebrow` |
-| Positioning paragraphs | `<div className="drop-cap prose-measure">` containing 2 `<p>` | See Copywriting Contract above | `font-body` 18px/400/1.65; `.drop-cap` on outer div; `.prose-measure` width constraint |
+| Section eyebrow | `<p className="eyebrow">` | `The formula.` | T1 — `.eyebrow` |
+| Positioning paragraphs | `<div className="drop-cap prose-measure">` containing 2 `<p>` | See Copywriting Contract above | T3 — `font-body` 18px/400/1.65; `.drop-cap` on outer div; `.prose-measure` width constraint |
 
 **Drop cap:** YES — `.drop-cap` wraps the first `<p>` of this section. The drop cap letter is in Cormorant Garamond at 3.5em, `--color-primary` (gold-as-decoration, not text — the utility defines this already).
 
@@ -289,9 +300,9 @@ The page is a single `<main>` element containing these sections in order, top to
 | 3 | `RELEASE 001` | `The edition.` | `Hand-numbered. The first edition. Each tube is marked at the manufacturing step. TODO(Andrew): confirm.` |
 
 **Per-card typography:**
-- Eyebrow label: `.eyebrow` — Inter 12px/600/uppercase/`--color-text`/opacity 0.6
-- Headline: `font-display` 24px/400/1.2/`--color-text`
-- Body: `font-body` 16px/400/1.65/`--color-text-dim`
+- Eyebrow label: T1 — `.eyebrow` Inter 12px/600/uppercase/`--color-text`/opacity 0.6
+- Headline: T4 — `font-display clamp(28px,4vw,72px)` weight 400 lh 1.2 `--color-text` (inside `p-6` card, the clamp resolves small — this is correct; do not override with a fixed size)
+- Body: T2 — `font-body` 16px/400/1.65/`--color-text-dim`
 
 **Ornament divider:** `.ornament-divider` appears BELOW this section (before `#shop-ingredient-story`).
 
@@ -308,18 +319,20 @@ The page is a single `<main>` element containing these sections in order, top to
 - Vertical padding: `py-16`.
 - Background: `--color-surface` (`#F2EFE9`) — a subtle warm-paper surface shift to visually separate this section from the card section before and after it. Use `w-full bg-[color:var(--color-surface)]` outer wrapper with inner `.prose-measure` container.
 
+  **Pattern note:** `bg-[color:var(--color-surface)]` is the intentional codebase pattern — a Tailwind arbitrary value referencing a CSS variable. Do NOT switch to `bg-surface` or any other form. Match this exact class string.
+
 **Copy elements:**
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Section eyebrow | `<p className="eyebrow">` | `What's in it. What isn't.` | `.eyebrow` |
-| Ingredient paragraphs | `<div className="prose-measure">` with 2 `<p>` | See Copywriting Contract above | `font-body` 18px/400/1.65; NO drop cap (drop cap is reserved for `#shop-positioning`) |
+| Section eyebrow | `<p className="eyebrow">` | `What's in it. What isn't.` | T1 — `.eyebrow` |
+| Ingredient paragraphs | `<div className="prose-measure">` with 2 `<p>` | See Copywriting Contract above | T3 — `font-body` 18px/400/1.65; NO drop cap (drop cap is reserved for `#shop-positioning`) |
 
 **Note:** Mark `{/* TODO(Andrew): verify ingredient list against manufacturer spec sheet before launch */}` as a JSX comment above the ingredient copy.
 
 **Ornament divider:** `.ornament-divider` appears BELOW this section (before `#shop-charity`).
 
-**Token usage:** `--color-surface` (section bg), `--color-text` (body), `--color-primary` (ornament divider via utility — opacity 0.5 already baked in class).
+**Token usage:** `--color-surface` (section bg via `bg-[color:var(--color-surface)]`), `--color-text` (body), `--color-primary` (ornament divider via utility — opacity 0.5 already baked in class).
 
 ---
 
@@ -336,11 +349,11 @@ The page is a single `<main>` element containing these sections in order, top to
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Section eyebrow | `<p className="eyebrow">` | `This week.` | `.eyebrow` |
-| Dynamic charity line | `<p>` | `This week's proceeds benefit [charityName].` OR fallback: `Proceeds go to our featured charity each week.` | `font-display` 28px/400/1.3/`--color-text` |
-| Supporting line | `<p>` | `One product. One weekly charity. One hundred percent of proceeds.` | `font-body` 18px/400/1.65/`--color-text-dim` |
+| Section eyebrow | `<p className="eyebrow">` | `This week.` | T1 — `.eyebrow` |
+| Dynamic charity line | `<p>` | `This week's proceeds benefit [charityName].` OR fallback: `Proceeds go to our featured charity each week.` | T4 — `font-display clamp(28px,4vw,72px)` weight 400 lh 1.3 `--color-text` |
+| Supporting line | `<p>` | `One product. One weekly charity. One hundred percent of proceeds.` | T3 — `font-body` 18px/400/1.65/`--color-text-dim` |
 
-**Stripe-machinery note:** This section does NOT contain a BuyButton. The charity callout is informational. BuyButton positions are `#shop-hero` and `#shop-buy` only.
+**Stripe-machinery note:** This section does NOT contain a BuyButton. The charity callout is informational. BuyButton positions are `#shop-hero` and `#shop-buy` only (third optional at `#shop-footer-cta`).
 
 **Implementation note:** The GROQ query for `charityName` is the existing inline `QUERY_LATEST_CHARITY_NAME` defined at the top of `apps/web/app/shop/page.tsx` (Phase 8). Preserve it byte-unchanged. The `try/catch` fallback path is also preserved. This section renders the same data with more visual weight than the Phase 8 one-line callout.
 
@@ -372,11 +385,11 @@ The page is a single `<main>` element containing these sections in order, top to
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Product eyebrow | `<p className="eyebrow">` | `THE BALM` | `.eyebrow` |
-| Product name | `<h2>` | `Jesse A. Eisenbalm` | `font-display` clamp(28px,4vw,42px)/400/1.1/`--color-text` |
-| Price + edition | `<p>` | `$8.99 · Release 001 · hand-numbered — TODO(Andrew)` | `font-display` 28px/400/1.2/`--color-primary-text` (#7A5C0E — AA-safe gold text) |
-| Edition sub-note | `<p>` | `Ships flat-rate, continental US — TODO(Andrew): confirm shipping details` | `font-body` 14px/400/1.5/`--color-text-mute` |
-| Second BuyButton | `<BuyButton />` | `Buy the lip balm` | BuyButton component — byte-unchanged; `mt-6` |
+| Product eyebrow | `<p className="eyebrow">` | `THE BALM` | T1 — `.eyebrow` |
+| Product name | `<h2>` | `Jesse A. Eisenbalm` | T4 — `font-display clamp(28px,4vw,72px)` weight 400 lh 1.1 `--color-text` |
+| Price + edition | `<p>` | `$8.99 · Release 001 · hand-numbered — TODO(Andrew)` | T4 — `font-display clamp(28px,4vw,72px)` weight 400 lh 1.2 `--color-primary-text` (#7A5C0E — AA-safe gold text) |
+| Edition sub-note | `<p>` | `Ships flat-rate, continental US — TODO(Andrew): confirm shipping details` | T2 — `font-body` 16px/400/1.5/`--color-text-mute` |
+| Second BuyButton | `<BuyButton />` | `Buy the lip balm` | BuyButton component — byte-unchanged. Wrap in `<div className="mt-6">` for top spacing; do NOT modify the component source or pass spacing props. |
 
 **WCAG note:** Price/edition uses `--color-primary-text` (#7A5C0E, 5.97:1) NOT raw `--color-primary` (#CDA434, 2.24:1 — fails AA as text).
 
@@ -413,10 +426,10 @@ The page is a single `<main>` element containing these sections in order, top to
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Section eyebrow | `<p className="eyebrow">` | `Questions.` | `.eyebrow` |
+| Section eyebrow | `<p className="eyebrow">` | `Questions.` | T1 — `.eyebrow` |
 | Section headline | `<h2>` | (omit — the eyebrow IS the section header; no h2 needed for a 6-item FAQ) | — |
-| FAQ question | `<summary>` | See FAQ table in Copywriting Contract | `font-body` 16px/600/1.4/`--color-text`; min-height 44px; cursor pointer |
-| FAQ answer | `<div>` inside `<details>` | See FAQ table in Copywriting Contract | `font-body` 16px/400/1.65/`--color-text-dim`; `pb-4 pt-2` |
+| FAQ question | `<summary>` | See FAQ table in Copywriting Contract | T2 — `font-body` 16px/600/1.4/`--color-text`; min-height 44px; cursor pointer |
+| FAQ answer | `<div>` inside `<details>` | See FAQ table in Copywriting Contract | T2 — `font-body` 16px/400/1.65/`--color-text-dim`; `pb-4 pt-2` |
 | Chevron icon | lucide-react `ChevronDown` 16px | aria-hidden | Rotates on `[open]` state; `--color-text-mute` |
 
 **Interaction:** `<details>`/`<summary>` — zero JS, no client component needed. CSS `[open] summary > .chevron { transform: rotate(180deg); }` for the chevron rotation. Reduced-motion guard in globals.css already covers `transition-duration: 0.01ms`.
@@ -437,19 +450,19 @@ The page is a single `<main>` element containing these sections in order, top to
 - Single column, centered.
 - Max-width: `860px`.
 - Vertical padding: `py-16`.
-- Background: `--color-surface` (`#F2EFE9`) — a gentle surface shift signals "end of product content, before site footer."
+- Background: `--color-surface` (`#F2EFE9`) — a gentle surface shift signals "end of product content, before site footer." Use `w-full bg-[color:var(--color-surface)]` outer wrapper.
 - `border-t border-[--color-line]`.
 
 **Copy elements:**
 
 | Element | Tag | Copy | Typography |
 |---------|-----|------|------------|
-| Outro line | `<p>` | `One product. This week's charity needs it.` | `font-display` italic 22px/400/1.4/`--color-text-dim` |
-| Optional third BuyButton | `<BuyButton />` | `Buy the lip balm` | BuyButton — byte-unchanged; `mt-6`; include ONLY if user scroll analytics suggest high drop-off here (assumption: include it — three positions is justified for a long-scroll page) |
+| Outro line | `<p>` | `One product. This week's charity needs it.` {/* TODO(Andrew): voice-check — "needs it" leans persuasive; consider a more neutral close */} | T2 — `font-body` italic 16px/400/1.4/`--color-text-dim` |
+| Optional third BuyButton | `<BuyButton />` | `Buy the lip balm` | BuyButton — byte-unchanged. Wrap in `<div className="mt-6">` for top spacing; do NOT modify the component source or pass spacing props. Include ONLY if user scroll analytics suggest high drop-off here (assumption: include it — three positions is justified for a long-scroll page). |
 
 **Note on BuyButton count:** Three BuyButton instances on the page is acceptable and not "urgency mechanics." The three positions serve different reading contexts: hero (first impression), `#shop-buy` (considered purchase moment), footer-cta (after FAQ consideration). This is a single product with one checkout path — no cart, no variants.
 
-**Token usage:** `--color-surface` (section bg), `--color-line` (top border), `--color-text-dim` (outro text).
+**Token usage:** `--color-surface` (section bg via `bg-[color:var(--color-surface)]`), `--color-line` (top border), `--color-text-dim` (outro text).
 
 ---
 
@@ -457,9 +470,11 @@ The page is a single `<main>` element containing these sections in order, top to
 
 | Position # | Section ID | Context | Component |
 |------------|------------|---------|-----------|
-| 1 | `#shop-hero` | First impression, immediately below tagline | `<BuyButton />` — byte-unchanged |
-| 2 | `#shop-buy` | Considered purchase moment, alongside product image | `<BuyButton />` — byte-unchanged |
-| 3 | `#shop-footer-cta` | Post-FAQ closing beat | `<BuyButton />` — byte-unchanged |
+| 1 | `#shop-hero` | First impression, immediately below tagline | `<BuyButton />` — byte-unchanged; wrap in `<div className="mt-8">` for spacing |
+| 2 | `#shop-buy` | Considered purchase moment, alongside product image | `<BuyButton />` — byte-unchanged; wrap in `<div className="mt-6">` for spacing |
+| 3 | `#shop-footer-cta` | Post-FAQ closing beat | `<BuyButton />` — byte-unchanged; wrap in `<div className="mt-6">` for spacing |
+
+**BuyButton wrapper rule (all three positions):** Spacing goes on a wrapper `<div>`, NOT on the component itself. `<BuyButton>` is byte-unchanged — do not modify the component source, do not pass `className`, `mt-*`, or any spacing props to the component. Example: `<div className="mt-8"><BuyButton /></div>`.
 
 Minimum contractual requirement from ROADMAP success criteria: ≥2 positions. This spec adds a third (justified above). If space is tight, drop the third — but never drop below 2.
 
