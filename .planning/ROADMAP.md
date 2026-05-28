@@ -310,7 +310,16 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   5. The frontend issue page renders a narrator attribution chip on the masthead when narrator is set (e.g. "Narrated by Werner Herzog") and renders no chip when unset (default Jesse remains the implicit/invisible default)
   6. No new npm dependency, no CDN, no new font loaded; `theme.ts` validation + FONT_WHITELIST + game-sandbox security all untouched
   7. Cost per run: narrator-aware runs add ≤10% to LLM token spend vs. Jesse-default runs (voice constraint is a small system-prompt delta, not a new round-trip)
-**Plans**: TBD (estimate 6-8 — see `.planning/phases/16-choose-your-narrator/16-INTENT.md` for full client-supplied spec)
+**Plans**: 9 plans
+- [ ] 16-01-contract-and-schema-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §1.2 + §2.2, create narratorProfile.ts schema, add weeklyIssue.narrator ref, register in index.ts, run TypeGen (autonomous: false)
+- [ ] 16-02-pipeline-test-scaffold-PLAN.md — Wave 0 RED tests: 6 new pytest files + extend test_chronicler.py (test_voice.py, test_narrator_seed_sentinel.py, test_narrator_cost_budget.py, test_calibrator_narrator.py, test_section_writer_voice_propagation.py, test_qa_judge_narrator.py)
+- [ ] 16-03-web-test-scaffold-PLAN.md — Wave 0 RED test: narrator-chip.test.ts with 4 sub-contracts (chip presence/absence/copy + GROQ no-leak Pitfall 8 guard)
+- [ ] 16-04-voice-py-refactor-PLAN.md — Wave 1: split lib/voice.py into UNIVERSAL_CORE + JESSE_PERSONA_BLOCK + assemble_voice() with import-time byte-equivalence assertion; preserve VOICE_CONSTRAINTS literal-concat for back-compat (Game agent stays Jesse via direct import)
+- [ ] 16-05-state-calibrator-writers-PLAN.md — Wave 2: DispatchState.narrator field + load_narrator_from_issue helper + Calibrator narrator-awareness + D-14 inactive-narrator warning + 4 narrative writers gain voice_constraints kwarg (Pitfall 2 mitigation)
+- [ ] 16-06-chronicler-narrator-PLAN.md — Wave 2: chronicler.py _build_system_prompt accepts voice_constraints kwarg; reads style_brief['voice']; WINNER AUTHORITY stays in chronicler-specific rules (Research §G)
+- [ ] 16-07-qa-judge-narrator-PLAN.md — Wave 2: run_llm_judge accepts narrator kwarg; per-call rubric assembly appends voiceRubric + exampleSamples[:3] (Research §D Option 1)
+- [ ] 16-08-seed-and-frontend-PLAN.md — Wave 2: seed 3 narrators (jesse + maya-rudolph + werner-herzog) with cross-language sentinel; extend QUERY_ISSUE_BY_SLUG with narrator->{name, slug, active}; render IssueHero masthead chip (autonomous: false — Andrew runs seed)
+- [ ] 16-09-verification-and-uat-PLAN.md — Wave 3: full test matrix verification; flip 16-VALIDATION.md to nyquist_compliant: true; author 16-HUMAN-UAT.md; Andrew runs Herzog UAT end-to-end (autonomous: false)
 **UI hint**: yes
 
 ## Progress
