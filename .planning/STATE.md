@@ -338,6 +338,7 @@ None yet.
 - [Phase 2] `/about` page copy not specified in brief; Andrew must provide before Phase 2 closes
 - [PARTIAL 2026-05-18] [Phase 5] First real-mode end-to-end pipeline run succeeded on issue 999 (runId 96ab834e96214671859322044a4b4683, duration 155s, status='awaiting-review', Sanity content approved by Andrew). Cost tracking returned $0 across all agents because langchain-openai's `with_structured_output` does NOT expose `usage_metadata` to the wrapper — known TODO from Plan 05-03 SUMMARY. PIPELINE_COST_CAP_USD stays at $10 placeholder; actual baseline measurement deferred to Phase 6 once cost tracking is fixed (either via `include_raw=True` or a sidechannel usage capture).
 - [Phase 6 carryover] Fix langchain-openai cost-metadata capture so PIPELINE_COST_CAP_USD can actually enforce. Currently all per-agent USD readings are $0 in production because structured-output calls don't surface token counts through the wrapper.
+- [Phase 8] Legal pages at `apps/web/app/legal/privacy/page.tsx` and `apps/web/app/legal/terms/page.tsx` contain TODO(Andrew) placeholder copy. The pages exist with no 404 (CMR-07 + CMR-08 satisfied for code-completeness), but the prose has not been reviewed by counsel. Andrew must replace with reviewed copy covering: (privacy) data collected/shared/retained, EU/UK/CA subject rights, contact email; (terms) refund/return policy, IP notice, limitation of liability, governing law. Tracked at `.planning/phases/08-stripe-commerce/08-07-thank-you-and-legal-pages-SUMMARY.md`.
 
 ### Quick Tasks Completed
 
