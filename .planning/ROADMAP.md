@@ -325,7 +325,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
-| 15. Shop Storefront | 1/1 | Complete   | 2026-05-28 |
+| 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
 
 ## Backlog
 
