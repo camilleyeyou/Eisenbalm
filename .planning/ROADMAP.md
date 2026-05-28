@@ -295,7 +295,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   5. Locked constraints preserved: WCAG AA on the warm-paper light base for every text/accent token used on `/shop`; single `<main>`; `prefers-reduced-motion` respected; only `--color-*` tokens for color (no hardcoded hex); no new npm dependencies; no CDN scripts; brief constraints honored (no Shopify, no Commerce.js, no cart, no urgency mechanics)
   6. `pnpm --filter web build` exits 0 and all prior tripwire tests stay green (Phase 7 game-sandbox, Phase 10 typography, Phase 12 navigator/deliberation, Phase 13 deliberation-conversation/no-model-names, Phase 14 theme-aa-tones, Phase 8 CMR-* including CMR-01 server-component + CMR-09 ShopCallout source-scan); `apps/web/__tests__/shop-page.test.ts` is adjusted to the new structure if needed (server component, BuyButton present in ≥2 positions, no client-flicker, no urgency vocabulary)
 **Plans**: 1 plan
-- [ ] 15-01-shop-storefront-PLAN.md — Wave 1: extend shop-page.test.ts with 10 Phase 15 source-scan assertions (RED-first Wave 0 within plan) + rewrite shop/page.tsx as 8-section long-scroll storefront with BuyButton at 3 positions (SHOP-01..SHOP-11)
+- [x] 15-01-shop-storefront-PLAN.md — Wave 1: extend shop-page.test.ts with 10 Phase 15 source-scan assertions (RED-first Wave 0 within plan) + rewrite shop/page.tsx as 8-section long-scroll storefront with BuyButton at 3 positions (SHOP-01..SHOP-11) (completed 2026-05-28)
 **UI hint**: yes
 
 ## Progress
@@ -325,7 +325,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
-| 15. Shop Storefront | 0/1 | Planned | - |
+| 15. Shop Storefront | 1/1 | Complete   | 2026-05-28 |
 
 ## Backlog
 
@@ -333,7 +333,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 6/8 plans executed
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)

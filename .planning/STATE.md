@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 08-07-thank-you-and-legal-pages-PLAN.md
-last_updated: "2026-05-28T16:43:42.556Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 15-01-shop-storefront-PLAN.md
+last_updated: "2026-05-28T18:01:36.008Z"
 progress:
-  total_phases: 15
-  completed_phases: 13
-  total_plans: 100
-  completed_plans: 98
+  total_phases: 16
+  completed_phases: 14
+  total_plans: 101
+  completed_plans: 99
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 8 — stripe-commerce
+**Current focus:** Phase 15 — shop-storefront
 
 ## Current Position
 
-Phase: 8 (stripe-commerce) — EXECUTING
-Plan: 5 of 8
+Phase: 15 (shop-storefront) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -133,6 +133,7 @@ Plan: 5 of 8
 | Phase 08-stripe-commerce P05 | 5 | 2 tasks | 2 files |
 | Phase 08-stripe-commerce P06 | 4 | 1 tasks | 1 files |
 | Phase 08-stripe-commerce P07 | 3 | 3 tasks | 4 files |
+| Phase 15 P01 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -329,6 +330,8 @@ Recent decisions affecting current work:
 - [Phase 08-stripe-commerce]: CMR-05 source-scan tripwire: JSDoc forbidden-pattern strings must be described without embedding the literal strings — raw file read by Vitest would trip the assertions
 - [Phase 08-stripe-commerce]: Phase 2 metadata export (title, OG, Twitter card) preserved verbatim in shop/page.tsx rewrite; QUERY_LATEST_CHARITY_NAME stays inline (single-consumer); try/catch wraps sanityClient.fetch for Sanity outage resilience
 - [Phase 08-stripe-commerce]: thank-you JSDoc must not embed literal forbidden regex strings — Vitest readFileSync scans full file source including comments
+- [Phase 15]: BuyButton wrapper-div spacing pattern: all 3 BuyButton positions wrapped in <div className='mt-N'> with no props on <BuyButton /> itself; double-spacing visual check deferred to 15-HUMAN-UAT
+- [Phase 15]: Fragment <> return on shop/page.tsx (not <main>) because root layout provides the single <main id='main'>; CLAUDE.md single-<main> rule honored
 
 ### Pending Todos
 
@@ -395,6 +398,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-28T16:43:42.547Z
-Stopped at: Completed 08-07-thank-you-and-legal-pages-PLAN.md
+Last session: 2026-05-28T18:01:36.001Z
+Stopped at: Completed 15-01-shop-storefront-PLAN.md
 Resume file: None
