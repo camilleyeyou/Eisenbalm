@@ -486,7 +486,7 @@ async def test_inactive_narrator_falls_back_to_jesse_with_warning():
 
     with patch.object(cal_mod, "_fetch_previous_bonus_types", new=AsyncMock(return_value=[])), \
          patch.object(cal_mod, "acomplete", new=AsyncMock(return_value=(None, {"resolved_model": "stub"}))), \
-         patch("eisenbalm_pipeline.lib.convex_client.convex_mutation_safe", new=AsyncMock(side_effect=_capture_event)):
+         patch("eisenbalm_pipeline.agents.calibrator.convex_mutation_safe", new=AsyncMock(side_effect=_capture_event)):
         result = await cal_mod.calibrator(state)
 
     # Fall-back assertion
@@ -702,6 +702,24 @@ async def test_judge_narrator_none_byte_equivalent_to_legacy():
     system_content = captured_messages[0][0]["content"]
     assert system_content == legacy_rubric, (
         "QA judge system message diverged from legacy rubric.md when narrator=None (NRR-10)"
+    )
+
+    # B6 fix (revision 1): NRR-10 also pins the USER message byte-for-byte when narrator=None.
+    # The legacy Phase 5 user message content is reconstructed here from the same template
+    # judge.py uses, so the test catches any user-message drift (e.g., narrator-aware
+    # user_intro prefixes accidentally landing on the narrator=None path).
+    import json as _json
+    sections_json = _json.dumps(_sections(), indent=2)
+    legacy_user_content = (
+        "Evaluate these section bodies against the Jesse voice rubric. "
+        "Return JSON JudgeFindings with a `findings` array. "
+        "An empty array is a passing grade.\n\n"
+        f"SECTIONS:\n{sections_json}"
+    )
+    user_content = captured_messages[0][1]["content"]
+    assert user_content == legacy_user_content, (
+        "QA judge USER message diverged from legacy Phase 5 content when narrator=None (NRR-10). "
+        "Plan 16-07 must NOT inject a narrator-aware user_intro on the narrator=None path."
     )
 ```
   </action>

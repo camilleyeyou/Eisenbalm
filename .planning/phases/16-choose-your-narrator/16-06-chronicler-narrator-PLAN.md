@@ -2,44 +2,42 @@
 phase: 16-choose-your-narrator
 plan: 06
 type: execute
-wave: 2
-depends_on: ["16-01", "16-02", "16-04", "16-05"]
+wave: 4
+depends_on: [16-04, 16-05]
 files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py
 autonomous: true
-requirements: [NRR-05]
+requirements:
+  - NRR-02
+  - NRR-06
+  - NRR-08
 must_haves:
   truths:
-    - "Chronicler's _build_system_prompt accepts voice_constraints: str kwarg and embeds it as the system prompt prefix"
-    - "chronicler() node body computes voice = state.get('style_brief', {}).get('voice', VOICE_CONSTRAINTS) and passes voice_constraints=voice to _build_system_prompt"
-    - "When state['style_brief']['voice'] == VOICE_CONSTRAINTS (narrator=None branch), chronicler system prompt is BYTE-IDENTICAL to pre-Phase-16 (NRR-10 byte-equivalence)"
-    - "WINNER AUTHORITY rule (current line 77-83) stays IN the chronicler-specific system prompt rules — it is universal to the chronicler regardless of narrator (RESEARCH §G)"
-    - "Phase 13 D-18 fallback path (chronicler failure → editor_gate_1 deterministic transcript preserved) is UNTOUCHED — the try/except inside the node body stays exactly as today"
-    - "Wave 0 test_chronicler.py::test_narrator_voice_propagation flips GREEN"
-    - "All existing Phase 13 chronicler tests (test_chronicler_emits_well_formed_turns / faithful dramatization / fallback / model_versions) stay GREEN"
+    - "Chronicler system prompt is composed from UNIVERSAL_CORE + WINNER AUTHORITY line + narrator.voiceRubric"
+    - "JESSE_PERSONA_BLOCK is NOT in the chronicler system prompt (only UNIVERSAL_CORE is)"
+    - "When narrator.slug == 'jesse', chronicler output is byte-equivalent to Phase 14 chronicler behaviour modulo the WINNER AUTHORITY line (NRR-02)"
+    - "WINNER AUTHORITY rule appears explicitly in the chronicler persona-agnostic preamble (per CONTEXT canonical_refs line 122 + D-04 caveat)"
   artifacts:
     - path: "packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py"
-      provides: "narrator-aware system prompt assembly via style_brief['voice']"
-      contains: "voice_constraints"
+      provides: "narrator-aware chronicler with WINNER AUTHORITY preamble"
   key_links:
-    - from: "chronicler.py _build_system_prompt"
-      to: "lib/voice.VOICE_CONSTRAINTS default param"
-      via: "voice_constraints: str = VOICE_CONSTRAINTS kwarg"
-      pattern: "voice_constraints"
-    - from: "chronicler() node body"
-      to: "state['style_brief']['voice']"
-      via: "state.get('style_brief', {}).get('voice', VOICE_CONSTRAINTS)"
-      pattern: "style_brief"
+    - from: "packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py"
+      to: "packages/pipeline/src/eisenbalm_pipeline/lib/voice.UNIVERSAL_CORE"
+      via: "system prompt composition"
+      pattern: "from eisenbalm_pipeline.lib.voice import UNIVERSAL_CORE"
 ---
 
 <objective>
-Migrate Chronicler from direct VOICE_CONSTRAINTS import to consuming style_brief["voice"]. This is the minimal change that closes NRR-05 (Chronicler dramatizes in narrator voice when set, falls back to Jesse when unset).
+Refactor the chronicler agent to compose its system prompt from `UNIVERSAL_CORE + WINNER_AUTHORITY_PREAMBLE + narrator.voiceRubric` instead of consuming `VOICE_CONSTRAINTS` verbatim. The WINNER AUTHORITY rule (per CONTEXT canonical_refs line 122) lives here — NOT in `voice.py`.
 
-Per Research §F: 2 lines added to _build_system_prompt (signature + interpolation), 1 line changed in chronicler() node body. The Phase 13 D-18 fallback path is untouched. The WINNER AUTHORITY rule (current line 77-83 in chronicler.py) stays in the chronicler-specific system prompt rules per Research §G — it is universal to chronicler regardless of narrator, and adding it to UNIVERSAL_CORE would be vacuous noise for the 4 section writers.
+Purpose: Make the chronicler the ONLY agent whose system prompt varies by narrator. NRR-02 (chronicler narrator-aware) and NRR-06 (no leakage to other agents) are enforced here.
 
-This plan does NOT touch lib/voice.py (Plan 16-04 landed it) and does NOT change the chronicler() node's emit_event=None semantics or the @agent_node wrapper.
+Output: Updated `chronicler.py` that:
+- Imports `UNIVERSAL_CORE` (not `VOICE_CONSTRAINTS`).
+- Builds a `_build_system_prompt(narrator)` helper that concatenates UNIVERSAL_CORE + WINNER AUTHORITY preamble + `narrator.voiceRubric` rendered as plain text + optional `narrator.exampleSamples`.
+- Substitutes "Jesse's voice" → f"{narrator.displayName}'s voice" in the UNIVERSAL_CORE opening sentence so the chronicler's first sentence stays grammatical when a non-Jesse narrator is active.
 
-Output: 1 file modified; 1 Wave 0 test flips GREEN (test_narrator_voice_propagation in test_chronicler.py); 4 existing Phase 13 chronicler tests stay GREEN.
+Implements: D-04 (chronicler-side WINNER AUTHORITY placement), D-05 (chronicler reads narrator from state), D-10 (system prompt structure), NRR-02/06/08.
 </objective>
 
 <execution_context>
@@ -49,119 +47,189 @@ Output: 1 file modified; 1 Wave 0 test flips GREEN (test_narrator_voice_propagat
 
 <context>
 @.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
 @.planning/phases/16-choose-your-narrator/16-CONTEXT.md
 @.planning/phases/16-choose-your-narrator/16-RESEARCH.md
-@.planning/phases/13-deliberation-as-conversation/13-CONTEXT.md
+@packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py
+@packages/pipeline/src/eisenbalm_pipeline/lib/voice.py  # <-- post-16-04 (UNIVERSAL_CORE + JESSE_PERSONA_BLOCK exist)
+
+<decisions_implemented>
+- **D-04 caveat** (re-confirmed by B1 revision): WINNER AUTHORITY rule lives in the chronicler agent's `_build_system_prompt`. Specifically in a constant `WINNER_AUTHORITY_PREAMBLE` placed between UNIVERSAL_CORE and the narrator voice rubric. CONTEXT canonical_refs line 122 ("WINNER AUTHORITY becomes part of UNIVERSAL_CORE") is overridden by D-04's allowance ("or in the chronicler persona-agnostic preamble") and by Research §G analysis (the rule is vacuous for narrative writers).
+- **D-05**: Chronicler reads `state["narrator"]` (resolved object, not the slug).
+- **D-10**: System prompt structure = UNIVERSAL_CORE + WINNER AUTHORITY + narrator-specific rubric + optional example samples.
+</decisions_implemented>
 
 <interfaces>
-<!-- Phase 16-04 already shipped: -->
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, assemble_voice
+Imports the chronicler needs (post-16-04):
+```python
+from eisenbalm_pipeline.lib.voice import UNIVERSAL_CORE  # NOT VOICE_CONSTRAINTS
+from eisenbalm_pipeline.state import Narrator, DispatchState
+```
 
-<!-- Plan 16-05 already shipped: -->
-# Calibrator sets state['style_brief']['voice'] via assemble_voice(narrator).
-# When narrator is None: style_brief['voice'] == VOICE_CONSTRAINTS.
+The WINNER AUTHORITY preamble — define as a module-level constant in chronicler.py:
+```python
+WINNER_AUTHORITY_PREAMBLE = (
+    "WINNER AUTHORITY: This issue features one charity, selected after deliberation. "
+    "Treat that charity as the sole subject of your chronicle. Do not equivocate, "
+    "do not invoke the runners-up, and do not soften the win with hedging. The "
+    "selection is final."
+)
+```
 
-<!-- Chronicler new shape (this plan ships): -->
-def _build_system_prompt(voice_constraints: str = VOICE_CONSTRAINTS) -> str:
-    return f"{voice_constraints}\n\n..."
+Substitution rule (so UNIVERSAL_CORE's "Jesse's voice" opening reads correctly under non-Jesse narrators):
+```python
+def _personalize_universal_core(core: str, narrator: Narrator) -> str:
+    """
+    UNIVERSAL_CORE begins with the sentence "Jesse's voice is dry, precise, and
+    absurdly serious." When the active narrator is NOT Jesse, replace the
+    leading "Jesse's voice" with "<DisplayName>'s voice" so the first sentence
+    stays grammatical and the rubric flows.
 
-# In chronicler() body:
-voice = state.get("style_brief", {}).get("voice", VOICE_CONSTRAINTS)
-system = _build_system_prompt(voice_constraints=voice)
+    For Jesse, this is a no-op (str.replace on "Jesse's voice" → "Jesse's voice").
+    """
+    return core.replace("Jesse's voice", f"{narrator['displayName']}'s voice", 1)
+```
 </interfaces>
-</context>
 
 <tasks>
 
-<task type="auto" tdd="true">
-  <name>Task 1: Refactor chronicler.py _build_system_prompt to accept voice_constraints kwarg + read style_brief['voice'] in node body</name>
+<task type="auto" tdd="false">
+  <name>Task 1: Refactor chronicler.py to compose system prompt from UNIVERSAL_CORE + WINNER AUTHORITY + narrator rubric</name>
   <files>packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py</files>
-  <behavior>
-    - _build_system_prompt(voice_constraints: str = VOICE_CONSTRAINTS) — kwarg added with VOICE_CONSTRAINTS default for back-compat
-    - The system prompt body uses {voice_constraints} interpolation instead of {VOICE_CONSTRAINTS}
-    - chronicler() node body computes `voice = state.get('style_brief', {}).get('voice', VOICE_CONSTRAINTS)` and calls `_build_system_prompt(voice_constraints=voice)`
-    - When voice == VOICE_CONSTRAINTS (Jesse default), the system prompt is byte-identical to pre-Phase-16
-    - The narrator-sentinel test in test_chronicler.py::test_narrator_voice_propagation passes (sentinel string from style_brief['voice'] appears in the chronicler system message)
-    - Phase 13 D-18 fallback (the try/except returning {"deliberation_conversation": None}) stays UNCHANGED at lines 162-197
-    - WINNER AUTHORITY rule stays in _build_system_prompt body (current lines 77-83) — Research §G locked it there
-  </behavior>
+
   <read_first>
-    - packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py FULL FILE (198 lines — _build_system_prompt at lines 53-86, chronicler() node body at lines 137-197)
-    - packages/pipeline/tests/test_chronicler.py (the new Phase 16 test test_narrator_voice_propagation appended in Plan 16-02 — confirms which sentinel string the chronicler system prompt must include when style_brief['voice'] carries the marker)
-    - .planning/phases/16-choose-your-narrator/16-RESEARCH.md §F (exact migration pattern) + §G (WINNER AUTHORITY placement decision — stays in chronicler-specific rules, NOT in UNIVERSAL_CORE)
-    - .planning/phases/16-choose-your-narrator/16-CONTEXT.md D-04 (WINNER AUTHORITY universal across narrators for the chronicler) + D-05 (Chronicler consumer surface stable — reads style_brief["voice"], not direct import)
-    - .planning/phases/13-deliberation-as-conversation/13-CONTEXT.md D-18 (fallback preserves editor_gate_1 deterministic transcript)
+    1. READ the FULL current `packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py`. Note:
+       - the current import block (probably imports `VOICE_CONSTRAINTS`),
+       - the chronicler entry function name and signature,
+       - any prompt template files referenced from the `prompts/` directory.
+    2. RE-READ `packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` post-16-04 to confirm `UNIVERSAL_CORE` exists and is importable.
+    3. READ `packages/pipeline/src/eisenbalm_pipeline/state.py` post-16-05 to confirm `Narrator` TypedDict has `displayName`, `voiceRubric`, `exampleSamples` fields.
   </read_first>
+
   <action>
-Two surgical edits to packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py.
+    Edit `chronicler.py`:
 
-(A) Lines 53-86 — change the _build_system_prompt function signature + interpolation. Replace ONLY the function header (line 53) and the first interpolation line (line 55-56). Keep the rest of the rules (lines 57-86) byte-identical:
+    1. **Replace the import** `from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS` with:
+       ```python
+       from eisenbalm_pipeline.lib.voice import UNIVERSAL_CORE
+       from eisenbalm_pipeline.state import Narrator, DispatchState
+       ```
 
-Current line 53-56:
-```python
-def _build_system_prompt() -> str:
-    """Return the Chronicler system prompt with VOICE_CONSTRAINTS verbatim."""
-    return (
-        f"{VOICE_CONSTRAINTS}\n\n"
-```
+    2. **Add module-level constant** for WINNER AUTHORITY (per D-04 caveat + CONTEXT canonical_refs line 122):
+       ```python
+       WINNER_AUTHORITY_PREAMBLE = (
+           "WINNER AUTHORITY: This issue features one charity, selected after deliberation. "
+           "Treat that charity as the sole subject of your chronicle. Do not equivocate, "
+           "do not invoke the runners-up, and do not soften the win with hedging. The "
+           "selection is final."
+       )
+       ```
 
-Replace with:
-```python
-def _build_system_prompt(voice_constraints: str = VOICE_CONSTRAINTS) -> str:
-    """Return the Chronicler system prompt with the given voice_constraints.
+    3. **Add a private helper** `_personalize_universal_core`:
+       ```python
+       def _personalize_universal_core(core: str, narrator: Narrator) -> str:
+           """Replace 'Jesse's voice' with '<DisplayName>'s voice' in the first sentence of UNIVERSAL_CORE. No-op for Jesse."""
+           return core.replace("Jesse's voice", f"{narrator['displayName']}'s voice", 1)
+       ```
 
-    Phase 16 (NRR-05): accepts voice_constraints kwarg. Default = VOICE_CONSTRAINTS
-    (Jesse) so the function remains back-compat-callable with no args. The
-    chronicler() node body computes voice_constraints from state['style_brief']['voice']
-    which the Calibrator has set via assemble_voice(narrator). When narrator is
-    None, style_brief['voice'] == VOICE_CONSTRAINTS — byte-identical system prompt
-    to pre-Phase-16 (NRR-10 zero-regression).
-    """
-    return (
-        f"{voice_constraints}\n\n"
-```
+    4. **Add a private helper** `_render_voice_rubric(rubric)` that turns a `NarratorVoiceRubric` TypedDict into plain text:
+       ```python
+       def _render_voice_rubric(rubric: NarratorVoiceRubric) -> str:
+           constraints_lines = "\n".join(f"- {c}" for c in rubric["constraints"])
+           return (
+               f"Register: {rubric['register']}\n"
+               f"Cadence: {rubric['cadence']}\n"
+               f"Constraints:\n{constraints_lines}"
+           )
+       ```
 
-The body of the function (lines 57-86 containing "You are The Chronicler..." through the 8 rules including WINNER AUTHORITY at rule 7) stays BYTE-IDENTICAL. Do NOT remove WINNER AUTHORITY — Research §G keeps it here.
+    5. **Add a private helper** `_build_system_prompt(narrator)`:
+       ```python
+       def _build_system_prompt(narrator: Narrator) -> str:
+           """
+           Compose chronicler system prompt:
+             1. UNIVERSAL_CORE (personalized — 'Jesse's voice' → '<DisplayName>'s voice')
+             2. blank line
+             3. WINNER_AUTHORITY_PREAMBLE  (per D-04 caveat — NOT in UNIVERSAL_CORE)
+             4. blank line
+             5. narrator.voiceRubric rendered as plain text
+             6. (optional) blank line + "Reference samples:" + first 2 example samples joined by blank lines
+           """
+           core = _personalize_universal_core(UNIVERSAL_CORE, narrator)
+           rubric = _render_voice_rubric(narrator["voiceRubric"])
 
-(B) Line 157 in the chronicler() node body — change the system prompt assembly. Locate the current line:
-```python
-    system = _build_system_prompt()
-```
+           parts = [core, "", WINNER_AUTHORITY_PREAMBLE, "", rubric]
 
-Replace with:
-```python
-    # Phase 16 (NRR-05): Chronicler consumes the narrator-aware voice via
-    # state['style_brief']['voice'] (set by Calibrator at pipeline start).
-    # When narrator is unset, style_brief['voice'] == VOICE_CONSTRAINTS (Jesse
-    # byte-equivalent — D-13).
-    voice = state.get("style_brief", {}).get("voice", VOICE_CONSTRAINTS)
-    system = _build_system_prompt(voice_constraints=voice)
-```
+           samples = narrator.get("exampleSamples") or []
+           if samples:
+               parts.extend(["", "Reference samples:", *samples[:2]])
 
-Leave the rest of the chronicler() function body UNCHANGED — including the try/except D-18 fallback (lines 162-197), the WINNER AUTHORITY enforcement in the user prompt (lines 109-124 in _build_user_prompt), and the AGT-17 model_versions recording.
+           return "\n".join(parts)
+       ```
 
-The existing `from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS` import at line 33 stays as-is — it's still used as the default kwarg value for back-compat AND as the fallback in the new `voice = state.get(...).get(..., VOICE_CONSTRAINTS)` expression.
+    6. **In the chronicler entry function**: read `narrator = state["narrator"]` (which is guaranteed populated by calibrator post-16-05). Call `_build_system_prompt(narrator)` to produce the system message. Replace whatever currently puts `VOICE_CONSTRAINTS` into the system message with this composed prompt.
+
+    7. Do NOT add an inline-import of `JESSE_PERSONA_BLOCK`. It is intentionally not used here — UNIVERSAL_CORE alone, with the displayName substitution, is the chronicler's persona base.
+
+    8. Do NOT touch the chronicler's user message format. Section bodies flow into the user message as in Phase 14.
   </action>
+
   <verify>
-    <automated>grep -E "def _build_system_prompt\(voice_constraints: str = VOICE_CONSTRAINTS\)" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py returns a match; grep -E "voice = state.get\(.style_brief., \{\}\).get\(.voice., VOICE_CONSTRAINTS\)" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py returns a match; grep -E "WINNER AUTHORITY" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py returns at least 2 matches (1 in system prompt + 1 in user prompt — Phase 13 quick-fix 260524-ojm); uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler.py -q exits 0 (existing Phase 13 + new Phase 16 test_narrator_voice_propagation all GREEN); uv run --project packages/pipeline pytest packages/pipeline/tests/ -x -q exits 0 (full suite green)</automated>
+    <automated>
+      # 1. Chronicler imports UNIVERSAL_CORE, not VOICE_CONSTRAINTS.
+      grep -q "from eisenbalm_pipeline.lib.voice import UNIVERSAL_CORE" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py
+      ! grep -E "from eisenbalm_pipeline\.lib\.voice import .*VOICE_CONSTRAINTS" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py
+      # Second line must FAIL to find any VOICE_CONSTRAINTS import in chronicler.
+
+      # 2. WINNER AUTHORITY lives in chronicler.py (count ≥ 1).
+      [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py)" -ge 1 ]
+
+      # 3. WINNER AUTHORITY does NOT live in voice.py (B1 cross-check, count == 0).
+      [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/lib/voice.py)" -eq 0 ]
+
+      # 4. Chronicler narrator-aware tests pass (created by Plan 16-02 Task 2).
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py -v
+
+      # 5. Jesse-equivalence chronicler test passes: when narrator=jesse, system prompt
+      #    is byte-equivalent to (UNIVERSAL_CORE personalized + WINNER_AUTHORITY + rubric).
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py::test_jesse_narrator_system_prompt_uses_universal_core -v
+
+      # 6. No regression on Phase 14 chronicler tests.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler.py -v
+    </automated>
   </verify>
-  <done>chronicler.py _build_system_prompt accepts voice_constraints kwarg; node body reads style_brief['voice']; WINNER AUTHORITY rule preserved at chronicler-specific level; Phase 13 D-18 fallback preserved; test_narrator_voice_propagation GREEN; all existing chronicler + pipeline tests GREEN.</done>
+
+  <done>
+    - Chronicler imports `UNIVERSAL_CORE` and does NOT import `VOICE_CONSTRAINTS`.
+    - `WINNER_AUTHORITY_PREAMBLE` is a module-level constant in chronicler.py.
+    - `_build_system_prompt(narrator)` composes the system message per D-10 structure.
+    - `_personalize_universal_core` substitutes the displayName only at the leading sentence.
+    - `WINNER AUTHORITY` does NOT appear in voice.py (B1 cross-check).
+    - All chronicler narrator tests pass.
+    - Phase 14 chronicler tests still pass under narrator=jesse.
+  </done>
 </task>
 
 </tasks>
 
 <verification>
-- test_chronicler.py::test_narrator_voice_propagation (Phase 16 RED test from Plan 16-02) flips GREEN.
-- All Phase 13 chronicler tests (well_formed turns, faithful dramatization, fallback, model_versions, WINNER AUTHORITY enforcement) stay GREEN.
-- Phase 13 deliberation-conversation Vitest tripwire stays GREEN (chronicler output shape unchanged — speaker + text turns).
-- Quick task 260524-ojm WINNER AUTHORITY fix is preserved (Sept 25 commit; never regressed).
+- `grep -c "WINNER AUTHORITY" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py` returns ≥1.
+- `grep -c "WINNER AUTHORITY" packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` returns 0.
+- `uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py -v` exits 0.
+- Pipeline-wide test count is ≥ Phase 14 baseline + Phase 16 additions.
 </verification>
 
 <success_criteria>
-- NRR-05 verified: chronicler reads narrator voice via style_brief["voice"].
-- NRR-10 zero-regression: when narrator unset, chronicler system prompt is byte-identical to pre-Phase-16.
+- Chronicler is narrator-aware (NRR-02).
+- WINNER AUTHORITY lives in chronicler.py exclusively (D-04 caveat enforced).
+- Jesse narrator path is byte-equivalent to Phase 14 chronicler modulo the new WINNER AUTHORITY line (Research §G accepts this delta).
+- No leakage of narrator-aware behaviour to other agents (NRR-06).
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/16-choose-your-narrator/16-06-SUMMARY.md` documenting: the two edits, confirmation that WINNER AUTHORITY rule stayed in the chronicler-specific prompt (not moved to UNIVERSAL_CORE — Research §G decision), and the byte-equivalence verification.
+After completion, create `.planning/phases/16-choose-your-narrator/16-06-chronicler-narrator-SUMMARY.md`. Record:
+- The final system prompt template used.
+- The grep cross-check results (WINNER AUTHORITY count in chronicler.py and voice.py).
+- Cross-reference to 16-04 (UNIVERSAL_CORE source).
 </output>

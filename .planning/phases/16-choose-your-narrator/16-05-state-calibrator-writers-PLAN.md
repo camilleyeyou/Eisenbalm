@@ -2,80 +2,46 @@
 phase: 16-choose-your-narrator
 plan: 05
 type: execute
-wave: 2
-depends_on: ["16-01", "16-02", "16-04"]
+wave: 3
+depends_on: [16-01, 16-02, 16-04]
 files_modified:
-  - packages/pipeline/src/eisenbalm_pipeline/graph/state.py
-  - packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py
+  - packages/pipeline/src/eisenbalm_pipeline/state.py
   - packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py
   - packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py
-  - packages/pipeline/src/eisenbalm_pipeline/agents/problem.py
   - packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py
   - packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py
-  - packages/pipeline/api/runs.py
+  - packages/pipeline/src/eisenbalm_pipeline/agents/bonus.py
 autonomous: true
-requirements: [NRR-03, NRR-04]
+requirements:
+  - NRR-01
+  - NRR-03
+  - NRR-05
 must_haves:
   truths:
-    - "DispatchState carries narrator: NotRequired[Optional[dict]] field declared identically to API_CONTRACTS.md §7 (added by Plan 16-01)"
-    - "lib/sanity_client.py exports async load_narrator_from_issue(issue_id: str) -> Optional[dict] that GROQ-dereferences weeklyIssue.narrator into {name, slug, voiceConstraints, voiceRubric, exampleSamples, active}"
-    - "FastAPI startup path (api/runs.py /run/weekly handler) calls load_narrator_from_issue and seeds state['narrator'] BEFORE graph.ainvoke"
-    - "Calibrator imports assemble_voice from lib/voice and uses it at BOTH stub-mode fallback (line 158) AND defensive fill (line 182) — style_brief['voice'] = assemble_voice(state.get('narrator'))"
-    - "Calibrator emits inactive-narrator warning via existing Convex deliberationEvents.eventType='editor-decision' payload `{warning: 'inactive narrator <name> — fell back to Jesse'}` and proceeds with Jesse voice (D-14)"
-    - "All 4 narrative writer agents (origin_story.py, problem.py, founder_bio.py, case_study.py) pass `voice_constraints=style_brief.get('voice', VOICE_CONSTRAINTS)` to build_section_writer_prompt — without this, narrator voice never reaches the writers (Pitfall 2)"
-    - "Game agent (agents/game.py) is UNTOUCHED — stays on direct VOICE_CONSTRAINTS import per D-07 Game-stays-Jesse rule"
-    - "All Wave 0 tests (test_calibrator_narrator, test_section_writer_voice_propagation) flip GREEN"
-    - "Existing 168 pipeline tests + voice byte-equivalence tests stay GREEN"
+    - "DispatchState exposes optional `narrator: Narrator | None` and `narrator_slug: str | None`"
+    - "Calibrator fetches narrator record by slug on the winning charity (or via override)"
+    - "Calibrator falls back to Jesse + emits inactive_narrator deliberation event when narrator is inactive"
+    - "Narrative writer agents (origin_story, founder_bio, case_study, bonus) consume verbatim VOICE_CONSTRAINTS — no narrator-aware branching"
   artifacts:
-    - path: "packages/pipeline/src/eisenbalm_pipeline/graph/state.py"
-      provides: "DispatchState.narrator field"
-      contains: "narrator"
-    - path: "packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py"
-      provides: "load_narrator_from_issue helper"
-      contains: "load_narrator_from_issue"
+    - path: "packages/pipeline/src/eisenbalm_pipeline/state.py"
+      provides: "Narrator + NarratorVoiceRubric typed dicts; DispatchState narrator fields"
     - path: "packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py"
-      provides: "narrator-aware assembly + inactive narrator warning"
-      contains: "assemble_voice"
-    - path: "packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py"
-      provides: "voice_constraints kwarg propagation"
-      contains: "voice_constraints=style_brief"
-    - path: "packages/pipeline/src/eisenbalm_pipeline/agents/problem.py"
-      provides: "voice_constraints kwarg propagation"
-      contains: "voice_constraints=style_brief"
-    - path: "packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py"
-      provides: "voice_constraints kwarg propagation"
-      contains: "voice_constraints=style_brief"
-    - path: "packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py"
-      provides: "voice_constraints kwarg propagation"
-      contains: "voice_constraints=style_brief"
-    - path: "packages/pipeline/api/runs.py"
-      provides: "load_narrator_from_issue invocation before graph.ainvoke"
-      contains: "load_narrator_from_issue"
+      provides: "narrator resolution + inactive-fallback warning emission"
   key_links:
-    - from: "api/runs.py POST /run/weekly handler"
-      to: "lib/sanity_client.load_narrator_from_issue"
-      via: "async call before graph.ainvoke, result seeded into initial state['narrator']"
-      pattern: "await load_narrator_from_issue"
-    - from: "agents/calibrator.py assemble_voice call"
-      to: "lib/voice.assemble_voice"
-      via: "import + invocation at line 158 + line 182"
-      pattern: "assemble_voice(state.get"
-    - from: "4 writer agents build_section_writer_prompt call sites"
-      to: "lib/voice.build_section_writer_prompt voice_constraints kwarg"
-      via: "explicit kwarg propagation from style_brief['voice']"
-      pattern: "voice_constraints=style_brief"
+    - from: "packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py"
+      to: "packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.convex_mutation_safe"
+      via: "module-level import + best-effort deliberation event for inactive-fallback warning"
+      pattern: "from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe"
 ---
 
 <objective>
-Wire the narrator surface end-to-end from Sanity load → DispatchState → Calibrator → 4 writers. This is the load-bearing plan for NRR-03 (Calibrator voice merge) and NRR-04 (4 writers consume narrator voice).
+Add the narrator state slot, calibrator resolution logic, and confirm narrative writers (origin story, founder bio, case study, bonus) continue to consume `VOICE_CONSTRAINTS` verbatim.
 
-Per Research §C (Calibrator wiring) and Pitfall 2 (writers MUST explicitly pass voice_constraints kwarg or narrator voice silently falls back to Jesse default), this plan touches 8 files: graph/state.py + lib/sanity_client.py + agents/calibrator.py + 4 writers + api/runs.py. Each edit is small (≤20 lines each); the file count is high because narrator must flow through the full pipeline initialization path.
+Purpose: Establish the "narrator only affects chronicler + QA judge" boundary at the state and calibrator layers. NRR-01 (no voice drift on narrative writers) is enforced negatively here: by NOT branching on narrator in writer agents, and POSITIVELY verified by the Plan 16-02 byte-equivalence test of `VOICE_CONSTRAINTS`.
 
-This plan does NOT touch the Chronicler (Plan 16-06) or the QA judge (Plan 16-07) — Chronicler reads style_brief["voice"] which the Calibrator already populates after this plan, so Chronicler narrator-awareness is technically free; the explicit refactor in Plan 16-06 is needed only to remove the direct VOICE_CONSTRAINTS import dependency and turn the chronicler Wave 0 test green.
+Output: Updated `state.py` (TypedDict additions + Narrator/NarratorVoiceRubric models), updated `calibrator.py` (narrator resolution path), no behavioural changes to the four narrative writer agents (but verified in this plan via tests).
 
-This plan does NOT touch Game agent (D-07 Game-stays-Jesse) and does NOT touch Bonus/Researcher (out of scope per CONTEXT non-goals).
-
-Output: 8 files modified; 2 Wave 0 tests flip GREEN (test_calibrator_narrator, test_section_writer_voice_propagation); 168 pipeline tests + 4 voice tests stay GREEN.
+Implements: D-02 (default narrator = Jesse), D-13 (override path), D-14 (inactive narrator fallback to Jesse + Convex warning event), NRR-01/03/05.
 </objective>
 
 <execution_context>
@@ -85,341 +51,325 @@ Output: 8 files modified; 2 Wave 0 tests flip GREEN (test_calibrator_narrator, t
 
 <context>
 @.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
 @.planning/phases/16-choose-your-narrator/16-CONTEXT.md
 @.planning/phases/16-choose-your-narrator/16-RESEARCH.md
-@.planning/phases/16-choose-your-narrator/16-VALIDATION.md
+@packages/pipeline/src/eisenbalm_pipeline/state.py
+@packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py
+@packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py
+@packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py
+@packages/pipeline/tests/test_calibrator_narrator.py  # <-- created by Plan 16-02 Task 2
+
+<decisions_implemented>
+- **D-02**: Default narrator is Jesse. If charity.narratorSlug is None or unresolved, use Jesse.
+- **D-13**: Override path is `state["narrator_slug"]` set before calibrator runs. Takes precedence over charity.narratorSlug.
+- **D-14**: If resolved narrator has `status='inactive'`, fall back to Jesse and emit a `deliberationEvents` entry with type=`inactive_narrator_fallback` carrying the original slug.
+- **NRR-01**: Narrative writer agents continue to use verbatim VOICE_CONSTRAINTS. No conditional branching on narrator.
+- **NRR-03**: Calibrator is the SINGLE narrator resolution point. Chronicler/QA judge read `state["narrator"]` (resolved object), not `state["narrator_slug"]` (raw string).
+</decisions_implemented>
 
 <interfaces>
-<!-- Plan 16-04 (already landed) ships: -->
-from eisenbalm_pipeline.lib.voice import (
-    VOICE_CONSTRAINTS,
-    UNIVERSAL_CORE,
-    JESSE_PERSONA_BLOCK,
-    assemble_voice,
-    build_section_writer_prompt,
-)
+Current `DispatchState` (state.py) fields (Phase 14 baseline — preserve all):
+```python
+class DispatchState(TypedDict):
+    run_id: str
+    issue_number: int
+    style_brief: StyleBrief | None
+    candidates: list[CharityCandidate]
+    winning_charity: Charity | None
+    winning_charity_sanity_id: str | None
+    # ... etc (all existing fields)
+```
 
-<!-- API_CONTRACTS §7 (Plan 16-01 landed): -->
-# DispatchState gains:
-narrator: Optional[dict]   # {name, slug, voiceConstraints, voiceRubric, exampleSamples, active} or None
+Phase 16 additions:
+```python
+class Narrator(TypedDict):
+    """Resolved narrator record (loaded from Sanity by calibrator)."""
+    slug: str
+    displayName: str
+    voiceRubric: NarratorVoiceRubric
+    exampleSamples: list[str]
+    status: Literal["active", "inactive"]
 
-<!-- API_CONTRACTS §1.2 (frontend GROQ): voiceConstraints / voiceRubric / exampleSamples MUST NOT be projected — Plan 16-08 enforces -->
+class NarratorVoiceRubric(TypedDict):
+    """Voice rubric structure used by chronicler prompt + QA judge."""
+    register: str          # e.g. "Maya Rudolph: sly, dry, warm but precise"
+    constraints: list[str] # e.g. ["No 1980s sitcom callbacks", "No ironic asides"]
+    cadence: str           # e.g. "Short declarative sentences with one well-placed comma"
 
-<!-- Pipeline-side GROQ (NEW — for the pipeline narrator load only; full pipeline-only projection): -->
-*[_type == "weeklyIssue" && _id == $issueId][0]{
-  narrator->{
-    name,
-    "slug": slug.current,
-    voiceConstraints,
-    voiceRubric,
-    exampleSamples,
-    active
-  }
-}
+# Added to DispatchState:
+    narrator: Narrator | None           # resolved by calibrator (default = Jesse record)
+    narrator_slug: str | None           # override path (D-13); if set, takes precedence over charity.narratorSlug
+```
+
+`convex_mutation_safe` signature (from `lib/convex_client.py` — Phase 8/15 unchanged):
+```python
+async def convex_mutation_safe(mutation_name: str, args: dict) -> None:
+    """Best-effort Convex mutation: logs on failure, never raises."""
+```
 </interfaces>
-</context>
 
 <tasks>
 
-<task type="auto" tdd="true">
-  <name>Task 1: Add narrator field to DispatchState + load_narrator_from_issue helper in lib/sanity_client.py</name>
-  <files>packages/pipeline/src/eisenbalm_pipeline/graph/state.py, packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py</files>
-  <behavior>
-    - DispatchState gains `narrator: NotRequired[Optional[dict]]` with comment citing API_CONTRACTS §7
-    - load_narrator_from_issue(issue_id) returns None when weeklyIssue.narrator is unset, or a dict with the 6 narratorProfile fields when set
-    - load_narrator_from_issue tolerates Sanity unreachability — returns None on any exception (graceful degradation)
-    - load_narrator_from_issue uses the existing groq_query helper (same dereference pattern as winning_charity)
-  </behavior>
+<task type="auto" tdd="false">
+  <name>Task 1: Extend DispatchState with narrator fields + add Narrator/NarratorVoiceRubric TypedDicts</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/state.py</files>
+
   <read_first>
-    - packages/pipeline/src/eisenbalm_pipeline/graph/state.py FULL FILE (current 179 lines — preserve every existing field; insert narrator between lines 168-170)
-    - packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py lines 337-382 (existing groq_query helper — the GROQ read pattern to reuse) + lines 36-68 (charity dereference exemplar)
-    - .planning/phases/16-choose-your-narrator/16-RESEARCH.md §E (load_narrator_from_issue signature + GROQ query verbatim)
-    - .planning/phases/16-choose-your-narrator/16-CONTEXT.md D-09 (optional reference; absence = null) + D-14 (inactive narrator NOT silently honored — but the load itself returns the dict; Calibrator decides the fallback)
-    - docs/API_CONTRACTS.md §7 narrator line (Plan 16-01 landed — confirm field exists and matches what we declare in state.py)
+    1. READ the current `packages/pipeline/src/eisenbalm_pipeline/state.py` end-to-end. Note all existing TypedDicts and the exact `DispatchState` schema.
+    2. CONFIRM the existing import block uses `from typing import TypedDict, Literal` (or compatible). If `Literal` is missing, add it.
   </read_first>
+
   <action>
-Two file edits.
+    Edit `state.py`:
 
-(A) packages/pipeline/src/eisenbalm_pipeline/graph/state.py — insert this block immediately AFTER the line `featured_charity_keys: Optional[list[str]]   # AGT-04: ...` (around line 169) and BEFORE the `# ── Error handling ──` comment line:
+    1. Add two new module-level TypedDicts ABOVE `DispatchState`:
+       ```python
+       class NarratorVoiceRubric(TypedDict):
+           """Per-narrator voice rubric. Used as chronicler system prompt addendum and as the QA judge rubric override."""
+           register: str
+           constraints: list[str]
+           cadence: str
 
-```python
+       class Narrator(TypedDict):
+           """Resolved narrator record. Loaded from Sanity by the calibrator agent (Plan 16-05 Task 2)."""
+           slug: str
+           displayName: str
+           voiceRubric: NarratorVoiceRubric
+           exampleSamples: list[str]
+           status: Literal["active", "inactive"]
+       ```
 
-    # ── Phase 16: Narrator (NRR-02, NRR-03) ───────────────────────────────────
-    # Loaded narratorProfile dict {name, slug, voiceConstraints, voiceRubric, exampleSamples, active}
-    # or None. Sourced from weeklyIssue.narrator reference at pipeline start by
-    # lib/sanity_client.load_narrator_from_issue. ONLY the Calibrator reads this
-    # field (CONTEXT D-05 single injection point); all downstream agents
-    # consume style_brief["voice"] which Calibrator sets via lib/voice.assemble_voice.
-    # VERBATIM from docs/API_CONTRACTS.md §7 (Phase 16 addition).
-    narrator: NotRequired[Optional[dict]]
-```
+    2. Add two fields to `DispatchState` (preserve every existing field):
+       ```python
+       narrator: Narrator | None           # resolved by calibrator. None until calibrator runs.
+       narrator_slug: str | None           # D-13 override; if set, takes precedence over charity.narratorSlug.
+       ```
 
-(B) packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py — append at the end of the file (after the existing `set_charity_first_featured` function):
+    3. If `state.py` exposes a `dispatch_state_initial(run_id, issue_number)` or similar initializer factory, add `narrator=None, narrator_slug=None` to its returned dict.
 
-```python
-
-
-# ── Phase 16: Narrator load (NRR-02) ─────────────────────────────────────
-
-
-async def load_narrator_from_issue(issue_id: str) -> Optional[dict]:
-    """Load the narrator profile dereference for a weeklyIssue, or None.
-
-    Used by api/runs.py POST /run/weekly handler at pipeline start to seed
-    state['narrator'] BEFORE the Calibrator runs. The Calibrator is the single
-    injection point that reads state['narrator'] (CONTEXT D-05).
-
-    Pipeline-side GROQ projection — includes voiceConstraints / voiceRubric /
-    exampleSamples (the frontend projection per API_CONTRACTS §1.2 explicitly
-    excludes these for security per Pitfall 8).
-
-    Tolerant: any exception (Sanity unreachable, malformed response, missing
-    narrator) returns None. The Calibrator handles None as the default Jesse
-    voice path.
-
-    Args:
-        issue_id: Sanity weeklyIssue _id (e.g. "issue-42").
-
-    Returns:
-        {name, slug, voiceConstraints, voiceRubric, exampleSamples, active} dict
-        or None.
-    """
-    query = (
-        '*[_type == "weeklyIssue" && _id == $issueId][0]'
-        '{ narrator->{ name, "slug": slug.current, voiceConstraints, '
-        'voiceRubric, exampleSamples, active } }'
-    )
-    try:
-        rows = await groq_query(query, params={"issueId": issue_id})
-    except Exception:  # noqa: BLE001 — first-run / outage tolerance
-        return None
-    if not rows:
-        return None
-    row = rows[0] if isinstance(rows, list) else rows
-    narrator = row.get("narrator") if isinstance(row, dict) else None
-    return narrator if isinstance(narrator, dict) else None
-```
+    Do NOT change any other TypedDict.
   </action>
+
   <verify>
-    <automated>grep -E "narrator: NotRequired\[Optional\[dict\]\]" packages/pipeline/src/eisenbalm_pipeline/graph/state.py returns a match; grep -E "async def load_narrator_from_issue" packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py returns a match; uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.sanity_client import load_narrator_from_issue; import inspect; sig = inspect.signature(load_narrator_from_issue); assert 'issue_id' in sig.parameters; print('OK')" prints 'OK'; uv run --project packages/pipeline pytest packages/pipeline/tests/ -x -q exits 0 (existing 168 + Phase 16 byte-equiv tests still green)</automated>
+    <automated>
+      # State imports cleanly.
+      uv run --project packages/pipeline python -c "from eisenbalm_pipeline.state import DispatchState, Narrator, NarratorVoiceRubric; print('ok')" | grep -q '^ok$'
+
+      # State scaffold tests (Plan 16-02 Task 1) pass.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_dispatch_state_narrator.py -v
+    </automated>
   </verify>
-  <done>DispatchState.narrator field declared (matches API_CONTRACTS §7); load_narrator_from_issue helper exists with tolerant error handling; existing tests still green.</done>
+
+  <done>
+    - `Narrator` and `NarratorVoiceRubric` are exported as module-level TypedDicts.
+    - `DispatchState` includes `narrator` and `narrator_slug` optional fields.
+    - No existing field renamed or removed.
+    - Initializer factory (if present) sets narrator fields to None.
+  </done>
 </task>
 
-<task type="auto" tdd="true">
-  <name>Task 2: Wire Calibrator to assemble_voice + inactive narrator warning (D-05 single injection point)</name>
+<task type="auto" tdd="false">
+  <name>Task 2: Calibrator narrator resolution + D-14 inactive fallback warning (module-level convex_mutation_safe import)</name>
   <files>packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py</files>
-  <behavior>
-    - Calibrator imports `assemble_voice` alongside `VOICE_CONSTRAINTS` from lib/voice
-    - Lines 156-166 (stub-mode fallback): `brief_dict["voice"] = assemble_voice(narrator)` where narrator is computed once at function entry
-    - Line 181 (defensive fill): `brief_dict["voice"] = assemble_voice(narrator)`
-    - Inactive narrator branch: if state.get('narrator') is a dict AND narrator.get('active') is False → emit a Convex deliberationEvents row with eventType='editor-decision' + payload JSON-string `{"warning": "inactive narrator <name> — fell back to Jesse"}`, then set narrator = None for the rest of the function
-    - Wave 0 test_calibrator_narrator flips GREEN (3 tests: test_calibrator_uses_assemble_voice_with_narrator, test_calibrator_narrator_none_byte_equivalent_to_jesse, test_inactive_narrator_falls_back_to_jesse_with_warning)
-    - When narrator is None, the stub-mode fallback brief_dict["voice"] == VOICE_CONSTRAINTS (byte-equal — NRR-10 zero-regression)
-  </behavior>
+
   <read_first>
-    - packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py FULL FILE (current 197 lines — function body at lines 130-196 is the edit target)
-    - packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py (verify the `convex_mutation_safe` API — used to emit the deliberationEvents row for the inactive narrator warning; lookup the exact import name)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/_wrapper.py (@agent_node decorator — confirm emit_event=None semantics and how to emit a custom event from within the node body)
-    - packages/pipeline/tests/test_calibrator_narrator.py (the RED tests this task turns GREEN — confirms exact assertions: assemble_voice called, brief_dict["voice"] contains narrator content, inactive narrator emits warning via Convex)
-    - .planning/phases/16-choose-your-narrator/16-CONTEXT.md D-14 (inactive narrator: fall back to Jesse + log non-blocking warning via existing editor-decision eventType + no Convex schema change)
-    - .planning/phases/16-choose-your-narrator/16-RESEARCH.md §C (Calibrator rewire pattern — exact 4 edits)
+    1. READ the FULL current `packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py`. Note:
+       - the current import block,
+       - the current calibrator entry point function name (e.g. `run_calibrator(state)` or `calibrator_node(state)`),
+       - existing Sanity client usage.
+    2. READ `packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py` and confirm `convex_mutation_safe` is exposed as a module-level coroutine.
+    3. READ `packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py` for the existing helper used to fetch documents by slug. Reuse it if present; do not invent a new HTTP path.
   </read_first>
+
   <action>
-Edit packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py — four targeted edits.
+    Edit `calibrator.py`:
 
-(A) Line 27 — extend the lib.voice import to include `assemble_voice`:
-```python
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, assemble_voice
-```
+    1. **Add `convex_mutation_safe` as a MODULE-LEVEL import** (alongside existing imports at the top of the file). This is required so that `unittest.mock.patch("eisenbalm_pipeline.agents.calibrator.convex_mutation_safe", ...)` intercepts it correctly per the Python "patch where it's looked up" convention. Do NOT use an inline (function-body) import — the Plan 16-02 Task 2 test patches at the import site, and an inline import would silently bypass the mock.
 
-(B) After line 134 (`run_id = state["run_id"]`), insert the narrator resolution block (lines added inside the `calibrator()` function body, before the `previous = await ...` line):
+       ```python
+       from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
+       ```
 
-```python
-    # ── Phase 16: Resolve narrator (D-05 single injection point, D-14 inactive fallback) ──
-    narrator = state.get("narrator")
-    if isinstance(narrator, dict) and narrator.get("active") is False:
-        # D-14: inactive narrator silently parked — fall back to Jesse and emit
-        # a non-blocking warning via the existing editor-decision eventType.
-        # No new Convex schema field needed.
-        try:
-            from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
-            import json as _json
-            await convex_mutation_safe(
-                "deliberationEvents:insert",
-                {
-                    "runId": run_id,
-                    "agentId": "calibrator",
-                    "eventType": "editor-decision",
-                    "payload": _json.dumps({
-                        "warning": (
-                            f"inactive narrator {narrator.get('name', '?')} "
-                            f"— fell back to Jesse"
-                        ),
-                        "narratorSlug": narrator.get("slug"),
-                    }),
-                },
-            )
-        except Exception as _exc:  # noqa: BLE001 — Convex failure must not block the run
-            log.warning(
-                "Calibrator: failed to emit inactive-narrator warning event: %r",
-                _exc,
-            )
-        narrator = None
-```
+    2. Add a narrator resolution helper (private to the module — name it `_resolve_narrator`):
 
-(C) Line 158 (inside the stub-mode `else:` branch — the `brief_dict = { ... "voice": VOICE_CONSTRAINTS, ... }` literal) — change the `"voice": VOICE_CONSTRAINTS,` line to:
-```python
-            "voice": assemble_voice(narrator),
-```
+       ```python
+       async def _resolve_narrator(
+           state: DispatchState,
+           sanity_client: SanityClient,  # or whatever the existing client type is
+       ) -> Narrator:
+           """
+           Resolve which narrator to use for this run.
 
-(D) Line 181-182 (the defensive fill `if not brief_dict.get("voice"): brief_dict["voice"] = VOICE_CONSTRAINTS`) — change the assignment to:
-```python
-    if not brief_dict.get("voice"):
-        brief_dict["voice"] = assemble_voice(narrator)
-```
+           Precedence (D-13):
+             1. state["narrator_slug"] (override) if set
+             2. winning_charity.narratorSlug if set
+             3. "jesse" (default per D-02)
 
-Leave _build_messages (lines 93-127) and the LLM call site (lines 143-148) UNCHANGED — they still embed the literal VOICE_CONSTRAINTS in the system prompt, and the defensive override at the new line 182 guarantees the right voice lands in `brief_dict["voice"]` regardless of what the LLM emitted. Per Research §C this is the minimal-safe wiring.
+           D-14: If the resolved narrator record has status='inactive',
+           emit a deliberation event and fall back to Jesse.
+           """
+           override_slug = state.get("narrator_slug")
+           charity_slug = (state.get("winning_charity") or {}).get("narratorSlug")
+           chosen_slug = override_slug or charity_slug or "jesse"
+
+           narrator_record = await sanity_client.fetch_narrator_by_slug(chosen_slug)
+           if narrator_record is None:
+               # Slug pointed at a missing record — silently fall back to Jesse, but log.
+               logger.warning(
+                   "Narrator slug %s did not resolve; falling back to Jesse.",
+                   chosen_slug,
+               )
+               return await sanity_client.fetch_narrator_by_slug("jesse")
+
+           if narrator_record["status"] == "inactive":
+               # D-14: best-effort Convex warning event, then fall back to Jesse.
+               await convex_mutation_safe(
+                   "deliberation:insertEvent",
+                   {
+                       "runId": state["run_id"],
+                       "agentId": "calibrator",
+                       "eventType": "inactive_narrator_fallback",
+                       "payload": {
+                           "originalSlug": chosen_slug,
+                           "fellBackTo": "jesse",
+                           "reason": "narrator status == 'inactive'",
+                       },
+                   },
+               )
+               logger.warning(
+                   "Narrator %s is inactive; falling back to Jesse (run_id=%s).",
+                   chosen_slug,
+                   state["run_id"],
+               )
+               return await sanity_client.fetch_narrator_by_slug("jesse")
+
+           return narrator_record
+       ```
+
+    3. In the existing calibrator entry function (after `winning_charity` has been confirmed), call `_resolve_narrator` and write the result back to state:
+       ```python
+       resolved = await _resolve_narrator(state, sanity_client)
+       state["narrator"] = resolved
+       # Do NOT clear state["narrator_slug"]; preserve the override input for auditability.
+       ```
+
+    4. If `sanity_client.fetch_narrator_by_slug` does NOT exist yet in `sanity_client.py`, ADD a thin helper that does the GROQ-by-slug query (mirroring existing `fetch_charity_by_slug` style — see existing patterns). The helper returns `Narrator | None`.
+
+    Do NOT change calibrator's effect on `style_brief`, `winning_charity`, or any other state field. Narrator resolution is additive.
   </action>
+
   <verify>
-    <automated>grep -E "from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, assemble_voice" packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py returns a match; grep -c "assemble_voice(narrator)" packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py returns at least 2 (stub-mode + defensive fill); grep -E "inactive narrator" packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py returns a match; uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py -q exits 0 (all 3 tests GREEN); uv run --project packages/pipeline pytest packages/pipeline/tests/ -x -q exits 0 (no regression on existing 168 + voice byte-equivalence)</automated>
+    <automated>
+      # 1. Named test for D-14 inactive-narrator fallback path (created by Plan 16-02 Task 2).
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py::test_inactive_narrator_falls_back_to_jesse_with_warning -v
+
+      # 2. Full calibrator narrator test file passes.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py -v
+
+      # 3. convex_mutation_safe is a MODULE-LEVEL import (so the mock-patch site works).
+      grep -E "^from eisenbalm_pipeline\.lib\.convex_client import .*convex_mutation_safe" packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py | grep -v "^\s*#"
+      # Should print exactly one line. (No leading whitespace = top-level import.)
+
+      # 4. There is NO inline import of convex_mutation_safe inside any function body.
+      ! grep -E "^\s+from eisenbalm_pipeline\.lib\.convex_client import .*convex_mutation_safe" packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py
+      # The leading "!" inverts: this line must FAIL to find any indented import.
+
+      # 5. Existing calibrator behaviour preserved.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator.py -v
+    </automated>
   </verify>
-  <done>Calibrator imports assemble_voice; narrator resolution branch handles active=False with warning event; both stub-mode + defensive-fill sites use assemble_voice; Wave 0 test_calibrator_narrator 3 tests GREEN; no regression.</done>
+
+  <done>
+    - `convex_mutation_safe` is imported at module level in calibrator.py.
+    - `_resolve_narrator` exists and follows the D-13 precedence chain.
+    - D-14 fallback emits a `deliberationEvents` row with `eventType="inactive_narrator_fallback"`.
+    - `state["narrator"]` is populated after calibrator runs.
+    - `state["narrator_slug"]` (input) is preserved.
+    - `test_calibrator_narrator.py::test_inactive_narrator_falls_back_to_jesse_with_warning` passes.
+    - All existing Phase 14 calibrator tests still pass.
+  </done>
 </task>
 
-<task type="auto" tdd="true">
-  <name>Task 3: Propagate voice_constraints kwarg in 4 narrative writer agents (Pitfall 2 mitigation — NRR-04)</name>
-  <files>packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py, packages/pipeline/src/eisenbalm_pipeline/agents/problem.py, packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py, packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py</files>
-  <behavior>
-    - All 4 writer agents pass `voice_constraints=style_brief.get("voice", VOICE_CONSTRAINTS)` to build_section_writer_prompt
-    - Each writer adds an import: `from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt` (replacing the current single-symbol import)
-    - The local variable `style_brief` is computed once at the top of the call site (defensive: `style_brief = state.get("style_brief") or {}`) to keep both build_section_writer_prompt args (the dict + the kwarg) sourced from the same value
-    - Game agent (agents/game.py) is NOT touched — Game stays Jesse via direct VOICE_CONSTRAINTS import per D-07
-    - test_section_writer_voice_propagation 4 parametrized tests flip GREEN
-  </behavior>
+<task type="auto" tdd="false">
+  <name>Task 3: Confirm narrative writers (origin_story, founder_bio, case_study, bonus) remain narrator-agnostic</name>
+  <files>
+    packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py
+    packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py
+    packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py
+    packages/pipeline/src/eisenbalm_pipeline/agents/bonus.py
+  </files>
+
   <read_first>
-    - packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py FULL FILE (87 lines — call site at lines 55-62)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/problem.py lines 1-90 (call site near line 87)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py lines 1-100 (call site near line 90)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py lines 1-100 (call site near line 84)
-    - packages/pipeline/tests/test_section_writer_voice_propagation.py (the RED test this task turns GREEN — captures voice_constraints kwarg via build_section_writer_prompt patch)
-    - .planning/phases/16-choose-your-narrator/16-RESEARCH.md §C + Pitfall 2 (writers MUST add voice_constraints=style_brief.get("voice", VOICE_CONSTRAINTS) — single-line addition per writer)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/game.py line 21 (confirm game.py is NOT in the edit scope — it imports VOICE_CONSTRAINTS directly and keeps that import)
+    1. READ all four files end-to-end. Confirm each currently builds its system prompt from `VOICE_CONSTRAINTS` (verbatim).
+    2. CONFIRM none of them currently reads `state["narrator"]` or `state["narrator_slug"]`.
   </read_first>
+
   <action>
-For each of the 4 narrative writer files, apply the same surgical edit pattern. Use `Read` first on each file to confirm exact line numbers (the call site signature is identical across all 4 — they all call build_section_writer_prompt(section_id=..., section_title=..., section_guidance=..., charity=..., research=..., style_brief=...)).
+    NO CODE CHANGES. The point of this task is to make narrator-agnosticism a verified property, not to edit files.
 
-For each writer (origin_story.py, problem.py, founder_bio.py, case_study.py):
+    Add a header comment to each of the four files (above the existing imports) that pins this guarantee in human-readable form for any future reviewer:
 
-(A) Import line change. Locate the existing line:
-```python
-from eisenbalm_pipeline.lib.voice import build_section_writer_prompt
-```
-Replace with:
-```python
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt
-```
+    ```python
+    # ─── Phase 16 NRR-01 invariant ───────────────────────────────────────────────
+    # This agent consumes VOICE_CONSTRAINTS VERBATIM. It must not branch on
+    # state["narrator"] or state["narrator_slug"]. Narrator-aware behaviour lives
+    # exclusively in the chronicler agent (16-06) and the QA judge (16-07).
+    # The byte-equivalence guard for the system message lives in
+    # packages/pipeline/tests/test_writer_system_message_invariance.py
+    # (Plan 16-02 Task 3).
+    # ─────────────────────────────────────────────────────────────────────────────
+    ```
 
-(B) Call site change. The current pattern in all 4 writers is:
-```python
-    messages = build_section_writer_prompt(
-        section_id="<id>",
-        section_title="<title>",
-        section_guidance=SECTION_GUIDANCE,
-        charity=state.get("winning_charity") or {},
-        research=state.get("research") or {},
-        style_brief=state.get("style_brief") or {},
-    )
-```
-
-Refactor to extract style_brief once and add the voice_constraints kwarg:
-```python
-    style_brief = state.get("style_brief") or {}
-    messages = build_section_writer_prompt(
-        section_id="<id>",
-        section_title="<title>",
-        section_guidance=SECTION_GUIDANCE,
-        charity=state.get("winning_charity") or {},
-        research=state.get("research") or {},
-        style_brief=style_brief,
-        voice_constraints=style_brief.get("voice", VOICE_CONSTRAINTS),
-    )
-```
-
-Apply this verbatim to all 4 files. No other change. Do NOT touch agents/game.py (Game stays Jesse — D-07).
-
-For founder_bio.py and case_study.py: the call site has additional logic around state.get("winning_charity") and verification scrubbing (Plan 05-10 Pitfall 5). PRESERVE the existing scrub logic; only add the voice_constraints kwarg and the style_brief extraction. Read the exact file before editing.
+    Do NOT add `narrator` to any function signature in these four files. Do NOT add any conditional that references narrator state.
   </action>
+
   <verify>
-    <automated>for f in packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py packages/pipeline/src/eisenbalm_pipeline/agents/problem.py packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py; do grep -E "voice_constraints=style_brief" "$f" || { echo "FAIL $f"; exit 1; }; done; grep -E "voice_constraints" packages/pipeline/src/eisenbalm_pipeline/agents/game.py | wc -l returns 0 (Game agent NOT touched); uv run --project packages/pipeline pytest packages/pipeline/tests/test_section_writer_voice_propagation.py -q exits 0 (all 4 parametrized cases GREEN); uv run --project packages/pipeline pytest packages/pipeline/tests/ -x -q exits 0 (no regression on existing 168 + AGT-09 voice isolation tests in test_*_voice_isolation.py)</automated>
+    <automated>
+      # 1. Header comment present in all four narrative writer files.
+      for f in origin_story founder_bio case_study bonus; do
+        grep -q "Phase 16 NRR-01 invariant" packages/pipeline/src/eisenbalm_pipeline/agents/${f}.py || (echo "MISSING in ${f}.py" && exit 1)
+      done
+
+      # 2. None of the four files reads narrator state.
+      for f in origin_story founder_bio case_study bonus; do
+        ! grep -E '(state\["narrator|state\.get\("narrator|narrator_slug)' packages/pipeline/src/eisenbalm_pipeline/agents/${f}.py
+      done
+      # Each grep must exit non-zero (no match). The leading "!" turns absence into success.
+
+      # 3. The writer-invariance test (Plan 16-02 Task 3) passes — these four agents emit byte-identical system messages whether or not narrator is set.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_writer_system_message_invariance.py -v
+    </automated>
   </verify>
-  <done>4 writer agents have voice_constraints=style_brief.get("voice", VOICE_CONSTRAINTS); game.py untouched; test_section_writer_voice_propagation 4 tests GREEN; AGT-09 voice isolation tests still GREEN.</done>
-</task>
 
-<task type="auto">
-  <name>Task 4: Seed state['narrator'] in api/runs.py BEFORE graph.ainvoke</name>
-  <files>packages/pipeline/api/runs.py</files>
-  <read_first>
-    - packages/pipeline/api/runs.py FULL FILE (current handler — locate the POST /run/weekly handler body and find where the initial DispatchState dict is built and graph.ainvoke is invoked)
-    - packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py (the load_narrator_from_issue helper landed in Task 1)
-    - .planning/phases/16-choose-your-narrator/16-RESEARCH.md §E + §Open Question 3 (load narrator at pipeline start, before graph.ainvoke — exact location: alongside the issue_number → weeklyIssue lookup if one exists, or as a new call inline)
-    - .planning/phases/16-choose-your-narrator/16-CONTEXT.md D-09 (narrator loaded from Sanity weeklyIssue.narrator reference)
-  </read_first>
-  <action>
-Edit packages/pipeline/api/runs.py. Locate the POST /run/weekly handler (or whatever endpoint constructs the initial DispatchState and calls graph.ainvoke). The exact line numbers depend on the current file; use Read to confirm before editing.
-
-(A) Import the helper at the top of the file:
-```python
-from eisenbalm_pipeline.lib.sanity_client import load_narrator_from_issue
-```
-
-(B) Immediately BEFORE the initial DispatchState dict construction (or BEFORE graph.ainvoke if state is built inline), add:
-
-```python
-    # ── Phase 16: Load narrator from Sanity weeklyIssue.narrator reference ──
-    # Tolerant: returns None if Sanity unreachable, narrator unset, or issue not
-    # yet in Sanity. The Calibrator handles None as the default Jesse voice path.
-    issue_doc_id = f"issue-{issue_number}"
-    narrator_doc = await load_narrator_from_issue(issue_doc_id)
-```
-
-(C) In the initial DispatchState literal (the dict passed to graph.ainvoke), add the narrator field:
-```python
-        "narrator": narrator_doc,
-```
-
-The exact insertion point in the DispatchState literal depends on the current file structure — insert it adjacent to other initial-state fields like run_id, issue_number, publish_date. Use Read to find the right block.
-
-If the file does not currently have a clean initial-state literal (e.g., the state is built piecemeal via dict operations), add a single statement after the construction:
-```python
-    initial_state["narrator"] = narrator_doc
-```
-
-Preserve every existing field and the existing graph.ainvoke call signature.
-  </action>
-  <verify>
-    <automated>grep -E "from eisenbalm_pipeline.lib.sanity_client import load_narrator_from_issue" packages/pipeline/api/runs.py returns a match; grep -E "load_narrator_from_issue\(" packages/pipeline/api/runs.py returns a match; grep -E "narrator.*narrator_doc|\"narrator\": narrator_doc|narrator_doc" packages/pipeline/api/runs.py returns at least 2 matches (import-level call + state-field assignment); uv run --project packages/pipeline pytest packages/pipeline/tests/ -x -q exits 0 (full suite green); uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_section_writer_voice_propagation.py packages/pipeline/tests/test_voice.py -q exits 0 (all Phase 16 wave-1-targeted tests GREEN)</automated>
-  </verify>
-  <done>api/runs.py calls load_narrator_from_issue before graph.ainvoke and seeds state['narrator']. Full pytest suite green.</done>
+  <done>
+    - All four narrative writers carry the NRR-01 header comment.
+    - Grep confirms none of them references narrator state.
+    - `test_writer_system_message_invariance.py` passes.
+    - No behavioural regression on Phase 14 writer tests.
+  </done>
 </task>
 
 </tasks>
 
 <verification>
-- 2 Wave 0 RED tests flip GREEN: test_calibrator_narrator.py (3 tests) + test_section_writer_voice_propagation.py (4 parametrized cases).
-- test_voice.py + test_narrator_seed_sentinel.py + test_narrator_cost_budget.py either GREEN or skip-guarded (depending on whether Plan 16-08 seed has landed — they may stay SKIPPED here).
-- Full pipeline pytest suite (168 + ~9 new Phase 16) exits 0.
-- Game agent untouched (grep voice_constraints in game.py = 0 matches outside the import statement which is unchanged).
-- AGT-09 voice isolation tests (test_*_voice_isolation in Plan 05-10) stay GREEN — the voice_constraints kwarg addition does not violate the invariant.
+- `uv run --project packages/pipeline pytest packages/pipeline/tests/test_dispatch_state_narrator.py packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_writer_system_message_invariance.py -v` exits 0.
+- Test count across the whole pipeline test suite is ≥ Phase 14 baseline (168) + Phase 16 additions from Plan 16-02.
+- `grep -rE 'state\["narrator|narrator_slug' packages/pipeline/src/eisenbalm_pipeline/agents/{origin_story,founder_bio,case_study,bonus}.py` returns no matches.
 </verification>
 
 <success_criteria>
-- NRR-03 (Calibrator narrator merge) verified by test_calibrator_narrator green.
-- NRR-04 (4 writers consume narrator voice) verified by test_section_writer_voice_propagation green.
-- D-14 (inactive narrator warning) verified by test_inactive_narrator_falls_back_to_jesse_with_warning green.
-- Zero-regression on existing pipeline tests.
+- All three tasks' verify blocks pass.
+- Calibrator is the single narrator resolution point (NRR-03).
+- Narrative writers are provably narrator-agnostic (NRR-01).
+- D-14 inactive-narrator fallback observably writes to Convex via the mocked `convex_mutation_safe`.
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/16-choose-your-narrator/16-05-SUMMARY.md` documenting: the exact line changes in calibrator.py (before/after diff for the four edits), the writer-agent kwarg propagation diff, the api/runs.py narrator-load wiring, confirmation that Game agent and Bonus/Researcher were not touched, and the green-test count after this plan.
+After completion, create `.planning/phases/16-choose-your-narrator/16-05-state-calibrator-writers-SUMMARY.md`. Record:
+- The exact list of new state fields.
+- The narrator precedence chain enforced in calibrator (D-13).
+- Confirmation that `convex_mutation_safe` is imported at module level.
+- Cross-reference to 16-06 (chronicler) and 16-07 (QA judge) which consume `state["narrator"]`.
 </output>

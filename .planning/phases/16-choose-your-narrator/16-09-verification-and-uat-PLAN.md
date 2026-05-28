@@ -2,305 +2,292 @@
 phase: 16-choose-your-narrator
 plan: 09
 type: execute
-wave: 3
-depends_on: ["16-04", "16-05", "16-06", "16-07", "16-08"]
+wave: 5
+depends_on: [16-04, 16-05, 16-06, 16-07, 16-08a, 16-08b]
 files_modified:
-  - .planning/phases/16-choose-your-narrator/16-VALIDATION.md
-  - .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md
+  - .planning/phases/16-choose-your-narrator/16-VERIFICATION.md
+  - .planning/phases/16-choose-your-narrator/16-UAT.md
 autonomous: false
-requirements: [NRR-10]
+requirements:
+  - NRR-01
+  - NRR-02
+  - NRR-03
+  - NRR-04
+  - NRR-05
+  - NRR-06
+  - NRR-07
+  - NRR-08
+  - NRR-09
+  - NRR-10
+  - NRR-11
+  - NRR-12
+  - NRR-13
+  - NRR-14
 must_haves:
   truths:
-    - "All Phase 16 Wave 0 RED tests are GREEN: test_voice.py (4), test_narrator_seed_sentinel.py (1), test_narrator_cost_budget.py (3 parametrized), test_calibrator_narrator.py (3), test_section_writer_voice_propagation.py (4 parametrized), test_qa_judge_narrator.py (3), test_chronicler.py::test_narrator_voice_propagation (1)"
-    - "All 8 existing web tripwires + 29 CMR sentinels GREEN: deliberation-no-model-names, game-sandbox, typography, deliberation-conversation, podcast-slot, theme-aa-tones, shop-page, narrator-chip (Plan 16-03 file flipping fully GREEN with Plan 16-08 implementation)"
-    - "Full pipeline pytest suite (≥168 + ~19 Phase 16 = ≥187 tests) exits 0 — zero regression on Phase 1-15 contracts"
-    - "pnpm --filter web test:unit exits 0; pnpm --filter web build exits 0"
-    - "16-VALIDATION.md frontmatter flipped to nyquist_compliant: true and wave_0_complete: true; Per-Task Verification Map TBD task IDs filled with the canonical 16-NN-NN identifiers from Plans 16-01 through 16-08"
-    - "16-HUMAN-UAT.md created with Andrew's UAT checklist for Success Criterion 1 (Herzog issue reads as Herzog) + Success Criterion 4 (Studio picker UX) + Success Criterion 5 (chip placement + copy) + D-14 inactive narrator fallback (run with a parked narrator + confirm warning event in Convex)"
-    - "Andrew has run at least ONE narrator-aware pipeline run end-to-end against the production Sanity dataset: weeklyIssue.narrator set to werner-herzog, real OpenRouter call (not stub mode), QA score recorded, draft Sanity issue contains Herzog-voice sections + Herzog-voice chronicler conversation"
+    - "Per-task verification map covers every NRR-01..NRR-14 requirement with a named task ID"
+    - "Zero-regression gate asserts pipeline test count ≥ Phase 14 baseline (168) + Phase 16 additions"
+    - "Zero-regression gate asserts web commerce sentinel count ≥ Phase 8 baseline (29 CMR- tests)"
+    - "Andrew end-to-end UAT confirms full Maya/Herzog/Jesse round-trip works"
   artifacts:
-    - path: ".planning/phases/16-choose-your-narrator/16-VALIDATION.md"
-      provides: "Updated frontmatter + task-to-requirement map with 16-NN-NN IDs filled in"
-      contains: "nyquist_compliant: true"
-    - path: ".planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md"
-      provides: "Andrew's manual UAT checklist for Phase 16 success criteria + D-14 inactive narrator manual test"
-      contains: "Herzog"
+    - path: ".planning/phases/16-choose-your-narrator/16-VERIFICATION.md"
+      provides: "Automated verification report with explicit count assertions"
+    - path: ".planning/phases/16-choose-your-narrator/16-UAT.md"
+      provides: "Andrew's UAT log for end-to-end narrator pick + chronicler output + chip render"
   key_links:
-    - from: ".planning/phases/16-choose-your-narrator/16-VALIDATION.md"
-      to: "Plans 16-01 through 16-08 PLAN.md files"
-      via: "task ID assignment + filled Per-Task Verification Map"
-      pattern: "16-0[1-8]"
-    - from: ".planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md"
-      to: ".planning/phases/16-choose-your-narrator/16-INTENT.md Werner Herzog sample"
-      via: "Andrew compares pipeline output to the client-supplied acceptance reference"
-      pattern: "Werner Herzog"
+    - from: "16-VERIFICATION.md"
+      to: "Plan 16-02 + Plan 16-03 test files"
+      via: "named pytest / vitest invocations with count gates"
+      pattern: "pytest ... | grep -oE \"[0-9]+ passed\" must return ≥187"
 ---
 
 <objective>
-Close Phase 16. Run the full test matrix to confirm every NRR-* requirement has flipped from RED to GREEN. Flip 16-VALIDATION.md to nyquist_compliant: true with the Per-Task Verification Map TBD IDs filled in. Author 16-HUMAN-UAT.md with Andrew's manual UAT checklist covering Success Criteria 1, 4, 5 + the D-14 inactive narrator path. Andrew runs a real Herzog-narrator pipeline end-to-end against production Sanity and confirms the output reads as Herzog (not Jesse-in-disguise) per the client-supplied acceptance bar from 16-INTENT.md.
+Run the full Phase 16 verification matrix, assert zero regression on Phase 14 and Phase 8 baselines via explicit test counts, and gate Phase 16 ship-readiness on Andrew's end-to-end UAT (Maya issue render + Jesse legacy issue render + Herzog draft preview in Studio).
 
-This plan is the verification + UAT close-out. It does NOT modify any production code — only the planning docs (VALIDATION.md, HUMAN-UAT.md). The autonomous-false checkpoint is Andrew's UAT confirmation: a single Herzog run must produce a Sanity draft whose Origin Story / Problem / Founder Bio / Case Study sections read as Herzog when Andrew reads them aloud (the human-judgable bar from 16-INTENT.md).
+Purpose: NRR-01..NRR-14 are individually exercised by per-task tests across Plans 16-02 through 16-08b. This plan binds them into a single matrix, adds explicit count-based regression guards (B3), and pauses for Andrew to drive the round-trip flow before declaring Phase 16 done.
 
-Output: 2 planning files updated; full test matrix green; Andrew UAT signed off.
+Output:
+- `16-VERIFICATION.md` with the per-task matrix, named pytest/vitest invocations, and explicit count assertions.
+- `16-UAT.md` with Andrew's end-to-end test transcript.
+
+Implements: all NRR-01..NRR-14 — this plan is the audit layer.
 </objective>
 
 <execution_context>
 @$HOME/.claude/get-shit-done/workflows/execute-plan.md
 @$HOME/.claude/get-shit-done/templates/summary.md
+@$HOME/.claude/get-shit-done/templates/verification.md
+@$HOME/.claude/get-shit-done/templates/uat.md
 </execution_context>
 
 <context>
 @.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
 @.planning/phases/16-choose-your-narrator/16-CONTEXT.md
-@.planning/phases/16-choose-your-narrator/16-INTENT.md
-@.planning/phases/16-choose-your-narrator/16-VALIDATION.md
 @.planning/phases/16-choose-your-narrator/16-RESEARCH.md
-</context>
+@.planning/phases/16-choose-your-narrator/16-01-contract-and-schema-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-02-pipeline-test-scaffold-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-03-web-test-scaffold-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-04-voice-py-refactor-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-05-state-calibrator-writers-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-06-chronicler-narrator-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-07-qa-judge-narrator-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-08a-seed-narrators-SUMMARY.md
+@.planning/phases/16-choose-your-narrator/16-08b-frontend-chip-SUMMARY.md
+
+<decisions_implemented>
+- B3 revision (count baselines): Phase 14 pipeline baseline is 168 passing tests; Phase 16 adds ~19 new tests (test_voice_constants, test_dispatch_state_narrator, test_calibrator_narrator, test_writer_system_message_invariance, test_chronicler_narrator, test_qa_judge_narrator, test_narrator_cost_budget, test_narrator_seed_sentinel). Total expected ≥187. Phase 8 commerce sentinel baseline is 29 CMR- tests.
+- B6 revision: NRR-10 byte-equivalence asserted on BOTH system AND user QA messages — not just system.
+- W11 revision: disambiguate per-task map row IDs and add a row for NRR-07.
+</decisions_implemented>
 
 <tasks>
 
-<task type="auto">
-  <name>Task 1: Run full test matrix and confirm all GREEN</name>
-  <files></files>
+<task type="auto" tdd="false">
+  <name>Task 1: Run zero-regression matrix with explicit test count assertions (B3)</name>
+  <files>.planning/phases/16-choose-your-narrator/16-VERIFICATION.md</files>
+
   <read_first>
-    - .planning/phases/16-choose-your-narrator/16-VALIDATION.md (the full validation contract — every test in Per-Task Verification Map MUST exit 0 here)
+    1. CONFIRM the Phase 14 pipeline test baseline (168). Run once on the pre-Phase-16 git ref OR rely on the documented baseline in `.planning/phases/14-*-SUMMARY.md`.
+    2. CONFIRM the Phase 8 commerce sentinel baseline (29 CMR- tests). Run once or check `.planning/phases/08-*-SUMMARY.md`.
+    3. CONFIRM all six SUMMARY files referenced in `<context>` exist (i.e., upstream plans completed).
   </read_first>
+
   <action>
-Run the full test matrix in this exact order and capture the outputs:
+    Author `16-VERIFICATION.md` (use `~/.claude/get-shit-done/templates/verification.md` as a starting template). The file MUST include:
 
-(A) Pipeline byte-equivalence + voice constants:
-```bash
-uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py -v
-```
-Expected: 4 tests PASS (test_voice_constants_byte_equivalence, test_jesse_explicit_narrator_byte_equivalence, test_universal_core_contains_dem_04_rule, test_universal_core_contains_no_exclamation_rule).
+    ### Section A — Per-Task Verification Map (W11 fix: disambiguated row IDs)
 
-(B) Pipeline seed sentinel + cost budget:
-```bash
-uv run --project packages/pipeline pytest packages/pipeline/tests/test_narrator_seed_sentinel.py packages/pipeline/tests/test_narrator_cost_budget.py -v
-```
-Expected: 1 + 3 = 4 tests PASS.
+    | NRR ID | Description | Task ID | Verify Command |
+    |--------|-------------|---------|----------------|
+    | NRR-01 | Narrative writers byte-identical to Phase 14 (VOICE_CONSTRAINTS verbatim) | 16-02-01a | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_voice_byte_equivalence -v` |
+    | NRR-02 | Chronicler narrator-aware | 16-06-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py -v` |
+    | NRR-03 | Calibrator is single resolution point | 16-05-02 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py -v` |
+    | NRR-04 | VOICE_CONSTRAINTS symbol preserved + JESSE_PERSONA_BLOCK names Jesse | 16-02-01b | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_jesse_persona_block_names_jesse_explicitly -v` |
+    | NRR-05 | DispatchState has narrator + narrator_slug | 16-02-01 / 16-05-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_dispatch_state_narrator.py -v` |
+    | NRR-06 | No leakage to non-chronicler / non-QA agents | 16-05-03 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_writer_system_message_invariance.py -v` |
+    | NRR-07 | Andrew can pick narrator in Studio with exampleSamples preview | 16-08a-03 | Andrew checkpoint (Plan 16-08a Task 3) — recorded in 16-UAT.md |
+    | NRR-08 | WINNER AUTHORITY lives in chronicler.py, not voice.py | 16-06-01 | `[ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py)" -ge 1 ] && [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/lib/voice.py)" -eq 0 ]` |
+    | NRR-09 | QA judge narrator-aware | 16-07-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py -v` |
+    | NRR-10 | QA judge byte-identical (system + user) when narrator=None | 16-07-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py::test_qa_judge_narrator_none_preserves_legacy_messages -v` |
+    | NRR-11 | Narrator is Studio-curated content | 16-08a-03 | Andrew checkpoint (Plan 16-08a Task 3) |
+    | NRR-12 | Jesse seed sentinel anchored to VOICE_CONSTRAINTS | 16-02-01c / 16-08a-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_narrator_seed_sentinel.py -v` |
+    | NRR-13 | Frontend surfaces narrator on issue page | 16-08b-03 | `pnpm --filter web test:unit --run apps/web/__tests__/issue/narrator-chip.test.ts` |
+    | NRR-14 | Jesse implicit, non-Jesse explicit | 16-08b-03 | Same as NRR-13 (chip absent for jesse, present for others) |
 
-(C) Pipeline Calibrator narrator + 4 writer propagation + QA judge narrator + chronicler narrator:
-```bash
-uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_section_writer_voice_propagation.py packages/pipeline/tests/test_qa_judge_narrator.py packages/pipeline/tests/test_chronicler.py -v
-```
-Expected: 3 + 4 + 3 + (existing Phase 13 chronicler tests + 1 new test_narrator_voice_propagation) all PASS.
+    Note row-ID disambiguation: NRR-01 / NRR-04 / NRR-12 all live in pipeline test files Plan 16-02 Task 1 produced. The task IDs are suffixed (a/b/c) to point at the exact pytest filter. NRR-07 maps to the Plan 16-08a Task 3 Andrew checkpoint (no automated verify possible — recorded in UAT.md).
 
-(D) Full pipeline pytest suite — zero regression:
-```bash
-uv run --project packages/pipeline pytest packages/pipeline/tests/ -v
-```
-Expected: ≥187 tests pass (168 Phase 14 baseline + ~19 Phase 16 new). Exit 0.
+    ### Section B — Zero-regression gates (B3 fix: explicit counts)
 
-(E) Web Vitest suite — narrator-chip + 8 existing tripwires + 29 CMR sentinels:
-```bash
-pnpm --filter web test:unit
-```
-Expected: narrator-chip.test.ts ≥7 assertions GREEN; deliberation-no-model-names + game-sandbox + typography + deliberation-conversation + podcast-slot + theme-aa-tones + shop-page + all CMR sentinels GREEN. Exit 0.
+    Three named acceptance criteria, run as bash commands and recorded with the exact numeric outputs:
 
-(F) Web build — TypeScript + Next.js production build:
-```bash
-pnpm --filter web build
-```
-Expected: exit 0.
+    1. **Pipeline test count ≥187** (Phase 14 baseline 168 + Phase 16 additions ~19):
+       ```bash
+       PIPELINE_COUNT=$(uv run --project packages/pipeline pytest packages/pipeline/tests/ 2>&1 | tail -3 | grep -oE "[0-9]+ passed" | awk '{print $1}')
+       echo "Pipeline passing tests: $PIPELINE_COUNT (expect ≥187)"
+       [ "$PIPELINE_COUNT" -ge 187 ] || (echo "REGRESSION: pipeline test count dropped" && exit 1)
+       ```
 
-If ANY suite fails, halt and report. Do not flip nyquist_compliant: true until all 6 commands above exit 0. Capture the test counts and timing in the SUMMARY.md.
+    2. **Commerce sentinel count ≥29** (Phase 8 baseline):
+       ```bash
+       CMR_COUNT=$(pnpm --filter web test:unit 2>&1 | grep -c "CMR-")
+       echo "Commerce sentinel hits: $CMR_COUNT (expect ≥29)"
+       [ "$CMR_COUNT" -ge 29 ] || (echo "REGRESSION: commerce sentinel count dropped" && exit 1)
+       ```
+
+    3. **No new lint errors**:
+       ```bash
+       pnpm --filter web lint && pnpm --filter studio lint
+       uv run --project packages/pipeline ruff check packages/pipeline/src packages/pipeline/tests
+       ```
+
+    Record actual numeric outputs in 16-VERIFICATION.md alongside the commands.
+
+    ### Section C — WINNER AUTHORITY cross-check (B1)
+
+    ```bash
+    [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py)" -ge 1 ]
+    [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/lib/voice.py)" -eq 0 ]
+    ```
+
+    Record exact grep output.
+
+    ### Section D — Phase 14 named-test allowlist
+
+    Spot-check a sample of Phase 14 tests that exercise the writer agents (origin_story, founder_bio, case_study, bonus) still pass under narrator=Jesse default. Capture the test names and pass status.
   </action>
+
   <verify>
-    <automated>uv run --project packages/pipeline pytest packages/pipeline/tests/ -q exits 0; pnpm --filter web test:unit exits 0; pnpm --filter web build exits 0; echo "FULL MATRIX GREEN"</automated>
+    <automated>
+      # 1. Pipeline count gate.
+      PIPELINE_COUNT=$(uv run --project packages/pipeline pytest packages/pipeline/tests/ 2>&1 | tail -3 | grep -oE "[0-9]+ passed" | awk '{print $1}')
+      echo "Pipeline passing: $PIPELINE_COUNT"
+      [ "$PIPELINE_COUNT" -ge 187 ]
+
+      # 2. Commerce sentinel count gate.
+      CMR_COUNT=$(pnpm --filter web test:unit 2>&1 | grep -c "CMR-")
+      echo "Commerce sentinel hits: $CMR_COUNT"
+      [ "$CMR_COUNT" -ge 29 ]
+
+      # 3. WINNER AUTHORITY cross-check (B1).
+      [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py)" -ge 1 ]
+      [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/lib/voice.py)" -eq 0 ]
+
+      # 4. No placeholder leftover in narrators.json (B5).
+      ! grep -E "VERBATIM_FROM|TODO|PLACEHOLDER" apps/studio/seeds/narrators.json
+
+      # 5. All per-NRR named tests pass.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py packages/pipeline/tests/test_dispatch_state_narrator.py packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_writer_system_message_invariance.py packages/pipeline/tests/test_chronicler_narrator.py packages/pipeline/tests/test_qa_judge_narrator.py packages/pipeline/tests/test_narrator_seed_sentinel.py packages/pipeline/tests/test_narrator_cost_budget.py -v
+      pnpm --filter web test:unit --run apps/web/__tests__/issue/narrator-chip.test.ts
+
+      # 6. 16-VERIFICATION.md exists and records all three gate outputs.
+      [ -f .planning/phases/16-choose-your-narrator/16-VERIFICATION.md ]
+      grep -q "Pipeline passing tests" .planning/phases/16-choose-your-narrator/16-VERIFICATION.md
+      grep -q "Commerce sentinel hits" .planning/phases/16-choose-your-narrator/16-VERIFICATION.md
+      grep -q "WINNER AUTHORITY" .planning/phases/16-choose-your-narrator/16-VERIFICATION.md
+    </automated>
   </verify>
-  <done>All 6 commands exit 0. Captures pasted into the eventual SUMMARY.md.</done>
-</task>
 
-<task type="auto">
-  <name>Task 2: Update 16-VALIDATION.md — flip nyquist_compliant + fill Per-Task Verification Map task IDs</name>
-  <files>.planning/phases/16-choose-your-narrator/16-VALIDATION.md</files>
-  <read_first>
-    - .planning/phases/16-choose-your-narrator/16-VALIDATION.md FULL FILE (current frontmatter has nyquist_compliant: false; Per-Task Verification Map has 15 rows with TBD task IDs in columns 1+2)
-    - All 9 created PLAN.md files (16-01 through 16-09) — locate which plan + which requirement covers each row
-  </read_first>
-  <action>
-Edit .planning/phases/16-choose-your-narrator/16-VALIDATION.md.
-
-(A) Frontmatter — flip two fields:
-```yaml
-nyquist_compliant: true
-wave_0_complete: true
-```
-
-(B) Per-Task Verification Map — fill TBD columns. Use this mapping (derived from each plan's requirements + the test file each plan turns green):
-
-| Task ID | Plan | Wave | Requirement | Test Command |
-|---------|------|------|-------------|--------------|
-| 16-02-01 | 16-02 | 0 | NRR-03, NRR-10 | test_voice.py::test_voice_constants_byte_equivalence |
-| 16-02-01 | 16-02 | 0 | NRR-03, NRR-10 | test_voice.py::test_jesse_explicit_narrator_byte_equivalence |
-| 16-02-01 | 16-02 | 0 | NRR-09 | test_narrator_seed_sentinel.py::test_jesse_seed_matches_persona_block |
-| 16-02-01 | 16-02 | 0 | NRR-10 (cost ≤10%) | test_narrator_cost_budget.py |
-| 16-03-01 | 16-03 | 0 | NRR-02, NRR-08 | narrator-chip.test.ts |
-| 16-01-02 | 16-01 | 0 | NRR-01 | pnpm typegen + NarratorProfile in sanity.types.ts |
-| 16-01-03 | 16-01 | 0 | NRR-02 | grep narrator in weeklyIssue.ts |
-| 16-05-02 | 16-05 | 2 | NRR-03 (Calibrator) | test_calibrator_narrator.py |
-| 16-05-03 | 16-05 | 2 | NRR-04 (4 writers) | test_section_writer_voice_propagation.py |
-| 16-06-01 | 16-06 | 2 | NRR-05 (Chronicler) | test_chronicler.py::test_narrator_voice_propagation |
-| 16-07-01 | 16-07 | 2 | NRR-06 (QA rubric) | test_qa_judge_narrator.py |
-| 16-08-04 | 16-08 | 2 | NRR-08 (frontend chip) | narrator-chip.test.ts (DOM + source-scan) |
-| 16-08-05 | 16-08 | 2 | NRR-09 (seed) | pnpm seed:narrators (manual + automated) |
-| 16-09-01 | 16-09 | 3 | NRR-10 (tripwires) | full pipeline pytest + web test:unit |
-| 16-05-02 | 16-05 | 2 | NRR-10 (inactive warning) | test_calibrator_narrator.py::test_inactive_narrator_falls_back_to_jesse_with_warning |
-
-Update the Validation Sign-Off section at the bottom — flip all 5 checkboxes to checked and the Approval line to `**Approval:** approved — Phase 16 closed YYYY-MM-DD`.
-  </action>
-  <verify>
-    <automated>grep -E "nyquist_compliant: true" .planning/phases/16-choose-your-narrator/16-VALIDATION.md returns a match; grep -E "wave_0_complete: true" .planning/phases/16-choose-your-narrator/16-VALIDATION.md returns a match; grep -c "TBD" .planning/phases/16-choose-your-narrator/16-VALIDATION.md returns 0 in the Per-Task Verification Map section (all task ID slots filled); grep -E "Approval.*approved" .planning/phases/16-choose-your-narrator/16-VALIDATION.md returns a match</automated>
-  </verify>
-  <done>16-VALIDATION.md flipped to nyquist_compliant: true with task IDs filled; sign-off approved.</done>
-</task>
-
-<task type="auto">
-  <name>Task 3: Create 16-HUMAN-UAT.md with Andrew's manual UAT checklist</name>
-  <files>.planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md</files>
-  <read_first>
-    - .planning/phases/16-choose-your-narrator/16-INTENT.md "Voice samples (acceptance reference)" section — Andrew uses the Werner Herzog sample as the qualitative bar
-    - .planning/phases/13-deliberation-as-conversation/13-HUMAN-UAT.md (Phase 13 UAT pattern to mirror — checklist format, success criteria mapping, Andrew approval line)
-    - .planning/phases/16-choose-your-narrator/16-CONTEXT.md D-14 (inactive narrator UAT scenario)
-    - .planning/phases/16-choose-your-narrator/16-VALIDATION.md §Manual-Only Verifications (the 4 manual verification items)
-  </read_first>
-  <action>
-Create .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md:
-
-```markdown
-[YAML frontmatter block:]
-  phase: 16-choose-your-narrator
-  type: human-uat
-  status: pending
-  created: YYYY-MM-DD
-[end frontmatter]
-
-# Phase 16 — Human UAT Checklist (Andrew)
-
-> Authored by /gsd:plan-phase Plan 16-09 close-out.
-> Andrew runs through each item; sign off at the bottom.
-
-## Pre-UAT setup
-
-- [ ] Plan 16-08 Task 5 already approved (3 narrators seeded into production Sanity dataset).
-- [ ] Studio is deployed and reachable at the canonical Sanity Studio URL.
-- [ ] Production pipeline (Railway FastAPI) is healthy: `curl https://<railway-domain>/healthz` returns 200.
-- [ ] Real OpenRouter token, Tavily token, SANITY_API_TOKEN in Railway secrets (Phase 5 baseline).
-
-## Success Criterion 1 — Herzog issue reads as Herzog (NRR-04 + Success Criterion 1)
-
-- [ ] Create a new `weeklyIssue` draft in Studio (issue number N where N is the next free integer).
-- [ ] Set `weeklyIssue.narrator` to `werner-herzog`.
-- [ ] Trigger pipeline run: `POST /run/weekly` with `{issueNumber: N, narrator: "werner-herzog"}` (or whatever the production trigger shape is per Phase 4 contract).
-- [ ] Wait for completion (~3 minutes per Phase 5 cost baseline).
-- [ ] Open the resulting Sanity draft.
-- [ ] **Read the Origin Story aloud.** Does it sound like Werner Herzog?
-  - Bar: does it reach for the geological-time register? Are there wry comparisons (the opera-house, the river)?
-  - Compare to the Werner Herzog Origin Story sample in `.planning/phases/16-choose-your-narrator/16-INTENT.md`.
-  - PASS if it reads as Herzog. FAIL if it reads as Jesse-in-disguise.
-- [ ] **Read the Problem Statement aloud.** Same test.
-- [ ] **Read the Founder Bio aloud.** Same test.
-- [ ] **Read the Case Study aloud.** Same test.
-- [ ] **Check the deliberation conversation** (DeliberationSlot on the rendered issue page): does the Editor's final turn still name the WINNER (Phase 13 D-04 + quick task 260524-ojm preserved)? Is the dialogue in Herzog register?
-
-Notes section (Andrew fills in observations / spot-rewrites needed):
-```
-[Andrew notes here]
-```
-
-## Success Criterion 2 — Jesse-default (NRR-10 zero-regression)
-
-- [ ] Create a second `weeklyIssue` draft (issue N+1) with `narrator` UNSET.
-- [ ] Trigger pipeline run.
-- [ ] **Spot check** the Origin Story / Problem / Founder Bio / Case Study against the latest pre-Phase-16 Jesse-default issue (issue 999 from Phase 5 baseline or whichever was the last canonical Jesse issue).
-- [ ] PASS if Jesse voice is byte-equivalent in feel (small deviations expected from LLM stochasticity; no register drift).
-
-## Success Criterion 4 — Studio picker UX (NRR-07)
-
-- [ ] Open any `weeklyIssue` draft → confirm "Narrator" reference picker is visible above the pipelineMetadata group.
-- [ ] Click into picker → confirm all 3 seeded narrators (jesse, maya-rudolph, werner-herzog) appear.
-- [ ] Click on werner-herzog → confirm the Studio reference card opens the narratorProfile document showing the `exampleSamples` array entries inline.
-- [ ] Confirm the picker can be CLEARED back to no-selection (D-16 — defaults to no selection footgun mitigation).
-
-## Success Criterion 5 — Frontend chip (NRR-08)
-
-- [ ] Load the Herzog-narrator issue page (the Success Criterion 1 issue) in the deployed web app.
-- [ ] Confirm "Narrated by Werner Herzog" chip renders under the issue title.
-- [ ] Confirm chip styling: --color-text-mute, Inter uppercase, 0.18em letter-spacing, ~11px (Phase 12 MED-04 convention).
-- [ ] Confirm chip placement: after the byline "by Jesse A. Eisenbalm", before the mission statement.
-- [ ] Load the Jesse-default issue page (Success Criterion 2 issue) → confirm NO chip renders.
-- [ ] Open browser network inspector → confirm GROQ response does NOT include voiceConstraints / voiceRubric / exampleSamples (Pitfall 8 security gate).
-
-## D-14 — Inactive narrator silent fallback (NRR-10)
-
-- [ ] In Studio, create a 4th narrator profile (e.g. "Aaron Sorkin") with `active: false`.
-- [ ] Reference it on a new `weeklyIssue` draft.
-- [ ] Trigger pipeline run.
-- [ ] Confirm the issue ships with Jesse voice (not Sorkin).
-- [ ] Open Convex dashboard → `deliberationEvents` table → find a row with `agentId: 'calibrator'`, `eventType: 'editor-decision'`, payload containing `"warning"` and the inactive narrator name.
-- [ ] PASS if the warning is recorded AND the run completes successfully.
-
-## Sign-off
-
-- [ ] Success Criterion 1: PASS / FAIL (Herzog reads as Herzog)
-- [ ] Success Criterion 2: PASS / FAIL (Jesse-default zero-regression)
-- [ ] Success Criterion 4: PASS / FAIL (Studio picker functional)
-- [ ] Success Criterion 5: PASS / FAIL (Chip placement + no leak)
-- [ ] D-14 inactive narrator: PASS / FAIL
-
-**Approval:** ___________  **Date:** ___________
-```
-
-The exact wording can be tightened. The core checklist must cover the 4 manual verifications from 16-VALIDATION.md plus the D-14 path.
-  </action>
-  <verify>
-    <automated>test -f .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md; grep -E "Werner Herzog" .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md returns at least 3 matches; grep -E "Approval" .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md returns a match; grep -E "D-14" .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md returns a match</automated>
-  </verify>
-  <done>16-HUMAN-UAT.md created with the 5 UAT sections + sign-off block.</done>
+  <done>
+    - 16-VERIFICATION.md exists with all four sections.
+    - Pipeline test count gate satisfied (≥187).
+    - Commerce sentinel gate satisfied (≥29).
+    - WINNER AUTHORITY cross-check passes.
+    - No placeholder tokens in narrators.json.
+    - All per-NRR named tests pass.
+  </done>
 </task>
 
 <task type="checkpoint:human-verify" gate="blocking">
-  <name>Task 4: Andrew executes 16-HUMAN-UAT.md end-to-end + signs off</name>
-  <what-built>
-Tasks 1-3 ran the full automated test matrix, flipped 16-VALIDATION.md to nyquist_compliant: true, and authored the 16-HUMAN-UAT.md checklist. Andrew now executes the UAT checklist against the production stack, confirms each Success Criterion + D-14, and signs off.
+  <name>Task 2: Andrew end-to-end UAT — Maya/Herzog/Jesse round-trip (record in 16-UAT.md)</name>
+  <files>.planning/phases/16-choose-your-narrator/16-UAT.md</files>
 
-This is the Phase 16 close-out gate. After Andrew's approval, the phase is complete; STATE.md updates and ROADMAP.md Phase 16 completion happen in the post-execute phase-close step.
+  <what-built>
+    Phase 16 narrator support is wired end-to-end:
+    - Three narrators seeded in Sanity Studio (Plan 16-08a).
+    - Pipeline narrator resolution + chronicler / QA judge narrator-awareness (Plans 16-04 through 16-07).
+    - Frontend narrator chip on issue pages (Plan 16-08b).
+
+    All automated tests pass per Task 1 above. This checkpoint binds the wiring into Andrew's hands: pick a narrator on a real draft issue, drive the pipeline, watch the chronicler output speak in the narrator's voice, confirm the chip renders on the published page.
   </what-built>
+
   <how-to-verify>
-1. Open .planning/phases/16-choose-your-narrator/16-HUMAN-UAT.md.
-2. Work through each checklist item in order: Pre-UAT setup → Success Criterion 1 → 2 → 4 → 5 → D-14.
-3. For Success Criterion 1: read each section ALOUD and compare to the Werner Herzog sample in 16-INTENT.md. The bar is "does it sound like Herzog or like Jesse-in-disguise?" — the latter fails.
-4. Fill in the sign-off PASS / FAIL line for each Success Criterion.
-5. If any FAIL: report the specific failure mode (which Success Criterion, what was observed vs expected). The plan does NOT close until all 5 are PASS.
-6. If all 5 PASS: sign the Approval line and date. Type "approved" here to signal completion.
+    Drive three scenarios in sequence. Record actual output verbatim in `16-UAT.md`.
+
+    ### Scenario A — Jesse (legacy default, regression check)
+
+    1. In Sanity Studio, open the most recent draft issue. Confirm `narratorSlug` is unset (or explicitly set to `jesse`).
+    2. Trigger a pipeline run against this draft (or replay a Phase 14 fixture).
+    3. After chronicler output completes: confirm the chronicled section bodies read as Jesse. No Maya/Herzog tells.
+    4. Publish the draft. Open `/issue/[slug]`.
+    5. Confirm NO narrator chip renders.
+    6. Confirm the issue reads identically to a Phase 14 published issue (byline, publish date, mission).
+
+    ### Scenario B — Maya Rudolph
+
+    1. Open the same (or new) draft issue. Set `narratorSlug` to `maya-rudolph` in the picker.
+    2. Confirm Studio preview shows Maya's voiceRubric and at least one exampleSample.
+    3. Trigger a pipeline run.
+    4. After chronicler output completes: confirm sections read in Maya's voice (sly, dry, warm). Sentences shorter than Herzog; warmer than Jesse.
+    5. Publish. Open `/issue/[slug]`.
+    6. Confirm the narrator chip renders with text "Narrated by Maya Rudolph".
+    7. Confirm the chip appears ABOVE the publish-date element (D-19) — use browser devtools to confirm DOM order.
+
+    ### Scenario C — Werner Herzog (draft preview only — no publish required)
+
+    1. Open the same (or new) draft issue. Set `narratorSlug` to `werner-herzog`.
+    2. Confirm Studio preview shows Herzog's voiceRubric.
+    3. Trigger a pipeline run (or just the chronicler agent in dev mode).
+    4. Confirm at least the chronicler dry-run output reads in Herzog's register (longer, more grave sentences).
+    5. Either publish and verify chip ("Narrated by Werner Herzog") above publish-date, OR confirm in Studio preview that the chip would render.
+
+    ### Aggregate confirmations to record in 16-UAT.md:
+
+    - All three scenarios completed.
+    - Chip placement matches D-19 (DOM order: byline → chip → publish-date).
+    - Chronicled voice qualitatively shifts between narrators (subjective — Andrew judges).
+    - Phase 14 Jesse path renders identically to baseline.
+    - No console errors in the browser during any scenario.
+    - Pipeline logs show calibrator resolved the correct narrator on each run.
   </how-to-verify>
-    <action>
-This task is a manual checkpoint — Andrew executes the steps in <how-to-verify> below. There is no Claude-automated action for this task; the verification happens entirely in the user's environment with the user's credentials.
+
+  <resume-signal>
+    Type "approved" once all three scenarios are complete and recorded in `16-UAT.md`, OR describe any issue (failed voice shift, missing chip, regression on Jesse path).
+  </resume-signal>
+
+  <action>
+    This task is a manual checkpoint. Andrew executes the three scenarios in `<how-to-verify>` against the production stack and records observations verbatim in `.planning/phases/16-choose-your-narrator/16-UAT.md`. There is no Claude-automated action.
   </action>
+
   <verify>
-    <automated>(checkpoint — manual: Andrew confirms each step in <how-to-verify> and types "approved" in <resume-signal>)</automated>
+    <automated>(checkpoint — manual: Andrew confirms each scenario in &lt;how-to-verify&gt; and types "approved" in &lt;resume-signal&gt;)</automated>
   </verify>
-  <done>Andrew types "approved" after completing each <how-to-verify> step successfully.</done>
-  <resume-signal>Type "approved" with the 5 PASS lines confirmed, or report specific Success Criterion failures.</resume-signal>
+
+  <done>
+    Andrew types "approved" after all three scenarios (Jesse, Maya, Herzog) are recorded in 16-UAT.md with PASS verdicts.
+  </done>
 </task>
 
 </tasks>
 
 <verification>
-- 6-command test matrix all exit 0.
-- 16-VALIDATION.md nyquist_compliant: true.
-- 16-HUMAN-UAT.md exists with full 5-section checklist.
-- Andrew has signed off on all 5 Success Criteria (1, 2, 4, 5, D-14).
-- Phase 16 ready for STATE.md / ROADMAP.md close-out.
+- 16-VERIFICATION.md exists and contains all sections.
+- Task 1 zero-regression gates pass with named numeric outputs recorded.
+- Task 2 Andrew checkpoint passes with `16-UAT.md` containing transcripts for all three scenarios.
+- All cross-checks (WINNER AUTHORITY, placeholder absence) pass.
 </verification>
 
 <success_criteria>
-- NRR-10 zero-regression: full test matrix + Andrew UAT confirms.
-- Success Criteria 1 (Herzog) + 4 (Studio) + 5 (chip) + D-14 (inactive) all PASS.
-- The phase ships only when Andrew reads a Herzog Origin Story aloud and confirms it sounds like Herzog (the human-judgable bar from 16-INTENT.md is the binding gate).
+- Phase 16 ship-readiness confirmed.
+- Every NRR-01..NRR-14 has a documented verification (test or human checkpoint).
+- Phase 14 pipeline baseline (168) and Phase 8 commerce sentinel baseline (29) are non-regressed by EXPLICIT count assertion.
+- Andrew has driven the full Maya/Herzog/Jesse loop and signed off.
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/16-choose-your-narrator/16-09-SUMMARY.md` documenting: the test matrix counts (e.g. "187 pipeline tests pass, 0 fail"), the Andrew UAT outcome per Success Criterion, any spot-rewrite observations Andrew flagged, and the final approval timestamp.
+After completion, create `.planning/phases/16-choose-your-narrator/16-09-verification-and-uat-SUMMARY.md`. Record:
+- Final numeric outputs from the three zero-regression gates.
+- Excerpt of Andrew's UAT confirmations.
+- Cross-reference to `16-VERIFICATION.md` and `16-UAT.md` for full transcripts.
 </output>

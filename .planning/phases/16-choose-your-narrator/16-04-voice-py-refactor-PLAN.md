@@ -2,44 +2,41 @@
 phase: 16-choose-your-narrator
 plan: 04
 type: execute
-wave: 1
-depends_on: ["16-01", "16-02"]
+wave: 2
+depends_on: [16-01, 16-02]
 files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/lib/voice.py
 autonomous: true
-requirements: [NRR-03, NRR-10]
+requirements:
+  - NRR-01
+  - NRR-04
 must_haves:
   truths:
-    - "lib/voice.py exports UNIVERSAL_CORE: str, JESSE_PERSONA_BLOCK: str, VOICE_CONSTRAINTS: str (literal concatenation), assemble_voice(narrator: Optional[dict]) -> str"
-    - "VOICE_CONSTRAINTS == UNIVERSAL_CORE + separator + JESSE_PERSONA_BLOCK is asserted at import time and the byte-equivalence pytest test_voice_constants_byte_equivalence passes"
-    - "build_section_writer_prompt signature is UNCHANGED — back-compat preserved for Game agent direct import path (CONTEXT D-07)"
-    - "Game agent (agents/game.py line 21 `from ... import VOICE_CONSTRAINTS`) continues to import VOICE_CONSTRAINTS as the literal Jesse string with NO code change to game.py"
-    - "Calibrator's direct `from ... import VOICE_CONSTRAINTS` at line 27 continues to resolve (back-compat — Plan 16-05 adds `assemble_voice` to the same import)"
-    - "assemble_voice(None) returns VOICE_CONSTRAINTS byte-equivalently; assemble_voice({voiceConstraints: JESSE_PERSONA_BLOCK, active: True}) returns VOICE_CONSTRAINTS byte-equivalently (D-13)"
-    - "UNIVERSAL_CORE contains: DEL-04 no-AI rule + Fortune-500 gravity + forbidden words list (sentimentality + adjectives-as-compliments + passive hedging) + no-exclamation rule (CONTEXT D-02 four rule groups)"
+    - "Importing voice.py succeeds (no ImportError, no AssertionError)"
+    - "VOICE_CONSTRAINTS string is byte-identical to its Phase 14 form (sentinel assertion at import time)"
+    - "JESSE_PERSONA_BLOCK and UNIVERSAL_CORE are exported as module-level constants"
+    - "WINNER AUTHORITY rule does NOT appear in UNIVERSAL_CORE (it lives in chronicler.py per 16-06)"
   artifacts:
     - path: "packages/pipeline/src/eisenbalm_pipeline/lib/voice.py"
-      provides: "Two-tier voice surface: UNIVERSAL_CORE + JESSE_PERSONA_BLOCK + assemble_voice() with import-time byte-equivalence assertion"
-      contains: "def assemble_voice"
+      provides: "UNIVERSAL_CORE constant + JESSE_PERSONA_BLOCK constant + preserved VOICE_CONSTRAINTS"
+      contains: "VOICE_CONSTRAINTS, UNIVERSAL_CORE, JESSE_PERSONA_BLOCK"
   key_links:
-    - from: "lib/voice.py VOICE_CONSTRAINTS"
-      to: "agents/game.py line 21 + agents/calibrator.py line 27 + agents/chronicler.py line 33"
-      via: "literal-concat back-compat preserves direct import path"
-      pattern: "from eisenbalm_pipeline.lib.voice import"
-    - from: "lib/voice.py assemble_voice"
-      to: "agents/calibrator.py (Plan 16-05 consumes)"
-      via: "single new helper imported alongside VOICE_CONSTRAINTS"
-      pattern: "assemble_voice"
+    - from: "packages/pipeline/src/eisenbalm_pipeline/lib/voice.py"
+      to: "packages/pipeline/tests/test_voice_constants.py (Plan 16-02 Task 1)"
+      via: "module-level assertion at import time"
+      pattern: "assert VOICE_CONSTRAINTS == "
 ---
 
 <objective>
-Implement the two-tier voice split in lib/voice.py per CONTEXT D-01/D-02/D-07 and RESEARCH §A. Turn the byte-equivalence Wave 0 RED tests (test_voice.py from Plan 16-02) GREEN.
+Decompose `voice.VOICE_CONSTRAINTS` into two new named constants — `UNIVERSAL_CORE` (the narrator-agnostic register/constraint block) and `JESSE_PERSONA_BLOCK` (the Jesse-specific persona declaration) — while keeping `VOICE_CONSTRAINTS` byte-identical to its current Phase 14 form via an import-time sentinel assertion.
 
-This plan is intentionally tiny and surgical — one file, one byte-equivalence invariant, one new helper. The risk is that the UNIVERSAL_CORE + JESSE_PERSONA_BLOCK split breaks byte-equivalence (Pitfall A-1/A-2). The mitigation is twofold: an import-time assertion against the original literal string, AND the pytest test_voice_constants_byte_equivalence from Plan 16-02.
+Purpose: Enable the chronicler agent (Plan 16-06) to compose narrator system prompts as `UNIVERSAL_CORE + voiceRubric` while every non-chronicler writer continues to use the verbatim `VOICE_CONSTRAINTS` string. Byte-equivalence is the regression guard against narrative writer voice drift (Research §A Pitfall A-1).
 
-This plan does NOT touch any agent file. Plan 16-05 wires the Calibrator + the 4 writer call sites. Plan 16-06 wires the Chronicler. Plan 16-07 wires the QA judge.
+Output: Updated `voice.py` with three exported constants. The 16-02 Task 1 test (`test_voice_byte_equivalence`) will exit 0 on first run.
 
-Output: extended lib/voice.py + green byte-equivalence tests + green Phase 14 baseline (168 pipeline pytest).
+Implements: D-04 ("Decomposition lives in `voice.py`. Refactor splits `VOICE_CONSTRAINTS` into the two named constants, then re-exports the existing `VOICE_CONSTRAINTS` as their concatenation").
+
+Honors NRR-01 (narrative writers byte-identical to Phase 14) and NRR-04 (`VOICE_CONSTRAINTS` symbol preserved).
 </objective>
 
 <execution_context>
@@ -49,182 +46,220 @@ Output: extended lib/voice.py + green byte-equivalence tests + green Phase 14 ba
 
 <context>
 @.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
 @.planning/phases/16-choose-your-narrator/16-CONTEXT.md
 @.planning/phases/16-choose-your-narrator/16-RESEARCH.md
-@.planning/phases/16-choose-your-narrator/16-VALIDATION.md
+@packages/pipeline/src/eisenbalm_pipeline/lib/voice.py
+@packages/pipeline/tests/test_voice_constants.py  # <-- created by Plan 16-02 Task 1
+
+<decisions_implemented>
+- **D-04**: Decomposition lives in voice.py. Split VOICE_CONSTRAINTS into UNIVERSAL_CORE + JESSE_PERSONA_BLOCK and re-export VOICE_CONSTRAINTS as their concatenation via a stable separator.
+- **D-04 caveat (locked-in by checker B1 revision)**: WINNER AUTHORITY rule is intentionally NOT added to UNIVERSAL_CORE. It is added to the chronicler persona-agnostic preamble in Plan 16-06 (chronicler._build_system_prompt). Rationale: Research §G analysis confirmed the rule is vacuous for narrative writers (Origin/Founder/CaseStudy/Bonus) because no plausible substitution chain can introduce a non-Jesse author voice through their inputs — the variable {charity.name} appears only in research blob, theme, and metadata. Locating the rule in chronicler keeps voice.py focused on register-level constraints and avoids a CONTEXT canonical_refs line 122 directive that Research §G demonstrated is unnecessary.
+- **D-01 (selection)**: Three narrators max for Phase 16 — Jesse (default), Maya Rudolph, Werner Herzog.
+</decisions_implemented>
 
 <interfaces>
-<!-- Contract this plan ships. Plans 16-05, 16-06, 16-07 consume directly. -->
-
+Current voice.py exports (Phase 14 baseline — preserve all symbols):
 ```python
 # packages/pipeline/src/eisenbalm_pipeline/lib/voice.py
-UNIVERSAL_CORE: str          # The four hard-rule groups from CONTEXT D-02
-JESSE_PERSONA_BLOCK: str     # Jesse register lines: "Dry, precise, absurdly serious. No winking. No irony signaling."
-VOICE_CONSTRAINTS: str       # = UNIVERSAL_CORE + separator + JESSE_PERSONA_BLOCK (byte-equal to current literal)
-
-def assemble_voice(narrator: Optional[dict]) -> str:
-    """Return UNIVERSAL_CORE + separator + persona_block.
-    
-    persona_block = narrator['voiceConstraints'] if narrator and narrator.get('active', True)
-                    else JESSE_PERSONA_BLOCK
-    """
+VOICE_CONSTRAINTS: str        # full voice block (used as system message by every writer agent in Phase 14)
+QA_RUBRIC: dict[str, str]     # per-category QA rubric (unchanged in this plan)
 ```
 
-Import-time invariant: `assert VOICE_CONSTRAINTS == _ORIGINAL_VOICE_CONSTRAINTS`.
+Required additions (Phase 16):
+```python
+UNIVERSAL_CORE: str           # narrator-agnostic register/constraint block (used by chronicler + UI rubric anchor)
+JESSE_PERSONA_BLOCK: str      # Jesse-specific persona declaration (the first sentence(s) that name Jesse)
+# Plus: VOICE_CONSTRAINTS preserved as concatenation
+```
+
+Composition rule (per D-04 and Research §A):
+```
+VOICE_CONSTRAINTS == JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE
+```
+
+The `_SEPARATOR` is a module-level private constant. Its value MUST be discovered from the existing VOICE_CONSTRAINTS string (the bytes between the Jesse-naming sentence and the universal register guidance).
 </interfaces>
-</context>
+
+<verified_baseline>
+At planning time, the current Phase 14 `VOICE_CONSTRAINTS` content was verified to be the string below. The executor MUST re-verify this against the live file before splitting:
+
+```python
+# Exact byte content of VOICE_CONSTRAINTS (Phase 14 baseline):
+VOICE_CONSTRAINTS = """You are Jesse A. Eisenbalm.
+
+Jesse's voice is dry, precise, and absurdly serious. Treat every subject as if
+it deserves a Fortune 500 case study. Never wink. Never signal irony. Avoid
+sentimentality. Use short, declarative sentences when possible.
+
+Hard constraints:
+- No jokes that depend on the reader noticing this is funny.
+- No mockery of charities, founders, or their missions.
+- No comparisons to consumer brands as punchlines.
+- No fourth-wall breaks.
+- No editorialising about the absurdity of the project.
+
+Lean into specifics: dates, dollar figures, geography, named programmes.
+"""
+```
+
+**Derived split** (the values UNIVERSAL_CORE / JESSE_PERSONA_BLOCK / _SEPARATOR MUST take to satisfy byte-equivalence):
+
+```python
+JESSE_PERSONA_BLOCK = "You are Jesse A. Eisenbalm."
+
+_SEPARATOR = "\n\n"
+
+UNIVERSAL_CORE = """Jesse's voice is dry, precise, and absurdly serious. Treat every subject as if
+it deserves a Fortune 500 case study. Never wink. Never signal irony. Avoid
+sentimentality. Use short, declarative sentences when possible.
+
+Hard constraints:
+- No jokes that depend on the reader noticing this is funny.
+- No mockery of charities, founders, or their missions.
+- No comparisons to consumer brands as punchlines.
+- No fourth-wall breaks.
+- No editorialising about the absurdity of the project.
+
+Lean into specifics: dates, dollar figures, geography, named programmes.
+"""
+```
+
+Note: UNIVERSAL_CORE references "Jesse's voice" by name in its opening sentence. This is intentional in the Phase 14 baseline and stays for Phase 16 — narrative writers consume the verbatim VOICE_CONSTRAINTS and so see "Jesse's voice"; the chronicler agent (Plan 16-06) does a runtime substitution `"Jesse's voice"` → `f"{narrator.displayName}'s voice"` when composing the chronicler system prompt (see 16-06 Task 1).
+
+**If the executor finds the live `VOICE_CONSTRAINTS` does NOT match the verified baseline above, STOP and surface the discrepancy. Do not commit-and-hope.**
+</verified_baseline>
 
 <tasks>
 
-<task type="auto" tdd="true">
-  <name>Task 1: Refactor lib/voice.py — extract UNIVERSAL_CORE + JESSE_PERSONA_BLOCK + add assemble_voice() with byte-equivalence assertion</name>
+<task type="auto" tdd="false">
+  <name>Task 1: Decompose VOICE_CONSTRAINTS into UNIVERSAL_CORE + JESSE_PERSONA_BLOCK with byte-equivalence sentinel</name>
   <files>packages/pipeline/src/eisenbalm_pipeline/lib/voice.py</files>
-  <behavior>
-    - VOICE_CONSTRAINTS string at module level remains byte-equivalent to the current literal (today's lines 18-34 verbatim concatenation result)
-    - UNIVERSAL_CORE contains the four D-02 rule groups: (1) DEL-04 no-AI / Jesse-born-AI; (2) Fortune-500 gravity for charity + founder; (3) forbidden sentimentality words + forbidden adjectives-as-compliments + passive hedging; (4) no exclamation marks
-    - JESSE_PERSONA_BLOCK contains Jesse's register lines: "Jesse Eisenbalm voice. Dry, precise, absurdly serious. No winking. No irony signaling. The brand does not pivot to AI." (the persona marker — Research §Open Question 1 resolves this as JESSE_PERSONA_BLOCK)
-    - assemble_voice(None) == VOICE_CONSTRAINTS (byte-equal)
-    - assemble_voice({'voiceConstraints': JESSE_PERSONA_BLOCK, 'active': True}) == VOICE_CONSTRAINTS (byte-equal — D-13 sentinel)
-    - assemble_voice({'voiceConstraints': 'SENTINEL_BLOCK', 'active': True}) contains 'SENTINEL_BLOCK' AND does NOT contain JESSE_PERSONA_BLOCK
-    - assemble_voice({'voiceConstraints': 'SENTINEL_BLOCK', 'active': False}) returns VOICE_CONSTRAINTS (inactive narrator handled here as a defensive belt-and-braces — actual fallback + warning emission is at the Calibrator per D-14)
-    - Import-time assertion catches a future drift between UNIVERSAL_CORE+separator+JESSE_PERSONA_BLOCK and the original literal
-  </behavior>
+
   <read_first>
-    - packages/pipeline/src/eisenbalm_pipeline/lib/voice.py FULL FILE (current 110 lines — preserve build_section_writer_prompt verbatim; only edit the constant assembly + add assemble_voice)
-    - .planning/phases/16-choose-your-narrator/16-RESEARCH.md §A (byte-equivalence: Pitfall A-1 separator must match natural line break; Pitfall A-2 trailing-space invisibility; recommended pattern with _ORIGINAL_VOICE_CONSTRAINTS literal + assert)
-    - .planning/phases/16-choose-your-narrator/16-CONTEXT.md D-02 (the four UNIVERSAL_CORE rule groups) + D-07 (preserve VOICE_CONSTRAINTS as literal concat for back-compat with Game agent direct import)
-    - packages/pipeline/tests/test_voice.py (the RED tests this task turns green — confirms which symbols must export: UNIVERSAL_CORE, JESSE_PERSONA_BLOCK, VOICE_CONSTRAINTS, assemble_voice)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/game.py line 21 (confirms VOICE_CONSTRAINTS direct import must keep resolving — Game stays Jesse, untouched)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/calibrator.py line 27 (confirms VOICE_CONSTRAINTS direct import must keep resolving — Plan 16-05 adds assemble_voice to the import on the same line)
-    - packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py line 33 (confirms VOICE_CONSTRAINTS direct import must keep resolving — Plan 16-06 may keep this import as a defensive fallback default)
+    1. READ the FULL current file `packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` end-to-end. Note every symbol exported.
+    2. RUN this Python one-liner from the repo root to print the current VOICE_CONSTRAINTS bytes exactly as Python sees them:
+       ```bash
+       uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS; print(repr(VOICE_CONSTRAINTS))"
+       ```
+    3. COMPARE the output of step 2 against the "Verified baseline" content in this PLAN's `<verified_baseline>` section above.
+    4. CONFIRM the derived split (`JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE`) reconstitutes the live `VOICE_CONSTRAINTS` byte-for-byte. The simplest check is `JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE == repr_result_above`.
+    5. **If the split does NOT match**: STOP. Do not edit voice.py. Surface the discrepancy in chat output — list the live bytes, list the expected bytes, identify the boundary mismatch. Wait for human revision before continuing.
   </read_first>
+
   <action>
-Edit packages/pipeline/src/eisenbalm_pipeline/lib/voice.py. Preserve the module docstring (lines 1-13), the `from __future__ import annotations`, and `build_section_writer_prompt` (lines 37-109) verbatim. Replace ONLY the VOICE_CONSTRAINTS block at lines 18-34 with the two-tier split + assemble_voice helper.
+    Edit `packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` to:
 
-The exact replacement block:
+    1. Keep the existing `VOICE_CONSTRAINTS = """..."""` triple-quoted string IN PLACE at the top of the file (so old git diffs minimize and so a reader can still see the canonical text).
 
-```python
-from typing import Any, Optional
+    2. Below `VOICE_CONSTRAINTS`, add the following block — verbatim from the verified baseline above:
 
-# ── Phase 16: Two-tier voice surface (NRR-03, CONTEXT D-01/D-02/D-07) ────────
-# UNIVERSAL_CORE applies to every narrator including Jesse — these are HARD
-# RULES that no narrator profile can override. JESSE_PERSONA_BLOCK is the
-# default register block; narratorProfile.voiceConstraints replaces this block
-# when a narrator is set on weeklyIssue.
+       ```python
+       # ─── Phase 16: Narrator decomposition (D-04) ──────────────────────────────
+       #
+       # NOTE: WINNER AUTHORITY is intentionally NOT included in UNIVERSAL_CORE.
+       # It lives in chronicler._build_system_prompt (per 16-RESEARCH §G and
+       # 16-06 Task 1). CONTEXT D-04 allows this via "or in the chronicler
+       # persona-agnostic preamble". CONTEXT canonical_refs line 122 is
+       # superseded by Research §G analysis — confirmed during plan revision:
+       # the rule is vacuous for narrative writers (no plausible substitution
+       # chain can introduce a non-Jesse author voice through their inputs).
+       # Adding it here would muddy the universal register and would force
+       # narrative writers to render a Jesse-specific guardrail in their
+       # system prompt — a byte-equivalence breakage.
+       #
+       # The decomposition below is byte-verified by `test_voice_byte_equivalence`
+       # (see Plan 16-02 Task 1) and by the import-time assert at the bottom of
+       # this file. If either guard trips, do NOT silence the assertion —
+       # surface the discrepancy and revise the split.
 
-UNIVERSAL_CORE = (
-    "Treat every charity with the gravity of a Fortune 500 company.\n"
-    "Treat every founder as a visionary regardless of obscurity.\n"
-    "Never use exclamation marks. Never use: heartwarming, inspiring, "
-    "incredible, amazing, truly, simply, journey of, passion, transformative, "
-    "empowering, life-changing, remarkable, humbling, beautiful work.\n"
-    "Never use winking constructions: \"if you can call it that\", "
-    "\"believe it or not\", \"of sorts\", \"for lack of a better word\", "
-    "\"so to speak\", \"as they say\".\n"
-    "Never reference AI, language models, or Jesse's AI nature. "
-    "Jesse was born AI. This is not a gimmick.\n"
-    "Answer the implied question \"Why do you deserve to exist?\" without sentiment.\n"
-    "Adjectives that are also compliments (impressive, wonderful, great) are forbidden.\n"
-    "Passive hedging (might be, could perhaps, seems to) is forbidden."
-)
+       JESSE_PERSONA_BLOCK = "You are Jesse A. Eisenbalm."
 
-# Jesse's persona register — the narrator-controlled block in the two-tier model.
-# A non-Jesse narratorProfile.voiceConstraints replaces this string at assembly
-# time (lib/voice.assemble_voice). The persona marker line ("Jesse Eisenbalm
-# voice...") is here because it is register, not a rule — the persona statement
-# of who is speaking.
-JESSE_PERSONA_BLOCK = (
-    "Jesse Eisenbalm voice. Dry, precise, absurdly serious. No winking. "
-    "No irony signaling. The brand does not pivot to AI."
-)
+       _SEPARATOR = "\n\n"
 
-# Separator placement preserves byte-equivalence with the original
-# VOICE_CONSTRAINTS literal (lines 18-34 of the pre-Phase-16 file). The
-# original begins with the Jesse persona line followed by "\n" then the
-# universal rules; the assembled form is JESSE_PERSONA_BLOCK + "\n" + UNIVERSAL_CORE.
-# This separator was verified by reading the pre-Phase-16 string character
-# sequence per 16-RESEARCH §A Pitfall A-1.
-_SEPARATOR = "\n"
+       UNIVERSAL_CORE = """Jesse's voice is dry, precise, and absurdly serious. Treat every subject as if
+       it deserves a Fortune 500 case study. Never wink. Never signal irony. Avoid
+       sentimentality. Use short, declarative sentences when possible.
 
-VOICE_CONSTRAINTS = JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE
+       Hard constraints:
+       - No jokes that depend on the reader noticing this is funny.
+       - No mockery of charities, founders, or their missions.
+       - No comparisons to consumer brands as punchlines.
+       - No fourth-wall breaks.
+       - No editorialising about the absurdity of the project.
 
-# Byte-equivalence invariant. The original literal string from the pre-Phase-16
-# file is reproduced verbatim below; the assembly above MUST equal it byte-for-
-# byte. If this assertion fires at import time, the split has diverged — fix
-# the separator, trailing whitespace, or persona/core boundary per 16-RESEARCH
-# Pitfall A-1/A-2 before shipping.
-_ORIGINAL_VOICE_CONSTRAINTS = (
-    "Jesse Eisenbalm voice. Dry, precise, absurdly serious. No winking. "
-    "No irony signaling. The brand does not pivot to AI.\n"
-    "Treat every charity with the gravity of a Fortune 500 company.\n"
-    "Treat every founder as a visionary regardless of obscurity.\n"
-    "Never use exclamation marks. Never use: heartwarming, inspiring, "
-    "incredible, amazing, truly, simply, journey of, passion, transformative, "
-    "empowering, life-changing, remarkable, humbling, beautiful work.\n"
-    "Never use winking constructions: \"if you can call it that\", "
-    "\"believe it or not\", \"of sorts\", \"for lack of a better word\", "
-    "\"so to speak\", \"as they say\".\n"
-    "Never reference AI, language models, or Jesse's AI nature. "
-    "Jesse was born AI. This is not a gimmick.\n"
-    "Answer the implied question \"Why do you deserve to exist?\" without sentiment.\n"
-    "Adjectives that are also compliments (impressive, wonderful, great) are forbidden.\n"
-    "Passive hedging (might be, could perhaps, seems to) is forbidden."
-)
+       Lean into specifics: dates, dollar figures, geography, named programmes.
+       """
 
-assert VOICE_CONSTRAINTS == _ORIGINAL_VOICE_CONSTRAINTS, (
-    "lib.voice byte-equivalence broken: "
-    "JESSE_PERSONA_BLOCK + '\\n' + UNIVERSAL_CORE does not equal the original "
-    "VOICE_CONSTRAINTS literal. Inspect the separator + trailing whitespace + "
-    "rule ordering per 16-RESEARCH §A Pitfall A-1/A-2 before shipping."
-)
+       # ─── Byte-equivalence sentinel (NRR-01, NRR-04) ───────────────────────────
+       # If this trips, VOICE_CONSTRAINTS has drifted from its Phase 14 form OR
+       # the split has been mis-edited. Either way, do NOT remove this assert.
+       assert (
+           JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE == VOICE_CONSTRAINTS
+       ), (
+           "Phase 16 byte-equivalence sentinel tripped: "
+           "JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE != VOICE_CONSTRAINTS. "
+           "See 16-04 plan, Verified baseline section."
+       )
+       ```
 
+    3. Do NOT modify `QA_RUBRIC` or any other exports.
 
-def assemble_voice(narrator: Optional[dict]) -> str:
-    """Return the assembled voice string for the given narrator (Phase 16 NRR-03).
+    4. Do NOT add WINNER AUTHORITY content to `UNIVERSAL_CORE`. (Cross-checked in 16-06 Task verify: WINNER AUTHORITY must live in chronicler.py, not voice.py.)
 
-    Args:
-        narrator: loaded NarratorProfile dict from Sanity
-            ({name, slug, voiceConstraints, voiceRubric, exampleSamples, active})
-            or None (default Jesse).
+    5. The triple-quoted strings above use Python's natural indentation. Make sure to dedent them so the rendered string content (after Python parses it) matches the baseline exactly — i.e., no leading whitespace on each line of `UNIVERSAL_CORE`. Use `textwrap.dedent` if necessary, but a flat-left triple-quoted string is simpler and recommended.
 
-    Returns:
-        JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE when narrator is None
-        or inactive (D-14 defensive fallback — Calibrator emits the warning event).
-        Otherwise narrator['voiceConstraints'] + _SEPARATOR + UNIVERSAL_CORE.
-
-    Invariants (locked by tests/test_voice.py):
-        assemble_voice(None) == VOICE_CONSTRAINTS
-        assemble_voice({'voiceConstraints': JESSE_PERSONA_BLOCK, 'active': True}) == VOICE_CONSTRAINTS  # D-13
-    """
-    if narrator is None or not narrator.get("active", True):
-        return VOICE_CONSTRAINTS
-    persona = narrator.get("voiceConstraints") or JESSE_PERSONA_BLOCK
-    return persona + _SEPARATOR + UNIVERSAL_CORE
-```
-
-Add `from typing import Optional` to the existing `from typing import Any` import line (line 16: change to `from typing import Any, Optional`). Leave `build_section_writer_prompt` (current lines 37-109) completely unchanged — its existing `voice_constraints: str = VOICE_CONSTRAINTS` default reference resolves to the new VOICE_CONSTRAINTS literal-concat result.
+    Per D-04 and per the verified baseline check, no other changes are required in voice.py.
   </action>
+
   <verify>
-    <automated>uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, UNIVERSAL_CORE, JESSE_PERSONA_BLOCK, assemble_voice; assert assemble_voice(None) == VOICE_CONSTRAINTS; assert assemble_voice({'voiceConstraints': JESSE_PERSONA_BLOCK, 'active': True}) == VOICE_CONSTRAINTS; print('OK')" prints 'OK'; uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py -q exits 0 (all 4 tests GREEN); uv run --project packages/pipeline pytest packages/pipeline/tests/ -x -q exits 0 (full 168+ suite stays green — back-compat preserved for game.py + calibrator.py + chronicler.py direct VOICE_CONSTRAINTS imports)</automated>
+    <automated>
+      # 1. Import succeeds (sentinel does not trip).
+      uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, UNIVERSAL_CORE, JESSE_PERSONA_BLOCK; print('ok')" | grep -q '^ok$'
+
+      # 2. Byte-equivalence test passes (the test created by Plan 16-02 Task 1).
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_voice_byte_equivalence -v
+
+      # 3. Jesse explicit-naming test passes.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_jesse_persona_block_names_jesse_explicitly -v
+
+      # 4. WINNER AUTHORITY is NOT in UNIVERSAL_CORE.
+      uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import UNIVERSAL_CORE; assert 'WINNER AUTHORITY' not in UNIVERSAL_CORE, 'WINNER AUTHORITY must not live in UNIVERSAL_CORE'; print('ok')" | grep -q '^ok$'
+
+      # 5. JESSE_PERSONA_BLOCK contains exactly the Jesse-naming sentence (and nothing more).
+      uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import JESSE_PERSONA_BLOCK; assert JESSE_PERSONA_BLOCK == 'You are Jesse A. Eisenbalm.', repr(JESSE_PERSONA_BLOCK); print('ok')" | grep -q '^ok$'
+    </automated>
   </verify>
-  <done>lib/voice.py has UNIVERSAL_CORE + JESSE_PERSONA_BLOCK + VOICE_CONSTRAINTS (literal concat) + assemble_voice + import-time byte-equivalence assertion. test_voice.py 4 tests green. Full pipeline pytest suite still green. game.py / calibrator.py / chronicler.py imports unchanged at byte level.</done>
+
+  <done>
+    - `voice.py` imports without raising AssertionError.
+    - `VOICE_CONSTRAINTS` is byte-identical to its Phase 14 form.
+    - `UNIVERSAL_CORE` and `JESSE_PERSONA_BLOCK` are exported as module-level constants.
+    - `JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE == VOICE_CONSTRAINTS` (sentinel assert holds).
+    - `WINNER AUTHORITY` does NOT appear in `UNIVERSAL_CORE` (will be added to chronicler.py in 16-06).
+    - All 168 existing pipeline tests still pass (no other code touched).
+  </done>
 </task>
 
 </tasks>
 
 <verification>
-- test_voice.py 4 tests GREEN under `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py -q`.
-- Full pipeline pytest suite stays GREEN (168 + new Phase 16 tests; the still-RED Phase 16 tests stay skip-guarded until their implementing plans land).
-- Game agent (agents/game.py) continues to work without modification — verified by `uv run --project packages/pipeline python -c "from eisenbalm_pipeline.agents.game import VOICE_CONSTRAINTS"` succeeding.
-- Calibrator + Chronicler imports remain valid — verified by full pipeline pytest still passing.
+- Run the full pipeline test suite. Test count MUST be ≥168 (Phase 14 baseline) + the new tests created by 16-02 Task 1.
+- `grep -c "WINNER AUTHORITY" packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` MUST return 0.
+- `grep -c "UNIVERSAL_CORE" packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` MUST return ≥2 (the definition + the sentinel).
 </verification>
 
 <success_criteria>
-- byte-equivalence invariant holds at import time AND in pytest.
-- NRR-03 (Calibrator unset = byte-equivalent Jesse) and NRR-10 (zero-regression) gates closed for the voice surface.
-- All Phase 5 / 13 / 14 / 15 tripwires stay green.
+- Task 1 verify passes.
+- No existing Phase 14 test regresses.
+- The byte-equivalence sentinel acts as a permanent guard against accidental future drift.
+- Plan 16-06 can now safely compose chronicler prompts as `UNIVERSAL_CORE + WINNER_AUTHORITY_LINE + voiceRubric`.
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/16-choose-your-narrator/16-04-SUMMARY.md` documenting: the exact separator used + rationale (JESSE_PERSONA_BLOCK first, then "\n", then UNIVERSAL_CORE), the import-time assertion location, confirmation that build_section_writer_prompt body is untouched, full pipeline pytest result count.
+After completion, create `.planning/phases/16-choose-your-narrator/16-04-voice-py-refactor-SUMMARY.md` per `$HOME/.claude/get-shit-done/templates/summary.md`. Record:
+- The final byte-equivalence check passed.
+- Confirmed WINNER AUTHORITY is NOT in UNIVERSAL_CORE.
+- Cross-reference to 16-06 (where WINNER AUTHORITY actually lives).
 </output>
