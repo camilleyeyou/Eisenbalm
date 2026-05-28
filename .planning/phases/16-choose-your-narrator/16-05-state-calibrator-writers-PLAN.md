@@ -157,8 +157,8 @@ async def convex_mutation_safe(mutation_name: str, args: dict) -> None:
       # State imports cleanly.
       uv run --project packages/pipeline python -c "from eisenbalm_pipeline.state import DispatchState, Narrator, NarratorVoiceRubric; print('ok')" | grep -q '^ok$'
 
-      # State scaffold tests (Plan 16-02 Task 1) pass.
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_dispatch_state_narrator.py -v
+      # State scaffold tests pass via the calibrator narrator tests (which load narrator into DispatchState and exercise the new field — Plan 16-02 Task 2).
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py -v
     </automated>
   </verify>
 
@@ -317,8 +317,8 @@ async def convex_mutation_safe(mutation_name: str, args: dict) -> None:
     # state["narrator"] or state["narrator_slug"]. Narrator-aware behaviour lives
     # exclusively in the chronicler agent (16-06) and the QA judge (16-07).
     # The byte-equivalence guard for the system message lives in
-    # packages/pipeline/tests/test_writer_system_message_invariance.py
-    # (Plan 16-02 Task 3).
+    # packages/pipeline/tests/test_section_writer_voice_propagation.py
+    # (Plan 16-02 Task 2).
     # ─────────────────────────────────────────────────────────────────────────────
     ```
 
@@ -338,15 +338,15 @@ async def convex_mutation_safe(mutation_name: str, args: dict) -> None:
       done
       # Each grep must exit non-zero (no match). The leading "!" turns absence into success.
 
-      # 3. The writer-invariance test (Plan 16-02 Task 3) passes — these four agents emit byte-identical system messages whether or not narrator is set.
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_writer_system_message_invariance.py -v
+      # 3. The four narrative writers propagate style_brief["voice"] to build_section_writer_prompt — Plan 16-02 Task 2 created this test.
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_section_writer_voice_propagation.py -v
     </automated>
   </verify>
 
   <done>
     - All four narrative writers carry the NRR-01 header comment.
     - Grep confirms none of them references narrator state.
-    - `test_writer_system_message_invariance.py` passes.
+    - `test_section_writer_voice_propagation.py` passes.
     - No behavioural regression on Phase 14 writer tests.
   </done>
 </task>
@@ -354,7 +354,7 @@ async def convex_mutation_safe(mutation_name: str, args: dict) -> None:
 </tasks>
 
 <verification>
-- `uv run --project packages/pipeline pytest packages/pipeline/tests/test_dispatch_state_narrator.py packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_writer_system_message_invariance.py -v` exits 0.
+- `uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_section_writer_voice_propagation.py -v` exits 0.
 - Test count across the whole pipeline test suite is ≥ Phase 14 baseline (168) + Phase 16 additions from Plan 16-02.
 - `grep -rE 'state\["narrator|narrator_slug' packages/pipeline/src/eisenbalm_pipeline/agents/{origin_story,founder_bio,case_study,bonus}.py` returns no matches.
 </verification>

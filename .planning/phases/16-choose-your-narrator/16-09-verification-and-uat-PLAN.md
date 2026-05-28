@@ -19,13 +19,9 @@ requirements:
   - NRR-08
   - NRR-09
   - NRR-10
-  - NRR-11
-  - NRR-12
-  - NRR-13
-  - NRR-14
 must_haves:
   truths:
-    - "Per-task verification map covers every NRR-01..NRR-14 requirement with a named task ID"
+    - "Per-task verification map covers every NRR-01..NRR-10 requirement with a named task ID"
     - "Zero-regression gate asserts pipeline test count ≥ Phase 14 baseline (168) + Phase 16 additions"
     - "Zero-regression gate asserts web commerce sentinel count ≥ Phase 8 baseline (29 CMR- tests)"
     - "Andrew end-to-end UAT confirms full Maya/Herzog/Jesse round-trip works"
@@ -44,13 +40,13 @@ must_haves:
 <objective>
 Run the full Phase 16 verification matrix, assert zero regression on Phase 14 and Phase 8 baselines via explicit test counts, and gate Phase 16 ship-readiness on Andrew's end-to-end UAT (Maya issue render + Jesse legacy issue render + Herzog draft preview in Studio).
 
-Purpose: NRR-01..NRR-14 are individually exercised by per-task tests across Plans 16-02 through 16-08b. This plan binds them into a single matrix, adds explicit count-based regression guards (B3), and pauses for Andrew to drive the round-trip flow before declaring Phase 16 done.
+Purpose: NRR-01..NRR-10 are individually exercised by per-task tests across Plans 16-02 through 16-08b. This plan binds them into a single matrix, adds explicit count-based regression guards (B3), and pauses for Andrew to drive the round-trip flow before declaring Phase 16 done.
 
 Output:
 - `16-VERIFICATION.md` with the per-task matrix, named pytest/vitest invocations, and explicit count assertions.
 - `16-UAT.md` with Andrew's end-to-end test transcript.
 
-Implements: all NRR-01..NRR-14 — this plan is the audit layer.
+Implements: all NRR-01..NRR-10 — this plan is the audit layer.
 </objective>
 
 <execution_context>
@@ -77,7 +73,7 @@ Implements: all NRR-01..NRR-14 — this plan is the audit layer.
 @.planning/phases/16-choose-your-narrator/16-08b-frontend-chip-SUMMARY.md
 
 <decisions_implemented>
-- B3 revision (count baselines): Phase 14 pipeline baseline is 168 passing tests; Phase 16 adds ~19 new tests (test_voice_constants, test_dispatch_state_narrator, test_calibrator_narrator, test_writer_system_message_invariance, test_chronicler_narrator, test_qa_judge_narrator, test_narrator_cost_budget, test_narrator_seed_sentinel). Total expected ≥187. Phase 8 commerce sentinel baseline is 29 CMR- tests.
+- B3 revision (count baselines): Phase 14 pipeline baseline is 168 passing tests; Phase 16 adds ~19 new tests (test_voice, test_calibrator_narrator, test_section_writer_voice_propagation, test_chronicler::test_narrator_voice_propagation, test_qa_judge_narrator, test_narrator_cost_budget, test_narrator_seed_sentinel). Total expected ≥187. Phase 8 commerce sentinel baseline is 29 CMR- tests.
 - B6 revision: NRR-10 byte-equivalence asserted on BOTH system AND user QA messages — not just system.
 - W11 revision: disambiguate per-task map row IDs and add a row for NRR-07.
 </decisions_implemented>
@@ -101,22 +97,18 @@ Implements: all NRR-01..NRR-14 — this plan is the audit layer.
 
     | NRR ID | Description | Task ID | Verify Command |
     |--------|-------------|---------|----------------|
-    | NRR-01 | Narrative writers byte-identical to Phase 14 (VOICE_CONSTRAINTS verbatim) | 16-02-01a | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_voice_byte_equivalence -v` |
-    | NRR-02 | Chronicler narrator-aware | 16-06-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py -v` |
+    | NRR-01 | Narrative writers byte-identical to Phase 14 (VOICE_CONSTRAINTS verbatim) | 16-02-01a | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py::test_voice_constants_byte_equivalence -v` |
+    | NRR-02 | Chronicler narrator-aware | 16-06-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler.py::test_narrator_voice_propagation -v` |
     | NRR-03 | Calibrator is single resolution point | 16-05-02 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py -v` |
-    | NRR-04 | VOICE_CONSTRAINTS symbol preserved + JESSE_PERSONA_BLOCK names Jesse | 16-02-01b | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_jesse_persona_block_names_jesse_explicitly -v` |
-    | NRR-05 | DispatchState has narrator + narrator_slug | 16-02-01 / 16-05-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_dispatch_state_narrator.py -v` |
-    | NRR-06 | No leakage to non-chronicler / non-QA agents | 16-05-03 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_writer_system_message_invariance.py -v` |
+    | NRR-04 | Section writers propagate style_brief["voice"] to build_section_writer_prompt | 16-02-02a / 16-05-03 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py packages/pipeline/tests/test_section_writer_voice_propagation.py -v` |
+    | NRR-05 | DispatchState has narrator + narrator_slug (exercised by calibrator narrator tests which load narrator into state) | 16-02-02b / 16-05-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_calibrator_narrator.py -v` |
+    | NRR-06 | No leakage to non-chronicler / non-QA agents (narrative writers consume style_brief["voice"], never branch on narrator directly) | 16-05-03 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_section_writer_voice_propagation.py -v` |
     | NRR-07 | Andrew can pick narrator in Studio with exampleSamples preview | 16-08a-03 | Andrew checkpoint (Plan 16-08a Task 3) — recorded in 16-UAT.md |
-    | NRR-08 | WINNER AUTHORITY lives in chronicler.py, not voice.py | 16-06-01 | `[ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py)" -ge 1 ] && [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/lib/voice.py)" -eq 0 ]` |
+    | NRR-08 | Frontend narrator chip rendered on issue page (chip present iff narrator set AND name !== Jesse; chip JSX precedes <time> in source order; GROQ projection does NOT leak voiceConstraints/voiceRubric/exampleSamples) | 16-08b-03 / 16-03-01 | `pnpm --filter web test:unit --run apps/web/__tests__/narrator-chip.test.ts` |
     | NRR-09 | QA judge narrator-aware | 16-07-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py -v` |
     | NRR-10 | QA judge byte-identical (system + user) when narrator=None | 16-07-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py::test_qa_judge_narrator_none_preserves_legacy_messages -v` |
-    | NRR-11 | Narrator is Studio-curated content | 16-08a-03 | Andrew checkpoint (Plan 16-08a Task 3) |
-    | NRR-12 | Jesse seed sentinel anchored to VOICE_CONSTRAINTS | 16-02-01c / 16-08a-01 | `uv run --project packages/pipeline pytest packages/pipeline/tests/test_narrator_seed_sentinel.py -v` |
-    | NRR-13 | Frontend surfaces narrator on issue page | 16-08b-03 | `pnpm --filter web test:unit --run apps/web/__tests__/issue/narrator-chip.test.ts` |
-    | NRR-14 | Jesse implicit, non-Jesse explicit | 16-08b-03 | Same as NRR-13 (chip absent for jesse, present for others) |
 
-    Note row-ID disambiguation: NRR-01 / NRR-04 / NRR-12 all live in pipeline test files Plan 16-02 Task 1 produced. The task IDs are suffixed (a/b/c) to point at the exact pytest filter. NRR-07 maps to the Plan 16-08a Task 3 Andrew checkpoint (no automated verify possible — recorded in UAT.md).
+    Note row-ID disambiguation: NRR-01 and NRR-04 both rely on pipeline test files Plan 16-02 produced (test_voice.py and test_section_writer_voice_propagation.py respectively). NRR-07 maps to the Plan 16-08a Task 3 Andrew Studio checkpoint (no automated verify possible — recorded in 16-UAT.md). The Jesse seed sentinel cross-language check (test_narrator_seed_sentinel.py) is enforced by Section B count gates, and the WINNER AUTHORITY cross-check is enforced by Section C — both are standalone gates that do not consume a NRR-ID slot.
 
     ### Section B — Zero-regression gates (B3 fix: explicit counts)
 
@@ -178,8 +170,8 @@ Implements: all NRR-01..NRR-14 — this plan is the audit layer.
       ! grep -E "VERBATIM_FROM|TODO|PLACEHOLDER" apps/studio/seeds/narrators.json
 
       # 5. All per-NRR named tests pass.
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py packages/pipeline/tests/test_dispatch_state_narrator.py packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_writer_system_message_invariance.py packages/pipeline/tests/test_chronicler_narrator.py packages/pipeline/tests/test_qa_judge_narrator.py packages/pipeline/tests/test_narrator_seed_sentinel.py packages/pipeline/tests/test_narrator_cost_budget.py -v
-      pnpm --filter web test:unit --run apps/web/__tests__/issue/narrator-chip.test.ts
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py packages/pipeline/tests/test_calibrator_narrator.py packages/pipeline/tests/test_section_writer_voice_propagation.py packages/pipeline/tests/test_chronicler.py::test_narrator_voice_propagation packages/pipeline/tests/test_qa_judge_narrator.py packages/pipeline/tests/test_narrator_seed_sentinel.py packages/pipeline/tests/test_narrator_cost_budget.py -v
+      pnpm --filter web test:unit --run apps/web/__tests__/narrator-chip.test.ts
 
       # 6. 16-VERIFICATION.md exists and records all three gate outputs.
       [ -f .planning/phases/16-choose-your-narrator/16-VERIFICATION.md ]
@@ -280,7 +272,7 @@ Implements: all NRR-01..NRR-14 — this plan is the audit layer.
 
 <success_criteria>
 - Phase 16 ship-readiness confirmed.
-- Every NRR-01..NRR-14 has a documented verification (test or human checkpoint).
+- Every NRR-01..NRR-10 has a documented verification (test or human checkpoint).
 - Phase 14 pipeline baseline (168) and Phase 8 commerce sentinel baseline (29) are non-regressed by EXPLICIT count assertion.
 - Andrew has driven the full Maya/Herzog/Jesse loop and signed off.
 </success_criteria>

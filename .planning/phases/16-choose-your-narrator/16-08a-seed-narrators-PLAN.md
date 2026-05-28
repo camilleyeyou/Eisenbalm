@@ -11,7 +11,7 @@ files_modified:
 autonomous: false
 requirements:
   - NRR-07
-  - NRR-11
+  - NRR-09
 must_haves:
   truths:
     - "narrators.json contains three records: jesse, maya-rudolph, werner-herzog"
@@ -37,7 +37,7 @@ must_haves:
 <objective>
 Create the static narrator seed file (`narrators.json`) and the idempotent seed script (`seed-narrators.ts`), then pause for an Andrew checkpoint to confirm seeded records preview correctly in Sanity Studio with exampleSamples visible. Sample text for Jesse is anchored to real Phase 5+ chronicler prose. Sample text for Maya Rudolph and Werner Herzog is realistic draft prose written at the budget envelope the cost-budget test enforces (Plan 16-02 Task 3 `test_narrator_cost_budget`) — Andrew can replace the Maya/Herzog samples post-seed via Studio without re-running this plan.
 
-Purpose: Per D-11, narrators are static, versioned config. Per CONTEXT canonical_refs, Andrew picks the active narrator in Studio at runtime (NRR-11). This plan establishes the three seed records and confirms they render correctly for Andrew before any frontend chip work or end-to-end UAT runs.
+Purpose: Per D-11, narrators are static, versioned config. Per CONTEXT canonical_refs, Andrew picks the active narrator in Studio at runtime (NRR-09). This plan establishes the three seed records and confirms they render correctly for Andrew before any frontend chip work or end-to-end UAT runs.
 
 Output:
 - `apps/studio/seeds/narrators.json` with three real records (no placeholders).
@@ -45,7 +45,7 @@ Output:
 - `apps/studio/package.json` `seed:narrators` script wired.
 - Andrew has confirmed the seeded records preview correctly in Studio.
 
-Implements: D-11 (static seed), NRR-07 (Andrew picks narrator in Studio with exampleSamples preview), NRR-11 (narrator is Studio-curated content).
+Implements: D-11 (static seed), NRR-07 (Andrew picks narrator in Studio with exampleSamples preview), NRR-09 (narrator is Studio-curated content).
 </objective>
 
 <execution_context>
@@ -68,7 +68,7 @@ Implements: D-11 (static seed), NRR-07 (Andrew picks narrator in Studio with exa
 - **D-11**: Narrators are static seed records. Authored in `narrators.json` under version control, upserted by `seed-narrators.ts`.
 - **D-09**: Each narrator has 2-3 exampleSamples (sample paragraphs). Andrew curates them.
 - **NRR-07**: Andrew can pick a narrator in Studio with exampleSamples preview rendering — confirmed in this plan's checkpoint task.
-- **NRR-11**: Narrator is Studio-curated content. The seed script establishes initial state; future edits happen in Studio.
+- **NRR-09**: Narrator is Studio-curated content. The seed script establishes initial state; future edits happen in Studio.
 - **Andrew replacement allowed**: Maya/Herzog sample prose in narrators.json is realistic DRAFT content sized to fit the cost-budget guard (Plan 16-02 Task 3). Andrew may rewrite these in Studio after the checkpoint without invalidating downstream tests, so long as each rewritten sample stays under ~1200 tokens (the cost-budget ceiling).
 </decisions_implemented>
 
@@ -190,7 +190,7 @@ The Phase 16 INTENT document (`16-INTENT.md`) explicitly marks "Real sample cont
           r = n['voiceRubric']
           assert r.get('register') and r.get('cadence') and isinstance(r.get('constraints'), list) and len(r['constraints']) >= 3, n['slug']"
 
-      # 6. Jesse sentinel (NRR-12): Jesse's voiceRubric.register references key phrases from JESSE_PERSONA_BLOCK / UNIVERSAL_CORE.
+      # 6. Jesse seed sentinel (cross-language anchor for NRR-09 QA judge byte-equivalence): Jesse's voiceRubric.register references key phrases from JESSE_PERSONA_BLOCK / UNIVERSAL_CORE.
       python -c "import json; d=json.load(open('apps/studio/seeds/narrators.json')); 
       jesse = next(n for n in d['narrators'] if n['slug']=='jesse'); 
       reg = jesse['voiceRubric']['register'].lower(); 
@@ -401,7 +401,7 @@ The Phase 16 INTENT document (`16-INTENT.md`) explicitly marks "Real sample cont
 <success_criteria>
 - D-11 satisfied: narrators are versioned static seed records.
 - NRR-07 satisfied (verified by Andrew): narrator picker + exampleSamples preview works in Studio.
-- NRR-11 satisfied: any future narrator additions or sample rewrites happen via Studio (or via re-running the seed script against an updated `narrators.json`).
+- NRR-09 satisfied: any future narrator additions or sample rewrites happen via Studio (or via re-running the seed script against an updated `narrators.json`).
 - Plan 16-09 cost-budget verification can run against real prose (not placeholders).
 </success_criteria>
 

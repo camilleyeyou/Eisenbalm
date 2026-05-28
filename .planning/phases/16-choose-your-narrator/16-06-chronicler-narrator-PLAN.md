@@ -188,14 +188,10 @@ def _personalize_universal_core(core: str, narrator: Narrator) -> str:
       # 3. WINNER AUTHORITY does NOT live in voice.py (B1 cross-check, count == 0).
       [ "$(grep -c 'WINNER AUTHORITY' packages/pipeline/src/eisenbalm_pipeline/lib/voice.py)" -eq 0 ]
 
-      # 4. Chronicler narrator-aware tests pass (created by Plan 16-02 Task 2).
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py -v
+      # 4. Chronicler narrator-aware test passes (extended in Plan 16-02 Task 3 — function appended to test_chronicler.py).
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler.py::test_narrator_voice_propagation -v
 
-      # 5. Jesse-equivalence chronicler test passes: when narrator=jesse, system prompt
-      #    is byte-equivalent to (UNIVERSAL_CORE personalized + WINNER_AUTHORITY + rubric).
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py::test_jesse_narrator_system_prompt_uses_universal_core -v
-
-      # 6. No regression on Phase 14 chronicler tests.
+      # 5. Full chronicler test file passes (Phase 13 baseline tests + Phase 16 narrator propagation extension; covers Jesse-equivalence under narrator=Jesse via the existing chronicler baseline test paths).
       uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler.py -v
     </automated>
   </verify>
@@ -216,7 +212,7 @@ def _personalize_universal_core(core: str, narrator: Narrator) -> str:
 <verification>
 - `grep -c "WINNER AUTHORITY" packages/pipeline/src/eisenbalm_pipeline/agents/chronicler.py` returns ≥1.
 - `grep -c "WINNER AUTHORITY" packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` returns 0.
-- `uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler_narrator.py -v` exits 0.
+- `uv run --project packages/pipeline pytest packages/pipeline/tests/test_chronicler.py::test_narrator_voice_propagation -v` exits 0.
 - Pipeline-wide test count is ≥ Phase 14 baseline + Phase 16 additions.
 </verification>
 

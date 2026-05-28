@@ -216,6 +216,30 @@ describe('NRR-08(d) — GROQ projection contains ONLY name + slug + active (Pitf
   })
 })
 
+describe('NRR-08(e) — narrator chip JSX precedes <time> element in IssueHero source (DOM-order source-scan)', () => {
+  it('narrator chip JSX appears before <time> element in IssueHero source', () => {
+    const src = readOrEmpty(ISSUE_HERO_PATH)
+    // Skip on missing file (RED state pre-Plan-16-08b)
+    if (!src) return expect(true).toBe(true)
+
+    // Source-scan DOM-order proxy: the "Narrated by" chip JSX must appear in the
+    // source file BEFORE the first <time> element. Because IssueHero.tsx renders
+    // children in source order, this source-position assertion is a sufficient
+    // proxy for the rendered DOM-order invariant from CONTEXT D-19 (chip above
+    // publish-date line).
+    const chipPos = src.indexOf('Narrated by')
+    const timePos = src.indexOf('<time')
+
+    // If the chip is not yet present (pre-Plan-16-08b), skip — the chip
+    // presence is enforced by NRR-08(a)/(b)/(c) above. This block ONLY
+    // enforces ordering ONCE the chip exists.
+    if (chipPos < 0) return expect(true).toBe(true)
+
+    expect(timePos).toBeGreaterThan(0)
+    expect(chipPos).toBeLessThan(timePos)
+  })
+})
+
 describe('NRR-08 + DEL-04 — chip surface MUST NOT introduce any model name', () => {
   it('IssueHero.tsx chip block does NOT reference model names', () => {
     const src = readOrEmpty(ISSUE_HERO_PATH)
@@ -230,9 +254,9 @@ describe('NRR-08 + DEL-04 — chip surface MUST NOT introduce any model name', (
 ```
   </action>
   <verify>
-    <automated>test -f apps/web/__tests__/narrator-chip.test.ts; pnpm --filter web exec vitest run apps/web/__tests__/narrator-chip.test.ts --reporter=basic exits non-zero (RED: most assertions fail because Plan 16-08 not yet landed) OR — if pre-implementation graceful-skip succeeds — pnpm --filter web test:unit reports the file collected without parse errors; grep -c "describe\\|it(" apps/web/__tests__/narrator-chip.test.ts returns at least 7 (4 describe blocks + at least 7 it() bodies)</automated>
+    <automated>test -f apps/web/__tests__/narrator-chip.test.ts; pnpm --filter web exec vitest run apps/web/__tests__/narrator-chip.test.ts --reporter=basic exits non-zero (RED: most assertions fail because Plan 16-08b not yet landed) OR — if pre-implementation graceful-skip succeeds — pnpm --filter web test:unit reports the file collected without parse errors; grep -c "describe\\|it(" apps/web/__tests__/narrator-chip.test.ts returns at least 8 (5 describe blocks + at least 8 it() bodies — NRR-08(a)/(b)/(c)/(d)/(e) source-scan DOM-order + DEL-04 model-name guard)</automated>
   </verify>
-  <done>narrator-chip.test.ts created with 4 describe blocks covering NRR-08(a)/(b)/(c)/(d) sub-contracts + DEL-04 chip surface guard. Tests collect; file is RED until Plan 16-08 lands (expected); existing tripwire suite stays green.</done>
+  <done>narrator-chip.test.ts created with 5 describe blocks covering NRR-08(a)/(b)/(c)/(d)/(e) sub-contracts + DEL-04 chip surface guard. NRR-08(e) is the source-scan DOM-order assertion (chip JSX precedes <time>) per CONTEXT D-19. Tests collect; file is RED until Plan 16-08b lands (expected); existing tripwire suite stays green.</done>
 </task>
 
 </tasks>
@@ -245,7 +269,7 @@ describe('NRR-08 + DEL-04 — chip surface MUST NOT introduce any model name', (
 </verification>
 
 <success_criteria>
-- narrator-chip.test.ts exists with ≥7 it() assertions across ≥4 describe blocks.
+- narrator-chip.test.ts exists with ≥8 it() assertions across ≥5 describe blocks.
 - Plan 16-08 has a single Vitest target file to turn green.
 - VALIDATION §Wave 0 Requirements row 4 closes (narrator-chip.test.ts present).
 </success_criteria>

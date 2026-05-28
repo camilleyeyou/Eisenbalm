@@ -683,7 +683,7 @@ async def test_judge_appends_narrator_rubric():
 
 
 @pytest.mark.asyncio
-async def test_judge_narrator_none_byte_equivalent_to_legacy():
+async def test_qa_judge_narrator_none_preserves_legacy_messages():
     """When narrator is None, the system message MUST equal the legacy rubric.md content (NRR-10 zero-regression)."""
     from eisenbalm_pipeline.agents.qa import judge as judge_mod
     legacy_rubric = judge_mod._load_rubric()   # noqa: SLF001

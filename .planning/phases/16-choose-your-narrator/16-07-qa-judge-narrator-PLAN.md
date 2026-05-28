@@ -180,7 +180,7 @@ def _render_narrator_addendum(narrator: Narrator) -> str:
       uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py::test_qa_judge_narrator_none_preserves_legacy_messages -v
 
       # 3. Narrator-set system message contains the narrator display name.
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py::test_qa_judge_with_narrator_appends_addendum_to_system_only -v
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge_narrator.py::test_judge_appends_narrator_rubric -v
 
       # 4. No regression on Phase 5 QA judge tests.
       uv run --project packages/pipeline pytest packages/pipeline/tests/test_qa_judge.py -v

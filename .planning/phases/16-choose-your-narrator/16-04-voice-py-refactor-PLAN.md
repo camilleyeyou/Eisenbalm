@@ -22,7 +22,7 @@ must_haves:
       contains: "VOICE_CONSTRAINTS, UNIVERSAL_CORE, JESSE_PERSONA_BLOCK"
   key_links:
     - from: "packages/pipeline/src/eisenbalm_pipeline/lib/voice.py"
-      to: "packages/pipeline/tests/test_voice_constants.py (Plan 16-02 Task 1)"
+      to: "packages/pipeline/tests/test_voice.py (Plan 16-02 Task 1)"
       via: "module-level assertion at import time"
       pattern: "assert VOICE_CONSTRAINTS == "
 ---
@@ -51,7 +51,7 @@ Honors NRR-01 (narrative writers byte-identical to Phase 14) and NRR-04 (`VOICE_
 @.planning/phases/16-choose-your-narrator/16-CONTEXT.md
 @.planning/phases/16-choose-your-narrator/16-RESEARCH.md
 @packages/pipeline/src/eisenbalm_pipeline/lib/voice.py
-@packages/pipeline/tests/test_voice_constants.py  # <-- created by Plan 16-02 Task 1
+@packages/pipeline/tests/test_voice.py  # <-- created by Plan 16-02 Task 1
 
 <decisions_implemented>
 - **D-04**: Decomposition lives in voice.py. Split VOICE_CONSTRAINTS into UNIVERSAL_CORE + JESSE_PERSONA_BLOCK and re-export VOICE_CONSTRAINTS as their concatenation via a stable separator.
@@ -219,10 +219,10 @@ Note: UNIVERSAL_CORE references "Jesse's voice" by name in its opening sentence.
       uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, UNIVERSAL_CORE, JESSE_PERSONA_BLOCK; print('ok')" | grep -q '^ok$'
 
       # 2. Byte-equivalence test passes (the test created by Plan 16-02 Task 1).
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_voice_byte_equivalence -v
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py::test_voice_constants_byte_equivalence -v
 
       # 3. Jesse explicit-naming test passes.
-      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice_constants.py::test_jesse_persona_block_names_jesse_explicitly -v
+      uv run --project packages/pipeline pytest packages/pipeline/tests/test_voice.py::test_jesse_explicit_narrator_byte_equivalence -v
 
       # 4. WINNER AUTHORITY is NOT in UNIVERSAL_CORE.
       uv run --project packages/pipeline python -c "from eisenbalm_pipeline.lib.voice import UNIVERSAL_CORE; assert 'WINNER AUTHORITY' not in UNIVERSAL_CORE, 'WINNER AUTHORITY must not live in UNIVERSAL_CORE'; print('ok')" | grep -q '^ok$'
