@@ -298,6 +298,21 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 15-01-shop-storefront-PLAN.md — Wave 1: extend shop-page.test.ts with 10 Phase 15 source-scan assertions (RED-first Wave 0 within plan) + rewrite shop/page.tsx as 8-section long-scroll storefront with BuyButton at 3 positions (SHOP-01..SHOP-11) (completed 2026-05-28)
 **UI hint**: yes
 
+### Phase 16: Choose Your Narrator
+**Goal**: An issue whose `weeklyIssue.narrator` reference is set to a non-default `narratorProfile` document renders the four narrative sections (Origin Story, Problem Statement, Founder Bio, Case Study) AND the deliberation conversation in that narrator's voice — where "in voice" means (a) QA scores ≥80% on the per-narrator voice rubric, AND (b) Andrew confirms in human UAT the issue reads as that narrator (not Jesse-in-disguise). When `narrator` is unset, the pipeline produces Jesse voice byte-equivalent to Phase 15-era runs (zero-regression on existing tripwires + pytest). Three seeded narrator profiles minimum at landing: `jesse` (the explicit default), `maya-rudolph`, `werner-herzog`. Reader does NOT pick the narrator — editorial choice only (Andrew), governed in Studio. Narrator does NOT vary within an issue. Narrator does NOT change the visual theme (Phase 14 light palette remains fixed). Narrator is NOT a new model — same OpenRouter model, same agents, just narrator-aware system prompts. Game and Bonus sections are NOT narrator-aware in this phase (revisit if needed).
+**Depends on**: Phase 1 (Sanity Foundation — schema pattern reused), Phase 5 (Agent Quality — VOICE_CONSTRAINTS centralization + Jesse-voice QA rubric), Phase 13 (Deliberation as Conversation — chronicler single-pass voice-shaping pattern extended), Phase 14 (Light Theme Adoption — visual baseline locked, narrator becomes the variation axis)
+**Requirements**: NRR-01, NRR-02, NRR-03, NRR-04, NRR-05, NRR-06, NRR-07, NRR-08, NRR-09, NRR-10
+**Success Criteria** (what must be TRUE):
+  1. A `weeklyIssue` with `narrator` → seeded `werner-herzog` profile, run through the full pipeline, produces Origin Story / Problem / Founder Bio / Case Study sections that read as Herzog (QA score ≥80% on Herzog voice rubric, AND Andrew confirms in human UAT)
+  2. A `weeklyIssue` with `narrator` unset (or set to default `jesse`) produces Jesse-voice content byte-equivalent in behavior to Phase 15-era runs: existing tripwires green (game-sandbox, no-model-names, typography, deliberation-conversation, podcast-slot, theme-aa-tones) AND existing 168-passing pipeline pytest suite remains green
+  3. The deliberation conversation rendered on the issue page reflects the narrator voice when set, and falls back to Jesse voice when unset (Phase 13 DEL-CONV behavior preserved as the default branch — chronicler output for unset-narrator runs is byte-equivalent given the same inputs)
+  4. Andrew can pick a narrator in Sanity Studio from a dropdown that previews `narratorProfile.exampleSamples`, and the choice flows into the next pipeline run without a code deploy
+  5. The frontend issue page renders a narrator attribution chip on the masthead when narrator is set (e.g. "Narrated by Werner Herzog") and renders no chip when unset (default Jesse remains the implicit/invisible default)
+  6. No new npm dependency, no CDN, no new font loaded; `theme.ts` validation + FONT_WHITELIST + game-sandbox security all untouched
+  7. Cost per run: narrator-aware runs add ≤10% to LLM token spend vs. Jesse-default runs (voice constraint is a small system-prompt delta, not a new round-trip)
+**Plans**: TBD (estimate 6-8 — see `.planning/phases/16-choose-your-narrator/16-INTENT.md` for full client-supplied spec)
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
@@ -326,6 +341,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
+| 16. Choose Your Narrator | 0/0 | Not started | - |
 
 ## Backlog
 
