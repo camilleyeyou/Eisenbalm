@@ -286,7 +286,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 ### Phase 15: Shop Storefront — Rich Product Page
 **Goal**: Convert the current minimal `/shop` (one sentence + BuyButton from Phase 8) into a real long-scroll product page for the Jesse A. Eisenbalm lip balm — modeled on the structure of `jesseaeisenbalm.com`: hero with the locked tagline "**Stop. Breathe. Balm. A human-only ritual for an AI-everywhere world.**" + product positioning paragraph (premium beeswax, petrolatum-free, professional-grade, TEWL prevention), 3-column features (beeswax formula / 100% to charity / hand-numbered Release 001), expanded ingredient story (no synthetics / parabens / petroleum), product image slot + `$8.99` + repeated BuyButton, charity callout populated from the current published issue (preserving the Phase 8 wiring), and an inline FAQ block (with `/shop/faq` promoted to its own route only if the content exceeds inline practicality — decision deferred to the UI-SPEC). Reuses every piece of the Phase 8 Stripe machinery byte-unchanged: the `<BuyButton>` client component (08-04), `POST /api/checkout/create-session` (08-04), `POST /api/stripe/webhook` (08-05), `/shop/thank-you` (08-07), `/legal/privacy` + `/legal/terms` (08-07). The page lives at `/shop` on the Dispatch site — the homepage stays the magazine destination per the brief ("a magazine that happens to sell one product"). Editorial light-theme aesthetic from Phase 14 + the typographic utilities established in Phase 10 (`.eyebrow`, `.drop-cap`, `.ornament-divider`, `.prose-measure`). Voice on `/shop` is the lip balm's own sub-brand voice ("Stop. Breathe. Balm." — meditative, deliberate, anti-AI ritual) — the deliberate counterpoint to the Dispatch's AI-editorial voice; the two co-exist as complementary sub-brands on the same site. Brand details from `jesseaeisenbalm.com` (tagline, $8.99, Release 001, charity model, beeswax/petrolatum-free positioning) used verbatim with `TODO(Andrew)` markers on items to finalize before launch: real product photography, final tagline confirmation, final price, real edition number. Product imagery: placeholder image slots (editorial SVG illustration or a type-only treatment for the hero) with explicit `TODO(Andrew)` markers — Andrew uploads real photos to replace.
 **Depends on**: Phase 8 (commerce code surface), Phase 14 (light theme)
-**Requirements**: TBD (defined during planning — likely `SHOP-*` prefix covering hero/tagline, product positioning, feature cluster, charity callout, BuyButton placement, FAQ, imagery slots, locked Stripe-machinery preservation)
+**Requirements**: SHOP-01, SHOP-02, SHOP-03, SHOP-04, SHOP-05, SHOP-06, SHOP-07, SHOP-08, SHOP-09, SHOP-10, SHOP-11
 **Success Criteria** (what must be TRUE):
   1. `/shop` renders as a long-scroll product page — hero (tagline + product image slot + first CTA) → positioning paragraph → 3-column features → expanded ingredient story → charity callout (current published issue) → product image + price + repeated BuyButton → FAQ → footer — on the warm-paper light base, mobile-friendly, every CTA ≥44px touch target
   2. The Phase 8 `<BuyButton>` from 08-04 is reused byte-unchanged and renders in at least 2 positions on `/shop`; clicking it still POSTs to the existing `/api/checkout/create-session` route — no Stripe wiring change
@@ -294,7 +294,8 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. Editorial typography is consistent with the rest of the magazine: uses `.eyebrow`, `.ornament-divider`, `.prose-measure` (and optionally `.drop-cap` on the hero or positioning paragraph) from Phase 10; Cormorant/Lora/Inter only (no new fonts; FONT_WHITELIST unchanged)
   5. Locked constraints preserved: WCAG AA on the warm-paper light base for every text/accent token used on `/shop`; single `<main>`; `prefers-reduced-motion` respected; only `--color-*` tokens for color (no hardcoded hex); no new npm dependencies; no CDN scripts; brief constraints honored (no Shopify, no Commerce.js, no cart, no urgency mechanics)
   6. `pnpm --filter web build` exits 0 and all prior tripwire tests stay green (Phase 7 game-sandbox, Phase 10 typography, Phase 12 navigator/deliberation, Phase 13 deliberation-conversation/no-model-names, Phase 14 theme-aa-tones, Phase 8 CMR-* including CMR-01 server-component + CMR-09 ShopCallout source-scan); `apps/web/__tests__/shop-page.test.ts` is adjusted to the new structure if needed (server component, BuyButton present in ≥2 positions, no client-flicker, no urgency vocabulary)
-**Plans**: TBD (run /gsd:plan-phase 15 to break down)
+**Plans**: 1 plan
+- [ ] 15-01-shop-storefront-PLAN.md — Wave 1: extend shop-page.test.ts with 10 Phase 15 source-scan assertions (RED-first Wave 0 within plan) + rewrite shop/page.tsx as 8-section long-scroll storefront with BuyButton at 3 positions (SHOP-01..SHOP-11)
 **UI hint**: yes
 
 ## Progress
@@ -324,7 +325,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 12. Machine Editorial Design Adoption | 5/5 | Complete    | 2026-05-22 |
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
-| 15. Shop Storefront | 0/? | Not planned | - |
+| 15. Shop Storefront | 0/1 | Planned | - |
 
 ## Backlog
 
