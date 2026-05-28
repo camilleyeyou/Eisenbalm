@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 15-01-shop-storefront-PLAN.md
-last_updated: "2026-05-28T18:12:23.539Z"
+stopped_at: Phase 16 context gathered
+last_updated: "2026-05-28T21:10:20.524Z"
 progress:
-  total_phases: 16
+  total_phases: 17
   completed_phases: 14
   total_plans: 101
   completed_plans: 99
@@ -399,6 +399,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-28T18:01:36.001Z
-Stopped at: Completed 15-01-shop-storefront-PLAN.md
-Resume file: None
+Last session: 2026-05-28T21:10:20.501Z
+Stopped at: Phase 16 context gathered
+Resume file: .planning/phases/16-choose-your-narrator/16-CONTEXT.md
