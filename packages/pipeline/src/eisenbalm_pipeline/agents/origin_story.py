@@ -1,3 +1,16 @@
+# ─── Phase 16 NRR-01 invariant ───────────────────────────────────────────────
+# This agent consumes VOICE_CONSTRAINTS VERBATIM. It must not branch on
+# state["narrator"] or state["narrator_slug"]. Narrator-aware behaviour lives
+# exclusively in the chronicler agent (16-06) and the QA judge (16-07).
+# The byte-equivalence guard for the system message lives in
+# packages/pipeline/tests/test_section_writer_voice_propagation.py
+# (Plan 16-02 Task 2).
+# Propagation path: Calibrator (16-05) writes the narrator-aware voice into
+# style_brief["voice"]; this writer FORWARDS that string into
+# build_section_writer_prompt via the voice_constraints kwarg. When no
+# narrator is set the value is byte-identical to VOICE_CONSTRAINTS, so the
+# Phase 14 baseline is preserved (NRR-10).
+# ─────────────────────────────────────────────────────────────────────────────
 """Phase 5 OriginStoryWriter — Sonnet via OpenRouter.
 
 Replaces Phase 4 stub. Voice-isolation enforced by
@@ -18,7 +31,7 @@ from pydantic import BaseModel
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
-from eisenbalm_pipeline.lib.voice import build_section_writer_prompt
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt
 
 
 SECTION_GUIDANCE: str = (
@@ -52,13 +65,18 @@ def _origin_story_payload(state: DispatchState) -> dict:
 )
 async def origin_story(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
+    style_brief = state.get("style_brief") or {}
     messages = build_section_writer_prompt(
         section_id="origin_story",
         section_title="Origin Story",
         section_guidance=SECTION_GUIDANCE,
         charity=state.get("winning_charity") or {},
         research=state.get("research") or {},
-        style_brief=state.get("style_brief") or {},
+        style_brief=style_brief,
+        # Phase 16 NRR-04 / Plan 16-05: forward the calibrator-set voice
+        # (narrator-aware composition). When no narrator is set this is
+        # byte-identical to VOICE_CONSTRAINTS — NRR-10 byte-equivalence.
+        voice_constraints=style_brief.get("voice") or VOICE_CONSTRAINTS,
     )
     out_obj, usage = await acomplete(
         agent_id="origin_story",

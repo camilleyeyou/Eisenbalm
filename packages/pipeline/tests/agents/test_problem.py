@@ -119,5 +119,10 @@ async def test_problem_voice_isolation(sample_dispatch_state) -> None:
         sample_dispatch_state["case_study"] = {"headline": "X", "body": "X"}
         await problem(sample_dispatch_state)
 
-    allowed = {"section_id", "section_title", "section_guidance", "charity", "research", "style_brief"}
+    # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th
+    # whitelisted kwarg so the calibrator-set narrator voice can propagate.
+    allowed = {
+        "section_id", "section_title", "section_guidance",
+        "charity", "research", "style_brief", "voice_constraints",
+    }
     assert set(captured.keys()).issubset(allowed)

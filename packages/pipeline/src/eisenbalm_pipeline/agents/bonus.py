@@ -1,3 +1,17 @@
+# ─── Phase 16 NRR-01 invariant ───────────────────────────────────────────────
+# This agent consumes VOICE_CONSTRAINTS VERBATIM. It must not branch on
+# state["narrator"] or state["narrator_slug"]. Narrator-aware behaviour lives
+# exclusively in the chronicler agent (16-06) and the QA judge (16-07).
+# Per CONTEXT D-19 (Phase 16 non-goals), the Bonus + Game agents are NOT
+# narrator-aware in this phase — they continue to use VOICE_CONSTRAINTS
+# directly without propagating style_brief["voice"]. If a later phase adds
+# bonus/game narrator awareness, the rule above no longer holds; revisit.
+# The byte-equivalence guard for the system message lives in
+# packages/pipeline/tests/test_section_writer_voice_propagation.py
+# (Plan 16-02 Task 2) — note Bonus is intentionally OUT of scope for that
+# test (only 4 narrative writers: origin_story, problem, founder_bio,
+# case_study).
+# ─────────────────────────────────────────────────────────────────────────────
 """Phase 5 BonusWriter — three-branch routing (Sonnet via OpenRouter).
 
 Replaces Phase 4 stub. Single ``@agent_node`` entry; routes on

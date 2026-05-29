@@ -1,3 +1,16 @@
+# ─── Phase 16 NRR-01 invariant ───────────────────────────────────────────────
+# This agent consumes VOICE_CONSTRAINTS VERBATIM. It must not branch on
+# state["narrator"] or state["narrator_slug"]. Narrator-aware behaviour lives
+# exclusively in the chronicler agent (16-06) and the QA judge (16-07).
+# The byte-equivalence guard for the system message lives in
+# packages/pipeline/tests/test_section_writer_voice_propagation.py
+# (Plan 16-02 Task 2).
+# Propagation path: Calibrator (16-05) writes the narrator-aware voice into
+# style_brief["voice"]; this writer FORWARDS that string into
+# build_section_writer_prompt via the voice_constraints kwarg. When no
+# narrator is set the value is byte-identical to VOICE_CONSTRAINTS, so the
+# Phase 14 baseline is preserved (NRR-10).
+# ─────────────────────────────────────────────────────────────────────────────
 """Phase 5 ProblemWriter — Sonnet via OpenRouter.
 
 Replaces Phase 4 stub. Emits ``state['problem_statement']`` (SectionContent)
@@ -19,7 +32,7 @@ from pydantic import BaseModel, Field, field_validator
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
-from eisenbalm_pipeline.lib.voice import build_section_writer_prompt
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt
 
 
 SECTION_GUIDANCE: str = (
@@ -84,13 +97,16 @@ def _problem_payload(state: DispatchState) -> dict:
 )
 async def problem(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
+    style_brief = state.get("style_brief") or {}
     messages = build_section_writer_prompt(
         section_id="problem",
         section_title="Problem Statement",
         section_guidance=SECTION_GUIDANCE,
         charity=state.get("winning_charity") or {},
         research=state.get("research") or {},
-        style_brief=state.get("style_brief") or {},
+        style_brief=style_brief,
+        # Phase 16 NRR-04 / Plan 16-05: forward narrator-aware voice.
+        voice_constraints=style_brief.get("voice") or VOICE_CONSTRAINTS,
     )
     out_obj, usage = await acomplete(
         agent_id="problem",

@@ -74,6 +74,13 @@ async def test_origin_story_voice_isolation(sample_dispatch_state) -> None:
         sample_dispatch_state["founder_bio"] = {"headline": "X", "body": "X"}
         await origin_story(sample_dispatch_state)
 
-    # Only the four allowed kwargs go through the helper.
-    allowed = {"section_id", "section_title", "section_guidance", "charity", "research", "style_brief"}
+    # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th
+    # whitelisted kwarg so the calibrator-set narrator voice can propagate
+    # through to the writer's system prompt. Voice-isolation property
+    # still holds: voice_constraints is the narrator-aware voice string,
+    # NOT a sibling-section's output.
+    allowed = {
+        "section_id", "section_title", "section_guidance",
+        "charity", "research", "style_brief", "voice_constraints",
+    }
     assert set(captured.keys()).issubset(allowed)
