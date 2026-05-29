@@ -22,7 +22,7 @@
  * Touch target: PDF link keeps min-h-11 (≥44px). Ghost numeral is aria-hidden
  * and pointer-events:none (decorative only). No <main>.
  */
-import type { IssueCharity } from '@/lib/sanity/types'
+import type { IssueCharity, IssueNarrator } from '@/lib/sanity/types'
 
 function formatPublishDate(dateStr: string): string {
   // dateStr is ISO-8601 (e.g., "2025-06-05"). Parse in UTC to avoid
@@ -46,6 +46,12 @@ interface IssueHeroProps {
   publishDate: string
   readingTimeMinutes: number
   problemPdfUrl: string | null
+  /**
+   * Phase 16 (NRR-08): per-issue narrator. Undefined / null / inactive / Jesse
+   * all suppress the chip — Jesse is the implicit default. Only an explicit,
+   * active, non-Jesse narrator surfaces a chip.
+   */
+  narrator?: IssueNarrator | null
 }
 
 export function IssueHero({
@@ -54,8 +60,10 @@ export function IssueHero({
   publishDate,
   readingTimeMinutes,
   problemPdfUrl,
+  narrator,
 }: IssueHeroProps) {
-  const issueLabel = `Issue ${issueNumber} — ${formatPublishDate(publishDate)}`
+  const formattedDate = formatPublishDate(publishDate)
+  const issueLabel = `Issue ${issueNumber}`
 
   return (
     <header className="relative mx-auto w-full max-w-[1340px] overflow-hidden px-4 pt-28 pb-16 sm:px-10 sm:pt-36 sm:pb-20">
@@ -79,11 +87,41 @@ export function IssueHero({
 
       {/* Hero inner content — sits above ghost numeral */}
       <div className="relative" style={{ zIndex: 1 }}>
-        {/* Issue label — .eyebrow class with --color-primary accent line prefix */}
+        {/*
+         * Phase 16 (NRR-08) — Narrator chip.
+         * Position: above the publish-date line (the eyebrow below carries the
+         * semantic publish-date timestamp), per CONTEXT D-19 ("above the
+         * publish-date line"). Render only when narrator is set, active, AND
+         * not Jesse Eisenbalm — Jesse is the implicit default; an absent /
+         * inactive / Jesse narrator renders no chip (NRR-08(b)). The two-
+         * condition guard (narrator && narrator.name !== 'Jesse Eisenbalm')
+         * is the source-scan contract enforced by
+         * apps/web/__tests__/narrator-chip.test.ts. Styling reuses the Phase
+         * 12 MED-04 machine-readout convention (font-ui / 11px / uppercase /
+         * 0.18em tracking / --color-text-mute) already used in
+         * BonusSection.tsx — no new design surface.
+         */}
+        {narrator && narrator.active && narrator.name !== 'Jesse Eisenbalm' && (
+          <p
+            data-testid="narrator-chip"
+            className="mb-6 font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em] text-[color:var(--color-text-mute)]"
+          >
+            Narrated by {narrator.name}
+          </p>
+        )}
+
+        {/* Issue label — .eyebrow class with --color-primary accent line prefix.
+            The publish-date is rendered as a semantic <time> element so screen
+            readers + crawlers can parse it; this is also the "publish-date line"
+            referenced by CONTEXT D-19 / NRR-08. */}
         <p className="eyebrow mb-9 flex items-center gap-[14px] text-[color:var(--color-primary)]">
           <span className="inline-block h-px w-9 bg-[color:var(--color-primary)]" aria-hidden="true" />
-          {issueLabel}
+          {issueLabel} —{' '}
+          <time dateTime={publishDate}>{formattedDate}</time>
         </p>
+        {/* Note: the chip JSX above MUST stay before the <time> element here.
+            apps/web/__tests__/narrator-chip.test.ts (NRR-08(e)) source-scans
+            for chipPos < timePos as a proxy for rendered DOM-order. */}
 
         {/* Charity name — primary visual anchor (h1), masthead-scale display.
             Text-shadow glow uses --color-primary-glow for the ambient halo.

@@ -195,6 +195,7 @@ export default async function IssuePage({ params }: PageProps) {
         publishDate={issue.publishDate}
         readingTimeMinutes={minutes}
         problemPdfUrl={issue.problemPdfUrl}
+        narrator={issue.narrator ?? null}
       />
 
       {/* Section navigator — 8 cards after hero, before first editorial section.
