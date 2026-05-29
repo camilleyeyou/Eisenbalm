@@ -37,6 +37,17 @@ export const QUERY_ISSUE_BY_SLUG = groq`
       missionStatement,
     },
 
+    // Phase 16 (NRR-08): masthead narrator chip projection.
+    // CANONICAL per docs/API_CONTRACTS.md §1.2 — project name + slug + active ONLY.
+    // voiceConstraints / voiceRubric / exampleSamples are pipeline-only fields and
+    // MUST NOT be projected to the reader-facing query (security: no system prompt
+    // leak per Phase 16 Pitfall 8 / NRR-08(d)).
+    narrator-> {
+      name,
+      "slug": slug.current,
+      active,
+    },
+
     theme {
       primaryColor,
       accentColor,
