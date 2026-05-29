@@ -267,3 +267,72 @@ async def test_winner_authoritative_when_editor_decision_diverges() -> None:
     assert favored_by_editor in all_content
     # system-prompt rule present
     assert "WINNER AUTHORITY" in all_content
+
+
+# ── Phase 16 (NRR-05): Chronicler reads style_brief["voice"], not direct VOICE_CONSTRAINTS ──
+
+
+@pytest.mark.skipif(not CHRONICLER_AVAILABLE, reason="chronicler module not yet present")
+@pytest.mark.xfail(
+    reason="Phase 16 Plan 16-06 not yet landed — chronicler still imports VOICE_CONSTRAINTS directly instead of reading style_brief['voice']. Flip to passing when 16-06 ships.",
+    strict=False,
+)
+@pytest.mark.asyncio
+async def test_narrator_voice_propagation():
+    """When state['style_brief']['voice'] carries a narrator voice marker, the chronicler system prompt MUST include it.
+
+    This is the Phase 16 Wave 0 RED test for NRR-05: the Chronicler's
+    consumer surface must shift from direct `from ... import VOICE_CONSTRAINTS`
+    to reading `state.get('style_brief', {}).get('voice', VOICE_CONSTRAINTS)`
+    inside `_build_system_prompt()` (Plan 16-06).
+
+    Implementation gate: the system prompt is the FIRST message in the
+    acomplete call. We intercept that call and assert the narrator's sentinel
+    string appears in the system content.
+    """
+    from eisenbalm_pipeline.agents import chronicler as chr_mod
+
+    NARRATOR_SENTINEL = "HERZOG_PERSONA_MARKER_PHASE16"
+
+    state = _minimal_state(charity_name="The Nap Ministry")
+    state["style_brief"] = {
+        "voice": f"Some preamble.\n\n{NARRATOR_SENTINEL}\n\nMore lines.",
+        "constraints": [],
+        "bonusType": "bigBudget",
+        "visualDirection": "",
+        "previousBonusTypes": [],
+    }
+    state["winning_charity"] = {"name": "The Nap Ministry"}
+    state["editor_decision"] = "Pick The Nap Ministry."
+    state["runner_up_notes"] = ""
+
+    captured_messages: list[list[dict]] = []
+
+    async def _capture(**kwargs):
+        captured_messages.append(kwargs["messages"])
+        # Return a minimal Chronicler-shaped response so the happy path completes.
+        class _Turn:
+            def __init__(self, speaker, text):
+                self.speaker = speaker
+                self.text = text
+            def model_dump(self):
+                return {"speaker": self.speaker, "text": self.text}
+
+        class _Out:
+            turns = [
+                _Turn("scout", "Stub turn 1."),
+                _Turn("advocate", "Stub turn 2."),
+                _Turn("editor", "Stub turn 3."),
+                _Turn("editor", "The Nap Ministry is the pick."),
+            ]
+        return _Out(), {"resolved_model": "stub"}
+
+    with patch.object(chr_mod, "acomplete", new=_capture):
+        await chr_mod.chronicler(state)
+
+    assert captured_messages, "chronicler did not call acomplete — RED expected before Plan 16-06"
+    system_content = captured_messages[0][0]["content"]
+    assert NARRATOR_SENTINEL in system_content, (
+        f"Chronicler system prompt missing narrator voice marker {NARRATOR_SENTINEL!r}. "
+        "Chronicler must consume style_brief['voice'] (NOT a direct VOICE_CONSTRAINTS import) per NRR-05."
+    )
