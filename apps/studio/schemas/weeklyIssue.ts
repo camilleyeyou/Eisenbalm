@@ -418,6 +418,15 @@ export default defineType({
       ],
     }),
 
+    // ─── Narrator (Phase 16 — NRR-01) ─────────────────────────────────────────
+    defineField({
+      name: 'narrator',
+      title: 'Narrator',
+      type: 'reference',
+      to: [{ type: 'narratorProfile' }],
+      description: 'Optional narrator profile. Leave unset for default Jesse voice. Set to override all four narrative sections (Origin Story, Problem, Founder Bio, Case Study) + the deliberation conversation. Clicking the linked profile opens the Studio card showing exampleSamples (NRR-07 preview affordance).',
+    }),
+
     // ─── Pipeline Metadata ─────────────────────────────────────────────────────
     defineField({
       name: 'pipelineMetadata',
