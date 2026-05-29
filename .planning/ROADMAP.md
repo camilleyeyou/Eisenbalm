@@ -311,7 +311,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   6. No new npm dependency, no CDN, no new font loaded; `theme.ts` validation + FONT_WHITELIST + game-sandbox security all untouched
   7. Cost per run: narrator-aware runs add ≤10% to LLM token spend vs. Jesse-default runs (voice constraint is a small system-prompt delta, not a new round-trip)
 **Plans**: 11 plans (10 active + 1 tombstone)
-- [ ] 16-01-contract-and-schema-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §1.2 + §2.2, create narratorProfile.ts schema, add weeklyIssue.narrator ref, register in index.ts, run TypeGen (autonomous: false)
+- [x] 16-01-contract-and-schema-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §1.2 + §2.2, create narratorProfile.ts schema, add weeklyIssue.narrator ref, register in index.ts, run TypeGen (autonomous: false)
 - [x] 16-02-pipeline-test-scaffold-PLAN.md — Wave 0 RED tests: 6 new pytest files + extend test_chronicler.py (test_voice.py, test_narrator_seed_sentinel.py, test_narrator_cost_budget.py, test_calibrator_narrator.py, test_section_writer_voice_propagation.py, test_qa_judge_narrator.py)
 - [x] 16-03-web-test-scaffold-PLAN.md — Wave 0 RED test: narrator-chip.test.ts with 5 sub-contracts (chip presence/absence/copy + DOM-order source-scan + GROQ no-leak Pitfall 8 guard)
 - [ ] 16-04-voice-py-refactor-PLAN.md — Wave 1: split lib/voice.py into UNIVERSAL_CORE + JESSE_PERSONA_BLOCK + assemble_voice() with import-time byte-equivalence assertion; preserve VOICE_CONSTRAINTS literal-concat for back-compat (Game agent stays Jesse via direct import)
@@ -352,7 +352,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
-| 16. Choose Your Narrator | 3/11 | In Progress|  |
+| 16. Choose Your Narrator | 4/11 | In Progress|  |
 
 ## Backlog
 
