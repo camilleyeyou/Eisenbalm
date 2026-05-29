@@ -136,7 +136,14 @@ async def qa(state: DispatchState) -> DispatchState:
     ]
 
     # Layer 2: LLM-as-judge (one Opus call, all sections concatenated).
-    layer2, resolved_model = await run_llm_judge(sections, run_id=run_id)
+    # Phase 16 (NRR-09): pass the resolved narrator (if any) so the judge can
+    # evaluate against the narrator's voice rubric. When ``state['narrator']``
+    # is None (legacy Jesse-default path), run_llm_judge produces byte-identical
+    # Phase 5 messages (NRR-10).
+    narrator = state.get("narrator")
+    layer2, resolved_model = await run_llm_judge(
+        sections, run_id=run_id, narrator=narrator,
+    )
 
     all_findings = layer1 + layer2
 
