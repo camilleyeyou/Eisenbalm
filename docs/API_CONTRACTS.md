@@ -66,6 +66,12 @@ type LatestIssueSlug = {
     missionStatement,
   },
 
+  narrator-> {
+    name,
+    "slug": slug.current,
+    active,
+  },   // Phase 16 (NRR-08): masthead narrator chip projection — name + slug + active ONLY; voiceConstraints / voiceRubric / exampleSamples are pipeline-only and MUST NOT be projected to the reader-facing query (security: no system prompt leak).
+
   theme {
     primaryColor,
     accentColor,
@@ -299,6 +305,8 @@ def write_charity(charity: CharityCandidate) -> str:
 
 Called once after all section agents complete and QA/Editor final has run.
 Status is always `'draft'` — Andrew changes it to `'published'`.
+
+**Phase 16 note:** `narrator` is intentionally NOT part of the write payload. Narrator is an editorial-only Sanity field that Andrew sets in Studio; the pipeline READS it (via load_narrator_from_issue in lib/sanity_client.py) but never writes it. Narrator change history is preserved by Sanity's built-in revision tracking — no pipeline-side audit field needed (CONTEXT D-15).
 
 ```python
 def write_issue_draft(state: DispatchState) -> str:
@@ -1327,6 +1335,10 @@ class DispatchState(TypedDict):
     winning_charity_sanity_id: Optional[str]    # set after Sanity write
     deliberation_transcript: Optional[str]      # full Scout+Advocate+Editor text
     deliberation_conversation: Optional[list[dict]]   # Phase 13 (DEL-CONV): Chronicler dialogue turns — [{"speaker": "scout|advocate|editor", "text": "plain prose, no Markdown"}]; written by the chronicler node; flattened into deliberation_transcript for the podcast/NotebookLM export
+
+    # ── Phase 16: Narrator (editorial-only, loaded from Sanity at pipeline start) ──
+    narrator: Optional[dict]                # Loaded narratorProfile dict {name, slug, voiceConstraints, voiceRubric, exampleSamples, active} or None — VERBATIM from docs/API_CONTRACTS.md §7 (Phase 16 addition). Set unset = default Jesse voice. The Calibrator is the single agent that reads this (CONTEXT D-05); all downstream agents consume style_brief["voice"] which Calibrator assembles via lib/voice.assemble_voice(narrator).
+
     editor_decision: Optional[str]              # why this charity won
     runner_up_notes: Optional[str]
 
