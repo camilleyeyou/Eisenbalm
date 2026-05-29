@@ -62,23 +62,21 @@ Implements: NRR-09 (narrator-aware QA), NRR-10 (byte-identical narrator=None beh
 Current QA judge entry (Phase 5 baseline — preserve):
 ```python
 # packages/pipeline/src/eisenbalm_pipeline/agents/qa/judge.py
-async def evaluate_section(
-    section_id: str,
-    section_body: str,
-    category: str,
-    # ... etc
-) -> QaCorrection: ...
+async def run_llm_judge(
+    sections: dict[str, str],
+    *,
+    run_id: str,
+) -> tuple[list[QAFinding], str]: ...
 ```
 
 Phase 16 addition — the entry signature gains an optional `narrator` parameter (kwarg with default None to preserve callers):
 ```python
-async def evaluate_section(
-    section_id: str,
-    section_body: str,
-    category: str,
+async def run_llm_judge(
+    sections: dict[str, str],
     *,
+    run_id: str,
     narrator: Narrator | None = None,
-) -> QaCorrection: ...
+) -> tuple[list[QAFinding], str]: ...
 ```
 
 Narrator addendum renderer (helper):
@@ -88,23 +86,24 @@ def _render_narrator_addendum(narrator: Narrator) -> str:
     Produce a system-message ADDENDUM that anchors evaluation against
     the narrator's voice rubric. Appended AFTER the legacy rubric.md content.
 
+    The Narrator TypedDict (16-05) carries voiceRubric as a plain str (matching the
+    Sanity narratorProfile.voiceRubric `type: 'text'` field — see Plan 16-01) and
+    exampleSamples as list[str].
+
     Returns "" if narrator is None (caller should not call in that case, but defensive).
     """
-    rubric = narrator["voiceRubric"]
-    constraints_lines = "\n".join(f"- {c}" for c in rubric["constraints"])
+    rubric_text = narrator.get("voiceRubric") or ""
     samples = narrator.get("exampleSamples") or []
     sample_block = ""
     if samples:
-        # Take first 2 samples — keep token budget bounded.
+        # Take first 2 samples — keep token budget bounded (NRR-10 criterion 7).
         sample_block = "\n\nReference samples for this narrator's voice:\n" + "\n\n".join(samples[:2])
 
     return (
         f"\n\n"
-        f"NARRATOR-SPECIFIC RUBRIC: This issue is narrated by {narrator['displayName']}. "
+        f"NARRATOR-SPECIFIC RUBRIC: This issue is narrated by {narrator['name']}. "
         f"Evaluate the section against THIS narrator's voice (not Jesse's, unless this IS Jesse).\n"
-        f"Register: {rubric['register']}\n"
-        f"Cadence: {rubric['cadence']}\n"
-        f"Constraints:\n{constraints_lines}"
+        f"{rubric_text}"
         f"{sample_block}"
     )
 ```
@@ -119,10 +118,10 @@ def _render_narrator_addendum(narrator: Narrator) -> str:
   <read_first>
     1. READ the FULL current `packages/pipeline/src/eisenbalm_pipeline/agents/qa/judge.py` end-to-end. Note:
        - the current import block,
-       - the current entry function signature,
-       - how the system and user messages are currently built (via a `prompts.format_messages(category=...)` call or similar),
-       - the rubric loading path (probably `prompts/rubric.md` or per-category rubric files).
-    2. READ `packages/pipeline/src/eisenbalm_pipeline/state.py` post-16-05 to confirm `Narrator` TypedDict.
+       - the current entry function signature — verified to be `async def run_llm_judge(sections, *, run_id)` (NOT `evaluate_section`),
+       - how the system and user messages are currently built (verified: `messages = [{"role": "system", "content": rubric}, {"role": "user", "content": "Evaluate these section bodies against the Jesse voice rubric. ..."}]` — see judge.py lines 89-102),
+       - the rubric loading path (`_load_rubric()` reads `prompts/rubric.md` adjacent to judge.py — see `_RUBRIC_PATH` at line 29).
+    2. READ `packages/pipeline/src/eisenbalm_pipeline/state.py` post-16-05 to confirm `Narrator` TypedDict (note: the Plan 16-05 revision aligned the TypedDict with the Sanity narratorProfile schema — fields are `name`, `slug`, `voiceConstraints`, `voiceRubric` (str), `exampleSamples` (list[str]), `active` (bool)).
     3. RECORD the exact current "legacy" system message content and user message content (e.g., by running an existing Phase 5 QA judge test in isolation and inspecting the captured messages). This is what NRR-10 binds you to.
   </read_first>
 
@@ -134,24 +133,35 @@ def _render_narrator_addendum(narrator: Narrator) -> str:
        from eisenbalm_pipeline.state import Narrator
        ```
 
-    2. **Add a private renderer** `_render_narrator_addendum` at module scope (verbatim from `<interfaces>` above).
+    2. **Add a private renderer** `_render_narrator_addendum` at module scope (verbatim from `<interfaces>` above — uses `narrator["name"]` and treats `voiceRubric` as a plain str per the Sanity schema in Plan 16-01).
 
-    3. **Modify the entry function** `evaluate_section` (or its current name) to accept an optional `narrator` keyword:
+    3. **Modify the entry function** `run_llm_judge` (the actual function name in `judge.py` — NOT `evaluate_section`; if a future rename has occurred, use whichever name currently exists in the file) to accept an optional `narrator` keyword:
        ```python
-       async def evaluate_section(
-           section_id: str,
-           section_body: str,
-           category: str,
+       async def run_llm_judge(
+           sections: dict[str, str],
            *,
+           run_id: str,
            narrator: Narrator | None = None,
-       ) -> QaCorrection: ...
+       ) -> tuple[list[QAFinding], str]: ...
        ```
 
     4. **Inside the function**: build messages the same way Phase 5 does. Then, ONLY for the system message and ONLY when narrator is set, append the addendum:
        ```python
        # Build messages exactly as Phase 5 does first.
-       messages = prompts.format_messages(category=category, section_body=section_body)
-       # messages is List[dict[str,str]] with messages[0] = system, messages[1] = user.
+       rubric = _load_rubric()
+       sections_json = json.dumps(sections, indent=2)
+       messages = [
+           {"role": "system", "content": rubric},
+           {
+               "role": "user",
+               "content": (
+                   "Evaluate these section bodies against the Jesse voice rubric. "
+                   "Return JSON JudgeFindings with a `findings` array. "
+                   "An empty array is a passing grade.\n\n"
+                   f"SECTIONS:\n{sections_json}"
+               ),
+           },
+       ]
 
        # Phase 16 — narrator-aware ADDENDUM to system message only (NRR-09 + NRR-10).
        if narrator is not None:
@@ -166,7 +176,7 @@ def _render_narrator_addendum(narrator: Narrator) -> str:
 
     5. **Do NOT** add any `user_intro`, prefix, or suffix to the user message — regardless of narrator presence. The Plan 16-02 Task 2 test asserts byte-equivalence of `captured_messages[1]["content"]` against the legacy user content, and a single character difference fails the test.
 
-    6. **Wire narrator into the call site**: in the QA orchestrator / runner that fans out to `evaluate_section` for each category, pass `narrator=state["narrator"]`. (This call site may live in `qa/__init__.py` or a per-category loop in the main graph — find it during the read step and update.)
+    6. **Wire narrator into the call site**: in the QA orchestrator / runner that fans out to `run_llm_judge` (or its current name) for each category, pass `narrator=state["narrator"]`. (This call site may live in `qa/__init__.py` or a per-category loop in the main graph — find it during the read step and update.)
 
     7. Do NOT modify the corrections JSON schema, the OpenRouter call site, or the per-category rubric files.
   </action>
@@ -188,15 +198,20 @@ def _render_narrator_addendum(narrator: Narrator) -> str:
       # 5. Grep guard — judge.py does NOT modify the user message based on narrator.
       ! grep -E "narrator.*messages\[1\]|messages\[1\].*narrator|user_intro" packages/pipeline/src/eisenbalm_pipeline/agents/qa/judge.py
       # Any such pattern means the user message is being touched — must fail to find.
+
+      # 6. The narrator kwarg landed on the actual entry function (whose name is run_llm_judge in the live file).
+      grep -E "async def run_llm_judge\(" packages/pipeline/src/eisenbalm_pipeline/agents/qa/judge.py | grep -q "narrator"
+      # If a future rename has renamed run_llm_judge, substitute the current name — the contract is that
+      # the QA judge entry function accepts `narrator: Narrator | None = None` as a keyword.
     </automated>
   </verify>
 
   <done>
-    - `evaluate_section` accepts `narrator: Narrator | None = None`.
+    - `run_llm_judge` (or its current name) accepts `narrator: Narrator | None = None`.
     - When `narrator=None`: system AND user messages byte-identical to Phase 5.
     - When `narrator=<some narrator>`: system message has addendum appended; user message untouched.
     - `_render_narrator_addendum` only ever touches system content.
-    - QA orchestrator passes `state["narrator"]` to every `evaluate_section` call.
+    - QA orchestrator passes `state["narrator"]` to every `run_llm_judge` call.
     - All Phase 5 QA judge tests still pass.
     - New narrator tests pass.
   </done>
@@ -222,3 +237,5 @@ After completion, create `.planning/phases/16-choose-your-narrator/16-07-qa-judg
 - Confirmation that both system AND user messages are byte-identical to Phase 5 when narrator=None.
 - The QA orchestrator call site that now passes narrator.
 </output>
+</content>
+</invoke>

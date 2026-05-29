@@ -310,7 +310,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   5. The frontend issue page renders a narrator attribution chip on the masthead when narrator is set (e.g. "Narrated by Werner Herzog") and renders no chip when unset (default Jesse remains the implicit/invisible default)
   6. No new npm dependency, no CDN, no new font loaded; `theme.ts` validation + FONT_WHITELIST + game-sandbox security all untouched
   7. Cost per run: narrator-aware runs add ≤10% to LLM token spend vs. Jesse-default runs (voice constraint is a small system-prompt delta, not a new round-trip)
-**Plans**: 10 plans (9 active + 1 tombstone)
+**Plans**: 11 plans (10 active + 1 tombstone)
 - [ ] 16-01-contract-and-schema-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §1.2 + §2.2, create narratorProfile.ts schema, add weeklyIssue.narrator ref, register in index.ts, run TypeGen (autonomous: false)
 - [ ] 16-02-pipeline-test-scaffold-PLAN.md — Wave 0 RED tests: 6 new pytest files + extend test_chronicler.py (test_voice.py, test_narrator_seed_sentinel.py, test_narrator_cost_budget.py, test_calibrator_narrator.py, test_section_writer_voice_propagation.py, test_qa_judge_narrator.py)
 - [ ] 16-03-web-test-scaffold-PLAN.md — Wave 0 RED test: narrator-chip.test.ts with 5 sub-contracts (chip presence/absence/copy + DOM-order source-scan + GROQ no-leak Pitfall 8 guard)
