@@ -273,10 +273,6 @@ async def test_winner_authoritative_when_editor_decision_diverges() -> None:
 
 
 @pytest.mark.skipif(not CHRONICLER_AVAILABLE, reason="chronicler module not yet present")
-@pytest.mark.xfail(
-    reason="Phase 16 Plan 16-06 not yet landed — chronicler still imports VOICE_CONSTRAINTS directly instead of reading style_brief['voice']. Flip to passing when 16-06 ships.",
-    strict=False,
-)
 @pytest.mark.asyncio
 async def test_narrator_voice_propagation():
     """When state['style_brief']['voice'] carries a narrator voice marker, the chronicler system prompt MUST include it.

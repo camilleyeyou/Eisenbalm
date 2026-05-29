@@ -60,16 +60,17 @@ from typing import Any, Optional
 #   3. DEL-04 no-AI-reference rule
 #   4. Compliment-adjectives + passive-hedging bans
 #
-# NOTE: WINNER AUTHORITY is intentionally NOT included in UNIVERSAL_CORE.
-# It lives in chronicler._build_system_prompt (per 16-RESEARCH §G and
-# 16-06 Task 1). CONTEXT D-04 allows this via "or in the chronicler
-# persona-agnostic preamble". CONTEXT canonical_refs line 122 is
-# superseded by Research §G analysis — confirmed during plan revision:
-# the rule is vacuous for narrative writers (no plausible substitution
-# chain can introduce a non-Jesse author voice through their inputs).
-# Adding it here would muddy the universal register and would force
-# narrative writers to render a Jesse-specific guardrail in their
-# system prompt — a byte-equivalence breakage.
+# NOTE: The winner-authority guardrail is intentionally NOT included in
+# UNIVERSAL_CORE. It lives in chronicler._build_system_prompt (per
+# 16-RESEARCH §G and 16-06 Task 1). CONTEXT D-04 allows this via
+# "or in the chronicler persona-agnostic preamble". CONTEXT canonical_refs
+# line 122 is superseded by Research §G analysis — confirmed during plan
+# revision: the rule is vacuous for narrative writers (no plausible
+# substitution chain can introduce a non-Jesse author voice through their
+# inputs). Adding it here would muddy the universal register and would
+# force narrative writers to render a Jesse-specific guardrail in their
+# system prompt — a byte-equivalence breakage. See chronicler.py for the
+# actual preamble constant.
 UNIVERSAL_CORE = (
     "Treat every charity with the gravity of a Fortune 500 company.\n"
     "Treat every founder as a visionary regardless of obscurity.\n"
