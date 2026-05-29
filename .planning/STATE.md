@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 16-07-qa-judge-narrator-PLAN.md
-last_updated: "2026-05-29T19:51:01.463Z"
+stopped_at: Completed 16-06-chronicler-narrator-PLAN.md
+last_updated: "2026-05-29T19:55:11.256Z"
 progress:
   total_phases: 17
   completed_phases: 14
   total_plans: 112
-  completed_plans: 106
+  completed_plans: 108
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 16 (choose-your-narrator) — EXECUTING
-Plan: 7 of 11
+Plan: 9 of 11
 
 ## Performance Metrics
 
@@ -139,6 +139,8 @@ Plan: 7 of 11
 | Phase 16-choose-your-narrator P01 | 20 | 4 tasks | 4 files |
 | Phase 16-choose-your-narrator P05 | 15min | 3 tasks | 12 files |
 | Phase 16-choose-your-narrator P07 | 7min | 1 tasks | 2 files |
+| Phase 16-choose-your-narrator P08b | 12 | 3 tasks | 4 files |
+| Phase 16-choose-your-narrator P06 | 12min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -345,6 +347,12 @@ Recent decisions affecting current work:
 - [Phase 16-choose-your-narrator]: Plan 16-01 Task 4 (TypeGen) attested by Andrew via "approved" human-verify resume-signal — apps/studio/sanity.types.ts is gitignored per Phase 1 D-08 (Pitfall 5: TypeGen requires live Sanity project credentials in apps/studio/.env.local), so the regenerated file lives only in Andrew's local environment and CI. No Claude-side regeneration possible; no commit of types file. Downstream Plans 16-04..16-09 consume NarratorProfile + WeeklyIssue['narrator'] types via @eisenbalm/shared re-export shim (established Phase 1 contract preserved verbatim).
 - [Phase 16-choose-your-narrator]: Plan 16-05: Narrator TypedDict + DispatchState narrator/narrator_slug slots + calibrator D-13 precedence chain + D-14 inactive fallback (boolean active field, not status string) + module-level convex_mutation_safe import (patch-where-looked-up). lib/sanity_client.fetch_narrator_by_slug projects 6 canonical narratorProfile fields via _type=='narratorProfile' GROQ. 4 narrative writers (origin_story, problem, founder_bio, case_study) forward style_brief['voice'] via voice_constraints kwarg — narrator-agnostic at source level (NRR-01). Bonus stays unchanged per CONTEXT D-19. Phase 5 voice-isolation tests extended to allow voice_constraints as 7th whitelisted kwarg. 6 Plan 16-02 tests turned green (3 calibrator + 4 voice propagation, 1 already passing). NRR-10 byte-equivalence holds: assemble_voice(None) == VOICE_CONSTRAINTS. The convex_mutation_safe call uses kwargs (path=, args=) so the Plan 16-02 test mock with side_effect=lambda **kwargs works without coupling to positional shape.
 - [Phase 16-choose-your-narrator]: Plan 16-07: QA judge narrator-aware via system-message-only append (D-12). When narrator=None, BOTH system AND user messages byte-identical to Phase 5 (NRR-10). exampleSamples capped at first 2 to bound token budget. Orchestrator (agents/qa/__init__.py) passes state['narrator'] through to run_llm_judge.
+- [Phase 16-choose-your-narrator]: Plan 16-08b: Followed canonical docs/API_CONTRACTS.md §1.2 schema (name + slug + active) over stale plan text (displayName + slug !== 'jesse'). Plan was drafted before commit 4c60712 ('align Plans 16-05/16-06/16-07/16-08a to canonical narratorProfile schema'). Test + API_CONTRACTS + narratorProfile.ts + seed agree: canonical is 'name'. CLAUDE.md precedence applied.
+- [Phase 16-choose-your-narrator]: Plan 16-08b: Chip placed ABOVE the eyebrow (the publish-date carrier), NOT between byline and a stand-alone <time> as stale verified_dom_baseline suggested. Current hero post-Phase 12 restyle is eyebrow→h1→byline→mission→meta-row; date lives in the eyebrow. Eyebrow upgraded to wrap formattedDate in <time dateTime={publishDate}> — wins NRR-08(e) source-scan anchor + a11y/SEO.
+- [Phase 16-choose-your-narrator]: Plan 16-08b: Chip suppression is a three-way guard — narrator && narrator.active && narrator.name !== 'Jesse Eisenbalm'. Covers absent/null narrator, parked (active=false, CONTEXT D-14 silent Jesse fallback), and explicit Jesse default. Source-scan test regex tolerates the extra .active term.
+- [Phase 16-choose-your-narrator]: [Phase 16-06]: D-04 caveat enforced — WINNER_AUTHORITY_PREAMBLE lives in chronicler.py as a module-level constant; lib/voice.py UNIVERSAL_CORE stays narrator-agnostic; B1 grep cross-check (voice.py count == 0) passes after rephrasing a 16-04 comment that contained the literal phrase.
+- [Phase 16-choose-your-narrator]: [Phase 16-06]: D-05 single-injection-point preserved — chronicler reads style_brief['voice'] (calibrator-composed) as the primary voice source; state['narrator'] consulted ONLY for additive personalization (UNIVERSAL_CORE name substitution, voiceRubric, exampleSamples). Plan instruction to read narrator directly was reconciled against the binding xfail test + D-05 — fixed via Rule 3.
+- [Phase 16-choose-your-narrator]: [Phase 16-06]: NRR-08 schema alignment — narrator['name'] (not 'displayName'); narrator.get('voiceRubric') as plain str; no NarratorVoiceRubric wrapper; no _render_voice_rubric helper. Matches Plan 16-07's qa/judge.py canonical pattern byte-for-byte.
 
 ### Pending Todos
 
@@ -411,6 +419,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-29T19:51:01.452Z
-Stopped at: Completed 16-07-qa-judge-narrator-PLAN.md
+Last session: 2026-05-29T19:55:11.244Z
+Stopped at: Completed 16-06-chronicler-narrator-PLAN.md
 Resume file: None
