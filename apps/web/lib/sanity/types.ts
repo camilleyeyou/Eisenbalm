@@ -117,12 +117,29 @@ export type IssueDeliberation = {
   conversation: IssueDeliberationTurn[] | null
 } | null
 
+/**
+ * Phase 16 (NRR-08) — masthead narrator chip.
+ *
+ * Canonical projection per docs/API_CONTRACTS.md §1.2: name + slug + active ONLY.
+ * voiceConstraints / voiceRubric / exampleSamples are pipeline-only and MUST
+ * NOT appear on this reader-facing type (no system prompt leak / Pitfall 8).
+ *
+ * Optional + nullable to cover (a) older issues with no narrator field
+ * (undefined) and (b) issues with the narrator reference explicitly null.
+ */
+export type IssueNarrator = {
+  name: string
+  slug: string
+  active: boolean
+}
+
 export type Issue = {
   issueNumber: number
   publishDate: string
   bonusType: BonusType
   runId: string | null
   charity: IssueCharity
+  narrator?: IssueNarrator | null
   theme: IssueTheme
   originStory: IssueSection
   problemStatement: IssueSection
