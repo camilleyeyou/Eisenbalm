@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 16-05-state-calibrator-writers-PLAN.md
-last_updated: "2026-05-29T19:42:09.856Z"
+stopped_at: Completed 16-07-qa-judge-narrator-PLAN.md
+last_updated: "2026-05-29T19:51:01.463Z"
 progress:
   total_phases: 17
   completed_phases: 14
   total_plans: 112
-  completed_plans: 105
+  completed_plans: 106
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 16 (choose-your-narrator) — EXECUTING
-Plan: 6 of 11
+Plan: 7 of 11
 
 ## Performance Metrics
 
@@ -138,6 +138,7 @@ Plan: 6 of 11
 | Phase 16-choose-your-narrator P02 | 14 | 3 tasks | 7 files |
 | Phase 16-choose-your-narrator P01 | 20 | 4 tasks | 4 files |
 | Phase 16-choose-your-narrator P05 | 15min | 3 tasks | 12 files |
+| Phase 16-choose-your-narrator P07 | 7min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -343,6 +344,7 @@ Recent decisions affecting current work:
 - [Phase 16-choose-your-narrator]: Plan 16-01: Wave 0 contract gate closed — docs/API_CONTRACTS.md amended additively at §1.2 (narrator->{name, slug, active} GROQ projection with Pitfall 8 security comment), §7 (DispatchState.narrator field with Phase 16 comment block mirroring Phase 13 style), and §2.2 (Phase 16 note confirming narrator stays out of write_issue_draft per CONTEXT D-15). narratorProfile.ts created with 6 fields (name, slug, voiceConstraints, voiceRubric, exampleSamples, active) mirroring agentProfile.ts verbatim — exampleSamples is plain `{type:'text'}` strings (D-12), active.initialValue=true. weeklyIssue.narrator inserted at TOP LEVEL immediately BEFORE pipelineMetadata group (Andrew sees editorial-input control before drilling into technical pipelineMetadata; Research §B placement recommendation). schemaTypes export extended to 4 entries (charity, weeklyIssue, agentProfile, narratorProfile). Plan executed exactly as written — zero Rule 1/2/3 auto-fixes, zero Rule 4 escalations.
 - [Phase 16-choose-your-narrator]: Plan 16-01 Task 4 (TypeGen) attested by Andrew via "approved" human-verify resume-signal — apps/studio/sanity.types.ts is gitignored per Phase 1 D-08 (Pitfall 5: TypeGen requires live Sanity project credentials in apps/studio/.env.local), so the regenerated file lives only in Andrew's local environment and CI. No Claude-side regeneration possible; no commit of types file. Downstream Plans 16-04..16-09 consume NarratorProfile + WeeklyIssue['narrator'] types via @eisenbalm/shared re-export shim (established Phase 1 contract preserved verbatim).
 - [Phase 16-choose-your-narrator]: Plan 16-05: Narrator TypedDict + DispatchState narrator/narrator_slug slots + calibrator D-13 precedence chain + D-14 inactive fallback (boolean active field, not status string) + module-level convex_mutation_safe import (patch-where-looked-up). lib/sanity_client.fetch_narrator_by_slug projects 6 canonical narratorProfile fields via _type=='narratorProfile' GROQ. 4 narrative writers (origin_story, problem, founder_bio, case_study) forward style_brief['voice'] via voice_constraints kwarg — narrator-agnostic at source level (NRR-01). Bonus stays unchanged per CONTEXT D-19. Phase 5 voice-isolation tests extended to allow voice_constraints as 7th whitelisted kwarg. 6 Plan 16-02 tests turned green (3 calibrator + 4 voice propagation, 1 already passing). NRR-10 byte-equivalence holds: assemble_voice(None) == VOICE_CONSTRAINTS. The convex_mutation_safe call uses kwargs (path=, args=) so the Plan 16-02 test mock with side_effect=lambda **kwargs works without coupling to positional shape.
+- [Phase 16-choose-your-narrator]: Plan 16-07: QA judge narrator-aware via system-message-only append (D-12). When narrator=None, BOTH system AND user messages byte-identical to Phase 5 (NRR-10). exampleSamples capped at first 2 to bound token budget. Orchestrator (agents/qa/__init__.py) passes state['narrator'] through to run_llm_judge.
 
 ### Pending Todos
 
@@ -409,6 +411,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-29T19:42:09.843Z
-Stopped at: Completed 16-05-state-calibrator-writers-PLAN.md
+Last session: 2026-05-29T19:51:01.452Z
+Stopped at: Completed 16-07-qa-judge-narrator-PLAN.md
 Resume file: None
