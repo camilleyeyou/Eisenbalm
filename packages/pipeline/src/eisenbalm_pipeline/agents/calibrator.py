@@ -15,16 +15,18 @@ StyleBrief lands on weeklyIssue.calibratorBrief at Sanity write time (Publisher)
 """
 from __future__ import annotations
 
+import json
 import logging
-from typing import Literal
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
-from eisenbalm_pipeline.graph.state import DispatchState
+from eisenbalm_pipeline.graph.state import DispatchState, Narrator
+from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
-from eisenbalm_pipeline.lib.sanity_client import groq_query
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
+from eisenbalm_pipeline.lib.sanity_client import fetch_narrator_by_slug, groq_query
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, assemble_voice
 
 log = logging.getLogger(__name__)
 
@@ -127,10 +129,122 @@ def _build_messages(
     ]
 
 
+async def _emit_inactive_narrator_warning(
+    run_id: str, original_slug: str, narrator_name: str
+) -> None:
+    """D-14: emit a non-blocking deliberationEvents warning when the resolved
+    narrator has ``active == False``. Best-effort — Convex failures log and
+    continue (lib/convex_client.convex_mutation_safe semantics).
+
+    Uses ``editor-decision`` event type (Phase 5 Plan 05-01 patched Convex
+    schema literal union) to avoid widening the Convex eventType union for
+    this single edge. The payload carries a human-readable ``warning`` key
+    so downstream UI + the Plan 16-02 test assertion can detect it.
+    """
+    # Call with keyword args so the Plan 16-02 test mock (side_effect
+    # accepts **kwargs) can introspect the payload without positional-vs-
+    # keyword arg-shape coupling. ``convex_mutation_safe(path, args)`` is
+    # a 2-positional API; this call passes both as keyword to make the
+    # test's ``_capture_event(**kwargs)`` shape work.
+    await convex_mutation_safe(
+        path="deliberationEvents:insert",
+        args={
+            "runId": run_id,
+            "agentId": "calibrator",
+            "eventType": "editor-decision",
+            "payload": json.dumps(
+                {
+                    "warning": "inactive_narrator_fallback",
+                    "originalSlug": original_slug,
+                    "originalName": narrator_name,
+                    "fellBackTo": "jesse",
+                    "reason": "narrator marked inactive (active=False)",
+                }
+            ),
+        },
+    )
+
+
+async def _resolve_narrator(
+    state: DispatchState,
+) -> tuple[Optional[Narrator], bool]:
+    """Resolve which narrator to use for this run.
+
+    Precedence (D-13):
+      1. state["narrator"] (pre-populated by test / upstream code) if set
+      2. state["narrator_slug"] override (fetched from Sanity)
+      3. winning_charity.narratorSlug (fetched from Sanity)
+      4. Jesse default (returns None — caller passes None to assemble_voice)
+
+    D-14: If the resolved narrator record has ``active == False``, emit a
+    deliberation warning and signal the caller to fall back to Jesse by
+    returning ``(None, True)``. Detection uses the boolean ``active`` field
+    (Sanity narratorProfile schema — Plan 16-01 + CONTEXT D-08), NOT a
+    ``status: "active"|"inactive"`` string.
+
+    Returns:
+        A tuple ``(narrator, fellback)``. ``narrator`` is the resolved
+        Narrator record (or None when the Jesse default applies). ``fellback``
+        is True iff the resolution path tripped the D-14 inactive-narrator
+        fallback (caller is responsible for the warning emission, which
+        happens inside this helper).
+    """
+    run_id = state["run_id"]
+
+    # 1) Direct state['narrator'] takes precedence (test path + upstream
+    #    code that wants to bypass Sanity lookup entirely).
+    narrator_record: Optional[dict] = state.get("narrator")  # type: ignore[assignment]
+
+    # 2/3) Slug-based fetch when no direct record was set.
+    if narrator_record is None:
+        override_slug = state.get("narrator_slug")
+        charity = state.get("winning_charity") or {}
+        charity_slug = charity.get("narratorSlug") if isinstance(charity, dict) else None
+        chosen_slug = override_slug or charity_slug
+        # Jesse default: no slug means use VOICE_CONSTRAINTS verbatim. Do
+        # not round-trip to Sanity for the default case — assemble_voice(None)
+        # produces the byte-equivalent Jesse voice (Phase 16 D-13).
+        if chosen_slug and chosen_slug != "jesse":
+            try:
+                narrator_record = await fetch_narrator_by_slug(chosen_slug)
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "Narrator slug %s fetch failed: %r — falling back to Jesse.",
+                    chosen_slug,
+                    exc,
+                )
+                narrator_record = None
+            if narrator_record is None:
+                log.warning(
+                    "Narrator slug %s did not resolve; falling back to Jesse.",
+                    chosen_slug,
+                )
+
+    # D-14: detect inactivity (boolean `active`, not status string).
+    if narrator_record is not None and narrator_record.get("active") is False:
+        await _emit_inactive_narrator_warning(
+            run_id=run_id,
+            original_slug=narrator_record.get("slug") or "",
+            narrator_name=narrator_record.get("name") or "",
+        )
+        return (None, True)
+
+    return (narrator_record, False)  # type: ignore[return-value]
+
+
 @agent_node(name="calibrator", emit_event=None)
 async def calibrator(state: DispatchState) -> DispatchState:
     issue_number = state["issue_number"]
     run_id = state["run_id"]
+
+    # ── Phase 16 narrator resolution (NRR-03 single resolution point) ──────
+    resolved_narrator, fellback = await _resolve_narrator(state)
+    # ``assemble_voice`` is the single composition surface (Phase 16 D-05).
+    # When resolved_narrator is None (Jesse default OR D-14 inactive
+    # fallback), this returns VOICE_CONSTRAINTS verbatim (NRR-10 byte
+    # equivalence). When set, it composes
+    # ``narrator.voiceConstraints + UNIVERSAL_CORE``.
+    voice_for_brief = assemble_voice(resolved_narrator)
 
     previous = await _fetch_previous_bonus_types()
     chosen = _pick_bonus_type(previous, issue_number)
@@ -155,7 +269,7 @@ async def calibrator(state: DispatchState) -> DispatchState:
     else:
         # Stub-mode fallback (FakeOpenRouterClient may return raw content).
         brief_dict = {
-            "voice": VOICE_CONSTRAINTS,
+            "voice": voice_for_brief,
             "constraints": [
                 "No exclamation marks.",
                 "No sentimentality keywords.",
@@ -178,8 +292,11 @@ async def calibrator(state: DispatchState) -> DispatchState:
             "No sentimentality keywords.",
             "Numbers cited with sources.",
         ]
-    if not brief_dict.get("voice"):
-        brief_dict["voice"] = VOICE_CONSTRAINTS
+    # Phase 16 NRR-03/04: ALWAYS overwrite the LLM-emitted `voice` with the
+    # narrator-aware composition. The LLM has no business choosing the voice
+    # — the Calibrator is the single resolution point. When narrator is None,
+    # ``voice_for_brief == VOICE_CONSTRAINTS`` byte-for-byte (NRR-10).
+    brief_dict["voice"] = voice_for_brief
     if not brief_dict.get("visualDirection"):
         brief_dict["visualDirection"] = (
             "Warm cream paper feel; serif display, sans body."
@@ -189,8 +306,22 @@ async def calibrator(state: DispatchState) -> DispatchState:
     model_versions = dict(state.get("model_versions") or {})
     model_versions["calibrator"] = usage["resolved_model"]
 
-    return {
+    # Phase 16: persist the resolved narrator back to state for downstream
+    # consumers (chronicler — Plan 16-06; QA judge — Plan 16-07). On D-14
+    # fallback, resolved_narrator is None (Jesse default); chronicler + QA
+    # judge interpret None as "use Jesse rubric / Jesse-voice chronicler".
+    # state['narrator_slug'] (input override) is preserved untouched for
+    # auditability.
+    out_state: dict[str, Any] = {
         **state,
         "style_brief": brief_dict,
         "model_versions": model_versions,
     }
+    # Only overwrite narrator if we changed it (fellback) or if we resolved
+    # a fresh record via slug — leave None if it was already None and no slug
+    # was provided.
+    if fellback:
+        out_state["narrator"] = None
+    elif resolved_narrator is not None:
+        out_state["narrator"] = resolved_narrator
+    return out_state

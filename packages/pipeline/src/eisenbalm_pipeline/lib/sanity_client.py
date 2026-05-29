@@ -382,6 +382,44 @@ async def groq_query(query: str, *, params: Optional[dict] = None) -> list[dict]
     return body.get("result") or []
 
 
+async def fetch_narrator_by_slug(slug: str) -> Optional[dict]:
+    """Phase 16 (NRR-03) — read a single narratorProfile document by slug.
+
+    The GROQ projection mirrors the canonical Sanity narratorProfile schema
+    fields from Plan 16-01 (name, voiceConstraints, voiceRubric,
+    exampleSamples, active) plus the inner ``slug.current`` string (NOT the
+    wrapper object — pipeline state stores the inner string per Narrator
+    TypedDict in graph/state.py).
+
+    Returns the narrator dict on hit, ``None`` when the slug does not
+    resolve. Network/HTTP errors propagate to the caller; the calibrator
+    catches and falls back to Jesse (D-14 + log warning).
+
+    The ``_type`` filter is ``narratorProfile`` (Plan 16-01 schema), NOT
+    bare ``narrator``. The output field surface MUST match the Narrator
+    TypedDict in graph/state.py byte-for-byte.
+    """
+    query = (
+        '*[_type == "narratorProfile" && slug.current == $slug][0]{'
+        'name, "slug": slug.current, voiceConstraints, voiceRubric, '
+        'exampleSamples, active'
+        '}'
+    )
+    rows = await groq_query(query, params={"slug": slug})
+    # groq_query returns ``result`` which is a list for *[...][0] queries
+    # GROQ wraps the single-document projection in a list with one item.
+    if not rows:
+        return None
+    # When [0] is used in GROQ, Sanity returns a single object (not a list).
+    # ``groq_query`` unwraps to ``.result`` which may be either a list or a
+    # single dict depending on the projection. Normalize both shapes.
+    if isinstance(rows, list):
+        return rows[0] if rows else None
+    if isinstance(rows, dict):
+        return rows
+    return None
+
+
 async def set_charity_first_featured(
     http: AsyncClient, charity_id: str, issue_id: str
 ) -> None:
