@@ -121,6 +121,25 @@ class QACorrection(TypedDict):
     accepted: bool                      # set by Editor final
 
 
+class Narrator(TypedDict):
+    """Resolved narrator record. Loaded from Sanity by the calibrator agent (Plan 16-05 Task 2).
+
+    Field names mirror the Sanity narratorProfile schema (Plan 16-01 + CONTEXT D-08) verbatim.
+    Renaming any field here REQUIRES a matching rename in:
+      - apps/studio/schemas/narratorProfile.ts
+      - apps/studio/seeds/narrators.json
+      - apps/studio/scripts/seed-narrators.ts
+      - docs/API_CONTRACTS.md §7
+    Per CLAUDE.md hard rule, contract changes happen first.
+    """
+    name: str                      # display name (Sanity narratorProfile.name)
+    slug: str                      # url-slug (Sanity narratorProfile.slug.current — inner string)
+    voiceConstraints: str          # PERSONA_BLOCK content (Sanity narratorProfile.voiceConstraints, type: 'text')
+    voiceRubric: str               # QA-judge persona rubric, plain text (Sanity narratorProfile.voiceRubric, type: 'text')
+    exampleSamples: list[str]      # plain prose samples (Sanity narratorProfile.exampleSamples, array of 'text')
+    active: bool                   # narrator on/off switch (Sanity narratorProfile.active; default True; D-14: when False → fall back to Jesse)
+
+
 class DispatchState(TypedDict):
     # ── Identity ──────────────────────────────────────────────────────────────
     run_id: str                         # UUID, set at pipeline start
@@ -167,6 +186,17 @@ class DispatchState(TypedDict):
 
     # ── Phase 5 additions ─────────────────────────────────────────────────────
     featured_charity_keys: Optional[list[str]]   # AGT-04: Scout dedup keys (list NOT set — JSON-serializable for LangGraph checkpoint per RESEARCH Pitfall 7)
+
+    # ── Phase 16 additions: Choose Your Narrator (NRR-01, NRR-03, NRR-05) ─────
+    # See docs/API_CONTRACTS.md §7 + apps/studio/schemas/narratorProfile.ts.
+    # Calibrator (Plan 16-05) resolves which narrator to use and writes the
+    # full record to `narrator`. The Chronicler (Plan 16-06) and QA judge
+    # (Plan 16-07) consume `narrator` only — narrative writers stay verbatim
+    # on VOICE_CONSTRAINTS (NRR-01). `narrator_slug` is the D-13 override
+    # path: when set BEFORE calibrator runs, it takes precedence over
+    # `winning_charity.narratorSlug`.
+    narrator: Optional[Narrator]                 # resolved by calibrator; None until calibrator runs
+    narrator_slug: Optional[str]                 # D-13 override; takes precedence over charity.narratorSlug
 
     # ── Error handling ─────────────────────────────────────────────────────────
     error: Optional[str]
