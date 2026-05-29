@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 16 context gathered
-last_updated: "2026-05-28T21:10:20.524Z"
+status: Ready to execute
+stopped_at: Completed 16-03-web-test-scaffold-PLAN.md (parallel wave 0 executor)
+last_updated: "2026-05-29T12:54:36.959Z"
 progress:
   total_phases: 17
   completed_phases: 14
-  total_plans: 101
-  completed_plans: 99
+  total_plans: 112
+  completed_plans: 101
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 15 — shop-storefront
+**Current focus:** Phase 16 — choose-your-narrator
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 16 (choose-your-narrator) — EXECUTING
+Plan: 2 of 11
 
 ## Performance Metrics
 
@@ -134,6 +134,7 @@ Plan: Not started
 | Phase 08-stripe-commerce P06 | 4 | 1 tasks | 1 files |
 | Phase 08-stripe-commerce P07 | 3 | 3 tasks | 4 files |
 | Phase 15 P01 | 4 | 2 tasks | 2 files |
+| Phase 16-choose-your-narrator P03 | 10 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -333,6 +334,7 @@ Recent decisions affecting current work:
 - [Phase 08-stripe-commerce]: thank-you JSDoc must not embed literal forbidden regex strings — Vitest readFileSync scans full file source including comments
 - [Phase 15]: BuyButton wrapper-div spacing pattern: all 3 BuyButton positions wrapped in <div className='mt-N'> with no props on <BuyButton /> itself; double-spacing visual check deferred to 15-HUMAN-UAT
 - [Phase 15]: Fragment <> return on shop/page.tsx (not <main>) because root layout provides the single <main id='main'>; CLAUDE.md single-<main> rule honored
+- [Phase 16-choose-your-narrator]: Plan 16-03: NRR-08 frontend RED-first source-scan tripwire landed (apps/web/__tests__/narrator-chip.test.ts, 6 describe / 9 it() assertions). RED state verified (6 failed / 3 passed) — Plan 16-08b turns these green. Pitfall 8 GROQ no-leak security guard encoded. All 4 sampled existing tripwires (game-sandbox, deliberation-no-model-names, podcast-slot, deliberation-conversation — 21/21) stay green.
 
 ### Pending Todos
 
@@ -399,6 +401,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-28T21:10:20.501Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-choose-your-narrator/16-CONTEXT.md
+Last session: 2026-05-29T12:54:36.950Z
+Stopped at: Completed 16-03-web-test-scaffold-PLAN.md (parallel wave 0 executor)
+Resume file: None
