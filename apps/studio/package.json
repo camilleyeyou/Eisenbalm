@@ -13,7 +13,9 @@
     "schema:extract": "sanity schema extract --enforce-required-fields",
     "typegen": "pnpm schema:extract && sanity typegen generate",
     "seed:agents": "tsx --env-file=.env.local scripts/seed-agents.ts",
-    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-content.ts"
+    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-content.ts",
+    "seed:narrators": "tsx --env-file=.env.local scripts/seed-narrators.ts",
+    "seed:narrators:dry-run": "tsx scripts/seed-narrators.ts --dry-run"
   },
   "dependencies": {
     "@sanity/client": "^7.22.0",
