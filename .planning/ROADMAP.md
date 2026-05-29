@@ -312,7 +312,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   7. Cost per run: narrator-aware runs add ≤10% to LLM token spend vs. Jesse-default runs (voice constraint is a small system-prompt delta, not a new round-trip)
 **Plans**: 11 plans (10 active + 1 tombstone)
 - [ ] 16-01-contract-and-schema-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §1.2 + §2.2, create narratorProfile.ts schema, add weeklyIssue.narrator ref, register in index.ts, run TypeGen (autonomous: false)
-- [ ] 16-02-pipeline-test-scaffold-PLAN.md — Wave 0 RED tests: 6 new pytest files + extend test_chronicler.py (test_voice.py, test_narrator_seed_sentinel.py, test_narrator_cost_budget.py, test_calibrator_narrator.py, test_section_writer_voice_propagation.py, test_qa_judge_narrator.py)
+- [x] 16-02-pipeline-test-scaffold-PLAN.md — Wave 0 RED tests: 6 new pytest files + extend test_chronicler.py (test_voice.py, test_narrator_seed_sentinel.py, test_narrator_cost_budget.py, test_calibrator_narrator.py, test_section_writer_voice_propagation.py, test_qa_judge_narrator.py)
 - [x] 16-03-web-test-scaffold-PLAN.md — Wave 0 RED test: narrator-chip.test.ts with 5 sub-contracts (chip presence/absence/copy + DOM-order source-scan + GROQ no-leak Pitfall 8 guard)
 - [ ] 16-04-voice-py-refactor-PLAN.md — Wave 1: split lib/voice.py into UNIVERSAL_CORE + JESSE_PERSONA_BLOCK + assemble_voice() with import-time byte-equivalence assertion; preserve VOICE_CONSTRAINTS literal-concat for back-compat (Game agent stays Jesse via direct import)
 - [ ] 16-05-state-calibrator-writers-PLAN.md — Wave 2: DispatchState.narrator field + load_narrator_from_issue helper + Calibrator narrator-awareness + D-14 inactive-narrator warning + 4 narrative writers gain voice_constraints kwarg (Pitfall 2 mitigation)
@@ -352,7 +352,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 13. Deliberation as Conversation | 3/3 | Complete    | 2026-05-24 |
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
-| 16. Choose Your Narrator | 2/11 | In Progress|  |
+| 16. Choose Your Narrator | 3/11 | In Progress|  |
 
 ## Backlog
 
@@ -360,7 +360,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 
 **Goal:** [Captured for future planning] Deferred polish items surfaced by the UI/UX audit of the live site (eisenbalm-web.vercel.app, 2026-05-20). These are intentionally NOT hotfixes. The P0 accessibility cluster already shipped as quick task 260520-0kt; charity data hygiene (test record + duplicate-slug charity) was resolved manually in Sanity.
 **Requirements:** TBD
-**Plans:** 2/11 plans executed
+**Plans:** 3/11 plans executed
 
 Plans:
 - [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions (via Sanity `urlFor`). Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)

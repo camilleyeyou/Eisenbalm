@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 16-03-web-test-scaffold-PLAN.md (parallel wave 0 executor)
-last_updated: "2026-05-29T12:54:36.959Z"
+stopped_at: Completed 16-02-pipeline-test-scaffold-PLAN.md
+last_updated: "2026-05-29T13:00:15.330Z"
 progress:
   total_phases: 17
   completed_phases: 14
   total_plans: 112
-  completed_plans: 101
+  completed_plans: 102
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 16 (choose-your-narrator) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 
 ## Performance Metrics
 
@@ -135,6 +135,7 @@ Plan: 2 of 11
 | Phase 08-stripe-commerce P07 | 3 | 3 tasks | 4 files |
 | Phase 15 P01 | 4 | 2 tasks | 2 files |
 | Phase 16-choose-your-narrator P03 | 10 | 1 tasks | 1 files |
+| Phase 16-choose-your-narrator P02 | 14 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -335,6 +336,8 @@ Recent decisions affecting current work:
 - [Phase 15]: BuyButton wrapper-div spacing pattern: all 3 BuyButton positions wrapped in <div className='mt-N'> with no props on <BuyButton /> itself; double-spacing visual check deferred to 15-HUMAN-UAT
 - [Phase 15]: Fragment <> return on shop/page.tsx (not <main>) because root layout provides the single <main id='main'>; CLAUDE.md single-<main> rule honored
 - [Phase 16-choose-your-narrator]: Plan 16-03: NRR-08 frontend RED-first source-scan tripwire landed (apps/web/__tests__/narrator-chip.test.ts, 6 describe / 9 it() assertions). RED state verified (6 failed / 3 passed) — Plan 16-08b turns these green. Pitfall 8 GROQ no-leak security guard encoded. All 4 sampled existing tripwires (game-sandbox, deliberation-no-model-names, podcast-slot, deliberation-conversation — 21/21) stay green.
+- [Phase 16-choose-your-narrator]: Skip guard via assemble_voice import (Phase 16-04 sentinel) — adopted for 3 Wave 0 wiring tests (test_calibrator_narrator.py + test_section_writer_voice_propagation.py + test_qa_judge_narrator.py) because plan-spec guards on calibrator/judge module imports would not skip (modules already exist Phase 5) and tests would fail today. assemble_voice does not exist until Plan 16-04, making it the canonical 'Phase 16 has landed' signal.
+- [Phase 16-choose-your-narrator]: test_chronicler.py extension uses pytest.mark.xfail(strict=False) for the new test_narrator_voice_propagation — chronicler module already imports today so plan-spec append would create a hard FAIL. xfail keeps the suite green at Wave 0 while signaling RED state; Plan 16-06 executor removes the decorator in the same commit that turns the test green.
 
 ### Pending Todos
 
@@ -401,6 +404,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-29T12:54:36.950Z
-Stopped at: Completed 16-03-web-test-scaffold-PLAN.md (parallel wave 0 executor)
+Last session: 2026-05-29T13:00:15.320Z
+Stopped at: Completed 16-02-pipeline-test-scaffold-PLAN.md
 Resume file: None
