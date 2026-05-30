@@ -1285,12 +1285,12 @@ class ResearchOutput(TypedDict):
 
 class SectionContent(TypedDict):
     headline: str
-    body: str                           # plain text, paragraphs separated by \n\n
+    body: list[dict]   # Phase 18: discriminated-union BodyBlock; Pydantic at writer enforces; TypedDict can't express the union
 
 class CaseStudyContent(TypedDict):
     subjectName: str
     headline: str
-    body: str
+    body: list[dict]   # Phase 18: discriminated-union BodyBlock; Pydantic at writer enforces; TypedDict can't express the union
 
 class GameContent(TypedDict):
     headline: str
@@ -1299,10 +1299,55 @@ class GameContent(TypedDict):
 
 class BonusContent(TypedDict):
     headline: str
-    body: str
+    body: list[dict]   # Phase 18: discriminated-union BodyBlock; Pydantic at writer enforces; TypedDict can't express the union
     lyrics: Optional[str]               # jingle only
     sunoPrompt: Optional[str]           # jingle only
+```
 
+## Phase 18: BodyBlock discriminated union
+
+`SectionContent.body`, `CaseStudyContent.body`, and `BonusContent.body` (when
+`style_brief["bonusType"] == "specAd"`) are typed `list[dict]` at the TypedDict layer
+because Python's `TypedDict` cannot express a discriminated union. The actual write-time
+shape is enforced by each writer agent's Pydantic response model via:
+
+```python
+from typing import Annotated, Literal, Union
+from pydantic import BaseModel, Field
+
+class Paragraph(BaseModel):
+    type: Literal['paragraph'] = 'paragraph'
+    text: str
+
+class Heading(BaseModel):
+    type: Literal['h2', 'h3']      # writer picks per local hierarchy
+    text: str
+
+class Blockquote(BaseModel):
+    type: Literal['blockquote'] = 'blockquote'
+    text: str
+
+BodyBlock = Annotated[
+    Union[Paragraph, Heading, Blockquote],
+    Field(discriminator='type'),
+]
+```
+
+The shared `BodyBlock` declaration lives in `packages/pipeline/src/eisenbalm_pipeline/graph/blocks.py`
+(created in Plan 18-03) and is imported by all five long-read writer Pydantic models
+(`OriginStoryOutput`, `ProblemOutput`, `FounderBioOutput`, `CaseStudyOutput`, `SpecAdBonus`).
+
+A `@field_validator('body')` named `_enforce_structural_floor` runs on each writer's response
+and raises `ValueError` if `count(type in ('h2','h3')) < 2` OR `count(type == 'blockquote') < 1`.
+The existing Phase 5 `acomplete` retry-once-then-fail path (`lib/openrouter_client.py` lines
+169-179) handles structural-validation retries automatically — no new mechanism.
+
+`BigBudgetBonus.body` and `JingleBonus.body` remain `str` (CONTEXT D-04 — those branches'
+structured payloads `storyboards[]` / `lyrics + sunoPrompt` already provide visual variety).
+
+`ProblemOutput.pdfContent` is UNCHANGED (CONTEXT D-03 — Phase 6 WeasyPrint contract preserved).
+
+```python
 class Theme(TypedDict):
     primaryColor: str                   # hex, e.g. "#1D4E89"
     accentColor: str
