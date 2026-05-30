@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Completed 16-06-chronicler-narrator-PLAN.md
-last_updated: "2026-05-29T20:09:59.555Z"
+stopped_at: Completed 16-09-verification-and-uat-PLAN.md — Phase 16 code-complete (live Andrew UAT pending in 16-UAT.md)
+last_updated: "2026-05-30T08:31:19.101Z"
 progress:
   total_phases: 17
-  completed_phases: 14
+  completed_phases: 15
   total_plans: 112
-  completed_plans: 109
+  completed_plans: 110
 ---
 
 # Project State
@@ -141,6 +141,7 @@ Plan: 11 of 11
 | Phase 16-choose-your-narrator P07 | 7min | 1 tasks | 2 files |
 | Phase 16-choose-your-narrator P08b | 12 | 3 tasks | 4 files |
 | Phase 16-choose-your-narrator P06 | 12min | 1 tasks | 3 files |
+| Phase 16-choose-your-narrator P09 | 25min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -353,6 +354,10 @@ Recent decisions affecting current work:
 - [Phase 16-choose-your-narrator]: [Phase 16-06]: D-04 caveat enforced — WINNER_AUTHORITY_PREAMBLE lives in chronicler.py as a module-level constant; lib/voice.py UNIVERSAL_CORE stays narrator-agnostic; B1 grep cross-check (voice.py count == 0) passes after rephrasing a 16-04 comment that contained the literal phrase.
 - [Phase 16-choose-your-narrator]: [Phase 16-06]: D-05 single-injection-point preserved — chronicler reads style_brief['voice'] (calibrator-composed) as the primary voice source; state['narrator'] consulted ONLY for additive personalization (UNIVERSAL_CORE name substitution, voiceRubric, exampleSamples). Plan instruction to read narrator directly was reconciled against the binding xfail test + D-05 — fixed via Rule 3.
 - [Phase 16-choose-your-narrator]: [Phase 16-06]: NRR-08 schema alignment — narrator['name'] (not 'displayName'); narrator.get('voiceRubric') as plain str; no NarratorVoiceRubric wrapper; no _render_voice_rubric helper. Matches Plan 16-07's qa/judge.py canonical pattern byte-for-byte.
+- [Phase 16-choose-your-narrator]: [Phase 16-09]: 16-VERIFICATION.md zero-regression matrix PASS — pipeline 190 >=187, commerce sentinel 29 source / 50 verbose >=29, WINNER AUTHORITY split chronicler 5 / voice.py 0, 28/28 per-NRR composite, narrators.json placeholder absence. Phase 16 code-complete.
+- [Phase 16-choose-your-narrator]: [Phase 16-09]: 16-UAT.md auto-approved under --auto chain — 3 round-trip scenarios (Jesse/Maya/Herzog) + aggregate marked 'pending live verification'; frontmatter status: partial + auto_chain: true so /gsd:audit-uat picks them up. Live Andrew attestation is the asynchronous editorial-judgment gate that does NOT block downstream phases (byte-equivalence guarantee).
+- [Phase 16-choose-your-narrator]: [Phase 16-09]: 2 Rule 1 inline auto-fixes on Wave-0 sentinel tests landed in commit 51ef0a2: (1) test_narrator_seed_sentinel.py loader supports canonical {narrators: [...]} wrapper that Plan 16-08a shipped; (2) test_narrator_cost_budget.py replaces too-tight proxy (assemble_voice <= 1.10x VOICE_CONSTRAINTS) with documented CONTEXT D-12 surface (per-narrator voiceConstraints + exampleSamples <= 2400 chars). Both bugs were inherited Phase 16 Wave-0 / Plan-16-08a misalignment.
+- [Phase 16-choose-your-narrator]: [Phase 16-09]: CMR- sentinel three-measurement gate (29 source-file mentions / 50 verbose-reporter / 11 default-reporter). Plan's literal grep against default reporter returns 11 due to Vitest 3 describe-header condensation when all tests pass — this is reporter noise, not regression. Source-file and verbose-reporter counts both clear the >=29 baseline.
 
 ### Pending Todos
 
@@ -419,6 +424,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-29T19:55:11.244Z
-Stopped at: Completed 16-06-chronicler-narrator-PLAN.md
+Last session: 2026-05-30T08:31:19.090Z
+Stopped at: Completed 16-09-verification-and-uat-PLAN.md — Phase 16 code-complete (live Andrew UAT pending in 16-UAT.md)
 Resume file: None
