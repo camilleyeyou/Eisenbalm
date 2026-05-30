@@ -79,13 +79,13 @@ class ResearchOutput(TypedDict):
 
 class SectionContent(TypedDict):
     headline: str
-    body: str                           # plain text, paragraphs separated by \n\n
+    body: list[dict]                    # Phase 18 D-01: list[BodyBlock] (graph/blocks.py); Pydantic at each writer enforces shape
 
 
 class CaseStudyContent(TypedDict):
     subjectName: str
     headline: str
-    body: str
+    body: list[dict]                    # Phase 18 D-01: list[BodyBlock] (graph/blocks.py); Pydantic at each writer enforces shape
 
 
 class GameContent(TypedDict):
@@ -96,7 +96,7 @@ class GameContent(TypedDict):
 
 class BonusContent(TypedDict):
     headline: str
-    body: str
+    body: list[dict]                    # Phase 18 D-01: SpecAdBonus uses list[BodyBlock]; BigBudget/Jingle still str at writer-Pydantic layer (D-04); TypedDict permissive
     lyrics: Optional[str]               # jingle only
     sunoPrompt: Optional[str]           # jingle only
 
