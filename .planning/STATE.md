@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 18 context gathered
-last_updated: "2026-05-30T13:57:18.607Z"
+status: Milestone complete
+stopped_at: Completed 18-06-fixtures-verification-and-uat-PLAN.md — Phase 18 code-complete, Andrew UAT pending
+last_updated: "2026-05-30T16:08:22.786Z"
 progress:
   total_phases: 18
-  completed_phases: 15
-  total_plans: 112
-  completed_plans: 110
+  completed_phases: 16
+  total_plans: 118
+  completed_plans: 116
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 16 — choose-your-narrator
+**Current focus:** Phase 18 — magazine-editorial-layout-writers
 
 ## Current Position
 
-Phase: 999.1
+Phase: 18
 Plan: Not started
 
 ## Performance Metrics
@@ -142,6 +142,12 @@ Plan: Not started
 | Phase 16-choose-your-narrator P08b | 12 | 3 tasks | 4 files |
 | Phase 16-choose-your-narrator P06 | 12min | 1 tasks | 3 files |
 | Phase 16-choose-your-narrator P09 | 25min | 2 tasks | 5 files |
+| Phase 18 P01 | 5 | 3 tasks | 2 files |
+| Phase 18-magazine-editorial-layout-writers P02 | 7 | 3 tasks | 4 files |
+| Phase 18 P03 | 8 | 3 tasks | 3 files |
+| Phase 18 P04 | 19min | 3 tasks | 13 files |
+| Phase 18 P05 | 6 | 2 tasks | 2 files |
+| Phase 18-magazine-editorial-layout-writers P06 | 15 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -358,6 +364,17 @@ Recent decisions affecting current work:
 - [Phase 16-choose-your-narrator]: [Phase 16-09]: 16-UAT.md auto-approved under --auto chain — 3 round-trip scenarios (Jesse/Maya/Herzog) + aggregate marked 'pending live verification'; frontmatter status: partial + auto_chain: true so /gsd:audit-uat picks them up. Live Andrew attestation is the asynchronous editorial-judgment gate that does NOT block downstream phases (byte-equivalence guarantee).
 - [Phase 16-choose-your-narrator]: [Phase 16-09]: 2 Rule 1 inline auto-fixes on Wave-0 sentinel tests landed in commit 51ef0a2: (1) test_narrator_seed_sentinel.py loader supports canonical {narrators: [...]} wrapper that Plan 16-08a shipped; (2) test_narrator_cost_budget.py replaces too-tight proxy (assemble_voice <= 1.10x VOICE_CONSTRAINTS) with documented CONTEXT D-12 surface (per-narrator voiceConstraints + exampleSamples <= 2400 chars). Both bugs were inherited Phase 16 Wave-0 / Plan-16-08a misalignment.
 - [Phase 16-choose-your-narrator]: [Phase 16-09]: CMR- sentinel three-measurement gate (29 source-file mentions / 50 verbose-reporter / 11 default-reporter). Plan's literal grep against default reporter returns 11 due to Vitest 3 describe-header condensation when all tests pass — this is reporter noise, not regression. Source-file and verbose-reporter counts both clear the >=29 baseline.
+- [Phase 18]: body fields in §7 TypedDicts changed from str to list[dict]; BodyBlock discriminated union (Paragraph|Heading|Blockquote) documented inline; BigBudget/Jingle body stays str (D-04); pdfContent unchanged (D-03)
+- [Phase 18]: Consolidated 3 ROADMAP test stubs into parametrized test_writer_structural_floor.py per CONTEXT Claude's Discretion (cleaner parametrize output)
+- [Phase 18]: BodyBlock union placed in graph/blocks.py (sibling to state.py) — avoids circular imports when writers import both DispatchState and BodyBlock
+- [Phase 18]: body: list[dict] on TypedDicts (not list[BodyBlock]) per CONTEXT D-01 — TypedDict cannot carry discriminated union; Pydantic at each writer enforces shape
+- [Phase 18]: text_to_portable_text preserved as tombstone per D-04 — BigBudget/Jingle bonus branches + stub fixtures still call it
+- [Phase 18]: CaseStudyOutput gained subjectName field to support test_writer_structural_floor.py which requires it
+- [Phase 18]: QA _body_to_text() helper added in Plan 18-04 (scope pull-forward from Plan 18-05) as a blocking Rule 3 fix
+- [Phase 18]: test fixtures use model_construct() to bypass structural floor validator in wiring/isolation tests
+- [Phase 18]: Task 2 skipped — _body_to_text helper was pulled forward by 18-04 deviation (equiv. to _section_body_text); structural-variety axis severity='warning' per D-05; single Opus call preserved
+- [Phase 18-magazine-editorial-layout-writers]: problem_output pdfContent preserved as top-level 'problem_pdf_content' key (D-03) — not nested inside problem_statement; matches test_stub_fixtures.py contract
+- [Phase 18-magazine-editorial-layout-writers]: MEL-06 Andrew UAT documented and auto-approved via auto_advance=true; marked PENDING for Andrew's async sign-off in 18-VERIFICATION.md
 
 ### Pending Todos
 
@@ -424,6 +441,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-30T13:57:18.579Z
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-magazine-editorial-layout-writers/18-CONTEXT.md
+Last session: 2026-05-30T15:57:16.161Z
+Stopped at: Completed 18-06-fixtures-verification-and-uat-PLAN.md — Phase 18 code-complete, Andrew UAT pending
+Resume file: None

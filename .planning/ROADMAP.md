@@ -394,7 +394,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
 | 17. UI/UX Audit Follow-ups | 0/5 | Not started | - |
-| 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete   | 2026-05-30 |
+| 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 
 ## Backlog
 
