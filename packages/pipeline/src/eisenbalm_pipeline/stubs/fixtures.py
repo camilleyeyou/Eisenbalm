@@ -240,19 +240,36 @@ def origin_story_output() -> dict:
     return {
         "origin_story": {
             "headline": "Whitlock and the Edenwold Tape",
-            "body": (
-                "Margaret Whitlock did not set out to start an institution. "
-                "She had been hired, in 1986, as the new director of a "
-                "small regional library system in central Vermont. The "
-                "buildings were old, the budget was small, and the work "
-                "was administrative.\n\n"
-                "One Thursday in February she discovered, while pulling "
-                "an inventory file, that the board had no record of how "
-                "its buildings sounded. No acoustic survey, no recordings, "
-                "no notes. The buildings had been operating for between "
-                "thirty and one hundred years.\n\n"
-                "She bought a tape recorder. The Foundation began."
-            ),
+            "body": [
+                {"type": "paragraph", "text": "Burlington, Vermont. 1987."},
+                {"type": "h2", "text": "The founding moment"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "Margaret Whitlock did not set out to start an institution. "
+                        "She had been hired, in 1986, as the new director of a "
+                        "small regional library system in central Vermont. The "
+                        "buildings were old, the budget was small, and the work "
+                        "was administrative."
+                    ),
+                },
+                {
+                    "type": "blockquote",
+                    "text": "The silence is the product.",
+                },
+                {"type": "h2", "text": "Why not something else"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "One Thursday in February she discovered, while pulling "
+                        "an inventory file, that the board had no record of how "
+                        "its buildings sounded. No acoustic survey, no recordings, "
+                        "no notes. The buildings had been operating for between "
+                        "thirty and one hundred years. She bought a tape recorder. "
+                        "The Foundation began."
+                    ),
+                },
+            ],
         },
     }
 
@@ -261,17 +278,37 @@ def problem_output() -> dict:
     return {
         "problem_statement": {
             "headline": "The libraries are quiet, and no one is listening.",
-            "body": (
-                "The acoustic environment of a public-library building is "
-                "neither a feature nor a problem. It is a record. The "
-                "ceiling tile, the floor pine, the door hinge — all of "
-                "these have a sound. Most are now being replaced.\n\n"
-                "When the buildings are renovated, the sound is lost. "
-                "When the sound is lost, the building loses a dimension "
-                "of its identity that cannot be reconstructed.\n\n"
-                "The Quiet Foundation records what would otherwise be "
-                "thrown away."
-            ),
+            "body": [
+                {
+                    "type": "paragraph",
+                    "text": "The problem is structural.",
+                },
+                {"type": "h2", "text": "What goes unmeasured"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "The acoustic environment of a public-library building is "
+                        "neither a feature nor a problem. It is a record. The "
+                        "ceiling tile, the floor pine, the door hinge — all of "
+                        "these have a sound. Most are now being replaced."
+                    ),
+                },
+                {
+                    "type": "blockquote",
+                    "text": "Absence of data is itself a measurement.",
+                },
+                {"type": "h2", "text": "Why intervention works"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "When the buildings are renovated, the sound is lost. "
+                        "When the sound is lost, the building loses a dimension "
+                        "of its identity that cannot be reconstructed. "
+                        "The Quiet Foundation records what would otherwise be "
+                        "thrown away."
+                    ),
+                },
+            ],
         },
         "problem_pdf_content": (
             "Whitlock, M. (1987). On the silence of small libraries.\n\n"
@@ -285,14 +322,34 @@ def founder_bio_output() -> dict:
     return {
         "founder_bio": {
             "headline": "Margaret Whitlock",
-            "body": (
-                "Margaret Whitlock has been the director of the Quiet "
-                "Foundation since its founding in 1987. She holds an MLS "
-                "from Simmons College and previously directed the "
-                "Northshire Library Council from 1974 to 1986.\n\n"
-                "She lives in Burlington, Vermont, and does not give "
-                "interviews."
-            ),
+            "body": [
+                {
+                    "type": "paragraph",
+                    "text": "The founder was a public-service archivist.",
+                },
+                {"type": "h2", "text": "Before the foundation"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "Margaret Whitlock has been the director of the Quiet "
+                        "Foundation since its founding in 1987. She holds an MLS "
+                        "from Simmons College and previously directed the "
+                        "Northshire Library Council from 1974 to 1986."
+                    ),
+                },
+                {
+                    "type": "blockquote",
+                    "text": "Information that nobody asks for is also information.",
+                },
+                {"type": "h2", "text": "The decision to leave"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "She lives in Burlington, Vermont, and does not give "
+                        "interviews."
+                    ),
+                },
+            ],
         },
     }
 
@@ -302,17 +359,39 @@ def case_study_output() -> dict:
         "case_study": {
             "subjectName": "The Edenwold Township Library",
             "headline": "Edenwold Township Library, 1987-2003",
-            "body": (
-                "The Edenwold Township Library was the Foundation's first "
-                "subject. Built in 1903, it was a single-room building "
-                "with a pressed-tin ceiling and a coal stove that had "
-                "been disabled but not removed.\n\n"
-                "The Foundation's fourteen-hour recording of the library "
-                "is the largest single-building acoustic archive the "
-                "Foundation has produced. In 2003, when the township "
-                "voted to demolish the building, the archive was donated "
-                "to the Vermont Historical Society."
-            ),
+            "body": [
+                {
+                    "type": "paragraph",
+                    "text": "A nurse in Tacoma submitted a recording in 2019.",
+                },
+                {"type": "h2", "text": "What the recording captured"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "The Edenwold Township Library was the Foundation's first "
+                        "subject. Built in 1903, it was a single-room building "
+                        "with a pressed-tin ceiling and a coal stove that had "
+                        "been disabled but not removed."
+                    ),
+                },
+                {
+                    "type": "blockquote",
+                    "text": (
+                        "The data set is now cited in seven peer-reviewed papers."
+                    ),
+                },
+                {"type": "h2", "text": "What it changed"},
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "The Foundation's fourteen-hour recording of the library "
+                        "is the largest single-building acoustic archive the "
+                        "Foundation has produced. In 2003, when the township "
+                        "voted to demolish the building, the archive was donated "
+                        "to the Vermont Historical Society."
+                    ),
+                },
+            ],
         },
     }
 
