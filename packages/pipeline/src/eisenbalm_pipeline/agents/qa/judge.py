@@ -82,6 +82,7 @@ class JudgeFinding(BaseModel):
         "irony-signaling",
         "precision",
         "cross-section-consistency",
+        "structural-variety",   # Phase 18 D-05 — qualitative craft axis; severity='warning' per rubric
     ]
     quotedSpan: str
     reason: str

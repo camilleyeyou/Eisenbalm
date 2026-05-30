@@ -46,6 +46,14 @@ The question "Why do you deserve to exist?" is answered without sentiment.
    Failure: Founder Bio reverential while Problem Statement is cold;
    Case Study uses a different register than Origin Story.
 
+6. **structural-variety** — Do the sub-headers serve the prose? Check: <=6
+   words, Jesse-voice, no generic labels ("Background", "Conclusion",
+   "Overview"). Is the blockquote a real one-sentence lift from body prose,
+   or a restated summary? Structural shell is guaranteed by the Pydantic
+   validator at the writer layer (Phase 18 D-02); this axis judges craft.
+   Severity: **warning** (counts are guaranteed by the pipeline; this axis
+   catches "technically compliant but editorially lazy" output).
+
 ## Input Format
 
 JSON object with section bodies:
@@ -69,7 +77,7 @@ JSON object with "findings" array:
     {
       "section": "origin_story",
       "severity": "error" | "warning" | "info",
-      "axis": "gravity" | "sentiment" | "irony-signaling" | "precision" | "cross-section-consistency",
+      "axis": "gravity" | "sentiment" | "irony-signaling" | "precision" | "cross-section-consistency" | "structural-variety",
       "quotedSpan": "the exact offending text (max 100 chars)",
       "reason": "why this violates Jesse voice (1-2 sentences)",
       "suggestedFix": "concrete alternative (1-2 sentences)"
