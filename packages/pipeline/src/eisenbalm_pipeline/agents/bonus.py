@@ -30,9 +30,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
+from eisenbalm_pipeline.graph.blocks import BodyBlock
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
@@ -81,12 +82,44 @@ class JingleBonus(BaseModel):
 
 
 class SpecAdBonus(BaseModel):
-    """specAd branch output — simplest shape (headline + body only)."""
+    """specAd branch output — Phase 18 D-04: body is list[BodyBlock] + structural floor."""
 
-    headline: str = ""
-    body: str = Field(
-        default="", description="200-400 words of ad copy and rationale",
+    headline: str = Field(default="", description="<=6 words")
+    body: list[BodyBlock] = Field(  # Phase 18 D-01/D-04 (was: body: str = Field(...))
+        default_factory=list,
+        description="100-300 words rendered as list[BodyBlock]; >=2 h2/h3 + >=1 blockquote",
     )
+
+    @field_validator('body')
+    @classmethod
+    def _enforce_structural_floor(cls, body: list[BodyBlock]) -> list[BodyBlock]:
+        heading_count = sum(1 for b in body if b.type in ('h2', 'h3'))
+        blockquote_count = sum(1 for b in body if b.type == 'blockquote')
+        if heading_count < 2:
+            raise ValueError(
+                f"structural-floor: need >=2 sub-headers, got {heading_count}"
+            )
+        if blockquote_count < 1:
+            raise ValueError(
+                f"structural-floor: need >=1 blockquote, got {blockquote_count}"
+            )
+        return body
+
+
+# ── Phase 18 D-04 — appended to _build_spec_ad_prompt ONLY.
+# _build_big_budget_prompt + _build_jingle_prompt are BYTE-UNCHANGED — their
+# structured outputs (storyboards[] for BigBudget, lyrics+sunoPrompt for Jingle)
+# already break the visual rhythm; the Phase 18 wall-of-text fix targets ONLY
+# narrative prose bodies.
+STRUCTURE_CONTRACT: str = (
+    "\n\nSTRUCTURE CONTRACT (non-negotiable):\n"
+    "Emit at minimum 2 sub-headers (h2 or h3) and 1 blockquote per section. "
+    "Sub-headers: <=6 words, Jesse-voice, break the body into 3+ logical "
+    "movements. Blockquote: a single sentence lifted verbatim from the most "
+    "quotable line in the body prose - not a generic restatement. "
+    "Sub-headers and blockquote serve Jesse's register. "
+    "Do not break voice; structural variety is typographic, not tonal."
+)
 
 
 # ── Three internal prompt builders (D-19) ───────────────────────────────
@@ -147,6 +180,7 @@ def _build_spec_ad_prompt(charity: dict, style_brief: dict) -> list[dict[str, st
         f"{VOICE_CONSTRAINTS}\n\n"
         "Output: headline (the ad headline) + body (200-400 words of ad copy "
         "and rationale for the creative direction — precise, dry, serious)."
+        + STRUCTURE_CONTRACT
     )
     user = (
         f"CHARITY: {charity.get('name', '')}\n"
