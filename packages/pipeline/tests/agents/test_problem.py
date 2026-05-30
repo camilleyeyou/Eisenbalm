@@ -69,7 +69,9 @@ async def test_problem_pdf_content(sample_dispatch_state) -> None:
         ],
         interventionMechanism="im",
     )
-    out = ProblemOutput(headline="H", body="B", pdfContent=pdf)
+    # Phase 18 D-01: ProblemOutput.body is now list[BodyBlock]; D-03: pdfContent unchanged.
+    # Use model_construct to bypass structural floor validation in this integration test.
+    out = ProblemOutput.model_construct(headline="H", body=[], pdfContent=pdf)
     with patch(
         "eisenbalm_pipeline.agents.problem.acomplete",
         AsyncMock(return_value=(out, {
@@ -82,7 +84,7 @@ async def test_problem_pdf_content(sample_dispatch_state) -> None:
     # State field is problem_statement (DispatchState §7) per validate_sections REQUIRED_FIELDS.
     assert "problem_statement" in result
     assert result["problem_statement"]["headline"] == "H"
-    assert result["problem_statement"]["body"] == "B"
+    assert result["problem_statement"]["body"] == []
     assert len(result["problem_statement"]["pdfContent"]["keyDataPoints"]) == 3
     assert "problemStatement" in result["problem_statement"]["pdfContent"]
     assert "interventionMechanism" in result["problem_statement"]["pdfContent"]
@@ -97,7 +99,7 @@ async def test_problem_voice_isolation(sample_dispatch_state) -> None:
         keyDataPoints=[KeyDataPoint(stat=f"s{i}", source=f"u{i}") for i in range(3)],
         interventionMechanism="i",
     )
-    out = ProblemOutput(headline="H", body="B", pdfContent=pdf)
+    out = ProblemOutput.model_construct(headline="H", body=[], pdfContent=pdf)
     captured: dict = {}
 
     def _capture(**kwargs):
@@ -114,9 +116,9 @@ async def test_problem_voice_isolation(sample_dispatch_state) -> None:
             "resolved_model": "anthropic/claude-sonnet-4-6",
         })),
     ):
-        sample_dispatch_state["origin_story"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["founder_bio"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["case_study"] = {"headline": "X", "body": "X"}
+        sample_dispatch_state["origin_story"] = {"headline": "X", "body": []}
+        sample_dispatch_state["founder_bio"] = {"headline": "X", "body": []}
+        sample_dispatch_state["case_study"] = {"headline": "X", "body": []}
         await problem(sample_dispatch_state)
 
     # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th

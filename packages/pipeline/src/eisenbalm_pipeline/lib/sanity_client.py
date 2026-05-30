@@ -17,7 +17,10 @@ from typing import Any, Optional
 from httpx import AsyncClient
 from slugify import slugify
 
-from eisenbalm_pipeline.lib.portable_text import text_to_portable_text
+from eisenbalm_pipeline.lib.portable_text import (
+    compose_section_body,
+    text_to_portable_text,
+)
 
 API_VERSION = "v2024-01-01"
 
@@ -71,19 +74,32 @@ async def write_charity(http: AsyncClient, charity: dict) -> str:
 def _build_bonus(state: dict) -> dict:
     """Mirror API_CONTRACTS §2.2 _build_bonus.
 
+    Phase 18 D-04: specAd bonus body is list[BodyBlock] -> compose_section_body.
+    BigBudget + Jingle bonus body remains str -> text_to_portable_text (unchanged).
+
     For ``jingle`` bonus type, include lyrics + sunoPrompt (sunoAudioUrl
-    intentionally omitted — Andrew populates after Suno generation).
+    is set to empty string per CONTEXT D-19).
     """
     bonus = state.get("bonus") or {}
-    bonus_type = (state.get("style_brief") or {}).get("bonusType")
+    # bonusType may be tagged onto bonus dict (D-19 agent tagging) or fall
+    # back to style_brief for backwards-compat with legacy stub state shapes.
+    bonus_type = bonus.get("bonusType") or (state.get("style_brief") or {}).get("bonusType")
+    body_value = bonus.get("body", "")
+    if bonus_type == "specAd" and isinstance(body_value, list):
+        body_pt = compose_section_body(body_value)
+    else:
+        # BigBudget + Jingle branches (D-04) — body remains str.
+        # Defensive: if specAd somehow emitted a str (stub-mode legacy), fall
+        # back to text_to_portable_text so the write doesn't crash.
+        body_pt = text_to_portable_text(body_value if isinstance(body_value, str) else "")
     result: dict[str, Any] = {
         "headline": bonus.get("headline", ""),
-        "body": text_to_portable_text(bonus.get("body", "")),
+        "body": body_pt,
     }
     if bonus_type == "jingle":
         result["lyrics"] = bonus.get("lyrics", "")
         result["sunoPrompt"] = bonus.get("sunoPrompt", "")
-        # sunoAudioUrl intentionally omitted — Andrew populates
+        # sunoAudioUrl intentionally omitted — Phase 5 D-19 sets to empty at write boundary
     return result
 
 
@@ -174,14 +190,17 @@ async def write_issue_draft(
         "theme": state.get("theme") or {},
         "originStory": {
             "headline": (state.get("origin_story") or {}).get("headline", ""),
-            "body": text_to_portable_text(
-                (state.get("origin_story") or {}).get("body", "")
+            # Phase 18: body is now list[BodyBlock]; compose_section_body dispatches
+            # each typed block to its matching Portable Text builder (h2/h3/blockquote/paragraph).
+            "body": compose_section_body(
+                (state.get("origin_story") or {}).get("body", []) or []
             ),
         },
         "problemStatement": {
             "headline": (state.get("problem_statement") or {}).get("headline", ""),
-            "body": text_to_portable_text(
-                (state.get("problem_statement") or {}).get("body", "")
+            # Phase 18: body is now list[BodyBlock]; pdfContent shape UNCHANGED (D-03).
+            "body": compose_section_body(
+                (state.get("problem_statement") or {}).get("body", []) or []
             ),
             # Phase 6 (PDF-01): pdfContent is the structured source for the
             # WeasyPrint renderer in agents/publisher/pdf.py. Field names match
@@ -192,15 +211,17 @@ async def write_issue_draft(
         },
         "founderBio": {
             "headline": (state.get("founder_bio") or {}).get("headline", ""),
-            "body": text_to_portable_text(
-                (state.get("founder_bio") or {}).get("body", "")
+            # Phase 18: body is now list[BodyBlock].
+            "body": compose_section_body(
+                (state.get("founder_bio") or {}).get("body", []) or []
             ),
         },
         "caseStudy": {
             "subjectName": (state.get("case_study") or {}).get("subjectName", ""),
             "headline": (state.get("case_study") or {}).get("headline", ""),
-            "body": text_to_portable_text(
-                (state.get("case_study") or {}).get("body", "")
+            # Phase 18: body is now list[BodyBlock].
+            "body": compose_section_body(
+                (state.get("case_study") or {}).get("body", []) or []
             ),
         },
         "game": {

@@ -200,12 +200,21 @@ def _build_spec_ad_prompt(charity: dict, style_brief: dict) -> list[dict[str, st
 def _bonus_payload(state: DispatchState) -> dict:
     section = state.get("bonus") or {}
     body = section.get("body", "")
+    # body may be list[BodyBlock] (specAd after Phase 18) or str (bigBudget/jingle).
+    if isinstance(body, list):
+        word_count = sum(
+            len(b.get("text", "").split()) if isinstance(b, dict)
+            else len(getattr(b, "text", "").split())
+            for b in body
+        )
+    else:
+        word_count = len(body.split()) if body else 0
     return {
         "sectionName": "bonus",
         "bonusType": section.get("bonusType")
             or (state.get("style_brief") or {}).get("bonusType"),
         "headline": section.get("headline", ""),
-        "wordCount": len(body.split()) if body else 0,
+        "wordCount": word_count,
     }
 
 

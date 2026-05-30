@@ -32,7 +32,7 @@ async def test_origin_story_runs(sample_dispatch_state) -> None:
     """AGT-09: writer calls build_section_writer_prompt (voice isolation).
     AGT-17: model_versions['origin_story'] populated.
     """
-    out = OriginStoryOutput(headline="H", body="B")
+    out = OriginStoryOutput.model_construct(headline="H", body=[])
     with patch(
         "eisenbalm_pipeline.agents.origin_story.acomplete",
         AsyncMock(return_value=(out, {
@@ -43,7 +43,7 @@ async def test_origin_story_runs(sample_dispatch_state) -> None:
         result = await origin_story(sample_dispatch_state)
 
     assert result["origin_story"]["headline"] == "H"
-    assert result["origin_story"]["body"] == "B"
+    assert result["origin_story"]["body"] == []
     assert result["model_versions"]["origin_story"] == "anthropic/claude-sonnet-4-6"
 
 
@@ -52,7 +52,7 @@ async def test_origin_story_voice_isolation(sample_dispatch_state) -> None:
     """AGT-09: agent calls build_section_writer_prompt with only the
     whitelisted 4 state slices — never reads other section state.
     """
-    out = OriginStoryOutput(headline="H", body="B")
+    out = OriginStoryOutput.model_construct(headline="H", body=[])
     captured: dict = {}
 
     def _capture(**kwargs):
@@ -70,8 +70,8 @@ async def test_origin_story_voice_isolation(sample_dispatch_state) -> None:
         })),
     ):
         # Pollute state with sibling-section outputs; agent must NOT pass them through.
-        sample_dispatch_state["problem_statement"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["founder_bio"] = {"headline": "X", "body": "X"}
+        sample_dispatch_state["problem_statement"] = {"headline": "X", "body": []}
+        sample_dispatch_state["founder_bio"] = {"headline": "X", "body": []}
         await origin_story(sample_dispatch_state)
 
     # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th

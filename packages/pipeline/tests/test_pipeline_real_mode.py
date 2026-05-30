@@ -127,22 +127,42 @@ def _research_output() -> ResearchOutputModel:
 
 
 def _section_with_body() -> dict:
-    return {"headline": "A Precise Headline", "body": "B" * 400}
+    # Phase 18 D-01: body is now list[BodyBlock]. Return a minimal non-empty
+    # body so truthiness checks in the wiring test pass. Validator is skipped
+    # via model_construct at the call site.
+    return {
+        "headline": "A Precise Headline",
+        "body": [
+            {"type": "paragraph", "text": "Opening paragraph."},
+            {"type": "h2", "text": "First movement"},
+            {"type": "blockquote", "text": "The silence is the product."},
+            {"type": "h2", "text": "Second movement"},
+            {"type": "paragraph", "text": "Closing paragraph."},
+        ],
+    }
 
 
 def _problem_output() -> ProblemOutput:
-    return ProblemOutput(
+    # Phase 18 D-01: ProblemOutput.body is list[BodyBlock]; D-03: pdfContent unchanged.
+    # Use model_construct to bypass structural-floor validator in this wiring test.
+    pdf = PdfContent(
+        problemStatement="ps",
+        keyDataPoints=[
+            KeyDataPoint(stat="stat 1", source="https://src1.example"),
+            KeyDataPoint(stat="stat 2", source="https://src2.example"),
+            KeyDataPoint(stat="stat 3", source="https://src3.example"),
+        ],
+        interventionMechanism="im",
+    )
+    return ProblemOutput.model_construct(
         headline="The Problem We Face",
-        body="B" * 400,
-        pdfContent=PdfContent(
-            problemStatement="ps",
-            keyDataPoints=[
-                KeyDataPoint(stat="stat 1", source="https://src1.example"),
-                KeyDataPoint(stat="stat 2", source="https://src2.example"),
-                KeyDataPoint(stat="stat 3", source="https://src3.example"),
-            ],
-            interventionMechanism="im",
-        ),
+        body=[
+            {"type": "paragraph", "text": "The precise problem."},
+            {"type": "h2", "text": "Institutional failure"},
+            {"type": "blockquote", "text": "Failure is structural, not accidental."},
+            {"type": "h2", "text": "The intervention"},
+        ],
+        pdfContent=pdf,
     )
 
 
@@ -177,7 +197,14 @@ def _jingle_bonus() -> JingleBonus:
 
 
 def _spec_ad_bonus() -> SpecAdBonus:
-    return SpecAdBonus(headline="H", body="B" * 300)
+    # Phase 18 D-04: SpecAdBonus.body is now list[BodyBlock].
+    # Use model_construct to bypass structural-floor validator in this wiring test.
+    return SpecAdBonus.model_construct(headline="H", body=[
+        {"type": "paragraph", "text": "The charity addresses an invisible crisis."},
+        {"type": "h2", "text": "The ask"},
+        {"type": "blockquote", "text": "No excuses."},
+        {"type": "h2", "text": "Why now"},
+    ])
 
 
 def _game_output() -> GameOutput:
@@ -240,14 +267,19 @@ async def _mock_acomplete(
     if response_format is ResearchOutputModel:
         return _research_output(), usage
     if response_format is OriginStoryOutput:
-        return OriginStoryOutput(**_section_with_body()), usage
+        # Phase 18 D-01: body is list[BodyBlock]; use model_construct to skip validator
+        # in this wiring-level test (structural floor tested in test_writer_structural_floor.py).
+        return OriginStoryOutput.model_construct(**_section_with_body()), usage
     if response_format is ProblemOutput:
         return _problem_output(), usage
     if response_format is FounderBioOutput:
-        return FounderBioOutput(**_section_with_body()), usage
+        # Phase 18 D-01: body is list[BodyBlock]; use model_construct (wiring test only).
+        return FounderBioOutput.model_construct(**_section_with_body()), usage
     if response_format is CaseStudyOutput:
-        return CaseStudyOutput(
-            headline="Case Study H", body="B" * 400,
+        # Phase 18 D-01: body is list[BodyBlock]; use model_construct (wiring test only).
+        return CaseStudyOutput.model_construct(
+            headline="Case Study H",
+            body=_section_with_body()["body"],
         ), usage
     if response_format is GameOutput:
         return _game_output(), usage

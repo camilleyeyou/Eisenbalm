@@ -56,6 +56,28 @@ def _qa_payload(state: DispatchState) -> dict:
     }
 
 
+def _body_to_text(body) -> str:
+    """Extract plain text from a section body field.
+
+    Phase 18 RESEARCH Pitfall 2: after Phase 18, long-read writer bodies are
+    list[dict] (Portable Text blocks) not str. QA judge sees concatenated prose
+    so it can evaluate sub-head wording and pull-quote authenticity without
+    parsing block JSON itself.
+
+    Handles both legacy str (BigBudget/Jingle body, stubs) and new list[dict]
+    (Phase 18 OriginStory/Problem/FounderBio/CaseStudy/SpecAd bodies).
+    """
+    if isinstance(body, str):
+        return body
+    if isinstance(body, list):
+        parts: list[str] = []
+        for block in body:
+            for child in (block.get('children') or []) if isinstance(block, dict) else []:
+                parts.append(child.get('text', ''))
+        return ' '.join(parts)
+    return ''
+
+
 def _extract_sections(state: DispatchState) -> dict[str, str]:
     """Pull the six section bodies into a flat ``{section_id: body}`` dict.
 
@@ -67,6 +89,9 @@ def _extract_sections(state: DispatchState) -> dict[str, str]:
         agent_id is 'problem' but the DispatchState field is
         'problem_statement' per Plan 05-10 SUMMARY)
       - state['game'].description (not .body) — GameContent has no 'body'
+
+    Phase 18 Pitfall 2: body fields are now list[dict] for long-read sections;
+    _body_to_text() handles both str (BigBudget/Jingle/stubs) and list[dict].
     """
     origin = state.get("origin_story") or {}
     problem = state.get("problem_statement") or {}
@@ -75,12 +100,12 @@ def _extract_sections(state: DispatchState) -> dict[str, str]:
     game = state.get("game") or {}
     bonus = state.get("bonus") or {}
     return {
-        "origin_story": origin.get("body", "") or "",
-        "problem":      problem.get("body", "") or "",
-        "founder_bio":  founder.get("body", "") or "",
-        "case_study":   case_st.get("body", "") or "",
+        "origin_story": _body_to_text(origin.get("body", "") or ""),
+        "problem":      _body_to_text(problem.get("body", "") or ""),
+        "founder_bio":  _body_to_text(founder.get("body", "") or ""),
+        "case_study":   _body_to_text(case_st.get("body", "") or ""),
         "game":         game.get("description", "") or "",
-        "bonus":        bonus.get("body", "") or "",
+        "bonus":        _body_to_text(bonus.get("body", "") or ""),
     }
 
 

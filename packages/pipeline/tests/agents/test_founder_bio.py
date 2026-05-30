@@ -65,7 +65,7 @@ async def test_founder_bio_runs(sample_dispatch_state) -> None:
         "founderBio": "bio",
         "summary": "s",
     }
-    out = FounderBioOutput(headline="H", body="B")
+    out = FounderBioOutput.model_construct(headline="H", body=[])
     with patch(
         "eisenbalm_pipeline.agents.founder_bio.acomplete",
         AsyncMock(return_value=(out, {
@@ -75,14 +75,14 @@ async def test_founder_bio_runs(sample_dispatch_state) -> None:
     ):
         result = await founder_bio(sample_dispatch_state)
     assert result["founder_bio"]["headline"] == "H"
-    assert result["founder_bio"]["body"] == "B"
+    assert result["founder_bio"]["body"] == []
     assert result["model_versions"]["founder_bio"] == "anthropic/claude-sonnet-4-6"
 
 
 @pytest.mark.asyncio
 async def test_founder_bio_voice_isolation(sample_dispatch_state) -> None:
     """AGT-09: only whitelisted state slices reach build_section_writer_prompt."""
-    out = FounderBioOutput(headline="H", body="B")
+    out = FounderBioOutput.model_construct(headline="H", body=[])
     captured: dict = {}
 
     def _capture(**kwargs):
@@ -99,9 +99,9 @@ async def test_founder_bio_voice_isolation(sample_dispatch_state) -> None:
             "resolved_model": "anthropic/claude-sonnet-4-6",
         })),
     ):
-        sample_dispatch_state["origin_story"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["problem_statement"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["case_study"] = {"headline": "X", "body": "X"}
+        sample_dispatch_state["origin_story"] = {"headline": "X", "body": []}
+        sample_dispatch_state["problem_statement"] = {"headline": "X", "body": []}
+        sample_dispatch_state["case_study"] = {"headline": "X", "body": []}
         await founder_bio(sample_dispatch_state)
 
     # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th
@@ -124,7 +124,7 @@ async def test_founder_bio_unverified_scrubs_name(sample_dispatch_state) -> None
         "founderNameVerified": False,
         "founderRole": "director",
     }
-    out = FounderBioOutput(headline="H", body="B")
+    out = FounderBioOutput.model_construct(headline="H", body=[])
     captured: dict = {}
 
     def _capture(**kwargs):

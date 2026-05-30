@@ -71,7 +71,17 @@ async def test_jingle_branch_sunourl_empty(sample_dispatch_state) -> None:
 @pytest.mark.asyncio
 async def test_spec_ad_branch(sample_dispatch_state) -> None:
     state = _state_with_bonus_type("specAd", sample_dispatch_state)
-    out = SpecAdBonus(headline="H", body="B" * 300)
+    # Phase 18 D-04: SpecAdBonus.body is now list[BodyBlock] (not str).
+    # Provide a conforming body with >=2 h2/h3 + >=1 blockquote.
+    _spec_ad_body = [
+        {"type": "paragraph", "text": "The charity addresses an invisible crisis."},
+        {"type": "h2", "text": "The ask"},
+        {"type": "paragraph", "text": "One year. No excuses."},
+        {"type": "blockquote", "text": "No excuses."},
+        {"type": "h2", "text": "Why now"},
+        {"type": "paragraph", "text": "Because next year is already too late."},
+    ]
+    out = SpecAdBonus(headline="H", body=_spec_ad_body)
     with patch(
         "eisenbalm_pipeline.agents.bonus.acomplete",
         AsyncMock(return_value=(out, {

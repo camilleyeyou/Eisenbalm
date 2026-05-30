@@ -59,7 +59,10 @@ async def test_case_study_runs(sample_dispatch_state) -> None:
         "subjectStory": "story",
         "summary": "s",
     }
-    out = CaseStudyOutput(headline="H", body="B")
+    # Phase 18 D-01: CaseStudyOutput.body is now list[BodyBlock].
+    # Use model_construct to bypass validation in this integration-path test
+    # (the structural floor is tested separately in test_writer_structural_floor.py).
+    out = CaseStudyOutput.model_construct(headline="H", body=[])
     with patch(
         "eisenbalm_pipeline.agents.case_study.acomplete",
         AsyncMock(return_value=(out, {
@@ -69,14 +72,14 @@ async def test_case_study_runs(sample_dispatch_state) -> None:
     ):
         result = await case_study(sample_dispatch_state)
     assert result["case_study"]["headline"] == "H"
-    assert result["case_study"]["body"] == "B"
+    assert result["case_study"]["body"] == []
     assert result["model_versions"]["case_study"] == "anthropic/claude-sonnet-4-6"
 
 
 @pytest.mark.asyncio
 async def test_case_study_voice_isolation(sample_dispatch_state) -> None:
     """AGT-09: build_section_writer_prompt called with only the 4 whitelisted slices."""
-    out = CaseStudyOutput(headline="H", body="B")
+    out = CaseStudyOutput.model_construct(headline="H", body=[])
     captured: dict = {}
 
     def _capture(**kwargs):
@@ -93,9 +96,9 @@ async def test_case_study_voice_isolation(sample_dispatch_state) -> None:
             "resolved_model": "anthropic/claude-sonnet-4-6",
         })),
     ):
-        sample_dispatch_state["origin_story"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["problem_statement"] = {"headline": "X", "body": "X"}
-        sample_dispatch_state["founder_bio"] = {"headline": "X", "body": "X"}
+        sample_dispatch_state["origin_story"] = {"headline": "X", "body": []}
+        sample_dispatch_state["problem_statement"] = {"headline": "X", "body": []}
+        sample_dispatch_state["founder_bio"] = {"headline": "X", "body": []}
         await case_study(sample_dispatch_state)
 
     # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th
@@ -115,7 +118,7 @@ async def test_case_study_unverified_scrubs_subject_name(sample_dispatch_state) 
         "subjectNameVerified": False,
         "subjectRole": "a graduate",
     }
-    out = CaseStudyOutput(headline="H", body="B")
+    out = CaseStudyOutput.model_construct(headline="H", body=[])
     captured: dict = {}
 
     def _capture(**kwargs):
