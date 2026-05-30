@@ -27,19 +27,35 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
+from eisenbalm_pipeline.graph.blocks import BodyBlock
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt
 
+
+# Phase 18 D-01/D-02 — appended to GUIDANCE_VERIFIED and GUIDANCE_ANONYMOUS.
+# Encodes the structural floor at the prompt layer; the Pydantic
+# _enforce_structural_floor validator below is the hard gate (retries once
+# via the existing acomplete path on failure).
+STRUCTURE_CONTRACT: str = (
+    "\n\nSTRUCTURE CONTRACT (non-negotiable):\n"
+    "Emit at minimum 2 sub-headers (h2 or h3) and 1 blockquote per section. "
+    "Sub-headers: <=6 words, Jesse-voice, break the body into 3+ logical "
+    "movements. Blockquote: a single sentence lifted verbatim from the most "
+    "quotable line in the body prose - not a generic restatement. "
+    "Sub-headers and blockquote serve Jesse's register. "
+    "Do not break voice; structural variety is typographic, not tonal."
+)
 
 GUIDANCE_VERIFIED: str = (
     "400-600 word biography of the named founder. Fortune-500 treatment. "
     "Present professional trajectory with precision. Do not editorialize. "
     "The name is verified; use it freely."
 )
+GUIDANCE_VERIFIED = GUIDANCE_VERIFIED + STRUCTURE_CONTRACT
 
 GUIDANCE_ANONYMOUS: str = (
     "400-600 word biography of the {role} of the charity. "
@@ -47,11 +63,27 @@ GUIDANCE_ANONYMOUS: str = (
     "\"The {role}\", \"they\", \"their\". The anonymity is intentional "
     "and professional — frame it as standard Fortune-500 anonymity."
 )
+GUIDANCE_ANONYMOUS = GUIDANCE_ANONYMOUS + STRUCTURE_CONTRACT
 
 
 class FounderBioOutput(BaseModel):
     headline: str = ""
-    body: str = ""
+    body: list[BodyBlock] = []  # Phase 18 D-01 (was: body: str = "")
+
+    @field_validator('body')
+    @classmethod
+    def _enforce_structural_floor(cls, body: list[BodyBlock]) -> list[BodyBlock]:
+        heading_count = sum(1 for b in body if b.type in ('h2', 'h3'))
+        blockquote_count = sum(1 for b in body if b.type == 'blockquote')
+        if heading_count < 2:
+            raise ValueError(
+                f"structural-floor: need >=2 sub-headers, got {heading_count}"
+            )
+        if blockquote_count < 1:
+            raise ValueError(
+                f"structural-floor: need >=1 blockquote, got {blockquote_count}"
+            )
+        return body
 
 
 def _select_guidance_and_scrub(research: dict) -> tuple[str, dict]:
@@ -81,12 +113,21 @@ def _select_guidance_and_scrub(research: dict) -> tuple[str, dict]:
 
 def _founder_bio_payload(state: DispatchState) -> dict:
     section = state.get("founder_bio") or {}
-    body = section.get("body", "") if isinstance(section, dict) else ""
+    body = section.get("body", []) if isinstance(section, dict) else []
     headline = section.get("headline", "") if isinstance(section, dict) else ""
+    # body is list[BodyBlock] after Phase 18; compute word count from block texts.
+    if isinstance(body, list):
+        word_count = sum(
+            len(b.get("text", "").split()) if isinstance(b, dict)
+            else len(getattr(b, "text", "").split())
+            for b in body
+        )
+    else:
+        word_count = len(str(body).split()) if body else 0
     return {
         "sectionName": "founderBio",
         "headline": headline,
-        "wordCount": len(body.split()) if body else 0,
+        "wordCount": word_count,
     }
 
 
@@ -125,7 +166,7 @@ async def founder_bio(state: DispatchState) -> DispatchState:
     elif isinstance(out_obj, dict):
         out_dict = dict(out_obj)
     else:
-        out_dict = {"headline": "", "body": ""}
+        out_dict = {"headline": "", "body": []}
 
     # AGT-17: parallel writers each contribute their OWN key to
     # model_versions; the DispatchState Annotated reducer merges across
