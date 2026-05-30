@@ -343,6 +343,26 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [ ] **(minor) _debug/convex duplicate `<main>`** — `apps/web/app/_debug/convex/page.tsx` nests a `<main>` inside the root layout's `<main id="main">`; internal debug route, low priority
 **UI hint**: yes (polish-only — visible surface area: BonusSection, archive, loading states, /about)
 
+### Phase 18: Magazine Editorial Layout — Writer Structure
+**Goal**: Eliminate the "wall of 19px prose" reading experience on `/issue/[slug]` by teaching the four narrative writer agents (Origin Story, Problem Statement, Founder Bio, Case Study) and the Bonus agent to emit varied Portable Text structure — minimum 2× `h2` sub-headers + 1× `blockquote` (pull-quote candidate) per long-read — while preserving Jesse voice byte-equivalently for every Phase 5 tripwire (no register drift, no exclamation marks, no forbidden adjectives). The frontend `PortableTextRenderer` already supports h2/h3/blockquote/figure roles (Phase 10 + Phase 13 built them); they are currently dead-coded at the live URL because every writer emits only `block.style === "normal"`. This phase activates the existing renderer primitives by upgrading the writer prompts + QA contract — zero new components, zero schema changes. Audit baseline: `.planning/phases/10-editorial-design-pass/10-UI-REVIEW.md` (score 14/24, root cause cited as "writer agents emit only flat paragraphs"; fixes #1 + #3).
+**Depends on**: Phase 5 (Agent Quality — writer agents are the modification surface), Phase 10 (Editorial Design Pass — the renderer primitives being activated), Phase 13 (Deliberation as Conversation — Portable Text emission patterns established for the chronicler)
+**Requirements**: MEL-01 through MEL-08 (derive during `/gsd:plan-phase 18`)
+**Success Criteria** (what must be TRUE):
+  1. Every Origin Story, Problem Statement, Founder Bio, Case Study, and Bonus section on a freshly-generated issue contains AT LEAST 2 `block.style: "h2"` (or `h3`) sub-header blocks emitted by the writer, breaking the body into ≥3 logical sub-sections; verified by GROQ post-condition `count(originStory.body[style in ["h2","h3"]]) >= 2` (and equivalents for the other 4 sections)
+  2. Every one of those 5 sections contains AT LEAST 1 `block.style: "blockquote"` block, lifting one quotable line from the body into the editorial pull-quote treatment (PortableTextRenderer.blockquote — display font, italic, `--color-accent` left border); verified by `count(*.body[style=="blockquote"]) >= 1` per section
+  3. Voice byte-equivalence preserved on the body prose itself: existing `test_voice_byte_equivalence` and Phase 5 voice-isolation tripwires (`no-exclamation`, `no-forbidden-adjectives`, `no-passive-hedging`, `no-AI-reference`) still pass on the full assembled body for every section
+  4. QA judge rejects any draft where a long-read section has 0 sub-headers OR 0 blockquotes — gates the structural contract at the QA layer, not just at write time
+  5. Zero-regression matrix: `pnpm --filter pipeline test` ≥ 190 passing (Phase 16 baseline), `pnpm --filter web test:unit` ≥ 234 passing (Phase 16 baseline); the Portable Text renderer tests still pass without modification
+  6. The live frontend at `https://eisenbalm-web.vercel.app/issue/[next-issue-slug]` no longer renders any section as 7-10 consecutive `<p>` blocks; verified by HTML scan asserting `count(<h2>) within each section >= 2 AND count(<blockquote>) >= 1`
+  7. Cost per writer call rises by no more than 15% — the structural contract is small additional system-prompt instruction, not a multi-pass rewrite
+**Plans**: 0/5 — not planned yet (run `/gsd:plan-phase 18`)
+- [ ] **Structural prompt contract** — add `STRUCTURE_CONTRACT` block to OriginStory/Problem/FounderBio/CaseStudy/Bonus writer system prompts: "Emit at minimum 2 h2 sub-headers and 1 blockquote per section. Sub-headers must be short (≤6 words), Jesse-voice, and break the body into 3+ logical movements. The blockquote must be a one-sentence punch lift from the body's most quotable line. Do not break voice — the structural variety serves Jesse's register, not a different one."
+- [ ] **Portable Text emission helpers** — extend `lib/portable_text.py` with `block_h2(text)`, `block_h3(text)`, `block_blockquote(text)` builders; update each writer to pass structured output through the helpers
+- [ ] **QA judge structural contract** — extend QA judge rubric with a new MEL-04 axis: "Structural variety: ≥2 sub-heads + 1 pull-quote present. Reject otherwise with `severity: error`." Add `_count_structural_blocks` helper alongside the narrator-rubric appending from Plan 16-07
+- [ ] **Pipeline tests** — RED-first scaffold: `test_writer_emits_h2_sub_headers.py` (5 tests, one per agent), `test_writer_emits_blockquote.py` (5 tests), `test_qa_rejects_flat_paragraph_wall.py` (1 test)
+- [ ] **Verification & frontend probe** — author `18-VERIFICATION.md` per-MEL matrix; trigger one full pipeline run end-to-end on production with a fresh issueNumber, query Sanity post-write to assert the GROQ count predicates above, fetch the live `/issue/[slug]` HTML and assert the `<h2>` + `<blockquote>` counts; Andrew UAT confirms the reading experience improvement (the actual user-perceived payoff)
+**UI hint**: yes (the whole point of this phase is the user-perceived editorial reading experience on `/issue/[slug]`)
+
 ## Progress
 
 **Execution Order:**
@@ -373,6 +393,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
 | 17. UI/UX Audit Follow-ups | 0/5 | Not started | - |
+| 18. Magazine Editorial Layout — Writer Structure | 0/5 | Not started | - |
 
 ## Backlog
 
