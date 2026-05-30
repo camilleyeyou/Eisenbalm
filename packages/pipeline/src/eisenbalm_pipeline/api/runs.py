@@ -38,6 +38,13 @@ class RunWeeklyBody(BaseModel):
     issueNumber: int = 999  # CONTEXT D-16 default
     forceNoWinner: bool = False  # stub-mode toggle (D-36 test)
     forceFailAgent: Optional[str] = None  # stub-mode toggle (D-37 test)
+    # Phase 16 trigger-path: optional narrator slug override. When provided,
+    # injects state["narrator_slug"], which the calibrator resolves via Sanity
+    # GROQ (graph/state.py L195-199 + agents/calibrator.py L195 resolution
+    # chain step 2). When omitted (None), the chain falls through to
+    # charity.narratorSlug then Jesse default — preserves byte-equivalent
+    # Phase 15 behavior for the no-narrator path (NRR-10).
+    narratorSlug: Optional[str] = None
 
 
 class ResumeSelection(BaseModel):
@@ -159,6 +166,13 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         "_force_no_winner": body.forceNoWinner,
         "_force_fail_agent": body.forceFailAgent,
     }
+    # Phase 16 trigger-path: inject narrator_slug only when explicitly provided.
+    # Absent key (vs None) preserves byte-equivalent legacy state shape for
+    # Jesse-default runs — the calibrator's resolution chain treats missing
+    # and None the same (state.get("narrator_slug") falls through), but
+    # omitting the key keeps the state diff minimal in checkpointer storage.
+    if body.narratorSlug is not None:
+        initial_state["narrator_slug"] = body.narratorSlug
     config = {"configurable": {"thread_id": run_id}}
 
     # Pattern 3: strong-ref'd background task (research §3).
