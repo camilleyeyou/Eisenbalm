@@ -416,6 +416,23 @@ def _build_bonus(state: DispatchState) -> dict:
     return result
 ```
 
+**Phase 18 update (long-read sections):** For the five long-read sections
+(`originStory`, `problemStatement`, `founderBio`, `caseStudy`, and `bonus` when
+`style_brief["bonusType"] == "specAd"`), the Python write path calls
+`compose_section_body(body_blocks)` instead of `text_to_portable_text(body_str)` because
+each long-read writer's Pydantic `body` field is now `list[BodyBlock]` (a discriminated
+union of Paragraph / Heading / Blockquote — see §7). `compose_section_body` dispatches each
+block on its `type` field to the matching builder (`block_paragraph`, `block_h2`,
+`block_h3`, `block_blockquote`) and returns a `list[dict]` of Sanity Portable Text blocks.
+
+`text_to_portable_text(body_str)` remains valid for:
+- `BigBudgetBonus.body` (D-04 — body remains str; visual variety comes from `storyboards[]`)
+- `JingleBonus.body`    (D-04 — body remains str; visual variety comes from lyrics + sunoPrompt)
+- Stub-mode fixtures that emit `body: str` (legacy backward-compat — see Plan 18-06)
+
+The `_build_bonus` helper in `lib/sanity_client.py` branches on `style_brief["bonusType"]`:
+`specAd` uses `compose_section_body`; `bigBudget` and `jingle` use `text_to_portable_text`.
+
 ---
 
 ### 2.3 — Upload PDF and patch issue
@@ -481,6 +498,28 @@ def text_to_portable_text(text: str) -> list[dict]:
         for para in paragraphs
     ]
 ```
+
+### Phase 18: Portable Text block builders (long-read sections)
+
+Defined in `packages/pipeline/src/eisenbalm_pipeline/lib/portable_text.py` (Plan 18-03 adds):
+
+- `block_paragraph(text: str) -> dict` — emits one block with `style: "normal"`
+- `block_h2(text: str) -> dict` — emits one block with `style: "h2"`
+- `block_h3(text: str) -> dict` — emits one block with `style: "h3"`
+- `block_blockquote(text: str) -> dict` — emits one block with `style: "blockquote"`
+- `compose_section_body(blocks: list[dict]) -> list[dict]` — dispatches each block on `block['type']`
+  to the matching builder; returns a list of Sanity Portable Text block dicts ready to write to Sanity.
+
+All four builders follow the same `_type: 'block'` + `_key: f'block-{uuid.uuid4().hex[:8]}'`
++ `markDefs: []` + single-span pattern as the existing `text_to_portable_text` helper.
+
+Sanity's `weeklyIssue.body` field type is `type: 'array', of: [{type: 'block'}]` with NO
+custom `styles` restriction (verified `apps/studio/schemas/weeklyIssue.ts`) — Sanity's default
+block type accepts `h2`, `h3`, `blockquote` styles natively. **No Sanity schema change.**
+
+The frontend `apps/web/components/issue/PortableTextRenderer.tsx` (Phase 10) has rendering
+handlers for `h2` / `h3` / `blockquote` block styles that are dead-coded at the live URL today
+— Phase 18 activates them by emitting the markers writers currently omit.
 
 ---
 
