@@ -184,6 +184,17 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **SHOP-10**: `TODO(Andrew)` JSX-comment markers are present (greppable) on every item Andrew must finalize before launch: hero product photography, product still photography, final price, edition number / hand-numbering description, ingredient list verification, shipping rates/carrier/delivery window, contact email, footer-outro voice check
 - [x] **SHOP-11**: Regression — `pnpm --filter web build` exits 0 and all prior tripwire tests stay green (Phase 7 game-sandbox, Phase 10 typography, Phase 12 navigator/deliberation, Phase 13 deliberation-conversation/no-model-names, Phase 14 theme-aa-tones LIGHT-03/05, Phase 11 archive/motion, Phase 8 CMR-* including CMR-01 and CMR-09); `apps/web/__tests__/shop-page.test.ts` runs the 6 preserved CMR-01 assertions + 10 new Phase 15 source-scan assertions all green
 
+### Magazine Editorial Layout — Writer Structure (Phase 18)
+
+- [ ] **MEL-01**: Each of the 5 long-read sections (`originStory`, `problemStatement`, `founderBio`, `caseStudy`, `bonus` when `bonusType == "specAd"`) emits at minimum 2 Portable Text blocks with `style: "h2"` or `style: "h3"` in its Sanity body array; verified by GROQ post-condition `count(<section>.body[style in ["h2","h3"]]) >= 2` per section
+- [ ] **MEL-02**: Each of those 5 sections emits at minimum 1 Portable Text block with `style: "blockquote"`; verified by `count(<section>.body[style=="blockquote"]) >= 1` per section
+- [ ] **MEL-03**: Body prose voice is byte-equivalent: existing Phase 5 voice-isolation tripwires (no exclamation marks, no forbidden adjectives, no passive hedging, no AI self-reference) still pass on the assembled body text for every section; `packages/pipeline/tests/test_section_writer_voice_propagation.py` stays green; `packages/pipeline/tests/test_voice.py` stays green (Phase 16 NRR-10 byte-equivalence)
+- [ ] **MEL-04**: QA judge rubric (`packages/pipeline/src/eisenbalm_pipeline/agents/qa/rubric.md`) gains a `structural-variety` axis; `JudgeFinding.axis` `Literal` in `packages/pipeline/src/eisenbalm_pipeline/agents/qa/judge.py` includes `"structural-variety"`; findings from a flat-paragraph-wall section produce at least one `structural-variety` entry in `qaCorrections` with `severity: "warning"` (not `error` — per CONTEXT D-05; Phase 5 D-02 keeps QA annotation-only)
+- [ ] **MEL-05**: Zero-regression matrix: `cd packages/pipeline && uv run pytest -x -q` reports >= 200 passing (>= 190 Phase 16 baseline + 4 new Phase 18 test files); `pnpm --filter web test:unit` reports >= 234 passing (Phase 16 baseline preserved); all listed Phase 18 tripwire tests (see 18-CONTEXT.md canonical_refs > Tripwires) stay green
+- [ ] **MEL-06**: Live frontend at `https://eisenbalm-web.vercel.app/issue/<next-issue-slug>` for a freshly-generated issue contains at least 2 `<h2>` elements AND at least 1 `<blockquote>` element within each of the 5 long-read section containers; verified by HTML scan documented in `18-VERIFICATION.md` (no 7-10 consecutive `<p>` blocks per section)
+- [ ] **MEL-07**: Cost per writer call rises at most 15% vs. Phase 16 baseline; the STRUCTURE_CONTRACT (CONTEXT D-01) is a <=120-word system-prompt addition; the structural-validator retry (CONTEXT D-02) adds at most one extra `acomplete` call per writer per run; verified by controlled real-mode run documented in `18-VERIFICATION.md`
+- [ ] **MEL-08**: `BigBudgetBonus.body` and `JingleBonus.body` Pydantic fields remain typed `str` (no structural floor — per CONTEXT D-04); only `SpecAdBonus.body` is typed `list[BodyBlock]`; a negative pytest case asserts `BigBudgetBonus` and `JingleBonus` Pydantic models do NOT carry the `_enforce_structural_floor` validator
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -353,12 +364,20 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | SHOP-09 | Phase 15: Shop Storefront — Rich Product Page | Not started |
 | SHOP-10 | Phase 15: Shop Storefront — Rich Product Page | Not started |
 | SHOP-11 | Phase 15: Shop Storefront — Rich Product Page | Not started |
+| MEL-01 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-02 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-03 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-04 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-05 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-06 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-07 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| MEL-08 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
 
 **Coverage:**
-- v1 requirements: 95 total (84 prior + 11 SHOP-* added Phase 15)
-- Mapped to phases: 95
+- v1 requirements: 103 total (95 prior + 8 MEL-* added Phase 18)
+- Mapped to phases: 103
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-05-28 — added SHOP-01..SHOP-11 for Phase 15 (Shop Storefront — Rich Product Page)*
+*Last updated: 2026-05-30 — added MEL-01..MEL-08 for Phase 18 (Magazine Editorial Layout — Writer Structure)*
