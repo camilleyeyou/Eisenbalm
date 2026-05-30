@@ -44,9 +44,18 @@ def test_jesse_seed_matches_persona_block():
     from eisenbalm_pipeline.lib.voice import JESSE_PERSONA_BLOCK
 
     data = json.loads(_NARRATORS_JSON.read_text(encoding="utf-8"))
-    # Tolerant lookup: data may be a list of dicts (slug-keyed) or a dict keyed by slug.
+    # Tolerant lookup: data may be
+    #   (a) a list of dicts (slug-keyed),
+    #   (b) a dict keyed by slug, or
+    #   (c) a dict wrapper with a "narrators" key holding the list (Plan 16-08a canonical shape).
     jesse_entry = None
-    if isinstance(data, list):
+    if isinstance(data, dict) and isinstance(data.get("narrators"), list):
+        # Canonical Plan 16-08a wrapper: {"narrators": [...]}.
+        for entry in data["narrators"]:
+            if isinstance(entry, dict) and entry.get("slug") == "jesse":
+                jesse_entry = entry
+                break
+    elif isinstance(data, list):
         for entry in data:
             if isinstance(entry, dict) and entry.get("slug") == "jesse":
                 jesse_entry = entry
