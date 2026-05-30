@@ -1,9 +1,9 @@
 ---
 phase: 18
 slug: magazine-editorial-layout-writers
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-30
 ---
 
@@ -42,13 +42,13 @@ created: 2026-05-30
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 18-01-01 | 01 | 0 | MEL-01..MEL-08 contract derivation | unit (RED scaffold) | `uv run pytest tests/agents/test_writer_structural_floor.py -x` | ❌ W0 | ⬜ pending |
-| 18-01-02 | 01 | 0 | MEL-04 QA structural axis | unit (RED scaffold) | `uv run pytest tests/agents/test_qa_structural_axis.py -x` | ❌ W0 | ⬜ pending |
-| 18-01-03 | 01 | 0 | MEL-08 specAd-only Bonus floor | unit (RED scaffold negative) | `uv run pytest tests/agents/test_bonus_specad_only.py -x` | ❌ W0 | ⬜ pending |
-| 18-02-* | 02 | 1 | MEL-01, MEL-02 helper substrate | unit | `uv run pytest tests/lib/test_portable_text_blocks.py -x` | ❌ W0 | ⬜ pending |
-| 18-03-* | 03 | 2 | MEL-01, MEL-02, MEL-03 writer Pydantic + prompts | unit + integration | `uv run pytest tests/agents/test_writer_structural_floor.py tests/test_section_writer_voice_propagation.py -x` | partial | ⬜ pending |
-| 18-04-* | 04 | 3 | MEL-04 QA judge axis + rubric extension | unit | `uv run pytest tests/agents/test_qa_structural_axis.py -x` | partial | ⬜ pending |
-| 18-05-* | 05 | 4 | MEL-05, MEL-06, MEL-07 verification + frontend probe + cost | integration + manual | `uv run pytest -x -q && pnpm --filter web test:unit` + HTML scan + cost diff | partial | ⬜ pending |
+| 18-01-01 | 01 | 0 | MEL-01..MEL-08 contract derivation | unit (RED scaffold) | `uv run pytest tests/agents/test_writer_structural_floor.py -x` | ✅ shipped | ✅ green |
+| 18-01-02 | 01 | 0 | MEL-04 QA structural axis | unit (RED scaffold) | `uv run pytest tests/agents/test_qa_structural_axis.py -x` | ✅ shipped | ✅ green |
+| 18-01-03 | 01 | 0 | MEL-08 specAd-only Bonus floor | unit (RED scaffold negative) | `uv run pytest tests/agents/test_bonus_specad_only.py -x` | ✅ shipped | ✅ green |
+| 18-02-* | 02 | 1 | MEL-01, MEL-02 helper substrate | unit | `uv run pytest tests/lib/test_portable_text_blocks.py -x` | ✅ shipped | ✅ green |
+| 18-03-* | 03 | 2 | MEL-01, MEL-02, MEL-03 writer Pydantic + prompts | unit + integration | `uv run pytest tests/agents/test_writer_structural_floor.py tests/test_section_writer_voice_propagation.py -x` | ✅ shipped | ✅ green |
+| 18-04-* | 04 | 3 | MEL-04 QA judge axis + rubric extension | unit | `uv run pytest tests/agents/test_qa_structural_axis.py -x` | ✅ shipped | ✅ green |
+| 18-05-* | 05 | 4 | MEL-05, MEL-06, MEL-07 verification + frontend probe + cost | integration + manual | `uv run pytest -x -q && pnpm --filter web test:unit` + HTML scan + cost diff | ✅ shipped | ✅ green (MEL-06 Andrew UAT pending) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -58,10 +58,10 @@ created: 2026-05-30
 
 ## Wave 0 Requirements
 
-- [ ] `packages/pipeline/tests/agents/test_writer_structural_floor.py` — parametrized over 5 writers (origin_story, problem, founder_bio, case_study, bonus[specAd]); covers MEL-01 (≥2 h2/h3) + MEL-02 (≥1 blockquote). RED-first; fixtures emit invalid + valid `body: list[BodyBlock]` payloads asserting Pydantic ValidationError on invalid, pass on valid.
-- [ ] `packages/pipeline/tests/agents/test_qa_structural_axis.py` — asserts `JudgeFinding.axis` `Literal` includes `"structural-variety"`; asserts rubric.md contains the new axis section. Covers MEL-04.
-- [ ] `packages/pipeline/tests/agents/test_bonus_specad_only.py` — negative test: `BigBudgetBonus` and `JingleBonus` Pydantic models do NOT have the structural floor validator (`body` field still accepts flat input). Covers MEL-08.
-- [ ] `packages/pipeline/tests/lib/test_portable_text_blocks.py` — unit tests for `block_paragraph`, `block_h2`, `block_h3`, `block_blockquote`, `compose_section_body` helpers. Asserts each emits valid Portable Text block shape with the expected `style` field.
+- [x] `packages/pipeline/tests/agents/test_writer_structural_floor.py` — parametrized over 5 writers (origin_story, problem, founder_bio, case_study, bonus[specAd]); covers MEL-01 (≥2 h2/h3) + MEL-02 (≥1 blockquote). RED-first; fixtures emit invalid + valid `body: list[BodyBlock]` payloads asserting Pydantic ValidationError on invalid, pass on valid.
+- [x] `packages/pipeline/tests/agents/test_qa_structural_axis.py` — asserts `JudgeFinding.axis` `Literal` includes `"structural-variety"`; asserts rubric.md contains the new axis section. Covers MEL-04.
+- [x] `packages/pipeline/tests/agents/test_bonus_specad_only.py` — negative test: `BigBudgetBonus` and `JingleBonus` Pydantic models do NOT have the structural floor validator (`body` field still accepts flat input). Covers MEL-08.
+- [x] `packages/pipeline/tests/lib/test_portable_text_blocks.py` — unit tests for `block_paragraph`, `block_h2`, `block_h3`, `block_blockquote`, `compose_section_body` helpers. Asserts each emits valid Portable Text block shape with the expected `style` field.
 
 *(The existing test suite covers MEL-03 — `test_section_writer_voice_propagation.py` — and MEL-05 — full suite count — without new files.)*
 
@@ -79,11 +79,11 @@ created: 2026-05-30
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (4 new test files identified)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5 s (per-task), < 75 s (per-wave)
-- [ ] `nyquist_compliant: true` set in frontmatter after all checks above
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (4 new test files identified + shipped)
+- [x] No watch-mode flags
+- [x] Feedback latency < 5 s (per-task), < 75 s (per-wave)
+- [x] `nyquist_compliant: true` set in frontmatter after all checks above
 
-**Approval:** pending
+**Approval:** Phase 18 code-complete. MEL-06 Andrew UAT pending (Plan 18-06 Task 3 checkpoint).
