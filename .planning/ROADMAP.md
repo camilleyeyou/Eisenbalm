@@ -356,8 +356,8 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   6. The live frontend at `https://eisenbalm-web.vercel.app/issue/[next-issue-slug]` no longer renders any section as 7-10 consecutive `<p>` blocks; verified by HTML scan asserting `count(<h2>) within each section >= 2 AND count(<blockquote>) >= 1`
   7. Cost per writer call rises by no more than 15% — the structural contract is small additional system-prompt instruction, not a multi-pass rewrite
 **Plans**: 6 plans
-- [ ] 18-01-contract-reconciliation-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §2.2 + §2.4 (body shape change + compose_section_body + 4 block helpers); add MEL-01..MEL-08 to REQUIREMENTS.md
-- [ ] 18-02-red-test-scaffold-PLAN.md — Wave 0 RED tests: 4 new pytest files (test_writer_structural_floor parametrized over 5 writers, test_qa_structural_axis, test_bonus_specad_only, test_portable_text_blocks)
+- [x] 18-01-contract-reconciliation-PLAN.md — Wave 0 gate: amend docs/API_CONTRACTS.md §7 + §2.2 + §2.4 (body shape change + compose_section_body + 4 block helpers); add MEL-01..MEL-08 to REQUIREMENTS.md
+- [x] 18-02-red-test-scaffold-PLAN.md — Wave 0 RED tests: 4 new pytest files (test_writer_structural_floor parametrized over 5 writers, test_qa_structural_axis, test_bonus_specad_only, test_portable_text_blocks)
 - [ ] 18-03-portable-text-helpers-and-state-PLAN.md — Wave 1: lib/portable_text.py block_paragraph/h2/h3/blockquote + compose_section_body serializer; graph/blocks.py BodyBlock discriminated union; graph/state.py body fields re-typed str → list[dict]
 - [ ] 18-04-writer-pydantic-and-prompts-PLAN.md — Wave 2: 5 writer Pydantic models (origin_story, problem, founder_bio, case_study, bonus[specAd only]) gain body: list[BodyBlock] + _enforce_structural_floor validator + STRUCTURE_CONTRACT in SECTION_GUIDANCE; sanity_client.py 5 call sites rewired to compose_section_body
 - [ ] 18-05-qa-judge-axis-and-orchestrator-PLAN.md — Wave 3: JudgeFinding.axis Literal += 'structural-variety' (D-05); rubric.md axis #6 with severity='warning'; agents/qa/__init__.py _section_body_text helper bridges str / list[dict] body shapes
@@ -394,7 +394,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
 | 17. UI/UX Audit Follow-ups | 0/5 | Not started | - |
-| 18. Magazine Editorial Layout — Writer Structure | 0/5 | Not started | - |
+| 18. Magazine Editorial Layout — Writer Structure | 2/6 | In Progress|  |
 
 ## Backlog
 
