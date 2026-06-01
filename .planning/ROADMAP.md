@@ -15,7 +15,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [ ] **Phase 3: Convex Deployment** - Deploy schema, wire all query/mutation functions, provision keys, and verify empty-table subscriptions from the web app
 - [ ] **Phase 4: Pipeline Skeleton** - FastAPI on Railway with the full LangGraph graph wired, all 14 stub agents, runId discipline, three-datastore writes, and Editor gate 1 interrupt validated cheaply before LLM cost
 - [x] **Phase 5: Agent Quality** (completed 2026-05-18) - Replace every stub with a real LLM-driven agent; enforce voice isolation, factual verification, bonus branching, hex/font validation, and Jesse-voice QA rubric
-- [ ] **Phase 6: PDF + Webhook Chain** - WeasyPrint PDF from real ProblemWriter output; Sanity-to-Railway webhook with HMAC, age check, idempotency, 30s delay, and Vercel deploy hook
+- [x] **Phase 6: PDF + Webhook Chain** - WeasyPrint PDF from real ProblemWriter output; Sanity-to-Railway webhook with HMAC, age check, idempotency, 30s delay, and Vercel deploy hook (completed 2026-06-01)
 - [ ] **Phase 7: Game Rendering** - iframe sandbox with automated HTML/JS validator, CSP meta injection, mobile sizing, and render fallback wired to Andrew notification
 - [ ] **Phase 8: Stripe / Commerce** - `/shop` product page, Stripe Checkout, `/shop/thank-you`, raw-body webhook with idempotency, legal pages, and persistent shop callout
 - [x] **Phase 9: Issue Page Completion** - Live Convex deliberation UI (subscriptions, agent identity cards, collapsed accordion) and podcast audio player + transcript, completing the full reading experience (completed 2026-05-21)
@@ -129,14 +129,14 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   2. Sending a webhook request with a tampered HMAC signature returns a non-200 response and does NOT trigger the Publisher; sending a valid webhook with a `sanity-transaction-time` older than 5 minutes is rejected; sending the same `idempotency-key` twice triggers the Publisher exactly once (not twice)
   3. After a valid publish webhook, the Vercel deploy hook fires at least 30 seconds after the webhook is received; `pipelineRuns.status` in Convex updates to `complete`; `POST /run/{runId}/publish` as a manual fallback triggers the same Publisher flow without a Sanity webhook
 **Plans**: 8 plans
-- [ ] 06-01-test-infrastructure-PLAN.md — Wave 0 test surface (skeletons + fixtures + tiny.ttf + conftest helpers)
-- [ ] 06-02-schema-and-writethrough-PLAN.md — Sanity schema adds problemStatement.pdfContent + write_issue_draft passthrough (autonomous: false — Andrew runs typegen)
-- [ ] 06-03-fonts-deps-and-idempotency-cli-PLAN.md — weasyprint+jinja2 deps; vendor 4 TTFs; setup-webhook-idempotency CLI; railway preDeployCommand chain
-- [ ] 06-04-webhook-and-idempotency-libs-PLAN.md — lib/sanity_webhook (corrected HMAC), lib/idempotency, lib/vercel_client; unskip Plan 06-01 lib tests
-- [ ] 06-05-publisher-package-and-pdf-renderer-PLAN.md — promote agents/publisher.py to package; add pdf.py + fonts.py + Jinja2 template; unskip pdf/fonts tests
+- [x] 06-01-test-infrastructure-PLAN.md — Wave 0 test surface (skeletons + fixtures + tiny.ttf + conftest helpers)
+- [x] 06-02-schema-and-writethrough-PLAN.md — Sanity schema adds problemStatement.pdfContent + write_issue_draft passthrough (autonomous: false — Andrew runs typegen)
+- [x] 06-03-fonts-deps-and-idempotency-cli-PLAN.md — weasyprint+jinja2 deps; vendor 4 TTFs; setup-webhook-idempotency CLI; railway preDeployCommand chain
+- [x] 06-04-webhook-and-idempotency-libs-PLAN.md — lib/sanity_webhook (corrected HMAC), lib/idempotency, lib/vercel_client; unskip Plan 06-01 lib tests
+- [x] 06-05-publisher-package-and-pdf-renderer-PLAN.md — promote agents/publisher.py to package; add pdf.py + fonts.py + Jinja2 template; unskip pdf/fonts tests
 - [x] 06-06-api-contracts-doc-update-PLAN.md — amend docs/API_CONTRACTS §5.3 with corrected signature algorithm + cross-link to lib/sanity_webhook
 - [x] 06-07-webhook-and-publisher-wiring-PLAN.md — _run_publisher coroutine + real webhook handler + manual fallback wiring; unskip publisher+webhook+manual tests
-- [ ] 06-08-readme-and-smoke-test-PLAN.md — README Phase 6 section + opt-in real-mode test + Andrew's 6-step smoke (autonomous: false)
+- [x] 06-08-readme-and-smoke-test-PLAN.md — README Phase 6 section + opt-in real-mode test + Andrew's 6-step smoke (autonomous: false)
 **Research flag**: Phase 6 — WeasyPrint base64 font bundling approach (documented failures #2031, #2126) and Supabase webhook idempotency-key deduplication table pattern
 
 ### Phase 7: Game Rendering
@@ -382,7 +382,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 3. Convex Deployment | 7/8 | In Progress | - |
 | 4. Pipeline Skeleton | 0/12 | Not started | - |
 | 5. Agent Quality | 15/15 | Complete | 2026-05-18 |
-| 6. PDF + Webhook Chain | 6/8 | In Progress | - |
+| 6. PDF + Webhook Chain | 8/8 | Complete   | 2026-06-01 |
 | 7. Game Rendering | 0/5 | Planned | - |
 | 8. Stripe / Commerce | 6/8 | In Progress|  |
 | 9. Issue Page Completion | 6/6 | Complete   | 2026-05-21 |
