@@ -340,7 +340,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] 17-02-bonus-section-next-image-PLAN.md — Wave 2: convert BonusSection storyboard grid to next/image fill in the aspect-video container; remove raw <img> + eslint-disable (P17-01, P17-02)
 - [x] 17-03-archive-pagination-PLAN.md — Wave 2: client-side load-more in ArchiveList (PAGE_SIZE=10, visibleCount, useEffect reset, hasMore ≥44px button); GROQ + CardSwap unchanged (P17-03)
 - [x] 17-04-loading-skeletons-and-debug-main-PLAN.md — Wave 2: 4 loading.tsx skeletons (animate-pulse + --color-line, no <main>) + fix duplicate <main> in /_debug/convex (P17-04, P17-06)
-- [ ] 17-05-about-copy-PLAN.md — Wave 2: replace /about placeholder with Jesse-voice interim copy + TODO(Andrew) marker; autonomous: false (Andrew voice gate) (P17-05)
+- [x] 17-05-about-copy-PLAN.md — Wave 2: replace /about placeholder with Jesse-voice interim copy + TODO(Andrew) marker; autonomous: false (Andrew voice gate) (P17-05)
 **UI hint**: yes (polish-only — visible surface area: BonusSection, archive, loading states, /about)
 
 ### Phase 18: Magazine Editorial Layout — Writer Structure
@@ -393,7 +393,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
-| 17. UI/UX Audit Follow-ups | 4/5 | In Progress|  |
+| 17. UI/UX Audit Follow-ups | 5/5 | Complete   | 2026-06-02 |
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 
 ## Backlog

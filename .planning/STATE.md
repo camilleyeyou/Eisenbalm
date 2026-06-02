@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 17-04-loading-skeletons-and-debug-main-PLAN.md
-last_updated: "2026-06-02T10:38:34.598Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 17-05-about-copy-PLAN.md
+last_updated: "2026-06-02T10:42:06.130Z"
 progress:
   total_phases: 18
-  completed_phases: 16
+  completed_phases: 17
   total_plans: 123
-  completed_plans: 120
+  completed_plans: 121
 ---
 
 # Project State
@@ -152,6 +152,7 @@ Plan: 5 of 5
 | Phase 17 P02 | 2 | 1 tasks | 1 files |
 | Phase 17 P03 | 2min | 1 tasks | 1 files |
 | Phase 17 P04 | 3 | 2 tasks | 5 files |
+| Phase 17 P05 | 1 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -384,6 +385,7 @@ Recent decisions affecting current work:
 - [Phase 17]: P17-02: next/image fill mode with relative aspect-video wrapper is the CLS-safe pattern for Sanity CDN image grids; no next.config change needed (cdn.sanity.io already in remotePatterns)
 - [Phase 17]: PAGE_SIZE=10 as module-level const in ArchiveList; useEffect resets visibleCount on [query, order] to prevent stale window (P17-03)
 - [Phase 17]: JSDoc comments in loading.tsx must use main#main notation (not <main id='main'>) since the no-main source-scan checks entire file content including comments
+- [Phase 17]: Interim Jesse-voice copy ships with TODO(Andrew) marker; Andrew voice approval is non-blocking — plan is code-complete; Task 2 auto-approved under auto_advance=true
 
 ### Pending Todos
 
@@ -450,6 +452,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02T10:38:34.589Z
-Stopped at: Completed 17-04-loading-skeletons-and-debug-main-PLAN.md
+Last session: 2026-06-02T10:42:06.118Z
+Stopped at: Completed 17-05-about-copy-PLAN.md
 Resume file: None
