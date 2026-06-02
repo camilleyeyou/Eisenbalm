@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 17-02-bonus-section-next-image-PLAN.md
-last_updated: "2026-06-02T10:27:59.571Z"
+stopped_at: Completed 17-03-archive-pagination-PLAN.md
+last_updated: "2026-06-02T10:32:11.762Z"
 progress:
   total_phases: 18
   completed_phases: 16
   total_plans: 123
-  completed_plans: 118
+  completed_plans: 119
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 17 (ui-ux-audit-follow-ups) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -150,6 +150,7 @@ Plan: 3 of 5
 | Phase 18-magazine-editorial-layout-writers P06 | 15 | 3 tasks | 3 files |
 | Phase 17 P01 | 4 | 2 tasks | 5 files |
 | Phase 17 P02 | 2 | 1 tasks | 1 files |
+| Phase 17 P03 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -380,6 +381,7 @@ Recent decisions affecting current work:
 - [Phase 17]: loading-skeletons no-<main> guards use existsSync check before readFileSync to avoid ENOENT throws on missing Wave-2 files
 - [Phase 17]: dep-count guard in archive-pagination.test.ts mirrors archive-cardswap.test.ts line 159 (toBe(17)) exactly
 - [Phase 17]: P17-02: next/image fill mode with relative aspect-video wrapper is the CLS-safe pattern for Sanity CDN image grids; no next.config change needed (cdn.sanity.io already in remotePatterns)
+- [Phase 17]: PAGE_SIZE=10 as module-level const in ArchiveList; useEffect resets visibleCount on [query, order] to prevent stale window (P17-03)
 
 ### Pending Todos
 
@@ -446,6 +448,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02T10:27:59.563Z
-Stopped at: Completed 17-02-bonus-section-next-image-PLAN.md
+Last session: 2026-06-02T10:32:11.754Z
+Stopped at: Completed 17-03-archive-pagination-PLAN.md
 Resume file: None
