@@ -47,7 +47,7 @@ export default function DebugConvexPage() {
   ]
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <meta name="robots" content="noindex,nofollow" />
       <h1 className="font-display text-2xl mb-2">Convex smoke test</h1>
       <p className="font-ui text-sm opacity-60 mb-6">
@@ -69,6 +69,6 @@ export default function DebugConvexPage() {
           ))}
         </tbody>
       </table>
-    </main>
+    </div>
   )
 }
