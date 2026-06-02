@@ -131,3 +131,46 @@ def test_font_configuration_required():
         or "font_config = font_config" in source
         or "font_config=fc" in source
     )
+
+
+def test_render_with_empty_theme_falls_back_to_house_defaults(pdf_content):
+    """Cross-phase regression (2026-06-01): Phase 12/14 suppressed per-issue
+    themes (DESIGNAGENT_SUPPRESSED), so weeklyIssue.theme.fontDisplay/fontBody
+    + hex fields come back null. The Phase 6 renderer must NOT KeyError — it
+    falls back to the vendored house defaults (Playfair Display + Source Serif
+    Pro). Live failure: issue-999601 Publisher crashed with KeyError:
+    'fontDisplay'.
+    """
+    # The exact shape the post-Phase-14 GROQ projection returns: keys present,
+    # values null.
+    empty_theme = {
+        "primaryColor": None,
+        "accentColor": None,
+        "backgroundColor": None,
+        "textColor": None,
+        "fontDisplay": None,
+        "fontBody": None,
+        "visualDirection": None,
+    }
+    pdf = render_problem_statement_pdf(
+        issue_number=999601,
+        charity_name="Puppies Behind Bars",
+        pdf_content=pdf_content,
+        theme=empty_theme,
+    )
+    assert pdf[:5] == b"%PDF-"
+    assert len(pdf) > 1000
+    # The vendored house-default fonts are embedded (not the absent theme fonts).
+    assert _font_embedded(pdf, "Playfair Display")
+    assert _font_embedded(pdf, "Source Serif Pro")
+
+
+def test_render_with_no_theme_key_at_all(pdf_content):
+    """Belt-and-braces: an entirely absent theme dict ({}) also renders."""
+    pdf = render_problem_statement_pdf(
+        issue_number=1,
+        charity_name="Test",
+        pdf_content=pdf_content,
+        theme={},
+    )
+    assert pdf[:5] == b"%PDF-"
