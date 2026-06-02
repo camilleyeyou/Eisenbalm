@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 17-03-archive-pagination-PLAN.md
-last_updated: "2026-06-02T10:32:11.762Z"
+stopped_at: Completed 17-04-loading-skeletons-and-debug-main-PLAN.md
+last_updated: "2026-06-02T10:38:34.598Z"
 progress:
   total_phases: 18
   completed_phases: 16
   total_plans: 123
-  completed_plans: 119
+  completed_plans: 120
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 17 (ui-ux-audit-follow-ups) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -151,6 +151,7 @@ Plan: 4 of 5
 | Phase 17 P01 | 4 | 2 tasks | 5 files |
 | Phase 17 P02 | 2 | 1 tasks | 1 files |
 | Phase 17 P03 | 2min | 1 tasks | 1 files |
+| Phase 17 P04 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -382,6 +383,7 @@ Recent decisions affecting current work:
 - [Phase 17]: dep-count guard in archive-pagination.test.ts mirrors archive-cardswap.test.ts line 159 (toBe(17)) exactly
 - [Phase 17]: P17-02: next/image fill mode with relative aspect-video wrapper is the CLS-safe pattern for Sanity CDN image grids; no next.config change needed (cdn.sanity.io already in remotePatterns)
 - [Phase 17]: PAGE_SIZE=10 as module-level const in ArchiveList; useEffect resets visibleCount on [query, order] to prevent stale window (P17-03)
+- [Phase 17]: JSDoc comments in loading.tsx must use main#main notation (not <main id='main'>) since the no-main source-scan checks entire file content including comments
 
 ### Pending Todos
 
@@ -448,6 +450,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02T10:32:11.754Z
-Stopped at: Completed 17-03-archive-pagination-PLAN.md
+Last session: 2026-06-02T10:38:34.589Z
+Stopped at: Completed 17-04-loading-skeletons-and-debug-main-PLAN.md
 Resume file: None
