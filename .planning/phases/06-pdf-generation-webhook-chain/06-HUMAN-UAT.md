@@ -16,6 +16,15 @@ Webhook chain configured 2026-06-01 (Sanity webhook created + Railway secret con
 - ✓ Railway `SANITY_WEBHOOK_SECRET` set by Andrew and confirmed to MATCH the Sanity webhook secret (a properly-signed test request returned HTTP 200 {"skipped":"not-published"}; an unsigned request returns 401).
 - ⏳ Railway `VERCEL_DEPLOY_HOOK_URL` — not yet confirmed set. Required for _run_publisher's Vercel deploy step (test 3).
 
+## Two latent Phase 6 bugs found + fixed during the 2026-06-01 smoke
+
+The live smoke surfaced two bugs that had been latent since Phase 6 was built (its end-to-end smoke was always `autonomous: false` / pending, so the Publisher was never exercised on Railway):
+
+1. **Null-theme KeyError** (commit `8f08ab9`) — Phase 12/14 suppressed per-issue themes (DESIGNAGENT_SUPPRESSED), so `weeklyIssue.theme.fontDisplay`/`fontBody` come back null. The renderer did a hard `theme['fontDisplay']` subscript → `KeyError`. Fix: `_theme_with_defaults()` overlays a house-palette default (warm paper / rust / gold + vendored Playfair Display / Source Serif Pro). +2 regression tests.
+2. **fonts/ missing from Docker image** (commit `35ce465`) — the Dockerfile copied `src/` but not the vendored `fonts/` dir (which lives outside `src/`). On Railway, `FONTS_DIR=/app/fonts` didn't exist → `font_to_base64` raised `FileNotFoundError` at the render step. Fix: `COPY fonts/ ./fonts/`. + tripwire test.
+
+Both crashed the Publisher BEFORE the PDF upload (problemPdf stayed null, Convex status never reached complete). Verified locally: render of the real empty-theme issue-999601 now produces a 20KB valid %PDF. Full pipeline suite 228 passing.
+
 ## Tests
 
 ### 1. End-to-end Andrew publish on Sanity Studio
