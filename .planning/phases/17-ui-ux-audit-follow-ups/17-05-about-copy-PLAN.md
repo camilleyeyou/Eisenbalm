@@ -92,7 +92,7 @@ Output: about/page.tsx with no placeholder, real interim prose, TODO(Andrew) mar
   <done>about/page.tsx shows Jesse-voice interim copy inside the <article> shell, contains a TODO(Andrew) marker, no "This page is being written" string, and about-page.test.ts is GREEN. The page is code-complete.</done>
 </task>
 
-<task type="checkpoint:human-verify" gate="blocking">
+<task type="checkpoint:human-verify" gate="non-blocking">
   <name>Task 2: Andrew approves /about voice (non-blocking manual gate)</name>
   <files>apps/web/app/about/page.tsx</files>
   <action>
