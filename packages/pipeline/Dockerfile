@@ -20,6 +20,15 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY src/ ./src/
 RUN uv sync --frozen --no-dev
 
+# Phase 6 PDF renderer reads vendored TTFs from packages/pipeline/fonts/
+# (lib/agents/publisher/fonts.py: FONTS_DIR = <package-root>/fonts). This dir
+# lives OUTSIDE src/, so it must be copied explicitly — without it,
+# font_to_base64 raises FileNotFoundError at render time and the Publisher
+# crashes before the PDF upload (observed live 2026-06-01: problemPdf stayed
+# null, Convex status never reached 'complete'). The runtime stage copies all
+# of /app from the builder, so this propagates.
+COPY fonts/ ./fonts/
+
 # ── Runtime stage ────────────────────────────────────────────────
 FROM python:3.11-slim-bookworm AS runtime
 

@@ -41,3 +41,18 @@ def test_missing_font_raises_clear_error():
     msg = str(excinfo.value)
     assert "Nonexistent Family" in msg
     assert "vendor" in msg.lower()  # diagnostic guidance for the engineer
+
+
+def test_dockerfile_copies_fonts_dir():
+    """Deploy regression (2026-06-01): the vendored fonts/ dir lives OUTSIDE
+    src/, so the Docker image must COPY it explicitly. Without it,
+    font_to_base64 raises FileNotFoundError at render time on Railway and the
+    Publisher crashes before the PDF upload (problemPdf stays null, Convex
+    status never reaches 'complete'). This tripwire fails if the COPY is dropped.
+    """
+    from pathlib import Path
+    dockerfile = (Path(__file__).parents[3] / "Dockerfile").read_text()
+    assert "COPY fonts/" in dockerfile, (
+        "Dockerfile must `COPY fonts/ ./fonts/` — the PDF renderer reads "
+        "vendored TTFs from <package-root>/fonts, which is outside src/."
+    )
