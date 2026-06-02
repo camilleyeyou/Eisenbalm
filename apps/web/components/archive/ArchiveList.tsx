@@ -1,14 +1,18 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ArchiveIssue } from '@/lib/sanity/types'
 import { ArchiveItem } from './ArchiveItem'
 
 type SortOrder = 'newest' | 'oldest'
 
+// Initial visible count + increment per "Load more" (P17-03; tunable single source of truth).
+const PAGE_SIZE = 10
+
 export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
   const [query, setQuery] = useState('')
   const [order, setOrder] = useState<SortOrder>('newest')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -24,6 +28,15 @@ export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
       ? [...matched].sort((a, b) => b.issueNumber - a.issueNumber)
       : [...matched].sort((a, b) => a.issueNumber - b.issueNumber)
   }, [issues, query, order])
+
+  const visible = filtered.slice(0, visibleCount)
+  const hasMore = filtered.length > visibleCount
+
+  // Reset the visible window when the search query or sort order changes (Pitfall 3 —
+  // without this, clearing a search can expose a stale smaller window).
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [query, order])
 
   return (
     <div>
@@ -66,18 +79,29 @@ export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
         aria-live="polite"
         className="mt-6 font-ui text-[14px] text-[color:var(--color-text-muted)]"
       >
-        Showing {filtered.length} {filtered.length === 1 ? 'issue' : 'issues'}
+        Showing {visible.length} of {filtered.length} {filtered.length === 1 ? 'issue' : 'issues'}
       </p>
       {filtered.length === 0 ? (
         <p className="mt-8 text-center font-ui text-[14px] text-[color:var(--color-text-muted)]">
           No issues match that search.
         </p>
       ) : (
-        <ul className="mt-4">
-          {filtered.map((issue) => (
-            <ArchiveItem key={issue.slug} issue={issue} />
-          ))}
-        </ul>
+        <>
+          <ul className="mt-4">
+            {visible.map((issue) => (
+              <ArchiveItem key={issue.slug} issue={issue} />
+            ))}
+          </ul>
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="mt-6 inline-flex items-center justify-center min-h-11 rounded border border-[color:var(--color-border)] px-4 font-ui text-[14px] text-[color:var(--color-text)] hover:text-[color:var(--color-text)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-accent)] focus-visible:outline-offset-2"
+            >
+              Load {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
+            </button>
+          )}
+        </>
       )}
     </div>
   )
