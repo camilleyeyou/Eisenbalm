@@ -11,13 +11,14 @@
  *   - bonusType branching preserved (bigBudget / jingle / specAd).
  *   - Sub-labels exact copy: "BIG BUDGET TREATMENT" / "THE JINGLE" / "THE SPEC AD".
  *   - Jingle audio element retained.
- *   - Storyboard <img> stays (next/image conversion is backlog 999.1).
+ *   - Storyboards render via next/image fill in the aspect-video container (P17-01; CLS-safe).
  *
  * Branches on bonusType:
  *   - bigBudget: editorial wide (860px), headline + body + storyboard image grid
  *   - jingle:    editorial (680px), headline + body + lyrics + optional <audio>
  *   - specAd:    editorial (680px), headline + body only
  */
+import Image from 'next/image'
 import type { IssueBonus, BonusType } from '@/lib/sanity/types'
 import { PortableTextRenderer } from './PortableTextRenderer'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
@@ -50,14 +51,16 @@ function BigBudgetBonus({ bonus }: BigBudgetBonusProps) {
             const url = sb.asset?.url
             if (!url) return null
             return (
-              <div key={i} className="aspect-video overflow-hidden rounded border border-[color:var(--color-line)] bg-[color:var(--color-card)]">
-                {/* next/image conversion is backlog item 999.1 — keep <img> with eslint-disable */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div
+                key={i}
+                className="relative aspect-video overflow-hidden rounded border border-[color:var(--color-line)] bg-[color:var(--color-card)]"
+              >
+                <Image
                   src={url}
                   alt={`Storyboard ${i + 1}`}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 430px"
+                  className="object-cover"
                 />
               </div>
             )
