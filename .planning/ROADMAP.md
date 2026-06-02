@@ -393,7 +393,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 14. Light Theme Adoption | 4/4 | Complete    | 2026-05-25 |
 | 15. Shop Storefront | 1/1 | Complete    | 2026-05-28 |
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
-| 17. UI/UX Audit Follow-ups | 5/5 | Complete   | 2026-06-02 |
+| 17. UI/UX Audit Follow-ups | 5/5 | Complete    | 2026-06-02 |
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 
 ## Backlog
