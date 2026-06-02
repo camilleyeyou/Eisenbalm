@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Completed 18-06-fixtures-verification-and-uat-PLAN.md — Phase 18 code-complete, Andrew UAT pending
-last_updated: "2026-05-30T16:08:22.786Z"
+status: Ready to execute
+stopped_at: Completed 17-01-wave0-test-stubs-PLAN.md — 5 RED test files authored
+last_updated: "2026-06-02T10:23:05.064Z"
 progress:
   total_phases: 18
   completed_phases: 16
-  total_plans: 118
-  completed_plans: 116
+  total_plans: 123
+  completed_plans: 117
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 18 — magazine-editorial-layout-writers
+**Current focus:** Phase 17 — ui-ux-audit-follow-ups
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
+Phase: 17 (ui-ux-audit-follow-ups) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -148,6 +148,7 @@ Plan: Not started
 | Phase 18 P04 | 19min | 3 tasks | 13 files |
 | Phase 18 P05 | 6 | 2 tasks | 2 files |
 | Phase 18-magazine-editorial-layout-writers P06 | 15 | 3 tasks | 3 files |
+| Phase 17 P01 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -375,6 +376,8 @@ Recent decisions affecting current work:
 - [Phase 18]: Task 2 skipped — _body_to_text helper was pulled forward by 18-04 deviation (equiv. to _section_body_text); structural-variety axis severity='warning' per D-05; single Opus call preserved
 - [Phase 18-magazine-editorial-layout-writers]: problem_output pdfContent preserved as top-level 'problem_pdf_content' key (D-03) — not nested inside problem_statement; matches test_stub_fixtures.py contract
 - [Phase 18-magazine-editorial-layout-writers]: MEL-06 Andrew UAT documented and auto-approved via auto_advance=true; marked PENDING for Andrew's async sign-off in 18-VERIFICATION.md
+- [Phase 17]: loading-skeletons no-<main> guards use existsSync check before readFileSync to avoid ENOENT throws on missing Wave-2 files
+- [Phase 17]: dep-count guard in archive-pagination.test.ts mirrors archive-cardswap.test.ts line 159 (toBe(17)) exactly
 
 ### Pending Todos
 
@@ -441,6 +444,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-30T15:57:16.161Z
-Stopped at: Completed 18-06-fixtures-verification-and-uat-PLAN.md — Phase 18 code-complete, Andrew UAT pending
+Last session: 2026-06-02T10:23:05.054Z
+Stopped at: Completed 17-01-wave0-test-stubs-PLAN.md — 5 RED test files authored
 Resume file: None
