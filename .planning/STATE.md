@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 17-01-wave0-test-stubs-PLAN.md — 5 RED test files authored
-last_updated: "2026-06-02T10:23:05.064Z"
+stopped_at: Completed 17-02-bonus-section-next-image-PLAN.md
+last_updated: "2026-06-02T10:27:59.571Z"
 progress:
   total_phases: 18
   completed_phases: 16
   total_plans: 123
-  completed_plans: 117
+  completed_plans: 118
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 17 (ui-ux-audit-follow-ups) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -149,6 +149,7 @@ Plan: 2 of 5
 | Phase 18 P05 | 6 | 2 tasks | 2 files |
 | Phase 18-magazine-editorial-layout-writers P06 | 15 | 3 tasks | 3 files |
 | Phase 17 P01 | 4 | 2 tasks | 5 files |
+| Phase 17 P02 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -378,6 +379,7 @@ Recent decisions affecting current work:
 - [Phase 18-magazine-editorial-layout-writers]: MEL-06 Andrew UAT documented and auto-approved via auto_advance=true; marked PENDING for Andrew's async sign-off in 18-VERIFICATION.md
 - [Phase 17]: loading-skeletons no-<main> guards use existsSync check before readFileSync to avoid ENOENT throws on missing Wave-2 files
 - [Phase 17]: dep-count guard in archive-pagination.test.ts mirrors archive-cardswap.test.ts line 159 (toBe(17)) exactly
+- [Phase 17]: P17-02: next/image fill mode with relative aspect-video wrapper is the CLS-safe pattern for Sanity CDN image grids; no next.config change needed (cdn.sanity.io already in remotePatterns)
 
 ### Pending Todos
 
@@ -444,6 +446,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02T10:23:05.054Z
-Stopped at: Completed 17-01-wave0-test-stubs-PLAN.md — 5 RED test files authored
+Last session: 2026-06-02T10:27:59.563Z
+Stopped at: Completed 17-02-bonus-section-next-image-PLAN.md
 Resume file: None
