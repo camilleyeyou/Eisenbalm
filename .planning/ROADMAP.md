@@ -327,7 +327,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 ### Phase 17: UI/UX Audit Follow-ups
 **Goal**: Land the deferred polish items surfaced by the 2026-05-20 UI/UX audit of the live site (`eisenbalm-web.vercel.app`). These are intentionally NOT hotfixes — the P0 accessibility cluster already shipped as quick task 260520-0kt and charity data hygiene was resolved manually in Sanity. Scope is the deferred medium-priority polish: image optimization (CLS), archive pagination, loading skeletons, /about copy, and one minor DOM-correctness fix on an internal debug route.
 **Depends on**: Phase 2 (Web Shell — /about page surface), Phase 5 (Agent Quality — BonusSection storyboards), Phase 9 (Issue Page Completion — issue/archive loading surfaces)
-**Requirements**: TBD (derive from audit notes during `/gsd:plan-phase 17`)
+**Requirements**: P17-01, P17-02, P17-03, P17-04, P17-05, P17-06, P17-07 (derived from the 6 audit success criteria — see 17-RESEARCH.md)
 **Success Criteria** (what must be TRUE):
   1. `BonusSection.tsx` storyboards render via `next/image` with explicit dimensions sourced from Sanity `urlFor`; raw `<img>` source-scan tripwire green; CLS measurable improvement on `/issue/[slug]` Lighthouse run
   2. `/archive` paginates or load-mores once `issueCount > N` (N TBD during planning); full-archive render no longer ships every issue in one HTML payload
@@ -335,12 +335,12 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. `/about/page.tsx` no longer displays the "This page is being written" placeholder; Jesse-voice copy in place (Andrew action — gated on Andrew providing text)
   5. `apps/web/app/_debug/convex/page.tsx` no longer nests `<main>` inside the layout's `<main id="main">` (low priority — internal route only)
   6. No new npm dependency, no CDN; existing Phase 14 light-theme + Phase 12 typography lock + Phase 8 commerce surface all untouched; web vitest baseline 234/234 preserved
-**Plans**: 0/5 — not planned yet (run `/gsd:plan-phase 17`)
-- [ ] **next/image conversion** — `apps/web/components/issue/BonusSection.tsx` storyboards use raw `<img>`; convert to `next/image` with explicit dimensions via Sanity `urlFor`. Removes CLS risk, enables optimization. (Code already flags this as a Phase 5 deferral.)
-- [ ] **Archive pagination** — `apps/web/app/archive` + `components/archive/ArchiveList.tsx` render all issues with no pagination; add pagination/load-more before the weekly archive grows large
-- [ ] **loading.tsx skeletons** — issue page, archive, charities; prevent content-jumping on slow Sanity reads (Performance pillar)
-- [ ] **/about page copy** — `apps/web/app/about/page.tsx` is a "This page is being written" placeholder; needs Jesse-voice copy. (Cross-ref: already a STATE.md blocker — Andrew must provide /about copy before Phase 2 fully closes.)
-- [ ] **(minor) _debug/convex duplicate `<main>`** — `apps/web/app/_debug/convex/page.tsx` nests a `<main>` inside the root layout's `<main id="main">`; internal debug route, low priority
+**Plans**: 5 plans
+- [ ] 17-01-wave0-test-stubs-PLAN.md — Wave 1: author the 5 source-scan test files (bonus-section-image, archive-pagination, loading-skeletons, about-page, debug-route) encoding P17-01/03/04/05/06 + dep-count guard (RED until Wave 2)
+- [ ] 17-02-bonus-section-next-image-PLAN.md — Wave 2: convert BonusSection storyboard grid to next/image fill in the aspect-video container; remove raw <img> + eslint-disable (P17-01, P17-02)
+- [ ] 17-03-archive-pagination-PLAN.md — Wave 2: client-side load-more in ArchiveList (PAGE_SIZE=10, visibleCount, useEffect reset, hasMore ≥44px button); GROQ + CardSwap unchanged (P17-03)
+- [ ] 17-04-loading-skeletons-and-debug-main-PLAN.md — Wave 2: 4 loading.tsx skeletons (animate-pulse + --color-line, no <main>) + fix duplicate <main> in /_debug/convex (P17-04, P17-06)
+- [ ] 17-05-about-copy-PLAN.md — Wave 2: replace /about placeholder with Jesse-voice interim copy + TODO(Andrew) marker; autonomous: false (Andrew voice gate) (P17-05)
 **UI hint**: yes (polish-only — visible surface area: BonusSection, archive, loading states, /about)
 
 ### Phase 18: Magazine Editorial Layout — Writer Structure

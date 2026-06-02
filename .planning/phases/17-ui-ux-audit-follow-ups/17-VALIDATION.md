@@ -2,7 +2,7 @@
 phase: 17
 slug: ui-ux-audit-follow-ups
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-01
 ---
@@ -40,13 +40,14 @@ created: 2026-06-01
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 0 | P17-* (test stubs) | wave-0 | `pnpm --filter web test:unit` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | P17-01 BonusSection uses `next/image` `fill`, no raw `<img>` | source-scan | `pnpm --filter web test:unit` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | P17-03 ArchiveList has PAGE_SIZE + load-more, dep count still 17 | source-scan | `pnpm --filter web test:unit` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | P17-04 loading.tsx at 4 route segments, none use `<main>` | source-scan (file-exists) | `pnpm --filter web test:unit` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | P17-05 /about has no "This page is being written" placeholder | source-scan | `pnpm --filter web test:unit` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | P17-06 _debug/convex has no `<main>` | source-scan | `pnpm --filter web test:unit` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | P17-07 prior 234 tests still green | regression | `pnpm --filter web test:unit` | ✅ existing | ⬜ pending |
+| 17-01 T1+T2 | 17-01 | 1 | P17-* (author 5 test stubs) | wave-0 | `pnpm --filter web test:unit` | ❌ W0 (created here) | ⬜ pending |
+| 17-02 T1 | 17-02 | 2 | P17-01 BonusSection uses `next/image` `fill`, no raw `<img>` | source-scan | `pnpm --filter web test:unit -- --run bonus-section-image` | ✅ after 17-01 | ⬜ pending |
+| 17-03 T1 | 17-03 | 2 | P17-03 ArchiveList has PAGE_SIZE + load-more, dep count still 17 | source-scan | `pnpm --filter web test:unit -- --run archive-pagination` | ✅ after 17-01 | ⬜ pending |
+| 17-04 T1 | 17-04 | 2 | P17-04 loading.tsx at 4 route segments, none use `<main>` | source-scan (file-exists) | `pnpm --filter web test:unit -- --run loading-skeletons` | ✅ after 17-01 | ⬜ pending |
+| 17-04 T2 | 17-04 | 2 | P17-06 _debug/convex has no `<main>` | source-scan | `pnpm --filter web test:unit -- --run debug-route` | ✅ after 17-01 | ⬜ pending |
+| 17-05 T1 | 17-05 | 2 | P17-05 /about has no "This page is being written" placeholder | source-scan | `pnpm --filter web test:unit -- --run about-page` | ✅ after 17-01 | ⬜ pending |
+| 17-05 T2 | 17-05 | 2 | P17-05 /about reads in Jesse voice (Andrew gate) | manual | N/A — Andrew review, non-blocking | N/A | ⬜ pending |
+| (all) | all | 2 | P17-07 prior 234 tests still green | regression | `pnpm --filter web test:unit` | ✅ existing | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
