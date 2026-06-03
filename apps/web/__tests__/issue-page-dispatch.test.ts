@@ -273,16 +273,32 @@ describe('Plan 03: useReducedMotion present in motion components', () => {
   })
 })
 
-// ─── DEFERRED: conditions not yet true ────────────────────────────────────────
-//
-// Plan 05: DESIGNAGENT_SUPPRESSED suppression removed from theming path
+// ─── Plan 05: DESIGNAGENT_SUPPRESSED suppression removed from theming path ────
 
-describe('DEFERRED: Plan 05 — DESIGNAGENT_SUPPRESSED suppression removed from theming path', () => {
-  it.todo(
-    // Plan 05 turns this green:
-    // issue/[slug]/layout.tsx must NOT contain the pattern:
-    //   suppressed ? '' : serializeThemeCss(theme)
-    // i.e., theming is unconditional after Plan 05
-    'issue/[slug]/layout.tsx: no suppressed ? "" : serializeThemeCss pattern (Plan 05)'
-  )
+const ISSUE_LAYOUT_PATH = resolve(__dirname, '../app/issue/[slug]/layout.tsx')
+
+describe('Plan 05: per-issue theming is unconditional — no suppression gate', () => {
+  const layoutSrc = readFileSync(ISSUE_LAYOUT_PATH, 'utf-8')
+
+  it('issue/[slug]/layout.tsx calls serializeThemeCss(theme) (unconditional theming)', () => {
+    // The live call must be present — not just in comments
+    const codeOnly = layoutSrc
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    expect(codeOnly).toMatch(/serializeThemeCss\s*\(/)
+  })
+
+  it('issue/[slug]/layout.tsx does NOT contain the suppressed ? "" : serializeThemeCss pattern', () => {
+    // The old MED-01/MED-02 suppression gate must be gone from the theming path
+    expect(layoutSrc).not.toMatch(/suppressed\s*\?\s*''\s*:\s*serializeThemeCss/)
+  })
+
+  it('issue/[slug]/layout.tsx does NOT read DESIGNAGENT_SUPPRESSED for theming', () => {
+    // DESIGNAGENT_SUPPRESSED may appear in comments but must not be in live code
+    const codeOnly = layoutSrc
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    // After stripping all comments, DESIGNAGENT_SUPPRESSED must not appear as live code
+    expect(codeOnly).not.toContain('DESIGNAGENT_SUPPRESSED')
+  })
 })

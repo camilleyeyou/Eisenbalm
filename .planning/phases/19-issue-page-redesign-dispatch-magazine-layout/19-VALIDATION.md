@@ -1,10 +1,11 @@
 ---
 phase: 19
 slug: issue-page-redesign-dispatch-magazine-layout
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-03
+completed: 2026-06-03
 ---
 
 # Phase 19 — Validation Strategy
@@ -41,22 +42,22 @@ created: 2026-06-03
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-T1 fonts + framer-motion | 19-01 | 1 | DES-01, P19-02 | source-scan + typecheck | `pnpm --filter web typecheck` | ✅ issue-page-dispatch.test.ts (01-T4) | ⬜ pending |
-| 01-T2 theme.ts tokens | 19-01 | 1 | P19-03, WEB-08, AGT-14 | unit + source-scan | `pnpm --filter web test:unit` | ✅ theme-aa-tones + issue-page-dispatch | ⬜ pending |
-| 01-T3 globals.css re-token | 19-01 | 1 | P19-03 | source-scan | `pnpm --filter web test:unit` | ✅ issue-page-dispatch.test.ts | ⬜ pending |
-| 01-T4 test gate update + tripwires | 19-01 | 1 | P19-06, WEB-09 | unit (RED→GREEN) | `pnpm --filter web test:unit` | ✅ (this task authors) | ⬜ pending |
-| 02-T1 motion primitives + retire | 19-02 | 2 | P19-04, P19-07 | source-scan + typecheck | `pnpm --filter web typecheck` | ✅ issue-page-dispatch.test.ts | ⬜ pending |
-| 02-T2 masthead/briefing/mission/shop | 19-02 | 2 | P19-01, CMR-09, WEB-15 | typecheck | `pnpm --filter web typecheck` | ✅ (source-scan grep in plan) | ⬜ pending |
-| 02-T3 restyle editorial/game/bonus/pod | 19-02 | 2 | DES-02/03/05, GAM-01/04, POD-01/03 | unit (existing tripwires) | `pnpm --filter web test:unit` | ✅ game-sandbox + podcast-slot | ⬜ pending |
-| 02-T4 page.tsx MOCK 10-section | 19-02 | 2 | P19-01, P19-05(A) | build + source-scan | `pnpm --filter web build` | ✅ issue-page-dispatch.test.ts | ⬜ pending |
-| 03-T1 scoreboard + confidence + dark css | 19-03 | 2 | DEL-02 | typecheck | `pnpm --filter web typecheck` | ✅ (source-scan grep in plan) | ⬜ pending |
-| 03-T2 DelibChat stagger + DEL-04 | 19-03 | 2 | DEL-04, P19-04 | unit | `pnpm --filter web test:unit` | ✅ deliberation-no-model-names | ⬜ pending |
-| 03-T3 DeliberationSlot rewrite + 5 subs | 19-03 | 2 | DEL-01..05 | unit + build | `pnpm --filter web test:unit` | ✅ deliberation-subscriptions | ⬜ pending |
-| 04-T1 Stage A gates green | 19-04 | 3 | P19-05(A) | full gate | `pnpm --filter web test:unit && build` | ✅ all | ⬜ pending |
-| 04-T2 visual approval | 19-04 | 3 | P19-05(A), P19-04 | MANUAL (human-verify) | n/a — visual vs prototype | n/a | ⬜ pending |
-| 05-T1 theme re-enable layout.tsx | 19-05 | 4 | WEB-06, DES-06, P19-03 | source-scan | `pnpm --filter web test:unit` | ✅ issue-page-dispatch.test.ts | ⬜ pending |
-| 05-T2 live fetch swap page.tsx | 19-05 | 4 | P19-05(B), DEL-01, GAM-05 | typecheck + source-scan | `pnpm --filter web typecheck` | ✅ issue-page-dispatch.test.ts | ⬜ pending |
-| 05-T3 full verify + sign-off | 19-05 | 4 | P19-06 | full gate + MANUAL UAT | `pnpm --filter web test:unit && typecheck && build` | ✅ all | ⬜ pending |
+| 01-T1 fonts + framer-motion | 19-01 | 1 | DES-01, P19-02 | source-scan + typecheck | `pnpm --filter web typecheck` | ✅ issue-page-dispatch.test.ts (01-T4) | ✅ green |
+| 01-T2 theme.ts tokens | 19-01 | 1 | P19-03, WEB-08, AGT-14 | unit + source-scan | `pnpm --filter web test:unit` | ✅ theme-aa-tones + issue-page-dispatch | ✅ green |
+| 01-T3 globals.css re-token | 19-01 | 1 | P19-03 | source-scan | `pnpm --filter web test:unit` | ✅ issue-page-dispatch.test.ts | ✅ green |
+| 01-T4 test gate update + tripwires | 19-01 | 1 | P19-06, WEB-09 | unit (RED→GREEN) | `pnpm --filter web test:unit` | ✅ (this task authors) | ✅ green |
+| 02-T1 motion primitives + retire | 19-02 | 2 | P19-04, P19-07 | source-scan + typecheck | `pnpm --filter web typecheck` | ✅ issue-page-dispatch.test.ts | ✅ green |
+| 02-T2 masthead/briefing/mission/shop | 19-02 | 2 | P19-01, CMR-09, WEB-15 | typecheck | `pnpm --filter web typecheck` | ✅ (source-scan grep in plan) | ✅ green |
+| 02-T3 restyle editorial/game/bonus/pod | 19-02 | 2 | DES-02/03/05, GAM-01/04, POD-01/03 | unit (existing tripwires) | `pnpm --filter web test:unit` | ✅ game-sandbox + podcast-slot | ✅ green |
+| 02-T4 page.tsx MOCK 10-section | 19-02 | 2 | P19-01, P19-05(A) | build + source-scan | `pnpm --filter web build` | ✅ issue-page-dispatch.test.ts | ✅ green |
+| 03-T1 scoreboard + confidence + dark css | 19-03 | 2 | DEL-02 | typecheck | `pnpm --filter web typecheck` | ✅ (source-scan grep in plan) | ✅ green |
+| 03-T2 DelibChat stagger + DEL-04 | 19-03 | 2 | DEL-04, P19-04 | unit | `pnpm --filter web test:unit` | ✅ deliberation-no-model-names | ✅ green |
+| 03-T3 DeliberationSlot rewrite + 5 subs | 19-03 | 2 | DEL-01..05 | unit + build | `pnpm --filter web test:unit` | ✅ deliberation-subscriptions | ✅ green |
+| 04-T1 Stage A gates green | 19-04 | 3 | P19-05(A) | full gate | `pnpm --filter web test:unit && build` | ✅ all | ✅ green |
+| 04-T2 visual approval | 19-04 | 3 | P19-05(A), P19-04 | MANUAL (human-verify) | n/a — visual vs prototype | n/a | ✅ approved |
+| 05-T1 theme re-enable layout.tsx | 19-05 | 4 | WEB-06, DES-06, P19-03 | source-scan | `pnpm --filter web test:unit` | ✅ issue-page-dispatch.test.ts | ✅ green |
+| 05-T2 live fetch swap page.tsx | 19-05 | 4 | P19-05(B), DEL-01, GAM-05 | typecheck + source-scan | `pnpm --filter web typecheck` | ✅ issue-page-dispatch.test.ts | ✅ green |
+| 05-T3 full verify + sign-off | 19-05 | 4 | P19-06 | full gate + MANUAL UAT | `pnpm --filter web test:unit && typecheck && build` | ✅ all | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -86,11 +87,11 @@ created: 2026-06-03
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (issue-page-dispatch.test.ts + theme-aa-tones update)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter (flipped in Plan 05 Task 3)
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (issue-page-dispatch.test.ts + theme-aa-tones update)
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter (flipped in Plan 05 Task 3)
 
-**Approval:** pending
+**Approval:** 2026-06-03 — automated matrix green (282 passed, 0 todo in dispatch test, clean typecheck, clean build)
