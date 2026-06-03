@@ -1003,3 +1003,295 @@ article {
   flex: 1;
   min-width: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Phase 19 — Dispatch Magazine Layout
+   Verbatim component classes from 19-PROTOTYPE.html + UI-SPEC.
+   All colors via --color-* tokens only (except dark-band inline constants
+   owned by the deliberation component — not declared here).
+   The 22px exceptions are NAMED PROTOTYPE VALUES — see UI-SPEC §Spacing.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── SCROLL PROGRESS BAR (Phase 19 override: 3px height, scaleX driven) ─ */
+/* .progress class already exists above (Phase 9). Phase 19 overrides height/z: */
+.progress {
+  height: 3px;
+  z-index: 300;
+  transform-origin: 0% 50%;
+  background: var(--color-accent);
+  /* Remove gradient from Phase 9 — solid accent per prototype */
+  box-shadow: none;
+}
+
+/* ── MASTHEAD ──────────────────────────────────────────────────────────── */
+.masthead {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 32px 36px;
+  text-align: center;
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* ── BRIEFING (3-col) ──────────────────────────────────────────────────── */
+.briefing {
+  max-width: 1180px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.briefing-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.3fr 1fr;
+}
+
+@media (max-width: 980px) {
+  .briefing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.brief-col {
+  padding: 32px;
+  border-right: 1px solid var(--color-line);
+}
+
+.brief-col:last-child {
+  border-right: none;
+}
+
+.brief-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brief-label::before {
+  content: '';
+  width: 14px;
+  height: 1px;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.stat .n {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.stat .l {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-mute);
+  margin-top: 6px;
+}
+
+.toc {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── MISSION BAND ──────────────────────────────────────────────────────── */
+/* NAMED PROTOTYPE EXCEPTION: 22px vertical padding — verbatim from prototype.
+   Do NOT change to 24px. This is the exact prototype value. */
+.mission-band {
+  background: #1A1714;
+  color: #FBFAF6;
+  text-align: center;
+  padding: 22px 32px;
+}
+
+/* ── STICKY SECTION RAIL ───────────────────────────────────────────────── */
+.rail {
+  position: fixed;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (max-width: 980px) {
+  .rail {
+    display: none;
+  }
+}
+
+.rail a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-text-mute);
+}
+
+.tick {
+  height: 2px;
+  background: var(--color-line-strong);
+  flex-shrink: 0;
+  display: block;
+}
+
+.rl {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.rail a:hover .rl,
+.rail a.active .rl {
+  opacity: 1;
+}
+
+/* ── ARTICLE SECTIONS ──────────────────────────────────────────────────── */
+.article-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+@media (max-width: 980px) {
+  .article-wrap {
+    padding: 0 18px;
+  }
+}
+
+.sec {
+  padding: 84px 0;
+  border-bottom: 1px solid var(--color-line);
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* NAMED PROTOTYPE EXCEPTION: 22px margin-bottom on sec-label.
+   Verbatim from prototype. Do NOT change to 24px. */
+.sec-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-accent);
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sec-label::before {
+  content: '§';
+  font-size: 13px;
+}
+
+/* ── DROP CAP (Phase 19 spec override) ─────────────────────────────────── */
+/* Overrides Phase 10 .drop-cap with Phase 19 exact values from UI-SPEC */
+.body.lead > p:first-of-type::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.6em;
+  float: left;
+  line-height: 0.74;
+  margin: 0.06em 0.1em 0 0;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* ── PULL QUOTE ─────────────────────────────────────────────────────────── */
+/* Applied by PortableTextRenderer to blockquote elements */
+.pq {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 32px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.32;
+  color: var(--color-text);
+  margin: 40px 0;
+  padding-left: 24px;
+  border-left: 3px solid var(--color-accent);
+}
+
+/* ── BODY PROSE ─────────────────────────────────────────────────────────── */
+.body {
+  font-family: var(--font-body);
+  font-size: 19.5px;
+  line-height: 1.78;
+  color: var(--color-prose);
+  font-weight: 300;
+}
+
+.body p {
+  margin-bottom: 24px;
+}
+
+/* ── GAME SECTION ───────────────────────────────────────────────────────── */
+.game {
+  background: var(--color-surface);
+  padding: 84px 32px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+@media (max-width: 980px) {
+  .game {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+/* ── SPEC AD ────────────────────────────────────────────────────────────── */
+.ad-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 84px 32px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* ── PODCAST SECTION ────────────────────────────────────────────────────── */
+.pod {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 84px 32px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* ── SHOP BAND ──────────────────────────────────────────────────────────── */
+.shop {
+  text-align: center;
+  padding: 96px 32px;
+  background: var(--color-surface-accent);
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* ── GAME PLAY BUTTON RIPPLE ────────────────────────────────────────────── */
+@keyframes rip {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable game play-button ripple under reduced-motion */
+  .play::before {
+    animation: none !important;
+  }
+  /* Ensure all rv (scroll-reveal) content is immediately visible */
+  .rv {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

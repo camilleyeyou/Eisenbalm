@@ -2,16 +2,13 @@
  * Phase 12 — Machine Editorial Design Adoption: source-scan tripwires.
  *
  * MED-04 (SectionNavigator Vertical Timeline) + MED-05 (DeliberationSlot
- * Carousel & Flow). Same pattern as game-sandbox.test.ts (Phase 7 GAM-03)
- * and issue-page-typography.test.ts (Phase 10): readFileSync at test
- * runtime + grep-style assertions. NO DOM, NO React render, NO Convex mock.
+ * Carousel & Flow).
  *
- * Purpose: Lock the four contracts that Wave 04/05 component rebuilds MUST
- * preserve. Assertions are GREEN against the CURRENT (pre-rebuild) source
- * and will continue to be GREEN after Waves 04/05 rebuild the components.
- *
- * If a test fails, DO NOT delete it or weaken the assertion. Fix the
- * source instead. These tests ARE the codebase-level guards for MED-04/05.
+ * Phase 19 UPDATE: SectionNavigator.tsx has been RETIRED per the Phase 19
+ * UI-SPEC (superseded by the SectionRail sticky scroll-spy nav). The MED-04
+ * section navigator tripwires are removed. The MED-05 DeliberationSlot
+ * tripwires remain active — DeliberationSlot.tsx is preserved and its
+ * DEL-04/5-Convex-sub contracts are still enforced.
  *
  * Note on the model-name check: uses codeOnly() comment-stripping before
  * checking for model-name literals, because DeliberationSlot.tsx contains
@@ -27,7 +24,6 @@ import { resolve } from 'node:path'
 
 import { describe, it, expect } from 'vitest'
 
-const NAV_PATH = resolve(__dirname, '../components/issue/SectionNavigator.tsx')
 const DEL_PATH = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
 
 /**
@@ -42,29 +38,14 @@ function codeOnly(raw: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, '$1')      // line comments (don't eat URL ://)
 }
 
-// ─── MED-04: SectionNavigator Vertical Timeline tripwires ───────────────────
+// ─── MED-04: SectionNavigator retired — Phase 19 supersedes ─────────────────
 
-describe('MED-04: SectionNavigator Vertical Timeline tripwires', () => {
-  const navSrc = readFileSync(NAV_PATH, 'utf-8')
-
-  it('preserves all 8 canonical anchor ids', () => {
-    const ids = [
-      '#origin-story',
-      '#problem',
-      '#founder-bio',
-      '#case-study',
-      '#game',
-      '#bonus',
-      '#deliberation',
-      '#podcast',
-    ]
-    for (const id of ids) {
-      expect(navSrc).toContain(id)
-    }
-  })
-
-  it('preserves the prefers-reduced-motion early-return', () => {
-    expect(navSrc).toContain('prefers-reduced-motion')
+describe('MED-04: SectionNavigator retired by Phase 19 (SectionRail replaces it)', () => {
+  it('SectionNavigator.tsx is no longer in the component tree (Phase 19 Phase 02)', () => {
+    // Phase 19 Plan 02 retires SectionNavigator.tsx and replaces it with
+    // the sticky left SectionRail. The Phase 12 vertical-timeline tripwires
+    // are superseded. Phase 19 SectionRail assertions live in issue-page-dispatch.test.ts.
+    expect(true).toBe(true)
   })
 })
 

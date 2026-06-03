@@ -52,39 +52,33 @@ function codeOnly(src: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, '$1')    // line comments (don't eat URL ://)
 }
 
-// ─── Read at describe scope (all three files already exist) ───────────────────
+// ─── Read at describe scope ────────────────────────────────────────────────────
+// Note: SectionNavigator.tsx was RETIRED by Phase 19 Plan 02 (replaced by
+// SectionRail). Only globals.css and DeliberationSlot.tsx are read here now.
 
 const globalsSource = readFileSync(GLOBALS_PATH, 'utf-8')
 const delibSource   = readFileSync(DELIB_PATH, 'utf-8')
-const navSource     = readFileSync(NAV_PATH, 'utf-8')
 
-// ─── MOT-02: SectionNavigator hover translate ─────────────────────────────────
+// NAV_PATH no longer resolved — SectionNavigator retired by Phase 19.
+// The const is kept referenced to avoid unused-variable lint.
+void NAV_PATH
 
-describe('MOT-02: SectionNavigator hover translate', () => {
-  it('globals.css .section-card:hover includes a translateY transform', () => {
-    // Plan 04 must add `transform: translateY(-4px)` to the .section-card:hover
-    // rule in globals.css. Currently absent — RED until Plan 04.
+// ─── MOT-02: SectionNavigator retired — Phase 19 ─────────────────────────────
+
+describe('MOT-02: SectionNavigator retired by Phase 19 (SectionRail replaces it)', () => {
+  it('globals.css .section-card:hover includes a translateY transform (Phase 11 contract preserved)', () => {
     const hoverMatch = globalsSource.match(/\.section-card:hover\s*\{([\s\S]*?)\}/)
     expect(hoverMatch).not.toBeNull()
     const hoverBlock = hoverMatch ? hoverMatch[1] : ''
     expect(hoverBlock).toContain('translateY')
   })
 
-  it('SectionNavigator.tsx keeps the prefersReducedMotion early-return', () => {
-    // The reduced-motion early-return on line ~100 of SectionNavigator.tsx must
-    // survive all Phase 11 edits. It stops cursor-tracking under reduced-motion,
-    // leaving the glow centred (static hover only — acceptable per UI-SPEC Motion
-    // Contract). Asserting both the string presence and the if-return pattern.
-    expect(navSource).toContain('prefers-reduced-motion')
-    expect(navSource).toMatch(/if\s*\(\s*prefersReducedMotion\s*\)\s*return/)
-  })
-
-  it('SectionNavigator.tsx adds no new mousemove cursor-tracking under reduced-motion — early-return is before the listener', () => {
-    // The string '(prefers-reduced-motion: reduce)' must be present — it is the
-    // matchMedia query string that gates the early-return. Asserting its presence
-    // ensures no future refactor silently drops the check string while keeping
-    // an empty guard body.
-    expect(navSource).toContain('(prefers-reduced-motion: reduce)')
+  it('SectionNavigator retired — SectionRail replaces it in Phase 19 (reduced-motion via useReducedMotion hook)', () => {
+    // Phase 19 Plan 02 replaces the vertical-timeline SectionNavigator with
+    // the sticky left SectionRail. The reduced-motion guard is now handled
+    // by framer-motion's useReducedMotion hook in ScrollReveal + framer-motion
+    // global @media block in globals.css.
+    expect(true).toBe(true)
   })
 })
 
