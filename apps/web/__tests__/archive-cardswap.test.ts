@@ -112,7 +112,10 @@ describe('ARC-01: CardSwap source-scan', () => {
     expect(code).not.toContain('@import')
     expect(code).not.toContain('cdnjs')
     expect(code).not.toMatch(/gsap/i)
-    expect(code).not.toContain('framer-motion')
+    // Note: framer-motion IS now a project dependency (Phase 19 approved dep).
+    // CardSwap.tsx itself does not use framer-motion (CSS-only animation);
+    // the import ban only applies to CardSwap's own source, not the project.
+    expect(code).not.toContain('@iconify/react')
   })
 })
 
@@ -137,7 +140,10 @@ describe('ARC-01: no new npm dependency', () => {
   // package.json already exists — read at describe scope is safe.
   const packageJsonSource = readFileSync(PACKAGE_JSON_PATH, 'utf-8')
 
-  it('apps/web/package.json declares no gsap or framer-motion dependency', () => {
+  it('apps/web/package.json declares no gsap or @iconify/react dependency', () => {
+    // Phase 19 decision: framer-motion IS an approved project dependency (P19-04).
+    // The original Phase 11 constraint banned framer-motion; Phase 19 reverses that
+    // ban by explicit locked decision. gsap and @iconify/react remain banned.
     const pkg = JSON.parse(packageJsonSource) as {
       dependencies?: Record<string, string>
       devDependencies?: Record<string, string>
@@ -147,16 +153,17 @@ describe('ARC-01: no new npm dependency', () => {
       ...Object.keys(pkg.devDependencies ?? {}),
     ]
     expect(allDepKeys).not.toContain('gsap')
-    expect(allDepKeys).not.toContain('framer-motion')
     expect(allDepKeys).not.toContain('@iconify/react')
+    // framer-motion is now expected (Phase 19 approved)
+    expect(allDepKeys).toContain('framer-motion')
   })
 
-  it('apps/web/package.json dependency count is unchanged at the Phase 11 baseline', () => {
+  it('apps/web/package.json dependency count is updated to Phase 19 baseline (18)', () => {
     const pkg = JSON.parse(packageJsonSource) as {
       dependencies?: Record<string, string>
     }
-    // Phase 11 baseline — bump ONLY with an approved dependency decision
-    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(17)
+    // Phase 19 baseline: 17 (Phase 11) + 1 (framer-motion) = 18
+    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(18)
   })
 })
 
@@ -166,16 +173,20 @@ describe('Security: FONT_WHITELIST unchanged', () => {
   // theme.ts already exists — read at describe scope is safe.
   const themeSource = readFileSync(THEME_PATH, 'utf-8')
 
-  it('theme.ts FONT_WHITELIST still has exactly 6 entries', () => {
-    // Assert each of the 6 canonical entries is present
+  it('theme.ts FONT_WHITELIST has exactly 9 entries (Phase 19 adds Fraunces/Newsreader/IBM Plex Mono)', () => {
+    // Phase 19 locked decision: FONT_WHITELIST extended from 6 to 9 entries.
+    // Original 6 entries preserved for backward compat + DesignAgent pipeline:
     expect(themeSource).toContain("'Playfair Display'")
     expect(themeSource).toContain("'Lora'")
     expect(themeSource).toContain("'Inter'")
     expect(themeSource).toContain("'Cormorant Garamond'")
     expect(themeSource).toContain("'Merriweather'")
     expect(themeSource).toContain("'DM Serif Display'")
-    // Assert no unapproved additions are present
+    // Phase 19 additions (AGT-14 extended):
+    expect(themeSource).toContain("'Fraunces'")
+    expect(themeSource).toContain("'Newsreader'")
+    expect(themeSource).toContain("'IBM Plex Mono'")
+    // Still banned:
     expect(themeSource).not.toContain('Spectral')
-    expect(themeSource).not.toContain('IBM Plex Mono')
   })
 })

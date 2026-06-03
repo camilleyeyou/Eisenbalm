@@ -43,19 +43,25 @@ function codeOnly(raw: string): string {
 describe('DES-01: Paired Google Fonts via next/font/google (no FOUT)', () => {
   const layoutSrc = readFileSync(LAYOUT_PATH, 'utf-8')
 
-  it('imports Playfair_Display from next/font/google', () => {
-    expect(layoutSrc).toMatch(/import\s*\{[^}]*Playfair_Display[^}]*\}\s*from\s*['"]next\/font\/google['"]/)
+  // Phase 19 locked decision: fonts swapped from Playfair_Display/Lora/Inter
+  // to Fraunces/Newsreader/IBM_Plex_Mono sitewide.
+  it('imports Fraunces from next/font/google (Phase 19 display font)', () => {
+    expect(layoutSrc).toMatch(/import\s*\{[^}]*Fraunces[^}]*\}\s*from\s*['"]next\/font\/google['"]/)
   })
 
-  it('imports Lora from next/font/google', () => {
-    expect(layoutSrc).toMatch(/import\s*\{[^}]*Lora[^}]*\}\s*from\s*['"]next\/font\/google['"]/)
+  it('imports Newsreader from next/font/google (Phase 19 body font)', () => {
+    expect(layoutSrc).toMatch(/import\s*\{[^}]*Newsreader[^}]*\}\s*from\s*['"]next\/font\/google['"]/)
   })
 
-  it('exposes Playfair Display as a CSS variable on <html>', () => {
+  it('imports IBM_Plex_Mono from next/font/google (Phase 19 UI font)', () => {
+    expect(layoutSrc).toMatch(/import\s*\{[^}]*IBM_Plex_Mono[^}]*\}\s*from\s*['"]next\/font\/google['"]/)
+  })
+
+  it('exposes Fraunces as a CSS variable on <html> (--font-display-loaded)', () => {
     expect(layoutSrc).toMatch(/variable:\s*['"]--font-display-loaded['"]/)
   })
 
-  it('exposes Lora as a CSS variable on <html>', () => {
+  it('exposes Newsreader as a CSS variable on <html> (--font-body-loaded)', () => {
     expect(layoutSrc).toMatch(/variable:\s*['"]--font-body-loaded['"]/)
   })
 

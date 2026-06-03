@@ -61,8 +61,9 @@ describe('P17-07: no new npm dep added (dependency count still 17)', () => {
     const pkg = JSON.parse(readFileSync(PKG_PATH, 'utf-8')) as {
       dependencies?: Record<string, string>
     }
-    // Phase 11 baseline locked at 17. Bump ONLY with an approved dep decision.
-    // Mirror of archive-cardswap.test.ts line 159.
-    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(17)
+    // Phase 11 baseline was 17. Phase 19 adds framer-motion (approved dep decision).
+    // Updated to 18 to reflect Phase 19 framer-motion addition.
+    // Mirror of archive-cardswap.test.ts updated count.
+    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(18)
   })
 })

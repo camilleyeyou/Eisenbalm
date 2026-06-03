@@ -52,6 +52,9 @@ export const FONT_WHITELIST = Object.freeze([
   'Cormorant Garamond',
   'Merriweather',
   'DM Serif Display',
+  'Fraunces',        // Phase 19 — display font
+  'Newsreader',      // Phase 19 — body font
+  'IBM Plex Mono',   // Phase 19 — UI/mono font
 ] as const)
 
 export type WhitelistedFont = (typeof FONT_WHITELIST)[number]
@@ -65,13 +68,13 @@ export type WhitelistedFont = (typeof FONT_WHITELIST)[number]
  * high-contrast. Does NOT look like a SaaS product or charity template.
  */
 export const BRAND_DEFAULTS = Object.freeze({
-  bg:          '#FAFAF8',   // off-white; warm, editorial, not clinical
-  text:        '#1A1A18',   // near-black; high contrast on default bg
-  primary:     '#2D5016',   // forest green; editorial authority
-  accent:      '#8B1A1A',   // deep crimson; restraint as CTA color
-  fontDisplay: 'Playfair Display' as WhitelistedFont,
-  fontBody:    'Lora' as WhitelistedFont,
-  fontUi:      'Inter' as WhitelistedFont,  // NEVER overridden by theme
+  bg:          '#FBFAF6',   // cream — oxblood/cream dispatch identity
+  text:        '#1A1714',   // warm near-black ink
+  primary:     '#9A3324',   // oxblood — Phase 19: primary = accent
+  accent:      '#9A3324',   // oxblood — CTA color, section labels, accents
+  fontDisplay: 'Fraunces' as WhitelistedFont,
+  fontBody:    'Newsreader' as WhitelistedFont,
+  fontUi:      'IBM Plex Mono' as WhitelistedFont,  // NEVER overridden by theme
 } as const)
 
 // ─── Validators ───────────────────────────────────────────────────────────────
@@ -299,7 +302,9 @@ export function serializeThemeCss(theme: IssueTheme): string {
   return [
     ':root {',
     `  --color-accent: ${p.accent};`,
+    `  --color-bg: ${p.bg};`,
     `  --color-primary: ${p.primary};`,
+    `  --color-text: ${p.text};`,
     `  --font-body: '${p.fontBody}', serif;`,
     `  --font-display: '${p.fontDisplay}', serif;`,
     '}',
@@ -342,6 +347,8 @@ export function applyTheme(element: HTMLElement, theme: IssueTheme): void {
     // ONLY setProperty. No exceptions. No cssText. No innerHTML.
     element.style.setProperty('--color-primary', p.primary)
     element.style.setProperty('--color-accent',  p.accent)
+    element.style.setProperty('--color-bg',      p.bg)
+    element.style.setProperty('--color-text',    p.text)
     element.style.setProperty('--font-display',  `'${p.fontDisplay}', serif`)
     element.style.setProperty('--font-body',     `'${p.fontBody}', serif`)
 
@@ -373,6 +380,8 @@ export function applyTheme(element: HTMLElement, theme: IssueTheme): void {
       // Attempt minimal safe fallback using only BRAND_DEFAULTS.
       element.style.setProperty('--color-primary', BRAND_DEFAULTS.primary)
       element.style.setProperty('--color-accent',  BRAND_DEFAULTS.accent)
+      element.style.setProperty('--color-bg',      BRAND_DEFAULTS.bg)
+      element.style.setProperty('--color-text',    BRAND_DEFAULTS.text)
       element.style.setProperty('--font-display',  `'${BRAND_DEFAULTS.fontDisplay}', serif`)
       element.style.setProperty('--font-body',     `'${BRAND_DEFAULTS.fontBody}', serif`)
     } catch {
