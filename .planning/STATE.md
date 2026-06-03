@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 19-03-stage-a-deliberation-centerpiece-PLAN.md
-last_updated: "2026-06-03T18:33:12.595Z"
+stopped_at: Completed 19-05-stage-b-live-wiring-and-verification-PLAN.md
+last_updated: "2026-06-03T19:47:51.099Z"
 progress:
   total_phases: 19
-  completed_phases: 17
+  completed_phases: 18
   total_plans: 128
-  completed_plans: 124
+  completed_plans: 126
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 19 (issue-page-redesign-dispatch-magazine-layout) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -156,6 +156,7 @@ Plan: 4 of 5
 | Phase 19 P01 | 11 | 4 tasks | 9 files |
 | Phase 19 P02 | 22 | 4 tasks | 20 files |
 | Phase 19 P03 | 14 | 3 tasks | 13 files |
+| Phase 19 P05 | 14 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -396,6 +397,8 @@ Recent decisions affecting current work:
 - [Phase 19]: ShopBand replaces ShopCallout on issue page (CMR-09 data-shop-callout preserved on ShopBand)
 - [Phase 19]: layout.tsx font axes fix: removed weight[] when axes defined for Fraunces/Newsreader variable fonts
 - [Phase 19]: SPEAKER_NAMES const map in DelibChat (3-speaker scout/advocate/editor only) — DEL-04 enforcement; candidate winner=index 0 heuristic for Stage A; ConfidenceBar CSS transition not framer-motion
+- [Phase 19]: DESIGNAGENT_SUPPRESSED removed from web theming path — per-issue theming unconditional on web side (pipeline flag stays)
+- [Phase 19]: lib/theme.test.ts MED-01 block updated to Phase 19 unconditional contract; IssueTheme import added to fix pre-existing typecheck error
 
 ### Pending Todos
 
@@ -462,6 +465,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-03T18:33:12.587Z
-Stopped at: Completed 19-03-stage-a-deliberation-centerpiece-PLAN.md
+Last session: 2026-06-03T19:47:51.090Z
+Stopped at: Completed 19-05-stage-b-live-wiring-and-verification-PLAN.md
 Resume file: None
