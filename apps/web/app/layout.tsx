@@ -8,7 +8,7 @@
  * by Plan 02-06's <AnchorCopyButton>) work without per-component providers.
  */
 import type { Metadata, Viewport } from 'next'
-import { Playfair_Display, Lora, Inter } from 'next/font/google'
+import { Fraunces, Newsreader, IBM_Plex_Mono } from 'next/font/google'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -19,34 +19,30 @@ import './globals.css'
 
 // ─── Fonts (next/font/google → CSS variables) ─────────────────────────────
 
-const fontDisplay = Playfair_Display({
+const fontDisplay = Fraunces({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-display-loaded',
-  // Phase 10 redesign: 400 powers the drop cap (large + light reads as
-  // editorial restraint), 600 stays the charity-name h1 + section h2 weight,
-  // 700 unlocks occasional emphasis. All three subsets are bundled at build
-  // time by next/font/google — no HTTP font load.
-  weight: ['400', '600', '700'],
-})
-
-const fontBody = Lora({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-body-loaded',
-  // Phase 10 redesign: 400 for body prose, 500 for emphasized inline runs,
-  // 700 for strong/bold marks (Portable Text `strong` mark already wants
-  // semibold per Phase 2 PortableTextRenderer). Italic subset added so
-  // editorial em marks + case-study sidebar quotes render correctly.
-  weight: ['400', '500', '700'],
+  axes: ['opsz'],
+  weight: ['300', '400', '500', '600'],
   style: ['normal', 'italic'],
 })
 
-const fontUi = Inter({
+const fontBody = Newsreader({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-body-loaded',
+  axes: ['opsz'],
+  weight: ['300', '400', '500'],
+  style: ['normal', 'italic'],
+})
+
+const fontUi = IBM_Plex_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-ui-loaded',
-  weight: ['400', '600'],
+  weight: ['400', '500'],
+  // No axes — IBM Plex Mono is not a variable font
 })
 
 // ─── Site-level metadata ──────────────────────────────────────────────────
@@ -83,7 +79,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#FAFAF8',
+  themeColor: '#FBFAF6',
   colorScheme: 'light',
 }
 
