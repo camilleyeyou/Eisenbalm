@@ -49,6 +49,7 @@ import { EditorialSection } from '@/components/issue/EditorialSection'
 import { CaseStudySection } from '@/components/issue/CaseStudySection'
 import { GameSlot } from '@/components/issue/GameSlot'
 import { BonusSection } from '@/components/issue/BonusSection'
+import { DeliberationSlot } from '@/components/issue/DeliberationSlot'
 import { PodcastSlot } from '@/components/issue/PodcastSlot'
 import { ShopBand } from '@/components/issue/ShopBand'
 import { groq } from 'next-sanity'
@@ -540,12 +541,25 @@ export default async function IssuePage({ params }: PageProps) {
       {/* 11. Bonus section — id="bonus" */}
       <BonusSection bonus={issue.bonus} bonusType={issue.bonusType} />
 
-      {/* 12. Deliberation stub — Plan 03 fills this with the full dark-band centerpiece */}
-      <section
-        id="delib"
-        data-deliberation-slot
-        aria-label="Deliberation"
-        style={{ display: 'none' }}
+      {/* 12. Deliberation dark-band centerpiece — Phase 19 Plan 03 */}
+      <DeliberationSlot
+        runId={issue.runId ?? null}
+        conversation={
+          (issue.selectionDeliberation?.conversation ?? null) as
+            Array<{ speaker: 'scout' | 'advocate' | 'editor'; text: string }> | null
+        }
+        candidates={
+          issue.selectionDeliberation?.candidates?.map((c, i) => ({
+            name: c.charity?.name ?? '',
+            location: c.charity?.location ?? '',
+            score: c.advocateScore ?? null,
+            note: c.advocateArgument ?? '',
+            // Candidate order: index 0 = winner (highest score), index 1 = runner-up.
+            // Stage B (Plan 05): live Convex data may reorder; field wins over position.
+            winning: i === 0 && Boolean(issue.selectionDeliberation?.editorDecision),
+            runnerUp: i === 1,
+          })) ?? null
+        }
       />
 
       {/* 13. Podcast slot — id="pod" */}

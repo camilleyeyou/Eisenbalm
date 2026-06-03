@@ -106,7 +106,7 @@ export function DelibChat({ messages, onComplete }: Props) {
     >
       {messages.map((msg, i) => {
         const displayName = SPEAKER_NAMES[msg.speaker] ?? 'The Editor'
-        const avatar = AVATAR_STYLE[msg.speaker] ?? AVATAR_STYLE.editor
+        const avatar = AVATAR_STYLE[msg.speaker] ?? AVATAR_STYLE['editor']!
         const isEditor = msg.speaker === 'editor'
 
         return (

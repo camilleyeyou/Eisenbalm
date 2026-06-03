@@ -7,21 +7,17 @@
  * issue-page-typography.test.ts (Phase 10): readFileSync at test runtime,
  * no DOM, no React render, no mocks.
  *
- * All three source files (globals.css, DeliberationSlot.tsx, SectionNavigator.tsx)
- * ALREADY EXIST. Assertions that test for features not yet added are RED until
- * Plan 04 adds them:
- *   - RED: globals.css .section-card:hover translateY (Plan 04)
- *   - RED: globals.css .pitch-card-list scroll-snap-type (Plan 04)
- *   - RED: DeliberationSlot IntersectionObserver (Plan 04)
- *   - RED: DeliberationSlot setDisplayValue (Plan 04)
- *   - RED: DeliberationSlot pitch-card-list class (Plan 04)
- *   - GREEN: SectionNavigator prefersReducedMotion early-return (already present)
- *   - GREEN: DeliberationSlot no model names (already passes DEL-04 tripwire)
+ * Phase 19 UPDATE (Plan 03): DeliberationSlot was fully rewritten as the
+ * dark-band centerpiece. MOT-03 assertions updated:
+ *   - IntersectionObserver → ConfidenceBar uses CSS transition (no IntersectionObserver)
+ *   - setDisplayValue → not in DeliberationSlot; confidence animation is CSS-transition-based
+ *   - pitch-card-list → still in globals.css (Phase 11 CSS preserved); no longer in
+ *     DeliberationSlot source (candidate display moved to DelibScoreboard component)
+ *   - prefersReducedMotion → now in ConfidenceBar.tsx (useReducedMotion hook)
+ *   - DEL-04 model-name check stays green
  *
- * PITFALL GUARD (Pitfall 4): Under reduced-motion, the count-up must show the
- * FINAL confidence value immediately, NOT 0. Starting at 0 with no animation
- * is worse UX than instantly showing the real value. The setDisplayValue(target)
- * assertion guards this.
+ * PITFALL GUARD (Pitfall 4): Under reduced-motion, the confidence bar must show the
+ * FINAL value immediately. This is now enforced in ConfidenceBar.tsx via useReducedMotion.
  *
  * If any assertion fails, DO NOT delete it or weaken it. Fix the source instead.
  * This file IS the codebase-level guard for Phase 11 MOT-02/MOT-03.
@@ -33,9 +29,10 @@ import { describe, it, expect } from 'vitest'
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
-const GLOBALS_PATH = resolve(__dirname, '../app/globals.css')
-const DELIB_PATH   = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
-const NAV_PATH     = resolve(__dirname, '../components/issue/SectionNavigator.tsx')
+const GLOBALS_PATH  = resolve(__dirname, '../app/globals.css')
+const DELIB_PATH    = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
+const CONF_BAR_PATH = resolve(__dirname, '../components/issue/ConfidenceBar.tsx')
+const NAV_PATH      = resolve(__dirname, '../components/issue/SectionNavigator.tsx')
 
 // ─── Comment-stripping helper ─────────────────────────────────────────────────
 
@@ -58,6 +55,7 @@ function codeOnly(src: string): string {
 
 const globalsSource = readFileSync(GLOBALS_PATH, 'utf-8')
 const delibSource   = readFileSync(DELIB_PATH, 'utf-8')
+const confBarSource = readFileSync(CONF_BAR_PATH, 'utf-8')
 
 // NAV_PATH no longer resolved — SectionNavigator retired by Phase 19.
 // The const is kept referenced to avoid unused-variable lint.
@@ -82,38 +80,34 @@ describe('MOT-02: SectionNavigator retired by Phase 19 (SectionRail replaces it)
   })
 })
 
-// ─── MOT-03: DeliberationSlot count-up + pitch-card scroll-snap ──────────────
+// ─── MOT-03: Confidence bar + pitch-card scroll-snap ─────────────────────────
+//
+// Phase 19 Plan 03 UPDATE: DeliberationSlot rewritten as dark-band centerpiece.
+//   - Confidence animation: moved to ConfidenceBar.tsx (CSS transition width 1.6s)
+//   - Candidate display: moved to DelibScoreboard.tsx
+//   - pitch-card-list CSS class: still in globals.css (Phase 11 CSS preserved)
+//   - Reduced-motion: enforced in ConfidenceBar.tsx via useReducedMotion hook
 
-describe('MOT-03: DeliberationSlot count-up + pitch-card scroll-snap', () => {
-  it('DeliberationSlot.tsx uses IntersectionObserver for the count-up', () => {
-    // Plan 04 must wire the confidence count-up via IntersectionObserver so
-    // the animation starts only when the meter scrolls into view (not on mount).
-    // Currently absent — RED until Plan 04.
-    expect(delibSource).toContain('IntersectionObserver')
+describe('MOT-03: ConfidenceBar CSS transition + pitch-card-list CSS + reduced-motion guard', () => {
+  it('ConfidenceBar.tsx uses CSS transition (not IntersectionObserver) for the count-up', () => {
+    // Phase 19: confidence animation is a CSS-transition width on a div, not rAF.
+    // ConfidenceBar uses a trigger prop + setTimeout(200ms) pattern.
+    expect(confBarSource).toContain('width 1.6s cubic-bezier')
   })
 
-  it('DeliberationSlot.tsx uses setDisplayValue state for the animated value', () => {
-    // Plan 04 must add a useState + setDisplayValue pattern to drive the
-    // count-up animation. Currently absent — RED until Plan 04.
-    expect(delibSource).toContain('setDisplayValue')
+  it('ConfidenceBar.tsx uses useReducedMotion for reduced-motion guard (Pitfall 4)', () => {
+    // PITFALL-4 guard: under reduced-motion, the bar must show the FINAL
+    // confidence value immediately, not 0. ConfidenceBar handles this by
+    // initializing width to `value` when prefersReducedMotion is true.
+    expect(confBarSource).toContain('useReducedMotion')
+    // Confirm the initial value is set to `value` (not 0) under reduced-motion
+    expect(confBarSource).toMatch(/prefersReducedMotion\s*\?\s*value/)
   })
 
-  it('reduced-motion branch sets the final value (not 0) — guards Pitfall 4', () => {
-    // PITFALL-4 guard: under reduced-motion, the count-up must show the FINAL
-    // confidence value immediately (not 0). If the reduced-motion branch just
-    // skips the animation and leaves displayValue at 0, the component is worse
-    // than it was before (shows 0% instead of the real value).
-    //
-    // The fix: detect prefersReducedMotion → setDisplayValue(target) directly
-    // in the observer callback, bypassing the rAF loop.
-    expect(delibSource).toContain('prefersReducedMotion')
-    expect(delibSource).toMatch(/setDisplayValue\(\s*target\s*\)/)
-  })
-
-  it('DeliberationSlot.tsx exposes no model names after edits (DEL-04 inheritance)', () => {
+  it('DeliberationSlot.tsx exposes no model names after Phase 19 rewrite (DEL-04 inheritance)', () => {
     // DEL-04 tripwire from deliberation-no-model-names.test.ts, duplicated here
     // so MOT-03 has its own guard. This assertion must remain green through all
-    // Phase 11 Plan 04 edits to DeliberationSlot.tsx.
+    // Phase 19 edits to DeliberationSlot.tsx.
     const code = codeOnly(delibSource).toLowerCase()
     const forbidden = [
       'modelversions',
@@ -130,21 +124,23 @@ describe('MOT-03: DeliberationSlot count-up + pitch-card scroll-snap', () => {
     }
   })
 
-  it('globals.css .pitch-card-list defines scroll-snap-type', () => {
-    // Plan 04 must add a .pitch-card-list rule to globals.css with
-    // scroll-snap-type so the pitch candidate cards snap cleanly on scroll.
-    // Currently absent — RED until Plan 04.
+  it('globals.css .pitch-card-list defines scroll-snap-type (Phase 11 CSS preserved)', () => {
+    // Phase 11 added .pitch-card-list scroll-snap CSS. Phase 19 preserves it
+    // in globals.css (the CSS class still serves the Phase 12 Convex live view
+    // when Stage B (Plan 05) wires the deliberationEvents pitch-log carousel).
     const pitchCardListMatch = globalsSource.match(/\.pitch-card-list\s*\{([\s\S]*?)\}/)
     expect(pitchCardListMatch).not.toBeNull()
     const pitchCardBlock = pitchCardListMatch ? pitchCardListMatch[1] : ''
     expect(pitchCardBlock).toContain('scroll-snap-type')
   })
 
-  it('DeliberationSlot.tsx applies the pitch-card-list class to the pitch container', () => {
-    // Plan 04 must apply className="pitch-card-list" (or equivalent) to the
-    // pitch candidates container in DeliberationSlot.tsx to activate the
-    // scroll-snap CSS defined in globals.css.
-    // Currently absent — RED until Plan 04.
-    expect(delibSource).toContain('pitch-card-list')
+  it('DeliberationSlot.tsx preserves the 5 Convex subscriptions (DEL-01 contract)', () => {
+    // Phase 19 dark-band rewrite keeps the 5 subscriptions verbatim so Plan 05
+    // can wire live data without structural change. This guards the contract.
+    expect(delibSource).toContain('api.pitchLog.byRunId')
+    expect(delibSource).toContain('api.deliberationEvents.byRunId')
+    expect(delibSource).toContain('api.agentVotes.byRunId')
+    expect(delibSource).toContain('api.qaCorrections.byRunId')
+    expect(delibSource).toContain('api.pipelineRuns.byRunId')
   })
 })

@@ -1,17 +1,13 @@
 /**
- * Phase 19 — Issue Page Dispatch source-scan tripwires (Wave 0).
+ * Phase 19 — Issue Page Dispatch source-scan tripwires.
  *
  * These tripwires assert the Phase 19 foundation contracts:
  *   - Fonts: Fraunces/Newsreader/IBM_Plex_Mono in layout.tsx
  *   - FONT_WHITELIST: 9 entries (original 6 + 3 new)
  *   - BRAND_DEFAULTS: oxblood/cream palette
  *   - framer-motion: present in package.json
- *
- * INTENTIONALLY DEFERRED (it.todo): tripwires for conditions that are NOT yet
- * true at Plan 01 and will be turned active by later plans:
- *   - Plan 02: Atmosphere/SectionNavigator retired, new components exist
- *   - Plan 05: DESIGNAGENT_SUPPRESSED no longer gates theming in issue/[slug]/layout.tsx
- *   - Plan 02/03: aria attributes on new motion components
+ *   - Plan 02: Atmosphere/SectionNavigator retired, new motion components exist
+ *   - Plan 03: DelibChat role=log/aria-live, useReducedMotion in motion components
  *
  * Pattern: readFileSync + regex assertions. NO DOM, NO React render, NO mocks.
  * Same pattern as game-sandbox.test.ts (Phase 7 GAM-03).
@@ -20,7 +16,7 @@
  * This file IS the codebase-level guard for Phase 19 foundation requirements.
  */
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { describe, it, expect } from 'vitest'
@@ -30,6 +26,8 @@ import { describe, it, expect } from 'vitest'
 const LAYOUT_PATH      = resolve(__dirname, '../app/layout.tsx')
 const THEME_PATH       = resolve(__dirname, '../lib/theme.ts')
 const PACKAGE_JSON_PATH = resolve(__dirname, '../package.json')
+const PAGE_PATH        = resolve(__dirname, '../app/issue/[slug]/page.tsx')
+const COMPONENTS_DIR   = resolve(__dirname, '../components/issue')
 
 // ─── DES-01: Fraunces/Newsreader/IBM Plex Mono in layout.tsx ────────────────
 
@@ -181,21 +179,103 @@ describe('Security: theme.ts invariants preserved through Phase 19 extension', (
   })
 })
 
-// ─── DEFERRED: conditions not yet true in Plan 01 ────────────────────────────
-//
-// These tripwires will be activated by later plans:
-//   - Plan 02: Atmosphere retired, SectionNavigator retired, ScrollProgressBar
-//     component exists, SectionRail.tsx exists
-//   - Plan 05: DESIGNAGENT_SUPPRESSED no longer gates theming in issue/[slug]/layout.tsx
-//   - Plan 02/03: aria-label on GameSlot play button, role="log" on DelibChat, etc.
+// ─── Plan 02: Atmosphere + SectionNavigator retired ──────────────────────────
 
-describe('DEFERRED: Plan 02 — new motion components and retired components', () => {
-  it.todo('Atmosphere.tsx is deleted or not imported in page.tsx (Plan 02)')
-  it.todo('SectionNavigator.tsx is deleted or not imported in page.tsx (Plan 02)')
-  it.todo('ScrollProgressBar.tsx exists with framer-motion useScroll (Plan 02)')
-  it.todo('SectionRail.tsx exists with role="navigation" and aria-label (Plan 02)')
-  it.todo('ScrollReveal.tsx exists with useReducedMotion guard (Plan 02)')
+describe('Plan 02: Atmosphere.tsx deleted and SectionNavigator.tsx deleted', () => {
+  it('Atmosphere.tsx is deleted (not present in components/issue/)', () => {
+    expect(existsSync(resolve(COMPONENTS_DIR, 'Atmosphere.tsx'))).toBe(false)
+  })
+
+  it('SectionNavigator.tsx is deleted (not present in components/issue/)', () => {
+    expect(existsSync(resolve(COMPONENTS_DIR, 'SectionNavigator.tsx'))).toBe(false)
+  })
+
+  it('Atmosphere is not imported in page.tsx', () => {
+    const pageSrc = readFileSync(PAGE_PATH, 'utf-8')
+    expect(pageSrc).not.toContain('Atmosphere')
+  })
+
+  it('SectionNavigator is not imported in page.tsx', () => {
+    const pageSrc = readFileSync(PAGE_PATH, 'utf-8')
+    expect(pageSrc).not.toContain('SectionNavigator')
+  })
 })
+
+// ─── Plan 02: New motion components exist ────────────────────────────────────
+
+describe('Plan 02: ScrollProgressBar, SectionRail, ScrollReveal exist', () => {
+  it('ScrollProgressBar.tsx exists with framer-motion useScroll', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'ScrollProgressBar.tsx'), 'utf-8')
+    expect(src).toContain('useScroll')
+  })
+
+  it('SectionRail.tsx exists with role="navigation" and aria-label', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'SectionRail.tsx'), 'utf-8')
+    expect(src).toContain('role="navigation"')
+    expect(src).toMatch(/aria-label/)
+  })
+
+  it('ScrollReveal.tsx exists with useReducedMotion guard', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'ScrollReveal.tsx'), 'utf-8')
+    expect(src).toContain('useReducedMotion')
+  })
+})
+
+// ─── Plan 02: GameSlot play button aria-label ─────────────────────────────────
+
+describe('Plan 02: GameSlot play button has aria-label containing "Play"', () => {
+  it('GameSlot.tsx contains aria-label with Play', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'GameSlot.tsx'), 'utf-8')
+    expect(src).toMatch(/aria-label[^>]*[Pp]lay/)
+  })
+})
+
+// ─── Plan 03: DelibChat accessibility + reduced-motion ───────────────────────
+
+describe('Plan 03: DelibChat has role="log", aria-live="polite", useReducedMotion', () => {
+  it('DelibChat.tsx has role="log"', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
+    expect(src).toContain('role="log"')
+  })
+
+  it('DelibChat.tsx has aria-live="polite"', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
+    expect(src).toContain('aria-live="polite"')
+  })
+
+  it('DelibChat.tsx uses useReducedMotion for reduced-motion guard', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
+    expect(src).toContain('useReducedMotion')
+  })
+})
+
+// ─── Plan 03: framer-motion motion components contain useReducedMotion ────────
+
+describe('Plan 03: useReducedMotion present in motion components', () => {
+  it('DelibChat.tsx contains useReducedMotion', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
+    expect(src).toContain('useReducedMotion')
+  })
+
+  it('ScrollReveal.tsx contains useReducedMotion', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'ScrollReveal.tsx'), 'utf-8')
+    expect(src).toContain('useReducedMotion')
+  })
+
+  it('StatCountUp.tsx contains useReducedMotion', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'StatCountUp.tsx'), 'utf-8')
+    expect(src).toContain('useReducedMotion')
+  })
+
+  it('ConfidenceBar.tsx contains useReducedMotion', () => {
+    const src = readFileSync(resolve(COMPONENTS_DIR, 'ConfidenceBar.tsx'), 'utf-8')
+    expect(src).toContain('useReducedMotion')
+  })
+})
+
+// ─── DEFERRED: conditions not yet true ────────────────────────────────────────
+//
+// Plan 05: DESIGNAGENT_SUPPRESSED suppression removed from theming path
 
 describe('DEFERRED: Plan 05 — DESIGNAGENT_SUPPRESSED suppression removed from theming path', () => {
   it.todo(
@@ -205,10 +285,4 @@ describe('DEFERRED: Plan 05 — DESIGNAGENT_SUPPRESSED suppression removed from 
     // i.e., theming is unconditional after Plan 05
     'issue/[slug]/layout.tsx: no suppressed ? "" : serializeThemeCss pattern (Plan 05)'
   )
-})
-
-describe('DEFERRED: Plan 02/03 — accessibility attributes on new components', () => {
-  it.todo('GameSlot play button has aria-label containing "Play" (Plan 02)')
-  it.todo('DelibChat has role="log" and aria-live="polite" (Plan 03)')
-  it.todo('ScrollReveal components: reduced-motion initial={false} pattern (Plan 02)')
 })
