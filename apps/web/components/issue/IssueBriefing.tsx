@@ -24,9 +24,10 @@ import { ScrollReveal } from './ScrollReveal'
 import { StatCountUp } from './StatCountUp'
 
 export interface StatItem {
-  to: number
+  to?: number       // numeric value for count-up stats (omit for text stats)
   suffix?: string
   plain?: boolean
+  text?: string     // text-valued fact (e.g. location, focus area) — rendered as-is, no count-up
   label: string
 }
 
@@ -76,7 +77,21 @@ export function IssueBriefing({ why, stats, toc }: IssueBriefingProps) {
             {stats.map((stat, i) => (
               <div key={i} className="stat">
                 <div className="n">
-                  <StatCountUp to={stat.to} suffix={stat.suffix} plain={stat.plain} />
+                  {stat.text != null ? (
+                    <span
+                      style={{
+                        fontSize: '16px',
+                        fontWeight: 500,
+                        letterSpacing: 0,
+                        lineHeight: 1.3,
+                        display: 'block',
+                      }}
+                    >
+                      {stat.text}
+                    </span>
+                  ) : (
+                    <StatCountUp to={stat.to ?? 0} suffix={stat.suffix} plain={stat.plain} />
+                  )}
                 </div>
                 <div className="l">{stat.label}</div>
               </div>

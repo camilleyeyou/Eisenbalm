@@ -44,6 +44,7 @@ import { ScrollProgressBar } from '@/components/issue/ScrollProgressBar'
 import { SectionRail } from '@/components/issue/SectionRail'
 import { IssueMasthead } from '@/components/issue/IssueMasthead'
 import { IssueBriefing } from '@/components/issue/IssueBriefing'
+import type { StatItem } from '@/components/issue/IssueBriefing'
 import { MissionBand } from '@/components/issue/MissionBand'
 import { EditorialSection } from '@/components/issue/EditorialSection'
 import { CaseStudySection } from '@/components/issue/CaseStudySection'
@@ -165,12 +166,54 @@ export default async function IssuePage({ params }: PageProps) {
     publisher: { '@type': 'Organization', name: SITE_NAME, url: siteUrl },
   }
 
-  // Derive IssueBriefing stats from live charity fields.
-  // foundingYear and assetRange are optional; omit stat if not available.
-  const briefingStats: Array<{ to: number; suffix?: string; plain?: boolean; label: string }> = []
+  // Derive IssueBriefing "At a glance" stats from live charity fields.
+  // foundingYear is a count-up number; focusArea / assetRange / location are
+  // text facts. Each is omitted when the underlying field is absent, so the
+  // 2×2 grid fills with whatever the charity record provides (never empty when
+  // any fact exists).
+  const briefingStats: StatItem[] = []
   if (issue.charity.foundingYear) {
     briefingStats.push({ to: issue.charity.foundingYear, plain: true, label: 'Founded' })
   }
+  if (issue.charity.focusArea) {
+    briefingStats.push({ text: issue.charity.focusArea, label: 'Focus' })
+  }
+  if (issue.charity.assetRange) {
+    briefingStats.push({ text: issue.charity.assetRange, label: 'Assets' })
+  }
+  if (issue.charity.location) {
+    briefingStats.push({ text: issue.charity.location, label: 'Based in' })
+  }
+
+  // Derive deliberation scoreboard candidates.
+  // The Sanity candidates[] array is NOT ordered winner-first — it preserves
+  // pitch order. The actual winner is the charity this issue features
+  // (issue.charity), which also carries the top advocate score. Sort the
+  // featured charity to the front (fallback: highest advocateScore) so the
+  // "Selected" badge and the prominent top card always match the issue's
+  // charity, not whatever happens to sit at index 0.
+  const featuredSlug = issue.charity.slug
+  const hasEditorDecision = Boolean(issue.selectionDeliberation?.editorDecision)
+  const rawCandidates = issue.selectionDeliberation?.candidates ?? []
+  const scoreboardCandidates =
+    rawCandidates.length > 0
+      ? [...rawCandidates]
+          .sort((a, b) => {
+            const aWin = a.charity?.slug === featuredSlug
+            const bWin = b.charity?.slug === featuredSlug
+            if (aWin !== bWin) return aWin ? -1 : 1
+            return (b.advocateScore ?? 0) - (a.advocateScore ?? 0)
+          })
+          .map((c, i) => ({
+            name: c.charity?.name ?? '',
+            location: c.charity?.location ?? '',
+            score: c.advocateScore ?? null,
+            note: c.advocateArgument ?? c.scoutSummary ?? '',
+            // Winner sorted to index 0; editorDecision gates the "Selected" badge.
+            winning: i === 0 && hasEditorDecision,
+            runnerUp: i === 1,
+          }))
+      : null
 
   // Derive IssueBriefing TOC — always the same 8-section order (LOCKED Phase 19 UI-SPEC)
   const briefingToc = [
@@ -265,17 +308,7 @@ export default async function IssuePage({ params }: PageProps) {
           (issue.selectionDeliberation?.conversation ?? null) as
             Array<{ speaker: 'scout' | 'advocate' | 'editor'; text: string }> | null
         }
-        candidates={
-          issue.selectionDeliberation?.candidates?.map((c, i) => ({
-            name: c.charity?.name ?? '',
-            location: c.charity?.location ?? '',
-            score: c.advocateScore ?? null,
-            note: c.advocateArgument ?? c.scoutSummary ?? '',
-            // Candidate order: index 0 = winner (highest score), index 1 = runner-up.
-            winning: i === 0 && Boolean(issue.selectionDeliberation?.editorDecision),
-            runnerUp: i === 1,
-          })) ?? null
-        }
+        candidates={scoreboardCandidates}
       />
 
       {/* 13. Podcast slot — id="pod" */}
