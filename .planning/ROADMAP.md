@@ -395,7 +395,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
 | 17. UI/UX Audit Follow-ups | 5/5 | Complete    | 2026-06-02 |
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
-| 19. Issue Page Redesign — Dispatch Magazine Layout | 1/5 | In Progress|  |
+| 19. Issue Page Redesign — Dispatch Magazine Layout | 2/5 | In Progress|  |
 
 ## Backlog
 
@@ -418,7 +418,7 @@ _(empty — see Phase 17 in active milestone for UI/UX audit follow-ups, promote
 
 Plans:
 - [x] 19-01-foundation-fonts-theme-tokens-PLAN.md — Wave 1: install framer-motion; swap fonts (Fraunces/Newsreader/IBM Plex Mono) in layout.tsx; oxblood/cream BRAND_DEFAULTS + 9-entry FONT_WHITELIST + serializeThemeCss/applyTheme emit bg/text; globals.css :root re-token; update theme-aa-tones.test.ts + author issue-page-dispatch.test.ts (Wave 0)
-- [ ] 19-02-stage-a-shell-and-sections-PLAN.md — Wave 2 (Stage A): framer-motion primitives (ScrollReveal/ScrollProgressBar/StatCountUp/SectionRail); new Masthead/Briefing/MissionBand/ShopBand; restyle EditorialSection/CaseStudySection/GameSlot/BonusSection/PodcastSlot; rewrite page.tsx 10-section order from MOCK_ISSUE; retire Atmosphere + SectionNavigator
+- [x] 19-02-stage-a-shell-and-sections-PLAN.md — Wave 2 (Stage A): framer-motion primitives (ScrollReveal/ScrollProgressBar/StatCountUp/SectionRail); new Masthead/Briefing/MissionBand/ShopBand; restyle EditorialSection/CaseStudySection/GameSlot/BonusSection/PodcastSlot; rewrite page.tsx 10-section order from MOCK_ISSUE; retire Atmosphere + SectionNavigator
 - [ ] 19-03-stage-a-deliberation-centerpiece-PLAN.md — Wave 2 (Stage A): rewrite DeliberationSlot to dark-band centerpiece (DelibScoreboard + DelibChat stagger + ConfidenceBar); preserve 5 Convex subs + DEL-04; wire MOCK into page.tsx
 - [ ] 19-04-stage-a-visual-approval-checkpoint-PLAN.md — Wave 3 (GATE): Stage A automated gates green + human visual approval vs 19-PROTOTYPE.html before Stage B (autonomous: false)
 - [ ] 19-05-stage-b-live-wiring-and-verification-PLAN.md — Wave 4 (Stage B): re-enable per-issue theming in issue/[slug]/layout.tsx; swap MOCK_ISSUE → live QUERY_ISSUE_BY_SLUG; thread runId (Convex subs + GAM-05) + problemPdfUrl; full-suite verify + nyquist sign-off + live UAT (autonomous: false)

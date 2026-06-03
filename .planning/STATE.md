@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 19-01-foundation-fonts-theme-tokens-PLAN.md
-last_updated: "2026-06-03T17:47:48.430Z"
+stopped_at: Completed 19-02-stage-a-shell-and-sections-PLAN.md
+last_updated: "2026-06-03T18:15:39.408Z"
 progress:
   total_phases: 19
   completed_phases: 17
   total_plans: 128
-  completed_plans: 122
+  completed_plans: 123
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 19 (issue-page-redesign-dispatch-magazine-layout) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -154,6 +154,7 @@ Plan: 2 of 5
 | Phase 17 P04 | 3 | 2 tasks | 5 files |
 | Phase 17 P05 | 1 | 2 tasks | 1 files |
 | Phase 19 P01 | 11 | 4 tasks | 9 files |
+| Phase 19 P02 | 22 | 4 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -390,6 +391,9 @@ Recent decisions affecting current work:
 - [Phase 17]: Interim Jesse-voice copy ships with TODO(Andrew) marker; Andrew voice approval is non-blocking — plan is code-complete; Task 2 auto-approved under auto_advance=true
 - [Phase 19]: FONT_WHITELIST appended before BRAND_DEFAULTS update to avoid WhitelistedFont type error (Pitfall 2 from research)
 - [Phase 19]: color-mix() used for --color-surface-accent in globals.css :root (fixed constant, not per-issue computed)
+- [Phase 19]: MOCK_ISSUE as single object (Stage A) — minimal diff for Stage B Plan 05 swap
+- [Phase 19]: ShopBand replaces ShopCallout on issue page (CMR-09 data-shop-callout preserved on ShopBand)
+- [Phase 19]: layout.tsx font axes fix: removed weight[] when axes defined for Fraunces/Newsreader variable fonts
 
 ### Pending Todos
 
@@ -456,6 +460,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-03T17:47:48.421Z
-Stopped at: Completed 19-01-foundation-fonts-theme-tokens-PLAN.md
+Last session: 2026-06-03T18:15:39.400Z
+Stopped at: Completed 19-02-stage-a-shell-and-sections-PLAN.md
 Resume file: None
