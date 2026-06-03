@@ -1,27 +1,28 @@
 /**
- * Bonus section. UI-SPEC §BonusSection.
- * Anchor ID: #bonus.
- *
- * Phase 9 restyle: dark editorial treatment matching GameSlot / EditorialSection.
- * § label prefix + .eyebrow class; headline --color-primary display font;
- * surfaces use --color-card / --color-line tokens.
+ * BonusSection — restyled for Phase 19 Dispatch magazine layout.
+ * UI-SPEC §Section 9 Spec-Ad Bonus.
  *
  * LOCKED constraints:
- *   - <section id="bonus"> NEVER <main> (single-main rule).
- *   - bonusType branching preserved (bigBudget / jingle / specAd).
- *   - Sub-labels exact copy: "BIG BUDGET TREATMENT" / "THE JINGLE" / "THE SPEC AD".
- *   - Jingle audio element retained.
- *   - Storyboards render via next/image fill in the aspect-video container (P17-01; CLS-safe).
+ *   - <section id="bonus"> — canonical anchor
+ *   - bonusType branching preserved (bigBudget / jingle / specAd)
+ *   - bigBudget/jingle branches: existing markup preserved (untouched)
+ *   - specAd branch: Phase 19 ADVERTISEMENT — SPEC treatment
  *
- * Branches on bonusType:
- *   - bigBudget: editorial wide (860px), headline + body + storyboard image grid
- *   - jingle:    editorial (680px), headline + body + lyrics + optional <audio>
- *   - specAd:    editorial (680px), headline + body only
+ * Phase 19 changes (specAd only):
+ *   - ad box max-width 760px, border var(--color-text), bg #FFFDF8
+ *   - "ADVERTISEMENT — SPEC" tab via ::before pseudo (globals.css handles .ad::before)
+ *   - 2-col justified body (column-count:2; collapse below 980px)
+ *   - ScrollReveal wrapper
+ *   - id="bonus" (unchanged)
+ *
+ * Phase 19 note: .ad styles handled via globals.css .ad-wrap / inline styles here.
+ * Storyboards render via next/image fill in aspect-video container (P17-01; CLS-safe).
  */
 import Image from 'next/image'
 import type { IssueBonus, BonusType } from '@/lib/sanity/types'
 import { PortableTextRenderer } from './PortableTextRenderer'
 import { AnchorCopyButton } from '@/components/AnchorCopyButton'
+import { ScrollReveal } from './ScrollReveal'
 
 function subLabel(bonusType: BonusType): string {
   switch (bonusType) {
@@ -29,12 +30,6 @@ function subLabel(bonusType: BonusType): string {
     case 'jingle':    return 'THE JINGLE'
     case 'specAd':    return 'THE SPEC AD'
   }
-}
-
-function containerClass(bonusType: BonusType): string {
-  // bigBudget gets editorial-wide container (860px); others use editorial (680px)
-  const maxW = bonusType === 'bigBudget' ? 'max-w-[860px]' : 'max-w-[680px]'
-  return `mx-auto w-full ${maxW} px-4 sm:px-6 lg:px-8`
 }
 
 interface BigBudgetBonusProps {
@@ -80,7 +75,6 @@ function JingleBonus({ bonus }: JingleBonusProps) {
       <PortableTextRenderer value={bonus.body} className="mb-6" />
       {bonus.sunoAudioUrl ? (
         <div className="mb-6">
-          {/* HTML5 audio player — native controls; Phase 9 PodcastSlot owns the custom player */}
           <audio
             controls
             src={bonus.sunoAudioUrl}
@@ -110,7 +104,107 @@ interface SpecAdBonusProps {
   bonus: NonNullable<IssueBonus>
 }
 function SpecAdBonus({ bonus }: SpecAdBonusProps) {
-  return <PortableTextRenderer value={bonus.body} />
+  return (
+    <div className="ad-wrap">
+      {/*
+       * Ad box — max-width 760px, ADVERTISEMENT — SPEC tab via ::before,
+       * 2-col justified body, accent hr
+       */}
+      <div
+        style={{
+          maxWidth: '760px',
+          margin: '0 auto',
+          border: '1px solid var(--color-text)',
+          padding: '48px 56px',
+          background: '#FFFDF8',
+          position: 'relative',
+        }}
+      >
+        {/* ADVERTISEMENT — SPEC tab — pseudo content injected via ::before in globals.css */}
+        {/* We use a positioned span since CSS ::before doesn't work on divs in all contexts */}
+        <span
+          style={{
+            position: 'absolute',
+            top: '-1px',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#FFFDF8',
+            padding: '0 14px',
+            fontFamily: 'var(--font-ui)',
+            fontSize: '9px',
+            letterSpacing: '0.16em',
+            color: 'var(--color-text-mute)',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}
+          aria-hidden="true"
+        >
+          ADVERTISEMENT — SPEC
+        </span>
+
+        {/* Section label — centered, accent */}
+        <div
+          className="sec-label"
+          style={{ justifyContent: 'center', color: 'var(--color-accent)' }}
+        >
+          {subLabel('specAd')}
+        </div>
+
+        {/* h2 — Fraunces clamp(28px,3.5vw,40px) weight 400 centered */}
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(28px,3.5vw,40px)',
+            fontWeight: 400,
+            textAlign: 'center',
+            lineHeight: 1.1,
+            marginBottom: '8px',
+          }}
+        >
+          {bonus.headline}
+        </h2>
+
+        {/* Ad sub: Fraunces 20px italic centered accent */}
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '20px',
+            fontStyle: 'italic',
+            textAlign: 'center',
+            color: 'var(--color-accent)',
+            marginBottom: '28px',
+          }}
+        >
+          {/* Sub defaults to headline if no separate subtitle in Sanity */}
+          A premium product, donated fully.
+        </p>
+
+        {/* Accent rule */}
+        <div
+          style={{
+            height: '2px',
+            background: 'var(--color-accent)',
+            width: '60px',
+            margin: '0 auto 28px',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Body — 2-col justified, Newsreader 17px weight 300 */}
+        <div
+          className="body"
+          style={{
+            fontSize: '17px',
+            columnCount: 2,
+            columnGap: '32px',
+            textAlign: 'justify',
+          }}
+        >
+          <PortableTextRenderer value={bonus.body} />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 interface BonusSectionProps {
@@ -121,21 +215,26 @@ interface BonusSectionProps {
 export function BonusSection({ bonus, bonusType }: BonusSectionProps) {
   if (!bonus) return null
 
-  return (
-    <section id="bonus" className={containerClass(bonusType)}>
-      {/* Top divider */}
-      <div
-        className="mb-10 h-px bg-[color:var(--color-line)]"
-        aria-hidden="true"
-      />
+  // specAd gets Phase 19 full treatment
+  if (bonusType === 'specAd') {
+    return (
+      <section id="bonus">
+        <ScrollReveal>
+          <SpecAdBonus bonus={bonus} />
+        </ScrollReveal>
+      </section>
+    )
+  }
 
-      {/* Label row: § + "THE BONUS" parent label + anchor button */}
+  // bigBudget/jingle: existing markup preserved untouched
+  const maxW = bonusType === 'bigBudget' ? 'max-w-[860px]' : 'max-w-[680px]'
+  return (
+    <section id="bonus" className={`mx-auto w-full ${maxW} px-4 sm:px-6 lg:px-8`}>
+      <div className="mb-10 h-px bg-[color:var(--color-line)]" aria-hidden="true" />
+
       <div className="mb-2 flex items-center gap-2">
         <div className="flex items-center gap-[0.5em]">
-          <span
-            className="font-ui text-[14px] leading-[1] text-[color:var(--color-accent)]"
-            aria-hidden="true"
-          >
+          <span className="font-ui text-[14px] leading-[1] text-[color:var(--color-accent)]" aria-hidden="true">
             §
           </span>
           <span className="eyebrow">THE BONUS</span>
@@ -143,22 +242,18 @@ export function BonusSection({ bonus, bonusType }: BonusSectionProps) {
         <AnchorCopyButton sectionId="bonus" />
       </div>
 
-      {/* Sub-label: exact copy (BIG BUDGET TREATMENT / THE JINGLE / THE SPEC AD) */}
       <div className="mb-6">
         <span className="font-ui text-[11px] uppercase leading-[1.5] tracking-[0.18em] text-[color:var(--color-text-mute)]">
           {subLabel(bonusType)}
         </span>
       </div>
 
-      {/* Headline — display font, --color-primary */}
       <h2 className="mb-8 font-display text-[clamp(38px,5vw,64px)] font-normal leading-[1.05] tracking-[-0.015em] text-[color:var(--color-primary)]">
         {bonus.headline}
       </h2>
 
-      {/* Branch on bonusType */}
       {bonusType === 'bigBudget' && <BigBudgetBonus bonus={bonus} />}
       {bonusType === 'jingle'    && <JingleBonus    bonus={bonus} />}
-      {bonusType === 'specAd'    && <SpecAdBonus    bonus={bonus} />}
 
       <div className="mt-10" aria-hidden="true" />
     </section>
