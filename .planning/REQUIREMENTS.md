@@ -195,6 +195,17 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **MEL-07**: Cost per writer call rises at most 15% vs. Phase 16 baseline; the STRUCTURE_CONTRACT (CONTEXT D-01) is a <=120-word system-prompt addition; the structural-validator retry (CONTEXT D-02) adds at most one extra `acomplete` call per writer per run; verified by controlled real-mode run documented in `18-VERIFICATION.md`
 - [x] **MEL-08**: `BigBudgetBonus.body` and `JingleBonus.body` Pydantic fields remain typed `str` (no structural floor — per CONTEXT D-04); only `SpecAdBonus.body` is typed `list[BodyBlock]`; a negative pytest case asserts `BigBudgetBonus` and `JingleBonus` Pydantic models do NOT carry the `_enforce_structural_floor` validator
 
+
+### Issue Page Redesign — Dispatch Magazine Layout (Phase 19)
+
+- [ ] **P19-01**: `/issue/[slug]` renders all 10 sections in the locked order — compact masthead → 3-col briefing (why / animated count-up stats / what's-inside TOC) → dark mission band → sticky left scroll-spy rail → drop-capped article sections with pull-quotes (origin/problem/founder/case) → full-width game → spec-ad bonus → deliberation dark-band centerpiece (scoreboard + chat + confidence) → podcast player → shop band — visually matching `19-PROTOTYPE.html`; the Atmosphere aurora + vertical-timeline `SectionNavigator` no longer appear (deleted).
+- [ ] **P19-02**: Fraunces / Newsreader / IBM Plex Mono load via `next/font/google` (no runtime HTTP font fetch) wired as `--font-display` / `--font-body` / `--font-ui`; all three are appended to `FONT_WHITELIST` (now 9 entries) and `BRAND_DEFAULTS` fonts reference them.
+- [ ] **P19-03**: oxblood `#9A3324` / cream `#FBFAF6` is the resolved palette when an issue supplies no theme (new `BRAND_DEFAULTS` + `globals.css :root`); per-issue Sanity `theme` overrides accent + type tokens (theming RE-ENABLED, reversing Phase 14 / Phase 12 MED-01) while structure/motion stay constant; `serializeThemeCss` + `applyTheme` emit `--color-bg` + `--color-text`; `lib/theme.ts` security invariants (hex regex, FONT_WHITELIST membership, WCAG AA gate, setProperty-only) unchanged and green.
+- [ ] **P19-04**: `framer-motion` (new dependency) drives scroll reveals, stat count-ups, scroll-progress bar, scroll-spy rail, and the deliberation message stagger; under `prefers-reduced-motion: reduce` ALL motion is disabled and 100% of content is immediately visible (no opacity-0 / hidden / empty states).
+- [ ] **P19-05**: Delivery is two-staged — Stage A (static shell with MOCK data) is reviewable and USER-APPROVED before any live data wiring; Stage B wires live Sanity GROQ + Convex deliberation subscriptions per `docs/API_CONTRACTS.md` WITHOUT changing the approved structure/motion.
+- [ ] **P19-06**: Zero-regression — `pnpm --filter web test:unit` >= prior baseline passing; `pnpm --filter web typecheck` + `build` clean; `theme-aa-tones.test.ts` UPDATED to the new palette; theme/security tests otherwise unmodified and green.
+- [ ] **P19-07**: Accessibility preserved — single `<main>` landmark, skip-link intact, scroll-spy rail keyboard-navigable (`role="navigation"` + `aria-label="Article sections"`, hidden < 980px), focus-visible ring honored, game play button + podcast play/pause have aria-labels, deliberation chat has `role="log"` + `aria-live="polite"`, game `sandbox="allow-scripts"` + DEL-04 no-model-names preserved.
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -372,12 +383,19 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | MEL-06 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
 | MEL-07 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
 | MEL-08 | Phase 18: Magazine Editorial Layout — Writer Structure | Not started |
+| P19-01 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
+| P19-02 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
+| P19-03 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
+| P19-04 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
+| P19-05 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
+| P19-06 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
+| P19-07 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
 
 **Coverage:**
-- v1 requirements: 103 total (95 prior + 8 MEL-* added Phase 18)
-- Mapped to phases: 103
+- v1 requirements: 110 total (95 prior + 8 MEL-* Phase 18 + 7 P19-* Phase 19)
+- Mapped to phases: 110
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-05-30 — added MEL-01..MEL-08 for Phase 18 (Magazine Editorial Layout — Writer Structure)*
+*Last updated: 2026-06-03 — added P19-01..P19-07 for Phase 19 (Issue Page Redesign — Dispatch Magazine Layout)*
