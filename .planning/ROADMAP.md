@@ -395,7 +395,26 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 16. Choose Your Narrator | 11/11 | Complete    | 2026-05-30 |
 | 17. UI/UX Audit Follow-ups | 5/5 | Complete    | 2026-06-02 |
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
+| 19. Issue Page Redesign — Dispatch Magazine Layout | 0/0 | Not planned | - |
 
 ## Backlog
 
 _(empty — see Phase 17 in active milestone for UI/UX audit follow-ups, promoted from 999.1 on 2026-05-30 via `/gsd:review-backlog`)_
+
+### Phase 19: Issue Page Redesign — Dispatch Magazine Layout
+**Goal**: Rebuild `/issue/[slug]` to match the new "Dispatch" oxblood/cream magazine prototype precisely, REPLACING the old design in place (retire the Atmosphere aurora layer + the vertical-timeline SectionNavigator). Locked section order: (1) compact masthead, (2) three-column briefing — "why this charity" / "at a glance" animated count-up stats / "what's inside" TOC, (3) dark mission band, (4) sticky left section rail with scroll-spy active-tick tracking, (5) article sections with drop caps + pull-quotes (origin / problem / founder / case-study), (6) full-width game slot, (7) spec-ad bonus treatment (2-column justified body, "ADVERTISEMENT — SPEC" tab), (8) deliberation centerpiece — dark band with animated candidate scoreboard + chat-style transcript reveal + confidence bar, (9) podcast player, (10) shop band. Stack: `next/font` for Fraunces + Newsreader + IBM Plex Mono (sitewide swap in `app/layout.tsx`; add all three to `FONT_WHITELIST`), Tailwind v4 for layout, **framer-motion (NEW dependency)** for scroll reveals + stat count-ups + the deliberation message sequence, with `prefers-reduced-motion` honored everywhere (motion off, content fully visible). THEME CONTRACT: oxblood `#9A3324` / cream `#FBFAF6` becomes the new `BRAND_DEFAULTS` (`lib/theme.ts` + `globals.css :root`); per-issue Sanity theme overrides of accent + type tokens are RE-ENABLED — reversing Phase 14's suppression and realigning with the original brief (CLAUDE_CODE_BRIEF.md §239-255). Structure + motion stay CONSTANT across issues; only color + type tokens change. All `lib/theme.ts` security invariants stay intact (hex regex, FONT_WHITELIST membership, WCAG AA contrast gate, `setProperty`-only injection). Scope is sitewide (home/archive/charities adopt the new palette + fonts), superseding Phase 14. Delivery is two-staged: (A) static shell with MOCK data for visual approval, then (B) wire live Sanity GROQ + Convex deliberation subscriptions per API_CONTRACTS.md.
+**Depends on**: Phase 2 (Web Shell + Theme Engine — `lib/theme.ts` + `globals.css` are the modification surface), Phase 9 (Issue Page Completion — Convex deliberation UI + podcast player being restyled), Phase 13 (Deliberation as Conversation — chronicler conversation data shape feeding the transcript), Phase 16 (Choose Your Narrator — narrator field on hero), Phase 18 (Magazine Editorial Layout — the h2/blockquote Portable Text the renderer consumes)
+**Requirements**: TBD (derive during `/gsd:plan-phase 19`)
+**Success Criteria** (what must be TRUE):
+  1. `/issue/[slug]` renders all 10 sections in the locked order above, visually matching the prototype (compact masthead, 3-col briefing, dark mission band, sticky rail, drop-capped article sections with pull-quotes, full-width game, spec-ad, deliberation centerpiece, podcast, shop band); the old Atmosphere aurora + vertical-timeline navigator no longer appear
+  2. Fraunces / Newsreader / IBM Plex Mono load via `next/font` (no runtime HTTP font fetch) and are wired as `--font-display` / `--font-body` / `--font-ui`; all three are members of `FONT_WHITELIST`
+  3. oxblood/cream is the resolved palette when an issue supplies no theme (new `BRAND_DEFAULTS`); a valid Sanity `theme` overrides accent + type tokens per issue while structure/motion are byte-identical across issues; `lib/theme.ts` security tests still pass unmodified (hex validation, font whitelist, WCAG AA fallback, setProperty-only)
+  4. framer-motion drives scroll reveals, stat count-ups, and the deliberation message reveal; under `prefers-reduced-motion: reduce` all motion is disabled and 100% of content is immediately visible (no hidden/empty states)
+  5. Stage A (static shell with mock data) is reviewable and user-approved BEFORE any live data wiring begins; Stage B wires Sanity GROQ + Convex subscriptions per API_CONTRACTS.md without changing the approved structure/motion
+  6. Zero-regression matrix: `pnpm --filter web test:unit` ≥ prior baseline passing; `pnpm --filter web typecheck` + `build` clean; theme/security tests unmodified and green
+  7. Accessibility preserved: single landmark structure, skip-link intact, scroll-spy rail keyboard-navigable, sticky rail hidden on mobile per prototype, focus-visible ring honored
+**Plans**: 0 plans (run `/gsd:plan-phase 19` to break down)
+**UI hint**: yes (entire phase is the user-perceived issue-page reading experience)
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 19 to break down)
