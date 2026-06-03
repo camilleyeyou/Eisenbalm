@@ -24,7 +24,8 @@ const fontDisplay = Fraunces({
   display: 'swap',
   variable: '--font-display-loaded',
   axes: ['opsz'],
-  weight: ['300', '400', '500', '600'],
+  // Fraunces is a variable font — axes requires weight='variable' or omitted.
+  // With axes defined, omit weight to load the full variable range.
   style: ['normal', 'italic'],
 })
 
@@ -33,7 +34,7 @@ const fontBody = Newsreader({
   display: 'swap',
   variable: '--font-body-loaded',
   axes: ['opsz'],
-  weight: ['300', '400', '500'],
+  // Newsreader is a variable font — same pattern as Fraunces above.
   style: ['normal', 'italic'],
 })
 
