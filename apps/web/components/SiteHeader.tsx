@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * SiteHeader — fixed dark nav with real mobile disclosure.
+ * SiteHeader — fixed nav (transparent at top → cream glass on scroll) with real mobile disclosure.
  * UI-SPEC §Navigation + §Accessibility Contract + §Motion Contract.
  *
  * Desktop (≥960px): wordmark left, inline link row + "Buy Lip Balm" CTA right.
@@ -79,7 +79,7 @@ export function SiteHeader() {
         'font-ui',
         'border-b transition-[padding,background,backdrop-filter,border-color]',
         scrolled
-          ? 'py-3 bg-[rgba(12,11,10,0.82)] backdrop-blur-[14px] border-[color:var(--color-line)]'
+          ? 'py-3 bg-[color-mix(in_srgb,var(--color-bg)_90%,transparent)] backdrop-blur-[10px] border-[color:var(--color-line)]'
           : 'border-transparent',
       ]
         .join(' ')}
