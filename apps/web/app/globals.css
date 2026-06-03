@@ -1145,24 +1145,26 @@ article {
 }
 
 .tick {
-  height: 2px;
-  background: var(--color-line-strong);
+  height: 3px;
+  background: var(--color-text-mute);
   flex-shrink: 0;
   display: block;
 }
 
 .rl {
   font-family: var(--font-ui);
-  font-size: 9px;
+  font-size: 9.5px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  opacity: 0;
-  transition: opacity 0.2s;
+  color: var(--color-text-mute);
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s;
 }
 
 .rail a:hover .rl,
 .rail a.active .rl {
   opacity: 1;
+  color: var(--color-text);
 }
 
 /* ── ARTICLE SECTIONS ──────────────────────────────────────────────────── */

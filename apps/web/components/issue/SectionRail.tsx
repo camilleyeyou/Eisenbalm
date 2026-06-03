@@ -4,7 +4,7 @@
  * SectionRail — sticky left scroll-spy rail (Phase 19).
  *
  * Fixed left 24px, vertically centered. role="navigation" aria-label="Article sections".
- * Appears when scrollY > 700px.
+ * Appears when scrollY > 400px.
  * Hidden below 980px via .rail CSS class (display:none).
  * Tracks sections: #origin, #problem, #founder, #case, #game, #bonus, #delib, #pod.
  * Active when section getBoundingClientRect().top < window.innerHeight * 0.4.
@@ -33,7 +33,7 @@ export function SectionRail() {
 
   // Show/hide rail based on scroll position
   useMotionValueEvent(scrollY, 'change', (latest) => {
-    setVisible(latest > 700)
+    setVisible(latest > 400)
   })
 
   // Track active section via scroll position
@@ -86,8 +86,8 @@ export function SectionRail() {
             <span
               className="tick"
               style={{
-                width: isActive ? 28 : 18,
-                background: isActive ? 'var(--color-accent)' : 'var(--color-line-strong)',
+                width: isActive ? 36 : 24,
+                background: isActive ? 'var(--color-accent)' : 'var(--color-text-mute)',
                 transition: 'background 0.25s, width 0.25s',
               }}
             />
