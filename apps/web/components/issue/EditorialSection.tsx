@@ -35,6 +35,12 @@ interface EditorialSectionProps {
   className?: string
   /** When true, applies .body.lead so the first paragraph gets a drop cap. */
   lead?: boolean
+  /**
+   * Optional PDF URL — when present, renders a "↓ Download the Problem
+   * Statement Deck (PDF)" link-button below the body (UI-SPEC §7).
+   * Min-height 44px for accessible touch target (WEB-09-adjacent).
+   */
+  pdfUrl?: string
 }
 
 export function EditorialSection({
@@ -44,6 +50,7 @@ export function EditorialSection({
   body,
   className,
   lead = false,
+  pdfUrl,
 }: EditorialSectionProps) {
   return (
     <div className="article-wrap">
@@ -78,6 +85,33 @@ export function EditorialSection({
             value={body}
             className={lead ? 'body lead' : 'body'}
           />
+
+          {/* PDF download button — UI-SPEC §7; rendered only when pdfUrl is set */}
+          {pdfUrl && (
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: '44px',
+                marginTop: '28px',
+                padding: '10px 20px',
+                fontFamily: 'var(--font-ui)',
+                fontSize: '12px',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--color-accent)',
+                border: '1px solid var(--color-accent)',
+                textDecoration: 'none',
+                borderRadius: '2px',
+              }}
+              aria-label="Download the Problem Statement Deck as PDF"
+            >
+              ↓&nbsp;&nbsp;Download the Problem Statement Deck (PDF)
+            </a>
+          )}
         </section>
       </ScrollReveal>
     </div>
