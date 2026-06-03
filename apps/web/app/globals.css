@@ -23,59 +23,60 @@
 }
 
 /**
- * Phase 14 — Warm-paper LIGHT house defaults.
- * Single fixed palette: DesignAgent suppressed, per-issue theming OFF.
- * All --color-* token values locked to the warm-paper light palette per
- * .planning/phases/14-light-theme-adoption/14-UI-SPEC.md.
- * theme.ts validation logic, FONT_WHITELIST, and serializeThemeCss are
- * UNTOUCHED — the suppressed ? '' : serializeThemeCss(theme) path still
- * returns '' so :root defaults win for every issue page.
+ * Phase 19 — Oxblood/cream DISPATCH house defaults.
+ * Theming back ON: per-issue serializeThemeCss overrides --color-accent,
+ * --color-primary, --color-bg, --color-text, --font-display, --font-body.
+ * Structural tokens (--color-prose, --color-surface-accent, --color-accent-deep,
+ * agent identity colors) are CONSTANT — never per-issue themed.
+ * FONT_WHITELIST extended to 9 entries; see lib/theme.ts.
  */
 :root {
-  /* Core base — warm paper + near-black ink (Phase 14 locked decisions) */
-  --color-bg: #FAFAF8;
-  --color-text: #1A1A1A;
+  /* Core base — cream paper + warm near-black ink (Phase 19 oxblood/cream identity) */
+  --color-bg: #FBFAF6;
+  --color-surface: #F3F0E8;
+  --color-card-hover: #EBE7DC;
+  --color-text: #1A1714;
+  --color-text-dim: #56514A;        /* Secondary prose, tagline — AA on cream */
+  --color-text-mute: #8C8779;       /* Muted labels, nav links */
 
-  /* Brand accents — UNCHANGED hue; decorative only on light bg (gold fails AA as text) */
-  --color-primary: #CDA434;         /* decorative: fills, borders, dots, drop-cap. NEVER body text on light. */
-  --color-accent: #C2502A;          /* decorative: borders, icons, large text only. */
+  /* Hairlines / borders */
+  --color-line: #E2DDD0;
+  --color-line-strong: #CFC9B8;
 
-  /* AA-safe text variants (NEW — Phase 14). Use for any gold/rust at normal text size. */
-  --color-primary-text: #7A5C0E;    /* NEW — gold-as-text, 5.97:1 on #FAFAF8 (raw gold fails AA as text) */
-  --color-accent-text: #9B3015;     /* NEW — rust-as-text, 7.11:1 on #FAFAF8 */
+  /* Brand accents — oxblood (per-issue override re-enabled, Phase 19) */
+  --color-accent: #9A3324;          /* oxblood — CTA color, section labels */
+  --color-primary: #9A3324;         /* oxblood — Phase 19: primary = accent */
 
-  /* House surfaces (fixed warm-paper layers per 14-UI-SPEC.md §Surface Tokens) */
-  --color-surface: #F2EFE9;
-  --color-card: #EDE9E1;
-  --color-card-hover: #E5E0D6;
+  /* Agent identity colors — HOUSE, never themed; values from Phase 19 prototype */
+  --color-scout: #5E7359;           /* ~4.6:1 on dark deliberation band #1A1714 — AA */
+  --color-advocate: #3D6285;        /* ~5.2:1 on dark deliberation band #1A1714 — AA */
+  --color-gold: #9C7A3C;            /* Decorative gold only — never body text */
 
-  /* Secondary text tones — AA-verified on the light bg (see theme-aa-tones.test.ts) */
-  --color-text-dim: #595047;        /* 7.55:1 on #FAFAF8 — AA at all sizes */
-  --color-text-mute: #706860;       /* 5.24:1 on #FAFAF8 — AA at all sizes (dark #938A77 = 3.89:1 on light — FAILS) */
+  /* NEW structural tokens — CONSTANT (not per-issue themed) */
+  --color-prose: #2C2823;           /* Long-form body prose only. Distinct from --color-text. */
+  --color-surface-accent: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg)); /* Shop band bg; auto-tracks per-issue accent */
+  --color-accent-deep: #6E2117;     /* Accent button hover state */
 
-  /* Accent-layer derivations — re-expressed for light bg (Phase 14) */
-  --color-primary-bright: color-mix(in srgb, var(--color-primary) 78%, black 22%);   /* FLIP: was white 22% — on light, "brighter" = deeper/darker gold */
-  --color-primary-glow: color-mix(in srgb, var(--color-primary) 12%, transparent);   /* REDUCE: was 40% — 40% gold glow on paper is amber mud; 12% is subtle warmth */
+  /* Accent-layer derivations */
+  --color-primary-bright: color-mix(in srgb, var(--color-primary) 78%, black 22%);
+  --color-primary-glow: color-mix(in srgb, var(--color-primary) 12%, transparent);
 
-  /* Agent identity colors — HOUSE, never themed; deepened for light bg contrast */
-  --color-scout: #3D6B2E;           /* 6.01:1 on #FAFAF8 — deepened from dark #8A9B7A */
-  --color-advocate: #1B4F8A;        /* 7.94:1 on #FAFAF8 — deepened from dark #6E92B8 */
+  /* AA-safe text variants (retained for Phase 14 tripwire compat) */
+  --color-primary-text: var(--color-primary);   /* oxblood passes AA as text on cream (~5.5:1) */
+  --color-accent-text: var(--color-accent);     /* oxblood passes AA as text on cream */
 
-  /* Hairlines / borders (track --color-text — auto-correct on light: 8% ink on paper) */
-  --color-line: color-mix(in srgb, var(--color-text) 8%, transparent);
-  --color-line-strong: color-mix(in srgb, var(--color-text) 16%, transparent);
-
-  /* Back-compat aliases — auto-resolve through updated core tokens above */
+  /* Back-compat aliases */
   --color-text-muted: var(--color-text-mute);
   --color-border: var(--color-line);
+  --color-card: var(--color-surface);
 
-  /* Fonts — LOCKED. --font-ui stays LOCKED (Inter). */
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Lora', Georgia, serif;
-  --font-ui: 'Inter', system-ui, sans-serif;
+  /* Fonts — Phase 19 sitewide swap. --font-ui stays LOCKED (IBM Plex Mono). */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Newsreader', Georgia, serif;
+  --font-ui: 'IBM Plex Mono', monospace;
 }
 
-/* Phase 14: house palette flipped dark→light (warm paper #FAFAF8). The media-query dark flip remains removed — suppressed DesignAgent means :root defaults win. */
+/* Phase 19: oxblood/cream palette. Theming re-enabled — per-issue serializeThemeCss overrides --color-bg/--color-text/--color-accent/--color-primary/--font-display/--font-body. */
 
 /* Base typography & layout */
 html {
@@ -125,6 +126,7 @@ nav, button {
   .bg-grid,
   .grain,
   .progress,
+  .rail,
   .site-nav,
   .section-navigator,
   .agent-chip,
