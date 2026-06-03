@@ -1,10 +1,12 @@
 /**
  * Per-issue layout. CONTEXT.md D-10 / D-11 / D-20.
  *
- * MED-01/MED-02: when DESIGNAGENT_SUPPRESSED is set, themeCss is '' and
- * ThemeApplier is suppressed — the globals.css :root house palette is the
- * sole source of colors/fonts. Flip the env var + redeploy to restore
- * per-issue theming with no code change.
+ * Phase 19 (Plan 05): per-issue theming is RE-ENABLED unconditionally.
+ * DESIGNAGENT_SUPPRESSED now affects ONLY the pipeline side (whether the
+ * DesignAgent node runs) — it no longer gates web theming. The web layout
+ * always calls serializeThemeCss(theme) so each issue's Sanity theme overrides
+ * the oxblood/cream BRAND_DEFAULTS for accent + type tokens (DES-06, WEB-06).
+ * Structure and motion are constant across issues; only color + font tokens change.
  *
  * LAYER 1 — server side (FOUC-free first paint):
  *   Fetches the issue, calls serializeThemeCss(issue.theme), and inlines the
@@ -13,15 +15,15 @@
  *   unstyled content.
  *
  * LAYER 2 — client side (defense-in-depth):
- *   Renders <ThemeApplier theme={issue.theme} /> which re-runs applyTheme()
- *   after hydration via useEffect. Catches any client-side mutation that might
- *   bypass the server style.
+ *   Renders <ThemeApplier theme={issue.theme} suppressed={false} /> which
+ *   re-runs applyTheme() after hydration via useEffect. Catches any client-side
+ *   mutation that might bypass the server style.
  *
  * Security: serializeThemeCss validates every value before building the CSS
  * string — no raw theme data from Sanity reaches the <style> innerHTML.
  *
  * If no published issue is found for the slug, children render with the brand
- * default theme (serializeThemeCss(null) in the root layout takes over).
+ * default theme (serializeThemeCss(null) emits the BRAND_DEFAULTS :root block).
  */
 import { sanityClient } from '@/lib/sanity/client'
 import { serializeThemeCss } from '@/lib/theme'
@@ -53,9 +55,6 @@ type ThemeResult = { theme: IssueTheme } | null
 export default async function IssueLayout({ children, params }: IssueLayoutProps) {
   const { slug } = await params
 
-  // MED-02: request-time server read. NEVER NEXT_PUBLIC_ (that bakes at build time).
-  const suppressed = process.env.DESIGNAGENT_SUPPRESSED === 'true'
-
   let theme: IssueTheme = null
   try {
     const result: ThemeResult = await sanityClient.fetch(QUERY_ISSUE_THEME, { slug })
@@ -65,9 +64,10 @@ export default async function IssueLayout({ children, params }: IssueLayoutProps
     // The page will still render; just without the per-issue theme.
   }
 
-  // MED-01: when suppressed, emit empty string so globals.css :root dark palette
-  // wins the cascade. NOT serializeThemeCss(null) — that emits the LIGHT palette.
-  const themeCss = suppressed ? '' : serializeThemeCss(theme)
+  // Phase 19 (Plan 05): theming is unconditional — always emit the :root block.
+  // serializeThemeCss(null) emits BRAND_DEFAULTS; serializeThemeCss(theme) overlays
+  // the per-issue accent + type tokens from Sanity (DES-06, WEB-06).
+  const themeCss = serializeThemeCss(theme)
 
   return (
     <>
@@ -78,10 +78,10 @@ export default async function IssueLayout({ children, params }: IssueLayoutProps
       <style dangerouslySetInnerHTML={{ __html: themeCss }} />
 
       {/*
-       * LAYER 2: Client component re-runs applyTheme on hydration.
-       * suppressed={suppressed} short-circuits applyTheme when MED-02 flag is ON.
+       * LAYER 2: Client component re-runs applyTheme on hydration (defense-in-depth).
+       * suppressed={false} — theming is always active on the web side (Phase 19).
        */}
-      <ThemeApplier theme={theme} suppressed={suppressed} />
+      <ThemeApplier theme={theme} suppressed={false} />
 
       {children}
     </>

@@ -30,6 +30,7 @@ import {
   HEX_REGEX,
   WCAG_AA_THRESHOLD,
 } from './theme.js'
+import type { IssueTheme } from './sanity/types.js'
 
 // ─── validateHex ──────────────────────────────────────────────────────────────
 
@@ -481,59 +482,55 @@ test('applyTheme: never throws on injection attempts in theme data', () => {
   }
 })
 
-// ─── MED-01: theme suppression no-op contract ────────────────────────────────
+// ─── Phase 19: unconditional theming contract ─────────────────────────────────
 //
-// These two tests document and lock the contract for Plan 12-03 (Wave 1).
-// The suppression mechanism lives in layout.tsx — NOT in theme.ts — and
-// must emit an empty CSS string rather than calling serializeThemeCss(null).
+// Phase 19 (Plan 05) reversed the Phase 12 MED-01 suppression. Per-issue
+// theming is now UNCONDITIONAL on the web side. The layout.tsx theming path is:
+//   const themeCss = serializeThemeCss(theme)
+// There is no suppressed ? '' : branch. DESIGNAGENT_SUPPRESSED now affects ONLY
+// the pipeline side (whether the DesignAgent node runs), not web theming.
 //
-// Pitfall to avoid (from 12-RESEARCH.md Pitfall 1):
-//   serializeThemeCss(null) returns the LIGHT BRAND_DEFAULTS palette
-//   (#FAFAF8 background). This would REGRESS the dark house look that
-//   globals.css :root establishes. The correct no-op is to return ''
-//   (empty string) so globals.css :root wins the cascade undisturbed.
-//
-// These tests prove the pitfall is real and lock the empty-string gate
-// that Plan 12-03 implements in layout.tsx.
+// These tests document and lock the Phase 19 unconditional theming contract.
+// The security invariants (hex validation, FONT_WHITELIST, WCAG AA gate,
+// setProperty-only injection) are UNCHANGED — only the suppression gate removed.
 
-describe('MED-01: theme suppression no-op contract', () => {
-  it('serializeThemeCss(null) STILL emits the light BRAND_DEFAULTS palette (this is why suppression must bypass it)', () => {
-    // Prove the pitfall: calling serializeThemeCss(null) when suppressed
-    // would reintroduce the LIGHT palette (bg = #FAFAF8), undoing the
-    // dark house palette from globals.css :root. Plan 12-03 must NOT call
-    // this function when suppressed — it must emit '' instead.
+describe('Phase 19: unconditional theming contract (replaces MED-01 suppression gate)', () => {
+  it('serializeThemeCss(null) always emits the BRAND_DEFAULTS :root block (never empty)', () => {
+    // Phase 19: serializeThemeCss is always called, even with null theme.
+    // It must always return a non-empty :root block (BRAND_DEFAULTS palette).
     const css = serializeThemeCss(null)
     assert.ok(
+      css.length > 0,
+      'serializeThemeCss(null) must return non-empty string — theming is unconditional in Phase 19'
+    )
+    assert.ok(
+      css.startsWith(':root {'),
+      `serializeThemeCss(null) must start with :root { — got: ${css.slice(0, 30)}`
+    )
+    assert.ok(
       css.includes(BRAND_DEFAULTS.bg),
-      `serializeThemeCss(null) must include BRAND_DEFAULTS.bg (${BRAND_DEFAULTS.bg}) — this proves the pitfall is real`
+      `serializeThemeCss(null) must include BRAND_DEFAULTS.bg (${BRAND_DEFAULTS.bg})`
     )
   })
 
-  it('the suppressed-mode CSS string is the empty string (contract for layout.tsx)', () => {
-    // This helper encodes the exact gate Plan 12-03 implements in layout.tsx:
-    //   const themeCss = suppressed ? '' : serializeThemeCss(theme)
-    // When suppressed=true → emit '' so globals.css :root wins.
-    // When suppressed=false → call serializeThemeCss which always returns
-    //   a non-empty ':root { ... }' block.
-    const suppressedThemeCss = (suppressed: boolean, theme: IssueTheme) =>
-      suppressed ? '' : serializeThemeCss(theme)
-
-    // Suppressed: must be exactly the empty string.
-    assert.strictEqual(
-      suppressedThemeCss(true, { primaryColor: '#CDA434' } as IssueTheme),
-      '',
-      'suppressedThemeCss(true, ...) must return empty string'
-    )
-
-    // Non-suppressed with null theme: must be non-empty (BRAND_DEFAULTS palette).
-    const nonSuppressed = suppressedThemeCss(false, null as unknown as IssueTheme)
-    assert.ok(
-      nonSuppressed.length > 0,
-      'suppressedThemeCss(false, null) must return non-empty string (BRAND_DEFAULTS palette)'
-    )
-    assert.ok(
-      nonSuppressed.startsWith(':root {'),
-      'suppressedThemeCss(false, null) must start with :root {'
-    )
+  it('serializeThemeCss always returns a non-empty :root block regardless of theme value (no empty-string path)', () => {
+    // Phase 19: the web layout calls serializeThemeCss(theme) unconditionally.
+    // No suppressed ? '' branch exists. Every call must return a :root block.
+    const cases: Array<IssueTheme> = [
+      null,
+      { primaryColor: '#9A3324' },
+      { primaryColor: '#9A3324', accentColor: '#C2502A', backgroundColor: '#FBFAF6', textColor: '#1A1714' },
+    ]
+    for (const theme of cases) {
+      const css = serializeThemeCss(theme)
+      assert.ok(
+        css.length > 0,
+        `serializeThemeCss must always return non-empty string (got empty for theme: ${JSON.stringify(theme)})`
+      )
+      assert.ok(
+        css.startsWith(':root {'),
+        `serializeThemeCss must always start with :root { (theme: ${JSON.stringify(theme)})`
+      )
+    }
   })
 })
