@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 17-05-about-copy-PLAN.md
-last_updated: "2026-06-02T10:48:28.489Z"
+status: Ready to execute
+stopped_at: Completed 19-01-foundation-fonts-theme-tokens-PLAN.md
+last_updated: "2026-06-03T17:47:48.430Z"
 progress:
-  total_phases: 18
+  total_phases: 19
   completed_phases: 17
-  total_plans: 123
-  completed_plans: 121
+  total_plans: 128
+  completed_plans: 122
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 17 — ui-ux-audit-follow-ups
+**Current focus:** Phase 19 — issue-page-redesign-dispatch-magazine-layout
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
+Phase: 19 (issue-page-redesign-dispatch-magazine-layout) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -153,6 +153,7 @@ Plan: Not started
 | Phase 17 P03 | 2min | 1 tasks | 1 files |
 | Phase 17 P04 | 3 | 2 tasks | 5 files |
 | Phase 17 P05 | 1 | 2 tasks | 1 files |
+| Phase 19 P01 | 11 | 4 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -387,6 +388,8 @@ Recent decisions affecting current work:
 - [Phase 17]: PAGE_SIZE=10 as module-level const in ArchiveList; useEffect resets visibleCount on [query, order] to prevent stale window (P17-03)
 - [Phase 17]: JSDoc comments in loading.tsx must use main#main notation (not <main id='main'>) since the no-main source-scan checks entire file content including comments
 - [Phase 17]: Interim Jesse-voice copy ships with TODO(Andrew) marker; Andrew voice approval is non-blocking — plan is code-complete; Task 2 auto-approved under auto_advance=true
+- [Phase 19]: FONT_WHITELIST appended before BRAND_DEFAULTS update to avoid WhitelistedFont type error (Pitfall 2 from research)
+- [Phase 19]: color-mix() used for --color-surface-accent in globals.css :root (fixed constant, not per-issue computed)
 
 ### Pending Todos
 
@@ -453,6 +456,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02T10:42:06.118Z
-Stopped at: Completed 17-05-about-copy-PLAN.md
+Last session: 2026-06-03T17:47:48.421Z
+Stopped at: Completed 19-01-foundation-fonts-theme-tokens-PLAN.md
 Resume file: None
