@@ -1059,6 +1059,10 @@ article {
   border-right: none;
 }
 
+.brief-col.center {
+  background: var(--color-surface);
+}
+
 .brief-label {
   font-family: var(--font-ui);
   font-size: 10px;
