@@ -9,7 +9,8 @@
     "start": "next start --port 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "test": "vitest run"
   },
   "dependencies": {
     "@eisenbalm/shared": "workspace:*",

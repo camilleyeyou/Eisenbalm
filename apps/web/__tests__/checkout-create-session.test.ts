@@ -122,4 +122,84 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
     )
     expect(res.status).toBe(500)
   })
+
+  // ─── Quantity wiring tests ────────────────────────────────────────────────
+
+  it('defaults to quantity=1 when body is empty object ({})', async () => {
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      }),
+    )
+    const args = sessionCreate.mock.calls[0][0]
+    expect(args.line_items[0].quantity).toBe(1)
+  })
+
+  it('passes explicit quantity=5 to Stripe line_items', async () => {
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ quantity: 5 }),
+      }),
+    )
+    const args = sessionCreate.mock.calls[0][0]
+    expect(args.line_items[0].quantity).toBe(5)
+  })
+
+  it('clamps quantity=0 to 1', async () => {
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ quantity: 0 }),
+      }),
+    )
+    const args = sessionCreate.mock.calls[0][0]
+    expect(args.line_items[0].quantity).toBe(1)
+  })
+
+  it('clamps quantity=99 to 20', async () => {
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ quantity: 99 }),
+      }),
+    )
+    const args = sessionCreate.mock.calls[0][0]
+    expect(args.line_items[0].quantity).toBe(20)
+  })
+
+  it('defaults to 1 when quantity is a non-numeric string', async () => {
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ quantity: 'abc' }),
+      }),
+    )
+    const args = sessionCreate.mock.calls[0][0]
+    expect(args.line_items[0].quantity).toBe(1)
+  })
+
+  it('defaults to 1 when body has no quantity key', async () => {
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ other: 'field' }),
+      }),
+    )
+    const args = sessionCreate.mock.calls[0][0]
+    expect(args.line_items[0].quantity).toBe(1)
+  })
 })

@@ -1237,6 +1237,10 @@ const { url } = await fetch('/api/checkout', {
 window.location.href = url
 ```
 
+**Request body:**
+
+`POST /api/checkout/create-session` accepts an optional JSON body `{ quantity?: number }`. The route validates it as an integer 1–20 and defaults to 1 on missing/invalid/out-of-range input. Stripe `line_items[0].quantity` is set to the validated value.
+
 ---
 
 ### 6.2 — Stripe webhook handler

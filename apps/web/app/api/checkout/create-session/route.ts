@@ -9,6 +9,11 @@
  * session.metadata at click time, NOT at webhook time. This avoids the
  * race where a new issue publishes between click and webhook (which
  * would otherwise credit the wrong charity).
+ *
+ * Accepts an optional JSON body `{ quantity?: number }`.
+ * The route validates it as an integer 1–20 and defaults to 1 on
+ * missing/invalid/out-of-range input. Stripe `line_items[0].quantity`
+ * is set to the validated value.
  */
 import { NextResponse } from 'next/server'
 import { groq } from 'next-sanity'
@@ -28,7 +33,7 @@ const QUERY_CURRENT_CHARITY_SLUG = groq`
   }
 `
 
-export async function POST(_req: Request) {
+export async function POST(req: Request) {
   const priceId = process.env.STRIPE_PRICE_ID
   if (!priceId) {
     // Stripe Dashboard product wasn't set up (Plan 08-02). Hard config error.
@@ -37,6 +42,15 @@ export async function POST(_req: Request) {
       { status: 500 },
     )
   }
+
+  // Parse quantity defensively from optional JSON body.
+  // Missing body, non-JSON, NaN, or out-of-range all collapse to a valid 1–20 value.
+  let quantity = 1
+  try {
+    const body = await req.json().catch(() => ({}))
+    const q = Number((body as { quantity?: unknown })?.quantity)
+    if (Number.isFinite(q)) quantity = Math.min(20, Math.max(1, Math.round(q)))
+  } catch { quantity = 1 }
 
   // Lock charity slug into session metadata at click time (Open Question 1).
   // If Sanity is unreachable, fall through with an empty string — better
@@ -64,7 +78,7 @@ export async function POST(_req: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
-    line_items: [{ price: priceId, quantity: 1 }],  // quantity LOCKED at 1 for v1
+    line_items: [{ price: priceId, quantity }],
     shipping_address_collection: {
       // CMR-10: shipping enabled; expand allowed_countries when Andrew configures more rates.
       allowed_countries: ['US'],
