@@ -37,6 +37,12 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         checkout: { sessions: { create: sessionCreate } },
       }),
     }))
+    // Mock sanityClient so the route's charitySlug lookup resolves instantly
+    // instead of making a real network call (which would timeout in CI).
+    vi.doMock('@/lib/sanity/client', () => ({
+      sanityClient: { fetch: vi.fn().mockResolvedValue(null) },
+      sanityBuildClient: { fetch: vi.fn().mockResolvedValue(null) },
+    }))
   })
 
   it('returns 200 with { url } pointing at Stripe-hosted checkout', async () => {
