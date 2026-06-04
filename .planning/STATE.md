@@ -422,6 +422,7 @@ None yet.
 | 260521-n4l | Stop theme injection from overriding --color-bg/--color-text (HYBRID model) so dark house palette in globals.css wins the cascade | 2026-05-21 | d20ea6a | [260521-n4l-apply-dark-hybrid-theme-stop-theme-injec](./quick/260521-n4l-apply-dark-hybrid-theme-stop-theme-injec/) |
 | 260523-eg3 | Fix Advocate always-0/10 score bug: robust vote-to-candidate matching + propagate keyStrengths/primaryConcern | 2026-05-23 | 18c0e9c | [260523-eg3-fix-advocate-always-0-10-score-bug-robus](./quick/260523-eg3-fix-advocate-always-0-10-score-bug-robus/) |
 | 260524-ojm | Fix Chronicler faithfulness bug: WINNER AUTHORITY prompt fix — editor final turn always names featured charity even when editor_decision favors a runner-up | 2026-05-25 | 3951204 | [260524-ojm-fix-chronicler-faithfulness-bug-delibera](./quick/260524-ojm-fix-chronicler-faithfulness-bug-delibera/) |
+| 260604-ftt | Redesign /shop to "Stop. Breathe. Balm." sub-brand mockup (scoped palette/fonts, split hero, ritual/formula/edition/cause beats, sticky buy bar) + real 1–20 multi-quantity Stripe checkout | 2026-06-04 | 81e0240 | [260604-ftt-redesign-shop-to-stop-breathe-balm-sub-b](./quick/260604-ftt-redesign-shop-to-stop-breathe-balm-sub-b/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
