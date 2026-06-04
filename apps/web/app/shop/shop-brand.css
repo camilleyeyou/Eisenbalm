@@ -1,0 +1,640 @@
+/**
+ * shop-brand.css — Scoped sub-brand palette + section/motion styles.
+ *
+ * ALL selectors are prefixed with .shop-brand so the sub-brand palette
+ * applies ONLY within the shop page wrapper and does NOT leak to the
+ * shared SiteHeader / SiteFooter or the rest of the site.
+ *
+ * Hex values appear ONLY in this file. apps/web/app/shop/page.tsx
+ * must reference only class names and CSS variables — never raw hex.
+ */
+
+/* ─── Sub-brand token layer ──────────────────────────────────────────────── */
+
+.shop-brand {
+  --paper: #FBFAF6;
+  --paper2: #F3F0E8;
+  --paper3: #EBE7DC;
+  --ink: #1A1714;
+  --ink-2: #56514A;
+  --ink-3: #8C8779;
+  --accent: #9A3324;
+  --accent-soft: #F2E3DE;
+  --accent-deep: #6E2117;
+  --gold: #9C7A3C;
+  --rule: #E2DDD0;
+  --rule-strong: #CFC9B8;
+
+  --sb-display: var(--font-display-loaded), Georgia, serif;
+  --sb-body: var(--font-body-loaded), Georgia, serif;
+  --sb-mono: var(--font-ui-loaded), monospace;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sb-body);
+}
+
+/* ─── Scroll-reveal primitive ────────────────────────────────────────────── */
+
+.shop-brand .rv {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.shop-brand .rv.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Hero: split-screen layout ─────────────────────────────────────────── */
+
+.shop-brand .sb-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100svh;
+}
+
+@media (min-width: 768px) {
+  .shop-brand .sb-hero {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Left panel — tube + edition stamp */
+.shop-brand .sb-hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(160deg, var(--paper2) 0%, var(--paper) 100%);
+  border-right: 1px solid var(--rule);
+  position: relative;
+  min-height: 50svh;
+}
+
+/* Right panel — buy controls */
+.shop-brand .sb-hero-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 2.5rem;
+  background: var(--paper);
+}
+
+@media (min-width: 1024px) {
+  .shop-brand .sb-hero-right {
+    padding: 4rem 4rem;
+  }
+}
+
+/* ─── CSS lip-balm tube placeholder ─────────────────────────────────────── */
+
+.shop-brand .sb-tube {
+  position: relative;
+  width: 80px;
+  height: 220px;
+  margin: 2rem auto;
+  animation: sb-float 4s ease-in-out infinite;
+}
+
+/* Tube body */
+.shop-brand .sb-tube-body {
+  position: absolute;
+  inset: 30px 0 20px;
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink) 50%, var(--ink-2) 100%);
+  border-radius: 8px;
+}
+
+/* Tube label band */
+.shop-brand .sb-tube-label {
+  position: absolute;
+  top: 60px;
+  inset-inline: 0;
+  height: 90px;
+  background: var(--accent);
+  border-top: 1px solid var(--accent-deep);
+  border-bottom: 1px solid var(--accent-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tube cap */
+.shop-brand .sb-tube-cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 32px;
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-2) 100%);
+  border-radius: 6px 6px 0 0;
+}
+
+/* Tube base */
+.shop-brand .sb-tube-base {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76px;
+  height: 22px;
+  background: var(--ink-2);
+  border-radius: 0 0 8px 8px;
+}
+
+/* Edition stamp */
+.shop-brand .sb-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  font-family: var(--sb-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 1.5rem;
+}
+
+/* ─── Eyebrow (sub-brand scoped) ─────────────────────────────────────────── */
+
+.shop-brand .sb-eyebrow {
+  font-family: var(--sb-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+/* ─── Hero heading ───────────────────────────────────────────────────────── */
+
+.shop-brand .sb-h1 {
+  font-family: var(--sb-display);
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+
+.shop-brand .sb-tagline {
+  font-family: var(--sb-display);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-2);
+  margin-top: 0.75rem;
+}
+
+.shop-brand .sb-price {
+  font-family: var(--sb-mono);
+  font-size: 1.05rem;
+  color: var(--ink-2);
+  margin-top: 1.25rem;
+  letter-spacing: 0.04em;
+}
+
+.shop-brand .sb-trust {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-family: var(--sb-body);
+  font-size: 0.85rem;
+  color: var(--ink-3);
+}
+
+.shop-brand .sb-trust-item::before {
+  content: "— ";
+  color: var(--accent);
+}
+
+/* ─── Ritual band (dark full-bleed) ─────────────────────────────────────── */
+
+.shop-brand .sb-ritual {
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2rem;
+}
+
+/* Breathing circle */
+.shop-brand .sb-breathe-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sb-breathe 5s ease-in-out infinite;
+}
+
+.shop-brand .sb-breathe-inner {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.7;
+}
+
+.shop-brand .sb-ritual-label {
+  font-family: var(--sb-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.shop-brand .sb-ritual-heading {
+  font-family: var(--sb-display);
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--paper);
+  max-width: 480px;
+}
+
+.shop-brand .sb-ritual-body {
+  font-family: var(--sb-body);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--paper2);
+  max-width: 520px;
+}
+
+.shop-brand .sb-in-out {
+  display: flex;
+  gap: 0.5rem;
+  font-family: var(--sb-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shop-brand .sb-in-out-in {
+  color: var(--gold);
+}
+
+.shop-brand .sb-in-out-sep {
+  color: var(--ink-3);
+}
+
+.shop-brand .sb-in-out-out {
+  color: var(--ink-3);
+}
+
+/* ─── Formula section ───────────────────────────────────────────────────── */
+
+.shop-brand .sb-formula {
+  width: 100%;
+  padding: 5rem 2rem;
+  background: var(--paper2);
+}
+
+.shop-brand .sb-formula-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.shop-brand .sb-formula-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  margin-top: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .shop-brand .sb-formula-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.shop-brand .sb-formula-col-label {
+  font-family: var(--sb-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.shop-brand .sb-formula-col-label--in {
+  color: var(--accent);
+}
+
+.shop-brand .sb-formula-col-label--out {
+  color: var(--ink-3);
+}
+
+.shop-brand .sb-formula-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-family: var(--sb-body);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.shop-brand .sb-formula-list--in li::before {
+  content: "+ ";
+  color: var(--accent);
+  font-family: var(--sb-mono);
+  font-size: 0.75rem;
+}
+
+.shop-brand .sb-formula-list--out li {
+  text-decoration: line-through;
+  color: var(--ink-3);
+}
+
+.shop-brand .sb-formula-list--out li::before {
+  content: "✗ ";
+  text-decoration: none;
+  display: inline-block;
+  font-size: 0.75rem;
+}
+
+.shop-brand .sb-formula-close {
+  margin-top: 2.5rem;
+  font-family: var(--sb-body);
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.65;
+  color: var(--ink-2);
+  border-top: 1px solid var(--rule);
+  padding-top: 1.5rem;
+  max-width: 560px;
+}
+
+/* ─── Edition block (big 001) ───────────────────────────────────────────── */
+
+.shop-brand .sb-edition {
+  width: 100%;
+  background: var(--paper3);
+  padding: 5rem 2rem;
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.shop-brand .sb-edition-numeral {
+  font-family: var(--sb-display);
+  font-size: clamp(6rem, 20vw, 14rem);
+  font-weight: 400;
+  line-height: 0.9;
+  color: var(--rule-strong);
+  letter-spacing: -0.04em;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.shop-brand .sb-edition-label {
+  font-family: var(--sb-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.shop-brand .sb-edition-desc {
+  margin-top: 0.75rem;
+  font-family: var(--sb-body);
+  font-size: 1rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+  max-width: 420px;
+  margin-inline: auto;
+}
+
+/* ─── Cause close (full-bleed accent) ───────────────────────────────────── */
+
+.shop-brand .sb-cause {
+  width: 100%;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 5rem 2rem;
+  text-align: center;
+}
+
+.shop-brand .sb-cause-eyebrow {
+  font-family: var(--sb-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  margin-bottom: 1rem;
+}
+
+.shop-brand .sb-cause-heading {
+  font-family: var(--sb-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--paper);
+  max-width: 560px;
+  margin: 0 auto 1.5rem;
+}
+
+.shop-brand .sb-cause-body {
+  font-family: var(--sb-body);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--accent-soft);
+  max-width: 480px;
+  margin: 0 auto 2.5rem;
+}
+
+/* BuyButton inside cause section needs a lighter color scheme */
+.shop-brand .sb-cause .sb-cause-buy button {
+  background: var(--paper);
+  color: var(--accent);
+  border: 1px solid var(--paper);
+}
+
+.shop-brand .sb-cause .sb-cause-buy button:hover {
+  background: var(--accent-soft);
+}
+
+/* ─── FAQ (native details/summary) ──────────────────────────────────────── */
+
+.shop-brand .sb-faq {
+  width: 100%;
+  padding: 5rem 2rem;
+  background: var(--paper);
+}
+
+.shop-brand .sb-faq-inner {
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.shop-brand .sb-faq-heading {
+  font-family: var(--sb-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.shop-brand details {
+  border-bottom: 1px solid var(--rule);
+}
+
+.shop-brand details:first-of-type {
+  border-top: 1px solid var(--rule);
+}
+
+.shop-brand summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--sb-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  min-height: 44px;
+}
+
+.shop-brand summary::-webkit-details-marker { display: none; }
+
+.shop-brand .sb-faq-chevron {
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.shop-brand details[open] .sb-faq-chevron {
+  transform: rotate(180deg);
+}
+
+.shop-brand .sb-faq-body {
+  padding-bottom: 1rem;
+  padding-top: 0.25rem;
+  font-family: var(--sb-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+/* ─── Sticky buy bar ─────────────────────────────────────────────────────── */
+
+.shop-brand .sb-sticky {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
+  border-top: 1px solid var(--ink-2);
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.shop-brand .sb-sticky.visible {
+  transform: translateY(0);
+}
+
+.shop-brand .sb-sticky-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.shop-brand .sb-sticky-product {
+  font-family: var(--sb-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper2);
+}
+
+.shop-brand .sb-sticky-price {
+  font-family: var(--sb-body);
+  font-size: 0.9rem;
+  color: var(--paper);
+}
+
+.shop-brand .sb-sticky-cause {
+  font-family: var(--sb-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Keyframe animations ────────────────────────────────────────────────── */
+
+@keyframes sb-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes sb-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(154, 51, 36, 0);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 24px 8px rgba(154, 51, 36, 0.25);
+  }
+}
+
+/* ─── Reduced-motion overrides ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-brand .rv {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .shop-brand .rv.in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .shop-brand .sb-tube {
+    animation: none !important;
+  }
+
+  .shop-brand .sb-breathe-circle {
+    animation: none !important;
+  }
+
+  .shop-brand .sb-sticky {
+    transition: none !important;
+  }
+}
