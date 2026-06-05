@@ -1050,6 +1050,19 @@ article {
   }
 }
 
+@media (max-width: 768px) {
+  .briefing-grid {
+    grid-template-columns: 1fr;
+  }
+  .brief-col {
+    border-right: none;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .brief-col:last-child {
+    border-bottom: none;
+  }
+}
+
 .brief-col {
   padding: 32px;
   border-right: 1px solid var(--color-line);
@@ -1338,6 +1351,12 @@ article {
   }
 }
 
+@media (max-width: 768px) {
+  .delib-grid {
+    gap: 28px;
+  }
+}
+
 /* Candidate card variants (used inline — listed here for reference) */
 /* .cand: base card  .win: winning card  .w: winner badge  .r: runner-up badge */
 
@@ -1377,6 +1396,31 @@ article {
   letter-spacing: 0.06em;
   color: #8A8273;
   margin-bottom: 4px;
+}
+
+/* ── SMALL-SCREEN GUTTER PASS (≤600px) ──────────────────────────────────── */
+@media (max-width: 600px) {
+  .masthead {
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 36px;
+  }
+  .ad-wrap {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .pod {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .shop {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .delib {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
 }
 
 /* Print: hide deliberation dark band (already covered by [data-deliberation-slot]) */
