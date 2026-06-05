@@ -117,7 +117,7 @@ export function CardSwap({ issues }: Props) {
       {/* 3D Scene */}
       <div
         className="cardswap-scene relative mx-auto max-w-full"
-        style={{ perspective: '1200px', width: '500px', height: '400px' }}
+        style={{ perspective: '1200px', width: 'min(500px, 100%)', height: '400px' }}
         onMouseEnter={pause}
         onMouseLeave={resume}
       >
