@@ -17,7 +17,7 @@ files_modified:
   - packages/emails/src/templates/ReviewAsk.tsx
   - packages/emails/src/templates/NewsletterOptin.tsx
   - packages/emails/src/templates/Replenishment.tsx
-  - packages/emails/src/render.ts
+  - packages/emails/src/render.tsx
   - packages/emails/src/index.ts
   - apps/web/next.config.ts
   - apps/web/__tests__/email-templates.test.ts
@@ -33,7 +33,7 @@ must_haves:
     - "Templates render with a graceful fallback when charity data is null (missing charitySlug)"
     - "Next.js builds with @react-email packages treated as server externals"
   artifacts:
-    - path: "packages/emails/src/render.ts"
+    - path: "packages/emails/src/render.tsx"
       provides: "renderEmailStep dispatching to the 8 templates via @react-email/render"
       contains: "render"
     - path: "packages/emails/src/layouts/Footer.tsx"
@@ -43,7 +43,7 @@ must_haves:
       provides: "E5 full-screen funded-charity story"
       min_lines: 20
   key_links:
-    - from: "packages/emails/src/render.ts"
+    - from: "packages/emails/src/render.tsx"
       to: "the 8 template components"
       via: "switch(step) → render(<Template .../>)"
       pattern: "render\\("
@@ -76,7 +76,7 @@ Output: 3 layouts + 8 templates + real renderEmailStep + next.config update + sn
 <interfaces>
 <!-- Render seam from Plan 20-03 (KEEP SIGNATURE STABLE) and library facts. -->
 
-renderEmailStep signature (packages/emails/src/render.ts — replace body, keep signature):
+renderEmailStep signature (packages/emails/src/render.tsx — replace body, keep signature; the seam is ALREADY `.tsx` from Plan 20-03):
   RenderData = {
     order: { customerEmail?: string|null; charitySlug?: string|null; amountTotal: number; createdAt: number }
     charity?: { name: string; location?: string; focusArea?: string; missionStatement?: string } | null
@@ -104,7 +104,9 @@ Unsubscribe URL: `${NEXT_PUBLIC_BASE_URL}/api/email/unsubscribe?token=${token}` 
   <read_first>packages/emails/package.json, apps/web/next.config.ts, .planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-RESEARCH.md</read_first>
   <files>packages/emails/package.json, packages/emails/src/layouts/TransactionalLayout.tsx, packages/emails/src/layouts/MarketingLayout.tsx, packages/emails/src/layouts/Footer.tsx, apps/web/next.config.ts</files>
   <action>
-Add deps to `packages/emails/package.json` dependencies: `"@react-email/components": "^1.0.12"`, `"@react-email/render": "^2.0.8"`, `"resend": "^6.12.4"`, `"react": "^19.2.6"`. Add devDependency `"@types/react": "^19.0.0"`. The `tsconfig.json` must set `"jsx": "react-jsx"` in compilerOptions so `.tsx` compiles. Run `pnpm install`.
+Add deps to `packages/emails/package.json` dependencies: `"@react-email/components": "^1.0.12"`, `"@react-email/render": "^2.0.8"`, `"resend": "^6.12.4"`, `"react": "^19.2.6"`. Add devDependency `"@types/react": "^19.0.0"`. Run `pnpm install`.
+
+`packages/emails/tsconfig.json` already has `"jsx": "react-jsx"` and an `include` covering `.tsx` (set in Plan 20-01 Task 1) — VERIFY it (grep `react-jsx` + `tsx`) and only add them if Plan 20-01 somehow omitted them. The `"typecheck": "tsc --noEmit"` script must already exist in `packages/emails/package.json` (added in 20-01 Task 1); confirm it is present (Task 2 verify depends on it). No render-seam rename happens in this plan — 20-03 created the seam as `render.tsx`.
 
 Create `packages/emails/src/layouts/Footer.tsx` — a React Email `Section` rendering:
 - The funded-charity line when `charity` is present (e.g. "This order funded {charity.name}, {charity.location}."), else fallback copy ("This order funded this week's featured charity.").
@@ -122,7 +124,8 @@ Update `apps/web/next.config.ts`: add top-level `serverExternalPackages: ['@reac
     <automated>cd /Users/user/Desktop/Eisenbalm && pnpm install >/dev/null 2>&1; grep -q "@react-email/render" packages/emails/package.json && grep -q "serverExternalPackages" apps/web/next.config.ts && grep -q "unsubscribe" packages/emails/src/layouts/Footer.tsx && test -f packages/emails/src/layouts/MarketingLayout.tsx && test -f packages/emails/src/layouts/TransactionalLayout.tsx && echo OK</automated>
   </verify>
   <acceptance_criteria>
-- `packages/emails/package.json` has `@react-email/render`, `@react-email/components`, `resend`, `react` deps.
+- `packages/emails/package.json` has `@react-email/render`, `@react-email/components`, `resend`, `react` deps and a `"typecheck": "tsc --noEmit"` script (from 20-01).
+- `packages/emails/tsconfig.json` has `"jsx": "react-jsx"` and an `include` covering `.tsx` (verified — set in 20-01).
 - `apps/web/next.config.ts` contains `serverExternalPackages` listing both react-email packages.
 - `Footer.tsx` renders the unsubscribe Link only when an `unsubscribeToken` prop is present (conditional).
 - `TransactionalLayout.tsx` does NOT pass `unsubscribeToken` to Footer; `MarketingLayout.tsx` does.
@@ -150,10 +153,10 @@ Marketing (use `MarketingLayout`, pass `charity` + `postalAddress` + `unsubscrib
 - `NewsletterOptin.tsx` (E7): the hinge. Renders `others[]` (2-3 OTHER charities by name) to prove "there are more"; CTA opts into the weekly charity newsletter (v1 only captures consent — link to a capture endpoint or the site; do NOT promise the newsletter is already sending). Fallback when `others` empty.
 - `Replenishment.tsx` (E8): replenishment + last call. Renders the live "since you bought, a machine has quietly funded {fundedMoreCount} more causes" line; fallback when count is null/0.
 
-All templates must accept null charity/others/count and render fallback copy (no crash). Add `export * from './templates/...'` lines OR a `templates/index.ts` barrel; ensure they are importable by render.ts (Task 3).
+All templates must accept null charity/others/count and render fallback copy (no crash). Add `export * from './templates/...'` lines OR a `templates/index.ts` barrel; ensure they are importable by render.tsx (Task 3).
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm && for f in OrderConfirmation Shipping DeliveredEstimate TheRitual CharityReceipt ReviewAsk NewsletterOptin Replenishment; do test -f packages/emails/src/templates/$f.tsx || { echo "MISSING $f"; exit 1; }; done; grep -iq "arrived\|delivered" packages/emails/src/templates/DeliveredEstimate.tsx && { echo "E3 contains forbidden word"; exit 1; } || echo "E3_SAFE"; grep -q "TODO(Andrew)" packages/emails/src/templates/CharityReceipt.tsx && echo OK</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm && for f in OrderConfirmation Shipping DeliveredEstimate TheRitual CharityReceipt ReviewAsk NewsletterOptin Replenishment; do test -f packages/emails/src/templates/$f.tsx || { echo "MISSING $f"; exit 1; }; done; grep -iq "arrived\|delivered" packages/emails/src/templates/DeliveredEstimate.tsx && { echo "E3 contains forbidden word"; exit 1; } || echo "E3_SAFE"; grep -q "TODO(Andrew)" packages/emails/src/templates/CharityReceipt.tsx && pnpm --filter @eisenbalm/emails typecheck && echo OK</automated>
   </verify>
   <acceptance_criteria>
 - All 8 template files exist under `packages/emails/src/templates/`.
@@ -162,14 +165,15 @@ All templates must accept null charity/others/count and render fallback copy (no
 - `CharityReceipt.tsx` references `charity.name`, `charity.missionStatement`, and has a null-charity fallback.
 - `NewsletterOptin.tsx` maps `others` and `Replenishment.tsx` renders `fundedMoreCount`.
 - Every template file starts with a `TODO(Andrew)` voice-approval marker.
+- `pnpm --filter @eisenbalm/emails typecheck` passes (template TSX compiles — surfaces JSX/type errors here, not late in Task 3).
   </acceptance_criteria>
   <done>8 deadpan draft templates with charity slots and the E2/E3 copy guards.</done>
 </task>
 
 <task type="auto" tdd="true">
   <name>Task 3: renderEmailStep dispatch + snapshot/assertion tests</name>
-  <read_first>packages/emails/src/render.ts, packages/emails/src/templates/CharityReceipt.tsx, apps/web/vitest.config.ts</read_first>
-  <files>packages/emails/src/render.ts, packages/emails/src/index.ts, apps/web/__tests__/email-templates.test.ts</files>
+  <read_first>packages/emails/src/render.tsx, packages/emails/src/templates/CharityReceipt.tsx, apps/web/__tests__/email-templates.test.ts, apps/web/vitest.config.ts</read_first>
+  <files>packages/emails/src/render.tsx, packages/emails/src/index.ts, apps/web/__tests__/email-templates.test.ts</files>
   <behavior>
     - renderEmailStep(1, {order, charity}) resolves to an HTML string containing the charity name (funded footer)
     - renderEmailStep(3, {order, charity}) HTML contains neither "arrived" nor "delivered"
@@ -180,7 +184,7 @@ All templates must accept null charity/others/count and render fallback copy (no
     - renderEmailStep(8, {order, fundedMoreCount:3}) HTML contains '3'
   </behavior>
   <action>
-Replace the placeholder body of `packages/emails/src/render.ts` `renderEmailStep` with a real dispatch (KEEP the exported signature + RenderData type unchanged):
+Replace the placeholder body of `packages/emails/src/render.tsx` `renderEmailStep` with a real dispatch (KEEP the exported signature + RenderData type unchanged; the file is ALREADY `.tsx` — created that way in Plan 20-03 — so NO rename is needed):
 ```typescript
 import { render } from '@react-email/render'
 import OrderConfirmation from './templates/OrderConfirmation'
@@ -199,9 +203,9 @@ export async function renderEmailStep(step: number, data: RenderData): Promise<s
   }
 }
 ```
-render.ts is `.ts` but now uses JSX — RENAME it to `packages/emails/src/render.tsx` and update the barrel `export * from './render'` (path resolution stays `./render`). Ensure tsconfig `jsx: react-jsx` (set in Task 1).
+The seam is already `packages/emails/src/render.tsx` (Plan 20-03 created it with the `.tsx` extension); the barrel `export * from './render'` already resolves to it (specifier unchanged). Do NOT rename anything. tsconfig `jsx: react-jsx` + `.tsx` `include` are already in place from Plan 20-01 — no tsconfig edit here.
 
-Create `apps/web/__tests__/email-templates.test.ts` (vitest, `import { describe, it, expect } from 'vitest'`) encoding all behaviors. `renderEmailStep` is async — `await` it. Build a minimal `order` fixture `{ amountTotal: 899, createdAt: 0, customerEmail:'a@b.c', charitySlug:'nap-ministry' }` and a charity fixture `{ name:'The Nap Ministry', location:'Atlanta, GA', focusArea:'Rest', missionStatement:'Rest is resistance.' }`. Assert substrings per the behavior block, including the transactional-vs-marketing unsubscribe presence/absence (EMAIL-05/06) and the E3 delivery-safe guard (EMAIL-08).
+FILL IN `apps/web/__tests__/email-templates.test.ts` — this file already exists as an `it.todo` Wave-0 skeleton from Plan 20-01 Task 2 (it currently only reserves the EMAIL-04/05/06/08 coverage). REPLACE its `it.todo` placeholders with real `it(...)` assertions (vitest, `import { describe, it, expect } from 'vitest'`) encoding all behaviors below; now import `renderEmailStep` from `@eisenbalm/emails`. `renderEmailStep` is async — `await` it. Build a minimal `order` fixture `{ amountTotal: 899, createdAt: 0, customerEmail:'a@b.c', charitySlug:'nap-ministry' }` and a charity fixture `{ name:'The Nap Ministry', location:'Atlanta, GA', focusArea:'Rest', missionStatement:'Rest is resistance.' }`. Assert substrings per the behavior block, including the transactional-vs-marketing unsubscribe presence/absence (EMAIL-05/06) and the E3 delivery-safe guard (EMAIL-08).
   </action>
   <verify>
     <automated>cd /Users/user/Desktop/Eisenbalm/apps/web && npx vitest run __tests__/email-templates.test.ts</automated>

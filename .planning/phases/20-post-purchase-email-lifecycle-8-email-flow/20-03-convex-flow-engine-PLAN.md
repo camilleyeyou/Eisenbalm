@@ -7,6 +7,7 @@ depends_on: [20-01, 20-02]
 files_modified:
   - packages/emails/src/charity.ts
   - packages/emails/src/enqueuePlan.ts
+  - packages/emails/src/render.tsx
   - packages/emails/src/index.ts
   - apps/web/__tests__/email-charity-queries.test.ts
   - apps/web/__tests__/email-enqueue-missing-email.test.ts
@@ -166,26 +167,30 @@ Create `convex/emailFlow.ts`:
   5. For each step in `plan.steps`: `const fnId = await ctx.scheduler.runAfter(offsetForStep(step), internal.emailActions.sendEmailStep, { orderId, step })`; `await ctx.runMutation(internal.emailSends.insertScheduled, { orderId, email: order.customerEmail, step, scheduledFnId: fnId as unknown as string })`.
   Import `planEnqueue, offsetForStep, generateUnsubscribeToken` from `@eisenbalm/emails`; `internalMutation, internalQuery` from `./_generated/server`; `internal` from `./_generated/api`; `v` from `convex/values`.
 
-Extend `convex/stripeOrders.ts` `insert` (additive — args + behavior unchanged, preserving API_CONTRACTS §6 and the webhook contract): after the `ctx.db.insert('stripeOrders', {...})` capturing `orderId`, add:
+Extend `convex/stripeOrders.ts` `insert` (additive — the public return type MUST NOT change: this is `api.stripeOrders.insert`, and 20-BRIEF forbids any change to API_CONTRACTS §6. The current handler does `await ctx.db.insert('stripeOrders', {...})` WITHOUT capturing the id and ends with `return null`. Capture the inserted id into a LOCAL variable, fire the enqueue BEFORE the existing `return null`, and leave `return null` EXACTLY as-is — do not return the id):
 ```typescript
+// was: await ctx.db.insert('stripeOrders', {...})
+const orderId = await ctx.db.insert('stripeOrders', {
+  // ...unchanged fields...
+})
 try {
   await ctx.scheduler.runAfter(0, internal.emailFlow.enqueueEmailFlow, { orderId })
 } catch (err) {
   console.error('[emailFlow] enqueue scheduling failed; order recorded:', err)
 }
-return orderId
+return null  // PRESERVED — public return shape unchanged (API_CONTRACTS §6)
 ```
-Change the final `return null` to `return orderId` (handlers.ts ignores the return value — confirmed in apps/web/lib/stripe/handlers.ts maybeRecordOrder — so this is safe). Import `internal` from `./_generated/api` at top of stripeOrders.ts.
+The only change to `ctx.db.insert` is binding its already-computed return value to a local `orderId` so the enqueue can reference it. The function STILL returns `null`. Do NOT write `return orderId`. Import `internal` from `./_generated/api` at top of stripeOrders.ts.
 
 Create `apps/web/__tests__/email-enqueue-missing-email.test.ts` testing `planEnqueue`: `planEnqueue({}) → { skip:true, steps:[1..8] }`; `planEnqueue({ customerEmail:'a@b.c' }) → { skip:false, steps:[1..8] }`. enqueueEmailFlow calls this same helper, so the unit test covers the real decision.
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm/apps/web && npx vitest run __tests__/email-enqueue-missing-email.test.ts && cd /Users/user/Desktop/Eisenbalm && grep -q "enqueueEmailFlow" convex/stripeOrders.ts && grep -q "return orderId" convex/stripeOrders.ts && grep -q "scheduledFnId" convex/emailFlow.ts && grep -q "markSkipped" convex/emailFlow.ts && echo OK</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm/apps/web && npx vitest run __tests__/email-enqueue-missing-email.test.ts && cd /Users/user/Desktop/Eisenbalm && grep -q "scheduler.runAfter(0, internal.emailFlow.enqueueEmailFlow" convex/stripeOrders.ts && grep -q "return null" convex/stripeOrders.ts && ! grep -q "return orderId" convex/stripeOrders.ts && grep -q "scheduledFnId" convex/emailFlow.ts && grep -q "markSkipped" convex/emailFlow.ts && echo OK</automated>
   </verify>
   <acceptance_criteria>
 - `email-enqueue-missing-email.test.ts` green (planEnqueue skip true/false).
 - `convex/emailFlow.ts` schedules with `offsetForStep(step)` and stores `scheduledFnId` via `insertScheduled`.
-- `convex/stripeOrders.ts` calls `internal.emailFlow.enqueueEmailFlow` inside try/catch and `return orderId`.
+- `convex/stripeOrders.ts` calls `internal.emailFlow.enqueueEmailFlow` inside try/catch BEFORE the handler's `return null`; `return null` is PRESERVED and `return orderId` does NOT appear (public return shape unchanged — API_CONTRACTS §6).
 - enqueueEmailFlow missing-email path has no `throw` (grep shows markSkipped loop + early return).
   </acceptance_criteria>
   <done>Enqueue wired fire-and-forget to order insert; missing-email path marks skipped; planEnqueue unit-tested.</done>
@@ -194,9 +199,9 @@ Create `apps/web/__tests__/email-enqueue-missing-email.test.ts` testing `planEnq
 <task type="auto">
   <name>Task 3: sendEmailStep + sweepStaleSends actions + crons.ts + render seam</name>
   <read_first>convex/emailFlow.ts, convex/emailSends.ts, convex/emailSubscribers.ts, .planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-RESEARCH.md</read_first>
-  <files>convex/emailActions.ts, convex/emailSends.ts, convex/crons.ts, packages/emails/src/render.ts, packages/emails/src/index.ts</files>
+  <files>convex/emailActions.ts, convex/emailSends.ts, convex/crons.ts, packages/emails/src/render.tsx, packages/emails/src/index.ts</files>
   <action>
-Add a render seam in `packages/emails/src/render.ts` (Plan 20-04 replaces the body with real React Email templates; KEEP THIS SIGNATURE STABLE):
+Add a render seam at `packages/emails/src/render.tsx` (NOTE the `.tsx` extension — created as `.tsx` from the start so Plan 20-04 can swap the placeholder body for JSX `render(<Template/>)` with NO file rename; the barrel import specifier stays `./render`, and 20-01 already set tsconfig `include` to cover `.tsx` + `jsx: react-jsx`). Plan 20-04 replaces the body with real React Email templates; KEEP THIS SIGNATURE STABLE:
 ```typescript
 export interface RenderData {
   order: { customerEmail?: string | null; charitySlug?: string | null; amountTotal: number; createdAt: number }
@@ -231,7 +236,18 @@ Create `convex/emailActions.ts` with FIRST LINE `"use node"`. Import `internalAc
   7. `const from = STEP_STREAM[step]==='transactional' ? process.env.EMAIL_FROM_TRANSACTIONAL! : process.env.EMAIL_FROM_MARKETING!`.
   8. `const provider = selectProvider(process.env)` (live OFF by default). `try { const res = await provider.send({ from, to: order.customerEmail, subject: SUBJECTS[step], html, headers }); await ctx.runMutation(internal.emailSends.markSent, { orderId, step, providerMessageId: res.id }) } catch (err) { await ctx.runMutation(internal.emailSends.markFailed, { orderId, step, errorMessage: String(err) }) }`.
 
-`sweepStaleSends = internalAction({ args:{}, handler })`: `const rows = await ctx.runQuery(internal.emailSends.listStaleScheduled, {})`; for each row where `row.createdAt + offsetForStep(row.step) < Date.now() - 3600_000` call `await ctx.scheduler.runAfter(0, internal.emailActions.sendEmailStep, { orderId: row.orderId, step: row.step })`. Idempotency in sendEmailStep makes this safe (20-RESEARCH Gotcha 4/5).
+`sweepStaleSends = internalAction({ args:{}, handler })`: `const rows = await ctx.runQuery(internal.emailSends.listStaleScheduled, {})`. Re-enqueue a row ONLY when it is still scheduled AND meaningfully past its expected fire time, so the hourly sweep does not noisily re-fire low-offset steps (e.g. E1 offset=0) every hour:
+```typescript
+const now = Date.now()
+for (const row of rows) {
+  const expectedFireAt = row.createdAt + offsetForStep(row.step)
+  // Only re-enqueue rows that are still 'scheduled' and are >1h past their expected fire time.
+  if (row.status === 'scheduled' && now - expectedFireAt > 3600_000) {
+    await ctx.scheduler.runAfter(0, internal.emailActions.sendEmailStep, { orderId: row.orderId, step: row.step })
+  }
+}
+```
+(`listStaleScheduled` already filters to `status==='scheduled'`; the explicit `row.status === 'scheduled'` guard is belt-and-suspenders.) Idempotency in sendEmailStep makes the re-enqueue safe even on overlap (20-RESEARCH Gotcha 4/5); the tightened window prevents scheduled-function noise.
 
 Create `convex/crons.ts`:
 ```typescript

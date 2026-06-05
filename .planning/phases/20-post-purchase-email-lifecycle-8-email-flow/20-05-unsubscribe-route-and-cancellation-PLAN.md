@@ -3,7 +3,7 @@ phase: 20-post-purchase-email-lifecycle-8-email-flow
 plan: 05
 type: execute
 wave: 3
-depends_on: [20-02, 20-03]
+depends_on: [20-01, 20-02, 20-03]
 files_modified:
   - convex/emailSubscribers.ts
   - apps/web/app/api/email/unsubscribe/route.ts
@@ -54,12 +54,13 @@ Output: cancellation mutation + unsubscribe route + 2 vitest files (route shape 
 @.planning/STATE.md
 @.planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-BRIEF.md
 @.planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-RESEARCH.md
+@convex/_generated/ai/guidelines.md
 @convex/emailSubscribers.ts
 @convex/schema.ts
 @apps/web/app/api/stripe/webhook/route.ts
 
 <interfaces>
-<!-- Existing patterns + Plan 20-02/20-03 contracts. -->
+<!-- Existing patterns + Plan 20-01/20-02/20-03 contracts. -->
 
 ConvexHttpClient usage (from apps/web/lib/stripe/handlers.ts):
   import { ConvexHttpClient } from 'convex/browser'
@@ -70,7 +71,7 @@ ConvexHttpClient usage (from apps/web/lib/stripe/handlers.ts):
 emailSubscribers table (Plan 20-02): email, consentState, unsubscribeToken, unsubscribedAt?. Indexed by_token.
 emailSends table (Plan 20-02/03): orderId, email, step(1-8), status('scheduled'|'sent'|'failed'|'cancelled'|'skipped'), scheduledFnId?. Indexed by_email_step + by_status.
 
-isMarketingStep(step) from @eisenbalm/emails: step >= 4.
+shouldCancelOnUnsubscribe + isMarketingStep come from @eisenbalm/emails (Plan 20-01 created packages/emails/src/suppression.ts; this plan ADDS shouldCancelOnUnsubscribe to that same file). isMarketingStep(step) === step >= 4.
 
 Convex cancel API (20-RESEARCH §Code Examples): `await ctx.scheduler.cancel(scheduledFnId as any)` — returns void, does not throw if the id already ran/cancelled. Cancel must run inside a mutation/action.
 
@@ -82,7 +83,7 @@ Route runtime: Next 15 App Router Route Handler. Use `export const runtime = 'no
 
 <task type="auto" tdd="true">
   <name>Task 1: Pure cancellation-decision helper + unsubscribeByToken mutation</name>
-  <read_first>convex/emailSubscribers.ts, convex/schema.ts, .planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-RESEARCH.md</read_first>
+  <read_first>convex/_generated/ai/guidelines.md, convex/emailSubscribers.ts, convex/schema.ts, packages/emails/src/suppression.ts, .planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-RESEARCH.md</read_first>
   <files>convex/emailSubscribers.ts, packages/emails/src/suppression.ts, packages/emails/src/index.ts, apps/web/__tests__/email-unsubscribe-cancel.test.ts</files>
   <behavior>
     - shouldCancelOnUnsubscribe({step:4, status:'scheduled'}) === true
@@ -91,14 +92,14 @@ Route runtime: Next 15 App Router Route Handler. Use `export const runtime = 'no
     - shouldCancelOnUnsubscribe({step:6, status:'cancelled'}) === false   (already cancelled)
   </behavior>
   <action>
-Add a pure helper to `packages/emails/src/suppression.ts` (so the cancel decision is unit-testable; the Convex mutation calls the SAME helper):
+Add a pure helper to `packages/emails/src/suppression.ts` (this file already exists from Plan 20-01; APPEND this export). The cancel decision is unit-testable; the Convex mutation calls the SAME helper:
 ```typescript
 import { isMarketingStep } from './offsets'
 export function shouldCancelOnUnsubscribe(row: { step: number; status: string }): boolean {
   return isMarketingStep(row.step) && row.status === 'scheduled'
 }
 ```
-(`isMarketingStep` is already imported in suppression.ts from Plan 20-01.) It is re-exported via the existing barrel.
+(`isMarketingStep` is already imported in suppression.ts from Plan 20-01.) It is re-exported via the existing barrel (`packages/emails/src/index.ts` already runs `export * from './suppression'`).
 
 Add to `convex/emailSubscribers.ts`:
 - `unsubscribeByToken = internalMutation({ args:{ token: v.string() }, handler })`:

@@ -20,6 +20,7 @@ files_modified:
   - apps/web/__tests__/email-token.test.ts
   - apps/web/__tests__/email-idempotency.test.ts
   - apps/web/__tests__/email-provider.test.ts
+  - apps/web/__tests__/email-templates.test.ts
 autonomous: true
 requirements: [EMAIL-01, EMAIL-02, EMAIL-03, EMAIL-07]
 must_haves:
@@ -64,7 +65,7 @@ must_haves:
 Scaffold the `@eisenbalm/emails` workspace package and the pure, Convex-free business logic that the rest of Phase 20 builds on: the 8 purchase-anchored offset constants, the marketing-suppression decision function, the idempotency decision function, unsubscribe-token generation, per-step subjects, and the `SendEmailProvider` abstraction (Resend impl + Fake impl + env-gated selector with live sending OFF by default).
 
 Purpose: Research flags that Convex has no unit-test SDK — so all testable logic must live as pure functions importable by both `convex/` (Wave 2) and `apps/web/` (Wave 3/4). This plan creates the seam and the Wave 0 vitest coverage so every later task has a green sampling target.
-Output: A source-resolution workspace package (mirrors `@eisenbalm/shared`) plus 5 vitest files covering EMAIL-01/02/03/07.
+Output: A source-resolution workspace package (mirrors `@eisenbalm/shared`, with tsconfig set up for `.tsx` + `jsx: react-jsx` up front) plus 5 vitest files covering EMAIL-01/02/03/07 and a Wave-0 `email-templates.test.ts` `it.todo` skeleton reserving EMAIL-04/05/06/08 (Plan 20-04 Task 3 fills it in).
 </objective>
 
 <execution_context>
@@ -121,7 +122,10 @@ type SubscriberLike = { consentState: 'subscribed' | 'unsubscribed' } | null | u
   <action>
 Create `packages/emails/` as a source-resolution workspace package mirroring `@eisenbalm/shared` EXACTLY (no build step):
 - `packages/emails/package.json`: name `@eisenbalm/emails`, `"private": true`, `"type": "module"`, `"main": "./src/index.ts"`, `"types": "./src/index.ts"`, `"exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } }`. devDependencies: `"typescript": "^5.6.0"`. Add a `"typecheck": "tsc --noEmit"` script.
-- `packages/emails/tsconfig.json`: copy `packages/shared/tsconfig.json` verbatim (extends the repo base, noEmit). If shared's tsconfig references files that do not exist here, keep only `extends` + `compilerOptions` + `"include": ["src/**/*.ts"]`.
+- `packages/emails/tsconfig.json`: base it on `packages/shared/tsconfig.json` (extends the repo base) BUT set it up for `.tsx` from the start so no later rename is needed (Plan 20-03 creates `render.tsx` and Plan 20-04 adds `.tsx` templates):
+  - `"include": ["src/**/*.{ts,tsx}"]` (covers both `.ts` and `.tsx` — shared's `["src/**/*.ts"]` would exclude `.tsx`).
+  - `compilerOptions` must include `"jsx": "react-jsx"` (so `.tsx` compiles without a per-file pragma) in addition to whatever it inherits/copies from shared (e.g. `noEmit`).
+  Keep only `extends` + `compilerOptions` (with `jsx: react-jsx`) + the `{ts,tsx}` `include` if shared's tsconfig references files that do not exist here.
 - `packages/emails/src/index.ts`: barrel — `export * from './offsets'`, `export * from './suppression'`, `export * from './token'`, `export * from './subjects'`, `export * from './provider'`. (These files are created in Tasks 2-3; create the barrel now even if some are stubs you fill in this plan.)
 - `apps/web/package.json`: add `"@eisenbalm/emails": "workspace:*"` to dependencies (alphabetical, next to `@eisenbalm/shared`).
 - `pnpm-workspace.yaml`: leave as-is (`packages/*` already covers it). Do NOT add a redundant entry.
@@ -130,12 +134,14 @@ Create `packages/emails/` as a source-resolution workspace package mirroring `@e
 Do NOT add `resend`, `@react-email/render`, or `@react-email/components` here yet — those are added in Plan 20-03 (templates) and the provider's dynamic import keeps this package dependency-light. (`resend` is imported lazily inside ResendProvider in Task 3.)
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm && pnpm install --frozen-lockfile=false >/dev/null 2>&1; node -e "require('./packages/emails/package.json').name === '@eisenbalm/emails' || process.exit(1)" && grep -q '@eisenbalm/emails' apps/web/package.json && echo OK</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm && pnpm install --frozen-lockfile=false >/dev/null 2>&1; node -e "require('./packages/emails/package.json').name === '@eisenbalm/emails' || process.exit(1)" && grep -q '@eisenbalm/emails' apps/web/package.json && grep -q 'tsx' packages/emails/tsconfig.json && grep -q 'react-jsx' packages/emails/tsconfig.json && grep -q '"typecheck"' packages/emails/package.json && echo OK</automated>
   </verify>
   <acceptance_criteria>
 - `packages/emails/package.json` `.name` === `@eisenbalm/emails` and `.main` === `./src/index.ts`.
 - `apps/web/package.json` dependencies contains `"@eisenbalm/emails": "workspace:*"`.
 - `packages/emails/src/index.ts` re-exports offsets, suppression, token, subjects, provider.
+- `packages/emails/tsconfig.json` `include` covers `.tsx` (contains `tsx`) and `compilerOptions.jsx === "react-jsx"` — so the `.tsx` render seam (20-03) and templates (20-04) compile with NO later rename or tsconfig edit.
+- `packages/emails/package.json` has a `"typecheck": "tsc --noEmit"` script (used by 20-04 Task 2 verify).
 - No `resend`/`@react-email/*` dependency added in `packages/emails/package.json`.
   </acceptance_criteria>
   <done>Workspace package resolves; apps/web declares the dependency; barrel exists.</done>
@@ -144,7 +150,7 @@ Do NOT add `resend`, `@react-email/render`, or `@react-email/components` here ye
 <task type="auto" tdd="true">
   <name>Task 2: Pure helpers — offsets, suppression, idempotency, token, subjects</name>
   <read_first>packages/emails/src/index.ts, .planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-BRIEF.md, .planning/phases/20-post-purchase-email-lifecycle-8-email-flow/20-RESEARCH.md</read_first>
-  <files>packages/emails/src/offsets.ts, packages/emails/src/suppression.ts, packages/emails/src/token.ts, packages/emails/src/subjects.ts, apps/web/__tests__/email-offsets.test.ts, apps/web/__tests__/email-suppression.test.ts, apps/web/__tests__/email-token.test.ts, apps/web/__tests__/email-idempotency.test.ts</files>
+  <files>packages/emails/src/offsets.ts, packages/emails/src/suppression.ts, packages/emails/src/token.ts, packages/emails/src/subjects.ts, apps/web/__tests__/email-offsets.test.ts, apps/web/__tests__/email-suppression.test.ts, apps/web/__tests__/email-token.test.ts, apps/web/__tests__/email-idempotency.test.ts, apps/web/__tests__/email-templates.test.ts</files>
   <behavior>
     - OFFSETS_MS[0]===0, [1]===1*24*3600_000, [2]===4*24*3600_000, [3]===7*24*3600_000, [4]===9*24*3600_000, [5]===14*24*3600_000, [6]===21*24*3600_000, [7]===42*24*3600_000; length===8
     - isMarketingStep(1..3)===false; isMarketingStep(4..8)===true
@@ -206,9 +212,24 @@ export function generateUnsubscribeToken(): string { return randomBytes(32).toSt
 `packages/emails/src/subjects.ts`: export `SUBJECTS: Record<number,string>` — 8 deadpan Jesse-voice subject DRAFTS (one per step, each prefixed with a `// TODO(Andrew): voice sign-off` comment above the object). Subject for step 3 MUST NOT contain "arrived" or "delivered" (delivery-ESTIMATE safe). Keep them short, honest, non-deceptive (CAN-SPAM). Example step 3: `"It should reach you any day now."`
 
 Then create the 4 vitest files in `apps/web/__tests__/` importing from `@eisenbalm/emails`, encoding the behaviors above. `email-idempotency.test.ts` tests `shouldSendStep`. Each file: `import { describe, it, expect } from 'vitest'`.
+
+ALSO create the Wave-0 skeleton `apps/web/__tests__/email-templates.test.ts` as a FAILING-FREE `it.todo` placeholder (it must run green now so the suite stays clean, while reserving the EMAIL-04/05/06/08 coverage that Plan 20-04 Task 3 fills in). It does NOT import the templates yet (templates do not exist until 20-04):
+```typescript
+import { describe, it } from 'vitest'
+// Wave-0 skeleton — Plan 20-04 Task 3 replaces these it.todo placeholders with real
+// renderEmailStep assertions. Kept here so email-templates.test.ts is a Wave-0 artifact
+// per 20-VALIDATION.md / 20-RESEARCH (the render-template test seam is reserved up front).
+describe('email-templates (EMAIL-04/05/06/08) — filled in by Plan 20-04', () => {
+  it.todo('E1 transactional render contains the funded charity name (EMAIL-04)')
+  it.todo('E3 render contains neither "arrived" nor "delivered" (EMAIL-08)')
+  it.todo('E4 marketing render contains the unsubscribe link (EMAIL-05)')
+  it.todo('E1 transactional render contains NO unsubscribe link (EMAIL-06)')
+  it.todo('E7 render lists OTHER charities; E8 render shows the "N more" count')
+})
+```
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm/apps/web && npx vitest run __tests__/email-offsets.test.ts __tests__/email-suppression.test.ts __tests__/email-token.test.ts __tests__/email-idempotency.test.ts</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm/apps/web && npx vitest run __tests__/email-offsets.test.ts __tests__/email-suppression.test.ts __tests__/email-token.test.ts __tests__/email-idempotency.test.ts __tests__/email-templates.test.ts</automated>
   </verify>
   <acceptance_criteria>
 - `npx vitest run` on the 4 files passes with 0 failures.
@@ -216,6 +237,7 @@ Then create the 4 vitest files in `apps/web/__tests__/` importing from `@eisenba
 - `shouldSuppressStep(3, {consentState:'unsubscribed'}) === false` and `shouldSuppressStep(4, {consentState:'unsubscribed'}) === true` assertions present and green.
 - `generateUnsubscribeToken()` assertion `/^[0-9a-f]{64}$/` present and green.
 - `SUBJECTS[3]` does not match `/arrived|delivered/i` (asserted in email-offsets or subjects test).
+- `apps/web/__tests__/email-templates.test.ts` exists as an `it.todo` skeleton (Wave-0 artifact for EMAIL-04/05/06/08) and runs green (no real template imports yet — Plan 20-04 Task 3 fills it in).
   </acceptance_criteria>
   <done>All four pure-helper test files green; helpers exported from the package barrel.</done>
 </task>
