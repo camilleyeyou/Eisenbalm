@@ -141,4 +141,40 @@ export default defineSchema({
   })
     .index('by_sessionId', ['sessionId'])
     .index('by_charitySlug_createdAt', ['charitySlug', 'createdAt']),
+
+  // ── Email lifecycle: consent ledger (Phase 20 — EMAIL-03) ────────────────
+  emailSubscribers: defineTable({
+    email: v.string(),
+    consentState: v.union(v.literal('subscribed'), v.literal('unsubscribed')),
+    source: v.string(),                  // 'post-purchase-flow' | 'newsletter-optin'
+    unsubscribeToken: v.string(),        // 64-char hex; globally unique
+    createdAt: v.number(),
+    unsubscribedAt: v.optional(v.number()),
+  })
+    .index('by_email', ['email'])
+    .index('by_token', ['unsubscribeToken']),
+
+  // ── Email lifecycle: idempotent send ledger (Phase 20 — EMAIL-02) ────────
+  emailSends: defineTable({
+    orderId: v.id('stripeOrders'),
+    email: v.string(),                   // denormalized for fast suppression queries
+    step: v.number(),                    // 1-8
+    status: v.union(
+      v.literal('scheduled'),
+      v.literal('sent'),
+      v.literal('failed'),
+      v.literal('cancelled'),            // unsubscribe cancelled this pending step
+      v.literal('skipped'),              // customerEmail absent at enqueue time
+    ),
+    scheduledFnId: v.optional(v.string()),     // Convex scheduled-fn id for ctx.scheduler.cancel
+    providerMessageId: v.optional(v.string()), // Resend / fake provider message id
+    sentAt: v.optional(v.number()),
+    failedAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_orderId', ['orderId'])
+    .index('by_orderId_step', ['orderId', 'step'])
+    .index('by_email_step', ['email', 'step'])
+    .index('by_status', ['status']),
 })
