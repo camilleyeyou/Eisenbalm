@@ -33,6 +33,8 @@ export class ResendProvider implements SendEmailProvider {
 export interface ProviderEnv {
   EMAIL_LIVE_SEND?: string
   RESEND_API_KEY?: string
+  // Index signature so a raw `process.env` (NodeJS.ProcessEnv) is assignable.
+  [key: string]: string | undefined
 }
 
 /** Live sending is OFF unless EMAIL_LIVE_SEND==='true' AND RESEND_API_KEY is present. Everything else => Fake. */

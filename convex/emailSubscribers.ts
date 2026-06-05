@@ -152,7 +152,7 @@ export const unsubscribeByToken = internalMutation({
  */
 export const unsubscribeByTokenPublic = mutation({
   args: { token: v.string() },
-  handler: async (ctx, { token }) => {
+  handler: async (ctx, { token }): Promise<{ ok: boolean }> => {
     return ctx.runMutation(internal.emailSubscribers.unsubscribeByToken, { token })
   },
 })
