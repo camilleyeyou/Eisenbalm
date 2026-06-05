@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { groq } from 'next-sanity'
 
 import { sanityClient } from '@/lib/sanity/client'
@@ -106,29 +107,16 @@ export default async function ShopPage() {
 
           {/* ── Left: CSS tube placeholder + edition stamp ─────────────── */}
           <div className="sb-hero-left">
-            {/* TODO(Andrew): upload product photography (portrait, 3:4). Replace
-                the CSS tube placeholder below with a Next.js <Image> when
-                real photography is ready. */}
-            <div className="sb-tube rv" aria-hidden="true">
-              <div className="sb-tube-cap" />
-              <div className="sb-tube-body">
-                <div className="sb-tube-label">
-                  <span
-                    style={{
-                      fontFamily: 'var(--sb-mono)',
-                      fontSize: '0.5rem',
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase' as const,
-                      color: 'var(--paper)',
-                      textAlign: 'center' as const,
-                      lineHeight: '1.5',
-                    }}
-                  >
-                    Jesse A.<br />Eisenbalm
-                  </span>
-                </div>
-              </div>
-              <div className="sb-tube-base" />
+            <div className="sb-tube-photo rv">
+              <Image
+                src="/product/tube-cutout.png"
+                alt="Jesse A. Eisenbalm lip balm — Release 001, single tube"
+                width={1546}
+                height={1685}
+                priority
+                sizes="(min-width: 1024px) 260px, 200px"
+                className="sb-tube-img"
+              />
             </div>
 
             <div className="sb-stamp rv">
@@ -274,6 +262,16 @@ export default async function ShopPage() {
             The first edition. Hand-numbered at the manufacturing step.
             A marker of where this product began.
           </p>
+          <div className="sb-edition-photo rv">
+            <Image
+              src="/product/tubes-trio.jpg"
+              alt="Jesse A. Eisenbalm lip balm — two tubes and cap"
+              width={2000}
+              height={1600}
+              sizes="(min-width: 768px) 720px, 100vw"
+              className="sb-edition-img"
+            />
+          </div>
         </div>
 
         {/* ════════════════════════════════════════════════════════════════

@@ -145,6 +145,20 @@
   border-radius: 0 0 8px 8px;
 }
 
+/* ─── Real product photo — floating tube (replaces CSS tube placeholder) ─── */
+
+.shop-brand .sb-tube-photo {
+  margin: 2rem auto;
+  animation: sb-float 4s ease-in-out infinite;
+  filter: drop-shadow(0 24px 26px rgba(26, 23, 20, 0.16));
+}
+
+.shop-brand .sb-tube-img {
+  width: clamp(150px, 38vw, 240px);
+  height: auto;
+  display: block;
+}
+
 /* Edition stamp */
 .shop-brand .sb-stamp {
   display: inline-flex;
@@ -423,6 +437,18 @@
   margin-inline: auto;
 }
 
+.shop-brand .sb-edition-photo {
+  max-width: 720px;
+  margin: 2.5rem auto 0;
+}
+
+.shop-brand .sb-edition-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--rule);
+}
+
 /* ─── Cause close (full-bleed accent) ───────────────────────────────────── */
 
 .shop-brand .sb-cause {
@@ -626,7 +652,8 @@
     transform: none !important;
   }
 
-  .shop-brand .sb-tube {
+  .shop-brand .sb-tube,
+  .shop-brand .sb-tube-photo {
     animation: none !important;
   }
 
