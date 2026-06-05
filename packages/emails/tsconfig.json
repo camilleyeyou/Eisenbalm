@@ -4,8 +4,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "Preserve",
+    "moduleResolution": "Bundler"
   },
-  "include": ["src/**/*.{ts,tsx}"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }
