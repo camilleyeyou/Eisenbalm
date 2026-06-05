@@ -19,7 +19,14 @@
 import { internalMutation, internalQuery, mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
-import { shouldCancelOnUnsubscribe } from '@eisenbalm/emails'
+
+// NOTE: We do NOT import from '@eisenbalm/emails' here because the barrel re-exports
+// token.ts (which uses node:crypto) and this file runs in the Convex (non-Node) runtime.
+// Same barrel-avoidance pattern as emailFlow.ts. Inline of shouldCancelOnUnsubscribe:
+// cancel only marketing steps (4-8) that are still 'scheduled'; transactional (1-3) never.
+function shouldCancelOnUnsubscribe(row: { step: number; status: string }): boolean {
+  return row.step >= 4 && row.status === 'scheduled'
+}
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
