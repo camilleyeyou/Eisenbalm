@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 20-01-emails-package-and-pure-helpers-PLAN.md
-last_updated: "2026-06-05T13:04:20.969Z"
+stopped_at: Completed 20-05-unsubscribe-route-and-cancellation-PLAN.md
+last_updated: "2026-06-05T13:41:41.032Z"
 progress:
   total_phases: 20
   completed_phases: 18
   total_plans: 133
-  completed_plans: 126
+  completed_plans: 129
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 20 (post-purchase-email-lifecycle-8-email-flow) — EXECUTING
-Plan: 3 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -159,6 +159,8 @@ Plan: 3 of 5
 | Phase 19 P05 | 14 | 3 tasks | 6 files |
 | Phase 20-post-purchase-email-lifecycle-8-email-flow P02 | 7 | 3 tasks | 6 files |
 | Phase 20-post-purchase-email-lifecycle-8-email-flow P01 | 10 | 3 tasks | 18 files |
+| Phase 20 P03 | 180 | 3 tasks | 16 files |
+| Phase 20 P05 | 8 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -407,6 +409,10 @@ Recent decisions affecting current work:
 - [Phase 20-post-purchase-email-lifecycle-8-email-flow]: provider.ts created in Task 2 (not Task 3) to unblock barrel import — barrel exports all 5 modules so tests fail before provider exists
 - [Phase 20-post-purchase-email-lifecycle-8-email-flow]: SUBJECTS[3] uses delivery-estimate-safe copy ('It should reach you any day now.') — avoids arrived/delivered per EMAIL-08 requirement
 - [Phase 20-post-purchase-email-lifecycle-8-email-flow]: Dependency-count tripwires updated to 19 (was 18) on @eisenbalm/emails addition — Rule 1 auto-fix for correctness tests
+- [Phase 20]: Inline planEnqueue+offsetForStep in emailFlow.ts — @eisenbalm/emails barrel pulls node:crypto+resend into non-Node.js mutation runtime; Web Crypto API used for token generation instead
+- [Phase 20]: render.tsx returns placeholder HTML stub — Plan 20-04 wires actual React Email templates; .tsx extension set from day 1 for JSX support
+- [Phase 20]: unsubscribeByTokenPublic uses ctx.runMutation(internal.emailSubscribers.unsubscribeByToken) — internal mutations cannot be called from browser client; thin public wrapper is idiomatic Convex pattern
+- [Phase 20]: Unsubscribe token-not-found returns 200 confirmation (not 404) — prevents token enumeration while keeping UX friendly
 
 ### Pending Todos
 
@@ -474,6 +480,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-05T13:04:20.959Z
-Stopped at: Completed 20-01-emails-package-and-pure-helpers-PLAN.md
+Last session: 2026-06-05T13:41:41.024Z
+Stopped at: Completed 20-05-unsubscribe-route-and-cancellation-PLAN.md
 Resume file: None

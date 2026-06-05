@@ -428,11 +428,11 @@ Plans:
 **Goal:** Build an in-house, fully-testable 8-email post-purchase lifecycle for the single-SKU Stripe store — triggered off each completed `stripeOrders` order, scheduled by Convex (`scheduler.runAfter` + hourly cron sweep), rendered as Jesse-voice React Email DRAFTS, sent via a Resend provider abstraction that is OFF by default, and personalized off the per-order `charitySlug`. Emails 1-3 are transactional (always send), 4-8 marketing (one-click `List-Unsubscribe` headers + CAN-SPAM postal footer; unsubscribe cancels pending marketing steps via `ctx.scheduler.cancel` but never transactional). Idempotent `emailSends` ledger guarantees each step sends at most once; `emailSubscribers` holds consent + unsubscribe token. Live sending + Resend key + DNS subdomains + postal address + Andrew voice sign-off are LAUNCH PREREQUISITES — the whole flow is testable with NO live sends.
 **Requirements**: EMAIL-01, EMAIL-02, EMAIL-03, EMAIL-04, EMAIL-05, EMAIL-06, EMAIL-07, EMAIL-08, EMAIL-09, EMAIL-10
 **Depends on:** Phase 8 (Stripe commerce — the `stripeOrders` table + the webhook that records orders is the lifecycle trigger)
-**Plans:** 0/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
-- [ ] 20-01-emails-package-and-pure-helpers-PLAN.md — Wave 1: scaffold `@eisenbalm/emails` workspace package; pure helpers (8 offsets, suppression, idempotency, token, subjects) + SendEmailProvider abstraction (Resend + Fake, live OFF by default) + Wave 0 vitest (EMAIL-01/02/03/07)
-- [ ] 20-02-convex-data-model-PLAN.md — Wave 1: add `emailSubscribers` + idempotent `emailSends` (with `scheduledFnId`) tables + internal claim/markSent/markSkipped/upsert/getByToken functions + env docs; deploy to dev (EMAIL-02/03/09)
-- [ ] 20-03-convex-flow-engine-PLAN.md — Wave 2: `enqueueEmailFlow` + `sendEmailStep`/`sweepStaleSends` actions + `crons.ts` hourly sweep + charity GROQ builders; wire enqueue into `stripeOrders.insert` (fire-and-forget) (EMAIL-01/02/03/09)
+- [x] 20-01-emails-package-and-pure-helpers-PLAN.md — Wave 1: scaffold `@eisenbalm/emails` workspace package; pure helpers (8 offsets, suppression, idempotency, token, subjects) + SendEmailProvider abstraction (Resend + Fake, live OFF by default) + Wave 0 vitest (EMAIL-01/02/03/07)
+- [x] 20-02-convex-data-model-PLAN.md — Wave 1: add `emailSubscribers` + idempotent `emailSends` (with `scheduledFnId`) tables + internal claim/markSent/markSkipped/upsert/getByToken functions + env docs; deploy to dev (EMAIL-02/03/09)
+- [x] 20-03-convex-flow-engine-PLAN.md — Wave 2: `enqueueEmailFlow` + `sendEmailStep`/`sweepStaleSends` actions + `crons.ts` hourly sweep + charity GROQ builders; wire enqueue into `stripeOrders.insert` (fire-and-forget) (EMAIL-01/02/03/09)
 - [ ] 20-04-react-email-templates-PLAN.md — Wave 3: 8 Jesse-voice React Email DRAFT templates + transactional/marketing layouts + CAN-SPAM footer + real `renderEmailStep` + Next `serverExternalPackages` (EMAIL-04/05/06/08)
 - [ ] 20-05-unsubscribe-route-and-cancellation-PLAN.md — Wave 3: `GET/POST /api/email/unsubscribe` one-click route + `unsubscribeByToken` cancellation mutation (cancels pending marketing steps only) (EMAIL-03/10)
