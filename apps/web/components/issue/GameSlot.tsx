@@ -78,13 +78,6 @@ export function GameSlot({ game, runId }: GameSlotProps) {
           {/* Head grid: 1.3fr 1fr — left: label + h2, right: description */}
           <div
             className="game-head"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1.3fr 1fr',
-              gap: '48px',
-              alignItems: 'end',
-              marginBottom: '36px',
-            }}
           >
             <div>
               <div className="sec-label" style={{ marginBottom: '14px' }}>
@@ -118,7 +111,6 @@ export function GameSlot({ game, runId }: GameSlotProps) {
                 fontStyle: 'italic',
                 color: 'var(--color-text-dim)',
                 lineHeight: 1.6,
-                textAlign: 'right',
               }}
             >
               {game?.description ?? ''}

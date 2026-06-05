@@ -111,11 +111,11 @@ function SpecAdBonus({ bonus }: SpecAdBonusProps) {
        * 2-col justified body, accent hr
        */}
       <div
+        className="ad-box"
         style={{
           maxWidth: '760px',
           margin: '0 auto',
           border: '1px solid var(--color-text)',
-          padding: '48px 56px',
           background: '#FFFDF8',
           position: 'relative',
         }}
@@ -192,12 +192,9 @@ function SpecAdBonus({ bonus }: SpecAdBonusProps) {
 
         {/* Body — 2-col justified, Newsreader 17px weight 300 */}
         <div
-          className="body"
+          className="body ad-body"
           style={{
             fontSize: '17px',
-            columnCount: 2,
-            columnGap: '32px',
-            textAlign: 'justify',
           }}
         >
           <PortableTextRenderer value={bonus.body} />
