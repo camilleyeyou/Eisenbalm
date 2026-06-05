@@ -1,4 +1,7 @@
 {
   "$schema": "https://convex.dev/schemas/convex.json",
-  "functions": "./"
+  "functions": "./",
+  "node": {
+    "externalPackages": ["resend"]
+  }
 }

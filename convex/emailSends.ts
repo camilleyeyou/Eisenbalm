@@ -37,6 +37,21 @@ export const getByOrderStep = internalQuery({
   },
 })
 
+/**
+ * List all rows with status='scheduled' (up to 100).
+ * Used by sweepStaleSends to find steps that were scheduled but never fired.
+ * The cron re-enqueues those that are >1h past their expected fire time.
+ */
+export const listStaleScheduled = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query('emailSends')
+      .withIndex('by_status', (q) => q.eq('status', 'scheduled'))
+      .take(100)
+  },
+})
+
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 /**

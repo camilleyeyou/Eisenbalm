@@ -9,7 +9,10 @@
  */
 
 import type * as agentVotes from "../agentVotes.js";
+import type * as crons from "../crons.js";
 import type * as deliberationEvents from "../deliberationEvents.js";
+import type * as emailActions from "../emailActions.js";
+import type * as emailFlow from "../emailFlow.js";
 import type * as emailSends from "../emailSends.js";
 import type * as emailSubscribers from "../emailSubscribers.js";
 import type * as pipelineRuns from "../pipelineRuns.js";
@@ -26,7 +29,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agentVotes: typeof agentVotes;
+  crons: typeof crons;
   deliberationEvents: typeof deliberationEvents;
+  emailActions: typeof emailActions;
+  emailFlow: typeof emailFlow;
   emailSends: typeof emailSends;
   emailSubscribers: typeof emailSubscribers;
   pipelineRuns: typeof pipelineRuns;
