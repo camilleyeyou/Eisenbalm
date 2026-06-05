@@ -67,7 +67,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 2.5rem 2rem;
   background: linear-gradient(160deg, var(--paper2) 0%, var(--paper) 100%);
   border-right: 1px solid var(--rule);
   position: relative;
@@ -154,7 +154,7 @@
 }
 
 .shop-brand .sb-tube-img {
-  width: clamp(150px, 38vw, 240px);
+  width: clamp(220px, 52vw, 380px);
   height: auto;
   display: block;
 }
