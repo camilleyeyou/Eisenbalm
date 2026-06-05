@@ -422,3 +422,13 @@ Plans:
 - [x] 19-03-stage-a-deliberation-centerpiece-PLAN.md — Wave 2 (Stage A): rewrite DeliberationSlot to dark-band centerpiece (DelibScoreboard + DelibChat stagger + ConfidenceBar); preserve 5 Convex subs + DEL-04; wire MOCK into page.tsx
 - [x] 19-04-stage-a-visual-approval-checkpoint-PLAN.md — Wave 3 (GATE): Stage A automated gates green + human visual approval vs 19-PROTOTYPE.html before Stage B (autonomous: false)
 - [x] 19-05-stage-b-live-wiring-and-verification-PLAN.md — Wave 4 (Stage B): re-enable per-issue theming in issue/[slug]/layout.tsx; swap MOCK_ISSUE → live QUERY_ISSUE_BY_SLUG; thread runId (Convex subs + GAM-05) + problemPdfUrl; full-suite verify + nyquist sign-off + live UAT (autonomous: false)
+
+### Phase 20: Post-Purchase Email Lifecycle (8-email flow)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 19
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 20 to break down)
