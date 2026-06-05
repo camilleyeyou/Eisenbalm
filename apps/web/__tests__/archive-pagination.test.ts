@@ -62,8 +62,9 @@ describe('P17-07: no new npm dep added (dependency count still 17)', () => {
       dependencies?: Record<string, string>
     }
     // Phase 11 baseline was 17. Phase 19 adds framer-motion (approved dep decision).
-    // Updated to 18 to reflect Phase 19 framer-motion addition.
+    // Phase 20 adds @eisenbalm/emails workspace dep (email lifecycle plan 20-01).
+    // Updated to 19 to reflect Phase 20 addition.
     // Mirror of archive-cardswap.test.ts updated count.
-    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(18)
+    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(19)
   })
 })

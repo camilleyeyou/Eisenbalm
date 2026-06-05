@@ -158,12 +158,12 @@ describe('ARC-01: no new npm dependency', () => {
     expect(allDepKeys).toContain('framer-motion')
   })
 
-  it('apps/web/package.json dependency count is updated to Phase 19 baseline (18)', () => {
+  it('apps/web/package.json dependency count is updated to Phase 20 baseline (19)', () => {
     const pkg = JSON.parse(packageJsonSource) as {
       dependencies?: Record<string, string>
     }
-    // Phase 19 baseline: 17 (Phase 11) + 1 (framer-motion) = 18
-    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(18)
+    // Phase 20 baseline: 18 (Phase 19) + 1 (@eisenbalm/emails workspace dep) = 19
+    expect(Object.keys(pkg.dependencies ?? {}).length).toBe(19)
   })
 })
 
