@@ -25,6 +25,26 @@ Do not modify `schema.ts` field names without checking [`docs/API_CONTRACTS.md`]
 
 ---
 
+## Phase 20 — Email lifecycle tables
+
+Two new tables added in Phase 20 (Plans 20-02). Both are **additive** — no existing table or field was modified.
+
+| Table | Purpose | Indexes |
+|---|---|---|
+| `emailSubscribers` | Consent ledger — one row per email address; tracks `consentState` (subscribed/unsubscribed), the 64-char hex `unsubscribeToken`, and `source`. Unsubscribing suppresses all marketing emails (E4–E8) while transactional emails (E1–E3) continue. | `by_email`, `by_token` |
+| `emailSends` | Idempotent send ledger — one row per `(orderId, step)` pair; the primary idempotency key for the 8-email flow. Carries `scheduledFnId` (the Convex scheduled-function id) so the unsubscribe path can call `ctx.scheduler.cancel()` on pending steps. | `by_orderId`, `by_orderId_step` (**the idempotency lookup**), `by_email_step`, `by_status` |
+
+Function modules:
+
+| File | Queries | Mutations |
+|---|---|---|
+| `emailSubscribers.ts` | `getByEmail`, `getByToken` | `upsertSubscriber` |
+| `emailSends.ts` | `getByOrderStep` | `insertScheduled`, `markSent`, `markFailed`, `markSkipped` |
+
+All functions are **internal** (`internalQuery`/`internalMutation`) — not callable from the browser client.
+
+---
+
 ## Phase 4 additions (Pipeline Skeleton)
 
 Two optional fields were added to the `pipelineRuns` table:

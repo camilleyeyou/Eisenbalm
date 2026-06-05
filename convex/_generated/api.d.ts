@@ -10,6 +10,8 @@
 
 import type * as agentVotes from "../agentVotes.js";
 import type * as deliberationEvents from "../deliberationEvents.js";
+import type * as emailSends from "../emailSends.js";
+import type * as emailSubscribers from "../emailSubscribers.js";
 import type * as pipelineRuns from "../pipelineRuns.js";
 import type * as pitchLog from "../pitchLog.js";
 import type * as qaCorrections from "../qaCorrections.js";
@@ -25,6 +27,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   agentVotes: typeof agentVotes;
   deliberationEvents: typeof deliberationEvents;
+  emailSends: typeof emailSends;
+  emailSubscribers: typeof emailSubscribers;
   pipelineRuns: typeof pipelineRuns;
   pitchLog: typeof pitchLog;
   qaCorrections: typeof qaCorrections;
