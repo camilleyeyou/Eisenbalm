@@ -440,6 +440,7 @@ None yet.
 | 260523-eg3 | Fix Advocate always-0/10 score bug: robust vote-to-candidate matching + propagate keyStrengths/primaryConcern | 2026-05-23 | 18c0e9c | [260523-eg3-fix-advocate-always-0-10-score-bug-robus](./quick/260523-eg3-fix-advocate-always-0-10-score-bug-robus/) |
 | 260524-ojm | Fix Chronicler faithfulness bug: WINNER AUTHORITY prompt fix — editor final turn always names featured charity even when editor_decision favors a runner-up | 2026-05-25 | 3951204 | [260524-ojm-fix-chronicler-faithfulness-bug-delibera](./quick/260524-ojm-fix-chronicler-faithfulness-bug-delibera/) |
 | 260604-ftt | Redesign /shop to "Stop. Breathe. Balm." sub-brand mockup (scoped palette/fonts, split hero, ritual/formula/edition/cause beats, sticky buy bar) + real 1–20 multi-quantity Stripe checkout | 2026-06-04 | 81e0240 | [260604-ftt-redesign-shop-to-stop-breathe-balm-sub-b](./quick/260604-ftt-redesign-shop-to-stop-breathe-balm-sub-b/) |
+| 260605-dzk | Responsive design pass for mobile + tablet: CardSwap fixed-500px → min(500px,100%) overflow fix; globals.css magazine layout gains 768px tablet breakpoints (briefing stacks + dividers flip, deliberation gap) + 600px gutter pass (18px horizontals on masthead/ad-wrap/pod/shop/delib) | 2026-06-05 | ba2787e | [260605-dzk-improve-responsive-design-across-apps-we](./quick/260605-dzk-improve-responsive-design-across-apps-we/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
