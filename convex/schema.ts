@@ -138,9 +138,24 @@ export default defineSchema({
     customerEmail: v.optional(v.string()),
     charitySlug: v.optional(v.string()),  // current charity at click time
     createdAt: v.number(),     // Date.now() server-side
+    // ── Phase CMR-SHIP-01 / CMR-DONATE-01 additive fields ────────────────────
+    amountSubtotal: v.optional(v.number()),   // product subtotal in cents (excludes shipping)
+    amountShipping: v.optional(v.number()),   // shipping in cents
+    donationAmount: v.optional(v.number()),   // == amountSubtotal; 100%-to-charity figure
+    customerName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    shippingAddress: v.optional(v.object({
+      line1: v.optional(v.string()),
+      line2: v.optional(v.string()),
+      city: v.optional(v.string()),
+      state: v.optional(v.string()),
+      postalCode: v.optional(v.string()),
+      country: v.optional(v.string()),
+    })),
   })
     .index('by_sessionId', ['sessionId'])
-    .index('by_charitySlug_createdAt', ['charitySlug', 'createdAt']),
+    .index('by_charitySlug_createdAt', ['charitySlug', 'createdAt'])
+    .index('by_createdAt', ['createdAt']),
 
   // ── Email lifecycle: consent ledger (Phase 20 — EMAIL-03) ────────────────
   emailSubscribers: defineTable({

@@ -26,6 +26,20 @@ export const insert = mutation({
     currency: v.string(),
     customerEmail: v.optional(v.string()),
     charitySlug: v.optional(v.string()),
+    // ── CMR-SHIP-01 / CMR-DONATE-01 additive args ────────────────────────────
+    amountSubtotal: v.optional(v.number()),
+    amountShipping: v.optional(v.number()),
+    donationAmount: v.optional(v.number()),
+    customerName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    shippingAddress: v.optional(v.object({
+      line1: v.optional(v.string()),
+      line2: v.optional(v.string()),
+      city: v.optional(v.string()),
+      state: v.optional(v.string()),
+      postalCode: v.optional(v.string()),
+      country: v.optional(v.string()),
+    })),
   },
   handler: async (ctx, args) => {
     const orderId = await ctx.db.insert('stripeOrders', {
@@ -36,6 +50,12 @@ export const insert = mutation({
       customerEmail: args.customerEmail,
       charitySlug: args.charitySlug,
       createdAt: Date.now(),
+      amountSubtotal: args.amountSubtotal,
+      amountShipping: args.amountShipping,
+      donationAmount: args.donationAmount,
+      customerName: args.customerName,
+      phone: args.phone,
+      shippingAddress: args.shippingAddress,
     })
     try {
       await ctx.scheduler.runAfter(0, internal.emailFlow.enqueueEmailFlow, {
