@@ -9,6 +9,7 @@
  */
 
 import type * as agentVotes from "../agentVotes.js";
+import type * as charityLedger from "../charityLedger.js";
 import type * as crons from "../crons.js";
 import type * as deliberationEvents from "../deliberationEvents.js";
 import type * as emailActions from "../emailActions.js";
@@ -29,6 +30,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agentVotes: typeof agentVotes;
+  charityLedger: typeof charityLedger;
   crons: typeof crons;
   deliberationEvents: typeof deliberationEvents;
   emailActions: typeof emailActions;

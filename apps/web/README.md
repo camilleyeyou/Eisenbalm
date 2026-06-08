@@ -595,3 +595,28 @@ pnpm --filter web test:unit
 The unit suite includes the Phase 10 source-scan tripwire
 (`__tests__/issue-page-typography.test.ts`), which asserts the contracts above.
 If it fails, fix the source — do not weaken the assertions.
+
+---
+
+## Charity donation ledger
+
+`apps/web/scripts/charity-ledger.mjs` queries `charityLedger.charityTotals` in
+Convex and outputs a per-charity summary of how much was donated and how much
+went to shipping. Requires `NEXT_PUBLIC_CONVEX_URL`.
+
+**Donation totals are PRODUCT SUBTOTAL ONLY — shipping is excluded.**
+This ensures the "amount donated to charity X" figure never includes the
+carrier fee.
+
+```bash
+# All-time totals
+NEXT_PUBLIC_CONVEX_URL=https://modest-magpie-797.convex.cloud \
+  node apps/web/scripts/charity-ledger.mjs
+
+# Single calendar year
+NEXT_PUBLIC_CONVEX_URL=https://modest-magpie-797.convex.cloud \
+  node apps/web/scripts/charity-ledger.mjs --year 2026
+```
+
+Output: an aligned table to stdout + a `charity-ledger-<year|all>.csv` file
+written to the current working directory.
