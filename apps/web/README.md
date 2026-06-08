@@ -72,8 +72,14 @@ Defined in `apps/web/.env.example` (committed) and `apps/web/.env.local` (gitign
 | `NEXT_PUBLIC_SITE_URL` | yes | `http://localhost:3000` | Base URL for sitemap.xml, feed.xml, JSON-LD canonical, and OG images. Set to `https://eisenbalm.com` (or your chosen domain) in Vercel. |
 | `NEXT_PUBLIC_CONVEX_URL` | yes (when Convex is configured) | _none_ | Public Convex deployment URL (e.g. `https://adjective-animal-NNN.convex.cloud`). Web app uses it to construct `ConvexReactClient`. Set after running `pnpm --filter @eisenbalm/convex exec convex dev --once --configure`. When missing, the provider falls back to passing children through (no Convex subscriptions) — the rest of the site still renders. |
 | `CONVEX_DEPLOY_KEY` | no (web app does not need it) | _none_ | **SECRET. NEVER commit. NEVER expose via NEXT_PUBLIC_*.** Convex Deploy Key (`dev:...` in Phase 3, `prod:...` after Andrew promotes the deployment). Used by `convex deploy` (CI / Vercel build step) and by the Phase 4 pipeline's HTTP API mutation calls. Kept in `apps/web/.env.local` for local HTTP API smoke tests. |
+| `STRIPE_SECRET_KEY` | yes | _none_ | **SECRET. NEVER commit. NEVER expose via NEXT_PUBLIC_*.** Server Stripe API key (`sk_test_…` / `sk_live_…`). |
+| `STRIPE_WEBHOOK_SECRET` | yes | _none_ | **SECRET. NEVER commit.** Webhook signing secret (`whsec_…`) for `/api/stripe/webhook`. |
+| `STRIPE_PRICE_ID` | yes | _none_ | Stripe Price id (`price_…`) for the lip balm SKU. |
+| `STRIPE_SHIPPING_RATE_ID` | no | _none_ | US flat-rate shipping id (`shr_…`, $3). Omit → no US shipping line. |
+| `STRIPE_SHIPPING_RATE_ID_INTL` | no | _none_ | International flat-rate shipping id (`shr_…`, $12, CA/UK/EU). Omit → international option not offered. |
+| `STRIPE_RECORD_ORDERS` | no | `true` | Write order rows to Convex `stripeOrders` on successful checkout. `false` → skip persistence. |
 
-No write token is needed for the web app at runtime. Phase 8 adds Stripe env vars to this list.
+No write token is needed for the web app at runtime. Stripe secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) stay out of `NEXT_PUBLIC_*` — set them in `apps/web/.env.local` (local) and the Vercel project dashboard (production).
 
 ---
 
@@ -276,8 +282,14 @@ Set these env vars in the Vercel project dashboard (or via `vercel env add`):
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | `6h1vd9mf` |
 | `NEXT_PUBLIC_SANITY_DATASET` | `production` |
 | `NEXT_PUBLIC_SITE_URL` | `https://eisenbalm.com` (or your domain) |
+| `STRIPE_SECRET_KEY` | from Stripe Dashboard → Developers → API keys (test or live) |
+| `STRIPE_WEBHOOK_SECRET` | from Stripe Dashboard → Developers → Webhooks → endpoint signing secret |
+| `STRIPE_PRICE_ID` | `price_…` for the lip balm SKU (Stripe Dashboard → Products) |
+| `STRIPE_SHIPPING_RATE_ID` | `shr_…` US flat rate ($3) |
+| `STRIPE_SHIPPING_RATE_ID_INTL` | `shr_…` international flat rate ($12, optional) |
+| `STRIPE_RECORD_ORDERS` | `true` (optional; `false` to skip Convex order rows) |
 
-No write token needed on the web side. Phase 8 adds Stripe variables to this list.
+No write token needed on the web side. Set the Stripe variables above in the Vercel dashboard — never commit secret values.
 
 ---
 
