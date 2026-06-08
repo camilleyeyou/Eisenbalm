@@ -43,6 +43,10 @@ export async function POST(req: Request) {
     )
   }
 
+  // CMR-SHIP-01: attach flat-rate US shipping when configured.
+  // When unset, shipping_options is omitted and checkout still works.
+  const shippingRateId = process.env.STRIPE_SHIPPING_RATE_ID
+
   // Parse quantity defensively from optional JSON body.
   // Missing body, non-JSON, NaN, or out-of-range all collapse to a valid 1–20 value.
   let quantity = 1
@@ -85,6 +89,9 @@ export async function POST(req: Request) {
     },
     phone_number_collection: { enabled: true },
     automatic_tax: { enabled: false },  // OFF until Andrew configures Stripe Tax
+    ...(shippingRateId
+      ? { shipping_options: [{ shipping_rate: shippingRateId }] }
+      : {}),
     success_url: buildSuccessUrl(),
     cancel_url: buildCancelUrl(),
     metadata: {
