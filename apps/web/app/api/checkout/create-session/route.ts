@@ -43,9 +43,17 @@ export async function POST(req: Request) {
     )
   }
 
-  // CMR-SHIP-01: attach flat-rate US shipping when configured.
-  // When unset, shipping_options is omitted and checkout still works.
+  // CMR-SHIP-01 + CMR-SHIP-INTL: attach flat-rate shipping rates when configured.
+  // US ($3) and International ($12) rates are offered to all buyers; Stripe lets
+  // the buyer choose at checkout. When both env ids are unset, shipping_options
+  // is omitted and checkout still works (US-only fallback).
   const shippingRateId = process.env.STRIPE_SHIPPING_RATE_ID
+  const shippingRateIdIntl = process.env.STRIPE_SHIPPING_RATE_ID_INTL
+
+  // Build the shipping_options array: US first, then INTL. Only include set ids.
+  const shippingOptions: { shipping_rate: string }[] = []
+  if (shippingRateId) shippingOptions.push({ shipping_rate: shippingRateId })
+  if (shippingRateIdIntl) shippingOptions.push({ shipping_rate: shippingRateIdIntl })
 
   // Parse quantity defensively from optional JSON body.
   // Missing body, non-JSON, NaN, or out-of-range all collapse to a valid 1–20 value.
@@ -84,14 +92,13 @@ export async function POST(req: Request) {
     mode: 'payment',
     line_items: [{ price: priceId, quantity }],
     shipping_address_collection: {
-      // CMR-10: shipping enabled; expand allowed_countries when Andrew configures more rates.
-      allowed_countries: ['US'],
+      // CMR-10 + CMR-SHIP-INTL: US + Canada + UK + EU core countries.
+      // Both US ($3) and International ($12) rates are offered to all buyers.
+      allowed_countries: ['US', 'CA', 'GB', 'DE', 'FR', 'IE', 'NL', 'ES', 'IT'],
     },
     phone_number_collection: { enabled: true },
     automatic_tax: { enabled: false },  // OFF until Andrew configures Stripe Tax
-    ...(shippingRateId
-      ? { shipping_options: [{ shipping_rate: shippingRateId }] }
-      : {}),
+    ...(shippingOptions.length > 0 ? { shipping_options: shippingOptions } : {}),
     success_url: buildSuccessUrl(),
     cancel_url: buildCancelUrl(),
     metadata: {
