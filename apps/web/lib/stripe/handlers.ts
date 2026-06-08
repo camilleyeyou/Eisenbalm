@@ -80,6 +80,18 @@ async function maybeRecordOrder(
     return
   }
   try {
+    const amountSubtotal = session.amount_subtotal ?? 0
+    const amountShipping = session.total_details?.amount_shipping ?? 0
+    const details = session.customer_details
+    // Stripe basil moved shipping under collected_information; fall back to legacy field.
+    const shipping =
+      (session as unknown as {
+        collected_information?: { shipping_details?: { address?: Record<string, string | null> } }
+        shipping_details?: { address?: Record<string, string | null> }
+      }).collected_information?.shipping_details ??
+      (session as unknown as { shipping_details?: { address?: Record<string, string | null> } }).shipping_details
+    const addr = shipping?.address
+
     await convex.mutation(api.stripeOrders.insert, {
       sessionId: session.id,
       eventId,
@@ -91,6 +103,21 @@ async function maybeRecordOrder(
         session.metadata?.charitySlug && session.metadata.charitySlug.length > 0
           ? session.metadata.charitySlug
           : undefined,
+      amountSubtotal,
+      amountShipping,
+      donationAmount: amountSubtotal,  // donation = product subtotal only (excludes shipping)
+      customerName: details?.name ?? undefined,
+      phone: details?.phone ?? undefined,
+      shippingAddress: addr
+        ? {
+            line1: addr.line1 ?? undefined,
+            line2: addr.line2 ?? undefined,
+            city: addr.city ?? undefined,
+            state: addr.state ?? undefined,
+            postalCode: addr.postal_code ?? undefined,
+            country: addr.country ?? undefined,
+          }
+        : undefined,
     })
   } catch (err) {
     // eslint-disable-next-line no-console
