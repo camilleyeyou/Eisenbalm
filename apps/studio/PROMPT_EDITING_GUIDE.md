@@ -32,7 +32,7 @@ You'll see one `.md` file per agent:
 4. Edit only the text between those two markers. Everything above `<!-- PROMPT START -->` is a note for reference — the pipeline ignores it.
 5. When you're done, scroll to the bottom of the page.
 6. Under **"Commit changes"**, write a short description of what you changed.
-7. Select **"Create a new branch and start a pull request"** (not "Commit directly to main").
+7. Select **"Create a new branch and start a pull request"** (not "Commit directly to master").
 8. Click **"Propose changes"**, then on the next screen click **"Create pull request"**.
 9. In the pull request, add **Ghislain** as a reviewer (there's a "Reviewers" panel on the right side).
 10. Submit the PR and ping Ghislain to take a look.
