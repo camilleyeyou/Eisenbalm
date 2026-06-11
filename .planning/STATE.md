@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Completed quick-260608-fwd-PLAN.md
-last_updated: "2026-06-08T18:42:27.928Z"
+stopped_at: Completed quick-260611-3jo extract-agent-system-prompts-to-flat-edi
+last_updated: "2026-06-11T09:55:52.502Z"
 progress:
   total_phases: 20
   completed_phases: 19
@@ -416,6 +416,8 @@ Recent decisions affecting current work:
 - [Phase 20]: Unsubscribe token-not-found returns 200 confirmation (not 404) — prevents token enumeration while keeping UX friendly
 - [Phase 20]: tsconfig moduleResolution switched to Bundler in packages/emails — NodeNext requires .js extensions; Bundler allows extensionless imports compatible with Next.js/vitest
 - [Phase 20]: baseUrl added to RenderData interface — marketing templates need it for unsubscribe URL construction; additive change, no callers broken
+- [Phase quick]: Chronicler prompt extraction skipped: _build_system_prompt diverges across narrator states; flat .md template cannot express conditional composition without architectural change out of scope for behavior-preserving refactor
+- [Phase quick]: Dual-location .md files: src/eisenbalm_pipeline/prompts/ for importlib.resources (editable+wheel) + packages/pipeline/prompts/ for Andrew-facing editing and fallback; str.replace() over str.format() to avoid KeyError on literal braces
 
 ### Pending Todos
 
@@ -489,6 +491,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-08T18:42:27.916Z
-Stopped at: Completed quick-260608-fwd-PLAN.md
+Last session: 2026-06-11T09:55:35.714Z
+Stopped at: Completed quick-260611-3jo extract-agent-system-prompts-to-flat-edi
 Resume file: None
