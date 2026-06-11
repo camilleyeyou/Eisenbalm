@@ -42,6 +42,7 @@ from eisenbalm_pipeline.agents.design.font_whitelist import (
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.wcag import SAFE_THEME, validate_theme
 
 log = logging.getLogger(__name__)
@@ -95,28 +96,9 @@ def _build_messages(
     display_list = ", ".join(sorted(WHITELIST_DISPLAY))
     body_list = ", ".join(sorted(WHITELIST_BODY))
     system = (
-        "You are the DesignAgent for The Eisenbalm Dispatch.\n\n"
-        "AESTHETIC ENVELOPE (Machine Editorial):\n"
-        "  backgroundColor: warm paper canvas. Target range near #FAFAF8 "
-        "(warm off-white / daylight broadsheet). Do NOT use near-black, "
-        "charcoal, or dark canvases for backgroundColor.\n"
-        "  textColor: near-black warm ink. Target range near #1A1A1A. "
-        "Ensure >= 4.5:1 WCAG-AA contrast with the (light) backgroundColor.\n"
-        "  fontDisplay: strongly prefer Cormorant Garamond.\n"
-        "  fontBody: strongly prefer Lora.\n"
-        "  primaryColor: brand gold #CDA434 register (decorative — "
-        "fills, borders, large glyphs; NOT body text on light canvas).\n"
-        "  accentColor: brand rust #C2502A register (borders and large "
-        "text only; NOT normal body text on light canvas).\n"
-        "  Atmosphere / character: editorial magazine on quality paper "
-        "with subtle warm ink-wash atmosphere — NOT digital dark-mode.\n\n"
-        "Output exactly four six-digit hex colors and two font names. You will not "
-        "invent a font. WCAG-AA contrast is a precondition, not a polish step.\n\n"
-        f"fontDisplay must be one of: {display_list}\n"
-        f"fontBody must be one of: {body_list}\n\n"
-        "WCAG-AA: contrast ratio between backgroundColor and textColor "
-        ">= 4.5:1. Your choices will be validated programmatically; a "
-        "second failure forces a hardcoded fallback."
+        load_prompt("design")
+        .replace("{display_list}", display_list)
+        .replace("{body_list}", body_list)
     )
     user_lines = [
         f"CHARITY: {charity.get('name', '')}",

@@ -36,6 +36,7 @@ from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.blocks import BodyBlock
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 
@@ -126,16 +127,7 @@ STRUCTURE_CONTRACT: str = (
 
 
 def _build_big_budget_prompt(charity: dict, style_brief: dict) -> list[dict[str, str]]:
-    system = (
-        "You are the BonusWriter for The Eisenbalm Dispatch. You are writing "
-        "the BIG BUDGET branch: a spec for a cinematic ad campaign.\n\n"
-        "VOICE CONSTRAINTS (non-negotiable):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        "Output: headline + body (200-400 words on concept) + storyboards "
-        "(3-5 items: each with shotNumber (int) and description (50-100 "
-        "words of precise visual/audio direction, Fortune-500 production "
-        "values, no winking))."
-    )
+    system = load_prompt("bonus-big-budget").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"CHARITY: {charity.get('name', '')}\n"
         f"MISSION: {charity.get('missionStatement', '')}\n"
@@ -149,17 +141,7 @@ def _build_big_budget_prompt(charity: dict, style_brief: dict) -> list[dict[str,
 
 
 def _build_jingle_prompt(charity: dict, style_brief: dict) -> list[dict[str, str]]:
-    system = (
-        "You are the BonusWriter for The Eisenbalm Dispatch. You are writing "
-        "the JINGLE branch.\n\n"
-        "VOICE CONSTRAINTS (non-negotiable):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        "Output: headline + body (100-200 words on concept) + lyrics "
-        "(8-16 lines, internal rhyme allowed) + sunoPrompt (40-80 words "
-        "describing musical style, instrumentation, mood, and lyrical theme "
-        "for the Suno API — do not reference AI in sunoPrompt). "
-        "sunoAudioUrl is left empty for Andrew to fill."
-    )
+    system = load_prompt("bonus-jingle").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"CHARITY: {charity.get('name', '')}\n"
         f"MISSION: {charity.get('missionStatement', '')}\n"
@@ -174,13 +156,9 @@ def _build_jingle_prompt(charity: dict, style_brief: dict) -> list[dict[str, str
 
 def _build_spec_ad_prompt(charity: dict, style_brief: dict) -> list[dict[str, str]]:
     system = (
-        "You are the BonusWriter for The Eisenbalm Dispatch. You are writing "
-        "the SPEC AD branch: a print/digital ad spec.\n\n"
-        "VOICE CONSTRAINTS (non-negotiable):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        "Output: headline (the ad headline) + body (200-400 words of ad copy "
-        "and rationale for the creative direction — precise, dry, serious)."
-        + STRUCTURE_CONTRACT
+        load_prompt("bonus-spec-ad")
+        .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+        .replace("{STRUCTURE_CONTRACT}", STRUCTURE_CONTRACT)
     )
     user = (
         f"CHARITY: {charity.get('name', '')}\n"

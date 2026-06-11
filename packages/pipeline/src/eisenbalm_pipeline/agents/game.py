@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 
@@ -57,12 +58,10 @@ class GameOutput(BaseModel):
 def _build_messages(charity: dict) -> list[dict[str, str]]:
     """Embed FORBIDDEN_CONSTRUCTS verbatim per D-20."""
     system = (
-        "You are the GameWriter for The Eisenbalm Dispatch. "
-        f"Write a self-contained HTML/JS game themed around "
-        f"{charity.get('name', '')}'s mission. Completable in 60-90 seconds.\n\n"
-        "VOICE CONSTRAINTS (apply to in-game text + headline):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        f"{FORBIDDEN_CONSTRUCTS}"
+        load_prompt("game")
+        .replace("{charity_name}", charity.get("name", ""))
+        .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+        .replace("{FORBIDDEN_CONSTRUCTS}", FORBIDDEN_CONSTRUCTS)
     )
     user = (
         f"CHARITY: {charity.get('name', '')}\n"
