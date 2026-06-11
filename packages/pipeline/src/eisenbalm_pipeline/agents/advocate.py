@@ -33,6 +33,7 @@ from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 
 
 class AdvocateVote(BaseModel):
@@ -63,17 +64,7 @@ def _build_messages(*, candidates: list[dict]) -> list[dict]:
     Kept short: Haiku rewards a tight prompt.
     """
     candidates_json = json.dumps(candidates, indent=2, default=str)
-    system = (
-        "You are the Advocate for The Eisenbalm Dispatch. Score each Scout "
-        "candidate 1-10 with a written argument. Surface the case for each "
-        "charity without editorializing. Dry. Precise. Serious. No winking. "
-        "No exclamation marks. Treat every charity with Fortune-500 gravity.\n\n"
-        "For each candidate output:\n"
-        "  - score (int, 1-10)\n"
-        "  - argument (150-250 words, Jesse voice)\n"
-        "  - keyStrengths (2-4 items)\n"
-        "  - primaryConcern (one sentence)"
-    )
+    system = load_prompt("advocate")
     user = (
         f"CANDIDATES (Scout output, JSON):\n{candidates_json}\n\n"
         "Return JSON AdvocateOutput with field `votes` (one AdvocateVote "

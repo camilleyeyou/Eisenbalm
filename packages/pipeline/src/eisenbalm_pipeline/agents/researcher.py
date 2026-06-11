@@ -27,6 +27,7 @@ from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.search_client import SearchResult, web_search
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
@@ -81,20 +82,7 @@ def _build_messages(
         f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
         for r in tavily_results
     )
-    system = (
-        "You are the Researcher for The Eisenbalm Dispatch. Deep-dive the "
-        "winning charity. You will not name a founder without a source URL "
-        "on the charity's own website. Falls back to anonymous framing "
-        "rather than guess.\n\n"
-        "VOICE CONSTRAINTS (apply to summary and bio fields):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        "For founderName: MUST provide founderNameSourceUrl pointing to "
-        "the specific page where the name appears on the charity's own "
-        "domain. If no verifiable source found, set founderName=null "
-        "and provide founderRole (the role title only). Same rule applies "
-        "to subjectName/subjectNameSourceUrl/subjectRole for the case "
-        "study subject (a beneficiary, program graduate, or similar)."
-    )
+    system = load_prompt("researcher").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"WINNING CHARITY:\n{charity}\n\n"
         f"TAVILY RESEARCH RESULTS:\n{results_block}\n\n"

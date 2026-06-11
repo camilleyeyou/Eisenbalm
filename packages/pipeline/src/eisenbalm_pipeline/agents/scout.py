@@ -31,6 +31,7 @@ from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.sanity_client import (
     API_VERSION,
     _dataset,
@@ -188,18 +189,7 @@ def _build_messages(
         f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:600]}"
         for r in tavily_results
     )
-    system = (
-        "You are the Scout for The Eisenbalm Dispatch. You find obscure "
-        "charities that deserve the Fortune-500 treatment. You reject "
-        "anything Charity Navigator already ranks prominently.\n"
-        "Return 3-5 candidates, never fewer.\n\n"
-        "Preferred terms: 'obscure charity', 'overlooked nonprofit', "
-        "'small charity impact'.\n"
-        f"Reject any charity whose name or website domain appears in: "
-        f"{featured_keys}\n\n"
-        "Emit each candidate as soon as you have enough information — "
-        "do not wait for all 5. Max tool calls: 8."
-    )
+    system = load_prompt("scout").replace("{featured_keys}", f"{featured_keys}")
     user = (
         "Parse the following Tavily search results into 3-5 CharityCandidate "
         "objects. Reject anything that does not look like a small or "
