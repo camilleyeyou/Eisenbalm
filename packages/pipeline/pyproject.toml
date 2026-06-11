@@ -36,9 +36,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/eisenbalm_pipeline"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"prompts" = "eisenbalm_pipeline/prompts"
-
 [tool.uv]
 package = true
 

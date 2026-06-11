@@ -3,14 +3,15 @@ plan: 260611-3jo
 subsystem: pipeline/prompts
 tags: [refactor, prompts, agents, behavior-preserving]
 completed: "2026-06-11T09:54:47Z"
-duration: "~2 sessions"
+remediated: "2026-06-11"
+duration: "~2 sessions + remediation pass"
 tasks_completed: 6
 tasks_total: 6
 files_created: 26
-files_modified: 7
+files_modified: 9
 key_decisions:
   - "chronicler skipped: _build_system_prompt diverges across narrator states — cannot reduce to flat template without architectural change out of scope for behavior-preserving refactor"
-  - "dual-location for .md files: src/eisenbalm_pipeline/prompts/ (importlib.resources in editable install) + packages/pipeline/prompts/ (Andrew-facing + fallback path)"
+  - "single-source for .md files (post-remediation): src/eisenbalm_pipeline/prompts/ is the ONLY location — ships automatically with the package (same as agents/qa/rubric.md), no force-include needed"
   - "str.replace() over str.format() for token substitution to avoid KeyError on literal braces in prompts"
 commits:
   - 612b12c
@@ -58,15 +59,16 @@ Pure behavior-preserving refactor. All 9 extractable agents now load their syste
 ### File layout
 
 ```
-packages/pipeline/prompts/           ← Andrew-facing (11 .md files + README.md)
-packages/pipeline/src/eisenbalm_pipeline/prompts/  ← in-package copy (11 .md files)
+packages/pipeline/src/eisenbalm_pipeline/prompts/  ← single canonical location (11 .md files + README.md)
 packages/pipeline/src/eisenbalm_pipeline/lib/prompts.py  ← loader
-apps/studio/PROMPT_EDITING_GUIDE.md  ← editorial instructions
+apps/studio/PROMPT_EDITING_GUIDE.md  ← Andrew's GitHub web-editor guide
 ```
+
+The `packages/pipeline/prompts/` top-level directory has been removed (remediation). There is now one location only.
 
 ### pyproject.toml
 
-Added `[tool.hatch.build.targets.wheel.force-include]` entry to ship `prompts/` into the wheel namespace for Railway deploys.
+No special packaging entry needed. `src/eisenbalm_pipeline/prompts/` ships with the wheel automatically under `packages = ["src/eisenbalm_pipeline"]` — same mechanism as `agents/qa/rubric.md`. The `[tool.hatch.build.targets.wheel.force-include]` prompts entry has been removed.
 
 ## Verification
 
@@ -80,7 +82,11 @@ None.
 
 ### Notable implementation decisions
 
-**[Rule 2 — Dual location for .md files]** In hatchling editable mode (`uv run`), `importlib.resources files("eisenbalm_pipeline")` resolves to `src/eisenbalm_pipeline/`. The `force-include` pyproject entry only affects wheel builds. To serve both dev (editable) and prod (wheel/Railway) from the same loader, `.md` files are maintained in both `src/eisenbalm_pipeline/prompts/` (importlib.resources primary) and `packages/pipeline/prompts/` (fallback + Andrew-facing). The loader tries importlib.resources first with `except (FileNotFoundError, TypeError)` fallback to the repo path.
+**[Rule 2 — Dual location for .md files]** In hatchling editable mode (`uv run`), `importlib.resources files("eisenbalm_pipeline")` resolves to `src/eisenbalm_pipeline/`. The `force-include` pyproject entry only affects wheel builds. To serve both dev (editable) and prod (wheel/Railway) from the same loader, `.md` files were maintained in both `src/eisenbalm_pipeline/prompts/` (importlib.resources primary) and `packages/pipeline/prompts/` (fallback + Andrew-facing). This was later identified as unnecessary dual-copy maintenance burden.
+
+**[Remediation — Single-source consolidation]** Subsequent verification found that `src/eisenbalm_pipeline/prompts/` ships automatically with the wheel under `packages = ["src/eisenbalm_pipeline"]` — exactly as `agents/qa/rubric.md` does. The top-level `packages/pipeline/prompts/` directory was removed, the fallback code path removed from `lib/prompts.py`, and the `force-include` entry removed from `pyproject.toml`. Load path is now: `importlib.resources files("eisenbalm_pipeline").joinpath("prompts", f"{name}.md")` — no fallback, no dual copy.
+
+**[Remediation — GitHub web-editor guide]** `apps/studio/PROMPT_EDITING_GUIDE.md` was rewritten with the GitHub browser-only flow (pencil icon → edit between markers → "Create a new branch and start a pull request" → assign Ghislain as reviewer). A 3-line `README.md` pointing to this guide now lives in `src/eisenbalm_pipeline/prompts/`. No CLI instructions remain in either doc. The full pytest suite (229 passed, 33 skipped) was confirmed green after both changes.
 
 ## Known Stubs
 

@@ -1,4 +1,4 @@
-"""Loader for agent system-prompt .md files in packages/pipeline/prompts/.
+"""Loader for agent system-prompt .md files.
 
 Convention (all .md files):
   - An editorial header lives BEFORE the <!-- PROMPT START --> sentinel line.
@@ -9,13 +9,10 @@ Convention (all .md files):
     the original inline string byte-for-byte.
 
 Resolution strategy (Railway-safe + dev-safe):
-  1. Primary: importlib.resources files("eisenbalm_pipeline").joinpath("prompts", ...)
-     — works from an installed wheel (Railway) and from the editable install
-     when prompts/ is inside src/eisenbalm_pipeline/prompts/.
-  2. Fallback: repo-relative path via __file__ — resolves
-     packages/pipeline/prompts/<name>.md for the case where prompts/ lives
-     outside src/ (the Andrew-facing canonical location) and the editable
-     install has not yet re-installed after a pyproject force-include change.
+  Single location: importlib.resources files("eisenbalm_pipeline").joinpath("prompts", ...)
+  — works from an installed wheel (Railway) and from the editable install because
+  prompts/ lives inside src/eisenbalm_pipeline/prompts/ (same mechanism as
+  agents/qa/rubric.md — no special pyproject packaging needed).
   Never uses os.getcwd() or bare relative paths.
 
 Token substitution pattern (all callers):
@@ -24,16 +21,10 @@ Use str.replace(), NOT str.format() — safe against any literal braces in prose
 """
 from __future__ import annotations
 
-import pathlib
 from importlib.resources import files
 
 _START = "<!-- PROMPT START -->"
 _END = "<!-- PROMPT END -->"
-
-# Repo-relative fallback: packages/pipeline/prompts/ (Andrew-facing canonical dir).
-# Resolved relative to THIS file: lib/prompts.py → lib/ → eisenbalm_pipeline/ →
-# src/ → pipeline/ → packages/pipeline/prompts/
-_REPO_PROMPTS_DIR = pathlib.Path(__file__).parent.parent.parent.parent / "prompts"
 
 
 def _extract(raw: str, name: str) -> str:
@@ -71,28 +62,17 @@ def load_prompt(name: str) -> str:
         string when all tokens are substituted back to their original values.
 
     Raises:
-        FileNotFoundError: if prompts/<name>.md cannot be found in either
-            the package data (installed wheel) or the repo prompts/ directory.
+        FileNotFoundError: if src/eisenbalm_pipeline/prompts/<name>.md cannot
+            be found via importlib.resources.
         ValueError: if the file is missing the <!-- PROMPT START --> /
             <!-- PROMPT END --> markers.
     """
-    # Primary: importlib.resources — resolves src/eisenbalm_pipeline/prompts/
-    # in editable mode and eisenbalm_pipeline/prompts/ in installed/Railway mode.
+    path = files("eisenbalm_pipeline").joinpath("prompts", f"{name}.md")
     try:
-        path = files("eisenbalm_pipeline").joinpath("prompts", f"{name}.md")
         raw: str = path.read_text("utf-8")
-        return _extract(raw, name)
-    except (FileNotFoundError, TypeError):
-        pass
-
-    # Fallback: repo-relative packages/pipeline/prompts/<name>.md
-    # Used when the prompt file lives outside src/ (Andrew-facing location)
-    # and the editable install has not yet re-synced.
-    fallback = _REPO_PROMPTS_DIR / f"{name}.md"
-    if not fallback.exists():
+    except (FileNotFoundError, TypeError) as exc:
         raise FileNotFoundError(
-            f"prompts/{name}.md not found via importlib.resources "
-            f"or repo path ({fallback})"
-        )
-    raw = fallback.read_text("utf-8")
+            f"prompts/{name}.md not found in eisenbalm_pipeline package data "
+            f"(src/eisenbalm_pipeline/prompts/{name}.md)"
+        ) from exc
     return _extract(raw, name)

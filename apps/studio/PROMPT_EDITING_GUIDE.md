@@ -1,63 +1,67 @@
-# Editing Agent Prompts
+# Editing Agent Prompts — A Guide for Andrew
 
-The system prompts that drive the nine pipeline agents live in flat Markdown files. You can change what the agents write — tone, structure, focus — by editing these files directly. No code changes, no redeployment of the Python pipeline.
+The words that drive each AI agent live in plain text files on GitHub. You can adjust what the agents write — tone, focus, how they approach a task — by editing those files directly in your browser. No code changes, no terminal.
 
-## Where the files live
+## Where the files are
 
-```
-packages/pipeline/prompts/
-  scout.md              ← how Scout finds charities
-  advocate.md           ← how Advocate scores them
-  researcher.md         ← how Researcher writes background
-  calibrator.md         ← voice rules + bonus type selection
-  editor.md             ← how Editor picks the winning charity
-  editor-final.md       ← how Editor reviews section drafts
-  game.md               ← the HTML/JS game
-  bonus-big-budget.md   ← big-budget ad branch
-  bonus-jingle.md       ← jingle branch
-  bonus-spec-ad.md      ← spec ad branch
-  design.md             ← theme colors and fonts
-```
+Open this folder on GitHub to see all the editable prompts:
+
+**`packages/pipeline/src/eisenbalm_pipeline/prompts/`**
+
+You'll see one `.md` file per agent:
+
+| File | What it controls |
+|------|-----------------|
+| `scout.md` | How Scout finds and describes obscure charities |
+| `advocate.md` | How Advocate scores and argues for each charity |
+| `researcher.md` | How Researcher gathers background on the winning charity |
+| `calibrator.md` | Voice rules and bonus type selection for the issue |
+| `editor.md` | How Editor weighs the candidates and picks a winner |
+| `editor-final.md` | How Editor reviews the section drafts |
+| `game.md` | How the HTML/JS game is written |
+| `bonus-big-budget.md` | The big-budget cinematic ad branch |
+| `bonus-jingle.md` | The jingle branch |
+| `bonus-spec-ad.md` | The spec ad branch |
+| `design.md` | How the theme colors and fonts are chosen |
 
 ## How to make a change
 
-1. Open the file you want to edit.
-2. Find the `<!-- PROMPT START -->` line and the `<!-- PROMPT END -->` line.
-3. Edit only the text between those two markers.
-4. Make the exact same change in the matching file at `packages/pipeline/src/eisenbalm_pipeline/prompts/<same-name>.md`.
-5. Commit both files.
+1. Click the file you want to edit.
+2. Click the **pencil icon** (Edit this file) in the top-right corner of the file view.
+3. Find the line that reads `<!-- PROMPT START -->` and the line that reads `<!-- PROMPT END -->`.
+4. Edit only the text between those two markers. Everything above `<!-- PROMPT START -->` is a note for reference — the pipeline ignores it.
+5. When you're done, scroll to the bottom of the page.
+6. Under **"Commit changes"**, write a short description of what you changed.
+7. Select **"Create a new branch and start a pull request"** (not "Commit directly to main").
+8. Click **"Propose changes"**, then on the next screen click **"Create pull request"**.
+9. In the pull request, add **Ghislain** as a reviewer (there's a "Reviewers" panel on the right side).
+10. Submit the PR and ping Ghislain to take a look.
 
-The pipeline reads the files on every run. No restart or redeploy needed.
+Ghislain will review and merge it. Nothing changes until he merges — so there's no risk in opening a PR. Once merged, the new wording goes live on the next pipeline run.
 
-## Tokens — leave these alone
+## Tokens — never delete these
 
-Each file may contain tokens like `{VOICE_CONSTRAINTS}` or `{charity_name}`. These are placeholders the pipeline replaces with live data at run time. A comment near the top of each file lists which tokens it uses.
+Some files contain placeholders like `{VOICE_CONSTRAINTS}` or `{charity_name}`. These get filled in automatically by the pipeline at run time with live data. If you accidentally delete one, the pipeline will substitute a blank string and that piece of information will silently disappear from the agent's instructions.
 
-Do not rename or delete tokens. If a token is missing from the file, the pipeline will substitute an empty string and the affected constraint will be silently dropped.
+Each file has a short comment near the top (above `<!-- PROMPT START -->`) listing which tokens it uses. Check that comment before editing around them.
 
-## What is safe to change
-
+Safe to change:
 - Sentence phrasing and word choice
 - Adding, removing, or reordering instructions
-- Tightening or expanding length guidance (e.g., "200-400 words")
+- Length guidance ("200–400 words", "three paragraphs", etc.)
 
-## What is not safe to change
+Not safe to change:
+- The `<!-- PROMPT START -->` and `<!-- PROMPT END -->` lines themselves
+- Token names and their placement
 
-- The `<!-- PROMPT START -->` / `<!-- PROMPT END -->` markers
-- Token names and placement
-- The `voice.py` file — that file controls Jesse's core voice constants and is off-limits for direct editing
+## What is not in these files
 
-## Chronicler is not here
+A few things are intentionally kept in code rather than here:
 
-The Chronicler agent composes its prompt dynamically from the active narrator's voice block, optional rubric, and example samples. It does not use a flat file. To adjust Chronicler behavior, update the narrator profile in Sanity Studio under Agent Profiles.
+- **Jesse's voice** — the core voice constants (dry, precise, absurdly serious) are locked in `voice.py` and enforced by the QA layer. Editing a prompt file can tune emphasis, but it won't override the foundational voice. If you want a voice adjustment that isn't taking effect, that's one for Ghislain.
+- **The QA rubric** — the quality-check criteria the pipeline uses to evaluate drafts are in `agents/qa/rubric.md`. They're test-locked and more fragile to change. Ask Ghislain.
+- **The Chronicler** — the agent that voices the section narrators composes its prompt dynamically from the active narrator profile in Sanity Studio. It doesn't use a flat file here. To adjust Chronicler behavior, update the narrator's profile in Studio under **Agent Profiles**, or ask Ghislain.
 
-## Testing after a change
+## Stuck?
 
-Run the test suite from `packages/pipeline` to confirm the pipeline still assembles correctly:
-
-```
-cd packages/pipeline
-uv run pytest -q
-```
-
-All 229 tests should pass. Skips are expected (integration tests that require live API keys).
+Anything unclear, or if you want to make a bigger change that touches voice or QA — ping Ghislain. Opening a PR is always safe; nothing goes live until it's reviewed and merged.
