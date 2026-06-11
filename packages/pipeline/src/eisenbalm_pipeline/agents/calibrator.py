@@ -25,6 +25,7 @@ from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState, Narrator
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.sanity_client import fetch_narrator_by_slug, groq_query
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, assemble_voice
 
@@ -105,19 +106,11 @@ def _build_messages(
     canonical string from lib/voice.py.
     """
     system = (
-        "You are the Calibrator for The Eisenbalm Dispatch. "
-        "You set the creative constraints for this issue.\n\n"
-        "VOICE CONSTRAINTS (non-negotiable, copy verbatim into output.voice):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        f"Issue number: {issue_number}\n"
-        f"Previous bonusTypes (most-recent-first): {previous_bonus_types}\n"
-        f"This week's bonusType (already selected by deterministic rotation): "
-        f"{chosen_bonus_type}\n\n"
-        "Output JSON StyleBrief with:\n"
-        "- voice: copy VOICE_CONSTRAINTS verbatim\n"
-        "- constraints: 3-5 specific rules for THIS week's writers\n"
-        f"- bonusType: EXACTLY '{chosen_bonus_type}' (do not deviate)\n"
-        "- visualDirection: one sentence aesthetic direction for DesignAgent"
+        load_prompt("calibrator")
+        .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+        .replace("{issue_number}", str(issue_number))
+        .replace("{previous_bonus_types}", f"{previous_bonus_types}")
+        .replace("{chosen_bonus_type}", chosen_bonus_type)
     )
     user = (
         "Produce the StyleBrief for this week's issue. "

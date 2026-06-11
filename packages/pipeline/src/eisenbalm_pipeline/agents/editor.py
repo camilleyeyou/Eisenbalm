@@ -45,6 +45,7 @@ from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 
@@ -190,26 +191,10 @@ def _build_messages(
     ]
     candidates_block = json.dumps(cleaned, indent=2)
     system = (
-        "You are the Editor for The Eisenbalm Dispatch. Select the charity "
-        "for this issue.\n\n"
-        "VOICE CONSTRAINTS (non-negotiable for editorReasoning, "
-        "runnerUpNotes, and deliberationTranscript):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        "Selection rules:\n"
-        "1. Highest Advocate score wins by default.\n"
-        "2. Set confidence 0.0-1.0 reflecting your conviction.\n"
-        "3. If top two scores are within "
-        f"{EDITOR_INTERRUPT_THRESHOLD} AND your confidence < "
-        f"{EDITOR_CONFIDENCE_THRESHOLD}: set requiresHumanInput=true. "
-        "Otherwise: requiresHumanInput=false.\n\n"
-        "Notes:\n"
-        "- editorReasoning is 200-400 words, Jesse voice.\n"
-        "- runnerUpNotes is 50-150 words, Jesse voice.\n"
-        "- deliberationTranscript should be Markdown with sections: "
-        "# Eisenbalm Dispatch — Issue #N Deliberation, ## Scout Findings, "
-        "## Advocate Arguments, ## Editor Reasoning, ## Decision. "
-        "(Python re-renders this from a deterministic template; your "
-        "version is used only if the renderer fails.)"
+        load_prompt("editor")
+        .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+        .replace("{EDITOR_INTERRUPT_THRESHOLD}", f"{EDITOR_INTERRUPT_THRESHOLD}")
+        .replace("{EDITOR_CONFIDENCE_THRESHOLD}", f"{EDITOR_CONFIDENCE_THRESHOLD}")
     )
     user = (
         f"Issue #{issue_number}\n\n"
@@ -452,19 +437,7 @@ def _build_editor_final_messages(state: DispatchState) -> list[dict]:
         "game":          (state.get("game") or {}).get("headline", ""),
         "bonus":         (state.get("bonus") or {}).get("headline", ""),
     }
-    system = (
-        "You are the Editor for The Eisenbalm Dispatch. Review the QA "
-        "report and write any connective copy needed to unify the issue.\n\n"
-        "VOICE CONSTRAINTS (non-negotiable for your memo):\n"
-        f"{VOICE_CONSTRAINTS}\n\n"
-        "Your task:\n"
-        "1. Read the QA findings. Note severity 'error' items first.\n"
-        "2. Write editorFinalNotes: a 100-300 word memo to Andrew "
-        "describing what QA found, what you recommend he review before "
-        "publishing, and any connective context across sections.\n"
-        "3. Do NOT rewrite any section. Do NOT reject the draft. "
-        "The draft goes to Andrew as-is. Your notes are advisory only."
-    )
+    system = load_prompt("editor-final").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"QA FINDINGS:\n{json.dumps(qa_corrections, indent=2)}\n\n"
         f"SECTION HEADLINES:\n{json.dumps(section_headlines, indent=2)}\n\n"
