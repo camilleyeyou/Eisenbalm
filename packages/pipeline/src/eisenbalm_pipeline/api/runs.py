@@ -32,10 +32,60 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# Auto-increment read: project an OBJECT (not a scalar) so groq_query's
+# `body.get("result") or []` cannot coerce a legitimate 0/null number into an
+# empty list ambiguously — `result == {"issueNumber": N}` on hit, `null -> []`
+# on an empty dataset. Mirrors the calibrator's `order(issueNumber desc)` style.
+QUERY_MAX_ISSUE_NUMBER = (
+    '*[_type == "weeklyIssue"] | order(issueNumber desc)[0]{ issueNumber }'
+)
+
+
+async def _resolve_issue_number(body_issue_number: Optional[int]) -> int:
+    """Resolve the issue number for a weekly run.
+
+    Root cause this fixes: lib/sanity_client.write_issue_draft builds
+    ``issue_id = f"issue-{issue_number}"`` via ``createOrReplace``. A fixed
+    default (previously 999) meant every empty-body cron/manual trigger
+    OVERWROTE ``issue-999`` and never became the homepage's
+    ``order(issueNumber desc)[0]`` latest issue.
+
+    Behavior:
+      - Explicit override: when ``body_issue_number`` is not None, return it
+        verbatim and perform NO Sanity read (manual override + tests).
+      - Auto-increment: when None, read the max existing
+        ``weeklyIssue.issueNumber`` via GROQ and return ``max + 1``.
+      - Empty dataset (no weeklyIssue docs / missing number) -> base 1.
+
+    Fail-loud is intentional: a GROQ read error on the auto path propagates
+    (the caller turns it into a 5xx and the cron run is marked failed) rather
+    than silently defaulting to a colliding number.
+    """
+    if body_issue_number is not None:
+        return body_issue_number
+
+    # Local import to avoid circular import at module load (same pattern
+    # manual_publish uses for groq_query).
+    from eisenbalm_pipeline.lib.sanity_client import groq_query
+
+    rows = await groq_query(QUERY_MAX_ISSUE_NUMBER)
+    # Normalize both shapes groq_query may return for a `[0]{...}` projection
+    # (single dict, or a one-item list), exactly like fetch_narrator_by_slug.
+    doc: Optional[dict] = None
+    if isinstance(rows, dict):
+        doc = rows
+    elif isinstance(rows, list) and rows:
+        doc = rows[0]
+    max_num = doc.get("issueNumber") if doc else None
+    return (max_num + 1) if isinstance(max_num, int) else 1
+
+
 # ── Request models (CONTEXT "Claude's Discretion" — BaseModel for bodies) ──
 
 class RunWeeklyBody(BaseModel):
-    issueNumber: int = 999  # CONTEXT D-16 default
+    # None -> auto-increment to max(existing)+1 at trigger time (was: hardcoded
+    # 999, CONTEXT D-16); explicit value honored verbatim (manual override + tests).
+    issueNumber: Optional[int] = None
     forceNoWinner: bool = False  # stub-mode toggle (D-36 test)
     forceFailAgent: Optional[str] = None  # stub-mode toggle (D-37 test)
     # Phase 16 trigger-path: optional narrator slug override. When provided,
@@ -134,6 +184,12 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
     _require_trigger_secret(request)
     graph = _require_graph(request)
 
+    # Resolve the issue number BEFORE generating run_id / writing the Convex
+    # row / building initial_state, so a failed auto-increment read aborts the
+    # whole trigger (5xx) without leaving an orphan pipelineRuns row. When
+    # body.issueNumber is explicit, this is a no-op pass-through (no Sanity read).
+    issue_number = await _resolve_issue_number(body.issueNumber)
+
     # CONTEXT D-09: generated EXACTLY ONCE.
     run_id = new_run_id()
     started_at_ms = int(time.time() * 1000)
@@ -149,7 +205,7 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         "pipelineRuns:create",
         {
             "runId": run_id,
-            "issueNumber": body.issueNumber,
+            "issueNumber": issue_number,
             "startedAt": started_at_ms,
         },
     )
@@ -158,7 +214,7 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
     # forceNoWinner / forceFailAgent flags through state (graph/state.py).
     initial_state: dict = {
         "run_id": run_id,
-        "issue_number": body.issueNumber,
+        "issue_number": issue_number,
         "publish_date": date.today().isoformat(),
         "pipeline_started_at": datetime.now(timezone.utc)
         .isoformat()
