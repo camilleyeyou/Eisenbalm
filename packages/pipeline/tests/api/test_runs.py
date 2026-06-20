@@ -139,3 +139,83 @@ async def test_run_weekly_omits_narrator_slug_when_not_provided(
     assert (
         "narrator_slug" not in captured["initial_state"]
     ), f"narrator_slug should be absent, got: {captured['initial_state']}"
+
+
+# ── quick-260620-gfa: auto-increment issue numbering (ISSUE-NUM-01) ─────────
+
+
+def test_run_weekly_body_issue_number_defaults_none():
+    """The hardcoded 999 default caused every empty-body /run/weekly to
+    overwrite issue-999 (createOrReplace) and never become the homepage's
+    order(issueNumber desc)[0] latest. The new default MUST be None so
+    _resolve_issue_number auto-increments instead."""
+    from eisenbalm_pipeline.api.runs import RunWeeklyBody
+
+    assert RunWeeklyBody().issueNumber is None
+
+
+async def test_resolve_issue_number_auto_increments_from_max_list(monkeypatch):
+    """None body -> max(existing)+1. groq_query returns a one-item LIST shape."""
+    from eisenbalm_pipeline.api.runs import _resolve_issue_number
+
+    fake_groq = AsyncMock(return_value=[{"issueNumber": 7}])
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
+    )
+
+    assert await _resolve_issue_number(None) == 8
+    fake_groq.assert_awaited_once()
+
+
+async def test_resolve_issue_number_auto_increments_from_max_dict(monkeypatch):
+    """None body -> max(existing)+1. groq_query returns a bare DICT shape
+    (GROQ [0]{...} unwraps to a single object) — both shapes are normalized."""
+    from eisenbalm_pipeline.api.runs import _resolve_issue_number
+
+    fake_groq = AsyncMock(return_value={"issueNumber": 12})
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
+    )
+
+    assert await _resolve_issue_number(None) == 13
+
+
+async def test_resolve_issue_number_empty_dataset_base_one(monkeypatch):
+    """No weeklyIssue docs (groq_query -> []) -> base 1, never a collision."""
+    from eisenbalm_pipeline.api.runs import _resolve_issue_number
+
+    fake_groq = AsyncMock(return_value=[])
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
+    )
+
+    assert await _resolve_issue_number(None) == 1
+
+
+async def test_resolve_issue_number_explicit_override_skips_read(monkeypatch):
+    """An explicit issueNumber is honored verbatim and performs NO Sanity read
+    (manual override + the existing explicit-issueNumber e2e tests)."""
+    from eisenbalm_pipeline.api.runs import _resolve_issue_number
+
+    fake_groq = AsyncMock(return_value=[{"issueNumber": 999}])
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
+    )
+
+    assert await _resolve_issue_number(42) == 42
+    fake_groq.assert_not_awaited()
+
+
+async def test_resolve_issue_number_read_failure_propagates(monkeypatch):
+    """Fail-loud: a GROQ read error on the auto path MUST propagate (caller
+    turns it into a 5xx + failed run) rather than silently defaulting to a
+    colliding number."""
+    from eisenbalm_pipeline.api.runs import _resolve_issue_number
+
+    fake_groq = AsyncMock(side_effect=RuntimeError("sanity down"))
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
+    )
+
+    with pytest.raises(RuntimeError):
+        await _resolve_issue_number(None)
