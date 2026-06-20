@@ -48,6 +48,7 @@ Copy `packages/pipeline/.env.example` to `packages/pipeline/.env` and fill in re
 | `TAVILY_API_KEY` | Tavily search API key. Placeholder OK in Phase 4. Required in Phase 5. |
 | `EISENBALM_STUB_MODE` | `true` in Phase 4 (default if unset). Phase 5 flips the default. Controls whether agents use stub fixtures or real LLM calls. |
 | `PIPELINE_TRIGGER_SECRET` | Shared secret required as the `X-Pipeline-Trigger-Secret` header on `POST /run/weekly`, `/run/{runId}/resume`, and `/run/{runId}/publish`. Generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`. When unset locally, the check is skipped (with a logged warning) so local dev works without provisioning it. |
+| `PIPELINE_SELF_URL` | Base URL the `trigger-weekly` CLI subcommand POSTs to (its `/run/weekly`). Read **only** by the separate Railway weekly-cron service (V2-03), not the always-on web API. Defaults to `https://eisenbalm-pipeline-production.up.railway.app` when unset; point it at a staging URL to trigger a non-prod deploy. |
 
 ### Sharp edge: Supabase pooler mode
 
@@ -183,6 +184,29 @@ The `preDeployCommand` runs `setup-checkpointer` on every deploy, so once `SUPAB
 ```bash
 railway run python -m eisenbalm_pipeline.cli setup-checkpointer
 ```
+
+### Weekly cron trigger (V2-03)
+
+The Thursday 14:00 UTC weekly issue is fired by a **separate Railway service** running:
+
+```bash
+python -m eisenbalm_pipeline.cli trigger-weekly
+```
+
+on cron schedule `0 14 * * 4` (Thursday 14:00 UTC). This subcommand POSTs an empty JSON body to `{PIPELINE_SELF_URL}/run/weekly` with the `X-Pipeline-Trigger-Secret` header. It exits `0` (printing the returned `runId`) on success and exits nonzero with a stderr message on a missing secret, a non-2xx response, or a network error — so Railway marks the cron run as **failed** and surfaces it.
+
+**Why a SEPARATE service — not a `cronSchedule` on the web API.** A cron job must start, do its work, and **exit**. The always-on web service must **never** exit: it serves traffic and runs the pipeline graph inside long-lived background tasks. Adding a `cronSchedule` to the existing web service's `railway.toml` would convert the always-on API into a cron job and break it — which is exactly why `railway.toml` is intentionally left unchanged.
+
+**Why the cron only FIRES the trigger (POST `/run/weekly`) instead of running the graph inline.** The pipeline pauses at the Editor Gate 1 human gate for potentially hours or days — far longer than a cron job should live. The always-on web service owns the long-lived background graph execution; the cron is a lightweight fire-and-exit trigger.
+
+**Env vars the cron service needs:** `PIPELINE_TRIGGER_SECRET` (the same value the web service validates) and optionally `PIPELINE_SELF_URL` (defaults to the production domain; point it at a staging URL to trigger a non-prod deploy).
+
+**Standing up the cron service is a MANUAL Andrew step** (it requires Railway auth) — out of scope for the code change that added `trigger-weekly`. The rough steps:
+
+1. In the **same Railway project**, create a **new service** from this repo / `packages/pipeline/Dockerfile`.
+2. Set its start (cron) command to `python -m eisenbalm_pipeline.cli trigger-weekly`.
+3. Set the cron schedule to `0 14 * * 4` (Thursday 14:00 UTC).
+4. Set `PIPELINE_TRIGGER_SECRET` (same value as the web service) — and `PIPELINE_SELF_URL` only if the target is not production.
 
 ### Build & runtime config
 
