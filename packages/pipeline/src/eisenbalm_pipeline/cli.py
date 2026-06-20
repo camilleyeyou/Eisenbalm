@@ -8,14 +8,28 @@ Subcommands:
                                   WHK-04 dedup. Idempotent (CREATE TABLE IF
                                   NOT EXISTS + UNIQUE constraint).
                                   Phase 6 Plan 06-03 + research Pattern 2.
+  trigger-weekly                - POSTs an empty JSON body to
+                                  {PIPELINE_SELF_URL}/run/weekly with the
+                                  X-Pipeline-Trigger-Secret header. Exits 0 on
+                                  success (printing the returned runId) and
+                                  nonzero with a stderr message on missing
+                                  secret / non-2xx / network error so a Railway
+                                  cron service marks failed runs. Reads
+                                  PIPELINE_TRIGGER_SECRET + PIPELINE_SELF_URL
+                                  from env. Implements V2-03.
 
 Invocation:
   python -m eisenbalm_pipeline.cli setup-checkpointer
   python -m eisenbalm_pipeline.cli setup-webhook-idempotency
+  python -m eisenbalm_pipeline.cli trigger-weekly
 
 Used by:
-  - railway.toml preDeployCommand (Phase 4 + Phase 6 — both subcommands run)
+  - railway.toml preDeployCommand (Phase 4 + Phase 6 — both setup subcommands)
   - Andrew's manual provisioning (CONTEXT D-29 — railway run ...)
+  - A SEPARATE Railway cron service (schedule `0 14 * * 4`) runs
+    `trigger-weekly` — NOT the always-on web service. The web service must
+    never exit; a cron job must fire and exit. See packages/pipeline/README.md
+    "Weekly cron trigger (V2-03)".
 """
 from __future__ import annotations
 
@@ -23,14 +37,21 @@ import asyncio
 import os
 import sys
 
+import httpx
 import psycopg
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 USAGE = (
     "Usage:\n"
     "  python -m eisenbalm_pipeline.cli setup-checkpointer\n"
-    "  python -m eisenbalm_pipeline.cli setup-webhook-idempotency"
+    "  python -m eisenbalm_pipeline.cli setup-webhook-idempotency\n"
+    "  python -m eisenbalm_pipeline.cli trigger-weekly"
 )
+
+# Production Railway domain the `trigger-weekly` subcommand POSTs to when
+# PIPELINE_SELF_URL is unset. Point PIPELINE_SELF_URL at a staging URL to
+# trigger a non-prod deploy.
+DEFAULT_PIPELINE_SELF_URL = "https://eisenbalm-pipeline-production.up.railway.app"
 
 
 def _require_postgres_url() -> str:
@@ -93,9 +114,59 @@ async def setup_webhook_idempotency() -> None:
     print("webhook_idempotency table created / verified.")
 
 
+async def trigger_weekly() -> None:
+    """Fire the weekly run by POSTing to {PIPELINE_SELF_URL}/run/weekly (V2-03).
+
+    Run by a SEPARATE Railway cron service (schedule `0 14 * * 4`), NOT the
+    always-on web service. The cron only FIRES the trigger; the web service
+    runs the actual graph in a long-lived background task (the graph pauses at
+    Editor Gate 1 for hours/days — far longer than a cron job should live).
+
+    Exits 0 on a 2xx response (printing the returned runId). Exits nonzero with
+    a stderr message on missing secret / non-2xx / network error so Railway
+    marks the cron run as failed.
+    """
+    secret = os.environ.get("PIPELINE_TRIGGER_SECRET")
+    if not secret:
+        print(
+            "ERROR: PIPELINE_TRIGGER_SECRET is not set — cannot authenticate "
+            "/run/weekly.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    base_url = os.environ.get(
+        "PIPELINE_SELF_URL", DEFAULT_PIPELINE_SELF_URL
+    ).rstrip("/")
+    url = f"{base_url}/run/weekly"
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                url,
+                headers={"X-Pipeline-Trigger-Secret": secret},
+                json={},
+            )
+            resp.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        print(
+            f"ERROR: POST {url} returned {exc.response.status_code}: "
+            f"{exc.response.text[:500]}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    except httpx.HTTPError as exc:
+        print(f"ERROR: request to {url} failed: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    run_id = resp.json().get("runId")
+    print(f"Triggered weekly run: runId={run_id}")
+
+
 _SUBCOMMANDS = {
     "setup-checkpointer": setup_checkpointer,
     "setup-webhook-idempotency": setup_webhook_idempotency,
+    "trigger-weekly": trigger_weekly,
 }
 
 
