@@ -2,15 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Not started
-stopped_at: Phase 21 context gathered
-last_updated: "2026-06-21T22:40:13.531Z"
-last_activity: 2026-06-21 — Roadmap created for v2.0 Phases 21-27
+status: Ready to execute
+stopped_at: Completed 21-auth-app-shell-convex-schema/21-02-PLAN.md
+last_updated: "2026-06-21T23:31:37.984Z"
 progress:
   total_phases: 27
   completed_phases: 19
-  total_plans: 133
-  completed_plans: 131
+  total_plans: 138
+  completed_plans: 132
 ---
 
 # Project State
@@ -20,14 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** v2.0 Mission Control Dashboard — Phase 21 (Auth + App Shell + Convex Schema)
+**Current focus:** Phase 21 — auth-app-shell-convex-schema
 
 ## Current Position
 
-Phase: 21 — Auth + App Shell + Convex Schema
-Plan: —
-Status: Not started
-Last activity: 2026-06-21 — Roadmap created for v2.0 Phases 21-27
+Phase: 21 (auth-app-shell-convex-schema) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -165,6 +162,7 @@ Last activity: 2026-06-21 — Roadmap created for v2.0 Phases 21-27
 | Phase 20 P03 | 180 | 3 tasks | 16 files |
 | Phase 20 P05 | 8 | 2 tasks | 5 files |
 | Phase 20 P04 | 10 | 3 tasks | 19 files |
+| Phase 21-auth-app-shell-convex-schema P02 | 5 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -421,6 +419,7 @@ Recent decisions affecting current work:
 - [Phase 20]: baseUrl added to RenderData interface — marketing templates need it for unsubscribe URL construction; additive change, no callers broken
 - [Phase quick]: Chronicler prompt extraction skipped: _build_system_prompt diverges across narrator states; flat .md template cannot express conditional composition without architectural change out of scope for behavior-preserving refactor
 - [Phase quick]: Dual-location .md files: src/eisenbalm_pipeline/prompts/ for importlib.resources (editable+wheel) + packages/pipeline/prompts/ for Andrew-facing editing and fallback; str.replace() over str.format() to avoid KeyError on literal braces
+- [Phase 21-auth-app-shell-convex-schema]: workspace_id is v.string() slug 'eisenbalm' (not v.id) on all 11 new Convex tables; seed is idempotent; Clerk JWT trust via auth.config.ts; JIT user upsert keyed by identity.subject
 
 ### Pending Todos
 
@@ -501,6 +500,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T22:40:13.519Z
-Stopped at: Phase 21 context gathered
-Resume file: .planning/phases/21-auth-app-shell-convex-schema/21-CONTEXT.md
+Last session: 2026-06-21T23:31:37.972Z
+Stopped at: Completed 21-auth-app-shell-convex-schema/21-02-PLAN.md
+Resume file: None
