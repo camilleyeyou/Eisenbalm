@@ -1,8 +1,8 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: Milestone complete
+milestone: v2.0
+milestone_name: mission-control-dashboard
+status: Defining requirements
 stopped_at: Completed quick-260621-fi4 phase-0-reconciliation
 last_updated: "2026-06-21T18:22:49.014Z"
 progress:
@@ -19,12 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 20 — post-purchase-email-lifecycle-8-email-flow
+**Current focus:** v2.0 Mission Control Dashboard — defining requirements
 
 ## Current Position
 
-Phase: 20
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-21 — Milestone v2.0 (Mission Control Dashboard) started
 
 ## Performance Metrics
 
