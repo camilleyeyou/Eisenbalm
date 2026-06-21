@@ -251,3 +251,118 @@ async def test_completes_convex_writes(
     )
     assert event_call.args[1]["eventType"] == "publisher-deploy"
     assert event_call.args[1]["agentId"] == "publisher"
+
+
+async def test_deploy_failure_is_non_fatal_and_finalizes(
+    monkeypatch, mock_convex_mutation
+):
+    """WHK-05/WHK-07: a deploy failure (after Task 1's bounded retries are
+    exhausted) must NOT crash the publisher — the run still finalizes
+    (status=complete + publisher-deploy event) and the error sentinel is
+    embedded in the publisher-deploy payload (observable failure).
+    """
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.groq_query",
+        AsyncMock(return_value=[_sample_groq_result()]),
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.upload_pdf_to_issue", AsyncMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.asyncio.sleep", AsyncMock()
+    )
+    # The deploy raises AFTER its (Task 1) bounded retries are exhausted.
+    failing_vercel = AsyncMock(
+        side_effect=httpx.HTTPStatusError(
+            "429 Too Many Requests",
+            request=httpx.Request("POST", "https://x"),
+            response=httpx.Response(429),
+        )
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.trigger_vercel_deploy",
+        failing_vercel,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.convex_mutation_safe",
+        mock_convex_mutation,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.get_sanity_http", lambda: MagicMock()
+    )
+
+    app = _build_fake_app()
+
+    # MUST NOT raise — the deploy failure is swallowed and finalization runs.
+    await _run_publisher(
+        app, issue_id="issue-42", issue_number=42, run_id="run-abc"
+    )
+
+    # Finalization still ran: status=complete + publisher-deploy event.
+    mutation_names = [
+        call.args[0] for call in mock_convex_mutation.await_args_list
+    ]
+    assert "pipelineRuns:updateStatus" in mutation_names
+    assert "deliberationEvents:insert" in mutation_names
+
+    update_call = next(
+        c for c in mock_convex_mutation.await_args_list
+        if c.args[0] == "pipelineRuns:updateStatus"
+    )
+    assert update_call.args[1]["status"] == "complete"
+    assert update_call.args[1]["runId"] == "run-abc"
+
+    # The publisher-deploy payload carries the error sentinel (observable).
+    event_call = next(
+        c for c in mock_convex_mutation.await_args_list
+        if c.args[0] == "deliberationEvents:insert"
+    )
+    assert event_call.args[1]["eventType"] == "publisher-deploy"
+    assert "error" in event_call.args[1]["payload"]
+
+
+async def test_deploy_failure_manual_branch_does_not_crash(
+    monkeypatch, mock_convex_mutation
+):
+    """run_id=None (manually-authored issue): a deploy failure must not crash
+    the manual branch either — the try/except wraps both paths, and no Convex
+    writes happen (the run_id-None early return is preserved).
+    """
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.groq_query",
+        AsyncMock(return_value=[_sample_groq_result()]),
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.upload_pdf_to_issue", AsyncMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.asyncio.sleep", AsyncMock()
+    )
+    failing_vercel = AsyncMock(
+        side_effect=httpx.HTTPStatusError(
+            "500 Server Error",
+            request=httpx.Request("POST", "https://x"),
+            response=httpx.Response(500),
+        )
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.trigger_vercel_deploy",
+        failing_vercel,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.convex_mutation_safe",
+        mock_convex_mutation,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.get_sanity_http", lambda: MagicMock()
+    )
+
+    app = _build_fake_app()
+
+    # MUST NOT raise.
+    await _run_publisher(
+        app, issue_id="issue-42", issue_number=42, run_id=None
+    )
+
+    # run_id=None → early return before Convex writes (branch preserved).
+    assert mock_convex_mutation.await_count == 0

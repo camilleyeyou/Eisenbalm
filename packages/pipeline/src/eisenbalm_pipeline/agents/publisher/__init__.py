@@ -214,8 +214,22 @@ async def _run_publisher(
     # doesn't matter. Prefer the lifespan-registered convex_http (always an
     # httpx.AsyncClient) to avoid constructing a new client per fire.
     vercel_http = getattr(app.state, "convex_http", None) or get_sanity_http()
-    deploy_response = await trigger_vercel_deploy(vercel_http)
-    log.info("Publisher: Vercel deploy triggered — %s", deploy_response)
+    try:
+        deploy_response = await trigger_vercel_deploy(vercel_http)
+        log.info("Publisher: Vercel deploy triggered — %s", deploy_response)
+    except Exception as e:  # deploy is non-fatal — the run MUST still finalize.
+        # WHK-05: a missed deploy hook is not user-visible (ISR re-renders
+        # within 60s) and must never leave a run un-finalized in Convex.
+        # Swallow the error, record an observable sentinel, and continue to
+        # the step-6 finalization below. The sentinel rides into the
+        # publisher-deploy event payload under the "deploy" key (no new
+        # eventType, no Convex schema change).
+        log.warning(
+            "Publisher: Vercel deploy failed after retries — %r. "
+            "Continuing to finalize run.",
+            e,
+        )
+        deploy_response = {"error": str(e)}
 
     # 6. WHK-07: Convex pipelineRuns:updateStatus + publisher-deploy event.
     if run_id is None:
