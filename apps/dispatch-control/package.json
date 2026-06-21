@@ -1,0 +1,39 @@
+{
+  "name": "dispatch-control",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Eisenbalm Dispatch Control — Mission Control dashboard (Next.js 15 App Router)",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@eisenbalm/convex": "workspace:*",
+    "@eisenbalm/shared": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "convex": "^1.38.0",
+    "lucide-react": "^1.14.0",
+    "next": "^15.3.9",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitest/ui": "^3.2.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.6.0",
+    "vite-tsconfig-paths": "^5.1.0",
+    "vitest": "^3.2.0"
+  }
+}
