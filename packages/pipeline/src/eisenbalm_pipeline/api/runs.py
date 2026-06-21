@@ -20,10 +20,11 @@ import time
 from datetime import date, datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from langgraph.types import Command
 from pydantic import BaseModel
 
+from eisenbalm_pipeline.api.auth import require_clerk_jwt
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.cost import begin_run
 from eisenbalm_pipeline.lib.ids import new_run_id
@@ -380,3 +381,26 @@ async def manual_publish(request: Request, run_id: str) -> dict:
         "issueNumber": issue["issueNumber"],
         "scheduled": True,
     }
+
+
+# ── Dashboard-control endpoints (Clerk JWT guard) ─────────────────────────
+#
+# These endpoints require a valid Clerk JWT via Depends(require_clerk_jwt).
+# The cron path above (_require_trigger_secret) is intentionally UNTOUCHED.
+# D-04 (21-CONTEXT): no synthetic run-trigger this phase — whoami only.
+
+@router.post("/dashboard/whoami")
+async def dashboard_whoami(
+    claims: dict = Depends(require_clerk_jwt),
+) -> dict:
+    """Return the signed-in operator's Clerk user ID.
+
+    Minimal dashboard-control endpoint proving the require_clerk_jwt guard
+    is wired and that claims["sub"] (the Clerk userId) flows through.
+    Used downstream as actorId on audit_log rows and triggeredBy on runs rows
+    (attribute shapes defined in 21-CONTEXT D-13; write flows land Phase 23/25).
+
+    Returns:
+        {"operatorId": "<clerk-user-id>"} on success
+    """
+    return {"operatorId": claims.get("sub")}
