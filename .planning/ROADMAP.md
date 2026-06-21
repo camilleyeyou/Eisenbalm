@@ -469,7 +469,13 @@ Plans:
   3. FastAPI dashboard-control endpoints reject requests without a valid Clerk JWT; the Railway cron path retains its existing `X-Pipeline-Trigger-Secret` and is unaffected
   4. The audit log and run records attribute the signed-in operator's identity to every triggered action from day one
   5. Every new Convex table (`workspaces`, `users`, `agents`, `prompt_versions`, `pipeline_config`, `runs`, `agent_runs`, `charities`, `model_pricing`, `review_actions`, `audit_log`) carries a `workspace_id` field; querying by `workspace_id = "eisenbalm"` returns the seeded workspace record
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 21-01-PLAN.md — Scaffold dispatch-control app + Phase 21 test harness (Wave 0)
+- [ ] 21-02-PLAN.md — 11 Convex tables (workspace_id) + auth.config + seed + JIT user upsert
+- [ ] 21-03-PLAN.md — Clerk auth wiring (middleware, providers, sign-in); apps/web no-leak
+- [ ] 21-04-PLAN.md — FastAPI require_clerk_jwt guard; cron secret untouched
+- [ ] 21-05-PLAN.md — App shell: sidebar + 7 nav routes + Clerk user button
 **UI hint**: yes
 
 ### Phase 22: Config Externalization
