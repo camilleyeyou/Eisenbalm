@@ -206,20 +206,90 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **P19-06**: Zero-regression — `pnpm --filter web test:unit` >= prior baseline passing; `pnpm --filter web typecheck` + `build` clean; `theme-aa-tones.test.ts` UPDATED to the new palette; theme/security tests otherwise unmodified and green.
 - [x] **P19-07**: Accessibility preserved — single `<main>` landmark, skip-link intact, scroll-spy rail keyboard-navigable (`role="navigation"` + `aria-label="Article sections"`, hidden < 980px), focus-visible ring honored, game play button + podcast play/pause have aria-labels, deliberation chat has `role="log"` + `aria-live="polite"`, game `sandbox="allow-scripts"` + DEL-04 no-model-names preserved.
 
-## v2 Requirements
+## Milestone v2.0 Requirements — Mission Control Dashboard
 
-Deferred to future release. Tracked but not in current roadmap.
+**Scope:** Phases 21–27 (productization-prep deferred). A single-tenant, review-gated no-code control plane for the agent pipeline, built with multi-tenant bones. Grounded in `docs/MISSION_CONTROL_BRIEF.md`, `docs/CURRENT_STATE.md`, and `.planning/research/SUMMARY.md`. Locked decisions: separate `dispatch-control` app · single-tenant + `workspace_id` threaded · `require_review` default-on · Railway-cron scheduler.
+
+### Auth & App Shell (AUTH)
+- [ ] **AUTH-01**: Operator can sign in to the `dispatch-control` app via Clerk; every dashboard route is protected while the public `apps/web` site stays unauthenticated.
+- [ ] **AUTH-02**: Any unauthenticated request to a dashboard route or dashboard API is rejected (redirect to sign-in / 401).
+- [ ] **AUTH-03**: FastAPI dashboard-control endpoints verify a Clerk-issued token before mutating pipeline state; the Railway cron path keeps its existing `X-Pipeline-Trigger-Secret`.
+- [ ] **AUTH-04**: Actions are attributed to the signed-in operator (consumed by the audit log and run-trigger attribution).
+
+### Config Externalization & Reproducibility (CFG) — the §2 keystone
+- [ ] **CFG-01**: Active agent config (system prompt, user template, model, temperature, max tokens, enabled flag) lives in Convex and is the source the pipeline reads at run start.
+- [ ] **CFG-02**: The 12 existing prompt `.md` files are migrated into the config store as version-1 active rows, byte-verified against the files.
+- [ ] **CFG-03**: The pipeline loads the full run config once at run start; if the config store is unavailable it falls back to the on-disk `.md` files rather than crashing or silently ignoring edits.
+- [ ] **CFG-04**: Every run records an immutable snapshot of the exact config it used, written BEFORE the graph is invoked, so a mid-run edit cannot alter an in-flight run.
+- [ ] **CFG-05**: Every new dashboard/config table carries a `workspace_id` (seeded to one "eisenbalm" workspace); no charity- or Eisenbalm-specific logic is hardcoded in the control plane.
+
+### Dashboard & Live Observability (OBS)
+- [ ] **OBS-01**: Operator can view the pipeline as the real agent graph — each agent a node showing its current config (model, enabled, description).
+- [ ] **OBS-02**: Operator can view full run history (status, trigger source, who triggered, duration, cost) and open any run.
+- [ ] **OBS-03**: Operator can watch a run live — each agent transitions queued→running→done/failed with live token/cost accrual + latency — via Convex subscriptions.
+- [ ] **OBS-04**: Operator can see cost rolled up per agent → per run → per issue → per week/month, reading the already-captured per-call cost (no second cost recorder is added).
+- [ ] **OBS-05**: Operator can inspect per-agent input/output and any error/retry for a run.
+
+### Prompt Editing & Versioning (PRM)
+- [ ] **PRM-01**: Operator can edit an agent's system prompt and user-prompt template in a UI editor.
+- [ ] **PRM-02**: The editor highlights the template variables available to that agent and warns on unknown/mangled variables before save.
+- [ ] **PRM-03**: Saving a prompt creates a new version (author + timestamp + optional note) and never overwrites a prior version.
+- [ ] **PRM-04**: Operator can diff any two versions and activate/rollback to a chosen version in one click; activation is blocked or safely queued while a run is in progress.
+- [ ] **PRM-05**: Operator can test-run a single agent against sample or prior-real input and see its output + cost, without running the whole pipeline.
+- [ ] **PRM-06**: The voice/persona text (`VOICE_CONSTRAINTS`) is editable and versioned as a first-class config entry alongside agent prompts.
+
+### Run Control (RUN)
+- [ ] **RUN-01**: Operator can trigger a new issue run on demand from the dashboard.
+- [ ] **RUN-02**: A master `schedule_enabled` kill switch exists; the scheduler tick checks it FIRST and no-ops when off (automation controlled by data, not by enabling/disabling the cron).
+- [ ] **RUN-03**: A Railway cron calls the tick endpoint on the configured cadence; operator can edit cadence / pause / resume and see the next scheduled run with timezone shown explicitly.
+- [ ] **RUN-04**: Operator can cancel an in-flight run; the pipeline stops cooperatively and the run ends in a consistent `cancelled` state.
+- [ ] **RUN-05**: Operator can re-roll a single agent/section within an existing issue without rerunning the whole pipeline. *(absorbs former V2-05)*
+- [ ] **RUN-06**: Operator can set per-run and monthly budget caps with alert thresholds; the system warns at threshold and can refuse to start a run that would exceed the cap.
+
+### Review & Publish Gate (RVW)
+- [ ] **RVW-01**: `require_review` is on by default; a finished run lands in `awaiting_review` rather than auto-publishing.
+- [ ] **RVW-02**: Operator sees a full rendered preview of the issue + deliberation + cost before deciding.
+- [ ] **RVW-03**: Operator can approve-and-publish, approve-and-schedule, re-roll sections, or reject a run from the review screen.
+- [ ] **RVW-04**: Enabling `auto_publish` requires explicit friction — it is off by default, takes a confirmation step, and is alerted + audit-logged.
+- [ ] **RVW-05**: Every factual claim (number / name / date) in a finished issue is surfaced as a checklist for human sign-off before publish.
+
+### Charity Registry (REG)
+- [ ] **REG-01**: Operator can manage a charity registry with states candidate/featured/blocklisted, plus `times_featured`, `last_featured_at`, and a dedup key.
+- [ ] **REG-02**: The Scout consults the registry so an already-featured or blocklisted charity is not selected again.
+
+### Donation Reconciliation (RCN)
+- [ ] **RCN-01**: Operator can see, per issue, gross sales / Stripe fees / net-to-charity for that issue's sales window (from the Stripe API + existing order records).
+- [ ] **RCN-02**: Operator can track payout status per issue so the "100% of proceeds" promise is auditable.
+
+### Notifications (NTF)
+- [ ] **NTF-01**: Operator receives a notification (Slack and/or email) on run complete, run failed, and run awaiting review.
+- [ ] **NTF-02**: Operator receives a notification when a budget threshold is hit.
+
+### Audit Log (AUD)
+- [ ] **AUD-01**: Every config/prompt change, review decision, and kill-switch flip is recorded in an audit log with actor, timestamp, and before/after values.
+
+## Future Requirements (deferred beyond v2.0)
+
+Tracked but not in the v2.0 roadmap.
+
+### Productization (deferred from v2.0 — the §6 SaaS-extraction groundwork)
+- **V2-PROD-01**: Workspace-scoping audit + multi-workspace switching (activate Clerk Organizations)
+- **V2-PROD-02**: Per-workspace encrypted secrets store (BYO API keys; AES-256-GCM in Convex)
+- **V2-PROD-03**: De-Eisenbalm-ify the control plane (a "rename the brand" grep test passes)
+- **V2-PROD-04**: Agent graph topology stored as data/config (no graph-editor UI yet)
+
+### Automation
 
 ### Automation
 
 - **V2-01**: Suno API integration (auto-generate jingle audio from `sunoPrompt` instead of Andrew pasting `sunoAudioUrl`)
 - **V2-02**: NotebookLM API integration (auto-generate podcast audio from `deliberationTranscript`)
-- **V2-03**: Automatic weekly cron trigger for `/run/weekly` (v1 is manually triggered)
+- **V2-03**: Automatic weekly cron trigger for `/run/weekly` (v1 is manually triggered) — *CLI shipped in quick-260620-far; the kill-switch-gated tick + Railway-cron provisioning is now v2.0 RUN-02/RUN-03*
 
 ### Editorial Tooling
 
 - **V2-04**: A backup human reviewer flow when Andrew is unavailable (Andrew is the single gate in v1)
-- **V2-05**: A "regenerate single section" button in Sanity Studio that re-invokes one agent without rerunning the whole pipeline
+- **V2-05**: A "regenerate single section" button in Sanity Studio that re-invokes one agent without rerunning the whole pipeline — *absorbed into v2.0 RUN-05 (re-roll a single agent from the dashboard)*
 - **V2-06**: Voice-drift dashboard for Andrew (track Jesse-voice rubric scores across issues over time)
 
 ### Reader Engagement
