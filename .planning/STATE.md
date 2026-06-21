@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: mission-control-dashboard
-status: Defining requirements
-stopped_at: Completed quick-260621-fi4 phase-0-reconciliation
-last_updated: "2026-06-21T18:22:49.014Z"
+status: Roadmap created — ready for planning
+stopped_at: Roadmap created for v2.0 (Phases 21-27)
+last_updated: "2026-06-21T00:00:00.000Z"
 progress:
-  total_phases: 20
-  completed_phases: 19
+  total_phases: 27
+  completed_phases: 20
   total_plans: 133
   completed_plans: 131
 ---
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** v2.0 Mission Control Dashboard — defining requirements
+**Current focus:** v2.0 Mission Control Dashboard — Phase 21 (Auth + App Shell + Convex Schema)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 21 — Auth + App Shell + Convex Schema
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-21 — Milestone v2.0 (Mission Control Dashboard) started
+Status: Not started
+Last activity: 2026-06-21 — Roadmap created for v2.0 Phases 21-27
 
 ## Performance Metrics
 

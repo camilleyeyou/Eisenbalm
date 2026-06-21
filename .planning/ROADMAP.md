@@ -20,6 +20,16 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [ ] **Phase 8: Stripe / Commerce** - `/shop` product page, Stripe Checkout, `/shop/thank-you`, raw-body webhook with idempotency, legal pages, and persistent shop callout
 - [x] **Phase 9: Issue Page Completion** - Live Convex deliberation UI (subscriptions, agent identity cards, collapsed accordion) and podcast audio player + transcript, completing the full reading experience (completed 2026-05-21)
 
+**v1.0 complete. v2.0: Mission Control Dashboard (Phases 21–27)**
+
+- [ ] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation
+- [ ] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap
+- [ ] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O
+- [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run
+- [ ] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts
+- [ ] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup
+- [ ] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator
+
 ## Phase Details
 
 ### Phase 1: Sanity Foundation
@@ -396,6 +406,14 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 17. UI/UX Audit Follow-ups | 5/5 | Complete    | 2026-06-02 |
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 | 19. Issue Page Redesign — Dispatch Magazine Layout | 5/5 | Complete    | 2026-06-03 |
+| 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
+| 21. Auth + App Shell + Convex Schema | 0/? | Not started | - |
+| 22. Config Externalization | 0/? | Not started | - |
+| 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
+| 24. Prompt Editor + Versioning | 0/? | Not started | - |
+| 25. Run Control | 0/? | Not started | - |
+| 26. Review Gate + Charity Registry | 0/? | Not started | - |
+| 27. Money + Notifications | 0/? | Not started | - |
 
 ## Backlog
 
@@ -436,3 +454,94 @@ Plans:
 - [x] 20-03-convex-flow-engine-PLAN.md — Wave 2: `enqueueEmailFlow` + `sendEmailStep`/`sweepStaleSends` actions + `crons.ts` hourly sweep + charity GROQ builders; wire enqueue into `stripeOrders.insert` (fire-and-forget) (EMAIL-01/02/03/09)
 - [ ] 20-04-react-email-templates-PLAN.md — Wave 3: 8 Jesse-voice React Email DRAFT templates + transactional/marketing layouts + CAN-SPAM footer + real `renderEmailStep` + Next `serverExternalPackages` (EMAIL-04/05/06/08)
 - [ ] 20-05-unsubscribe-route-and-cancellation-PLAN.md — Wave 3: `GET/POST /api/email/unsubscribe` one-click route + `unsubscribeByToken` cancellation mutation (cancels pending marketing steps only) (EMAIL-03/10)
+
+---
+
+## v2.0 Phase Details — Mission Control Dashboard
+
+### Phase 21: Auth + App Shell + Convex Schema
+**Goal**: Operator can sign in to `dispatch-control` and see a navigable app shell; every dashboard route is protected by Clerk while `apps/web` stays unauthenticated; all new Convex tables carry `workspace_id` and the "eisenbalm" workspace is seeded
+**Depends on**: Phase 3 (Convex Deployment — existing tables and deploy pipeline)
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, CFG-05
+**Success Criteria** (what must be TRUE):
+  1. Operator navigates to `dispatch-control` and is redirected to Clerk sign-in when unauthenticated; after signing in, the app shell renders with top-level navigation (Graph, Runs, Config, Prompts, Registry, Finance, Settings)
+  2. Every dashboard route and API endpoint returns a redirect-to-sign-in or 401 when called without a valid Clerk session; `apps/web` public pages load without any Clerk dependency
+  3. FastAPI dashboard-control endpoints reject requests without a valid Clerk JWT; the Railway cron path retains its existing `X-Pipeline-Trigger-Secret` and is unaffected
+  4. The audit log and run records attribute the signed-in operator's identity to every triggered action from day one
+  5. Every new Convex table (`workspaces`, `users`, `agents`, `prompt_versions`, `pipeline_config`, `runs`, `agent_runs`, `charities`, `model_pricing`, `review_actions`, `audit_log`) carries a `workspace_id` field; querying by `workspace_id = "eisenbalm"` returns the seeded workspace record
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 22: Config Externalization
+**Goal**: The pipeline reads all agent config (prompts, model, temperature, tokens, enabled flag) from Convex once at run start; a full config snapshot is written to the `runs` record BEFORE the LangGraph graph is invoked; the 12 existing prompt `.md` files are migrated into Convex as version-1 active rows with byte-verification; agents read from `state["config"]` not from disk mid-run; disk files are retained as fallback
+**Depends on**: Phase 21
+**Requirements**: CFG-01, CFG-02, CFG-03, CFG-04
+**Success Criteria** (what must be TRUE):
+  1. A pipeline run triggered after Phase 22 shows a `config_snapshot` JSON field on the `runs` record that contains the exact prompt text and model settings used — verifiable by comparing the snapshot to the active prompt versions in Convex
+  2. The config snapshot is written to Convex and confirmed before `graph.ainvoke()` is called; editing a prompt mid-run does not change the in-flight run's behavior (the config was captured at start)
+  3. All 12 agent prompt `.md` files appear in Convex `prompt_versions` as version-1 active rows; running the byte-comparison verification script shows zero diff between the seeded rows and the original files
+  4. If Convex is unreachable at run start, the pipeline falls back to the on-disk `.md` files and logs a warning — it does not crash or silently ignore the degradation
+**Plans**: TBD
+
+### Phase 23: Node Wrappers + Read-Only Dashboard
+**Goal**: Every LangGraph agent node is wrapped by `wrap_agent_node()`; the wrapper emits `agent_runs:started`/`completed`/`failed` to Convex (reading already-accumulated cost from `cost.py` — no second recorder); the operator dashboard shows the pipeline graph, full run history, a live run view with per-agent status and cost, and per-agent input/output inspection; audit infrastructure is in place
+**Depends on**: Phase 22
+**Requirements**: OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, AUD-01
+**Success Criteria** (what must be TRUE):
+  1. Triggering a pipeline run causes each of the 14 agent nodes to emit `started` and `completed` (or `failed`) events to `agent_runs` in Convex with timestamps and cost-so-far; the dashboard live-run view shows each agent transitioning queued → running → done/failed in real time without page refresh
+  2. The cost roll-up on the dashboard matches the already-captured per-call cost from `acomplete`/`cost.py` — no second cost-recording call is present (verified by integration test checking `agent_runs` cost values match `pipelineRuns.cost`)
+  3. Operator can open any past run and inspect per-agent input/output payload and any error or retry message
+  4. The pipeline graph view shows each agent as a node with its current config (model, enabled flag, description) sourced from Convex
+  5. Every config/prompt change, review decision, and kill-switch flip emits a row to the `audit_log` table with actor, timestamp, and before/after values
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 24: Prompt Editor + Versioning
+**Goal**: Operator can edit any agent's system prompt and user-prompt template in a CodeMirror editor with `{variable}` highlighting; saving creates an immutable new version; operator can diff any two versions, activate a version, or rollback — with activation blocked while a run is in progress; `VOICE_CONSTRAINTS` is a versioned first-class config entry; operator can test-run a single agent against sample input
+**Depends on**: Phase 23
+**Requirements**: PRM-01, PRM-02, PRM-03, PRM-04, PRM-05, PRM-06
+**Success Criteria** (what must be TRUE):
+  1. Operator opens a prompt editor, makes a change, and saves — the dashboard shows a new version row with author, timestamp, and optional note; the prior version is still accessible and its text is unchanged
+  2. The editor highlights `{variable_name}` tokens specific to that agent in a distinct color; typing an unknown variable name or mangling an existing one shows a warning before the operator can save
+  3. Activating a prompt version while a run is in progress is blocked or safely queued with a visible explanation; activating when no run is in progress takes effect immediately for the next run
+  4. Operator can select any two versions in a diff view and see a side-by-side diff of the prompt text
+  5. Operator can trigger a test-run for a single agent, supply sample or prior-real input, and see the agent's output and cost without running the full pipeline
+  6. `VOICE_CONSTRAINTS` appears in the editor as a named config entry alongside agent prompts; editing and versioning it follows the same save-as-version flow
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 25: Run Control
+**Goal**: Operator can trigger a run on demand; a `schedule_enabled` kill switch gates all automated runs; a Railway cron calls the tick endpoint on the configured cadence; operator can cancel an in-flight run cooperatively; operator can re-roll a single agent/section via LangGraph checkpoint; per-run and monthly budget caps with alert thresholds are enforced
+**Depends on**: Phase 23
+**Requirements**: RUN-01, RUN-02, RUN-03, RUN-04, RUN-05, RUN-06
+**Success Criteria** (what must be TRUE):
+  1. Operator clicks "Trigger Run" on the dashboard and a new pipeline run starts; the run appears in the run history with `trigger_source = "manual"` and `triggered_by` = the operator's identity
+  2. Setting `schedule_enabled = false` in the dashboard causes the Railway cron tick to no-op immediately — no run starts; the dashboard shows the kill switch state and the next scheduled time with the operator's local timezone shown explicitly
+  3. Operator clicks "Cancel" on a live run; the run ends in `cancelled` status within the span of one agent node completing; every subsequent agent node that checks the cancel flag before starting no-ops cleanly
+  4. Operator uses the re-roll UI to regenerate a single agent/section within an existing run; the LangGraph checkpoint is read, the target node is re-executed, and the issue draft is updated in Sanity — the other sections are unchanged
+  5. When a run's projected cost would exceed the configured monthly cap, the system refuses to start the run and shows a warning; when accumulated cost crosses the alert threshold, the operator receives a notification (Slack and/or email)
+**Plans**: TBD
+
+### Phase 26: Review Gate + Charity Registry
+**Goal**: Every finished run lands in `awaiting_review` by default; operator sees a full rendered preview + cost before deciding; operator can approve-and-publish, approve-and-schedule, re-roll sections, or reject; enabling `auto_publish` requires explicit friction and is audit-logged; every factual claim is surfaced as a sign-off checklist; the charity registry tracks candidate/featured/blocklisted states and the Scout deduplicates against it
+**Depends on**: Phase 25, Phase 23
+**Requirements**: RVW-01, RVW-02, RVW-03, RVW-04, RVW-05, REG-01, REG-02
+**Success Criteria** (what must be TRUE):
+  1. A completed pipeline run lands in `awaiting_review` status and appears in the review queue; the operator sees a rendered preview of the full issue (including deliberation and cost) before making any decision
+  2. Operator can approve-and-publish (triggers Vercel deploy), approve-and-schedule (sets a future publish time), reject (returns run to rejected state), or initiate a section re-roll from the review screen
+  3. The factual-claims checklist surfaces every number, proper name, and date from the issue text; the operator must check off each claim (or explicitly skip) before the approve action is enabled
+  4. `auto_publish` is `false` by default; enabling it requires a modal confirmation step, is rate-limited, emits an audit log entry, and triggers an email alert to the operator — the dashboard makes the enabled state visually alarming
+  5. The charity registry shows each charity's current state (candidate/featured/blocklisted), `times_featured`, and `last_featured_at`; the Scout queries the registry at run start and skips any already-featured or blocklisted charity
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 27: Money + Notifications
+**Goal**: Operator can view, per issue, gross sales / Stripe fees / net-to-charity from actual Stripe API data + recorded order data; payout status per issue is tracked; `model_pricing` table is labeled as projection-only with a staleness indicator; operator receives Slack and/or email notifications on run complete, run failed, run awaiting review, and budget threshold hit
+**Depends on**: Phase 26
+**Requirements**: RCN-01, RCN-02, NTF-01, NTF-02
+**Success Criteria** (what must be TRUE):
+  1. The finance view shows, for each published issue: gross sales (from actual Stripe payment_intent records), Stripe fees, and net-to-charity — computed from the actual recorded `stripeOrders` rows and Stripe API, never from `model_pricing` estimates
+  2. Operator can mark a payout as sent (with date and reference) per issue; the dashboard shows payout status across all issues so the "100% of proceeds" promise is auditable at a glance
+  3. The `model_pricing` table view is labeled "Projection pricing (not actual cost)" and shows a staleness indicator when any row's pricing data is more than 30 days old
+  4. Operator receives a Slack notification and/or email within 5 minutes of: a run completing successfully, a run failing, a run entering `awaiting_review`, or a budget threshold being crossed
+**Plans**: TBD

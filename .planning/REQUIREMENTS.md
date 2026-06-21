@@ -461,11 +461,62 @@ Finalized during roadmap creation (2026-05-09). Research's 10-phase suggestion m
 | P19-06 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
 | P19-07 | Phase 19: Issue Page Redesign — Dispatch Magazine Layout | Not started |
 
-**Coverage:**
+**Coverage (v1.0):**
 - v1 requirements: 110 total (95 prior + 8 MEL-* Phase 18 + 7 P19-* Phase 19)
 - Mapped to phases: 110
 - Unmapped: 0 ✓
 
+## v2.0 Traceability
+
+Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped to Phases 21–27.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| AUTH-01 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| AUTH-02 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| AUTH-03 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| AUTH-04 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| CFG-05 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| CFG-01 | Phase 22: Config Externalization | Pending |
+| CFG-02 | Phase 22: Config Externalization | Pending |
+| CFG-03 | Phase 22: Config Externalization | Pending |
+| CFG-04 | Phase 22: Config Externalization | Pending |
+| OBS-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| OBS-02 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| OBS-03 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| OBS-04 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| OBS-05 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| AUD-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| PRM-01 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-02 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-03 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-04 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-05 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-06 | Phase 24: Prompt Editor + Versioning | Pending |
+| RUN-01 | Phase 25: Run Control | Pending |
+| RUN-02 | Phase 25: Run Control | Pending |
+| RUN-03 | Phase 25: Run Control | Pending |
+| RUN-04 | Phase 25: Run Control | Pending |
+| RUN-05 | Phase 25: Run Control | Pending |
+| RUN-06 | Phase 25: Run Control | Pending |
+| RVW-01 | Phase 26: Review Gate + Charity Registry | Pending |
+| RVW-02 | Phase 26: Review Gate + Charity Registry | Pending |
+| RVW-03 | Phase 26: Review Gate + Charity Registry | Pending |
+| RVW-04 | Phase 26: Review Gate + Charity Registry | Pending |
+| RVW-05 | Phase 26: Review Gate + Charity Registry | Pending |
+| REG-01 | Phase 26: Review Gate + Charity Registry | Pending |
+| REG-02 | Phase 26: Review Gate + Charity Registry | Pending |
+| RCN-01 | Phase 27: Money + Notifications | Pending |
+| RCN-02 | Phase 27: Money + Notifications | Pending |
+| NTF-01 | Phase 27: Money + Notifications | Pending |
+| NTF-02 | Phase 27: Money + Notifications | Pending |
+
+**Coverage (v2.0):**
+- v2.0 requirements: 38 total (AUTH:4, CFG:5, OBS:5, PRM:6, RUN:6, RVW:5, REG:2, RCN:2, NTF:2, AUD:1)
+- Mapped to phases: 38
+- Unmapped: 0 ✓
+- V2-PROD-01..04 deferred to future milestone (not in Phases 21-27) ✓
+
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-06-03 — added P19-01..P19-07 for Phase 19 (Issue Page Redesign — Dispatch Magazine Layout)*
+*Last updated: 2026-06-21 — added v2.0 traceability (AUTH/CFG/OBS/PRM/RUN/RVW/REG/RCN/NTF/AUD → Phases 21-27)*
