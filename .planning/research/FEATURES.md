@@ -1,305 +1,549 @@
-# Feature Research
+# Feature Landscape
 
-**Domain:** Weekly AI-generated editorial magazine + AI pipeline observability + one-product cause ecommerce
-**Researched:** 2026-05-09
-**Confidence:** HIGH (editorial/ecommerce), MEDIUM (AI observability — novel surface)
+**Domain:** Agent-pipeline control plane (operator dashboard over a 9-agent LangGraph editorial pipeline)
+**Researched:** 2026-06-21
+**Milestone:** v2.0 Mission Control Dashboard
 
 ---
 
-## Surface 1: Editorial Magazine
+## Scope Reminder
 
-The reading experience. Eight sections per issue, per-issue theming, archive, charity database.
+This file covers ONLY the ten new dashboard capabilities. The following are
+already shipped and must not be re-researched or re-scoped:
 
-### Table Stakes (Surface 1)
+- Public magazine site (reader routes, issue page, archive, shop)
+- 9-agent LangGraph pipeline (all agents, orchestration, Sanity writes)
+- Sanity Studio editorial review workflow (Andrew's manual gate)
+- Stripe checkout + webhook + email flow
+- Per-call OpenRouter cost capture (real tokens+USD in `acomplete` → `cost.py`)
+- File-externalized agent prompts (12 `.md` files, `lib/prompts.py::load_prompt()`)
 
-Features readers assume exist. Missing these = product feels broken.
+---
+
+## Feature Group 1 — DB-Backed Pipeline Config + Per-Run Snapshots
+
+### What It Is
+
+Prompts, model choices, temperatures, and the schedule currently live in
+code (`.md` files + env vars). This feature moves them into a database that the
+dashboard writes and the pipeline reads at run start. At run start, the pipeline
+takes a complete snapshot of the active config onto the run record, so each
+run is reproducible and mid-run edits cannot corrupt a live issue.
+
+### Table Stakes
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Mobile-first responsive layout | 60%+ of reading is on mobile in 2026; non-responsive = immediate bounce | LOW | Grid stays constant per brief; CSS variables handle theming |
-| Sub-3-second page load | Conversion/engagement drops sharply above 3s; ISR on Vercel handles this | LOW | Next.js ISR post-publish, Sanity CDN reads |
-| Per-page `<title>`, `<meta description>`, Open Graph tags | Every share to social/messaging produces a blank card without og:title, og:description, og:image | LOW | Per-issue: charity name, section summary, a theme-matched image |
-| `schema.org/Article` JSON-LD on issue pages | Google AI Mode (Gemini-powered) uses schema to verify claims and cite sources; omitting it removes eligibility for structured discovery | MEDIUM | `@type: Article`, `author` (Jesse), `datePublished`, `about` (charity entity) |
-| `schema.org/NGO` or `schema.org/Organization` JSON-LD on charity pages | Charity pages should be discoverable as entities; omitting hurts organic discovery of the charity database | LOW | `@type: NGO`, `name`, `url`, `foundingDate`, `description` |
-| XML sitemap at `/sitemap.xml` | Search crawlers require it; without it, archive pages may not be indexed | LOW | Next.js App Router has built-in sitemap generation via `sitemap.ts` |
-| `robots.txt` | Without it, crawlers make assumptions; some may over-crawl or under-crawl | LOW | Allow all issue and charity pages; disallow `/api/`, Convex endpoints |
-| Canonical URLs | Duplicate content penalty risk if `/` and `/issue/latest` both render the same issue | LOW | Canonical on `/` points to `/issue/[slug]` |
-| Accessible markup: ARIA landmarks, alt text, heading hierarchy | Screen readers require it; legal exposure in some jurisdictions; WCAG 2.2 AA is now expected baseline | MEDIUM | Headings must follow per-section hierarchy, not be decorative |
-| Keyboard navigation | Tab-accessible nav, game iframe focus management, audio player keyboard controls | MEDIUM | The sandboxed game iframe is the hard case |
-| Per-issue section anchor links | Readers sharing a specific section (e.g., "The Problem") expect a shareable URL | LOW | `#origin-story`, `#problem`, `#founder`, etc. |
-| Working audio player | Podcast section with play/pause, scrubber, volume — standard HTML5 `<audio>` expectations | LOW | `<audio>` element with controls; collapsible transcript below |
-| PDF download button | Brief specifies downloadable Problem Statement PDF | LOW | Already in brief; link to Sanity `problemPdf` asset URL |
-| Readable typography at all sizes | Long-form text requires comfortable line-height, measure, and contrast; the per-issue font switching makes this a real risk | MEDIUM | CSS variables inject fonts; must validate contrast ratio for each theme |
+| DB-backed prompt loader | Without this nothing else works — the editing UI has no data layer | High | Loader swap in `lib/prompts.py`, not string extraction. 12 `.md` files must be migrated as seed data. Fallback strategy (file vs DB unavailable) must be decided before building. |
+| Per-run config snapshot | The single biggest reproducibility guarantee — "which prompt produced this issue?" | Medium | Snapshot is a JSON blob stored on the run record at run start. Already partially supported: Convex `pipelineRuns.cost` holds a JSON blob; snapshot is the same pattern applied to config. |
+| `model_pricing` table (editable) | Cost roll-ups (Group 3) require current per-token prices | Low | A simple table; admin edits it when OpenRouter prices change. |
+| `pipeline_config` global record (`schedule_enabled`, `auto_publish`, `require_review`) | These three flags control the entire automation posture | Low | One-row config document. `schedule_enabled` is the kill-switch (Group 4). |
+| `agents` table (per-agent metadata) | Foundation for every per-agent UI card | Low | Static-ish: 14 canonical agents. Stores `key`, `description`, `enabled`, defaults. |
 
-### Differentiators (Surface 1)
+### Differentiators
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Per-issue color + typography theming | Each issue feels like its own publication; reinforces that every charity got a bespoke editorial treatment — not a template run | MEDIUM | Already specced: CSS variables on `<html>`. Risk: DesignAgent picks illegible combos. Needs hex-contrast validation in Publisher. |
-| Sandboxed interactive game per issue | No other charity editorial product has a playable game that gamifies the specific charity's mission | HIGH | Already specced: `<iframe srcdoc sandbox="allow-scripts">`. Self-contained constraint is the key discipline. |
-| Rotating bonus section (ad treatment / jingle / spec campaign) | Adds editorial surprise; "what is the bonus this week" becomes a reader hook | MEDIUM | Calibrator prevents two-week repeats. Brief covers all three formats. |
-| Deliberation layer embedded in the reading experience | Readers see the AI editorial board argue about which charity deserved the cover — inside the magazine, not on a separate "how it works" page | HIGH | Core differentiator; own surface (see Surface 2). |
-| Charity database as a long-term product | Over 52+ issues, the `/charities` database becomes a curated index of overlooked nonprofits — a distinct value artifact | LOW | GROQ query already written; needs good search/filter at scale |
-| Per-issue estimated reading time | Readers with 20 minutes before a meeting decide whether to start; showing "~18 min read" respects their time | LOW | Brief under-specifies this. Calculate from section word counts at render time. |
-| Print stylesheet | Some readers print long-form essays; a print-clean layout of the Problem Statement in particular would mirror the PDF's intent | LOW | Brief does not mention this. `@media print` hides game iframe, deliberation layer, shop callout, nav. |
+| Snapshot diffing between runs | "Why did Issue 12 cost more than Issue 11?" — compare their config snapshots | Medium | Useful for post-mortems. Not needed at launch. |
+| Graph-as-data (store the LangGraph topology as config, not code) | Productization: arbitrary pipelines, not just "the Eisenbalm pipeline" | High | Brief §6 explicitly defers the graph EDITOR UI. Store topology as data now; edit UI is post-v2. |
 
-### Anti-Features (Surface 1)
+### Anti-Features
 
-| Anti-Feature | Why Requested | Why NOT For This Brand | Alternative |
-|--------------|---------------|------------------------|-------------|
-| Newsletter / email subscribe CTA | "Every content site has one" | Brief explicitly: the site is a destination, not a newsletter. A subscribe form reframes Eisenbalm as a distribution channel rather than a magazine readers choose to visit. It also adds auth surface area for no value. | If distribution matters later, an RSS feed serves readers who want pull-based updates without the email relationship |
-| Related articles / "You might also like" widget | Standard editorial UX | Creates a generic "content site" feel that undercuts the one-issue-at-a-time magazine brand. Each issue is complete. There is no algorithmically similar charity. | The archive at `/archive` is the discovery mechanism — readers can browse, not be fed. |
-| Social share count displays | "Show virality to build credibility" | This brand is not competing on virality. Display counts on obscure charities can read as damning (low numbers). | Static share-to-X / share-to-Threads / copy-link buttons are sufficient without counts |
-| Comments or reader discussion | "Community builds engagement" | Brand voice requires no backtalk. Jesse doesn't entertain debate. A comment section would invite irony-signaling that collapses the dry-serious tone. | The deliberation layer is the "conversation" — between named agents, not anonymous readers |
-| User accounts / reading history personalization | Increases "stickiness" | Personalization requires auth, which adds surface area and implies a relationship (subscription) the brief rules out. One magazine per week — there is no personalization needed. | Bookmarking via native browser bookmark is sufficient |
-| AI-generated content labels / "Powered by AI" badges | Transparency best practice for general AI content | The brand premise is that Jesse was born AI. Labeling it "AI content" would be like labeling a Pixar film "computer-generated." The deliberation layer IS the transparency. | The Deliberation Layer shows the full pipeline. That is the transparency mechanism. |
-| Infinite scroll on archive | "Modern pagination" | Obscures navigation and makes it impossible to share a specific page position. Archive has a finite number of issues. | Simple paginated list or full list (52 issues/year is manageable) with search/filter |
-| Dark mode toggle | "Universal expectation" | Per-issue theming already defines the background color. Dark mode toggle conflicts with the DesignAgent's intentional palette and would require overriding every issue's aesthetic. | Honor `prefers-color-scheme` at the system level only for non-issue pages (archive, charities, about) |
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Graph editor UI | Brief §6: "no graph editor UI now — store graph as data." Building a drag-and-drop graph editor is a product unto itself. | Store the graph topology as JSON config; the dashboard reads and displays it but cannot edit edges. |
+| Inline-string extraction | Prompts are already `.md` files, not inline Python strings. Extraction work is zero. | Just swap the loader: `load_prompt(name)` reads from DB instead of file system. |
+| Live config mutation mid-run | A snapshot at run start exists precisely to prevent this. | Enforce: the pipeline reads config once at `POST /pipeline/run`, snapshots it, and ignores subsequent DB changes until next run. |
+
+### Dependencies on Existing Code
+
+- `lib/prompts.py::load_prompt()` — the single call site to swap. All 8 agent files call it.
+- `lib/voice.py::VOICE_CONSTRAINTS` — voice constraints are a separate surface (not in a `.md` file). Must decide: include in the DB config or keep in code. Recommendation: include, because it is what you would most want to edit.
+- `agents/qa/rubric.md` — also loaded via `importlib.resources`. Include in migration.
+- Convex `pipelineRuns` table — already has `cost` (JSON string). Add `configSnapshot` field (same pattern).
+- Railway Postgres — already hosts the LangGraph checkpointer. Prompt versions and config can live here or in a new Convex table. Decision needed; the brief implies Convex.
 
 ---
 
-## Surface 2: AI Observability Layer (Deliberation Layer)
+## Feature Group 2 — Prompt Editing: Versioning, Diff, Rollback, Test-Run
 
-The pipeline transparency surface. Lives inside the issue page. Shows pitch log, agent votes, QA corrections, event timeline — live via Convex subscriptions.
+### What It Is
 
-### Table Stakes (Surface 2)
+A UI where the operator edits a prompt, sees which `{token}` variables are
+available, saves as a new version (never overwrites), diffs any two versions,
+rolls back or activates a prior version, and can fire a single-agent test-run
+against a sample input to see output + cost without running the full pipeline.
+
+### Table Stakes
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Attribution to named agents (not "the AI") | "AI" is a black box; "Scout found three candidates; Advocate scored them 7, 4, 9; Editor chose #3 because…" is a story | MEDIUM | `agentProfile` documents in Sanity power the identity cards. Each event carries `agentId` — resolve to `displayName`, `role`, `personality`. |
-| Chronological event timeline | Readers need to understand cause-and-effect: Scout finds → Advocate argues → Editor decides | LOW | Convex events are ordered by `timestamp`. Render as a vertical timeline. |
-| Charity pitch cards with outcome markers | Show all 3-5 candidates, which ones were rejected and why, which one won | MEDIUM | `pitchLog.byRunId` + `selected` field. Rejected candidates shown with Advocate score and runner-up notes. |
-| QA correction diff view | Show what the QA agent changed and why, per section | MEDIUM | `qaCorrections` has `original`, `corrected`, `reason`, `severity`. A simple two-column diff or "before/after" toggle is readable. |
-| Empty/loading states that don't break the page | If Convex data hasn't loaded or `runId` is undefined, the section must degrade gracefully — not crash | LOW | Convex `useQuery` returns `undefined` while loading. Skeleton loaders for each card. |
-| Pipeline status indicator | Show whether the run is `running`, `awaiting-review`, or `complete` | LOW | `pipelineRuns.byRunId` query. Status badge at top of deliberation section. |
+| Prompt editor with `{variable}` highlighting | Operators need to know which tokens are substituted at runtime so they do not break calls | Medium | The current convention is `{VOICE_CONSTRAINTS}`, `{charity_name}`, etc. The editor must parse `{...}` tokens and warn on unknowns. |
+| Save-as-new-version (never overwrite) | Reproducibility requires an immutable version history | Low | `prompt_versions` table: `id`, `agent_key`, `content`, `author`, `created_at`, `note`, `active`. Activate = set `active=true` on one row. |
+| Diff between any two versions | Operators want to see exactly what changed before activating | Medium | Server-side line diff (Python `difflib` or a JS diff library). Display as side-by-side or inline unified diff in the UI. |
+| One-click rollback / activate | Errors in prompts must be recoverable in under 1 minute | Low | `PATCH /agents/{key}/prompt-versions/{id}/activate` flips the active flag. Audit log entry required (Group 9). |
+| Variable hint panel | Operators cannot memorize every agent's available tokens | Medium | Per-agent, document the available substitution tokens. Maintained as static config alongside the agent definition. |
 
-### Differentiators (Surface 2)
+### Differentiators
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Agent personality cards | Each agent has a `personality` field in `agentProfile`. Showing "Scout: relentlessly skeptical. Advocate: constitutionally optimistic." before showing their outputs makes the deliberation legible as a story, not a log dump | LOW | Already in schema. Display above the timeline. Cache after first GROQ fetch. |
-| Advocate score visualization | The 1-10 score per candidate is numerical data — render as a simple bar or rating, not just a number. Makes the comparative case at a glance. | LOW | Brief specifies `advocateScore (1–10)`. Simple CSS bar chart or star-equiv is enough. |
-| QA severity color coding | `minor` (yellow) / `moderate` (orange) / `major` (red) corrections communicate quality signal at a glance without requiring readers to read every correction | LOW | Already in schema. CSS utility classes. |
-| Deliberation section collapses by default | The deliberation layer is optional depth — readers who don't care about it should not be required to scroll through it | LOW | Collapsed accordion with "See how this issue was made" label. Expands on click. |
-| "Why this charity and not the others" summary block | A plain-language summary of the editor's decision — one paragraph, pinned above the full timeline — gives readers the TL;DR before diving into the log | LOW | Derived from `editorDecision` field in `selectionDeliberation`. Not a new Convex query — already in the Sanity issue fetch. |
-| Real-time event arrival animation | For readers who arrive while the pipeline is still running (unlikely but possible for future live-run transparency), new events animate in smoothly | MEDIUM | Convex subscriptions auto-update. CSS `@keyframes fade-in` on newly mounted cards. Low complexity for implemented subscription. |
+| Single-agent test-run | "Does my edited prompt produce valid output before I activate it?" — the most valuable prompt-editing safety net | High | `POST /agents/{key}/test-run` with a sample or previous real run's input. Returns the agent's output + cost. Requires the pipeline to support running a single node in isolation against injected state. The LangGraph `StateGraph` compiled with a checkpointer supports partial invocation via `graph.invoke({...}, thread_id=...)` with a targeted start node — feasible but requires care around shared state. |
+| A/B version comparison on real run output | "Which version produced better output?" | Very High | Not at launch. Requires running the same run twice or a dedicated eval harness. |
 
-### Anti-Features (Surface 2)
+### Anti-Features
 
-| Anti-Feature | Why Requested | Why NOT For This Brand | Alternative |
-|--------------|---------------|------------------------|-------------|
-| "Powered by [Model Name]" attribution | Transparency best practice in AI products | The brand is Jesse, not OpenRouter or Claude. Model names are infrastructure, not identity. Showing "written by Claude Sonnet 3.7" undermines the agent-as-character conceit and invites comparison to other AI products. | Agents have names and personalities in `agentProfile`. That IS the attribution. |
-| Accuracy score / hallucination meter | "Users want to know if AI content is reliable" | False precision. A "reliability: 84%" badge would be unverifiable and misleading for the kind of human-story editorial content this site publishes. | QA correction log shows what was caught and corrected. That is the honest version. |
-| Live pipeline progress bar during runs | "Transparency during generation" | Pipeline runs Thursday-to-Thursday, not while readers watch. This is a post-hoc observability layer, not a live generation viewer. A fake progress bar would be dishonest. | Pipeline status badge (`running` / `complete`) is sufficient. |
-| Editable agent outputs via reader UI | "Readers could help correct errors" | Violates the editorial chain of custody. Andrew is the only correction authority. Reader edits would destroy the journalistic posture. | A contact/corrections link in the footer pointing to Andrew is sufficient. |
-| Voting on which charity should have won | "Reader engagement, community feel" | Undermines the entire premise that the editorial board's deliberation is authoritative. Retroactive reader voting turns the deliberation into a poll. | Sharing the issue is the reader's vote. |
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Rich-text / WYSIWYG prompt editor | Prompts are plain text with `{token}` markers. Markdown formatting is meaningful (`.md` convention). A rich-text editor will corrupt formatting. | Plain `<textarea>` with syntax highlight overlay for `{...}` tokens. Monospace font. |
+| Auto-activate on save | Defeats the purpose of versioning. An unreviewed prompt edit could corrupt the next issue. | Always require explicit "Activate this version" action. Current active version stays live until explicitly replaced. |
+| Prompt-level A/B testing automation | Requires a controlled eval harness that does not exist. | Manual test-run covers the use case for now. |
+
+### Dependencies on Existing Code
+
+- `lib/prompts.py::load_prompt()` — must be extended to accept an optional `version_id`; when absent, loads the active version from DB.
+- `lib/voice.py` — `VOICE_CONSTRAINTS` and `JESSE_PERSONA_BLOCK` should be versioned too; they are the most voice-critical text in the system.
+- FastAPI: new route `POST /agents/{key}/test-run`. Must be able to invoke a single LangGraph node against injected state. Non-trivial — requires an isolated subgraph or a mock-state harness.
+- 12 existing `.md` files become seed data for `prompt_versions` table on first deploy.
 
 ---
 
-## Surface 3: One-Product Ecommerce
+## Feature Group 3 — Cost Observability Roll-Ups + Budget Caps + Projected Spend
 
-Lip balm. Custom Stripe. One page. One button. 100% of proceeds go to the featured charity.
+### What It Is
 
-### Table Stakes (Surface 3)
+Per-call cost is already captured (real OpenRouter tokens+USD via `acomplete`
+→ `cost.py`). This feature surfaces it: roll-ups per agent → per run → per
+issue → per week/month. Budget caps and alerts. Projected monthly spend from
+schedule + trailing average run cost.
+
+### Table Stakes (mostly surfacing, not instrumenting)
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Clear product description and price | Buyers need to know what they're purchasing and what it costs before clicking — hiding the price until checkout is a dark pattern | LOW | One SKU, one price. Display upfront on `/shop`. |
-| Single-click checkout path | 70% of carts are abandoned due to excessive steps. Stripe Checkout handles payment collection, so the flow is: product page → Stripe-hosted checkout → thank-you page. Minimal friction. | LOW | `POST /api/checkout` → redirect to `session.url`. Already in API contracts. |
-| Secure payment indicators | SSL lock, Stripe badge (Stripe Checkout includes these by default), accepted card logos | LOW | Stripe Checkout UI provides these natively. No manual implementation. |
-| Order confirmation page at `/shop/thank-you` | Buyers need acknowledgment that their order completed — without it, they re-submit or contact support | LOW | Already specced. Pull `session_id` from URL param to show order summary. |
-| Charity callout on product page | The purchase reason — "100% of proceeds go to [current featured charity]" — must be prominent, not buried in fine print | LOW | Dynamic: show current issue's charity name and link. Critical trust signal for this brand. |
-| Quantity selector | Even for a single SKU, buyers may want to purchase multiple lip balms (gifts, bulk). Removing quantity forces a separate transaction. | LOW | Brief includes `quantity` param in checkout session creation. |
-| Mobile-optimized checkout path | 60%+ of commerce is on mobile. Stripe Checkout is mobile-optimized by default. | LOW | Stripe handles this. Main risk is the product page layout itself. |
-| Privacy policy / terms | Required for payment processing compliance (Stripe TOS, GDPR/CCPA basics) | LOW | Brief does not mention this. Minimal static page required. `/legal/privacy` |
+| Per-agent cost on run record | Already captured in `pipelineRuns.cost` (JSON string). | Low | Zero new instrumentation. Parse `pipelineRuns.cost` JSON and render per-agent bars. |
+| Per-run total cost | Already captured. | Low | Sum of `agents.*` in the cost JSON. |
+| Per-issue cost (= per-run cost for weekly pipeline) | Each issue maps to exactly one run. | Low | Join `runs` to `issues` by `issue_id`. For the Eisenbalm Dispatch, this is a 1:1 relationship. |
+| Weekly/monthly roll-up | "How much did we spend this month?" | Low | Aggregate `runs.total_cost` over date range. No new capture needed. |
+| `model_pricing` table (editable) | Current token prices for projections | Low | Separate from cost capture; used for projecting future spend. OpenRouter already returns actual USD cost — projections are the only reason to maintain this table locally. |
+| Budget cap enforcement (hard stop or soft alert) | Prevents runaway spend from a rogue prompt or model selection | Medium | `pipeline_config.monthly_cap` + `pipeline_config.per_run_cap`. The per-run soft warn already exists (`cost.py:244-261` fires at 70% of cap). Hard stop = `POST /runs/{id}/cancel` triggered automatically. |
+| Alert thresholds | "Warn me before I hit the cap" | Low | Configurable % of monthly/per-run cap. Email or Slack (Group 10). |
+| Projected monthly spend | "At this rate, what will this month cost?" | Medium | Trailing 4-run average x runs-remaining-this-month. Simple arithmetic; display-only. |
 
-### Differentiators (Surface 3)
+### Differentiators
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Which charity receives this purchase — live, per featured issue | The buyer sees exactly which charity benefits from their order right now, with a link to the issue. This is the entire purchase motivation. | LOW | Query latest published issue slug + charity name from Sanity. Display on `/shop` with link to `/issue/[slug]`. |
-| "Your purchase goes to [charity]" on the thank-you page | Reinforces the reason for purchase; makes the confirmation page feel meaningful rather than transactional | LOW | Brief under-specifies the thank-you page content. Include charity name and a one-sentence impact statement. |
-| Persistent shop callout on every issue page | Readers encounter the purchase CTA in editorial context, where they're already engaged with the charity. Not a banner — one sentence, one button. | LOW | Already in brief. Append as fixed or sticky element at bottom of issue page. The callout updates dynamically with the current featured charity. |
-| No account required | Friction-free. Buyers who've never been to the site can purchase in under 2 minutes. | LOW | Stripe Guest Checkout is default. Brief prohibits user accounts on the marketing site. |
-| Total donated counter (optional, post-v1) | A running "$X,XXX donated to date across Y charities" figure on `/shop` builds long-term trust and demonstrates that the model works | MEDIUM | Requires order tracking in Supabase or Stripe metadata. Post-v1. |
+| Per-agent cost trend across runs | "Scout is getting more expensive — did the web search get slower?" | Medium | Time-series per agent. Useful for catching model price changes or prompt bloat. |
+| Cost breakdown by token type (input vs output) | Output tokens are usually more expensive; knowing the ratio informs prompt optimization | Low | `tokens_in` / `tokens_out` already captured in `cost.py`. Surface in UI. |
 
-### Anti-Features (Surface 3)
+### Anti-Features
 
-| Anti-Feature | Why Requested | Why NOT For This Brand | Alternative |
-|--------------|---------------|------------------------|-------------|
-| Urgency/scarcity mechanics ("Only 3 left!", countdown timers) | "Proven conversion tactics" | Brief explicitly forbids these. They are also dishonest for a non-inventory-scarce product and conflict with Jesse's no-manipulation brand posture. Dark patterns are increasingly illegal under FTC 2026 rules. | The charity mission is the urgency. "This week's proceeds go to [charity]. Next week they go somewhere else." — that is honest urgency. |
-| Popups and modal upsells | "Capture abandoning visitors" | Brief explicitly forbids. Popups destroy the magazine reading experience and signal the opposite of Jesse's dry, unbothered brand. | The persistent (non-modal) shop callout on issue pages is the non-annoying version. |
-| Subscription / recurring orders | "Increase LTV" | Brief locks one-time payment only. A subscription model implies a different relationship (membership) the brand hasn't established and doesn't want. Adding subscriptions dilutes the per-issue charity connection. | Each issue cycle is implicitly a fresh purchase decision. |
-| Product reviews / star ratings | "Social proof is conversion-critical" | Lip balm reviews introduce a consumer-product review dynamic that clashes with the editorial/cause-marketing brand. The editorial content is the social proof. | Issue readership and charity-link transparency serve as credibility signals instead. |
-| Multi-product catalog | "Expand revenue" | Brief explicitly out of scope. Multiple products introduce SKU management, inventory, shipping complexity, and distract from "magazine that happens to sell one product." | If product line grows, that is a v2 architectural decision that needs brand and scope rethinking. |
-| Abandoned cart emails | "Recover lost revenue" | Requires email collection and sending infrastructure. Brief prohibits newsletter/email. Any email capture re-opens the "is this a store?" question the brand deliberately avoids. | Stripe Guest Checkout reduces abandonment by minimizing friction, not by following up. |
-| Apple Pay / Google Pay as separate feature | "One-tap mobile payments reduce friction" | Stripe Checkout natively includes Apple Pay and Google Pay where supported. This is not a separate feature to build — it is included free by using Stripe Checkout. | Non-issue. Stripe handles it. |
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Re-implementing cost capture | Already done in `acomplete` → `cost.py`. Rebuilding it would create two sources of truth. | Surface the existing `pipelineRuns.cost` JSON. The `record_cost()` accumulation is correct; the display layer is what is missing. |
+| Per-call cost logging to a separate table | Would duplicate what is already in `pipelineRuns.cost`. | Store cost at the run/agent level (already done). Per-call granularity is overkill for a weekly editorial pipeline. |
+| Live cost streaming mid-run | Convex subscriptions already update `pipelineRuns` at end of run. A live per-call stream would require a new Convex event per `acomplete` call — high noise, low value. | Show accumulated agent costs as agents complete. The soft-cap warn at 70% is the live signal that matters. |
 
----
+### Dependencies on Existing Code
 
-## Feature Dependencies (Cross-Surface)
-
-```
-Deliberation Layer (Surface 2)
-    └──requires──> Convex subscriptions (runId from Sanity)
-                       └──requires──> Pipeline writes deliberation events to Convex
-                                          └──requires──> Pipeline runs successfully
-
-Per-issue theming (Surface 1)
-    └──requires──> DesignAgent output (valid hex + Google Font names)
-                       └──requires──> Publisher validates theme before writing to Sanity
-
-Shop callout charity name (Surface 3)
-    └──requires──> Latest published issue query (Surface 1 infrastructure)
-
-Charity database page (Surface 1)
-    └──requires──> Scout writes charity documents to Sanity during pipeline run
-
-PDF download (Surface 1)
-    └──requires──> Publisher agent generates PDF and uploads to Sanity (post-publish webhook)
-
-Audio player (Surface 1)
-    └──requires──> Andrew manually runs NotebookLM and pastes audio URL (manual gate, v1)
-```
-
-### Dependency Notes
-
-- **Deliberation layer requires pipeline + Convex**: The observability surface has no content until the pipeline runs. Issue pages for early issues show an empty deliberation section until the first run completes. Plan an empty state.
-- **Theme validation is a hard dependency**: If DesignAgent emits an invalid hex color or a Google Font name that fails to load, the entire issue's typography breaks. Publisher should validate before writing.
-- **Shop charity callout requires a published issue**: `/shop` shows "proceeds go to [charity]" based on the latest published issue. Before the first issue ships, this section shows a placeholder.
+- `cost.py::record_cost()` + `end_run()` — already produce the right data shape.
+- `pipelineRuns.cost` (Convex) — JSON string field; parse it in the dashboard.
+- The 70% soft-cap warn (`cost.py:244-261`) — already fires a Convex event; hook alerts to this.
+- `model_pricing` — new table, seeded from current OpenRouter model prices.
 
 ---
 
-## Under-Specified Areas (Brief Gaps)
+## Feature Group 4 — Run Control: Manual Trigger, Kill Switch, Cancel, Re-Roll
 
-These features are implied by the brief but not explicitly specified. They need decisions before or during build.
+### What It Is
 
-### Surface 1 — Editorial
+Operator-level control over when and whether the pipeline runs: trigger a run
+on demand, stop it cold (kill switch), cancel a specific in-flight run, and
+re-run a single agent within an existing issue. The scheduler (Railway cron →
+`/pipeline/tick`) checks the kill switch before every tick.
 
-| Gap | Question | Recommended Default |
-|-----|----------|---------------------|
-| Estimated reading time | Should issue pages show a reading time estimate? | YES. Calculate from section word counts server-side. Display in charity header area. |
-| Share buttons | Should sections have share-to-X / share-to-Threads / copy-link buttons? | YES, per-section anchor link copy-to-clipboard is sufficient. No share count display. |
-| RSS feed | Should the site publish an RSS feed at `/feed.xml`? | YES. Low complexity. Serves readers who want pull-based updates without email. Feed includes issue title, charity name, publish date, and link. No full content. |
-| Print stylesheet | Should issue pages have a print-clean layout? | YES. `@media print` hides nav, game iframe, deliberation layer, shop callout. Leaves editorial text + charity header readable. |
-| Accessibility: game iframe focus | How does keyboard focus enter/exit the sandboxed game iframe? | The iframe needs `tabindex="0"` and a visible focus ring. Add a "Skip game" link above it for keyboard users. |
-| Archive search implementation | How does `/archive` search work? Is it client-side filtering or a GROQ full-text query? | Client-side filtering of the full archive list (small dataset, fetched once). Filter by charity name, focus area, bonus type. |
-| `og:image` per issue | What is the Open Graph image for each issue? | DesignAgent should emit a "card image" suggestion, or a static template renders the charity name + issue number + accent color as an OG image. Simplest: static fallback image per issue. |
-| Podcast section: empty state | What shows when Andrew hasn't uploaded the audio yet (`audioFile` is null)? | Show the collapsible `deliberationTranscript` text only, with a note "Audio coming soon." |
-| `/about` page content | The brief mentions `/about` exists but says nothing about its content. | Static page: who Jesse is, what the format is, where 100% of proceeds go. Not a CMS-managed page. |
+### Table Stakes
 
-### Surface 2 — Deliberation Layer
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Manual trigger ("Run a new issue now") | The operator needs this for testing, catch-up issues, and pre-schedule validation | Low | `POST /pipeline/run` already exists as `POST /run/weekly` in `api/runs.py`. The dashboard button calls this endpoint. Auth-gated (dashboard session → X-Pipeline-Trigger-Secret header). |
+| Master kill switch (`schedule_enabled`) | A single flag to halt all automation. The scheduler checks this before every tick — if off, the tick is a no-op. | Low | `pipeline_config.schedule_enabled` boolean. Dashboard toggle. `POST /pipeline/tick` reads it. The Railway cron service still runs; only the tick handler is gated. |
+| `/pipeline/tick` endpoint | The Railway cron POSTs here; handler checks `schedule_enabled` | Low | New FastAPI route. Reads `schedule_enabled` from DB config. If true, calls the trigger logic. If false, returns 200 with `{"skipped": true}`. |
+| Cancel in-flight run | Broken or runaway runs must be stoppable without Railway console access | Medium | `POST /runs/{id}/cancel`. LangGraph supports interrupt/cancel via the checkpointer. Sets run status to `cancelled` in Convex. The pipeline must poll for a cancellation flag or be interrupted via the graph's async task. |
+| Schedule editor (day/time, timezone, pause/resume, next-run preview) | The operator needs to see and change when the weekly run fires without touching Railway CLI | Medium | Stored in `pipeline_config` (cron expression or structured day/time fields). Display "Next run: Thursday 14:00 UTC". The Railway cron itself is not reconfigurable via API — the schedule field controls only what `cli.py trigger-weekly` is expected to do; the Railway service must be reprovisioned if the cron expression changes. This is a known infrastructure constraint. |
+| Single-agent re-roll | "The OriginStory writer produced weak output — re-run just that agent against the existing run's state" | High | `POST /issues/{id}/agents/{key}/rerun`. Most complex run-control feature. Must: (1) load the existing run's LangGraph checkpoint, (2) set the specific node's state to pending, (3) invoke the graph from that node, (4) merge new output back. LangGraph with checkpointer supports this via `graph.invoke({}, config={"configurable": {"thread_id": run_id}})` with a targeted start node, but requires careful state management to avoid corrupting other sections. |
 
-| Gap | Question | Recommended Default |
-|-----|----------|---------------------|
-| Collapsed by default | Should the deliberation layer be collapsed or expanded on page load? | COLLAPSED by default with a clear "See how this issue was made" expansion trigger. Keeps the reading experience primary. |
-| Agent avatar images | `agentProfile` has an `avatar` field. Are avatars illustrated or abstract? | Not specified in brief. Placeholder: use a consistent geometric avatar system (initials + theme color) until illustrated avatars are created. |
-| Historical issues: Convex data retention | Convex data is described as "ephemeral pipeline observability." Does it persist indefinitely or expire? | The brief does not specify a retention policy. Convex data should persist indefinitely (it is queryable by readers on all past issues). Clarify with Andrew. |
-| Mobile layout of deliberation layer | How does the horizontal pitch card layout translate to mobile? | Vertical stack on mobile. Single-column pitch cards. Timeline collapses to simplified event list. |
+### Differentiators
 
-### Surface 3 — Ecommerce
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Per-agent enable/disable toggle | "Skip the DesignAgent for a fast test run" | Medium | `agents.enabled` flag. Pipeline checks this at graph build time (similar to existing `DESIGNAGENT_SUPPRESSED` env flag, but DB-driven). |
+| Run history with trigger source (scheduled / manual / re-roll) and who triggered it | Audit trail for understanding automation behavior | Low | `runs.trigger_source` field + `runs.triggered_by` (user ID or "scheduler"). Already partially covered by audit log (Group 9). |
 
-| Gap | Question | Recommended Default |
-|-----|----------|---------------------|
-| Product description on `/shop` | What copy describes the lip balm itself (ingredients, size, shipping)? | Static copy. Brief says "Jesse A. Eisenbalm lip balm" — product details (weight, ingredients, shipping cost/time) are not specified. Andrew must provide. |
-| Shipping | Does the checkout include shipping calculation or is shipping flat-rate / free? | Stripe Checkout supports shipping rate collection. Decision needed before Stripe product setup. Brief is silent. |
-| Privacy policy / terms of service | Are these required? Where do they live? | YES. Stripe requires them. Minimal static page at `/legal/privacy`. |
-| Order confirmation email | Does Stripe send an automatic receipt, or does the site send a custom one? | Stripe Checkout sends automatic email receipts by default. No custom email needed in v1. |
-| Thank-you page content | What exactly appears on `/shop/thank-you`? | Charity name, "Your purchase benefits [charity]", order total, Stripe session ID for reference. Brief says "reader lands on /shop/thank-you" but no content spec. |
+### Anti-Features
 
----
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Killing the Railway cron service via the dashboard | Railway cron cannot be started/stopped via a simple webhook call — requires Railway CLI or console. | Kill switch is data-level: `schedule_enabled=false` makes the tick a no-op. The cron service keeps running (harmless). |
+| Auto-retry on cancel | Cancellation is a deliberate operator action. Auto-retry after cancel defeats the purpose. | Require explicit manual trigger to start a new run after cancellation. |
+| Run queuing / concurrency | The pipeline is single-issue-at-a-time by design. Queueing multiple runs would require significant orchestration and creates editorial confusion (which issue is "this week's"?). | Enforce at most one active run: `POST /pipeline/run` returns 409 if a run is already in state `running`. |
 
-## MVP Definition
+### Dependencies on Existing Code
 
-### Launch With (v1)
-
-All three surfaces must function at launch. The site is not a product without all three.
-
-**Surface 1 — Editorial**
-- [ ] Issue page with all 8-10 sections rendered in order
-- [ ] Per-issue theme (CSS variables, working Google Fonts load)
-- [ ] Charity header with all metadata
-- [ ] PDF download for Problem Statement
-- [ ] Audio player (even if audio URL is null — graceful empty state)
-- [ ] Archive at `/archive` with client-side search/filter
-- [ ] Charity database at `/charities` and individual charity pages
-- [ ] Open Graph tags and schema.org JSON-LD on issue and charity pages
-- [ ] XML sitemap
-
-**Surface 2 — Deliberation Layer**
-- [ ] Pitch log with candidate cards (winner marked)
-- [ ] Agent event timeline (chronological)
-- [ ] QA corrections list with severity coloring
-- [ ] Agent identity cards (name, role, personality)
-- [ ] Collapsed by default with expand trigger
-- [ ] Graceful empty/loading states
-
-**Surface 3 — Ecommerce**
-- [ ] Product page at `/shop` with price, description, charity callout
-- [ ] Stripe Checkout redirect
-- [ ] Thank-you page at `/shop/thank-you`
-- [ ] Stripe webhook handler (signature-verified, idempotent)
-- [ ] Persistent shop callout on issue pages
-
-### Add After Validation (v1.x)
-
-- [ ] RSS feed at `/feed.xml` — add when reader retention becomes a priority
-- [ ] Print stylesheet — add when long-form readership is confirmed
-- [ ] Estimated reading time — add when section word count tracking is available
-- [ ] Per-section share/copy-link buttons — add when social sharing is measurable
-- [ ] `og:image` dynamic generation per issue — add when social card quality matters (start with static fallback)
-
-### Future Consideration (v2+)
-
-- [ ] Total donated counter on `/shop` — requires order aggregation across Stripe history
-- [ ] Charity search/filter on `/archive` with full-text GROQ — only needed when archive exceeds 50 issues
-- [ ] Email list (if brand pivots to distribution) — requires complete rethinking of the destination-not-newsletter positioning
+- `api/runs.py::POST /run/weekly` — the existing trigger endpoint. Dashboard wraps this.
+- `graph/builder.py` — the compiled LangGraph. Re-roll requires invoking it with a specific start node.
+- `graph/checkpointer.py` — Railway Postgres checkpointer. Re-roll reads checkpoint state from here.
+- `DESIGNAGENT_SUPPRESSED` env flag — the DB-driven per-agent enable toggle should eventually replace this.
+- `cost.py` soft-cap warn — hard-stop cancel should be triggered by the budget cap logic here.
 
 ---
 
-## Feature Prioritization Matrix
+## Feature Group 5 — Live Run Observability via Convex Subscriptions
 
-| Feature | Surface | User Value | Build Cost | Priority |
-|---------|---------|------------|------------|----------|
-| Issue page with all sections | 1 | HIGH | HIGH | P1 |
-| Per-issue theming | 1 | HIGH | MEDIUM | P1 |
-| Deliberation layer (collapsed) | 2 | HIGH | MEDIUM | P1 |
-| Stripe checkout | 3 | HIGH | MEDIUM | P1 |
-| Open Graph + schema.org markup | 1 | HIGH | LOW | P1 |
-| Archive + charity database | 1 | MEDIUM | LOW | P1 |
-| Agent identity cards | 2 | MEDIUM | LOW | P1 |
-| QA corrections display | 2 | MEDIUM | LOW | P1 |
-| Shop callout on issue pages | 3 | HIGH | LOW | P1 |
-| Charity callout on /shop | 3 | HIGH | LOW | P1 |
-| Thank-you page content | 3 | MEDIUM | LOW | P1 |
-| XML sitemap | 1 | MEDIUM | LOW | P1 |
-| RSS feed | 1 | LOW | LOW | P2 |
-| Print stylesheet | 1 | LOW | LOW | P2 |
-| Estimated reading time | 1 | MEDIUM | LOW | P2 |
-| Per-section anchor + copy-link | 1 | MEDIUM | LOW | P2 |
-| og:image dynamic generation | 1 | MEDIUM | MEDIUM | P2 |
-| Total donated counter | 3 | MEDIUM | MEDIUM | P3 |
+### What It Is
+
+A real-time dashboard view of a running pipeline: each agent lights up as
+queued → running → done / failed; live token and cost accrual; latency per
+agent; per-agent input/output capture; full run history with status, cost,
+and config snapshot.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Agent status progression (queued → running → done → failed) | Operators need to know which agent is running and how long it has been running | Medium | Convex `deliberationEvents` already streams agent events. A new `agent_runs` table (or richer event types in `deliberationEvents`) should carry `status`, `started_at`, `completed_at`, `tokens_in`, `tokens_out`, `usd`. Pipeline emits these via `convex_mutation` at agent start and end. |
+| Live token/cost accrual | "How much has this run cost so far?" | Medium | The current model accumulates per-agent cost in memory (`cost.py`) and persists at pipeline end. For live display, the pipeline must emit intermediate cost events to Convex as each agent completes. |
+| Agent latency | "Why did the Scout take 45 seconds?" | Low | `agent_runs.duration_ms` — captured by wrapping the agent call with `time.monotonic()`. |
+| Per-agent input/output capture | "What did the Advocate receive and what did it return?" | Medium | Input/output are LangGraph state slices. Capturing them requires serializing the relevant state fields before and after each node. Storage concern: verbose for multi-KB outputs. Consider storing only the output (input is derivable from prior outputs). |
+| Run history list (status, trigger source, duration, cost, config snapshot link) | Operators need to understand pattern over time | Low | Query `runs` table. Most data already exists in Convex `pipelineRuns`. |
+| Error + retry surfacing | "The Scout failed — why?" | Medium | Agents have a retry-once-then-fail path in `acomplete`. Errors should be emitted to Convex with the exception message (not the full traceback — security). |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Estimated time remaining | "Based on trailing averages, this run has ~8 minutes left" | Medium | Average agent latencies from prior runs, sum remaining agents. |
+| Side-by-side input/output diff vs prior run | "What changed in Scout's output between Issue 12 and 13?" | High | Not at launch. Requires storing full agent I/O, which has storage cost. |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Per-call LLM streaming to the dashboard | A single `acomplete` call may make 3-5 token-streaming rounds. Piping raw token streams to Convex would flood it. | Surface per-agent completion events, not per-token events. |
+| Storing full LLM input/output for all runs | Storage grows unboundedly; section content can be over 2 KB per agent. | Store output only (not input); implement a retention policy (e.g., keep last 12 runs' I/O). |
+
+### Dependencies on Existing Code
+
+- Convex `deliberationEvents` table — already receives agent events. May need new event types or a dedicated `agent_runs` table for the structured start/complete/error pattern.
+- `acomplete()` in `openrouter_client.py` — already emits cost per call. Adding a Convex mutation call here (agent_start / agent_complete events) is the injection point.
+- `pipelineRuns` Convex table — already has `status`, `cost`, `durationMs`. Add `configSnapshotId` reference.
+
+---
+
+## Feature Group 6 — Human Review Gate + Claims/Fact-Check Gate
+
+### What It Is
+
+When `require_review = true` (the default), a finished run lands in
+`awaiting_review` instead of auto-publishing. The dashboard presents a full
+preview of the generated issue, the deliberation trail, cost, and a list of
+flagged claims (numbers, names, dates). The operator chooses: approve &
+publish, approve & schedule for a future date, re-roll a specific section,
+or reject the entire run.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| `awaiting_review` landing state | Without this, the feature does not exist. | Low | Already partially implemented: pipeline publisher sets `pipelineRuns.status = "awaiting-review"` (Convex) after writing draft to Sanity. The brief makes this the explicit trigger for the review gate. |
+| Issue preview in the dashboard | Operator needs to read the generated content before approving | Medium | Render the Sanity draft (fetch by `weeklyIssue._id`, status='draft') inside the dashboard. The same GROQ queries used by the public site work here — just target the draft document. |
+| Approve & publish action | One-click path from review to live | Medium | `POST /issues/{id}/publish` triggers Publisher agent (or calls the existing Sanity publish + Vercel deploy hook path). The current flow is Andrew flips status in Sanity Studio; this replaces that with a dashboard action. |
+| Approve & schedule action | "Approve but publish Thursday at 9am" | Low | `POST /issues/{id}/schedule` with a `publish_at` timestamp. The Publisher agent (or a Convex scheduled function) fires at that time. |
+| Reject run | "This is not good enough — discard and re-run" | Low | Sets run status to `rejected`. Operator can trigger a new run. |
+| Re-roll individual section from review | "Approve everything except the FounderBio — re-run just that agent" | High | Same as single-agent re-roll (Group 4). Surface it from the review UI with one-click per section. |
+| `require_review` / `auto_publish` config flags | Operator can opt out of manual review for fully automated publish | Low | `pipeline_config.require_review` (default true) and `auto_publish` (default false). When both are set correctly, the pipeline auto-publishes on completion. |
+
+### Claims/Fact-Check Gate
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Claim extraction (numbers, dates, named entities, URLs) | Surface verifiable facts for human sign-off | Medium | Extract with a simple regex / NLP pass over the generated content (no LLM call needed for extraction; just highlight). The dashboard presents them as a checklist. |
+| Human sign-off checklist on extracted claims | Makes the "100% human-reviewed" promise auditable | Low | Checkboxes per claim; must be fully checked before approve & publish is enabled (or a soft warning if unchecked). |
+| Optional web-search verification of claims | "Is this charity's founding year correct?" | High | Requires a Tavily/Brave search call per claim. Very high cost and latency for potentially dozens of claims per issue. |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Auto-approve based on QA agent score | The QA agent already runs in the pipeline and its score is a soft signal, not a publish gate. Auto-approving on QA score would defeat the purpose of the human review gate. | Use QA corrections as context in the review UI (show severity counts), not as a gate condition. |
+| Replacing Sanity Studio as the editorial tool | Andrew's Sanity Studio access is the fallback for any dashboard failure. The dashboard ADDS a publish path; it does not REMOVE the Sanity one. | Keep the Sanity publish path alive in parallel. The dashboard `POST /issues/{id}/publish` should call the same underlying mechanism. |
+| Web-search verification by default | High latency, API cost, and false negatives. Automated fact-checking of charity founding stories against the web is unreliable. | Make web-search verification an opt-in button per claim, not the default flow. |
+
+### Dependencies on Existing Code
+
+- `publisher/__init__.py` — the Publisher agent already handles PDF generation + Vercel deploy + Convex status update. `POST /issues/{id}/publish` should invoke this agent or call the same sequence.
+- Convex `pipelineRuns.status = "awaiting-review"` — already set. The dashboard subscribes to this status to show the review queue.
+- Sanity draft document (`weeklyIssue.status = 'draft'`) — the preview renders this via GROQ.
+- `qaCorrections` Convex table — already populated. Surface severity counts in the review UI.
+
+---
+
+## Feature Group 7 — Charity Registry with Dedup
+
+### What It Is
+
+A registry of all charities the Scout has ever considered, with status
+(`candidate / featured / blocklisted`) and metadata to prevent featuring the
+same charity twice. The Scout checks this registry before proposing candidates.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Registry table (`name`, `slug`, `website`, `status`, `times_featured`, `last_featured_at`, `dedup_key`) | Without this, the Scout has no memory of prior charities | Medium | Convex `charities` table (or a new Convex table — `pitchLog` exists but is per-run, not a persistent registry). The `dedup_key` should be a normalized version of the charity name or website domain. |
+| Status transitions (`candidate → featured`, `candidate → blocklisted`, `featured → blocklisted`) | Operator needs to blocklist a charity (e.g., discovered fraud) | Low | Simple status update via dashboard UI. |
+| Scout integration — check registry before proposing | Prevents re-featuring or proposing blocklisted charities | Medium | The Scout agent must call the registry API (Convex query) during its web search loop. Currently the Scout writes to `pitchLog` but does not read from a persistent registry. |
+| Dashboard charity list view (searchable, filterable by status) | Operator needs to manage the registry | Low | Simple CRUD UI over the `charities` Convex table. |
+| Auto-promote featured charity from `candidate` on issue publish | When an issue goes live, the winning charity's registry entry should update to `featured` | Low | Triggered from the publish action (Group 6). |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Similarity dedup (fuzzy name match) | Catches "Quiet Foundation" vs "The Quiet Foundation" | Medium | Normalized string comparison or Levenshtein distance at insert time. Warn the Scout when a proposed charity is within N characters of an existing registry entry. |
+| Import existing charity data from Sanity | `charity` documents already exist in Sanity (the canonical content store). Backfill from there. | Low | Seed script: fetch all Sanity `charity` docs, insert into registry with `status = 'featured'` and `times_featured = 1`. |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Duplicating charity content in the registry | Sanity is the canonical store for charity editorial content (name, slug, mission statement, etc.). The registry is operational metadata only (status, times_featured, dedup_key). | Registry holds operational fields only. Charity editorial content stays in Sanity. Link by charity slug. |
+| LLM-powered dedup | Too expensive and non-deterministic for a simple uniqueness check. | Normalized string comparison (lowercase, strip "The", strip punctuation) covers 95% of cases. Flag remainder for human review. |
+
+### Dependencies on Existing Code
+
+- Sanity `charity` documents — backfill source for existing charities.
+- Convex `pitchLog` table — per-run Scout candidates. The persistent registry is a different concern (cross-run memory) but should be seeded from `pitchLog` history.
+- `agents/scout.py` — must be modified to query the registry before proposing candidates.
+
+---
+
+## Feature Group 8 — Donation Reconciliation Per Issue
+
+### What It Is
+
+Pull Stripe payment data for the window of each issue (from publish date to
+next issue's publish date) → gross revenue, Stripe fees, net-to-charity.
+Make the "100% of proceeds" promise auditable with a per-issue ledger.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Per-issue revenue window (gross, fees, net) | The core accountability feature — "we raised $X for Charity Y in Issue Z" | Medium | Use Stripe Read API (list `PaymentIntents` or `Charges` filtered by date range). Stripe fee is ~2.9% + $0.30 per transaction. Net = gross minus fees. |
+| Payout tracker (payout status, payout date, amount) | "Did we actually send the money?" | Medium | Manual entry initially (no Stripe payout API for charity disbursement — that is a separate bank transfer). Dashboard shows a payout record with status (pending/sent/confirmed) and operator-entered confirmation. |
+| Per-issue donation summary on the public site | "This issue raised $X for [Charity]" — a trust signal | Medium | Read from the reconciliation table; surface on the issue page and charity page. |
+| Historical reconciliation view | Cumulative totals across all issues | Low | Sum across all per-issue records. |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Automated Stripe data pull on issue publish | Zero manual data entry for revenue figures | Medium | Webhook or scheduled job pulls Stripe data for the closed window when the next issue publishes. |
+| Exportable reconciliation CSV | Useful for accounting and charity reporting | Low | Standard CSV export of the reconciliation table. |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Automated bank transfer to charity via Stripe Connect | Stripe Connect (charity as recipient) requires charity onboarding, KYC, significant legal/compliance work. Not appropriate for a v2 build. | Manual payout: operator does the bank transfer, records confirmation in the dashboard. |
+| Real-time revenue display on the public site | Exposes live Stripe data to the public; security and accuracy risks (disputes, refunds). | Show reconciled figures only after the issue window closes and figures are finalized. |
+
+### Dependencies on Existing Code
+
+- Stripe SDK — already present in `apps/web`. Reconciliation reads from Stripe via the server-side secret key.
+- Convex `stripeOrders` table — already records orders per issue. This is the source for item count; Stripe is the source for revenue figures.
+- Sanity `weeklyIssue.pipelineMetadata` — cost data lives here. Reconciliation data can live alongside it or in a new Convex/Postgres table.
+
+---
+
+## Feature Group 9 — Audit Log
+
+### What It Is
+
+An immutable record of every operator action: who changed which prompt, who
+approved which issue, who flipped the kill switch, with before/after values
+for edits.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Audit log table (`actor`, `action`, `entity_type`, `entity_id`, `before`, `after`, `timestamp`) | Accountability for every consequential action | Low | Append-only. Never deleted. `before`/`after` as JSON strings for prompt edits. |
+| Logged actions: prompt version activate/rollback, kill switch toggle, issue approve/reject/schedule, charity status change, payout record edit | These are the consequential actions | Low | Each dashboard action calls `auditLog.insert` after the primary mutation. |
+| Dashboard audit log view (filterable by actor, action type, date range) | Operators need to investigate "who did what when" | Low | Simple query UI over the audit log table. |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Audit log alerts ("someone deactivated the kill switch") | Notify Andrew when a sensitive action is taken | Low | Combine with notification system (Group 10). |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Logging pipeline internal agent calls to the audit log | Agent LLM calls are not operator actions. The audit log is for human decisions, not machine events. | Keep agent events in `deliberationEvents`; keep operator decisions in the audit log. |
+| Mutable audit log | Defeats the purpose. | Append-only. No update or delete endpoints for audit log rows. |
+
+### Dependencies on Existing Code
+
+- Convex — natural home for the audit log (real-time, schemaful). Or Postgres if stronger persistence guarantees matter more than real-time reactivity.
+- All Group 2 (prompt versioning) and Group 4 (run control) actions must call audit log insert as an atomic companion.
+- Dashboard auth (new, greenfield) — audit log entries require an authenticated actor ID.
+
+---
+
+## Feature Group 10 — Notifications
+
+### What It Is
+
+Operator-directed alerts for key pipeline events: run complete, run failed,
+awaiting review, budget threshold crossed.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Run complete notification | "The Thursday issue is ready to review" — Andrew's primary workflow trigger | Low | Email (via Resend — already wired for the post-purchase email flow) or Slack webhook. |
+| Run failed notification | "Something went wrong — check the logs" | Low | Same channels. Include run ID and first error message. |
+| Awaiting review notification | Redundant with run complete (if `require_review=true`, complete → awaiting review), but should fire when the review queue has been waiting over N hours | Low | Reminder notification if Andrew has not reviewed within a configurable window. |
+| Budget threshold notification | "You have reached 80% of your monthly budget" | Low | Already partially wired: the 70% soft-cap warn in `cost.py:244-261` fires a fire-and-forget Convex event. Hook a notification to this event. |
+| Notification channel config in dashboard | Operator sets their Slack webhook URL / email address without touching env vars | Low | `pipeline_config.notification_email`, `notification_slack_webhook`. |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Per-event notification opt-in/opt-out | Operator chooses which events generate notifications | Low | Boolean flags per event type in `pipeline_config`. |
+| Mobile push (PWA) | Dashboard-as-PWA with push notifications | High | Not at launch. Email + Slack covers the use case. |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| SMS notifications | High cost, carrier complexity, regulatory overhead for a single-operator tool. | Email + Slack covers all meaningful notification needs. |
+| Notification digest (batch multiple events) | Andrew needs to act on each notification individually. Batching delays critical alerts (run failed). | Send immediately, one event per notification. |
+
+### Dependencies on Existing Code
+
+- Resend API key + `@eisenbalm/emails` package — already present for post-purchase emails. The same Resend client can send notification emails using a simple transactional template.
+- `cost.py:244-261` — the 70% cap warn already fires a Convex event. Add a notification trigger here.
+- Convex `pipelineRuns.status` — already updated at run complete/fail/awaiting-review. Convex scheduled functions or webhook triggers are the notification dispatch mechanism.
+
+---
+
+## Feature Group 11 — Foundation: Auth + Workspace Scoping
+
+### What It Is
+
+The dashboard requires authenticated access (Andrew is the only user today).
+Auth must be built from zero — no existing auth layer. `workspace_id` must be
+threaded through all new tables from day one so the control plane can later
+be productized into multi-tenant SaaS.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Dashboard auth (login, session, protected routes) | Without auth, anyone with the URL can trigger pipeline runs or rollback prompts | Medium | Greenfield. Clerk is the brief's TBD option. Auth.js is the alternative. Single user (Andrew) initially — simple email/password or magic link is sufficient. |
+| `workspace_id` on all new tables | Multi-tenant bones from day one per brief §6 and §8 decision | Low | All new DB tables (agents, prompt_versions, pipeline_config, runs, charities, model_pricing, review_actions, audit_log) carry `workspace_id`. Single workspace now — scoping is a field, not a schema change. |
+| `workspaces` + `users` tables | Foundation for multi-tenant; used from the first day even with one row each | Low | Single workspace: `{ id: "eisenbalm", name: "The Eisenbalm Dispatch" }`. Single user: Andrew. |
+| Per-workspace secrets store | Route API keys through a secrets table instead of scattered env vars | Medium | `workspace_secrets` table: `workspace_id`, `key_name`, `encrypted_value`. Dashboard lets operator set/rotate keys via UI. Pipeline reads from secrets table at run start. Encryption at rest required (AES-256 or provider-managed). |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Building multi-tenant UI now | Brief is explicit: single-tenant first. Building multi-user, multi-workspace UI is premature. | Thread `workspace_id` through data; the UI stays single-workspace for v2. |
+| Eisenbalm-specific logic in the control plane | Brief §6: "no hardcoded 'eisenbalm' strings or charity-specific logic in the control plane." | The control plane should treat "weekly editorial issue pipeline with charity" as a generic configuration, not hardcode any Eisenbalm specifics. |
+
+### Dependencies on Existing Code
+
+- `dispatch-control` Next.js app — new, greenfield. Auth is the first thing to build.
+- Railway FastAPI — must validate dashboard auth tokens for protected endpoints (manual trigger, re-roll, cancel). The existing `X-Pipeline-Trigger-Secret` header approach can be extended.
+- Convex — workspace-scoped queries require `workspace_id` filter on every table. `@eisenbalm/convex` package will need schema additions.
+
+---
+
+## MVP Recommendation
+
+Build in this order (mirrors the brief's Phase 1-6, with one reordering):
+
+**Phase 1 — Foundation + Read-Only Dashboard**
+Prioritize: DB-backed config (loader swap + 12-file migration + snapshot), `dispatch-control` app shell, auth, read-only dashboard (pipeline graph, run history, live run view via Convex subscriptions, cost roll-ups from existing data).
+Defers: All write operations (prompt editing, run control, review gate).
+
+**Phase 2 — Prompt Editing + Versioning**
+Prioritize: Prompt editor with variable hints, version save/activate/rollback, diff view, audit log on prompt changes.
+Defers: Single-agent test-run (highest-complexity feature in this group).
+
+**Phase 3 — Run Control**
+Prioritize: Manual trigger UI, kill switch toggle, schedule editor, cancel in-flight.
+Defers: Single-agent re-roll (highest-complexity feature overall — requires LangGraph checkpoint manipulation).
+
+**Phase 4 — Review Gate + Charity Registry**
+Prioritize: `require_review` flow (awaiting_review queue, issue preview, approve/reject/schedule), claims checklist.
+Defers: Web-search claim verification (opt-in button only), re-roll from review (blocked on Phase 3 re-roll completion).
+
+**Phase 5 — Money + Notifications**
+Prioritize: Stripe reconciliation per issue, payout tracker, notifications (email + Slack).
+Defers: Public reconciliation display on issue page (needs design).
+
+**Phase 6 — Productization**
+Prioritize: Workspace scoping audit, per-workspace secrets store, de-Eisenbalm-ification audit.
+Defers: Graph editor UI (explicitly out of scope for v2).
+
+### Feature Complexity Summary
+
+| Feature Group | Complexity | Risk | Phase |
+|---------------|------------|------|-------|
+| DB config + snapshots | High (loader swap + migration) | High (pipeline breaks if DB unreachable) | 1 |
+| Auth + workspace scoping | Medium | Medium (greenfield, standard patterns) | 1 |
+| Read-only dashboard + cost roll-ups | Low (surfacing existing data) | Low | 1 |
+| Prompt versioning + editor | Medium | Low | 2 |
+| Single-agent test-run | High | Medium (LangGraph partial invocation) | 2 |
+| Manual trigger + kill switch | Low | Low | 3 |
+| Cancel in-flight | Medium | Medium (async task cancellation) | 3 |
+| Schedule editor | Medium | Low (data-level; Railway cron unchanged) | 3 |
+| Single-agent re-roll | High | High (checkpoint manipulation) | 3 |
+| Review gate (require_review flow) | Medium | Low | 4 |
+| Claims/fact-check gate | Medium | Low | 4 |
+| Charity registry + dedup | Medium | Low | 4 |
+| Stripe reconciliation | Medium | Low | 5 |
+| Notifications | Low | Low | 5 |
+| Productization / workspace audit | Low | Low | 6 |
+
+### Features That Are Mostly Already Done
+
+| Feature | Status | Remaining Work |
+|---------|--------|----------------|
+| Per-call cost capture | DONE (`acomplete` → `cost.py`) | Zero new instrumentation. Only display/roll-up work. |
+| `awaiting_review` status on pipeline completion | DONE (publisher sets it in Convex) | Wire the dashboard to subscribe to this status. |
+| File-externalized prompts | DONE (12 `.md` files) | Loader swap + versioning layer + 12-file DB migration. |
+| 70% budget soft-cap warn | DONE (`cost.py:244-261`) | Hook a notification to the existing Convex event. |
+| Agent event streaming to Convex | DONE (`deliberationEvents`) | New `agent_runs` event types for structured start/complete/error. |
 
 ---
 
 ## Sources
 
-- [What Readers Expect From Digital Magazines in 2026](https://www.3dissue.com/what-readers-expect-from-digital-magazines-in-2026-based-on-the-ux-patterns-winning-right-now/)
-- [Digital Publishing Trends for 2026](https://www.yudu.com/blog/digital-publishing-trends-2026)
-- [Show Your Work: AI Transparency That Earns Trust in Journalism](https://completeaitraining.com/news/show-your-work-ai-transparency-that-earns-trust-in/)
-- [Designing for AI Trust: 2026 Transparency Best Practices](https://www.parallelhq.com/blog/designing-ai-transparency-trust)
-- [Full Disclosure, Less Trust? arXiv study on AI disclosure in news writing](https://arxiv.org/html/2601.09620v1)
-- [Frontiers: Provenance and Disclosure Cues in AI Journalism (2026)](https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2026.1815243/full)
-- [AI Observability: The Missing Layer in Human-Agent Systems](https://www.designative.info/2026/04/20/ai-observability-is-the-missing-layer-in-human-agent-systems)
-- [Agentic AI Observability: A 2026 Playbook](https://www.arthur.ai/column/agentic-ai-observability-playbook-2026)
-- [Ecommerce Conversion Rate Benchmarks 2026 — Shopify](https://www.shopify.com/blog/ecommerce-conversion-rate)
-- [Dark Patterns in eCommerce — NAMAAIT](https://www.namaait.com/en/articles/104/dark-patterns-ecommerce)
-- [Dark Patterns 2026: FTC Click-to-Cancel Rule](https://cookie-script.com/privacy-laws/dark-patterns-2026-the-ftc-new-click-to-cancel-rule)
-- [Schema Markup After March 2026: Structured Data Update](https://www.digitalapplied.com/blog/schema-markup-after-march-2026-structured-data-strategies)
-- [Next.js SEO: Complete Implementation Guide for 2026](https://adeelhere.com/blog/2025-12-09-complete-nextjs-seo-guide-from-zero-to-hero)
-- [Open Graph Tags: Complete Guide 2026](https://share-preview.com/blog/og-tags-complete-guide.html)
-- [Social Proof Statistics 2026](https://wisernotify.com/blog/social-proof-statistics/)
-
----
-*Feature research for: The Eisenbalm Dispatch — editorial magazine, AI observability, one-product ecommerce*
-*Researched: 2026-05-09*
+- `docs/MISSION_CONTROL_BRIEF.md` — §1 (five asks), §3 (feature spec A-E), §4 (additions 1-7), §5 (data model), §7 (build phases)
+- `docs/CURRENT_STATE.md` — Q1 (prompts), Q2 (pipeline trigger), Q4 (cost capture), Q5 (auth)
+- `.planning/PROJECT.md` — validated requirements, out-of-scope constraints
+- `packages/pipeline/src/eisenbalm_pipeline/lib/prompts.py` — loader implementation (lines 49-70)
+- `packages/pipeline/src/eisenbalm_pipeline/lib/cost.py` — cost capture and soft-cap warn (lines 83-109, 244-261)
+- `packages/pipeline/src/eisenbalm_pipeline/lib/openrouter_client.py` — per-call cost in `_usage_from_message()` (lines 112-128)
+- `packages/pipeline/src/eisenbalm_pipeline/agents/publisher/__init__.py` — cost persistence (lines 59-77)
+- `convex/schema.ts` — existing Convex table schemas

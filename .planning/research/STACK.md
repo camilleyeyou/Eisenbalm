@@ -1,377 +1,444 @@
-# Stack Research
+# Technology Stack
 
-**Domain:** Weekly AI-generated editorial website with multi-agent pipeline, headless CMS, real-time subscriptions, and e-commerce
-**Researched:** 2026-05-09
-**Confidence:** HIGH (all versions verified against npm registry and PyPI; library choices verified against official docs and current community patterns)
-
-> NOTE: The stack is **locked by the build brief**. This document does NOT recommend alternatives to locked technologies. It specifies exact versions, companion libraries within each locked layer, sharp edges to avoid, and 2026 best practices for each locked tool.
+**Project:** The Eisenbalm Dispatch — Mission Control Dashboard (v2.0)
+**Researched:** 2026-06-21
+**Scope:** NEW additions only for the `dispatch-control` Next.js app. The v1.0 stack (Next.js 15.3.x, React 19, Sanity v5, Convex ^1.38, FastAPI + LangGraph, OpenRouter, Stripe, Resend) is LOCKED and is not re-researched here. This document covers only what is NEW for the admin dashboard.
 
 ---
 
-## Core Technologies (Locked — Do Not Substitute)
+## Foundational Decisions (Locked — Inherit from v1)
 
-### Frontend Layer
+The `dispatch-control` app shares a pnpm monorepo with the existing `apps/web` and `apps/studio`. It inherits:
 
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| Next.js | **15.x** (latest stable: `15.3.9`) | App Router frontend, API routes, Stripe webhook handler | `apps/web/` |
-| React | `19.2.6` | UI framework (required by Next.js 15+) | `apps/web/` |
-| TypeScript | `6.0.3` | Type safety across all TS packages | all TS packages |
-| Tailwind CSS | `4.3.0` | Utility-first styling | `apps/web/` |
+- **Runtime:** Next.js 15.3.x (App Router) — same constraint as `apps/web`; stay at 15.x to avoid the `next-sanity` SanityLive overage bug on Next.js 16
+- **React:** 19.2.6 — required by Next.js 15+
+- **TypeScript:** 5.6.x
+- **Tailwind CSS:** 4.3.x with `@theme` directives
+- **Convex:** `^1.38.0` (deployment: `modest-magpie-797`) — the real-time and dashboard state layer
+- **Stripe SDK:** `^21.0.0` — already present in `apps/web`; reuse for reconciliation reads
+- **Resend SDK:** `^6.12.4` — already in `packages/emails`; reuse for notification delivery
 
-**Version decision on Next.js:** Pin to **Next.js 15** (`15.x`), NOT 16. Next.js 16 is current latest (`16.2.6`) but `next-sanity` v11 (the current stable Sanity integration) has a documented 4–10x request overage bug with `<SanityLive>` on Next.js 16. Sanity recommends staying on Next.js 15 until `next-sanity` v12 ships. The `next-14` dist-tag (`14.2.35`) is fully supported but misses stable Turbopack; Next.js 15 is the sweet spot. Source: [Sanity docs on Next.js 16 compatibility](https://www.sanity.io/docs/help/nextjs-16-sanitylive-status).
-
----
-
-### CMS Layer
-
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| sanity (Studio) | **5.24.0** | Sanity Studio v5 — Andrew's editorial interface | `apps/studio/` |
-| @sanity/client | **7.22.0** | TypeScript GROQ queries from Next.js | `apps/web/lib/sanity/` |
-
-**Version note on Sanity:** The brief specifies "Sanity v3" but the ecosystem has since shipped v4 and v5. The `latest` npm tag is `5.24.0`. Schema API is backward-compatible: `defineType`, `defineField`, `defineArrayMember` from `'sanity'` are unchanged. No breaking changes to Studio schema authoring between v3 and v5 — v4 added Node 20 as minimum, v5 added React 19 requirement. The existing schemas in `/schemas/*.ts` are fully compatible with v5. Use v5 for React 19 support and the integrated TypeGen GA feature.
+No package listed above needs re-installing or re-versioning. The `dispatch-control` app adds them as workspace peer dependencies.
 
 ---
 
-### Pipeline Backend Layer
+## 1. Auth — Recommendation and Rationale
 
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| FastAPI | **0.136.1** | HTTP server, webhook handler, pipeline trigger endpoint | `packages/pipeline/` |
-| uvicorn[standard] | **0.46.0** | ASGI server for FastAPI | `packages/pipeline/` |
-| LangGraph | **1.1.10** | 9-agent workflow orchestration with StateGraph | `packages/pipeline/` |
-| pydantic | **2.13.4** | Data validation for API payloads and agent outputs | `packages/pipeline/` |
-| httpx | **0.28.1** | Async HTTP client (Convex mutations, Vercel deploy hook) | `packages/pipeline/` |
-| Python | **3.11+** | Runtime (3.11 recommended for Railway; 3.9 is LangGraph minimum) | Railway |
+### Recommendation: **Clerk** (`@clerk/nextjs ^7.x`, Core 3)
 
----
+**Do not use Auth.js (NextAuth v5), Convex Auth, or Better Auth for this project.**
 
-### AI Routing Layer
+#### Why Clerk
 
-| Technology | Version / approach | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| OpenRouter | HTTP API | Routes all 9 agent LLM calls to Claude and other models | `packages/pipeline/lib/openrouter_client.py` |
-| langchain-openai | **1.2.1** | `ChatOpenAI` pointed at OpenRouter base URL — the standard LangGraph integration pattern | `packages/pipeline/` |
-| langsmith | **0.8.3** | Tracing, observability, run replay for all 9 agents | `packages/pipeline/` |
+The `dispatch-control` dashboard is a **single-operator admin app** (Andrew, one user, zero public signups). Clerk's free tier (50,000 MAU, updated February 2026) means zero cost at this scale indefinitely. The auth requirement is simple: one Google / email login, protect all routes, done.
 
-**OpenRouter integration pattern:** OpenRouter exposes an OpenAI-compatible API. Do NOT use a standalone `openrouter` SDK. Use `langchain-openai`'s `ChatOpenAI` with `base_url="https://openrouter.ai/api/v1"` and `api_key=OPENROUTER_API_KEY`. This is the officially documented LangChain integration pattern and is compatible with LangGraph's node system. Source: [OpenRouter LangChain docs](https://openrouter.ai/docs/guides/community/langchain).
+Clerk's Core 3 release (March 2026) ships native React 19 concurrent-mode support (transitions, Suspense, streaming SSR) — the exact environment Next.js 15.3 + React 19 runs. The `@clerk/nextjs` v7 package requires `next >=15.2.3`, which this codebase satisfies.
 
----
+**Convex integration is first-class.** Clerk issues JWTs that Convex validates natively via `ConvexProviderWithClerk`. The integration pattern is:
 
-### Real-time Data Layer
-
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| convex | **1.38.0** | Real-time subscriptions for deliberation layer; pipeline status | `convex/` + `apps/web/` |
-
-Convex is used via two interfaces:
-- **TypeScript queries/mutations** in `convex/*.ts` — auto-generates types from schema
-- **HTTP API** from Python pipeline — `POST /api/mutation` with `Authorization: Convex {DEPLOY_KEY}`
-
-No auth configuration needed for this project. The site has no logged-in readers; Convex queries are public reads. The pipeline uses the deploy key (server-to-server), not user identity.
-
----
-
-### Pipeline Database Layer
-
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| supabase (Python SDK) | **2.30.0** | Optional persistent store for pipeline run history | `packages/pipeline/lib/supabase_client.py` |
-
-**Scope:** The brief lists Supabase as a pipeline database but does not specify what schema or data is stored there. Primary state lives in the LangGraph `DispatchState` TypedDict and is written to Sanity/Convex on completion. Supabase is available for long-term run archiving or audit logging if needed. No Supabase schema is defined yet — treat as optional until a clear use case emerges in the pipeline build phase.
-
----
-
-### Commerce Layer
-
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| stripe | **22.1.1** | Checkout session creation, webhook event construction | `apps/web/app/api/checkout/` + `apps/web/app/api/webhooks/stripe/` |
-
-Stripe is used in two API routes defined in `docs/API_CONTRACTS.md`:
-- `POST /api/checkout` — creates a `checkout.sessions` and returns redirect URL
-- `POST /api/webhooks/stripe` — verifies `stripe-signature` header, handles `checkout.session.completed`
-
-No Stripe SDK is used client-side. The client redirects to `session.url`. `stripe.webhooks.constructEvent()` handles all HMAC verification — no separate webhook validation library needed.
-
----
-
-### PDF Generation Layer
-
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| WeasyPrint | **68.1** | Render Problem Statement HTML template → PDF | `packages/pipeline/agents/publisher.py` |
-
-**Railway deployment warning (HIGH priority):** WeasyPrint requires system libraries (`libgobject-2.0-0`, `libcairo2`, `libpango-1.0-0`, `libgdk-pixbuf2.0-0`) that are NOT present in Railway's default Python environment. There are multiple open Railway issues about this. Use a Dockerfile for the pipeline service rather than Railway's Nixpacks auto-detect. The Dockerfile must install these system deps via `apt-get` before `pip install weasyprint`. Source: [WeasyPrint Railway issue #2461](https://github.com/Kozea/WeasyPrint/issues/2461) and [Railway station thread](https://station.railway.com/questions/cant-install-weasyprint-dependencies-d742101d).
-
-Required Dockerfile system packages:
 ```
-libpango1.0-0 libpangoft2-1.0-0 libharfbuzz0b libcairo2 libgdk-pixbuf2.0-0
-libffi-dev libgobject-2.0-0 libjpeg62-turbo-dev libpangocairo-1.0-0
+ClerkProvider (Server Component, app/layout.tsx)
+  └── ConvexClientProvider (Client Component, 'use client')
+        └── ConvexProviderWithClerk (wraps ConvexReactClient, passes useAuth)
+              └── rest of app
 ```
 
----
+Convex calls in the dashboard can then gate on `ctx.auth.getUserIdentity()` — no separate Convex auth layer needed. This is the documented, tested Clerk+Convex pattern.
 
-### Web Search Layer
+**Multi-tenant-bones are free.** Clerk ships `<CreateOrganization>`, `<OrganizationProfile>`, and `<OrganizationSwitcher>` out of the box. When productization arrives (Phase 6), enabling Organizations in Clerk maps cleanly to the `workspace_id` field threaded through Convex and the pipeline. No auth rewrite is needed.
 
-| Technology | Version (verified) | Purpose | Monorepo location |
-|------------|-------------------|---------|-------------------|
-| tavily-python | **0.7.24** | Scout and Researcher agent web search (charity discovery + deep dives) | `packages/pipeline/lib/search_client.py` |
-| langchain-tavily | **0.2.18** | LangChain tool wrapper for Tavily (for LangGraph tool nodes) | `packages/pipeline/` |
+**Middleware is a single function call:**
 
-**Decision: Tavily over Brave.** The brief says "Tavily or Brave" but Tavily is the clear choice for this use case:
-- `langchain-tavily` provides a first-class LangGraph tool integration (`TavilySearch`, `TavilyResearch`)
-- Tavily has a dedicated charity/nonprofit domain filter and structured result objects
-- `langchain-tavily 0.2.18` requires Python ≥ 3.10 — use Python 3.11 on Railway
-- Brave Search would require custom LangChain tool wrapping and returns raw HTML
+```typescript
+// apps/dispatch-control/middleware.ts  (NOT proxy.ts — that's Next.js 16+)
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+const isPublicRoute = createRouteMatcher(['/sign-in(.*)'])
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublicRoute(req)) await auth.protect()
+})
+export const config = { matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)'] }
+```
 
----
+#### Why not Auth.js v5
 
-## Supporting Libraries
+Auth.js v5 remains in "beta" as of June 2026, with a community thread running since 2023 asking when it will stabilize. The Better Auth team (which now maintains Auth.js) explicitly directs new projects to Better Auth, not Auth.js v5. It only makes sense for migration of existing codebases. This project has zero auth code — there is nothing to migrate.
 
-### TypeScript / Next.js Frontend
+#### Why not Convex Auth
 
-| Library | Version (verified) | Purpose | Use in this project |
-|---------|-------------------|---------|-------------------|
-| next-sanity | **12.4.5** | Sanity integration for Next.js App Router (sanityFetch, defineLive) | `apps/web/lib/sanity/` |
-| @sanity/client | `7.22.0` | GROQ query client with CDN support | `apps/web/lib/sanity/client.ts` |
-| @portabletext/react | **6.2.0** | Render Sanity Portable Text blocks in React | Issue page section bodies |
-| @sanity/image-url | **2.1.1** | Build image URLs from Sanity asset references | Charity and issue images |
-| zod | **4.4.3** | Runtime validation for API route payloads (checkout, webhooks) | `apps/web/app/api/` |
+Convex Auth is a Convex-specific auth layer, but it lacks Clerk's productization primitives (Organizations, switchable workspaces). Migrating from Convex Auth to something organization-aware when Phase 6 productization arrives would require rewriting auth. Clerk avoids that rewrite.
 
-**next-sanity version note:** `next-sanity` is currently at `12.4.5`. Do NOT use the `@cache-components` pre-release tag — that is the in-progress v12 experimental build for Next.js 16 compatibility. With Next.js 15, `next-sanity` v11/v12 stable both work correctly.
+#### Why not Better Auth
 
-### Sanity Studio
+Better Auth is the best choice for self-hosted projects with full data ownership. But it requires a secondary database (or a Convex adapter that is still in early community support). It adds infrastructure complexity for a one-person admin app that will eventually become a hosted SaaS product. Clerk's managed approach and productization primitives are the better tradeoff for this trajectory.
 
-| Library | Version (verified) | Purpose | Use in this project |
-|---------|-------------------|---------|-------------------|
-| sanity (Studio) | `5.24.0` | Core Studio runtime, schema types, defineConfig | `apps/studio/sanity.config.ts` |
-| @sanity/vision | `5.24.0` | GROQ query playground in Studio (dev tool for Andrew) | `apps/studio/` (dev only) |
-
-**TypeGen (built into Sanity v5):** Enable in `sanity.cli.ts` to auto-generate TypeScript types from schemas. This produces `sanity.types.ts` importable in `apps/web/`. No third-party type generator (like `groq-builder`) is needed — Sanity TypeGen GA (v5.10+) handles GROQ query types via `defineQuery()`.
-
-### Python / FastAPI Pipeline
-
-| Library | Version (verified) | Purpose | Use in this project |
-|---------|-------------------|---------|-------------------|
-| langsmith | `0.8.3` | LangGraph tracing and observability | Set `LANGSMITH_API_KEY` env var; LangGraph auto-traces |
-| langgraph-checkpoint-postgres | **3.0.5** | Postgres-backed checkpointer for LangGraph human-in-the-loop | Editor gate 1 pause/resume |
-| python-slugify | **8.0.4** | Deterministic slug generation for Sanity document IDs | `write_charity()`, `write_issue_draft()` |
-| python-multipart | latest | FastAPI file upload support (PDF upload to Sanity) | `packages/pipeline/api/` |
-| psycopg[binary] | `3.x` | Postgres driver for `langgraph-checkpoint-postgres` | Supabase connection |
-
-**LangGraph checkpoint note:** The brief requires the Editor gate 1 to pause the pipeline if no winner is selectable and surface the pause to Andrew via Convex. This is implemented using `interrupt()` from LangGraph 1.x with a Postgres checkpointer backed by Supabase. `MemorySaver` is development-only — it loses state on Railway restart. Use `langgraph-checkpoint-postgres 3.0.5` with Supabase's connection string.
-
-### Development Tools
-
-| Tool | Purpose | Configuration |
-|------|---------|---------------|
-| uv | Python package manager for Railway and local dev | `uv init --python 3.11` in `packages/pipeline/` |
-| Sanity CLI | Schema deploy, TypeGen, Studio dev server | `npx sanity@latest` or install globally |
-| Convex CLI | Schema deploy, function codegen | `npx convex@latest dev` |
-| TypeScript compiler | Type checking across `apps/web/` and `packages/shared/` | `tsconfig.json` at monorepo root with path aliases |
-
----
-
-## Installation
-
-### `apps/web/` (Next.js frontend)
+### Installation
 
 ```bash
-npm install next@^15.3.9 react@^19.2.6 react-dom@^19.2.6
-npm install @sanity/client@^7.22.0 next-sanity@^12.4.5
-npm install @portabletext/react@^6.2.0 @sanity/image-url@^2.1.1
-npm install convex@^1.38.0
-npm install stripe@^22.1.1
-npm install zod@^4.4.3
-npm install -D typescript@^6.0.3 tailwindcss@^4.3.0 @types/node @types/react
+pnpm --filter dispatch-control add @clerk/nextjs
 ```
 
-### `apps/studio/` (Sanity Studio)
+Version: `^7.5.7` (Core 3, latest as of 2026-06-21)
 
-```bash
-npm install sanity@^5.24.0 @sanity/vision@^5.24.0
+### Required environment variables (`apps/dispatch-control/.env.local`)
+
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
 ```
 
-### `packages/pipeline/` (FastAPI + LangGraph)
+### Confidence: HIGH
+Sources: [Clerk Core 3 changelog](https://clerk.com/changelog/2026-03-03-core-3), [Clerk pricing](https://clerk.com/pricing), [Convex + Clerk docs](https://docs.convex.dev/auth/clerk), [LogRocket Next.js auth 2026](https://blog.logrocket.com/best-auth-library-nextjs-2026/)
+
+---
+
+## 2. Secrets Store — Per-Workspace API Keys (§4.7 / §6 BYO Keys)
+
+### Recommendation: **Convex-encrypted rows in Convex** (Phase 1 start); graduate to Railway environment variables for pipeline-level secrets
+
+The dashboard's secrets requirement has two distinct use cases with different solutions:
+
+#### 2a. Per-workspace user-supplied API keys (future BYO keys — Phase 6)
+
+Use Convex document storage with AES-256-GCM encryption, keyed from a `WORKSPACE_ENCRYPTION_KEY` environment variable stored in Vercel/Railway. The `workspace_secrets` table holds `{ workspaceId, name, encryptedValue, iv, tag }` rows. This is the correct pattern for multi-tenant secrets that must be isolated per workspace and are read back at pipeline runtime.
+
+**Do NOT add a third-party secrets service (Doppler, Infisical, Vault, AWS Secrets Manager) in Phase 1.** They add operational complexity and an external dependency for a single-tenant app. The encryption-in-Convex pattern is zero-infrastructure and is the approach documented in the Convex community.
+
+For the pipeline to read user-supplied keys at run time, the FastAPI endpoint decrypts the relevant secret from Convex using `WORKSPACE_ENCRYPTION_KEY` and passes it as a transient environment variable to the agent. No plaintext secrets are stored in Convex documents.
+
+```typescript
+// convex/schema.ts addition (Phase 6 only — thread workspace_id now but no secrets table yet)
+workspaceSecrets: defineTable({
+  workspaceId: v.string(),
+  name: v.string(),            // e.g. 'OPENROUTER_API_KEY'
+  encryptedValue: v.string(),  // AES-256-GCM ciphertext, base64
+  iv: v.string(),              // initialization vector, base64
+  authTag: v.string(),         // GCM auth tag, base64
+  createdAt: v.number(),
+  rotatedAt: v.optional(v.number()),
+})
+  .index('by_workspace_name', ['workspaceId', 'name'])
+```
+
+#### 2b. System-level secrets (OpenRouter API key, Sanity token, Convex deploy key)
+
+These are already environment variables on Railway (pipeline) and Vercel (frontend). No change needed. **Use what's already in the repo — add nothing.**
+
+The dashboard UI for Phase 1 shows a masked last-4-chars display (like Stripe key management) — no new library required, this is a pattern not a package.
+
+### Confidence: MEDIUM
+The encryption-in-Convex pattern is community-validated but not a Convex first-party component. A first-party option (Convex API Keys component, `npm install convex-api-keys`) exists but is oriented toward API key issuance (keys your app gives to external callers), not storage of user-supplied third-party API credentials. That component solves a different problem.
+
+---
+
+## 3. Prompt Editor — Variable Highlighting and Diffing
+
+### 3a. Editor with variable template highlighting
+
+**Recommendation: `@uiw/react-codemirror ^4.23` + custom `@codemirror/view` extension**
+
+`@uiw/react-codemirror` is the standard React wrapper for CodeMirror 6. It ships as a React component and exposes the full CodeMirror 6 extension API. Version 4.23+ (latest is 4.25.x as of 2026-06-21) uses CodeMirror 6 internally (`@codemirror/view ^6.43`, `@codemirror/state ^6.6`).
+
+The prompt templates in `packages/pipeline/src/eisenbalm_pipeline/prompts/` use `{token}` substitution (curly-brace tokens: `{VOICE_CONSTRAINTS}`, `{charity_name}`, etc.). Variable highlighting is a custom CodeMirror `StateField` + `Decoration` extension — a well-documented CodeMirror pattern. The extension uses `EditorView.decorations.compute` with a regex matching `\{[A-Z_]+\}` and applies a `Decoration.mark({ class: 'cm-prompt-variable' })`. No third-party plugin needed for this.
 
 ```bash
-# Using uv (recommended for Railway)
-uv init --python 3.11
-uv add fastapi==0.136.1 "uvicorn[standard]==0.46.0"
-uv add langgraph==1.1.10 langsmith==0.8.3
-uv add langchain-openai==1.2.1 langchain-tavily==0.2.18 tavily-python==0.7.24
-uv add langgraph-checkpoint-postgres==3.0.5 "psycopg[binary]>=3.1"
-uv add supabase==2.30.0
-uv add httpx==0.28.1 pydantic==2.13.4
-uv add weasyprint==68.1
-uv add python-slugify==8.0.4 python-multipart
+pnpm --filter dispatch-control add @uiw/react-codemirror @codemirror/view @codemirror/state
+```
+
+The `@uiw/react-codemirror` package brings `@codemirror/view` and `@codemirror/state` as peer dependencies. Install them explicitly for the custom extension.
+
+**Do NOT install a full code editor framework** (Monaco, Ace) for prompt editing. They are multiple megabytes of JavaScript and optimized for source code, not plain text with custom decorations. CodeMirror 6 is the correct weight for this use case.
+
+### 3b. Prompt version diffing
+
+**Recommendation: `react-diff-viewer-continued ^4.2.2`**
+
+The original `react-diff-viewer` package is abandoned (last published 6 years ago). `react-diff-viewer-continued` is the actively maintained fork, last published 2 months ago, supports React 18/19, and renders side-by-side or inline diffs using `diff` under the hood.
+
+```bash
+pnpm --filter dispatch-control add react-diff-viewer-continued
+```
+
+For the side-by-side prompt diff view (two versions of a prompt, highlighted changes), pass `oldValue` and `newValue` as plain strings. Use `splitView={true}` and `useDarkTheme={false}` to match the dashboard palette. No additional diff library (jsdiff, diff2html) is needed.
+
+### Confidence: HIGH for CodeMirror 6 (well-documented, industry standard); MEDIUM for `react-diff-viewer-continued` (actively maintained fork but fork, not original)
+Sources: [CodeMirror decoration example](https://codemirror.net/examples/decoration/), [react-diff-viewer-continued npm](https://www.npmjs.com/package/react-diff-viewer-continued), [@uiw/react-codemirror GitHub](https://github.com/uiwjs/react-codemirror)
+
+---
+
+## 4. Notifications — Slack + Email
+
+### 4a. Email notifications
+
+**Use what's already in the repo — add nothing.**
+
+`resend ^6.12.4` is already installed in `packages/emails`. The `SendEmailProvider` abstraction with a `Resend` implementation already exists. The notification email type is just another email type in `packages/emails/src/templates/`. Route it through the existing `emailActions.sendEmailStep` Convex action or a new parallel action for pipeline events.
+
+### 4b. Slack notifications
+
+**Recommendation: `@slack/webhook ^7.0.9`**
+
+The official Slack SDK's incoming-webhook package. It is minimal (single class, no full-SDK overhead), Node 18+ compatible, and actively maintained (last published 15 days ago as of 2026-06-21). It wraps Slack's Incoming Webhooks API.
+
+```bash
+pnpm --filter dispatch-control add @slack/webhook
+```
+
+OR install on the pipeline side if notifications originate from Python:
+
+```bash
+# In packages/pipeline — Python equivalent
+uv add slack_sdk   # httpx-backed, async-friendly
+```
+
+The Slack notification flow belongs in a Convex action (`notifySlack`) or a FastAPI background task, not in the Next.js frontend. The Slack webhook URL is a pipeline/backend environment variable.
+
+**Pattern:** Convex `pipelineRuns` already tracks run status changes. A Convex action or mutation can trigger a Slack notification via the `@slack/webhook` `IncomingWebhook.send()` call when status transitions to `awaiting-review`, `failed`, or `complete`. Route through a Next.js API route (`POST /api/notify/slack`) if the notification must originate from the frontend, or call from Convex's Node runtime directly.
+
+```typescript
+// In a Convex action (Node runtime, not V8)
+import { IncomingWebhook } from '@slack/webhook'
+const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL!)
+await webhook.send({ text: `Run ${runId} is awaiting review.` })
+```
+
+**Do NOT add a full Slack app / Bot Token integration for notifications.** Incoming webhooks are sufficient. Bot tokens add OAuth complexity for no benefit when all you need is push-only messages to a channel.
+
+### Confidence: HIGH for `@slack/webhook` (official Slack SDK, actively maintained); HIGH for Resend reuse (already integrated)
+Sources: [@slack/webhook npm](https://www.npmjs.com/package/@slack/webhook), [Slack Incoming Webhooks docs](https://docs.slack.dev/tools/node-slack-sdk/webhook/)
+
+---
+
+## 5. Stripe Reconciliation
+
+**Use what's already in the repo — add nothing.**
+
+`stripe ^21.0.0` is already in `apps/web`. The Stripe Node.js library provides all APIs needed for donation reconciliation. Specifically:
+
+- `stripe.charges.list({ created: { gte: windowStart, lte: windowEnd }, limit: 100 })` — paginate charges for a date window
+- `stripe.balanceTransactions.list({ created: { gte: ... }, type: 'charge' })` — get gross/fee/net breakdown per transaction
+- `stripe.paymentIntents.list({ created: { gte: ... } })` — alternatively, paginate by PaymentIntent
+
+The Convex `stripeOrders` table (already present in `convex/schema.ts`) stores `amountTotal`, `amountSubtotal`, `amountShipping`, `donationAmount`, and `charitySlug`. For per-issue reconciliation:
+
+1. Query `stripeOrders` by `charitySlug` and `createdAt` range — all orders are already captured at webhook time
+2. Sum `donationAmount` (= `amountSubtotal`) for gross-to-charity
+3. For Stripe fees (not stored locally), use `stripe.balanceTransactions.list` filtered by `source` (the charge ID) to get Stripe's fee breakdown
+
+The dashboard reconciliation view is primarily a **read from `stripeOrders` in Convex** with a supplementary Stripe API call for fee details. No additional package needed. The reconciliation API route in `dispatch-control` will be a Next.js Route Handler that uses the already-installed `stripe` singleton.
+
+### Confidence: HIGH — Stripe SDK already installed, Convex schema already captures the necessary data fields
+Sources: [Stripe API: list charges](https://docs.stripe.com/api/charges/list?lang=node), [Stripe API: balance transactions](https://docs.stripe.com/api/balance_transactions/list?lang=node)
+
+---
+
+## 6. Complete New Dependencies for `apps/dispatch-control`
+
+This is the exhaustive list of packages that do NOT already exist anywhere in the monorepo and must be installed in the new `dispatch-control` app.
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `@clerk/nextjs` | `^7.5.7` | Auth middleware, `<ClerkProvider>`, `clerkMiddleware()`, `auth()` |
+| `@uiw/react-codemirror` | `^4.23.0` | React wrapper for CodeMirror 6 prompt editor |
+| `@codemirror/view` | `^6.43.0` | Custom variable-highlighting decoration extension |
+| `@codemirror/state` | `^6.6.0` | `StateField.define()` for the decoration extension |
+| `react-diff-viewer-continued` | `^4.2.2` | Side-by-side prompt version diff |
+| `@slack/webhook` | `^7.0.9` | Slack incoming webhook for pipeline notifications |
+
+All other required capabilities come from packages already in the monorepo:
+- Convex (`^1.38.0`) — real-time dashboard state, run history, agent config
+- Stripe (`^21.0.0`) — reconciliation reads (from `apps/web`, re-add to `dispatch-control`)
+- Resend (`^6.12.4`) — email notifications (from `packages/emails`)
+- Tailwind CSS (`^4.3.x`) — styling
+- Next.js + React + TypeScript — app framework
+
+### Installation
+
+```bash
+# Create the app
+mkdir -p apps/dispatch-control
+cd apps/dispatch-control
+# ... init Next.js app, then:
+
+pnpm add @clerk/nextjs @uiw/react-codemirror @codemirror/view @codemirror/state react-diff-viewer-continued @slack/webhook
+pnpm add convex stripe resend                    # re-add shared deps
+pnpm add next react react-dom                    # app framework
+pnpm add -D typescript tailwindcss @tailwindcss/postcss vitest
 ```
 
 ---
 
-## Version Compatibility Matrix
+## 7. What NOT to Add
+
+| Do NOT add | Why | What to use instead |
+|------------|-----|-------------------|
+| Auth.js / NextAuth v5 | Still in "beta" as of June 2026; maintainers direct new projects to Better Auth; no org/workspace primitives for productization | Clerk `@clerk/nextjs ^7.x` |
+| Better Auth | Excellent for self-hosted data ownership, but Convex adapter is early-community; adds complexity for a future-hosted-SaaS trajectory | Clerk — managed auth with first-class organization support |
+| Convex Auth | No organization/workspace primitives; would require rewrite at productization | Clerk — natively integrates with Convex via JWT |
+| Doppler / Infisical / Vault / AWS Secrets Manager | Operational overhead for single-tenant. Convex-encrypted rows are sufficient until multi-tenant Phase 6 | AES-256-GCM encryption in Convex rows + `WORKSPACE_ENCRYPTION_KEY` env var |
+| `convex-api-keys` npm package | Solves the wrong problem — it manages keys your app ISSUES to external callers, not keys your users supply for third-party services | Encrypted Convex rows (custom, minimal) |
+| Monaco Editor | ~4MB bundle, built for code, not plain-text prompt editing with custom decorations | `@uiw/react-codemirror` (~120KB) |
+| `react-diff-viewer` (original) | Abandoned, last published 6 years ago | `react-diff-viewer-continued ^4.2.2` |
+| Full Slack Bot Token / OAuth | Bot tokens require Slack app creation + OAuth flow; overkill for push-only notifications | `@slack/webhook` incoming webhooks |
+| `jsdiff` directly | `react-diff-viewer-continued` already wraps it and provides a rendered component | `react-diff-viewer-continued` |
+| Any new CMS / admin framework (Adminjs, Refine, Payload) | Brief locks Next.js; admin frameworks impose their own data model and conflict with Convex as the state layer | Next.js App Router + Convex + Tailwind + shadcn primitives |
+| Vercel AI SDK | Brief explicitly locks stack; also architecturally wrong — agent test-runs go through the existing FastAPI `/agents/{key}/test-run` endpoint | Existing FastAPI endpoint |
+
+---
+
+## 8. Convex Schema Additions for the Dashboard
+
+The dashboard requires new Convex tables. These are additive — no existing tables are modified. The `workspace_id` field is added to every new table now (even with one workspace) to avoid a later migration.
+
+```typescript
+// convex/schema.ts additions (new tables only)
+
+agents: defineTable({
+  workspaceId: v.string(),
+  key: v.string(),             // e.g. 'scout', 'calibrator'
+  displayName: v.string(),
+  enabled: v.boolean(),
+  model: v.string(),
+  temperature: v.number(),
+  maxTokens: v.optional(v.number()),
+  description: v.optional(v.string()),
+  activePromptVersionId: v.optional(v.id('promptVersions')),
+})
+  .index('by_workspace', ['workspaceId'])
+  .index('by_workspace_key', ['workspaceId', 'key']),
+
+promptVersions: defineTable({
+  workspaceId: v.string(),
+  agentKey: v.string(),
+  promptType: v.union(v.literal('system'), v.literal('user')),
+  content: v.string(),
+  version: v.number(),
+  authorId: v.optional(v.string()),  // Clerk userId
+  note: v.optional(v.string()),
+  createdAt: v.number(),
+})
+  .index('by_agent', ['workspaceId', 'agentKey'])
+  .index('by_agent_version', ['workspaceId', 'agentKey', 'version']),
+
+pipelineConfig: defineTable({
+  workspaceId: v.string(),
+  scheduleEnabled: v.boolean(),
+  requireReview: v.boolean(),
+  autoPublish: v.boolean(),
+  monthlyBudgetCap: v.optional(v.number()),  // USD
+  perRunBudgetCap: v.optional(v.number()),   // USD
+  scheduleDay: v.optional(v.number()),       // 0-6, day of week
+  scheduleHour: v.optional(v.number()),      // 0-23 UTC
+  updatedAt: v.number(),
+  updatedBy: v.optional(v.string()),         // Clerk userId
+})
+  .index('by_workspace', ['workspaceId']),
+
+reviewActions: defineTable({
+  workspaceId: v.string(),
+  runId: v.string(),
+  action: v.union(
+    v.literal('approve'),
+    v.literal('reject'),
+    v.literal('reroll'),
+    v.literal('schedule'),
+  ),
+  actorId: v.string(),           // Clerk userId
+  note: v.optional(v.string()),
+  timestamp: v.number(),
+})
+  .index('by_run', ['workspaceId', 'runId']),
+
+auditLog: defineTable({
+  workspaceId: v.string(),
+  actorId: v.string(),           // Clerk userId
+  action: v.string(),            // e.g. 'prompt.update', 'killswitch.toggle'
+  resourceType: v.string(),      // 'agent', 'pipelineConfig', 'promptVersion', etc.
+  resourceId: v.optional(v.string()),
+  before: v.optional(v.string()), // JSON snapshot
+  after: v.optional(v.string()),  // JSON snapshot
+  timestamp: v.number(),
+})
+  .index('by_workspace_time', ['workspaceId', 'timestamp']),
+```
+
+**Note:** The Clerk `userId` from `ctx.auth.getUserIdentity()?.subject` is the natural `actorId` for audit rows and review actions. No separate users table is needed in Phase 1.
+
+---
+
+## 9. Monorepo Layout — New App
+
+```
+apps/
+├── web/                 # existing public site (unchanged)
+├── studio/              # existing Sanity Studio (unchanged)
+└── dispatch-control/    # NEW: admin dashboard
+    ├── app/
+    │   ├── layout.tsx              # ClerkProvider + ConvexClientProvider
+    │   ├── middleware.ts           # clerkMiddleware() — protects all routes
+    │   ├── sign-in/[[...rest]]/    # Clerk hosted sign-in
+    │   ├── (dashboard)/            # route group for all admin pages
+    │   │   ├── layout.tsx          # shell: sidebar + header
+    │   │   ├── page.tsx            # run overview / live run view
+    │   │   ├── agents/
+    │   │   │   ├── page.tsx        # agent card grid
+    │   │   │   └── [key]/page.tsx  # prompt editor + version history
+    │   │   ├── runs/
+    │   │   │   ├── page.tsx        # run history table
+    │   │   │   └── [runId]/page.tsx # live run detail
+    │   │   ├── config/page.tsx     # kill switch + schedule + budget caps
+    │   │   ├── charities/page.tsx  # charity registry
+    │   │   ├── issues/page.tsx     # issue review board
+    │   │   └── reconciliation/page.tsx # Stripe donation per issue
+    │   └── api/
+    │       └── notify/slack/route.ts   # POST → Slack webhook
+    ├── components/
+    │   ├── PromptEditor.tsx            # @uiw/react-codemirror + variable extension
+    │   ├── PromptDiff.tsx              # react-diff-viewer-continued
+    │   └── ConvexClientProvider.tsx    # 'use client' wrapper for ConvexProviderWithClerk
+    └── package.json
+```
+
+---
+
+## 10. Compatibility Notes
 
 | Package | Compatible With | Notes |
 |---------|----------------|-------|
-| `next@^15.3.9` | `next-sanity@^12.4.5` | Stable. Do NOT use next@16 — SanityLive overage bug |
-| `next@^15.3.9` | `react@^19.2.6` | React 19 is required for Next.js 15+ |
-| `sanity@^5.24.0` | `react@^19.2.6` | Sanity v5 requires React 19 |
-| `langgraph@1.1.10` | `langchain-openai@1.2.1` | LangGraph 1.x works with langchain-openai 1.x |
-| `langgraph@1.1.10` | `langgraph-checkpoint-postgres@3.0.5` | Major versions must align; 1.x → 3.x is correct pairing |
-| `langchain-tavily@0.2.18` | Python `>=3.10` | Use Python 3.11 on Railway |
-| `weasyprint@68.1` | Python `>=3.9` | Requires system libs on Railway (use Dockerfile) |
-| `stripe@22.1.1` | Next.js App Router Route Handlers | Use `await request.text()` (not `.json()`) for webhook body |
-
----
-
-## Monorepo Layout — Library Assignments
-
-```
-eisenbalm/
-├── apps/
-│   ├── web/                    # next, react, @sanity/client, next-sanity,
-│   │   │                       # @portabletext/react, convex, stripe, zod,
-│   │   │                       # tailwindcss
-│   │   ├── lib/sanity/         # @sanity/client, next-sanity (sanityFetch)
-│   │   ├── app/api/checkout/   # stripe
-│   │   └── app/api/webhooks/   # stripe (constructEvent)
-│   └── studio/                 # sanity, @sanity/vision
-├── packages/
-│   ├── pipeline/               # fastapi, uvicorn, langgraph, langchain-openai,
-│   │   │                       # langsmith, langchain-tavily, tavily-python,
-│   │   │                       # langgraph-checkpoint-postgres, supabase,
-│   │   │                       # httpx, pydantic, weasyprint, python-slugify
-│   │   ├── lib/                # sanity_client.py, convex_client.py,
-│   │   │                       # openrouter_client.py, search_client.py,
-│   │   │                       # supabase_client.py, portable_text.py
-│   │   └── agents/             # calibrator.py, scout.py, advocate.py,
-│   │                           # editor.py, researcher.py, origin_story.py,
-│   │                           # problem.py, founder_bio.py, case_study.py,
-│   │                           # game.py, bonus.py, design.py, qa.py,
-│   │                           # publisher.py
-│   └── shared/                 # TypeScript shared types (DispatchState mirror,
-│                               # issue types used by both web and studio)
-├── convex/                     # convex schema + query/mutation functions
-│   │                           # (auto-generated types via `npx convex dev`)
-│   ├── schema.ts               # already present and complete
-│   ├── pipelineRuns.ts         # to be created
-│   ├── pitchLog.ts             # to be created
-│   ├── deliberationEvents.ts   # to be created
-│   ├── agentVotes.ts           # to be created
-│   └── qaCorrections.ts        # to be created
-└── schemas/                    # Sanity schemas (already complete)
-    ├── charity.ts
-    ├── weeklyIssue.ts
-    ├── agentProfile.ts
-    └── index.ts
-```
-
----
-
-## What NOT to Use
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `next@^16` | `next-sanity` SanityLive causes 4–10x Vercel/Sanity request overage. Active bug as of May 2026. | `next@^15.3.9` |
-| `sanity@^3.x` or `^4.x` | Outdated dist-tags. v5 is stable, required for React 19, and enables TypeGen GA. | `sanity@^5.24.0` |
-| `MemorySaver` (LangGraph) | In-process memory only — state is lost on Railway restart or deploy. Editor gate 1 pause would not survive. | `langgraph-checkpoint-postgres` with Supabase |
-| Brave Search SDK | No first-class LangChain tool integration. Requires custom wrapping. | `langchain-tavily` + `tavily-python` |
-| Vercel AI SDK (`ai` package) | Brief explicitly locks the stack. Also architecturally wrong: pipeline is Python/FastAPI, not Next.js server-side. | `langchain-openai` + OpenRouter on the pipeline side |
-| `sanity` Python package on PyPI | Version `0.2.5` — unmaintained stub. Incompatible with Sanity v3+. | Use `@sanity/client` HTTP API directly or the documented REST API patterns in `API_CONTRACTS.md` section 2 |
-| `groq-builder` or `sanity-typed` | Third-party type generators now superseded by Sanity TypeGen (built into v5). Extra dep with stale maintenance. | `sanity typegen generate` (built-in CLI) |
-| `shopify`, `Commerce.js` | Brief explicitly forbids. One product, custom Stripe only. | `stripe@22.1.1` |
-| Playwright for PDF generation | WeasyPrint is specified in the brief. Playwright would add ~600MB to the Railway container. | `weasyprint@68.1` (with Dockerfile system deps) |
-
----
-
-## Sharp Edges for 2026
-
-### 1. Sanity Python Client — No Maintained Official SDK
-**Severity: HIGH.** The `sanity` package on PyPI (`0.2.5`) is an unmaintained stub. The brief's `API_CONTRACTS.md` already accounts for this: section 2 uses direct REST calls against the Sanity Content API (`https://<projectId>.api.sanity.io/v2024-01-01/data/mutate/<dataset>`). The Python integration must use `httpx` with a `SANITY_API_TOKEN` header — NOT a Python SDK. The patterns in `API_CONTRACTS.md §2` are correct and complete.
-
-### 2. Next.js 15 vs 16 — Hold at 15 Until next-sanity v12 Ships
-**Severity: HIGH.** As of May 2026, Sanity officially recommends NOT upgrading to Next.js 16 if using `<SanityLive>` or `defineLive`. The `next-sanity@cache-components` tag is experimental. Watch the [next-sanity GitHub releases](https://github.com/sanity-io/next-sanity/releases) for the public v12 announcement before upgrading Next.js.
-
-### 3. LangGraph Interrupt() Rules — Not Negotiable
-**Severity: HIGH.** Editor gate 1 uses `interrupt()` to pause the graph. LangGraph 1.x `interrupt()` has strict rules that will silently break if violated:
-- Do NOT wrap `interrupt()` calls in `try/except`
-- All code BEFORE an `interrupt()` must be idempotent (the node reruns from scratch on resume)
-- Only pass JSON-serializable values to `interrupt()`
-- A Postgres-backed checkpointer is REQUIRED — `MemorySaver` loses state on Railway restart
-
-### 4. WeasyPrint on Railway — Requires Dockerfile
-**Severity: HIGH.** Railway's auto-detected Nixpacks environment does NOT include the system libraries WeasyPrint requires. Deploying without a custom Dockerfile causes an `OSError: cannot load library 'libgobject-2.0-0'` at runtime. The pipeline service must use a Dockerfile with explicit `apt-get install` for the required system packages.
-
-### 5. Stripe Webhook — Raw Body Required
-**Severity: MEDIUM.** `stripe.webhooks.constructEvent()` requires the raw request body as bytes/string. Next.js App Router Route Handlers must use `await request.text()` — NOT `await request.json()`. Calling `.json()` first will cause signature verification to fail.
-
-### 6. Convex Deliberation Queries — No Auth Layer
-**Severity: LOW.** The site has no reader authentication (explicitly out of scope per brief). All Convex queries serving the deliberation layer are public reads. The pipeline writes using the `CONVEX_DEPLOY_KEY` in the HTTP API header. This is the correct architecture for this project — do not add Convex Auth unless the brief changes.
-
-### 7. Sanity TypeGen — Enable from Day One
-**Severity: MEDIUM.** TypeGen produces TypeScript types from schemas AND GROQ queries. Enable it in `apps/studio/sanity.cli.ts` when the Studio is first configured. Retrofitting types after queries are written is significantly harder. The generated `sanity.types.ts` should be imported in `apps/web/types/issue.ts` to satisfy the `API_CONTRACTS.md` type definitions.
-
----
-
-## 2026 Best Practices Per Layer
-
-### Next.js App Router
-- Use Server Components for all Sanity GROQ reads (no client-side fetching for editorial content)
-- Use `sanityFetch` from `next-sanity` for automatic cache/revalidation — it switches between CDN and draft mode automatically
-- Define `generateStaticParams()` on `/issue/[slug]` and `/charities/[slug]` for static generation
-- Use Route Handlers (not `pages/api/`) for `/api/checkout` and `/api/webhooks/stripe`
-- CSS variables for theme injection: set on `<html>` element in the issue layout, not in a `<style>` tag inside body
-
-### Sanity Studio v5
-- Use `defineType`, `defineField`, `defineArrayMember` imports from `'sanity'` — they enable IDE autocomplete and TypeGen inference
-- Enable TypeGen in `sanity.cli.ts`: `{ schemaExtraction: { enabled: true }, typegen: { enabled: true } }`
-- Do NOT construct Portable Text manually in the pipeline — use the `text_to_portable_text()` helper from `API_CONTRACTS.md §2.4`
-- Use deterministic `_id` values (`charity-{slug}`, `issue-{number}`) to make pipeline writes idempotent
-
-### LangGraph 1.x
-- Define one `StateGraph` with `DispatchState` TypedDict as the state type
-- Phase 2 parallel section writers (OriginStory, Problem, FounderBio, CaseStudy, Game, Bonus, Design) run as `Send()` fan-out from a single dispatch node, not as branching conditions
-- Use `interrupt()` (not `breakpoint` / `NodeInterrupt`) for Editor gate 1 — `interrupt()` is the current LangGraph 1.x API
-- Set `LANGSMITH_API_KEY` in Railway env vars for automatic LangGraph tracing — no code changes needed
-- Pin `OPENROUTER_API_KEY` to the Railway service, not to individual agents; instantiate the LLM client once per graph invocation
-
-### Convex
-- Query functions that serve the deliberation layer are public (no `ctx.auth` check needed)
-- The pipeline uses the HTTP API (`POST /api/mutation`) with `Authorization: Convex {DEPLOY_KEY}` — not the TypeScript SDK
-- Convex auto-generates `convex/_generated/api.ts` on `npx convex dev` — never hand-edit this file
-- All mutation calls from the pipeline are non-blocking for the pipeline (fire-and-forget with error logging per `API_CONTRACTS.md` error handling rules)
-
-### FastAPI on Railway
-- Use `BackgroundTasks` (built into FastAPI) for the Sanity publish webhook — return 200 immediately, run Publisher agent async
-- Use `uv` as the package manager; Railway supports `pyproject.toml` with uv lock
-- HMAC verification for the Sanity webhook uses `hmac.compare_digest()` — already specified in `API_CONTRACTS.md §5.3`
-- Expose a `/health` endpoint for Railway health checks
-
-### Stripe
-- Use `stripe.checkout.sessions.create()` with `mode: 'payment'` and a pre-created Stripe Price ID
-- Always use `stripe.webhooks.constructEvent(body, signature, secret)` — never manually parse `stripe-signature`
-- Return `200` from the webhook handler even on processing failure (Stripe retries aggressively on 4xx/5xx)
-- `STRIPE_PRICE_ID` is a required env var — create the product and price in the Stripe dashboard before the Stripe phase
+| `@clerk/nextjs ^7.x` | `next >=15.2.3`, React 19 | Core 3. Use `middleware.ts` (NOT `proxy.ts` — that is Next.js 16+) |
+| `@clerk/nextjs ^7.x` | Convex `^1.38` | `ConvexProviderWithClerk` from `convex/react-clerk` wraps `ConvexReactClient` |
+| `@uiw/react-codemirror ^4.23` | React 19 | No known incompatibility; uses standard React ref pattern |
+| `@codemirror/view ^6.43` | `@uiw/react-codemirror ^4.23` | Peer dep — install together |
+| `react-diff-viewer-continued ^4.2.2` | React 19 | Confirmed React 18/19 support |
+| `@slack/webhook ^7.0.9` | Node 18+ | Works in Convex Node actions and Next.js Route Handlers |
+| `stripe ^21.0.0` | Next.js App Router | Already used in `apps/web`; same version |
 
 ---
 
 ## Sources
 
-- npm registry (`npm view <package> version`) — all version numbers verified 2026-05-09
-- PyPI (`pip index versions <package>`) — all Python version numbers verified 2026-05-09
-- [Sanity docs: Next.js 16 and SanityLive](https://www.sanity.io/docs/help/nextjs-16-sanitylive-status) — Next.js 15 hold recommendation (HIGH confidence)
-- [Sanity blog: Studio v5 and React 19](https://www.sanity.io/blog/sanity-studio-v5) — v5 compatibility notes (HIGH confidence)
-- [Sanity TypeGen GA](https://www.sanity.io/blog/sanity-typegen-ga) — TypeGen built-in to v5.10+ (HIGH confidence)
-- [LangGraph interrupts docs](https://docs.langchain.com/oss/python/langgraph/interrupts) — interrupt() rules (HIGH confidence)
-- [OpenRouter LangChain integration](https://openrouter.ai/docs/guides/community/langchain) — ChatOpenAI pattern (HIGH confidence)
-- [WeasyPrint Railway issue #2461](https://github.com/Kozea/WeasyPrint/issues/2461) — system deps requirement (HIGH confidence)
-- [Railway WeasyPrint help station](https://station.railway.com/questions/cant-install-weasyprint-dependencies-d742101d) — Nixpacks vs Dockerfile (HIGH confidence)
-- [LangSmith observability docs](https://docs.langchain.com/langsmith/observability) — LANGSMITH_API_KEY pattern (HIGH confidence)
-- [Convex auth docs](https://docs.convex.dev/auth) — no-auth public reads pattern (HIGH confidence)
-- `docs/API_CONTRACTS.md` — constrains all library choices at every boundary (authoritative)
+- [Clerk Core 3 changelog (2026-03-03)](https://clerk.com/changelog/2026-03-03-core-3) — React 19 concurrent mode support; `next >=15.2.3` requirement (HIGH confidence)
+- [Clerk @clerk/nextjs npm](https://www.npmjs.com/package/@clerk/nextjs) — v7.5.7 latest (HIGH confidence)
+- [Clerk pricing (Feb 2026 update)](https://clerk.com/changelog/2026-02-05-new-plans-more-value) — 50K MAU free (HIGH confidence)
+- [Clerk Next.js quickstart](https://clerk.com/docs/nextjs/getting-started/quickstart) — App Router middleware setup (HIGH confidence)
+- [Convex + Clerk docs](https://docs.convex.dev/auth/clerk) — `ConvexProviderWithClerk` pattern (HIGH confidence)
+- [Convex auth best practices](https://stack.convex.dev/authentication-best-practices-convex-clerk-and-nextjs) — three-layer auth pattern (HIGH confidence)
+- [LogRocket: best auth library Next.js 2026](https://blog.logrocket.com/best-auth-library-nextjs-2026/) — Auth.js v5 maintenance-mode note; Better Auth recommendation for new projects (MEDIUM confidence — editorial review, not official)
+- [Auth.js v5 beta discussion](https://github.com/nextauthjs/next-auth/discussions/13382) — confirms ongoing beta status as of 2026 (HIGH confidence — official repo)
+- [Convex API Keys component](https://www.convex.dev/components/convex-api-keys) — solves key issuance, not third-party key storage (HIGH confidence)
+- [Convex secrets encryption pattern](https://medium.com/@jballo/building-server-side-api-key-encryption-with-convex-and-node-js-crypto-29f69e0de8c6) — AES-256-GCM + Convex rows (MEDIUM confidence — community article)
+- [@uiw/react-codemirror GitHub](https://github.com/uiwjs/react-codemirror) — v4.25.x latest; 4.23+ uses CodeMirror 6 (HIGH confidence)
+- [@codemirror/view npm](https://www.npmjs.com/package/@codemirror/view) — v6.43.0 current (HIGH confidence)
+- [CodeMirror decoration example](https://codemirror.net/examples/decoration/) — `StateField` + `Decoration.mark` pattern (HIGH confidence — official docs)
+- [react-diff-viewer-continued npm](https://www.npmjs.com/package/react-diff-viewer-continued) — v4.2.2, actively maintained (HIGH confidence)
+- [@slack/webhook npm](https://www.npmjs.com/package/@slack/webhook) — v7.0.9 latest (HIGH confidence)
+- [Slack incoming webhooks Node SDK](https://docs.slack.dev/tools/node-slack-sdk/webhook/) — `IncomingWebhook` class (HIGH confidence — official docs)
+- [Stripe API: list charges](https://docs.stripe.com/api/charges/list?lang=node) — date range pagination (HIGH confidence — official docs)
+- [Stripe API: balance transactions](https://docs.stripe.com/api/balance_transactions/list?lang=node) — fee breakdown (HIGH confidence — official docs)
 
 ---
-*Stack research for: The Eisenbalm Dispatch — AI editorial website*
-*Researched: 2026-05-09*
+
+*Stack research for: The Eisenbalm Dispatch — Mission Control Dashboard v2.0 additions*
+*Researched: 2026-06-21*
+*Confidence: HIGH overall — all versions verified via npm registry and official docs; auth recommendation based on verified 2026 ecosystem state*
