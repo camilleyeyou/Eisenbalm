@@ -1,13 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.0
-milestone_name: mission-control-dashboard
-status: Roadmap created — ready for planning
-stopped_at: Roadmap created for v2.0 (Phases 21-27)
-last_updated: "2026-06-21T00:00:00.000Z"
+milestone_name: Phase Details — Mission Control Dashboard
+status: Not started
+stopped_at: Phase 21 context gathered
+last_updated: "2026-06-21T22:40:13.531Z"
+last_activity: 2026-06-21 — Roadmap created for v2.0 Phases 21-27
 progress:
   total_phases: 27
-  completed_phases: 20
+  completed_phases: 19
   total_plans: 133
   completed_plans: 131
 ---
@@ -500,6 +501,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T18:22:48.974Z
-Stopped at: Completed quick-260621-fi4 phase-0-reconciliation
-Resume file: None
+Last session: 2026-06-21T22:40:13.519Z
+Stopped at: Phase 21 context gathered
+Resume file: .planning/phases/21-auth-app-shell-convex-schema/21-CONTEXT.md
