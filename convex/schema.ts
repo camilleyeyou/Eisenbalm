@@ -192,4 +192,142 @@ export default defineSchema({
     .index('by_orderId_step', ['orderId', 'step'])
     .index('by_email_step', ['email', 'step'])
     .index('by_status', ['status']),
+
+  // ── Mission Control v2.0 — Phase 21 ─────────────────────────────────────────
+
+  // ── workspaces: single-tenant seed (Phase 21 CFG-05) ────────────────────────
+  workspaces: defineTable({
+    workspace_id: v.string(),    // slug — "eisenbalm"
+    name: v.string(),            // "The Eisenbalm Dispatch"
+    createdAt: v.number(),       // Unix ms
+  })
+    .index('by_workspace', ['workspace_id']),
+
+  // ── users: JIT upsert on first authenticated load (Phase 21 AUTH-04) ────────
+  users: defineTable({
+    workspace_id: v.string(),
+    clerkUserId: v.string(),     // Clerk "sub" claim — primary lookup key
+    email: v.string(),
+    displayName: v.optional(v.string()),
+    role: v.optional(v.string()),  // "admin" | "operator" — RBAC deferred to Phase 28
+    createdAt: v.number(),
+    lastSeenAt: v.number(),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_clerkUserId', ['clerkUserId']),
+
+  // ── runs: dashboard superset of frozen pipelineRuns (Phase 21 AUTH-04, Phase 23) ──
+  runs: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),           // same UUID as pipelineRuns.runId (join key)
+    triggerSource: v.string(),   // "manual" | "cron" | "webhook"
+    triggeredBy: v.optional(v.string()), // Clerk userId — optional until Phase 23 wires trigger
+    configSnapshot: v.optional(v.string()), // JSON — populated by Phase 22
+    status: v.string(),          // mirrors pipelineRuns.status; updated alongside it
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    cost: v.optional(v.string()),    // JSON cost summary — sourced from pipelineRuns.cost
+    durationMs: v.optional(v.number()),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_runId', ['runId']),
+
+  // ── audit_log: operator action trail (Phase 21 AUTH-04) ─────────────────────
+  audit_log: defineTable({
+    workspace_id: v.string(),
+    actorId: v.string(),         // Clerk userId from ctx.auth.getUserIdentity()?.subject
+    action: v.string(),          // "workspace.seed" | "run.triggered" | etc.
+    resourceType: v.optional(v.string()),  // "run" | "prompt_version" | "config" | etc.
+    resourceId: v.optional(v.string()),
+    before: v.optional(v.string()),  // JSON snapshot
+    after: v.optional(v.string()),   // JSON snapshot
+    timestamp: v.number(),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_timestamp', ['workspace_id', 'timestamp']),
+
+  // ── STUB TABLES (shape only — mutations added in later phases) ───────────────
+
+  // ── agents: per-agent config (Phase 22) ─────────────────────────────────────
+  agents: defineTable({
+    workspace_id: v.string(),
+    agentKey: v.string(),        // "scout" | "advocate" | "editor" | etc.
+    enabled: v.boolean(),
+    model: v.optional(v.string()),
+    temperature: v.optional(v.number()),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
+
+  // ── prompt_versions: versioned prompt store (Phase 24) ──────────────────────
+  prompt_versions: defineTable({
+    workspace_id: v.string(),
+    agentKey: v.string(),
+    version: v.number(),
+    content: v.string(),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    createdBy: v.optional(v.string()),  // Clerk userId
+    note: v.optional(v.string()),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
+
+  // ── pipeline_config: global pipeline settings (Phase 22) ────────────────────
+  pipeline_config: defineTable({
+    workspace_id: v.string(),
+    key: v.string(),             // "schedule_enabled" | "cost_cap_usd" | etc.
+    value: v.string(),           // JSON-encoded
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.string()),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_key', ['workspace_id', 'key']),
+
+  // ── agent_runs: per-node live progress (Phase 23) ───────────────────────────
+  agent_runs: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),
+    agentKey: v.string(),
+    status: v.string(),          // "queued" | "running" | "done" | "failed"
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    costUsd: v.optional(v.number()),
+    durationMs: v.optional(v.number()),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_runId', ['runId']),
+
+  // ── charities: registry with dedup (Phase 26) ────────────────────────────────
+  charities: defineTable({
+    workspace_id: v.string(),
+    name: v.string(),
+    status: v.string(),          // "candidate" | "featured" | "blocklisted"
+    timesFeatured: v.optional(v.number()),
+    lastFeaturedAt: v.optional(v.number()),
+  })
+    .index('by_workspace', ['workspace_id']),
+
+  // ── model_pricing: cost projection table (Phase 27) ─────────────────────────
+  model_pricing: defineTable({
+    workspace_id: v.string(),
+    model: v.string(),
+    inputPricePer1M: v.number(),   // USD
+    outputPricePer1M: v.number(),  // USD
+    updatedAt: v.number(),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_model', ['workspace_id', 'model']),
+
+  // ── review_actions: content review trail (Phase 26) ─────────────────────────
+  review_actions: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),
+    actorId: v.string(),
+    action: v.string(),          // "approved" | "rejected" | "requested_changes"
+    note: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_runId', ['runId']),
 })
