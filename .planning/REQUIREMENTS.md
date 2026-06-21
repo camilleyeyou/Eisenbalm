@@ -213,7 +213,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Auth & App Shell (AUTH)
 - [x] **AUTH-01**: Operator can sign in to the `dispatch-control` app via Clerk; every dashboard route is protected while the public `apps/web` site stays unauthenticated.
 - [x] **AUTH-02**: Any unauthenticated request to a dashboard route or dashboard API is rejected (redirect to sign-in / 401).
-- [ ] **AUTH-03**: FastAPI dashboard-control endpoints verify a Clerk-issued token before mutating pipeline state; the Railway cron path keeps its existing `X-Pipeline-Trigger-Secret`.
+- [x] **AUTH-03**: FastAPI dashboard-control endpoints verify a Clerk-issued token before mutating pipeline state; the Railway cron path keeps its existing `X-Pipeline-Trigger-Secret`.
 - [x] **AUTH-04**: Actions are attributed to the signed-in operator (consumed by the audit log and run-trigger attribution).
 
 ### Config Externalization & Reproducibility (CFG) — the §2 keystone
@@ -474,7 +474,7 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 |-------------|-------|--------|
 | AUTH-01 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | AUTH-02 | Phase 21: Auth + App Shell + Convex Schema | Complete |
-| AUTH-03 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| AUTH-03 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | AUTH-04 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | CFG-05 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | CFG-01 | Phase 22: Config Externalization | Pending |
