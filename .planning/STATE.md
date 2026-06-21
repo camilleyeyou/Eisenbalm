@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Completed quick-260620-hp3 make-vercel-deploy-hook-resilient-retry-
-last_updated: "2026-06-21T15:50:00.000Z"
+stopped_at: Completed quick-260621-d31 fix-per-agent-openrouter-cost-token-capt
+last_updated: "2026-06-21T16:43:54.273Z"
 progress:
   total_phases: 20
   completed_phases: 19
@@ -453,6 +453,7 @@ None yet.
 | 260620-far | Add automatic weekly Railway cron triggering (V2-03): new `trigger-weekly` CLI subcommand in cli.py — POSTs empty `{}` to `{PIPELINE_SELF_URL}/run/weekly` with the X-Pipeline-Trigger-Secret header via httpx.AsyncClient + raise_for_status; prints runId + exits 0 on 2xx, exits 2 on missing PIPELINE_TRIGGER_SECRET, exits 1 on non-2xx/network error (so Railway flags failed cron runs). PIPELINE_SELF_URL defaults to the production Railway domain. Docs: PIPELINE_SELF_URL added to .env.example + a README "Weekly cron trigger" section (SEPARATE Railway service on schedule `0 14 * * 4` Thu 14:00 UTC, fire-and-exit rationale since the graph pauses at Editor Gate 1 for hours/days, manual Andrew handoff). railway.toml + /run/weekly endpoint left untouched. | 2026-06-20 | 4e53dfe | | [260620-far-add-automatic-weekly-railway-cron-trigge](./quick/260620-far-add-automatic-weekly-railway-cron-trigge/) |
 | 260620-gfa | (FULL, Verified) Fix weekly issue-numbering collision so cron/manual runs create a NEW latest issue instead of overwriting `issue-999`. `RunWeeklyBody.issueNumber` → `Optional[int] = None`; new `_resolve_issue_number` helper reads `max(weeklyIssue.issueNumber)+1` via existing `groq_query` (object-projected QUERY_MAX_ISSUE_NUMBER), base 1 on empty dataset, honors explicit body value verbatim with NO Sanity read, fails loud on read error. Number resolved once before run_id/Convex `pipelineRuns:create` row/initial_state and used for both. Root cause of today's "Modest Needs #999 hidden behind test issue #999601"; that live doc was hand-bumped to 999602 separately. Out of scope (untouched): sanity_client id/slug construction, cli.py, /run/weekly auth, background-task pattern, web app. 6 new unit tests; full suite 235 passed/33 skipped/0 failed. | 2026-06-20 | 41c9443 | Verified | [260620-gfa-fix-weekly-issue-numbering-auto-incremen](./quick/260620-gfa-fix-weekly-issue-numbering-auto-incremen/) |
 | 260620-hp3 | (FULL, Verified) Make the Publisher's Vercel deploy-hook resilient so a 429/5xx no longer aborts the publisher or leaves the run un-finalized. `lib/vercel_client.py` `trigger_vercel_deploy` gains bounded retry/backoff (3 attempts, exp-ish, honors parseable `Retry-After`) on transient 429+5xx; non-transient 4xx raise immediately; exhaustion re-raises; 2xx return shape preserved; backoff via patchable module-level `asyncio.sleep`. `_run_publisher` wraps the deploy call try/except → on final failure logs + sets sentinel `deploy_response={"error":str(e)}` and CONTINUES, so Convex `pipelineRuns:updateStatus->complete` + `publisher-deploy` event always fire (sentinel embedded under existing payload `"deploy"` key — no new eventType, convex/schema.ts untouched). Root cause: prod 429 on the Vercel hook killed `_run_publisher` before finalization (`Task exception was never retrieved`); readers unaffected (ISR 60s). Out of scope: publisher() draft node, write_issue_draft, Convex/Sanity clients, schema, web app, /run/weekly, cli.py. 4 new tests (2 vercel_client, 2 publisher); full suite 242 passed/33 skipped/0 failed. NOTE: test_vercel_client.py needs `respx` (not in manifest) — run via `uv run --with respx pytest`. | 2026-06-21 | 6182bbe | Verified | [260620-hp3-make-vercel-deploy-hook-resilient-retry-](./quick/260620-hp3-make-vercel-deploy-hook-resilient-retry-/) |
+| 260621-d31 | (FULL+RESEARCH, Verified-code) Fix per-agent OpenRouter cost/token capture so the structured-output path records REAL tokens+USD (was hardcoded $0/0), re-arming the inert per-run cost cap. `acomplete` structured path → `with_structured_output(Model, include_raw=True)`; `_usage_from_message` reads tokens from `raw.usage_metadata` and USD from `raw.response_metadata["token_usage"]["cost"]` (authoritative OpenRouter usage accounting, enabled via `extra_body usage={"include":True}` in `_build_chat_model` — NOT a price table). include_raw changes failure semantics: parse miss returns `parsed=None` (no raise) → detect, one corrective retry, propagate on 2nd miss; cost recorded exactly once (no double-count — `@agent_node` wrapper still records duration-only, unchanged). Stub-mode $0/0 + acomplete signature/return shape preserved. respx confirmed already in [dependency-groups].dev (no pyproject change). 5 new unit tests incl. cap-trips-after-real-usd; full suite 247 passed/33 skipped/0 failed. Verifier human_needed ONLY for live-smoke (does OpenRouter emit usd>0 live for this account) — not a code gap. Resolves the "$0.00 cost trace" + inert PIPELINE_COST_CAP_USD guard. | 2026-06-21 | da6e43d | Needs Review | [260621-d31-fix-per-agent-openrouter-cost-token-capt](./quick/260621-d31-fix-per-agent-openrouter-cost-token-capt/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
@@ -496,6 +497,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-11T09:55:35.714Z
-Stopped at: Completed quick-260611-3jo extract-agent-system-prompts-to-flat-edi
+Last session: 2026-06-21T16:43:54.261Z
+Stopped at: Completed quick-260621-d31 fix-per-agent-openrouter-cost-token-capt
 Resume file: None
