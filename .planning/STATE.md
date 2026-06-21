@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 21-04-PLAN.md (require_clerk_jwt + AUTH-03 tests)
-last_updated: "2026-06-21T23:42:59.638Z"
+stopped_at: "Checkpoint: 21-05 awaiting human verification of app shell + 7 nav routes"
+last_updated: "2026-06-21T23:52:37.761Z"
 progress:
   total_phases: 27
-  completed_phases: 19
+  completed_phases: 20
   total_plans: 138
-  completed_plans: 134
+  completed_plans: 136
 ---
 
 # Project State
@@ -165,6 +165,7 @@ Plan: 4 of 5
 | Phase 21-auth-app-shell-convex-schema P02 | 5 | 2 tasks | 4 files |
 | Phase 21 P01 | 6 | 2 tasks | 18 files |
 | Phase 21-auth-app-shell-convex-schema P04 | 4 | 2 tasks | 4 files |
+| Phase 21 P05 | 4 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -506,6 +507,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T23:42:59.625Z
-Stopped at: Completed 21-04-PLAN.md (require_clerk_jwt + AUTH-03 tests)
+Last session: 2026-06-21T23:52:28.607Z
+Stopped at: Checkpoint: 21-05 awaiting human verification of app shell + 7 nav routes
 Resume file: None

@@ -22,7 +22,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v1.0 complete. v2.0: Mission Control Dashboard (Phases 21–27)**
 
-- [ ] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation
+- [x] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation (completed 2026-06-21)
 - [ ] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap
 - [ ] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O
 - [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run
@@ -407,7 +407,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 | 19. Issue Page Redesign — Dispatch Magazine Layout | 5/5 | Complete    | 2026-06-03 |
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
-| 21. Auth + App Shell + Convex Schema | 3/5 | In Progress|  |
+| 21. Auth + App Shell + Convex Schema | 5/5 | Complete   | 2026-06-21 |
 | 22. Config Externalization | 0/? | Not started | - |
 | 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
@@ -473,9 +473,9 @@ Plans:
 Plans:
 - [x] 21-01-PLAN.md — Scaffold dispatch-control app + Phase 21 test harness (Wave 0)
 - [x] 21-02-PLAN.md — 11 Convex tables (workspace_id) + auth.config + seed + JIT user upsert
-- [ ] 21-03-PLAN.md — Clerk auth wiring (middleware, providers, sign-in); apps/web no-leak
+- [x] 21-03-PLAN.md — Clerk auth wiring (middleware, providers, sign-in); apps/web no-leak
 - [x] 21-04-PLAN.md — FastAPI require_clerk_jwt guard; cron secret untouched
-- [ ] 21-05-PLAN.md — App shell: sidebar + 7 nav routes + Clerk user button
+- [x] 21-05-PLAN.md — App shell: sidebar + 7 nav routes + Clerk user button
 **UI hint**: yes
 
 ### Phase 22: Config Externalization
