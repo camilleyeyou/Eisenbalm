@@ -211,8 +211,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 **Scope:** Phases 21–27 (productization-prep deferred). A single-tenant, review-gated no-code control plane for the agent pipeline, built with multi-tenant bones. Grounded in `docs/MISSION_CONTROL_BRIEF.md`, `docs/CURRENT_STATE.md`, and `.planning/research/SUMMARY.md`. Locked decisions: separate `dispatch-control` app · single-tenant + `workspace_id` threaded · `require_review` default-on · Railway-cron scheduler.
 
 ### Auth & App Shell (AUTH)
-- [ ] **AUTH-01**: Operator can sign in to the `dispatch-control` app via Clerk; every dashboard route is protected while the public `apps/web` site stays unauthenticated.
-- [ ] **AUTH-02**: Any unauthenticated request to a dashboard route or dashboard API is rejected (redirect to sign-in / 401).
+- [x] **AUTH-01**: Operator can sign in to the `dispatch-control` app via Clerk; every dashboard route is protected while the public `apps/web` site stays unauthenticated.
+- [x] **AUTH-02**: Any unauthenticated request to a dashboard route or dashboard API is rejected (redirect to sign-in / 401).
 - [ ] **AUTH-03**: FastAPI dashboard-control endpoints verify a Clerk-issued token before mutating pipeline state; the Railway cron path keeps its existing `X-Pipeline-Trigger-Secret`.
 - [x] **AUTH-04**: Actions are attributed to the signed-in operator (consumed by the audit log and run-trigger attribution).
 
@@ -472,8 +472,8 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 21: Auth + App Shell + Convex Schema | Pending |
-| AUTH-02 | Phase 21: Auth + App Shell + Convex Schema | Pending |
+| AUTH-01 | Phase 21: Auth + App Shell + Convex Schema | Complete |
+| AUTH-02 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | AUTH-03 | Phase 21: Auth + App Shell + Convex Schema | Pending |
 | AUTH-04 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | CFG-05 | Phase 21: Auth + App Shell + Convex Schema | Complete |

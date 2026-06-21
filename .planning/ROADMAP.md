@@ -407,7 +407,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 | 19. Issue Page Redesign — Dispatch Magazine Layout | 5/5 | Complete    | 2026-06-03 |
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
-| 21. Auth + App Shell + Convex Schema | 1/5 | In Progress|  |
+| 21. Auth + App Shell + Convex Schema | 2/5 | In Progress|  |
 | 22. Config Externalization | 0/? | Not started | - |
 | 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
@@ -471,7 +471,7 @@ Plans:
   5. Every new Convex table (`workspaces`, `users`, `agents`, `prompt_versions`, `pipeline_config`, `runs`, `agent_runs`, `charities`, `model_pricing`, `review_actions`, `audit_log`) carries a `workspace_id` field; querying by `workspace_id = "eisenbalm"` returns the seeded workspace record
 **Plans**: 5 plans
 Plans:
-- [ ] 21-01-PLAN.md — Scaffold dispatch-control app + Phase 21 test harness (Wave 0)
+- [x] 21-01-PLAN.md — Scaffold dispatch-control app + Phase 21 test harness (Wave 0)
 - [x] 21-02-PLAN.md — 11 Convex tables (workspace_id) + auth.config + seed + JIT user upsert
 - [ ] 21-03-PLAN.md — Clerk auth wiring (middleware, providers, sign-in); apps/web no-leak
 - [ ] 21-04-PLAN.md — FastAPI require_clerk_jwt guard; cron secret untouched
