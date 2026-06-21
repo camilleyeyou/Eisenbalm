@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 21-01-PLAN.md (dispatch-control scaffold + test harness)
-last_updated: "2026-06-21T23:34:00.108Z"
+stopped_at: Completed 21-04-PLAN.md (require_clerk_jwt + AUTH-03 tests)
+last_updated: "2026-06-21T23:42:59.638Z"
 progress:
   total_phases: 27
   completed_phases: 19
   total_plans: 138
-  completed_plans: 133
+  completed_plans: 134
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 21 (auth-app-shell-convex-schema) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -164,6 +164,7 @@ Plan: 3 of 5
 | Phase 20 P04 | 10 | 3 tasks | 19 files |
 | Phase 21-auth-app-shell-convex-schema P02 | 5 | 2 tasks | 4 files |
 | Phase 21 P01 | 6 | 2 tasks | 18 files |
+| Phase 21-auth-app-shell-convex-schema P04 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -424,6 +425,7 @@ Recent decisions affecting current work:
 - [Phase 21]: DEFAULT_WORKSPACE_ID = 'eisenbalm' lives only in lib/workspace.ts constant + seeded Convex data (D-16); no other hardcoded string in control-plane code
 - [Phase 21]: apps/web no-clerk guard runs as a live vitest test so it trips immediately if any future phase leaks Clerk into the public reader site
 - [Phase 21]: pytest AUTH-03 stub uses @pytest.mark.skip (not xfail) so suite stays green and collection is verified from Wave 0
+- [Phase 21-auth-app-shell-convex-schema]: require_clerk_jwt uses HTTPBearer + PyJWT JWKS RS256 with degraded-dev branch; /dashboard/whoami is the minimal dashboard endpoint proving the guard; _require_trigger_secret cron path untouched
 
 ### Pending Todos
 
@@ -504,6 +506,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T23:34:00.098Z
-Stopped at: Completed 21-01-PLAN.md (dispatch-control scaffold + test harness)
+Last session: 2026-06-21T23:42:59.625Z
+Stopped at: Completed 21-04-PLAN.md (require_clerk_jwt + AUTH-03 tests)
 Resume file: None
