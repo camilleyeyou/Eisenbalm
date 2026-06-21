@@ -1,254 +1,91 @@
-# Project Research Summary
+# Research Summary — Milestone v2.0: Mission Control Dashboard
 
-**Project:** The Eisenbalm Dispatch
-**Domain:** Weekly AI-generated editorial site + 9-agent LangGraph pipeline + custom one-product Stripe ecommerce
-**Researched:** 2026-05-09
-**Confidence:** HIGH
+**Synthesized:** 2026-06-21
+**Sources:** `STACK.md`, `FEATURES.md`, `ARCHITECTURE.md`, `PITFALLS.md` (all v2.0; prior v1.0 versions are in git history) + `docs/MISSION_CONTROL_BRIEF.md` (spec) + `docs/CURRENT_STATE.md` (Phase 0 reconciliation)
+**Overall confidence:** HIGH
+
+---
 
 ## Executive Summary
 
-The Eisenbalm Dispatch is a weekly editorial product driven by a nine-agent LangGraph pipeline (FastAPI on Railway), published via Sanity Studio by a single human editor (Andrew), and deployed to Vercel on publish via webhook. The system couples five distinct services — Sanity (canonical content), Convex (real-time pipeline observability), Supabase/Postgres (LangGraph checkpoint state), Railway (pipeline execution), and Vercel (frontend) — through a single immutable `runId` that must flow identically through every write to every datastore on every weekly run. The stack is entirely locked by the build brief; research validated exact versions, confirmed compatibility matrices, and identified operational failure modes.
+The v2.0 Mission Control Dashboard adds a **Clerk-auth-gated `apps/dispatch-control` Next.js app** to the existing monorepo, plus new Convex tables and a small number of new Python files in the pipeline. The architectural foundation is **config externalization to Convex**: a `load_run_config()` reads all active prompts + pipeline settings once at run start, `snapshot_config()` writes the full config onto the `runs` record **before** `graph.ainvoke()` is called, and every agent reads from `state["config"]` rather than from the DB mid-run. This one decision makes every run reproducible, prevents mid-run edits from corrupting in-flight pipelines, and eliminates concurrent Convex round-trips during the parallel phase-2 superstep.
 
-The build sequence confirmed by research mirrors the brief's order: schemas first (Sanity + Convex schemas already exist and need wiring into live projects), web shell second, Convex function deployment third, then pipeline skeleton with stubs, then agent quality, then PDF/webhook chain, then game rendering, then Stripe, then deliberation UI, then podcast section. Every ordering constraint is a hard architectural dependency — not a preference.
+**Four convergent signals from all four research agents:**
+1. **Clerk auth is the true Phase-1 blocker** — nothing in the dashboard is viewable or writable without it.
+2. **The §2 keystone (config externalization + per-run snapshot) must be right before any other work begins.**
+3. **Cost capture ALREADY EXISTS** (`acomplete` → `cost.py` → `pipelineRuns.cost`) — do NOT add a second recorder; surface it live.
+4. **The new `runs` table AUGMENTS the frozen `pipelineRuns`** (same `run_id` join key, both written at run start; `pipelineRuns` contracts in `API_CONTRACTS.md §4` stay unchanged).
 
-The three failure modes that can collapse the product are: (1) **voice drift** — Jesse's dry register is the entire brand; QA agent and Editor Final are the only automated guardrails, and Calibrator output structurally contaminates all seven downstream section writers if not isolated; (2) **hallucinated real-person content** — Researcher must require a `sourceUrl` for every named founder or case study subject or fall back to anonymous framing (legal risk with documented defamation precedent); (3) **`runId` mismatch across datastores** — if generated more than once per run, the deliberation layer returns zero events for every issue indefinitely.
+---
 
 ## Key Findings
 
-### Recommended Stack
+### Stack (6 new packages; everything else reused)
+- `@clerk/nextjs ^7.x` (Core 3) — auth; free at 50K MAU; native `ConvexProviderWithClerk`; Organization primitives ready for Phase 6 multi-tenancy. **Chosen over Auth.js v5 (beta) and Convex Auth (no org primitives). Do not revisit.**
+- `@uiw/react-codemirror` + `@codemirror/view` + `@codemirror/state` — prompt editor; `{variable}` highlighting is a custom `StateField` + `Decoration.mark` extension (no third-party plugin). Not Monaco (too heavy for plain-text prompts).
+- `react-diff-viewer-continued ^4.2.2` — prompt version diffs (maintained fork).
+- `@slack/webhook ^7.x` — push notifications (needs Convex Node action, `'use node'`).
+- **Reused, add nothing:** Stripe (`^21` already present, for reconciliation), Resend (`packages/emails`, for email notifications), Convex, Next.js 15 / React 19 / Tailwind v4.
 
-The brief locks the stack and research confirmed compatibility. Detailed versions and companion libraries in `STACK.md`.
+### Architecture (decisions resolved)
+- **Config lives in Convex** (not Railway Postgres) — dashboard writes via mutations; pipeline reads via `httpx` query at run start. Convex gives real-time subscriptions and the pipeline already speaks Convex HTTP.
+- **Railway Postgres stays checkpointer-only** (LangGraph `AsyncPostgresSaver` tables). No app tables mixed in.
+- **`deliberationEvents` event-type union is frozen** — dashboard live progress uses a new `agent_runs` table, not new event types.
+- **`pipelineRuns` schema is frozen** — a new `runs` table is the dashboard-facing superset (`config_snapshot`, `trigger_source`, `triggered_by`, richer `status`), written alongside `pipelineRuns:create` on the same `run_id`.
+- **Live progress + cost via `wrap_agent_node()`** in a new `lib/agent_wrapper.py`: emits `agent_runs:started` before a node and `agent_runs:completed` after, reading the **already-accumulated** in-memory cost from `cost.py` — **no second `record_cost()` call.**
+- **Cancel is cooperative** — `/runs/{id}/cancel` sets `runs.status="cancelled"` in Convex; each wrapped node checks a cancel flag before starting (LangGraph has no native interrupt).
+- **Prompt loader swap, not extraction** — new `lib/config_loader.py` queries active prompt versions from Convex with `lib/prompts.py::load_prompt()` (the 12 `.md` files) retained as fallback; 8 agent call sites switch to `state["config"].prompts[name]`. Migration seeds the 12 files as version-1 active rows.
+- **Auth boundary:** Clerk on `dispatch-control` only; `apps/web` stays unauthenticated. FastAPI dashboard endpoints verify Clerk JWT; Railway cron keeps `X-Pipeline-Trigger-Secret`.
 
-**Core technologies:**
-- **Next.js 15.3.x (NOT 16)** — `next-sanity@^11` SanityLive has documented 4-10x request overage on Next.js 16; hold at 15 until next-sanity v12 ships
-- **Sanity v5.24+** — brief says "v3"; v5 is current stable, React 19 compatible, includes TypeGen GA (auto-generates TS types from schemas + GROQ queries) — enable on day one
-- **Convex** — schema already written; deploy as-is; no auth needed for public reads
-- **FastAPI + LangGraph 1.x + langgraph-checkpoint-postgres** — `interrupt()` inside Editor gate node (not `interrupt_before`); requires Postgres checkpointer (Supabase) for persistence across Railway restarts
-- **OpenRouter via langchain-openai** — pin model versions for voice-critical agents (Calibrator, Editor, QA)
-- **WeasyPrint with Dockerfile on Railway** — Nixpacks lacks `libgobject-2.0-0`/`libcairo2`; ship with custom Dockerfile from Phase 4
-- **Stripe Checkout + Route Handlers** — raw body via `request.text()` for signature verification; unconditional webhook verification (no dev-mode bypass)
-- **Tavily** for Scout/Researcher web search — first-class LangGraph tool integration
+### Features already done (zero/low new work)
+- Per-call cost capture — surface it, don't rebuild it.
+- `awaiting_review` status is already set by the Publisher — the review gate subscribes to it.
+- 12 `.md` prompt files already externalized — loader swap + versioning + migration, not string extraction.
+- A budget soft-cap warning already exists in `cost.py` — hook notifications to that Convex event.
+- `DESIGNAGENT_SUPPRESSED` env flag is a precursor for the DB-driven per-agent enable toggle.
 
-**Sharp edges flagged by research:**
-- No real Sanity Python SDK (`sanity` PyPI is a stub) — pipeline writes use `httpx` against Sanity Content REST API directly; `API_CONTRACTS.md §2` import is illustrative, not literal
-- WeasyPrint Google Fonts via HTTP fails in production (issues #2031, #2126) — fonts must be base64-bundled inline `@font-face`
-- Sanity CDN propagation race vs Vercel deploy hooks — fix with `useCdn: false` in build-time client + 30s pre-deploy delay
-
-### Expected Features
-
-Three distinct surfaces with separate feature landscapes. Detail in `FEATURES.md`.
-
-**Must have (table stakes):**
-
-*Editorial:*
-- Latest issue at `/`, individual issue at `/issue/[slug]`, archive at `/archive`, charity database at `/charities`
-- Per-issue theme switching via CSS variables (genuine differentiator)
-- `schema.org/Article` JSON-LD per issue (Google AI Mode citation), Open Graph tags, XML sitemap, RSS feed, mobile-responsive
-- Print stylesheet, estimated reading time, per-section anchor copy-link, contrast-validated theme colors
-
-*Deliberation layer:*
-- Live `pitchLog` / `agentVotes` / `qaCorrections` / `deliberationEvents` from Convex by `runId`
-- Collapsed by default — primary reading experience is editorial, deliberation is optional depth
-- Agent identity cards (named characters, not "an LLM") — never expose model names ("written by Claude")
-
-*Ecommerce:*
-- `/shop` product page, custom Stripe Checkout, `/shop/thank-you`
-- Webhook signature verification, idempotent on `event.id`
-- Privacy policy at `/legal/privacy` (required by Stripe TOS + GDPR/CCPA)
-- Persistent shop callout on every issue page (one sentence + button — no banner, no modal)
-
-**Should have (differentiators):**
-- Per-issue `og:image` rendered from theme + charity name
-- Source citations visible in deliberation events (Scout's research links surfaced to readers)
-- Charity-page issue history (this charity was featured in issues N1, N2…)
-
-**Defer (v2+):**
-- Suno API integration (manual paste in v1)
-- NotebookLM podcast generation (manual paste in v1)
-- Search/filter on archive beyond "by charity name / focus area"
-- User accounts, comments, email subscriptions (out of scope by brief)
-
-### Architecture Approach
-
-Three-store, two-gate architecture with one `runId` threading the entire weekly pipeline. Detail in `ARCHITECTURE.md`.
-
-**Major components:**
-1. **Sanity Studio + content** — canonical content; the only store Andrew edits; `weeklyIssue` lifecycle (draft → published) is the editorial workflow
-2. **Convex functions + schema** — pipeline observability; immutable run history; one-way write from pipeline; readers subscribe via `useQuery`
-3. **Supabase Postgres** — `AsyncPostgresSaver` LangGraph checkpoint backend ONLY (no manual tables); `checkpointer.setup()` runs once at deploy time, never on startup
-4. **FastAPI pipeline (Railway)** — `/run/weekly` endpoint; LangGraph graph wires 14 agents (9 named + Researcher + Publisher + 2 editor invocations); fan-out to 7 parallel section writers; `interrupt()` inside Editor gate 1
-5. **Next.js web (Vercel)** — App Router; reads from Sanity (`useCdn: true` for runtime, `false` for build-time Publisher webhook); subscribes to Convex; embeds game iframe with `sandbox="allow-scripts"`
-6. **Sanity → Publisher webhook** — HMAC-verified, age-checked (5min), idempotency-key deduplicated via Supabase table; triggers PDF render → Sanity asset upload → Vercel deploy hook (30s delay)
-
-**Datastore ownership rules (LOCKED):**
-| Data | Owner | Replicated where |
-|---|---|---|
-| Issue content | Sanity | nowhere |
-| Charity records | Sanity | nowhere |
-| Agent profiles | Sanity | nowhere |
-| Run status | Convex `pipelineRuns` | nowhere |
-| Pitch log | Convex `pitchLog` | nowhere |
-| Agent votes | Convex `agentVotes` | nowhere |
-| Deliberation events | Convex `deliberationEvents` | nowhere |
-| QA corrections | Convex `qaCorrections` | nowhere |
-| LangGraph checkpoint | Supabase | nowhere |
-| `runId` | generated once in pipeline | written to Sanity `pipelineMetadata.runId` + every Convex row |
-
-### Critical Pitfalls
-
-Top 5 from `PITFALLS.md` (26 total cataloged).
-
-1. **Voice drift via shared LangGraph state** — research published April 2026 (arxiv 2604.01350) shows 57-71% benign cross-agent contamination in shared-state pipelines. Scout's enthusiasm bleeds into writers' tone. **Prevention:** structurally isolate Calibrator's voice constants (immutable; not re-generated per node); prompt construction functions; voice audit cadence every 4 issues.
-
-2. **Hallucinated founders / case study subjects** — naming a real person with fabricated biographical details meets defamation elements. **Prevention:** mandatory `sourceUrl` field on every named individual; post-Researcher source-confirmation step (httpx fetch of charity website + string-search for name); anonymous fallback if `founderNameVerified: false`; Sanity Studio warning surfaced to Andrew.
-
-3. **iframe sandbox escape** — `sandbox="allow-scripts allow-same-origin"` completely negates the sandbox. **Prevention:** lint rule blocking `allow-same-origin`; automated HTML/JS validator on every GameWriter output (no `window.parent`, no `fetch`, no `document.cookie`); CSP `<meta>` injected into srcdoc.
-
-4. **Sanity CDN propagation race** — Publisher fires Vercel deploy hook before published issue is on the CDN; Vercel build reads stale data; new issue isn't on the live site after deploy completes. **Prevention:** 30-second pre-deploy delay in Publisher; `useCdn: false` in the build-time Sanity client; Vercel ISR or full rebuild on publish.
-
-5. **`runId` mismatch across datastores** — generated more than once per run; Sanity says runId=A, Convex says runId=B; deliberation layer queries by `runId` and returns nothing forever. **Prevention:** generate exactly once as the first field of `DispatchState`; never call `uuid()` again in any agent; integration test asserting `weeklyIssue.pipelineMetadata.runId == convex.pipelineRuns.runId`.
-
-**Cross-cutting risks every phase must address:**
-- Theme injection: hex validation + CSS `setProperty` (NOT template literals — CVE GHSA-97v6-998m-fp4g pattern)
-- Webhook idempotency: deterministic `_id`s; Sanity `idempotency-key` deduplication; Stripe `event.id` deduplication
-- Cost containment: iteration limits on Scout/Researcher; per-run cost logging; alert if a run exceeds threshold
-
-## Implications for Roadmap
-
-Suggested phase structure: **10 phases**.
-
-### Phase 1: Sanity Foundation
-**Rationale:** Schemas exist (`schemas/charity.ts`, `weeklyIssue.ts`, `agentProfile.ts`); nothing else can render or write content until they're live.
-**Delivers:** Live Sanity project; `apps/studio/` Studio v5 deployed; schemas wired; TypeGen enabled; one `agentProfile` document seeded per agent (14 total).
-**Addresses:** Foundation table stakes from FEATURES.md.
-**Avoids:** Late TypeGen retrofit pain; missing agent profiles when pipeline tries to attribute events.
-
-### Phase 2: Web Shell + Theme Engine
-**Rationale:** With Sanity content available, the entire reader experience can be scaffolded with mock/seeded data — no pipeline needed yet. Theme injection security must be correct here before any DesignAgent output reaches the frontend.
-**Delivers:** All routes (`/`, `/issue/[slug]`, `/archive`, `/charities`, `/charities/[slug]`, `/shop`, `/about`); per-issue theme via CSS `setProperty` with hex validation; `schema.org/Article` JSON-LD; OG tags; sitemap; RSS; print stylesheet; estimated reading time.
-**Uses:** Next.js 15 + `next-sanity@^11` + Sanity TypeGen.
-**Avoids:** CSS injection via theme (Pitfall 4); CDN race not yet relevant — webhook-driven build is later.
-
-### Phase 3: Convex Deployment
-**Rationale:** Convex `_generated/api.d.ts` must exist before pipeline skeleton type-checks against Convex mutations. Frontend deliberation queries can be wired against empty tables now and switched on later.
-**Delivers:** Convex deployed (`convex/schema.ts` already exists); query/mutation functions for `pipelineRuns.byRunId`, `pitchLog.byRunId`, `agentVotes.byRunId`, `qaCorrections.byRunId`, `deliberationEvents.byRunId`, plus mutation counterparts; CONVEX_DEPLOY_KEY provisioned; web app verifies subscriptions don't error on empty tables.
-**Avoids:** Late binding between pipeline writes and frontend reads; type drift between manually-typed Convex contracts and reality.
-
-### Phase 4: Pipeline Skeleton (LangGraph + Stubs)
-**Rationale:** Build the contracts before the content. With all 14 agent stubs returning structurally valid output, the LangGraph state contract, the three-datastore writes, the Editor gate 1 interrupt, and the runId discipline can all be validated cheaply.
-**Delivers:** FastAPI on Railway (Dockerfile from day one); `/run/weekly` endpoint; full LangGraph graph wired (Calibrator → Scout → Advocate → Editor[gate 1, `interrupt()`] → Researcher → fan-out{Origin, Problem, FounderBio, CaseStudy, Game, Bonus, Design} → QA → Editor[final]); stub agents emit valid LangGraph state shape; `runId` generated exactly once; Convex writes verified at every step; Sanity weeklyIssue draft written at end; `AsyncPostgresSaver` checkpointer wired with `checkpointer.setup()` as deploy hook.
-**Resolves open question:** Supabase role = AsyncPostgresSaver only.
-**Avoids:** runId mismatch (Pitfall 5); state contract changes after agent quality work begins; `interrupt()` discipline (no try/except, idempotent pre-interrupt code) tested early.
-
-### Phase 5: Agent Quality (voice + factual safety)
-**Rationale:** Densest phase for pitfall prevention. Calibrator/Editor/QA are voice-critical; Researcher gates real-person content; DesignAgent gates theme security. Stubs from Phase 4 become real LLM-driven agents one at a time.
-**Delivers:** Calibrator with hardcoded voice constants + bonus-type rotation; Scout with Tavily + iteration limits + incremental `pitchLog` writes; Advocate looping over candidates with score 1-10; Editor (gate 1) with structured deliberation transcript + `interrupt()` on no-winner; Researcher with mandatory `sourceUrl` enforcement and anonymous fallback; OriginStory/Problem/FounderBio/CaseStudy writers in Jesse voice (each rejecting Calibrator brief contamination); Bonus writer with three branches (bigBudget/jingle/specAd); Design with hex validation, Google Fonts API check, WCAG contrast validation; QA voice rubric; Editor Final.
-**Resolves open question:** Font whitelist (DesignAgent restricted to ~25 fonts safe for both web + WeasyPrint); factual verification mechanism (httpx + string-search of charity website).
-**Avoids:** Voice drift (Pitfall 1); hallucinated founders (Pitfall 2); CSS injection upstream of Phase 2's defenses; runaway agent costs.
-
-### Phase 6: PDF Generation + Publisher Webhook Chain
-**Rationale:** WeasyPrint needs real ProblemWriter `pdfContent` and DesignAgent `theme` from Phase 5. Webhook chain is its own surface area (signature, idempotency, retry, deploy hook timing) that's worth isolating.
-**Delivers:** WeasyPrint Dockerfile additions; Problem Statement PDF template (themed per issue); fonts bundled as base64 inline `@font-face` (NOT loaded via HTTP); Publisher agent triggered by Sanity webhook (HMAC + 5min age check + idempotency-key deduplication via Supabase table); 30-second pre-delay before Vercel deploy hook; `useCdn: false` in build-time Sanity client; manual `/run/{run_id}/publish` re-trigger fallback endpoint.
-**Avoids:** Sanity CDN race (Pitfall 4); WeasyPrint font HTTP failure; webhook replay attacks; Publisher death-by-Railway-restart.
-
-### Phase 7: Game Rendering (sandbox-safe iframe)
-**Rationale:** GameWriter exists from Phase 5 but its frontend rendering needs its own security gate. The validator has to be passing before any game reaches a real reader.
-**Delivers:** GameWriter prompt mandates inline-only resources (no CDN, no external `<script src=>`); automated HTML/JS validator (rejects `window.parent`, `fetch(`, `document.cookie`, `top.`, `parent.`); CSP `<meta>` in srcdoc; mobile-safe responsive iframe sizing; render fallback if validator fails (re-prompt or skip section with editor note).
-**Avoids:** Sandbox escape (Pitfall 3).
-
-### Phase 8: Stripe / Commerce
-**Rationale:** Independent of pipeline; depends only on `/shop` route from Phase 2. Can run in parallel with later phases.
-**Delivers:** `/shop` with current-issue charity callout (server-rendered, no client-side flicker); Stripe Checkout via `checkout.sessions.create()`; `/shop/thank-you` (static, no DB query); webhook handler with raw-body signature verification (`request.text()`), unconditional verification, idempotency on `event.id`; `/legal/privacy` page (Stripe TOS + GDPR/CCPA); shipping rate config; persistent shop callout on every issue page (one sentence + button only).
-**Resolves open question:** Stripe product/price/shipping configured in dashboard before code can complete.
-**Avoids:** Webhook signature bypass; double-fulfillment race (idempotent on `event.id`); urgency mechanics / popups (brief explicitly forbids).
-
-### Phase 9: Deliberation Layer (Convex live UI)
-**Rationale:** Needs real pipeline runs from Phases 4-5 to display anything meaningful. UI design is judgment-heavy (collapsed by default; what's legible vs cluttered).
-**Delivers:** `<DeliberationLayer runId={runId} />` component on issue page; subscriptions via `useQuery` for all 5 Convex tables; advocate score bars; QA severity colors; agent identity cards using `agentProfile` from Sanity; collapsed-by-default accordion; graceful empty states; pitch log timeline.
-**Avoids:** Showing model names ("written by Claude") — anti-feature from FEATURES.md research.
-
-### Phase 10: Podcast Section
-**Rationale:** Lightweight; depends on `podcast.audioFile` field that Andrew populates manually post-NotebookLM.
-**Delivers:** HTML5 `<audio>` player on issue page; collapsible transcript pulling `podcast.deliberationTranscript`; "Audio coming soon" empty state when no audio file uploaded yet.
-
-### Phase Ordering Rationale
-
-Hard dependencies (cannot reorder):
-- Phase 1 → Phase 2 (Sanity content before web shell renders anything)
-- Phase 3 → Phase 4 (Convex `_generated/api.ts` before pipeline writes Convex)
-- Phase 1+2+3 → Phase 4 (pipeline skeleton writes to all three stores)
-- Phase 4 → Phase 5 (stubs establish contracts cheaply before LLM cost)
-- Phase 5 → Phase 6 (WeasyPrint needs real ProblemWriter + DesignAgent output)
-- Phase 5 → Phase 7 (GameWriter exists in Phase 5; rendering security gate is Phase 7)
-- Phase 4+5 → Phase 9 (deliberation UI needs real Convex data from a real pipeline run)
-- Phase 2 → Phase 8 (Stripe needs `/shop` route)
-
-Parallelism opportunities:
-- Phase 8 (Stripe) can run in parallel with Phases 5-7 once Phase 2 is done
-- Phase 10 (Podcast) can run in parallel with Phase 8/9
-- Within Phase 5, the seven section writers share input shape and can be planned/executed in parallel waves
-
-Avoids:
-- Late voice work (voice-critical agents in Phase 5, not buried in skeleton)
-- Late security work (theme + sandbox + webhook signatures all in their respective phases, not deferred to "polish")
-- Three-datastore drift (pipeline skeleton in Phase 4 validates the contract before content work begins)
-
-### Research Flags
-
-Phases likely needing `/gsd:research-phase` during planning:
-- **Phase 4:** LangGraph `interrupt()` + `AsyncPostgresSaver` integration patterns (specific version pairing; common pitfalls around resume semantics)
-- **Phase 5:** QA voice rubric design specific to Jesse's brand voice (novel; cannot inherit from generic LLM eval libraries)
-- **Phase 6:** WeasyPrint font bundling approach + webhook idempotency-key pattern (high-specificity)
-- **Phase 7:** Automated HTML/JS validator for LLM-generated game output (novel problem; no off-the-shelf validator)
-
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** Sanity Studio v5 setup
-- **Phase 2:** Next.js App Router + Server Components + Sanity reads
-- **Phase 3:** Convex schema deploy + function wiring
-- **Phase 8:** Stripe Checkout + Route Handlers
-- **Phase 9:** Convex `useQuery` subscriptions + UI composition
-- **Phase 10:** HTML5 audio player
-
-## Confidence Assessment
-
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | All versions verified against npm registry + PyPI on 2026-05-09; compatibility matrix confirmed against official docs |
-| Features | HIGH (editorial/ecommerce), MEDIUM (deliberation UI) | Editorial + commerce surfaces are well-understood; deliberation UI design (collapsed vs open, agent cards vs lists) is judgment-heavy |
-| Architecture | HIGH | LangGraph patterns verified against 1.x docs; three-datastore boundaries explicit; webhook idempotency verified against Sanity official docs |
-| Pitfalls | HIGH (technical), MEDIUM (legal/factual) | CSS injection has CVE reference; sandbox breakout is MDN-documented; legal exposure from hallucinated real-person content flagged but not fully scoped |
-
-**Overall confidence:** HIGH
-
-### Gaps to Address
-
-- **Per-run LLM cost** — validate during Phase 5 with real OpenRouter calls; alert threshold should be set after baseline measured
-- **WeasyPrint render performance on Railway** — validate during Phase 6 with minimal test render before building full template; if too slow, fallback to Playwright
-- **Stripe product/price/shipping config** — Andrew must configure in Stripe dashboard before Phase 8 code can complete (price ID, shipping rates, product description)
-- **Convex retention policy** — brief calls Convex "ephemeral" but reader-facing deliberation layer needs all historical issues forever; decision: retain indefinitely (re-evaluate at first cost concern)
-- **`/about` page copy** — not specified in brief; Andrew must provide before Phase 2 closes
-- **Font whitelist** — DesignAgent must be restricted; Andrew or designer must approve final list of ~25 fonts before Phase 5 closes
-
-## Sources
-
-### Primary (HIGH confidence)
-- npm registry / PyPI — all package versions verified 2026-05-09
-- Sanity v5 official docs — TypeGen, schema patterns, webhook delivery semantics
-- LangGraph 1.x official docs — `interrupt()`, `AsyncPostgresSaver`, fan-out patterns, checkpointer setup
-- Stripe official docs — Checkout, webhook signature verification, idempotency
-- MDN — `<iframe sandbox>` attribute semantics
-- WeasyPrint GitHub issues #2031, #2126, #1581 — font HTTP loading failures
-- arxiv 2604.01350 (April 2026) — multi-agent state contamination rates
-- CVE GHSA-97v6-998m-fp4g — CSS injection via theme color fields in CMS context
-
-### Secondary (MEDIUM confidence)
-- Sanity community post-mortems — Vercel deploy hook CDN race
-- OpenRouter production patterns — model routing, fallback logic
-- Tavily LangGraph integration docs — first-class tool wiring
-
-### Tertiary (LOW confidence — none load-bearing)
-- General industry reports on agentic observability UX patterns (deliberation layer design judgment)
+### Pitfalls (phase-tagged, tied to real code)
+- **Snapshot race (Phase 22):** the snapshot must be the FIRST awaited op before LangGraph is invoked, or the window between `create_task` and the snapshot commit is a real race.
+- **Cost double-count (Phase 23):** `acomplete` already calls `record_cost()`; any callback/wrapper that ALSO records doubles spend, trips budget caps early, and poisons donation math. Wrapper must READ, not record.
+- **`auto_publish` accidentally on (Phase 26):** catastrophic — bypasses the only human gate on real-charity/real-money content. Needs friction modal + rate-limit + audit + alert from day one; default `false` (NOT NULL).
+- **Prompt DB fallback (Phase 22/24):** keep the 12 `.md` files; deleting them turns any Convex degradation into a pipeline outage. Variable-mangling by non-coders must be caught by editor validation + substitution preview before going live.
+- **Kill switch / cancel (Phase 25):** rely on the `schedule_enabled` flag checked inside `/pipeline/tick`, never on disabling the cron; cancel cleanup order (Convex status → checkpoint marker → task cancel) must be verified under Railway redeploys.
+- **`workspace_id` from day one (Phase 21):** must be on every new Convex table immediately; retrofitting at Phase 6/28 is a destructive migration over live run data. No Eisenbalm-specific logic in the control plane.
 
 ---
-*Research completed: 2026-05-09*
-*Ready for roadmap: yes*
+
+## Roadmap Implications
+
+Suggested: **8 phases (21–28)**, continuing numbering from v1.0's Phase 20.
+
+1. **Phase 21 — Auth + Convex schema + app shell.** Clerk first; new tables all carry `workspaceId`; seed `workspace_id="eisenbalm"`. Blocks everything.
+2. **Phase 22 — Config externalization (§2 keystone).** `lib/config_loader.py` + `snapshot_config()` as first awaited op; 12-file migration with byte-comparison verification; 8 call-site swaps; `DispatchState.config` field.
+3. **Phase 23 — Node wrappers + read-only dashboard.** `wrap_agent_node()` (no second recorder); `agent_runs` emissions; read-only views (graph, run history, live run, cost roll-ups); `lib/registry.py` for test-run.
+4. **Phase 24 — Prompt editing + versioning.** CodeMirror + `{variable}` decoration; save-as-version + dedup; diff; activate/rollback with in-progress-run lock; `VOICE_CONSTRAINTS` as a first-class versioned asset; `POST /agents/{key}/test-run`.
+5. **Phase 25 — Run control.** `/pipeline/tick` (flag check first) + provision Railway cron; cooperative cancel; schedule editor; single-agent re-roll via checkpoint; budget caps/alerts.
+6. **Phase 26 — Review gate + charity registry.** `awaiting_review` queue; `apps/web` preview (iframe, not reimplementation); friction-gated `auto_publish`; claims gate (unchecked by default); charity registry + Scout dedup.
+7. **Phase 27 — Money + notifications.** Stripe reconciliation (uses actual recorded cost, never `model_pricing`); Resend + Slack; `model_pricing` labeled as projection with staleness indicator.
+8. **Phase 28 — Productization prep.** Workspace-scoping audit; `workspace_secrets` (AES-256-GCM in Convex); Clerk Organizations; "rename the brand" grep test; graph topology as JSON config.
+
+---
+
+## Research Flags
+
+**Needs deeper research at plan-phase time:**
+- Phase 22 prompt migration — `_extract()` correctness + byte-comparison test (a subtle extraction bug creates a corrupted baseline that looks correct).
+- Phase 25 LangGraph single-node re-roll — `aget_state()` → node → `aupdate_state()` against the exact `langgraph-checkpoint-postgres` version in use.
+- Phase 25 cancel atomicity — three-step cleanup order verified under Railway redeploy.
+
+**Standard patterns (skip research-phase):** Clerk quickstart (P21); Convex subscriptions extension to `agent_runs` (P23); CodeMirror decoration + diff viewer (P24); Resend/`@slack/webhook` (P27).
+
+---
+
+## Open Gaps / Infra Notes
+- `dispatch-control` likely needs its own Vercel project (env-var isolation from `apps/web`; Clerk config; Turborepo cache for the second app). Confirm during Phase 21.
+- `SUPABASE_POSTGRES_URL` rename deferred to post-v2 (don't break `graph/checkpointer.py` mid-milestone).
+- Railway cron provisioning lands in Phase 25 alongside `/pipeline/tick`.
+- Convex vs Railway Postgres for the versioned config store: architecture agent resolved toward **Convex** (reactivity + existing HTTP path); Postgres would offer transactions/FKs. Worth a final nod at Phase 22 planning.
+
+---
+
+*Ready for the roadmapper to create phases 21–28 for milestone v2.0. Phase sequence, dependency chain, and pitfall mitigations are grounded in the live codebase state as of 2026-06-21.*
