@@ -91,7 +91,9 @@ def _build_chat_model(agent_id: str) -> Any:
     # response_format, breaking structured output). Live-mode regression caught
     # by Plan 05-15 first-real-run: Calibrator failed with "output_config.format:
     # Extra inputs are not permitted" when OpenRouter fell back to Bedrock.
-    extra_body: dict[str, Any] = {}
+    # Enable OpenRouter usage accounting so usage.cost (authoritative USD)
+    # surfaces in response_metadata["token_usage"]["cost"]. See RESEARCH §Q2.
+    extra_body: dict[str, Any] = {"usage": {"include": True}}
     if model_id.startswith("anthropic/"):
         extra_body["provider"] = {
             "order": ["Anthropic"],
@@ -105,6 +107,26 @@ def _build_chat_model(agent_id: str) -> Any:
         extra_body=extra_body,
         **kwargs,
     )
+
+
+def _usage_from_message(msg: Any, fallback_model: str) -> dict[str, Any]:
+    """Extract tokens + authoritative USD + resolved model from an AIMessage.
+
+    Works for both the structured ``raw`` AIMessage and the plain-text result.
+    USD comes from OpenRouter usage accounting at
+    ``response_metadata["token_usage"]["cost"]`` (usage_metadata drops cost).
+    """
+    um = getattr(msg, "usage_metadata", None) or {}
+    rm = getattr(msg, "response_metadata", None) or {}
+    token_usage = rm.get("token_usage") or {}
+    cost = token_usage.get("cost")
+    usd = float(cost) if cost is not None else 0.0
+    return {
+        "tokens_in": int(um.get("input_tokens", 0) or 0),
+        "tokens_out": int(um.get("output_tokens", 0) or 0),
+        "usd": usd,
+        "resolved_model": rm.get("model_name") or rm.get("model") or fallback_model,
+    }
 
 
 # ── Public API ──────────────────────────────────────────────────────────
@@ -165,69 +187,59 @@ async def acomplete(
     llm = _build_chat_model(agent_id)
 
     if response_format is not None:
-        structured = llm.with_structured_output(response_format)
+        # include_raw=True returns {"raw", "parsed", "parsing_error"} so we can
+        # read real token usage + USD off the underlying AIMessage. CRITICAL:
+        # a schema miss no longer raises — it surfaces as parsed=None (D-14).
+        structured = llm.with_structured_output(response_format, include_raw=True)
         try:
-            parsed = await structured.ainvoke(messages)
-        except Exception as exc:  # OutputParserException + transient — retry once (D-14).
-            log.warning("acomplete %s: parse fail, retrying once: %r", agent_id, exc)
+            result = await structured.ainvoke(messages)
+        except Exception as exc:  # transport/transient only (schema misses don't raise now)
+            log.warning("acomplete %s: invoke error, retrying once: %r", agent_id, exc)
+            result = await structured.ainvoke(messages)
+        if result["parsed"] is None:  # schema/refusal miss — corrective retry (D-14)
+            log.warning(
+                "acomplete %s: schema miss, retrying once: %r",
+                agent_id, result.get("parsing_error"),
+            )
             retry_messages = messages + [{
                 "role": "user",
                 "content": (
-                    f"Previous output failed schema validation: {exc}. "
+                    f"Previous output failed schema validation: "
+                    f"{result['parsing_error']}. "
                     f"Return JSON strictly matching the schema."
                 ),
             }]
-            parsed = await structured.ainvoke(retry_messages)
-        # Token + cost capture from the underlying invocation result is not
-        # directly available on the structured-output wrapper; we approximate
-        # via a separate non-structured call usage_metadata if needed. For
-        # now record_cost is called with what we know; LangChain provides
-        # response_metadata on the raw model. Fall back to zero on absent.
-        tokens_in = 0
-        tokens_out = 0
-        usd = 0.0
-        resolved_model = MODEL_BY_AGENT[agent_id]
-        # Best-effort metadata capture (LangChain returns BaseModel directly
-        # from with_structured_output; the response_metadata is not exposed
-        # in this wrapper path. We log a TODO for accurate token capture).
-        log.debug("acomplete %s: structured output (token capture approximate)", agent_id)
-        record_cost(run_id, agent_id, tokens_in=tokens_in, tokens_out=tokens_out, usd=usd)
+            result = await structured.ainvoke(retry_messages)
+        parsed = result["parsed"]
+        raw = result["raw"]
+        if parsed is None:  # second failure — preserve D-14 propagate contract
+            raise result["parsing_error"] or RuntimeError(
+                f"{agent_id}: structured output failed schema twice"
+            )
+
+        u = _usage_from_message(raw, MODEL_BY_AGENT[agent_id])
+        record_cost(
+            run_id, agent_id,
+            tokens_in=u["tokens_in"], tokens_out=u["tokens_out"], usd=u["usd"],
+        )
         recorder = get_recorder(run_id)
         recorder._last_agent = agent_id
         await recorder.check_cap()
-        return parsed, {
-            "tokens_in": tokens_in,
-            "tokens_out": tokens_out,
-            "usd": usd,
-            "resolved_model": resolved_model,
-        }
+        return parsed, u
 
-    # Plain string response path — full usage metadata accessible.
+    # Plain string response path.
     result = await llm.ainvoke(messages)
-    usage = getattr(result, "usage_metadata", {}) or {}
-    tokens_in = int(usage.get("input_tokens", 0) or 0)
-    tokens_out = int(usage.get("output_tokens", 0) or 0)
-    # OpenRouter's usage cost field shape may vary; default conservative.
-    input_cost = float(usage.get("input_cost", 0.0) or 0.0)
-    output_cost = float(usage.get("output_cost", 0.0) or 0.0)
-    usd = input_cost + output_cost
-
-    response_metadata = getattr(result, "response_metadata", {}) or {}
-    resolved_model = response_metadata.get("model", MODEL_BY_AGENT[agent_id])
-
+    u = _usage_from_message(result, MODEL_BY_AGENT[agent_id])
     content = result.content if hasattr(result, "content") else result
 
-    record_cost(run_id, agent_id, tokens_in=tokens_in, tokens_out=tokens_out, usd=usd)
+    record_cost(
+        run_id, agent_id,
+        tokens_in=u["tokens_in"], tokens_out=u["tokens_out"], usd=u["usd"],
+    )
     recorder = get_recorder(run_id)
     recorder._last_agent = agent_id
     await recorder.check_cap()
-
-    return content, {
-        "tokens_in": tokens_in,
-        "tokens_out": tokens_out,
-        "usd": usd,
-        "resolved_model": resolved_model,
-    }
+    return content, u
 
 
 # ── State helper for model_versions (AGT-17) ────────────────────────────
