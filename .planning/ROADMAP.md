@@ -409,7 +409,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
-| 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete   | 2026-06-22 |
+| 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
