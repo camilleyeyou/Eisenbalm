@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: true
 preset: "style:default base:neutral css-variables:true rsc:true"
 created: 2026-06-22
+revised: 2026-06-22
 ---
 
 # Phase 25 — UI Design Contract: Run Control
@@ -53,11 +54,13 @@ Declared values (multiples of 4):
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 14px (text-sm) | 400 (normal) | 1.5 | Table cells, descriptions, field labels |
-| Label | 12px (text-xs) | 500 (medium) | 1.4 | Uppercase section labels, badge text, form field hints |
+| Label | 12px (text-xs) | 400 (normal) | 1.4 | Uppercase section labels, badge text, form field hints — differentiated by `uppercase tracking-wide` alone |
 | Heading | 20px (text-xl) | 600 (semibold) | 1.2 | Page-level headings (`<h1>`) |
 | Sub-heading | 16px (text-base) | 600 (semibold) | 1.3 | Card section headers (`<h2>`, `<h3>`) |
 
 **Source:** Pre-populated from existing code patterns: `runs/page.tsx` uses `text-xl font-semibold` for h1; `RunDetail.tsx` uses `text-base font-semibold` for h2/h3; `text-sm` for body; `text-xs uppercase tracking-wide` for data labels.
+
+**Two weights only: 400 (normal) and 600 (semibold).** Label text (12px) is visually distinguished from body text (14px) by size, uppercase casing, and letter-spacing — not by weight. Do not use `font-medium` (500) anywhere in this phase.
 
 **No additional type sizes.** The operator dashboard is information-dense; four sizes (12 / 14 / 16 / 20) are sufficient.
 
@@ -114,7 +117,7 @@ This is NOT a modal dialog. Inline two-step confirmation is consistent with the 
 
 ### New surface: Cancel run (Run detail page)
 
-On `/runs/[runId]`, below the Run header card, add a "Cancel Run" button when `run.status === 'running'`. Styling: `bg-white border border-red-200 text-red-600 hover:bg-red-50 min-h-[44px] px-4 rounded-md text-sm font-medium`.
+On `/runs/[runId]`, below the Run header card, add a "Cancel Run" button when `run.status === 'running'`. Styling: `bg-white border border-red-200 text-red-600 hover:bg-red-50 min-h-[44px] px-4 rounded-md text-sm`.
 
 Two-step inline confirmation (same pattern as Trigger Run):
 1. Click → button becomes "Confirm Cancel?" + "Keep Running" text link.
@@ -137,12 +140,14 @@ One-step confirmation: clicking "Re-roll" opens a `window.confirm()` dialog ("Re
 
 The `/config` page is rebuilt from placeholder to three stacked panels. Existing placeholder (`ConfigPage`) is replaced entirely.
 
+**Primary focal point on /config:** The Kill Switch toggle at the top of Panel 1 is the primary focal point. Its ON/OFF colored state (neutral-900 vs red-500 background) resolves the most operationally critical question at a glance — whether automation is running — before the operator reads any other panel.
+
 **Panel 1 — Automation (kill switch + schedule):**
 Card: `rounded-lg border border-neutral-200 bg-white p-5`
 Header: `<h2 class="text-base font-semibold text-neutral-900">Automation</h2>`
 
 Kill switch row:
-- Label: "Scheduled runs" (text-sm font-medium text-neutral-700)
+- Label: "Scheduled runs" (`text-sm text-neutral-700`)
 - Toggle: `<button role="switch" aria-checked={scheduleEnabled}>`; when ON: `bg-neutral-900 text-white`; when OFF: `bg-red-500 text-white`
 - Status badge: "Automation ON" (`text-neutral-600 bg-neutral-100`) or "Automation OFF" (`text-red-700 bg-red-50 border border-red-200`), always visible beside the toggle
 - Minimum 44px click target on toggle
@@ -274,6 +279,7 @@ No third-party registries. All new UI is constructed from existing Tailwind util
 | Budget alert boundary (Phase 25 event; Phase 27 transport) | `25-CONTEXT.md` D-09 |
 | Cancelled status → runs table only, not pipelineRuns | `25-RESEARCH.md` Pitfall 1 |
 | Schedule display: local tz + UTC | `25-CONTEXT.md` D-11 |
+| Typography revision (2 weights) | gsd-ui-checker blocking issue 2026-06-22 — weight 500 removed, Label merged to 400 |
 
 ---
 
