@@ -1,26 +1,24 @@
-"""Phase 22 Wave 0 scaffold — CFG-01 / CFG-03 / CFG-04 config_loader test seams.
+"""Phase 22 — CFG-01 / CFG-03 / CFG-04 config_loader tests.
 
 Source: .planning/phases/22-config-externalization/22-RESEARCH.md
         (Validation Architecture → Test Map; Patterns 1/2/3) + 22-VALIDATION.md.
 
-These tests name the not-yet-existing `eisenbalm_pipeline.lib.config_loader`
-symbols (`load_run_config`, `RunConfig`, `AgentConfig`, `AGENT_KEY_TO_PROMPT_FILE`,
-`WORKSPACE_ID`). Each is marked `xfail(strict=False)` so the suite stays GREEN at
-Wave 0 — Plan 22-03 implements `config_loader` and removes these marks.
+These tests exercise the real `eisenbalm_pipeline.lib.config_loader` symbols
+(`load_run_config`, `RunConfig`, `AgentConfig`, `AGENT_KEY_TO_PROMPT_FILE`,
+`WORKSPACE_ID`) implemented in Plan 22-03.
 
 The `config_loader` import is guarded INSIDE each test body (not at module top)
-so the file collects cleanly even before the module exists: an ImportError inside
-an xfail test is reported as an expected failure, not a collection error.
+so the file collects cleanly and each test mocks `convex_query`/`convex_mutation`
+via monkeypatch.
 
-`load_prompt` (the byte oracle) IS importable today — imported at module top.
+`load_prompt` (the byte oracle) IS imported at module top — used to assert
+fallback parity.
 """
 from __future__ import annotations
 
 import dataclasses
 import json
 import logging
-
-import pytest
 
 # The byte oracle — exists today (lib/prompts.py). Used to assert fallback parity.
 from eisenbalm_pipeline.lib.prompts import load_prompt
@@ -50,13 +48,6 @@ AGENT_KEY_TO_PROMPT_FILE_EXPECTED = {
 }
 
 
-_XFAIL = pytest.mark.xfail(
-    reason="Phase 22 Plan 03 implements config_loader",
-    strict=False,
-)
-
-
-@_XFAIL
 async def test_load_run_config_from_convex(monkeypatch) -> None:
     """CFG-01: load_run_config() returns a RunConfig hydrated from Convex.
 
@@ -110,7 +101,6 @@ async def test_load_run_config_from_convex(monkeypatch) -> None:
         assert isinstance(ac.system_prompt, str)
 
 
-@_XFAIL
 async def test_hard_failure_fallback(monkeypatch, caplog) -> None:
     """CFG-03 (D-06): Convex raises → full disk/code fallback, single WARNING, no raise."""
     from eisenbalm_pipeline.lib import config_loader  # guarded import
@@ -131,7 +121,6 @@ async def test_hard_failure_fallback(monkeypatch, caplog) -> None:
     assert len(warnings) == 1, f"expected exactly one WARNING, got {len(warnings)}"
 
 
-@_XFAIL
 async def test_partial_fallback_per_key(monkeypatch, caplog) -> None:
     """CFG-03 (D-07): one missing prompt row → that agent file-falls-back + per-agent WARNING."""
     from eisenbalm_pipeline.lib import config_loader  # guarded import
@@ -168,7 +157,6 @@ async def test_partial_fallback_per_key(monkeypatch, caplog) -> None:
     assert any(missing_key in r.getMessage() for r in warnings)
 
 
-@_XFAIL
 def test_fallback_bytes_match_load_prompt() -> None:
     """CFG-03: the all-or-nothing fallback config is byte-identical to load_prompt() per key."""
     from eisenbalm_pipeline.lib import config_loader  # guarded import
@@ -178,7 +166,6 @@ def test_fallback_bytes_match_load_prompt() -> None:
         assert config.agents[agent_key].system_prompt == load_prompt(prompt_file)
 
 
-@_XFAIL
 def test_snapshot_roundtrip() -> None:
     """CFG-04: json.loads(json.dumps(dataclasses.asdict(config))) preserves per-agent values."""
     from eisenbalm_pipeline.lib import config_loader  # guarded import

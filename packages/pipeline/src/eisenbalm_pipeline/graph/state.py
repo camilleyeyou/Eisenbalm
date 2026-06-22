@@ -15,7 +15,20 @@ LangGraph reducer is added.
 """
 from __future__ import annotations
 
-from typing import Annotated, Literal, NotRequired, Optional, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Literal,
+    NotRequired,
+    Optional,
+    TypedDict,
+)
+
+if TYPE_CHECKING:
+    # Forward-ref only (string annotation below) — importing config_loader at
+    # module load would create a runtime circular import (config_loader has no
+    # need for state.py, but state.py must stay import-light for the graph).
+    from eisenbalm_pipeline.lib.config_loader import RunConfig
 
 
 def _merge_model_versions(
@@ -198,6 +211,12 @@ class DispatchState(TypedDict):
     narrator: Optional[Narrator]                 # resolved by calibrator; None until calibrator runs
     narrator_slug: Optional[str]                 # D-13 override; takes precedence over charity.narratorSlug
 
+    # ── Phase 22: Config Externalization (CFG-01) ─────────────────────────────
+    # Loaded ONCE at run start by lib/config_loader.load_run_config(); snapshotted
+    # to runs.configSnapshot BEFORE graph.ainvoke(); consumed by the 11 prompt
+    # call sites. Never mutated mid-run. See docs/API_CONTRACTS.md §7.
+    config: NotRequired[Optional["RunConfig"]]
+
     # ── Error handling ─────────────────────────────────────────────────────────
     error: Optional[str]
 
@@ -206,3 +225,20 @@ class DispatchState(TypedDict):
     # See 04-RESEARCH.md §"Open Questions" Q3.
     _force_no_winner: Optional[bool]
     _force_fail_agent: Optional[str]
+
+
+# ── Phase 22: resolve the `config` forward-ref at runtime ────────────────────
+# LangGraph's StateGraph calls ``typing.get_type_hints(DispatchState,
+# include_extras=True)`` at graph-build time, which evaluates the string
+# annotation ``"RunConfig"`` in this module's namespace. The TYPE_CHECKING import
+# above is invisible at runtime, so we bind ``RunConfig`` here via a deferred
+# *module* import (NOT a top-level ``from ... import``). config_loader does not
+# import this module, so there is no circular import. The import is wrapped
+# defensively so state.py still imports even if config_loader is unavailable
+# (the forward-ref only needs to resolve when a graph is actually built).
+try:  # pragma: no cover - trivial binding
+    import eisenbalm_pipeline.lib.config_loader as _config_loader
+
+    RunConfig = _config_loader.RunConfig
+except Exception:  # pragma: no cover - defensive
+    pass
