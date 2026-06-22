@@ -27,7 +27,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from httpx import AsyncClient
 
-from eisenbalm_pipeline.api import health, runs, webhooks
+from eisenbalm_pipeline.api import agents, health, runs, webhooks
 from eisenbalm_pipeline.graph.builder import build_graph
 from eisenbalm_pipeline.graph.checkpointer import (
     assert_tables_exist,
@@ -143,3 +143,4 @@ app = FastAPI(lifespan=lifespan, title="Eisenbalm Pipeline")
 app.include_router(runs.router)
 app.include_router(webhooks.router)
 app.include_router(health.router)
+app.include_router(agents.router)
