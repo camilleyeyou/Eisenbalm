@@ -297,9 +297,23 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
     costUsd: v.optional(v.number()),
     durationMs: v.optional(v.number()),
+    tokensIn: v.optional(v.number()),    // Phase 23 OBS-03
+    tokensOut: v.optional(v.number()),   // Phase 23 OBS-03
+    error: v.optional(v.string()),       // Phase 23 OBS-03 — error message on failure
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId', ['runId']),
+
+  // ── agent_run_payloads: per-agent I/O snapshots (Phase 23 OBS-05) ──
+  agent_run_payloads: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),
+    agentKey: v.string(),
+    inputSnapshot: v.optional(v.string()),   // JSON, truncated ~2000 chars
+    outputSnapshot: v.optional(v.string()),  // JSON, truncated ~2000 chars
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_runId_agentKey', ['runId', 'agentKey']),
 
   // ── charities: registry with dedup (Phase 26) ────────────────────────────────
   charities: defineTable({
