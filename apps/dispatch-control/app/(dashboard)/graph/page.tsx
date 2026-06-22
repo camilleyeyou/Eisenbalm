@@ -1,14 +1,35 @@
 /**
- * Graph — Phase 23 (live pipeline graph + node wrappers, agent_runs emissions).
- * Placeholder: renders section name + phase label until Phase 23 builds the real view.
+ * Phase 23 — Graph page (Server Component).
+ *
+ * Resolves the workspace_id server-side and passes it to the Client Component
+ * canvas. All Convex subscriptions (useQuery) live in PipelineGraph — this
+ * page stays a Server Component per Pitfall 3 (ReactFlowProvider must be in
+ * a Client Component).
+ *
+ * The page shell + height: The dashboard layout sets h-screen overflow-hidden;
+ * this page fills the remaining content area with flex-1. We set h-full on
+ * the graph container so React Flow's canvas fills the viewport.
  */
-export default function GraphPage() {
+import { getCurrentWorkspace } from '@/lib/workspace'
+import { PipelineGraph } from './_components/PipelineGraph'
+
+export default async function GraphPage() {
+  const workspace_id = await getCurrentWorkspace()
+
   return (
-    <div className="space-y-2">
-      <h1 className="text-xl font-semibold text-neutral-900">Graph</h1>
-      <p className="text-sm text-neutral-500">
-        Live pipeline graph with real-time agent-node progress — coming in Phase 23.
-      </p>
+    <div className="flex flex-col h-full -m-6">
+      {/* Page header — outside the graph canvas so it doesn't overlap nodes */}
+      <div className="px-6 pt-6 pb-3 shrink-0">
+        <h1 className="text-xl font-semibold text-neutral-900">Pipeline Graph</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">
+          Live agent DAG — click a node to inspect I/O and cost.
+        </p>
+      </div>
+
+      {/* React Flow canvas — fills remaining height */}
+      <div className="flex-1 min-h-0">
+        <PipelineGraph workspace_id={workspace_id} />
+      </div>
     </div>
   )
 }

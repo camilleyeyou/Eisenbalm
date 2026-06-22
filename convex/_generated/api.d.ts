@@ -8,8 +8,10 @@
  * @module
  */
 
+import type * as agentRuns from "../agentRuns.js";
 import type * as agentVotes from "../agentVotes.js";
 import type * as agents from "../agents.js";
+import type * as auditLog from "../auditLog.js";
 import type * as charityLedger from "../charityLedger.js";
 import type * as crons from "../crons.js";
 import type * as deliberationEvents from "../deliberationEvents.js";
@@ -35,8 +37,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentRuns: typeof agentRuns;
   agentVotes: typeof agentVotes;
   agents: typeof agents;
+  auditLog: typeof auditLog;
   charityLedger: typeof charityLedger;
   crons: typeof crons;
   deliberationEvents: typeof deliberationEvents;

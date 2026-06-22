@@ -1,0 +1,173 @@
+'use client'
+/**
+ * Phase 23 — AgentIOPanel: slide-over panel for per-agent I/O + error + cost.
+ *
+ * OBS-05: Operator can inspect per-agent input/output and any error/retry.
+ *
+ * Queries agent_run_payloads on node click (NOT subscribed — keeps live
+ * subscription lean, per RESEARCH Pattern 4 / Pitfall 2). Renders:
+ *   - inputSnapshot + outputSnapshot (pretty-printed JSON in <pre>)
+ *   - error message when status === 'failed'
+ *   - costUsd / durationMs / tokensIn / tokensOut from the agentRun row
+ *
+ * Read-only panel — no mutating actions.
+ */
+import { useQuery } from 'convex/react'
+import { api } from '@convex/_generated/api'
+
+interface AgentRun {
+  agentKey: string
+  status: string
+  costUsd?: number
+  durationMs?: number
+  tokensIn?: number
+  tokensOut?: number
+  error?: string
+}
+
+interface AgentIOPanelProps {
+  runId: string | null
+  agentKey: string
+  agentRun: AgentRun | undefined
+  onClose: () => void
+}
+
+export function AgentIOPanel({
+  runId,
+  agentKey,
+  agentRun,
+  onClose,
+}: AgentIOPanelProps) {
+  // Fetch I/O payload on demand (NOT subscribed — see OBS-05 / Pattern 4).
+  const payload = useQuery(
+    api.agentRuns.payloadByRunIdAgentKey,
+    runId && agentKey ? { runId, agentKey } : 'skip',
+  )
+
+  // Pretty-print a JSON string for display.
+  function prettyJson(raw: string | undefined): string {
+    if (!raw) return '—'
+    try {
+      return JSON.stringify(JSON.parse(raw), null, 2)
+    } catch {
+      return raw
+    }
+  }
+
+  return (
+    <div
+      className="absolute right-0 top-0 h-full w-96 bg-white border-l border-neutral-200 shadow-lg overflow-y-auto z-10 flex flex-col"
+      role="complementary"
+      aria-label={`${agentKey} details`}
+    >
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 sticky top-0 bg-white z-10">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900">{agentKey}</h2>
+          {agentRun && (
+            <p className="text-xs text-neutral-500 mt-0.5">
+              {agentRun.status}
+              {agentRun.costUsd != null && ` · $${agentRun.costUsd.toFixed(4)}`}
+              {agentRun.durationMs != null &&
+                ` · ${(agentRun.durationMs / 1000).toFixed(1)}s`}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          className="rounded p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          aria-label="Close panel"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="p-4 space-y-4 flex-1">
+        {/* Error block — shown when status=failed */}
+        {agentRun?.status === 'failed' && agentRun.error && (
+          <section>
+            <h3 className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">
+              Error
+            </h3>
+            <pre className="text-xs bg-red-50 border border-red-200 rounded p-2 whitespace-pre-wrap break-words text-red-800">
+              {agentRun.error}
+            </pre>
+          </section>
+        )}
+
+        {/* Cost + token metrics */}
+        {agentRun && (
+          <section>
+            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+              Metrics
+            </h3>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <dt className="text-neutral-500">Cost</dt>
+              <dd className="text-neutral-800">
+                {agentRun.costUsd != null
+                  ? `$${agentRun.costUsd.toFixed(4)}`
+                  : '—'}
+              </dd>
+              <dt className="text-neutral-500">Duration</dt>
+              <dd className="text-neutral-800">
+                {agentRun.durationMs != null
+                  ? `${(agentRun.durationMs / 1000).toFixed(1)}s`
+                  : '—'}
+              </dd>
+              <dt className="text-neutral-500">Tokens in</dt>
+              <dd className="text-neutral-800">
+                {agentRun.tokensIn?.toLocaleString() ?? '—'}
+              </dd>
+              <dt className="text-neutral-500">Tokens out</dt>
+              <dd className="text-neutral-800">
+                {agentRun.tokensOut?.toLocaleString() ?? '—'}
+              </dd>
+            </dl>
+          </section>
+        )}
+
+        {/* No run active */}
+        {!runId && (
+          <p className="text-xs text-neutral-400">
+            No run active. Start a run to see I/O snapshots.
+          </p>
+        )}
+
+        {/* Loading state */}
+        {runId && payload === undefined && (
+          <p className="text-xs text-neutral-400">Loading…</p>
+        )}
+
+        {/* I/O snapshots */}
+        {payload !== undefined && payload !== null && (
+          <>
+            <section>
+              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+                Input Snapshot
+              </h3>
+              <pre className="text-[10px] bg-neutral-50 border border-neutral-200 rounded p-2 whitespace-pre-wrap break-words text-neutral-700 max-h-64 overflow-y-auto">
+                {prettyJson(payload.inputSnapshot ?? undefined)}
+              </pre>
+            </section>
+
+            <section>
+              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+                Output Snapshot
+              </h3>
+              <pre className="text-[10px] bg-neutral-50 border border-neutral-200 rounded p-2 whitespace-pre-wrap break-words text-neutral-700 max-h-64 overflow-y-auto">
+                {prettyJson(payload.outputSnapshot ?? undefined)}
+              </pre>
+            </section>
+          </>
+        )}
+
+        {/* No payload stored yet for this agent */}
+        {payload === null && runId && (
+          <p className="text-xs text-neutral-400">
+            No I/O snapshot stored for this agent in this run.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
