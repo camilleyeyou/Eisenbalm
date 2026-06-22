@@ -1,9 +1,9 @@
 ---
 phase: 24
 slug: prompt-editor-versioning
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: backend-complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-22
 ---
 
@@ -42,18 +42,18 @@ created: 2026-06-22
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-T1 | 24-01 | 1 | PRM-01..06 (scaffold) | scaffold/contract | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py tests/test_voice_db_override.py tests/test_test_run.py -q` (xfail/skipped scaffolds) | ✅ Plan 01 | ⬜ pending |
+| 01-T1 | 24-01 | 1 | PRM-01..06 (scaffold) | scaffold/contract | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py tests/test_voice_db_override.py tests/test_test_run.py -q` (xfail/skipped scaffolds) | ✅ Plan 01 | ✅ green |
 | 02-T* | 24-02 | 2 | PRM-03, PRM-04 | Convex unit | `pnpm --filter @eisenbalm/convex test -- saveVersion` and `... -- activate_blocked` | ✅ Plan 01 | ⬜ pending |
-| 03-T* | 24-03 | 2 | PRM-01, PRM-06 | unit | `cd packages/pipeline && uv run pytest tests/test_config_loader_assets.py -x -q` | ✅ Plan 01 | ⬜ pending |
-| 04a-T1 | 24-04a | 3 | PRM-01 | byte-equivalence unit | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py::test_user_template_seed_byte_equivalence -x -q` | ✅ Plan 01 | ⬜ pending |
-| 04b-T1 | 24-04b | 4 | PRM-01 | integration/regression | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py tests/test_voice.py tests/test_section_writer_voice_propagation.py -x -q` | ✅ Plan 01 | ⬜ pending |
-| 04b-T2 | 24-04b | 4 | PRM-01 (seed) | static/parse | `cd packages/pipeline && uv run python -c "import ast; ast.parse(open('scripts/seed_phase24_assets.py').read())"` + grep `upsertActive`/`USER_TEMPLATE_KEYS` | ✅ Plan 04b | ⬜ pending |
-| 05a-T1 | 24-05a | 4 | PRM-01 | byte-equivalence unit | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py::test_section_guidance_seed_byte_equivalence tests/test_prompt_version_seeds.py::test_rubric_seed_byte_equivalence -x -q` | ✅ Plan 01 | ⬜ pending |
-| 05b-T1 | 24-05b | 5 | PRM-01 | regression | `cd packages/pipeline && uv run pytest tests/test_voice.py tests/test_section_writer_voice_propagation.py -x -q` + full suite | ✅ Plan 01 | ⬜ pending |
-| 05b-T2 | 24-05b | 5 | PRM-01 (seed) | static/parse | `cd packages/pipeline && uv run python -c "import ast; ast.parse(open('scripts/seed_phase24_assets.py').read())"` + grep `SECTION_GUIDANCE_KEYS` | ✅ Plan 04b | ⬜ pending |
-| 06-T1 | 24-06 | 6 | PRM-06 | unit + sentinel | `cd packages/pipeline && uv run pytest tests/test_voice.py tests/test_voice_db_override.py tests/test_prompt_version_seeds.py::test_voice_constraints_seed_byte_equivalence -x -q` | ✅ Plan 01 | ⬜ pending |
-| 06-T2 | 24-06 | 6 | PRM-05 | integration (isolation+cost) | `cd packages/pipeline && uv run pytest tests/test_test_run.py -x -q` | ✅ Plan 01 | ⬜ pending |
-| 06-T3 | 24-06 | 6 | PRM-01..06 (gate) | full regression | `cd packages/pipeline && uv run pytest -x -q` | ✅ exists | ⬜ pending |
+| 03-T* | 24-03 | 2 | PRM-01, PRM-06 | unit | `cd packages/pipeline && uv run pytest tests/test_config_loader_assets.py -x -q` | ✅ Plan 01 | ✅ green |
+| 04a-T1 | 24-04a | 3 | PRM-01 | byte-equivalence unit | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py::test_user_template_seed_byte_equivalence -x -q` | ✅ Plan 01 | ✅ green |
+| 04b-T1 | 24-04b | 4 | PRM-01 | integration/regression | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py tests/test_voice.py tests/test_section_writer_voice_propagation.py -x -q` | ✅ Plan 01 | ✅ green |
+| 04b-T2 | 24-04b | 4 | PRM-01 (seed) | static/parse | `cd packages/pipeline && uv run python -c "import ast; ast.parse(open('scripts/seed_phase24_assets.py').read())"` + grep `upsertActive`/`USER_TEMPLATE_KEYS` | ✅ Plan 04b | ✅ green |
+| 05a-T1 | 24-05a | 4 | PRM-01 | byte-equivalence unit | `cd packages/pipeline && uv run pytest tests/test_prompt_version_seeds.py::test_section_guidance_seed_byte_equivalence tests/test_prompt_version_seeds.py::test_rubric_seed_byte_equivalence -x -q` | ✅ Plan 01 | ✅ green |
+| 05b-T1 | 24-05b | 5 | PRM-01 | regression | `cd packages/pipeline && uv run pytest tests/test_voice.py tests/test_section_writer_voice_propagation.py -x -q` + full suite | ✅ Plan 01 | ✅ green |
+| 05b-T2 | 24-05b | 5 | PRM-01 (seed) | static/parse | `cd packages/pipeline && uv run python -c "import ast; ast.parse(open('scripts/seed_phase24_assets.py').read())"` + grep `SECTION_GUIDANCE_KEYS` | ✅ Plan 04b | ✅ green |
+| 06-T1 | 24-06 | 6 | PRM-06 | unit + sentinel | `cd packages/pipeline && uv run pytest tests/test_voice.py tests/test_voice_db_override.py tests/test_prompt_version_seeds.py::test_voice_constraints_seed_byte_equivalence -x -q` | ✅ Plan 01 | ✅ green |
+| 06-T2 | 24-06 | 6 | PRM-05 | integration (isolation+cost) | `cd packages/pipeline && uv run pytest tests/test_test_run.py -x -q` | ✅ Plan 06 | ✅ green |
+| 06-T3 | 24-06 | 6 | PRM-01..06 (gate) | full regression | `cd packages/pipeline && uv run pytest -x -q` | ✅ exists | ✅ green (311 passed, 33 skipped) |
 | 07-T1 | 24-07 | 3 | PRM-02 | unit | `cd apps/dispatch-control && npx vitest run __tests__/VariableRegistry.test.ts` | ✅ Plan 01 | ⬜ pending |
 | 07-T2 | 24-07 | 3 | PRM-01, PRM-02, PRM-03 | smoke/render | `cd apps/dispatch-control && npx vitest run __tests__/PromptEditor.test.tsx` | ✅ Plan 01 (or Plan 07) | ⬜ pending |
 | 07-T3 | 24-07 | 3 | PRM-01, PRM-06 | typecheck + unit | `cd apps/dispatch-control && npx tsc --noEmit` + `npx vitest run __tests__/PromptEditor.test.tsx __tests__/VariableRegistry.test.ts` | ✅ Plan 07 | ⬜ pending |
@@ -68,10 +68,10 @@ created: 2026-06-22
 
 ## Wave 0 Requirements
 
-- [ ] Byte-equivalence oracle tests for each newly-externalized asset (user-templates → 04a, SECTION_GUIDANCE + qa/rubric.md → 05a, VOICE_CONSTRAINTS → 06) — assert migrated v1 row == on-disk/in-code source
-- [ ] Preserve existing `test_voice.py` invariants (`assemble_voice(None) == VOICE_CONSTRAINTS`) and Phase-16 import-time sentinel
-- [ ] Convex mutation tests for `saveVersion` (increments, never overwrites) / `activate` (in-progress guard)
-- [ ] dispatch-control component test harness — confirm/install if absent (used by 07/08 vitest)
+- [x] Byte-equivalence oracle tests for each newly-externalized asset (user-templates → 04a, SECTION_GUIDANCE + qa/rubric.md → 05a, VOICE_CONSTRAINTS → 06) — assert migrated v1 row == on-disk/in-code source (`tests/test_prompt_version_seeds.py`; voice oracle GREEN this plan)
+- [x] Preserve existing `test_voice.py` invariants (`assemble_voice(None) == VOICE_CONSTRAINTS`) and Phase-16 import-time sentinel (sentinel byte-unchanged; `db_voice_override=None` path preserves composition)
+- [x] Convex mutation tests for `saveVersion` (increments, never overwrites) / `activate` (in-progress guard) (`apps/dispatch-control/__tests__/saveVersion.test.ts`, `activate.test.ts`)
+- [x] dispatch-control component test harness — confirm/install if absent (used by 07/08 vitest) (`apps/dispatch-control/vitest.config.ts` + `__tests__/` present)
 
 *Scaffolds created in Plan 01 (Wave 1); filled GREEN across Waves 3-7 per the map above.*
 
@@ -91,10 +91,10 @@ created: 2026-06-22
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or a Wave 0 scaffold dependency (only 07-T4 is a deliberate human-verify checkpoint)
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (Plan 01 scaffolds)
-- [ ] No watch-mode flags (all runs use `--run` / `-x -q` / `run`)
-- [ ] `nyquist_compliant: true` set in frontmatter (flipped by Plan 06 Task 3 after backend green)
+- [x] All tasks have `<automated>` verify or a Wave 0 scaffold dependency (only 07-T4 is a deliberate human-verify checkpoint)
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (Plan 01 scaffolds)
+- [x] No watch-mode flags (all runs use `--run` / `-x -q` / `run`)
+- [x] `nyquist_compliant: true` set in frontmatter (flipped by Plan 06 Task 3 after backend green)
 
-**Approval:** pending
+**Approval:** backend complete (Plans 01-06 GREEN; full pipeline suite 311 passed / 33 skipped). Frontend rows 02 (Convex) + 07/08 (dispatch-control UI) remain for their plans; their harnesses + scaffolds are in place.
