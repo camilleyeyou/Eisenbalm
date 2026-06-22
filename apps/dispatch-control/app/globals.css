@@ -27,3 +27,18 @@
   --ring: #171717;
   --radius: 0.5rem;
 }
+
+/**
+ * Phase 24 (PRM-02) — prompt-editor `{variable}` highlight styles.
+ * Scoped under the CodeMirror wrapper so they never bleed into the rest of
+ * the dashboard. Known tokens read green; unknown/mangled tokens read red with
+ * a wavy underline (the visual cue that pairs with the save-blocking warning).
+ */
+.cm-prompt-editor .cm-var-known {
+  color: #166534;
+  text-decoration: underline;
+}
+.cm-prompt-editor .cm-var-unknown {
+  color: #991b1b;
+  text-decoration: underline wavy;
+}
