@@ -410,7 +410,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
-| 24. Prompt Editor + Versioning | 10/10 | Complete   | 2026-06-22 |
+| 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
