@@ -95,6 +95,7 @@ def _pick_bonus_type(previous: list[str], issue_number: int) -> str:
 
 def _build_messages(
     *,
+    state: DispatchState,
     issue_number: int,
     previous_bonus_types: list[str],
     chosen_bonus_type: str,
@@ -104,9 +105,15 @@ def _build_messages(
     System prompt MUST contain VOICE_CONSTRAINTS verbatim (AGT-02). The
     voice block is NEVER re-authored here — Calibrator consumes the
     canonical string from lib/voice.py.
+
+    Phase 22 (CFG-01): base prompt read from
+    state["config"].agents["calibrator"].system_prompt, disk fallback otherwise.
+    The full str.replace token chain is preserved verbatim.
     """
+    cfg = state.get("config")
+    base = cfg.agents["calibrator"].system_prompt if cfg else load_prompt("calibrator")
     system = (
-        load_prompt("calibrator")
+        base
         .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
         .replace("{issue_number}", str(issue_number))
         .replace("{previous_bonus_types}", f"{previous_bonus_types}")
@@ -242,6 +249,7 @@ async def calibrator(state: DispatchState) -> DispatchState:
     previous = await _fetch_previous_bonus_types()
     chosen = _pick_bonus_type(previous, issue_number)
     messages = _build_messages(
+        state=state,
         issue_number=issue_number,
         previous_bonus_types=previous,
         chosen_bonus_type=chosen,

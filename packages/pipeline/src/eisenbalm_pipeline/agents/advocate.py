@@ -57,14 +57,18 @@ class AdvocateOutput(BaseModel):
     votes: list[AdvocateVote]
 
 
-def _build_messages(*, candidates: list[dict]) -> list[dict]:
+def _build_messages(*, state: DispatchState, candidates: list[dict]) -> list[dict]:
     """System prompt embeds Advocate's voice + scoring rule.
 
     Sourced from RESEARCH §Advocate lines 434-445 + lib/voice.py constraints.
     Kept short: Haiku rewards a tight prompt.
+
+    Phase 22 (CFG-01): base prompt read from
+    state["config"].agents["advocate"].system_prompt, disk fallback otherwise.
     """
     candidates_json = json.dumps(candidates, indent=2, default=str)
-    system = load_prompt("advocate")
+    cfg = state.get("config")
+    system = cfg.agents["advocate"].system_prompt if cfg else load_prompt("advocate")
     user = (
         f"CANDIDATES (Scout output, JSON):\n{candidates_json}\n\n"
         "Return JSON AdvocateOutput with field `votes` (one AdvocateVote "
@@ -94,7 +98,7 @@ async def advocate(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
     candidates = state.get("candidates") or []
 
-    messages = _build_messages(candidates=candidates)
+    messages = _build_messages(state=state, candidates=candidates)
     out_obj, usage = await acomplete(
         agent_id="advocate",
         run_id=run_id,

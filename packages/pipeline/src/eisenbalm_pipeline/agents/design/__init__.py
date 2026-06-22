@@ -83,6 +83,7 @@ def _validate_full(theme: dict) -> list[str]:
 
 def _build_messages(
     *,
+    state: DispatchState,
     charity: dict,
     style_brief: dict,
     retry_errors: Optional[list[str]] = None,
@@ -92,11 +93,16 @@ def _build_messages(
     The system prompt embeds the font whitelist + WCAG-AA constraint
     verbatim so the model has the contract in-context. On retry, the prior
     errors are appended to the user message — D-15 regenerate-once pattern.
+
+    Phase 22 (CFG-01): base prompt read from
+    state["config"].agents["design"].system_prompt, disk fallback otherwise.
     """
     display_list = ", ".join(sorted(WHITELIST_DISPLAY))
     body_list = ", ".join(sorted(WHITELIST_BODY))
+    cfg = state.get("config")
+    base = cfg.agents["design"].system_prompt if cfg else load_prompt("design")
     system = (
-        load_prompt("design")
+        base
         .replace("{display_list}", display_list)
         .replace("{body_list}", body_list)
     )
@@ -123,6 +129,7 @@ def _build_messages(
 
 async def _call_llm(
     *,
+    state: DispatchState,
     run_id: str,
     charity: dict,
     style_brief: dict,
@@ -135,7 +142,7 @@ async def _call_llm(
     regardless of stub vs real mode.
     """
     messages = _build_messages(
-        charity=charity, style_brief=style_brief, retry_errors=retry_errors,
+        state=state, charity=charity, style_brief=style_brief, retry_errors=retry_errors,
     )
     out_obj, usage = await acomplete(
         agent_id="design",
@@ -160,7 +167,7 @@ async def design(state: DispatchState) -> DispatchState:
 
     # Attempt 1.
     theme, usage = await _call_llm(
-        run_id=run_id, charity=charity, style_brief=style_brief,
+        state=state, run_id=run_id, charity=charity, style_brief=style_brief,
     )
     errors = _validate_full(theme)
     resolved_model = usage["resolved_model"]
@@ -172,6 +179,7 @@ async def design(state: DispatchState) -> DispatchState:
             len(errors),
         )
         theme, usage = await _call_llm(
+            state=state,
             run_id=run_id,
             charity=charity,
             style_brief=style_brief,

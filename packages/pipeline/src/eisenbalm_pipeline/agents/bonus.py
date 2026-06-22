@@ -126,8 +126,16 @@ STRUCTURE_CONTRACT: str = (
 # ── Three internal prompt builders (D-19) ───────────────────────────────
 
 
-def _build_big_budget_prompt(charity: dict, style_brief: dict) -> list[dict[str, str]]:
-    system = load_prompt("bonus-big-budget").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+def _build_big_budget_prompt(
+    state: DispatchState, charity: dict, style_brief: dict
+) -> list[dict[str, str]]:
+    cfg = state.get("config")
+    base = (
+        cfg.agents["bonus_big_budget"].system_prompt
+        if cfg
+        else load_prompt("bonus-big-budget")
+    )
+    system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"CHARITY: {charity.get('name', '')}\n"
         f"MISSION: {charity.get('missionStatement', '')}\n"
@@ -140,8 +148,16 @@ def _build_big_budget_prompt(charity: dict, style_brief: dict) -> list[dict[str,
     ]
 
 
-def _build_jingle_prompt(charity: dict, style_brief: dict) -> list[dict[str, str]]:
-    system = load_prompt("bonus-jingle").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+def _build_jingle_prompt(
+    state: DispatchState, charity: dict, style_brief: dict
+) -> list[dict[str, str]]:
+    cfg = state.get("config")
+    base = (
+        cfg.agents["bonus_jingle"].system_prompt
+        if cfg
+        else load_prompt("bonus-jingle")
+    )
+    system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"CHARITY: {charity.get('name', '')}\n"
         f"MISSION: {charity.get('missionStatement', '')}\n"
@@ -154,9 +170,17 @@ def _build_jingle_prompt(charity: dict, style_brief: dict) -> list[dict[str, str
     ]
 
 
-def _build_spec_ad_prompt(charity: dict, style_brief: dict) -> list[dict[str, str]]:
+def _build_spec_ad_prompt(
+    state: DispatchState, charity: dict, style_brief: dict
+) -> list[dict[str, str]]:
+    cfg = state.get("config")
+    base = (
+        cfg.agents["bonus_spec_ad"].system_prompt
+        if cfg
+        else load_prompt("bonus-spec-ad")
+    )
     system = (
-        load_prompt("bonus-spec-ad")
+        base
         .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
         .replace("{STRUCTURE_CONTRACT}", STRUCTURE_CONTRACT)
     )
@@ -207,13 +231,13 @@ async def bonus(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
 
     if bonus_type == "bigBudget":
-        messages = _build_big_budget_prompt(charity, style_brief)
+        messages = _build_big_budget_prompt(state, charity, style_brief)
         response_format: type[BaseModel] = BigBudgetBonus
     elif bonus_type == "jingle":
-        messages = _build_jingle_prompt(charity, style_brief)
+        messages = _build_jingle_prompt(state, charity, style_brief)
         response_format = JingleBonus
     else:
-        messages = _build_spec_ad_prompt(charity, style_brief)
+        messages = _build_spec_ad_prompt(state, charity, style_brief)
         response_format = SpecAdBonus
 
     out_obj, usage = await acomplete(

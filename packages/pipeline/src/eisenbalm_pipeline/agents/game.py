@@ -55,10 +55,16 @@ class GameOutput(BaseModel):
     )
 
 
-def _build_messages(charity: dict) -> list[dict[str, str]]:
-    """Embed FORBIDDEN_CONSTRUCTS verbatim per D-20."""
+def _build_messages(state: DispatchState, charity: dict) -> list[dict[str, str]]:
+    """Embed FORBIDDEN_CONSTRUCTS verbatim per D-20.
+
+    Phase 22 (CFG-01): base prompt read from
+    state["config"].agents["game"].system_prompt, disk fallback otherwise.
+    """
+    cfg = state.get("config")
+    base = cfg.agents["game"].system_prompt if cfg else load_prompt("game")
     system = (
-        load_prompt("game")
+        base
         .replace("{charity_name}", charity.get("name", ""))
         .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
         .replace("{FORBIDDEN_CONSTRUCTS}", FORBIDDEN_CONSTRUCTS)
@@ -91,7 +97,7 @@ async def game(state: DispatchState) -> DispatchState:
     charity = state.get("winning_charity") or {}
     run_id = state["run_id"]
 
-    messages = _build_messages(charity)
+    messages = _build_messages(state, charity)
     out_obj, usage = await acomplete(
         agent_id="game",
         run_id=run_id,

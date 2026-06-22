@@ -29,7 +29,7 @@ def test_no_external_deps_enumerated_in_prompt() -> None:
     ):
         assert token in FORBIDDEN_CONSTRUCTS, f"missing: {token}"
 
-    msgs = _build_messages({"name": "Foo", "missionStatement": "m"})
+    msgs = _build_messages({}, {"name": "Foo", "missionStatement": "m"})
     assert FORBIDDEN_CONSTRUCTS in msgs[0]["content"]
 
 

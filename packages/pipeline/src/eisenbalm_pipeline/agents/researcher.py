@@ -73,16 +73,21 @@ def _build_queries(charity: dict) -> list[str]:
 
 
 def _build_messages(
-    *, charity: dict, tavily_results: list[SearchResult]
+    *, state: DispatchState, charity: dict, tavily_results: list[SearchResult]
 ) -> list[dict[str, str]]:
     """System prompt embeds verification + role-fallback rules verbatim
     from RESEARCH §"Researcher" lines 533-549.
+
+    Phase 22 (CFG-01): base prompt read from
+    state["config"].agents["researcher"].system_prompt, disk fallback otherwise.
     """
     results_block = "\n\n---\n\n".join(
         f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
         for r in tavily_results
     )
-    system = load_prompt("researcher").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+    cfg = state.get("config")
+    base = cfg.agents["researcher"].system_prompt if cfg else load_prompt("researcher")
+    system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"WINNING CHARITY:\n{charity}\n\n"
         f"TAVILY RESEARCH RESULTS:\n{results_block}\n\n"
@@ -129,7 +134,7 @@ async def researcher(state: DispatchState) -> DispatchState:
             agent_id="researcher", attempts=tool_calls, limit=MAX_TOOL_CALLS,
         )
 
-    messages = _build_messages(charity=charity, tavily_results=tavily_results)
+    messages = _build_messages(state=state, charity=charity, tavily_results=tavily_results)
     out_obj, usage = await acomplete(
         agent_id="researcher",
         run_id=run_id,

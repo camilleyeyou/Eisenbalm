@@ -179,17 +179,23 @@ async def _load_featured_keys() -> list[str]:
 
 
 def _build_messages(
-    *, tavily_results: list[SearchResult], featured_keys: list[str]
+    *, state: DispatchState, tavily_results: list[SearchResult], featured_keys: list[str]
 ) -> list[dict[str, str]]:
     """System prompt embeds rejection rule + max_tool_calls budget verbatim
     from RESEARCH §Scout. featured_keys are interpolated for the LLM to use
     defensively (the real filter runs in Python after the model returns).
+
+    Phase 22 (CFG-01): the base system prompt is read from
+    state["config"].agents["scout"].system_prompt when present, falling back to
+    the on-disk default only on legacy/test paths without a resolved config.
     """
     results_block = "\n\n".join(
         f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:600]}"
         for r in tavily_results
     )
-    system = load_prompt("scout").replace("{featured_keys}", f"{featured_keys}")
+    cfg = state.get("config")
+    base = cfg.agents["scout"].system_prompt if cfg else load_prompt("scout")
+    system = base.replace("{featured_keys}", f"{featured_keys}")
     user = (
         "Parse the following Tavily search results into 3-5 CharityCandidate "
         "objects. Reject anything that does not look like a small or "
@@ -237,7 +243,7 @@ async def scout(state: DispatchState) -> DispatchState:
 
     # 3. LLM parses Tavily output into Pydantic-validated candidates.
     messages = _build_messages(
-        tavily_results=tavily_results, featured_keys=featured_keys
+        state=state, tavily_results=tavily_results, featured_keys=featured_keys
     )
     batch_out, usage = await acomplete(
         agent_id="scout",

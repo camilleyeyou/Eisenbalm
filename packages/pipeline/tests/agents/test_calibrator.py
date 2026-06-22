@@ -41,6 +41,7 @@ def test_bonus_rotation_first_issue() -> None:
 def test_voice_constants() -> None:
     """AGT-02: assembled system prompt embeds VOICE_CONSTRAINTS verbatim."""
     messages = _build_messages(
+        state={},
         issue_number=42,
         previous_bonus_types=["jingle"],
         chosen_bonus_type="bigBudget",

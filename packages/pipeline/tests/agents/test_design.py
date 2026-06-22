@@ -260,6 +260,7 @@ def test_build_messages_contains_machine_editorial_envelope() -> None:
     from eisenbalm_pipeline.agents.design import _build_messages
 
     messages = _build_messages(
+        state={},
         charity={"name": "X"},
         style_brief={"visualDirection": ""},
     )

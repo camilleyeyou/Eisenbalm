@@ -172,10 +172,15 @@ def _format_deliberation_transcript(
 
 def _build_messages(
     *,
+    state: DispatchState,
     candidates_with_scores: list[dict],
     issue_number: int,
 ) -> list[dict]:
-    """Editor system prompt embeds D-18 selection rules + VOICE_CONSTRAINTS."""
+    """Editor system prompt embeds D-18 selection rules + VOICE_CONSTRAINTS.
+
+    Phase 22 (CFG-01): base prompt read from
+    state["config"].agents["editor_gate1"].system_prompt, disk fallback otherwise.
+    """
     # Strip optional/None fields to keep the prompt compact + deterministic.
     cleaned = [
         {
@@ -190,8 +195,10 @@ def _build_messages(
         for c in candidates_with_scores
     ]
     candidates_block = json.dumps(cleaned, indent=2)
+    cfg = state.get("config")
+    base = cfg.agents["editor_gate1"].system_prompt if cfg else load_prompt("editor")
     system = (
-        load_prompt("editor")
+        base
         .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
         .replace("{EDITOR_INTERRUPT_THRESHOLD}", f"{EDITOR_INTERRUPT_THRESHOLD}")
         .replace("{EDITOR_CONFIDENCE_THRESHOLD}", f"{EDITOR_CONFIDENCE_THRESHOLD}")
@@ -255,6 +262,7 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
 
     # LLM call — Opus pinned via lib/llm_config.MODEL_BY_AGENT['editor_gate1'].
     messages = _build_messages(
+        state=state,
         candidates_with_scores=sorted_candidates,
         issue_number=issue_number,
     )
@@ -437,7 +445,9 @@ def _build_editor_final_messages(state: DispatchState) -> list[dict]:
         "game":          (state.get("game") or {}).get("headline", ""),
         "bonus":         (state.get("bonus") or {}).get("headline", ""),
     }
-    system = load_prompt("editor-final").replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+    cfg = state.get("config")
+    base = cfg.agents["editor_final"].system_prompt if cfg else load_prompt("editor-final")
+    system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
     user = (
         f"QA FINDINGS:\n{json.dumps(qa_corrections, indent=2)}\n\n"
         f"SECTION HEADLINES:\n{json.dumps(section_headlines, indent=2)}\n\n"
