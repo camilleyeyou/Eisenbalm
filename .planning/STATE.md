@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
+status: Ready to plan
 stopped_at: "Checkpoint: 21-05 awaiting human verification of app shell + 7 nav routes"
-last_updated: "2026-06-21T23:52:37.761Z"
+last_updated: "2026-06-22T00:02:48.827Z"
 progress:
   total_phases: 27
   completed_phases: 20
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 
 ## Current Position
 
-Phase: 21 (auth-app-shell-convex-schema) — EXECUTING
-Plan: 4 of 5
+Phase: 22
+Plan: Not started
 
 ## Performance Metrics
 

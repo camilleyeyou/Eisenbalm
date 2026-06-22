@@ -407,7 +407,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 18. Magazine Editorial Layout — Writer Structure | 6/6 | Complete    | 2026-05-30 |
 | 19. Issue Page Redesign — Dispatch Magazine Layout | 5/5 | Complete    | 2026-06-03 |
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
-| 21. Auth + App Shell + Convex Schema | 5/5 | Complete   | 2026-06-21 |
+| 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 0/? | Not started | - |
 | 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
