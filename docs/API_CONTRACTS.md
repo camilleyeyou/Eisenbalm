@@ -775,6 +775,58 @@ for correction in qa_corrections:
 
 ---
 
+## 3A. Dashboard → Pipeline (single-agent test-run)
+
+Phase 24 (PRM-05) adds a single-agent prompt-evaluation endpoint to the FastAPI
+pipeline service. It lets an operator test the CURRENT unsaved editor draft (D-03)
+against sample, manual, or prior-real input and see the raw output plus cost —
+WITHOUT touching any real run/issue table.
+
+### 3A.1 — `POST /agents/{agent_key}/test-run`
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/api/agents.py
+
+POST /agents/{agent_key}/test-run
+Auth: Depends(require_clerk_jwt)   # returns {"sub": <clerkUserId>}; same guard as POST /dashboard/whoami
+
+# Request body (Pydantic)
+{
+  "workspace_id": str,
+  "draft_prompt": str,                 # the unsaved SYSTEM prompt text (D-03)
+  "draft_user_template": Optional[str],# unsaved user-template text, if the agent has one
+  "variables": dict[str, str],         # template variable values (manual entry or fixture)
+  "prior_run_id": Optional[str],       # if set, load inputs from agent_run_payloads (mode 1)
+}
+
+# Response body (Pydantic)
+{
+  "output": str,                       # raw LLM output text or JSON
+  "cost_usd": float,
+  "tokens_in": int,
+  "tokens_out": int,
+  "model": str,
+  "duration_ms": int,
+}
+```
+
+**Isolation contract (PRM-05, CONTEXT Pitfall 8):**
+
+- The handler MUST call `acomplete(...)` **directly** — NOT `graph.ainvoke()`,
+  and NOT the `@agent_node` decorator. It is a prompt-evaluation utility, not a
+  pipeline invocation.
+- It MUST NOT write to `agent_runs`, `agent_run_payloads`, `deliberationEvents`,
+  or any real run / issue table. No `pipelineRuns:create`, no Sanity write.
+- Cost is read from the EXISTING `acomplete` usage path (`{tokens_in, tokens_out,
+  usd, resolved_model}`) — there is **no second cost recorder**.
+- Input sourcing (D-04, four modes): (1) prior-real via `agent_run_payloads`
+  read query `agentRuns:payloadByRunIdAgentKey` when `prior_run_id` is set;
+  (2) unsaved draft via `draft_prompt` / `draft_user_template`; (3) manual
+  variable entry via `variables`; (4) canned fixture via a `SAMPLE_FIXTURES`
+  constant in `api/agents.py`.
+
+---
+
 ## 4. Next.js → Convex (TypeScript query hooks)
 
 These are the Convex query function files.
@@ -1117,7 +1169,8 @@ prompt_versions: defineTable({
   note: v.optional(v.string()),
 })
   .index('by_workspace', ['workspace_id'])
-  .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
+  .index('by_workspace_agentKey', ['workspace_id', 'agentKey'])
+  .index('by_workspace_agentKey_version', ['workspace_id', 'agentKey', 'version']),  // Phase 24 ADD — efficient getByVersion
 ```
 
 Seed = the **11** migrated `.md` prompt files (CFG-02), each as a `version: 1`,
@@ -1142,6 +1195,59 @@ newline via `_extract()`). The canonical agentKey → prompt-file mapping:
 `chronicler`, `qa`, `origin_story`, `problem`, `founder_bio`, `case_study` have
 no migrated prompt file this phase (Section-writer prompts deferred to Phase 24 —
 D-02); their `system_prompt` resolves to `""` in `RunConfig` until then.
+
+#### 4A.2a — Phase 24 versioning mutations
+
+Phase 24 layers four versioning functions onto the existing `prompt_versions`
+table (the Phase-22 `upsertActive` / `getActive` remain untouched). These are
+the dashboard's write/read surface for prompt editing, diff, activation, and
+rollback. All emit to `internal.auditLog.write` (see §4A audit pattern).
+
+```typescript
+// convex/promptVersions.ts (Phase 24 additions)
+
+saveVersion(workspace_id: string, agentKey: string, content: string,
+            createdBy?: string, note?: string) → Id<'prompt_versions'>
+//   Inserts a NEW row with version = max(existing.version)+1 (1 when none exist),
+//   isActive: false. NEVER overwrites or mutates a prior version (PRM-03).
+//   Emits audit action 'prompt_version.saved'.
+
+activate(workspace_id: string, agentKey: string, version: number,
+         actorId: string) → { blocked: boolean, reason?: string }
+//   In-progress guard (D-02): if any `runs` row for the workspace has
+//   status === 'running', returns { blocked: true, reason: <explanation> }
+//   and performs NO isActive flip. Otherwise: deactivates every row for the
+//   agentKey, patches the target `version` to isActive: true, emits audit
+//   action 'prompt_version.activated', returns { blocked: false }.
+//   ROLLBACK == activate(olderVersion) — there is no separate rollback mutation.
+
+listForAgent(workspace_id: string, agentKey: string) → PromptVersion[]
+//   All versions for the agentKey, sorted newest-first (descending version).
+
+getByVersion(workspace_id: string, agentKey: string, version: number)
+            → PromptVersion | null
+//   One exact row (or null). Uses the new by_workspace_agentKey_version index.
+```
+
+#### 4A.2b — Phase 24 newly-externalized agentKeys
+
+Phase 24 externalizes additional assets into `prompt_versions` as new rows
+(NOT a new table). Each is seeded as a `version: 1`, `isActive: true` row whose
+`content` is **byte-identical** to its in-code constant / on-disk source (the
+same byte-oracle discipline as the CFG-02 seed). The canonical agentKeys:
+
+| agentKey group | agentKeys | byte-source |
+|---|---|---|
+| user-template prompts | `scout_user`, `advocate_user`, `calibrator_user`, `editor_gate1_user`, `editor_final_user`, `researcher_user`, `game_user`, `design_user`, `bonus_big_budget_user`, `bonus_jingle_user`, `bonus_spec_ad_user` | the in-code user-message string in each agent's `_build_messages` |
+| section guidance | `section_guidance_origin`, `section_guidance_problem`, `founder_bio_verified`, `founder_bio_anonymous`, `case_study_verified`, `case_study_anonymous` | `SECTION_GUIDANCE` / `GUIDANCE_VERIFIED` / `GUIDANCE_ANONYMOUS` constants (the anonymous variants seed the UNFORMATTED constant, still containing the literal `{role}` token) |
+| QA rubric | `rubric` | `agents/qa/rubric.md` |
+| voice | `voice_constraints` | `lib/voice.py` `VOICE_CONSTRAINTS` (full assembled string) |
+
+`founder_bio` / `case_study` use TWO agentKeys each (`_verified` + `_anonymous`)
+rather than one delimited row, so the runtime `founderNameVerified` branch reads
+a clean row per path (D-06 Option A). The `voice_constraints` row stores the FULL
+assembled `VOICE_CONSTRAINTS` string, not just `JESSE_PERSONA_BLOCK`; it is
+hydrated into `RunConfig.voice_constraints` at run start (see §7).
 
 ### 4A.3 — `pipeline_config` (global key/value settings)
 
@@ -1541,6 +1647,7 @@ class RunConfig:
     require_review: bool                # pipeline_config; default True
     auto_publish: bool                  # pipeline_config; default False
     schedule_enabled: bool              # pipeline_config; default False
+    voice_constraints: Optional[str] = None  # Phase 24 PRM-06 ADD — None → use code-constant VOICE_CONSTRAINTS; hydrated from the active `voice_constraints` prompt_versions row at run start and threaded into assemble_voice(..., db_voice_override=voice_constraints). assemble_voice(None) without an override stays byte-identical to VOICE_CONSTRAINTS (import-time sentinel + test_voice.py invariants preserved).
 
 
 class DispatchState(TypedDict):
