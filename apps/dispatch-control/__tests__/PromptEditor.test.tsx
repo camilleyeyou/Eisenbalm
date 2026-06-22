@@ -34,8 +34,12 @@ describe('PromptEditor smoke render (PRM-01)', () => {
   it('mounts without throwing and renders the dynamic placeholder or editor', () => {
     expect(PromptEditor).toBeDefined()
 
+    // `PromptEditor` is `T | undefined` behind the require-guard; alias to a
+    // capitalized const so it can be used as a JSX element (a non-null
+    // assertion in tag position — `<PromptEditor!>` — is invalid TS syntax).
+    const Editor = PromptEditor!
     const { container } = render(
-      <PromptEditor!
+      <Editor
         value={'You are {charity_name}.'}
         onChange={() => {}}
         allowedVariables={['charity_name']}

@@ -13,6 +13,12 @@ export default defineConfig({
     include: ['__tests__/**/*.test.ts', '__tests__/**/*.test.tsx'],
     globals: false,
     reporters: ['default'],
+    // Phase 24: register `.ts`/`.tsx` in Node's Module._extensions so the Wave 0
+    // RED scaffold tests can resolve the new prompts components via an
+    // extension-less runtime require() of relative TypeScript source. Without
+    // this, vitest's CJS executor (createRequire().resolve) only searches
+    // `.js`/`.json`/`.node` and the require falls into the RED catch branch.
+    setupFiles: ['./__tests__/registerTsRequire.ts'],
     // Per-file environment overrides:
     //   - edge-runtime: convex-test integration tests (Plan 23-01)
     //   - jsdom: React component tests (Plan 23-03)
