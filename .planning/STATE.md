@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 23-01-PLAN.md
-last_updated: "2026-06-22T07:40:29.295Z"
+status: Phase complete — ready for verification
+stopped_at: "Completed 23-04-PLAN.md: Read-only Runs dashboard + Audit Viewer (OBS-02, OBS-04, AUD-01)"
+last_updated: "2026-06-22T08:25:40.733Z"
 progress:
   total_phases: 27
-  completed_phases: 21
+  completed_phases: 22
   total_plans: 147
-  completed_plans: 142
+  completed_plans: 145
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 23 (node-wrappers-read-only-dashboard) — EXECUTING
-Plan: 2 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -172,6 +172,9 @@ Plan: 2 of 4
 | Phase 22 P04 | 12min | 3 tasks | 4 files |
 | Phase 22 P05 | 9 | 3 tasks | 13 files |
 | Phase 23 P01 | 9 | 3 tasks | 10 files |
+| Phase 23 P02 | 10 | 2 tasks | 4 files |
+| Phase 23 P03 | 30 | 3 tasks | 13 files |
+| Phase 23 P04 | 12 | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -439,6 +442,11 @@ Recent decisions affecting current work:
 - [Phase 22]: Plan 22-04: prompt-seed content sourced exclusively via load_prompt() (no raw file read) — byte-mismatch guard; idempotency proven at call-contract layer (seed never emits version field)
 - [Phase 23]: convex-test requires import.meta.glob modules param for Vite static analysis; schema-only overload fails in test context
 - [Phase 23]: agentRuns upsert uses by_runId + .filter(agentKey) — no compound index on agent_runs (by design)
+- [Phase 23]: record_cost never called in wrap_agent_node — get_cost_payload read-only; AST-verified no import or invocation
+- [Phase 23]: SECTION_WRITERS imported from builder to keep queueForRun agent keys in lockstep with DESIGNAGENT_SUPPRESSED flag
+- [Phase 23]: agentKey→displayName derived via toDisplayName() from snake_case; no displayName field on agents table
+- [Phase 23]: ConvexClientProvider D-16 null guard added to dispatch-control (mirrors apps/web) for env-less CI builds
+- [Phase 23]: force-dynamic required on all dispatch-control pages using Convex useQuery: D-16 null guard doesn't provide ConvexProvider context, so static prerendering throws; graph/page.tsx retroactively fixed alongside runs + settings
 
 ### Pending Todos
 
@@ -519,6 +527,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T07:40:29.285Z
-Stopped at: Completed 23-01-PLAN.md
+Last session: 2026-06-22T08:25:40.722Z
+Stopped at: Completed 23-04-PLAN.md: Read-only Runs dashboard + Audit Viewer (OBS-02, OBS-04, AUD-01)
 Resume file: None

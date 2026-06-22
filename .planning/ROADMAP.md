@@ -24,7 +24,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 - [x] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation (completed 2026-06-21)
 - [x] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap (completed 2026-06-22)
-- [ ] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O
+- [x] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O (completed 2026-06-22)
 - [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run
 - [ ] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts
 - [ ] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup
@@ -409,7 +409,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
-| 23. Node Wrappers + Read-Only Dashboard | 1/4 | In Progress|  |
+| 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete   | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
@@ -507,9 +507,9 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 23-01-PLAN.md — Convex schema extension (agent_runs + agent_run_payloads) + agentRuns.ts/auditLog.ts mutations+queries + cost-rollup util + convex-test/pytest harness (Wave 0)
-- [ ] 23-02-PLAN.md — wrap_agent_node() instrumentation across all agent nodes + queueForRun at run start (Wave 1)
-- [ ] 23-03-PLAN.md — Graph view: React Flow DAG with config-at-rest, live status, node-click I/O panel (Wave 1)
-- [ ] 23-04-PLAN.md — Runs history + run detail + cost roll-up + read-only audit-log viewer (Wave 1)
+- [x] 23-02-PLAN.md — wrap_agent_node() instrumentation across all agent nodes + queueForRun at run start (Wave 1)
+- [x] 23-03-PLAN.md — Graph view: React Flow DAG with config-at-rest, live status, node-click I/O panel (Wave 1)
+- [x] 23-04-PLAN.md — Runs history + run detail + cost roll-up + read-only audit-log viewer (Wave 1)
 **UI hint**: yes
 
 ### Phase 24: Prompt Editor + Versioning

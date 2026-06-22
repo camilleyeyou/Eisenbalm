@@ -224,8 +224,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **CFG-05**: Every new dashboard/config table carries a `workspace_id` (seeded to one "eisenbalm" workspace); no charity- or Eisenbalm-specific logic is hardcoded in the control plane.
 
 ### Dashboard & Live Observability (OBS)
-- [ ] **OBS-01**: Operator can view the pipeline as the real agent graph — each agent a node showing its current config (model, enabled, description).
-- [ ] **OBS-02**: Operator can view full run history (status, trigger source, who triggered, duration, cost) and open any run.
+- [x] **OBS-01**: Operator can view the pipeline as the real agent graph — each agent a node showing its current config (model, enabled, description).
+- [x] **OBS-02**: Operator can view full run history (status, trigger source, who triggered, duration, cost) and open any run.
 - [x] **OBS-03**: Operator can watch a run live — each agent transitions queued→running→done/failed with live token/cost accrual + latency — via Convex subscriptions.
 - [x] **OBS-04**: Operator can see cost rolled up per agent → per run → per issue → per week/month, reading the already-captured per-call cost (no second cost recorder is added).
 - [x] **OBS-05**: Operator can inspect per-agent input/output and any error/retry for a run.
@@ -481,8 +481,8 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | CFG-02 | Phase 22: Config Externalization | Complete |
 | CFG-03 | Phase 22: Config Externalization | Complete |
 | CFG-04 | Phase 22: Config Externalization | Complete |
-| OBS-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
-| OBS-02 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| OBS-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
+| OBS-02 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
 | OBS-03 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
 | OBS-04 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
 | OBS-05 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
