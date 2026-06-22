@@ -85,7 +85,7 @@ export function findUnknownVariables(text: string, allowed: string[]): string[] 
   const re = /\{([^}]+)\}/g
   let m: RegExpExecArray | null
   while ((m = re.exec(text)) !== null) {
-    const name = m[1].trim()
+    const name = (m[1] ?? '').trim()
     if (!allowedSet.has(name) && !seen.has(name)) {
       seen.add(name)
       unknown.push(name)

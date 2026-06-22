@@ -20,7 +20,7 @@ function buildDecorations(text: string, allowed: Set<string>): DecorationSet {
   let m: RegExpExecArray | null
   VARIABLE_REGEX.lastIndex = 0
   while ((m = VARIABLE_REGEX.exec(text)) !== null) {
-    const varName = m[1].trim()
+    const varName = (m[1] ?? '').trim()
     const deco = allowed.has(varName) ? knownDecoration : unknownDecoration
     builder.add(m.index, m.index + m[0].length, deco)
   }
