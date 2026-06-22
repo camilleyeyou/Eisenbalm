@@ -205,6 +205,7 @@ def _expected_and_substituted(agent_key: str) -> tuple[str, str]:
     if agent_key == "calibrator_user":
         expected = _user_of(
             calibrator_agent._build_messages(
+                state=_STATE,
                 issue_number=42,
                 previous_bonus_types=[],
                 chosen_bonus_type="specAd",
