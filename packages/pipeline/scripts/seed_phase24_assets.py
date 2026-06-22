@@ -43,6 +43,7 @@ from httpx import AsyncClient
 
 from eisenbalm_pipeline.lib.config_loader import (
     AGENT_KEY_TO_PROMPT_FILE,
+    SECTION_GUIDANCE_KEYS,
     USER_TEMPLATE_KEYS,
     WORKSPACE_ID,
 )
@@ -79,11 +80,17 @@ def _byte_verify(agent_key: str, content: str) -> None:
     )
 
 
-async def seed_assets(http: AsyncClient, agent_keys: Iterable[str]) -> int:
+async def seed_assets(
+    http: AsyncClient,
+    agent_keys: Iterable[str],
+    *,
+    note: str = "Phase 24 v1 seed — byte-verified user template",
+) -> int:
     """Upsert one active v1 prompt_versions row per agent_key. Returns the count.
 
     Content is sourced through ``load_prompt`` (byte oracle) and byte-verified
-    before each idempotent ``promptVersions:upsertActive`` call.
+    before each idempotent ``promptVersions:upsertActive`` call. ``note`` lets
+    each key group carry an accurate provenance label.
     """
     count = 0
     for agent_key in agent_keys:
@@ -97,7 +104,7 @@ async def seed_assets(http: AsyncClient, agent_keys: Iterable[str]) -> int:
                 "workspace_id": WORKSPACE_ID,
                 "agentKey": agent_key,
                 "content": content,
-                "note": "Phase 24 v1 seed — byte-verified user template",
+                "note": note,
             },
         )
         count += 1
@@ -109,20 +116,48 @@ async def seed_assets(http: AsyncClient, agent_keys: Iterable[str]) -> int:
 
 
 async def main() -> None:
-    """Seed the Phase 24 user-template assets into live Convex (idempotent)."""
+    """Seed Phase 24 assets into live Convex (idempotent).
+
+    Three key groups, each byte-verified against ``load_prompt`` before upsert:
+      - USER_TEMPLATE_KEYS (Plan 04b) — the 11 ``*_user.md`` templates
+      - SECTION_GUIDANCE_KEYS (Plan 05b) — origin/problem + bio/case-study
+        verified/anonymous guidance (the anonymous variants keep their literal
+        ``{role}`` placeholder UNFORMATTED — runtime ``.format(role=role)`` is a
+        call-site concern, never a seed concern)
+      - the singleton ``'rubric'`` key (Plan 05b)
+    """
     http = _build_client()
     try:
         print(
             f"Seeding Phase 24 user templates for workspace={WORKSPACE_ID!r} "
             f"({len(USER_TEMPLATE_KEYS)} keys) …"
         )
-        n = await seed_assets(http, USER_TEMPLATE_KEYS)
+        n_users = await seed_assets(http, USER_TEMPLATE_KEYS)
+
+        print(
+            f"\nSeeding Phase 24 section guidance "
+            f"({len(SECTION_GUIDANCE_KEYS)} keys) …"
+        )
+        n_guidance = await seed_assets(
+            http,
+            SECTION_GUIDANCE_KEYS,
+            note="Phase 24 v1 seed — byte-verified section guidance/rubric",
+        )
+
+        print("\nSeeding Phase 24 rubric (1 key) …")
+        n_rubric = await seed_assets(
+            http,
+            ("rubric",),
+            note="Phase 24 v1 seed — byte-verified section guidance/rubric",
+        )
     finally:
         await http.aclose()
 
+    total = n_users + n_guidance + n_rubric
     print(
-        f"\nSeed complete — {n} user-template prompt_versions rows "
-        f"(active v1; idempotent; re-runnable)."
+        f"\nSeed complete — {total} prompt_versions rows "
+        f"({n_users} user templates + {n_guidance} section guidance + "
+        f"{n_rubric} rubric; active v1; idempotent; re-runnable)."
     )
 
 
