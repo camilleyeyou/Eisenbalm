@@ -146,6 +146,15 @@ Every Thursday, ship a complete, on-voice issue: one obscure charity, eight orig
 - ✓ Manual Clerk setup deferred (JWT template "convex" + `CLERK_JWT_ISSUER_DOMAIN` need real account access); separate dispatch-control Vercel project for `CLERK_SECRET_KEY` isolation
 - ⏳ 2 live items pending in `21-HUMAN-UAT.md` (persist with `status: partial`): live Clerk sign-in → shell flow (covers Plans 03 + 05 checkpoints), and `seedEisenbalm` idempotency CLI proof (`npx convex run workspace:seedEisenbalm` ×2)
 
+**Mission Control — Config Externalization (Phase 22 — 2026-06-22)**
+- ✓ CFG-01: pipeline reads all agent config (prompt, model, temperature, top_p, max_tokens, enabled) from Convex once at run start via `lib/config_loader.py` `load_run_config()` (single round-trip over `agents:listForWorkspace` / `promptVersions:getActive` / `pipelineConfig:getAll`); `run_weekly` threads the resolved `RunConfig` onto `initial_state["config"]`; all 11 `load_prompt(...)` call sites across 8 agent files now read `state["config"].agents[key].system_prompt`, preserving exact `str.replace("{token}", …)` substitution
+- ✓ CFG-02: idempotent `scripts/seed_phase22.py` writes 15 `agents` rows + 11 `prompt_versions` v1-active rows (content sourced via `load_prompt()` byte-oracle, never raw file reads) + `pipeline_config` defaults; standalone `scripts/verify_prompt_seed.py` does a live zero-diff check; 11/11 fallback prompts confirmed byte-identical to `load_prompt()`
+- ✓ CFG-03: two-tier Convex-unreachable fallback (`_build_fallback_config()`, byte-parity with disk) with WARNING logs (D-06 hard-failure / D-07 per-key); agent call sites carry `if cfg else load_prompt(...)` guards — pipeline degrades, never crashes
+- ✓ CFG-04: `runs:create` → awaited `load_run_config()` → awaited `snapshot_config()` all run BEFORE `asyncio.create_task()` (snapshot-race fix); `snapshot_config(` appears exactly once — resume path does NOT re-snapshot; mid-run prompt edits cannot change an in-flight run
+- ✓ Contract-first: `docs/API_CONTRACTS.md §7/§4A` amended additively (control-plane table shapes + `RunConfig`/`AgentConfig` + `DispatchState.config`) before any code touched them; Convex `agents` table gained `top_p`/`max_tokens`/`description` (Phase 23 dashboard-ready)
+- ⏳ 2 live items routed to human verification in `22-VERIFICATION.md`: live `seed_phase22.py` + `verify_prompt_seed.py` against a real Convex deployment, and mid-run prompt-edit immutability — both need a live deployment, not blockers
+- Prompt count: 11 actual prompt files is correct (the apparent "12th" is `README.md`, not a prompt)
+
 ### Active
 
 <!-- Hypotheses until shipped. Grouped by build-brief sequence. -->
@@ -292,7 +301,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-22 — Phase 21 (Auth + App Shell + Convex Schema) complete: new Clerk-gated `apps/dispatch-control` app shell (7-item sidebar, placeholder routes), all 11 workspace-scoped Convex tables seeded, FastAPI Clerk-JWT guard (cron secret intact), `apps/web` still unauthenticated. 5 plans / 3 waves; automated checks green; 2 live-Clerk UAT items deferred to Andrew. Next: Phase 22 (config externalization).*
+*Last updated: 2026-06-22 — Phase 22 (Config Externalization) complete: the pipeline reads all agent config from Convex once at run start (`load_run_config()`), writes a full config snapshot to the `runs` record BEFORE the LangGraph graph is invoked (snapshot-race fix), seeds the 11 prompt `.md` files into Convex as v1-active rows with byte-verification, and swaps all 11 agent call sites to read `state["config"]` with a two-tier disk fallback. 5 plans / 3 waves; verification passed 4/4; full pipeline suite 282 passed / 0 failed; 2 live-Convex UAT items routed to human verification. Next: Phase 23 (Node Wrappers + Read-Only Dashboard).*
 
 *Earlier: 2026-06-21 — Milestone **v2.0 (Mission Control Dashboard)** started. The dashboard brief was reconciled against the real codebase in Phase 0 (`docs/CURRENT_STATE.md`, quick-260621-fi4); the four §8 forks were resolved with the user — single-tenant + multi-tenant bones, a separate `dispatch-control` Next.js app, `require_review` default-on, and a Railway-cron scheduler gated by a `schedule_enabled` kill switch. Key reconciliation: prompts are already file-externalized (loader swap, not string extraction); per-call OpenRouter cost capture already exists; frontend auth is greenfield. Requirements + roadmap (phases 21+) defined next. v1.0 shipped complete at Phase 20.*
 
