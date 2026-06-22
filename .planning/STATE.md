@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 24-06-PLAN.md
-last_updated: "2026-06-22T11:03:27.012Z"
+stopped_at: Completed 24-08-diff-rollback-testrun-ui-PLAN.md
+last_updated: "2026-06-22T22:13:26.693Z"
 progress:
   total_phases: 27
-  completed_phases: 22
+  completed_phases: 23
   total_plans: 157
-  completed_plans: 152
+  completed_plans: 155
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 24 (prompt-editor-versioning) — EXECUTING
-Plan: 7 of 10
+Plan: 8 of 10
 
 ## Performance Metrics
 
@@ -182,6 +182,7 @@ Plan: 7 of 10
 | Phase 24 P04b | 6min | 2 tasks | 9 files |
 | Phase 24 P05b | 12 | 2 tasks | 7 files |
 | Phase 24 P06 | 22min | 3 tasks | 7 files |
+| Phase 24 P08 | 8min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -463,6 +464,8 @@ Recent decisions affecting current work:
 - [Phase 24]: Plan 05b: qa/judge.run_llm_judge gained an optional rubric kwarg (None→disk fallback) instead of reading state directly; orchestrator threads state['config'].rubric
 - [Phase 24]: Plan 06: db_voice_override returns the DB voice verbatim; None preserves the code-constant composition + import-time sentinel (test_voice.py invariants untouched by construction)
 - [Phase 24]: Plan 06: test-run endpoint uses a local optional-bearer (_require_operator, HTTPBearer auto_error=False) so the dev-mode Clerk bypass is header-free per the Plan-01 test, without weakening prod auth on other routes; calls acomplete directly with a transient run_id (no @agent_node) for full real-table isolation
+- [Phase 24]: Plan 24-08: introduced NEXT_PUBLIC_PIPELINE_URL (no pipeline base-URL env existed) for the single-agent test-run client; documented in dispatch-control .env.example
+- [Phase 24]: Plan 24-08: DiffViewer = diff v9 diffLines + custom two-column renderer (data-side left/right); rollback == activate(olderVersion), guarded by api.runs.latest.status==='running'
 
 ### Pending Todos
 
@@ -543,6 +546,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T11:03:15.323Z
-Stopped at: Completed 24-06-PLAN.md
+Last session: 2026-06-22T22:13:13.243Z
+Stopped at: Completed 24-08-diff-rollback-testrun-ui-PLAN.md
 Resume file: None

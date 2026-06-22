@@ -25,7 +25,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation (completed 2026-06-21)
 - [x] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap (completed 2026-06-22)
 - [x] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O (completed 2026-06-22)
-- [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run (10 plans)
+- [x] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run (10 plans) (completed 2026-06-22)
 - [ ] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts
 - [ ] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup
 - [ ] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator
@@ -410,7 +410,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
-| 24. Prompt Editor + Versioning | 9/10 | In Progress|  |
+| 24. Prompt Editor + Versioning | 10/10 | Complete   | 2026-06-22 |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
@@ -534,7 +534,7 @@ Plans:
 - [x] 24-05b-guidance-rubric-callsites-and-seed-PLAN.md — 5 section-writer/QA call-site swaps + seed extension (Wave 5, PRM-01)
 - [x] 24-06-voice-versioning-and-test-run-backend-PLAN.md — VOICE_CONSTRAINTS versioned via db_voice_override + POST /agents/{key}/test-run (Wave 6, PRM-05/06)
 - [x] 24-07-editor-ui-variable-awareness-PLAN.md — CodeMirror editor + variable registry/highlight + save-as-version + version history + render checkpoint (Wave 3, PRM-01/02/03/06)
-- [ ] 24-08-diff-rollback-testrun-ui-PLAN.md — side-by-side diff + activate/rollback (in-progress block) + four-mode test-run UI (Wave 7, PRM-04/05)
+- [x] 24-08-diff-rollback-testrun-ui-PLAN.md — side-by-side diff + activate/rollback (in-progress block) + four-mode test-run UI (Wave 7, PRM-04/05)
 **UI hint**: yes
 
 ### Phase 25: Run Control
