@@ -16,6 +16,11 @@ export const dynamic = 'force-dynamic'
  * Unknown agentKeys (not in the registry) still render — the editor treats them
  * as having no allowed variables (every {token} flags as unknown), which is the
  * correct conservative behaviour.
+ *
+ * The client view (AgentPromptEditorView) also mounts the Plan-08 TestRunPanel
+ * (PRM-05), wired to its live editor draft state, so the operator can test-run
+ * the CURRENT unsaved draft against the four input modes (D-04) without running
+ * the pipeline. The pipeline base URL comes from NEXT_PUBLIC_PIPELINE_URL.
  */
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AgentPromptEditorView from '../_components/AgentPromptEditorView'

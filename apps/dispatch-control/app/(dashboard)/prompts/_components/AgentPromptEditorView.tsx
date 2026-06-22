@@ -16,6 +16,7 @@ import { useUser } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
 import { PromptEditor } from './PromptEditor'
 import VersionHistoryPanel from './VersionHistoryPanel'
+import TestRunPanel from './TestRunPanel'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
 
 interface AgentPromptEditorViewProps {
@@ -97,6 +98,16 @@ export default function AgentPromptEditorView({
             onSaved={() => {
               /* version list updates reactively via useQuery */
             }}
+          />
+        )}
+
+        {/* Test-run the CURRENT unsaved draft (D-03) — does NOT run the
+            pipeline. Wired to the live editor draft state above. */}
+        {!loading && (
+          <TestRunPanel
+            workspaceId={workspaceId}
+            agentKey={agentKey}
+            draftPrompt={draft}
           />
         )}
       </div>
