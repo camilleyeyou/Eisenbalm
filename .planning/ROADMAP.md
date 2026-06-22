@@ -23,7 +23,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 **v1.0 complete. v2.0: Mission Control Dashboard (Phases 21–27)**
 
 - [x] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation (completed 2026-06-21)
-- [ ] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap
+- [x] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap (completed 2026-06-22)
 - [ ] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O
 - [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run
 - [ ] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts
@@ -408,7 +408,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 19. Issue Page Redesign — Dispatch Magazine Layout | 5/5 | Complete    | 2026-06-03 |
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
-| 22. Config Externalization | 4/5 | In Progress|  |
+| 22. Config Externalization | 5/5 | Complete   | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
 | 25. Run Control | 0/? | Not started | - |
@@ -492,7 +492,7 @@ Plans:
 - [x] 22-02-PLAN.md — Convex schema flesh-out (agents top_p/max_tokens/description) + agents/promptVersions/pipelineConfig/runs functions (idempotent upserts + read queries + setConfigSnapshot)
 - [x] 22-03-PLAN.md — lib/config_loader.py (RunConfig + AGENT_KEY_TO_PROMPT_FILE + load_run_config two-tier fallback + snapshot_config) + DispatchState.config field
 - [x] 22-04-PLAN.md — Idempotent seed_phase22.py + standalone verify_prompt_seed.py + green mocked byte-parity pytest (CFG-02)
-- [ ] 22-05-PLAN.md — runs.py snapshot-before-invoke wiring + 11 prompt call-site swap + snapshot-ordering/resume-no-resnap tests
+- [x] 22-05-PLAN.md — runs.py snapshot-before-invoke wiring + 11 prompt call-site swap + snapshot-ordering/resume-no-resnap tests
 
 ### Phase 23: Node Wrappers + Read-Only Dashboard
 **Goal**: Every LangGraph agent node is wrapped by `wrap_agent_node()`; the wrapper emits `agent_runs:started`/`completed`/`failed` to Convex (reading already-accumulated cost from `cost.py` — no second recorder); the operator dashboard shows the pipeline graph, full run history, a live run view with per-agent status and cost, and per-agent input/output inspection; audit infrastructure is in place
