@@ -226,9 +226,9 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Dashboard & Live Observability (OBS)
 - [ ] **OBS-01**: Operator can view the pipeline as the real agent graph — each agent a node showing its current config (model, enabled, description).
 - [ ] **OBS-02**: Operator can view full run history (status, trigger source, who triggered, duration, cost) and open any run.
-- [ ] **OBS-03**: Operator can watch a run live — each agent transitions queued→running→done/failed with live token/cost accrual + latency — via Convex subscriptions.
-- [ ] **OBS-04**: Operator can see cost rolled up per agent → per run → per issue → per week/month, reading the already-captured per-call cost (no second cost recorder is added).
-- [ ] **OBS-05**: Operator can inspect per-agent input/output and any error/retry for a run.
+- [x] **OBS-03**: Operator can watch a run live — each agent transitions queued→running→done/failed with live token/cost accrual + latency — via Convex subscriptions.
+- [x] **OBS-04**: Operator can see cost rolled up per agent → per run → per issue → per week/month, reading the already-captured per-call cost (no second cost recorder is added).
+- [x] **OBS-05**: Operator can inspect per-agent input/output and any error/retry for a run.
 
 ### Prompt Editing & Versioning (PRM)
 - [ ] **PRM-01**: Operator can edit an agent's system prompt and user-prompt template in a UI editor.
@@ -266,7 +266,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **NTF-02**: Operator receives a notification when a budget threshold is hit.
 
 ### Audit Log (AUD)
-- [ ] **AUD-01**: Every config/prompt change, review decision, and kill-switch flip is recorded in an audit log with actor, timestamp, and before/after values.
+- [x] **AUD-01**: Every config/prompt change, review decision, and kill-switch flip is recorded in an audit log with actor, timestamp, and before/after values.
 
 ## Future Requirements (deferred beyond v2.0)
 
@@ -483,10 +483,10 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | CFG-04 | Phase 22: Config Externalization | Complete |
 | OBS-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
 | OBS-02 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
-| OBS-03 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
-| OBS-04 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
-| OBS-05 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
-| AUD-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
+| OBS-03 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
+| OBS-04 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
+| OBS-05 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
+| AUD-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
 | PRM-01 | Phase 24: Prompt Editor + Versioning | Pending |
 | PRM-02 | Phase 24: Prompt Editor + Versioning | Pending |
 | PRM-03 | Phase 24: Prompt Editor + Versioning | Pending |

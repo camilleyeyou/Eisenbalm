@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to plan
-stopped_at: Phase 23 context gathered
-last_updated: "2026-06-22T06:22:05.568Z"
+status: Ready to execute
+stopped_at: Completed 23-01-PLAN.md
+last_updated: "2026-06-22T07:40:29.295Z"
 progress:
   total_phases: 27
   completed_phases: 21
-  total_plans: 143
-  completed_plans: 141
+  total_plans: 147
+  completed_plans: 142
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 22 — config-externalization
+**Current focus:** Phase 23 — node-wrappers-read-only-dashboard
 
 ## Current Position
 
-Phase: 23
-Plan: Not started
+Phase: 23 (node-wrappers-read-only-dashboard) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -171,6 +171,7 @@ Plan: Not started
 | Phase 22 P03 | 6 | 3 tasks | 4 files |
 | Phase 22 P04 | 12min | 3 tasks | 4 files |
 | Phase 22 P05 | 9 | 3 tasks | 13 files |
+| Phase 23 P01 | 9 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -436,6 +437,8 @@ Recent decisions affecting current work:
 - [Phase 22]: Plan 22-01: §4A control-plane tables documented adjacent to §4.6 (frozen deliberation tables untouched); RunConfig/AgentConfig as @dataclass for asdict-serializable configSnapshot; byte-parity oracle = load_prompt()
 - [Phase 22]: Plan 22-03: ALL_AGENT_KEYS = MODEL_BY_AGENT (15) + 3 bonus variants (18 keys); _llm_key_for maps bonus_* to single 'bonus' llm row for model/temp; DispatchState.config forward-ref resolved at runtime via deferred module-import binding (LangGraph get_type_hints evaluates it at graph-build); two-tier fallback bytes byte-identical to load_prompt
 - [Phase 22]: Plan 22-04: prompt-seed content sourced exclusively via load_prompt() (no raw file read) — byte-mismatch guard; idempotency proven at call-contract layer (seed never emits version field)
+- [Phase 23]: convex-test requires import.meta.glob modules param for Vite static analysis; schema-only overload fails in test context
+- [Phase 23]: agentRuns upsert uses by_runId + .filter(agentKey) — no compound index on agent_runs (by design)
 
 ### Pending Todos
 
@@ -516,6 +519,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T06:22:05.552Z
-Stopped at: Phase 23 context gathered
-Resume file: .planning/phases/23-node-wrappers-read-only-dashboard/23-CONTEXT.md
+Last session: 2026-06-22T07:40:29.285Z
+Stopped at: Completed 23-01-PLAN.md
+Resume file: None

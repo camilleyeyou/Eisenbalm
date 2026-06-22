@@ -409,7 +409,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
-| 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
+| 23. Node Wrappers + Read-Only Dashboard | 1/4 | In Progress|  |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
@@ -506,7 +506,7 @@ Plans:
   5. Every config/prompt change, review decision, and kill-switch flip emits a row to the `audit_log` table with actor, timestamp, and before/after values
 **Plans**: 4 plans
 Plans:
-- [ ] 23-01-PLAN.md — Convex schema extension (agent_runs + agent_run_payloads) + agentRuns.ts/auditLog.ts mutations+queries + cost-rollup util + convex-test/pytest harness (Wave 0)
+- [x] 23-01-PLAN.md — Convex schema extension (agent_runs + agent_run_payloads) + agentRuns.ts/auditLog.ts mutations+queries + cost-rollup util + convex-test/pytest harness (Wave 0)
 - [ ] 23-02-PLAN.md — wrap_agent_node() instrumentation across all agent nodes + queueForRun at run start (Wave 1)
 - [ ] 23-03-PLAN.md — Graph view: React Flow DAG with config-at-rest, live status, node-click I/O panel (Wave 1)
 - [ ] 23-04-PLAN.md — Runs history + run detail + cost roll-up + read-only audit-log viewer (Wave 1)
