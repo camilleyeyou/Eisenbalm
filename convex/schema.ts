@@ -255,6 +255,9 @@ export default defineSchema({
     enabled: v.boolean(),
     model: v.optional(v.string()),
     temperature: v.optional(v.number()),
+    top_p: v.optional(v.number()),       // from SAMPLING_BY_AGENT
+    max_tokens: v.optional(v.number()),  // from MAX_TOKENS_BY_AGENT
+    description: v.optional(v.string()), // Phase 23 dashboard display
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
