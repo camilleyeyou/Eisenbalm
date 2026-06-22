@@ -8,10 +8,16 @@
  * Plan 08 adds:
  *   - a two-version compare selector (pick A + B) that renders <DiffViewer> for
  *     the chosen pair (default A = active version, B = the selected version).
- *     (activate/rollback controls land in Task 2.)
+ *   - per-version Activate / "Rollback to this version" controls wired to
+ *     api.promptVersions.activate. Rollback IS activate(olderVersion) — no
+ *     separate call. The control is DISABLED while a run is in progress
+ *     (api.runs.latest.status === 'running'), with an inline explanation
+ *     (D-02 block-with-explanation, no queue). On a server-side `{ blocked }`
+ *     return (TOCTOU race, Pitfall 2) the reason is surfaced inline.
  */
 import { useMemo, useState } from 'react'
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
+import { useUser } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
 import { DiffViewer } from './DiffViewer'
 
@@ -38,6 +44,40 @@ export default function VersionHistoryPanel({
     workspace_id: workspaceId,
     agentKey,
   })
+
+  const { user } = useUser()
+  const activateVersion = useMutation(api.promptVersions.activate)
+
+  // In-progress signal: reuse the dashboard's existing runs query. A run with
+  // status 'running' for this workspace disables activation (D-02).
+  const latestRun = useQuery(api.runs.latest, { workspace_id: workspaceId })
+  const runInProgress = latestRun?.status === 'running'
+
+  // Per-version activation state (which version is mid-activation) + any
+  // server-returned block reason (defensive TOCTOU surface, Pitfall 2).
+  const [activating, setActivating] = useState<number | null>(null)
+  const [blockedReason, setBlockedReason] = useState<string | null>(null)
+
+  async function handleActivate(version: number) {
+    setBlockedReason(null)
+    setActivating(version)
+    try {
+      const result = await activateVersion({
+        workspace_id: workspaceId,
+        agentKey,
+        version,
+        actorId: user?.id ?? 'unknown',
+      })
+      if (result?.blocked) {
+        setBlockedReason(
+          result.reason ??
+            'A run is in progress — activation will be available when it finishes.',
+        )
+      }
+    } finally {
+      setActivating(null)
+    }
+  }
 
   // Compare selector state: which two versions to diff. Null until the user
   // picks; defaults are derived (A = active, B = newest non-active) below.
@@ -80,6 +120,24 @@ export default function VersionHistoryPanel({
         </span>
       </div>
 
+      {runInProgress && (
+        <div
+          role="status"
+          className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+        >
+          A run is in progress — activation will be available when it finishes.
+        </div>
+      )}
+
+      {blockedReason && (
+        <div
+          role="alert"
+          className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+        >
+          {blockedReason}
+        </div>
+      )}
+
       {versions.length === 0 ? (
         <div className="rounded-lg border border-neutral-200 bg-white p-6 text-center">
           <p className="text-sm text-neutral-500">
@@ -113,8 +171,38 @@ export default function VersionHistoryPanel({
               {v.note && (
                 <p className="mt-1 text-xs text-neutral-600">{v.note}</p>
               )}
-              {/* Task 2 mounts activate/rollback controls here. */}
-              <div data-rollback-mount={`${agentKey}:${v.version}`} />
+              {/* Activate / rollback control (PRM-04). Rollback == activate of
+                  an older version; same mutation, label differs. */}
+              <div
+                data-rollback-mount={`${agentKey}:${v.version}`}
+                className="mt-2"
+              >
+                {v.isActive ? (
+                  <span className="text-xs text-neutral-400">
+                    Currently active
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleActivate(v.version)}
+                    disabled={runInProgress || activating !== null}
+                    title={
+                      runInProgress
+                        ? 'A run is in progress — activation will be available when it finishes.'
+                        : activeVersion !== null && v.version < activeVersion
+                          ? `Roll back to v${v.version}`
+                          : `Activate v${v.version}`
+                    }
+                    className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px]"
+                  >
+                    {activating === v.version
+                      ? 'Activating…'
+                      : activeVersion !== null && v.version < activeVersion
+                        ? 'Rollback to this version'
+                        : 'Activate'}
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
