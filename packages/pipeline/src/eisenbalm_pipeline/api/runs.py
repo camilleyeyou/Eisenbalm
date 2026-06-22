@@ -29,6 +29,7 @@ from eisenbalm_pipeline.lib.config_loader import load_run_config, snapshot_confi
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.cost import begin_run
 from eisenbalm_pipeline.lib.ids import new_run_id
+from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -225,6 +226,26 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
             "workspace_id": "eisenbalm",
             "runId": run_id,
             "triggerSource": "manual",
+        },
+    )
+
+    # Phase 23 OBS-03: pre-populate all agent_runs rows as "queued" so the
+    # dashboard graph shows the full pipeline shape immediately when a run
+    # begins. SECTION_WRITERS already respects DESIGNAGENT_SUPPRESSED, so the
+    # queued node set stays in lockstep with the wrapped node set (Pitfall 4).
+    agent_keys = [
+        "calibrator", "scout", "advocate", "editor_gate_1", "chronicler",
+        "researcher", "verify_research",
+        *SECTION_WRITERS,
+        "validate_sections", "qa", "editor_final", "publisher",
+    ]
+    await convex_mutation(
+        request.app.state.convex_http,
+        "agentRuns:queueForRun",
+        {
+            "workspace_id": "eisenbalm",
+            "runId": run_id,
+            "agentKeys": list(agent_keys),
         },
     )
 

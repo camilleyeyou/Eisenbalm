@@ -62,6 +62,7 @@ from eisenbalm_pipeline.agents.scout import scout
 from eisenbalm_pipeline.agents.validate import validate_sections
 from eisenbalm_pipeline.agents.verify import verify_research
 from eisenbalm_pipeline.graph.state import DispatchState
+from eisenbalm_pipeline.lib.agent_wrapper import wrap_agent_node
 
 
 # MED-02: reversible suppression flag. Read at module-import time so flipping
@@ -98,33 +99,33 @@ def build_graph(checkpointer: Any) -> Any:
     builder = StateGraph(DispatchState)
 
     # Sequential pre-fan-out agents.
-    builder.add_node("calibrator", calibrator)
-    builder.add_node("scout", scout)
-    builder.add_node("advocate", advocate)
-    builder.add_node("editor_gate_1", editor_gate_1)
-    builder.add_node("chronicler", chronicler)
-    builder.add_node("researcher", researcher)
+    builder.add_node("calibrator", wrap_agent_node("calibrator", calibrator))
+    builder.add_node("scout", wrap_agent_node("scout", scout))
+    builder.add_node("advocate", wrap_agent_node("advocate", advocate))
+    builder.add_node("editor_gate_1", wrap_agent_node("editor_gate_1", editor_gate_1))
+    builder.add_node("chronicler", wrap_agent_node("chronicler", chronicler))
+    builder.add_node("researcher", wrap_agent_node("researcher", researcher))
 
     # Phase 5 D-11: standalone non-LLM verification step between Researcher
     # and the parallel section-writer fan-out. Sets *Verified booleans on
     # state['research'] so downstream writers can branch on verification.
-    builder.add_node("verify_research", verify_research)
+    builder.add_node("verify_research", wrap_agent_node("verify_research", verify_research))
 
     # 7 parallel section writers.
-    builder.add_node("origin_story", origin_story)
-    builder.add_node("problem", problem)
-    builder.add_node("founder_bio", founder_bio)
-    builder.add_node("case_study", case_study)
-    builder.add_node("game", game)
-    builder.add_node("bonus", bonus)
+    builder.add_node("origin_story", wrap_agent_node("origin_story", origin_story))
+    builder.add_node("problem", wrap_agent_node("problem", problem))
+    builder.add_node("founder_bio", wrap_agent_node("founder_bio", founder_bio))
+    builder.add_node("case_study", wrap_agent_node("case_study", case_study))
+    builder.add_node("game", wrap_agent_node("game", game))
+    builder.add_node("bonus", wrap_agent_node("bonus", bonus))
     if not _SUPPRESSED:
-        builder.add_node("design", design)
+        builder.add_node("design", wrap_agent_node("design", design))
 
     # Join + post-parallel sequential.
-    builder.add_node("validate_sections", validate_sections)
-    builder.add_node("qa", qa)
-    builder.add_node("editor_final", editor_final)
-    builder.add_node("publisher", publisher)
+    builder.add_node("validate_sections", wrap_agent_node("validate_sections", validate_sections))
+    builder.add_node("qa", wrap_agent_node("qa", qa))
+    builder.add_node("editor_final", wrap_agent_node("editor_final", editor_final))
+    builder.add_node("publisher", wrap_agent_node("publisher", publisher))
 
     # Sequential pre-fan-out edges.
     builder.add_edge(START, "calibrator")
