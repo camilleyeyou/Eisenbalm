@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to plan
-stopped_at: "Checkpoint: 21-05 awaiting human verification of app shell + 7 nav routes"
-last_updated: "2026-06-22T00:02:48.827Z"
+stopped_at: Phase 22 context gathered
+last_updated: "2026-06-22T00:16:16.772Z"
 progress:
   total_phases: 27
   completed_phases: 20
@@ -507,6 +507,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T23:52:28.607Z
-Stopped at: Checkpoint: 21-05 awaiting human verification of app shell + 7 nav routes
-Resume file: None
+Last session: 2026-06-22T00:16:16.760Z
+Stopped at: Phase 22 context gathered
+Resume file: .planning/phases/22-config-externalization/22-CONTEXT.md
