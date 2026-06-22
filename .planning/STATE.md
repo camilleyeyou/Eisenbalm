@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 24-03-PLAN.md
-last_updated: "2026-06-22T10:06:10.233Z"
+stopped_at: Completed 24-04a-PLAN.md
+last_updated: "2026-06-22T10:17:47.424Z"
 progress:
   total_phases: 27
   completed_phases: 22
   total_plans: 157
-  completed_plans: 147
+  completed_plans: 148
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 24 (prompt-editor-versioning) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 
 ## Performance Metrics
 
@@ -177,6 +177,7 @@ Plan: 3 of 10
 | Phase 23 P04 | 12 | 3 tasks | 12 files |
 | Phase 24 P01 | 18min | 3 tasks | 10 files |
 | Phase 24 P03 | 6 | 3 tasks | 5 files |
+| Phase 24 P04a | 9 | 1 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -453,6 +454,7 @@ Recent decisions affecting current work:
 - [Phase 24]: [Phase 24 Plan 01]: founder_bio/case_study guidance externalized as two agentKeys each (_verified + _anonymous, D-06 Option A); voice_constraints seed stores full assembled VOICE_CONSTRAINTS; test-run isolation = direct acomplete call, no agent_runs/deliberationEvents writes
 - [Phase 24]: Plan 03: missing asset .md seed files between Wave 2/Wave 3 log at DEBUG (not WARNING) to preserve the D-06 single-WARNING-per-hard-failure contract
 - [Phase 24]: Plan 03: added SYSTEM_PROMPT_KEYS frozen-11 subset so the Phase 22 seed + test_prompt_seed stay scoped to their prompts after AGENT_KEY_TO_PROMPT_FILE was extended with Phase 24 asset keys
+- [Phase 24]: Plan 04a: byte-equivalence oracle derives the expected user string from each agent's live _build_messages (disk-fallback path) instead of a hand-copied literal, keeping the migration proof self-checking. design_user.md externalizes only the base no-retry message; the D-15 retry-error suffix stays in code. calibrator_user is static (no tokens).
 
 ### Pending Todos
 
@@ -533,6 +535,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T10:05:54.252Z
-Stopped at: Completed 24-03-PLAN.md
+Last session: 2026-06-22T10:17:34.663Z
+Stopped at: Completed 24-04a-PLAN.md
 Resume file: None
