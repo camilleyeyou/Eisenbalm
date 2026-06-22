@@ -1,11 +1,12 @@
 ---
 phase: 25
 slug: run-control
-status: draft
+status: approved
 shadcn_initialized: true
 preset: "style:default base:neutral css-variables:true rsc:true"
 created: 2026-06-22
 revised: 2026-06-22
+reviewed_at: 2026-06-22
 ---
 
 # Phase 25 — UI Design Contract: Run Control
