@@ -109,6 +109,7 @@ async def run_llm_judge(
     *,
     run_id: str,
     narrator: Narrator | None = None,
+    rubric: str | None = None,
 ) -> tuple[list[QAFinding], str]:
     """Single Opus call over all section bodies concatenated.
 
@@ -123,6 +124,10 @@ async def run_llm_judge(
             and first 1-2 example samples (NRR-09). When None, the system
             AND user messages are byte-identical to the legacy Phase 5
             implementation (NRR-10).
+        rubric: Phase 24 (PRM-01) — the operator-editable rubric resolved at
+            run start from ``RunConfig.rubric``. When None (Convex/config
+            absent), falls back to the on-disk ``rubric.md`` via ``_load_rubric``,
+            preserving the legacy byte-for-byte behavior.
 
     Returns:
         ``(findings, resolved_model)`` — findings as QAFinding NamedTuples
@@ -132,7 +137,9 @@ async def run_llm_judge(
     """
     # Build messages exactly as Phase 5 does first (NRR-10 byte-equivalence
     # baseline — when narrator is None, both messages stay as-is).
-    rubric = _load_rubric()
+    # Phase 24 (PRM-01): prefer the config-resolved rubric; disk fallback when
+    # absent so the rubric stays byte-identical to legacy under no-config.
+    rubric = rubric if rubric is not None else _load_rubric()
     sections_json = json.dumps(sections, indent=2)
     messages = [
         {"role": "system", "content": rubric},

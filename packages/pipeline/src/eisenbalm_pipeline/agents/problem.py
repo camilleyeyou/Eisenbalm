@@ -138,10 +138,19 @@ def _problem_payload(state: DispatchState) -> dict:
 async def problem(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
     style_brief = state.get("style_brief") or {}
+    # Phase 24 (PRM-01): read operator-editable guidance from RunConfig (loaded
+    # once at run start), falling back to the in-code SECTION_GUIDANCE (which is
+    # byte-identical to the on-disk seed) when config/key is absent.
+    cfg = state.get("config")
+    guidance = (
+        cfg.section_guidance.get("section_guidance_problem") or SECTION_GUIDANCE
+        if cfg
+        else SECTION_GUIDANCE
+    )
     messages = build_section_writer_prompt(
         section_id="problem",
         section_title="Problem Statement",
-        section_guidance=SECTION_GUIDANCE,
+        section_guidance=guidance,
         charity=state.get("winning_charity") or {},
         research=state.get("research") or {},
         style_brief=style_brief,

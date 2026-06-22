@@ -86,22 +86,35 @@ class CaseStudyOutput(BaseModel):
         return body
 
 
-def _select_guidance_and_scrub(research: dict) -> tuple[str, dict]:
+def _select_guidance_and_scrub(
+    research: dict, section_guidance: dict[str, str] | None = None
+) -> tuple[str, dict]:
     """Return ``(guidance, scrubbed_research)``. Mirror of founder_bio.
 
     Verified path: returns ``GUIDANCE_VERIFIED`` + shallow research copy.
     Unverified path: returns ``GUIDANCE_ANONYMOUS`` formatted with role
     (defaults to "a program participant") + research dict with
     ``subjectName`` explicitly set to None (RESEARCH Pitfall 5 mirror).
+
+    Phase 24 (PRM-01): ``section_guidance`` is the operator-editable map from
+    ``RunConfig.section_guidance`` (keys ``case_study_verified`` /
+    ``case_study_anonymous``). When present, the matching key's content is the
+    template source; otherwise the in-code GUIDANCE_* constants are used (which
+    are byte-identical to the on-disk seed). The anonymous template — from EITHER
+    source — keeps its runtime ``.format(role=role)`` (the literal ``{role}``
+    placeholder is stored UNFORMATTED in both the constant and the .md seed).
     """
+    sg = section_guidance or {}
     verified = bool(research.get("subjectNameVerified"))
     if verified:
-        return GUIDANCE_VERIFIED, dict(research)
+        verified_guidance = sg.get("case_study_verified") or GUIDANCE_VERIFIED
+        return verified_guidance, dict(research)
 
     role = research.get("subjectRole") or "a program participant"
     scrubbed = {k: v for k, v in research.items() if k != "subjectName"}
     scrubbed["subjectName"] = None
-    return GUIDANCE_ANONYMOUS.format(role=role), scrubbed
+    anonymous_guidance = sg.get("case_study_anonymous") or GUIDANCE_ANONYMOUS
+    return anonymous_guidance.format(role=role), scrubbed
 
 
 def _case_study_payload(state: DispatchState) -> dict:
@@ -134,7 +147,13 @@ def _case_study_payload(state: DispatchState) -> dict:
 async def case_study(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
     research = state.get("research") or {}
-    guidance, scrubbed_research = _select_guidance_and_scrub(research)
+    # Phase 24 (PRM-01): thread the operator-editable guidance map from RunConfig
+    # into the selector; it falls back to the in-code GUIDANCE_* when absent.
+    cfg = state.get("config")
+    section_guidance = cfg.section_guidance if cfg else None
+    guidance, scrubbed_research = _select_guidance_and_scrub(
+        research, section_guidance
+    )
     style_brief = state.get("style_brief") or {}
 
     messages = build_section_writer_prompt(

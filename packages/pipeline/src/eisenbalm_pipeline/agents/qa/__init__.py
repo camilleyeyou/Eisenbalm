@@ -166,8 +166,12 @@ async def qa(state: DispatchState) -> DispatchState:
     # is None (legacy Jesse-default path), run_llm_judge produces byte-identical
     # Phase 5 messages (NRR-10).
     narrator = state.get("narrator")
+    # Phase 24 (PRM-01): read the operator-editable rubric from RunConfig (loaded
+    # once at run start), with disk fallback inside run_llm_judge when absent.
+    cfg = state.get("config")
+    rubric = cfg.rubric if cfg else None
     layer2, resolved_model = await run_llm_judge(
-        sections, run_id=run_id, narrator=narrator,
+        sections, run_id=run_id, narrator=narrator, rubric=rubric,
     )
 
     all_findings = layer1 + layer2

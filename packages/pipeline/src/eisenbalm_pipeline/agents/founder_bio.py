@@ -86,7 +86,9 @@ class FounderBioOutput(BaseModel):
         return body
 
 
-def _select_guidance_and_scrub(research: dict) -> tuple[str, dict]:
+def _select_guidance_and_scrub(
+    research: dict, section_guidance: dict[str, str] | None = None
+) -> tuple[str, dict]:
     """Return ``(guidance, scrubbed_research)``.
 
     Per RESEARCH Pitfall 5: when ``founderNameVerified=False``, REMOVE
@@ -100,15 +102,26 @@ def _select_guidance_and_scrub(research: dict) -> tuple[str, dict]:
     Unverified path: returns ``GUIDANCE_ANONYMOUS`` formatted with the role
     (defaults to "founder" when ``founderRole`` is absent) plus a research
     dict with ``founderName`` explicitly set to None.
+
+    Phase 24 (PRM-01): ``section_guidance`` is the operator-editable map from
+    ``RunConfig.section_guidance`` (keys ``founder_bio_verified`` /
+    ``founder_bio_anonymous``). When present, the matching key's content is the
+    template source; otherwise the in-code GUIDANCE_* constants are used (which
+    are byte-identical to the on-disk seed). The anonymous template — from EITHER
+    source — keeps its runtime ``.format(role=role)`` (the literal ``{role}``
+    placeholder is stored UNFORMATTED in both the constant and the .md seed).
     """
+    sg = section_guidance or {}
     verified = bool(research.get("founderNameVerified"))
     if verified:
-        return GUIDANCE_VERIFIED, dict(research)
+        verified_guidance = sg.get("founder_bio_verified") or GUIDANCE_VERIFIED
+        return verified_guidance, dict(research)
 
     role = research.get("founderRole") or "founder"
     scrubbed = {k: v for k, v in research.items() if k != "founderName"}
     scrubbed["founderName"] = None  # explicit null prevents schema-based fallback
-    return GUIDANCE_ANONYMOUS.format(role=role), scrubbed
+    anonymous_guidance = sg.get("founder_bio_anonymous") or GUIDANCE_ANONYMOUS
+    return anonymous_guidance.format(role=role), scrubbed
 
 
 def _founder_bio_payload(state: DispatchState) -> dict:
@@ -139,7 +152,13 @@ def _founder_bio_payload(state: DispatchState) -> dict:
 async def founder_bio(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
     research = state.get("research") or {}
-    guidance, scrubbed_research = _select_guidance_and_scrub(research)
+    # Phase 24 (PRM-01): thread the operator-editable guidance map from RunConfig
+    # into the selector; it falls back to the in-code GUIDANCE_* when absent.
+    cfg = state.get("config")
+    section_guidance = cfg.section_guidance if cfg else None
+    guidance, scrubbed_research = _select_guidance_and_scrub(
+        research, section_guidance
+    )
     style_brief = state.get("style_brief") or {}
 
     messages = build_section_writer_prompt(
