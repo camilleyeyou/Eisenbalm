@@ -274,7 +274,8 @@ export default defineSchema({
     note: v.optional(v.string()),
   })
     .index('by_workspace', ['workspace_id'])
-    .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
+    .index('by_workspace_agentKey', ['workspace_id', 'agentKey'])
+    .index('by_workspace_agentKey_version', ['workspace_id', 'agentKey', 'version']),
 
   // ── pipeline_config: global pipeline settings (Phase 22) ────────────────────
   pipeline_config: defineTable({
