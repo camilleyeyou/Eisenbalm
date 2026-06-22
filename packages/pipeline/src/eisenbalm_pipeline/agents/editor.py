@@ -203,12 +203,16 @@ def _build_messages(
         .replace("{EDITOR_INTERRUPT_THRESHOLD}", f"{EDITOR_INTERRUPT_THRESHOLD}")
         .replace("{EDITOR_CONFIDENCE_THRESHOLD}", f"{EDITOR_CONFIDENCE_THRESHOLD}")
     )
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("editor_gate1_user")
+        if cfg and cfg.user_templates.get("editor_gate1_user")
+        else load_prompt("editor_gate1_user")
+    )
     user = (
-        f"Issue #{issue_number}\n\n"
-        f"CANDIDATES WITH ADVOCATE SCORES:\n{candidates_block}\n\n"
-        "Return JSON matching the EditorDecision schema: winnerName, "
-        "confidence (0.0-1.0), requiresHumanInput (bool), editorReasoning, "
-        "runnerUpNotes, deliberationTranscript."
+        user_tmpl
+        .replace("{issue_number}", str(issue_number))
+        .replace("{candidates_block}", candidates_block)
     )
     return [
         {"role": "system", "content": system},
@@ -448,10 +452,18 @@ def _build_editor_final_messages(state: DispatchState) -> list[dict]:
     cfg = state.get("config")
     base = cfg.agents["editor_final"].system_prompt if cfg else load_prompt("editor-final")
     system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    qa_corrections_json = json.dumps(qa_corrections, indent=2)
+    section_headlines_json = json.dumps(section_headlines, indent=2)
+    user_tmpl = (
+        cfg.user_templates.get("editor_final_user")
+        if cfg and cfg.user_templates.get("editor_final_user")
+        else load_prompt("editor_final_user")
+    )
     user = (
-        f"QA FINDINGS:\n{json.dumps(qa_corrections, indent=2)}\n\n"
-        f"SECTION HEADLINES:\n{json.dumps(section_headlines, indent=2)}\n\n"
-        "Return JSON EditorFinalOutput with editorFinalNotes (100-300 words)."
+        user_tmpl
+        .replace("{qa_corrections_json}", qa_corrections_json)
+        .replace("{section_headlines_json}", section_headlines_json)
     )
     return [
         {"role": "system", "content": system},

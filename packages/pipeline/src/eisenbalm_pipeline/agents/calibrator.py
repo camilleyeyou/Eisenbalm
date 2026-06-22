@@ -119,9 +119,11 @@ def _build_messages(
         .replace("{previous_bonus_types}", f"{previous_bonus_types}")
         .replace("{chosen_bonus_type}", chosen_bonus_type)
     )
+    # Phase 24 (PRM-01): static user template read from config, .md fallback.
     user = (
-        "Produce the StyleBrief for this week's issue. "
-        "Return valid JSON matching the StyleBriefOutput schema."
+        cfg.user_templates.get("calibrator_user")
+        if cfg and cfg.user_templates.get("calibrator_user")
+        else load_prompt("calibrator_user")
     )
     return [
         {"role": "system", "content": system},

@@ -196,14 +196,13 @@ def _build_messages(
     cfg = state.get("config")
     base = cfg.agents["scout"].system_prompt if cfg else load_prompt("scout")
     system = base.replace("{featured_keys}", f"{featured_keys}")
-    user = (
-        "Parse the following Tavily search results into 3-5 CharityCandidate "
-        "objects. Reject anything that does not look like a small or "
-        "overlooked charity.\n\n"
-        f"TAVILY RESULTS:\n{results_block}\n\n"
-        "Return JSON ScoutBatchOutput with field `candidates` "
-        "(list of 3-5 CharityCandidate objects)."
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("scout_user")
+        if cfg and cfg.user_templates.get("scout_user")
+        else load_prompt("scout_user")
     )
+    user = user_tmpl.replace("{results_block}", results_block)
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},

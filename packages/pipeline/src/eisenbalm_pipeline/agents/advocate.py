@@ -69,11 +69,13 @@ def _build_messages(*, state: DispatchState, candidates: list[dict]) -> list[dic
     candidates_json = json.dumps(candidates, indent=2, default=str)
     cfg = state.get("config")
     system = cfg.agents["advocate"].system_prompt if cfg else load_prompt("advocate")
-    user = (
-        f"CANDIDATES (Scout output, JSON):\n{candidates_json}\n\n"
-        "Return JSON AdvocateOutput with field `votes` (one AdvocateVote "
-        "per candidate, same order as input)."
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("advocate_user")
+        if cfg and cfg.user_templates.get("advocate_user")
+        else load_prompt("advocate_user")
     )
+    user = user_tmpl.replace("{candidates_json}", candidates_json)
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},

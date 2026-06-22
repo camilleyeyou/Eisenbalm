@@ -69,13 +69,16 @@ def _build_messages(state: DispatchState, charity: dict) -> list[dict[str, str]]
         .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
         .replace("{FORBIDDEN_CONSTRUCTS}", FORBIDDEN_CONSTRUCTS)
     )
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("game_user")
+        if cfg and cfg.user_templates.get("game_user")
+        else load_prompt("game_user")
+    )
     user = (
-        f"CHARITY: {charity.get('name', '')}\n"
-        f"MISSION: {charity.get('missionStatement', '')}\n\n"
-        "Return JSON GameOutput with: headline (game title), description "
-        "(50-100 word plain-text summary for accessibility), embedCode "
-        "(complete self-contained HTML document including inline <style> "
-        "and inline <script> — no external dependencies of any kind)."
+        user_tmpl
+        .replace("{charity_name}", charity.get("name", ""))
+        .replace("{mission_statement}", charity.get("missionStatement", ""))
     )
     return [
         {"role": "system", "content": system},

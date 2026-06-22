@@ -136,11 +136,17 @@ def _build_big_budget_prompt(
         else load_prompt("bonus-big-budget")
     )
     system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("bonus_big_budget_user")
+        if cfg and cfg.user_templates.get("bonus_big_budget_user")
+        else load_prompt("bonus_big_budget_user")
+    )
     user = (
-        f"CHARITY: {charity.get('name', '')}\n"
-        f"MISSION: {charity.get('missionStatement', '')}\n"
-        f"VISUAL DIRECTION: {style_brief.get('visualDirection', '')}\n\n"
-        "Return JSON BigBudgetBonus."
+        user_tmpl
+        .replace("{charity_name}", charity.get("name", ""))
+        .replace("{mission_statement}", charity.get("missionStatement", ""))
+        .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
     return [
         {"role": "system", "content": system},
@@ -158,11 +164,17 @@ def _build_jingle_prompt(
         else load_prompt("bonus-jingle")
     )
     system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("bonus_jingle_user")
+        if cfg and cfg.user_templates.get("bonus_jingle_user")
+        else load_prompt("bonus_jingle_user")
+    )
     user = (
-        f"CHARITY: {charity.get('name', '')}\n"
-        f"MISSION: {charity.get('missionStatement', '')}\n"
-        f"VISUAL DIRECTION: {style_brief.get('visualDirection', '')}\n\n"
-        "Return JSON JingleBonus with sunoAudioUrl set to empty string."
+        user_tmpl
+        .replace("{charity_name}", charity.get("name", ""))
+        .replace("{mission_statement}", charity.get("missionStatement", ""))
+        .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
     return [
         {"role": "system", "content": system},
@@ -184,11 +196,17 @@ def _build_spec_ad_prompt(
         .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
         .replace("{STRUCTURE_CONTRACT}", STRUCTURE_CONTRACT)
     )
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("bonus_spec_ad_user")
+        if cfg and cfg.user_templates.get("bonus_spec_ad_user")
+        else load_prompt("bonus_spec_ad_user")
+    )
     user = (
-        f"CHARITY: {charity.get('name', '')}\n"
-        f"MISSION: {charity.get('missionStatement', '')}\n"
-        f"VISUAL DIRECTION: {style_brief.get('visualDirection', '')}\n\n"
-        "Return JSON SpecAdBonus."
+        user_tmpl
+        .replace("{charity_name}", charity.get("name", ""))
+        .replace("{mission_statement}", charity.get("missionStatement", ""))
+        .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
     return [
         {"role": "system", "content": system},

@@ -106,15 +106,21 @@ def _build_messages(
         .replace("{display_list}", display_list)
         .replace("{body_list}", body_list)
     )
-    user_lines = [
-        f"CHARITY: {charity.get('name', '')}",
-        f"VISUAL DIRECTION: {style_brief.get('visualDirection', '')}",
-        "",
-        "Output JSON Theme: primaryColor, accentColor, backgroundColor, "
-        "textColor, fontDisplay, fontBody.",
-    ]
+    # Phase 24 (PRM-01): base (no-retry) user template read from config, .md
+    # fallback. The retry-error suffix (D-15 regenerate-once) stays in code.
+    user_tmpl = (
+        cfg.user_templates.get("design_user")
+        if cfg and cfg.user_templates.get("design_user")
+        else load_prompt("design_user")
+    )
+    user = (
+        user_tmpl
+        .replace("{charity_name}", charity.get("name", ""))
+        .replace("{visual_direction}", style_brief.get("visualDirection", ""))
+    )
     if retry_errors:
-        user_lines.extend([
+        user = "\n".join([
+            user,
             "",
             "PREVIOUS ATTEMPT FAILED VALIDATION:",
             *(f"- {e}" for e in retry_errors),
@@ -123,7 +129,7 @@ def _build_messages(
         ])
     return [
         {"role": "system", "content": system},
-        {"role": "user", "content": "\n".join(user_lines)},
+        {"role": "user", "content": user},
     ]
 
 

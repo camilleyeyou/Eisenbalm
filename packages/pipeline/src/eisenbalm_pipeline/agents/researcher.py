@@ -88,12 +88,16 @@ def _build_messages(
     cfg = state.get("config")
     base = cfg.agents["researcher"].system_prompt if cfg else load_prompt("researcher")
     system = base.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+    # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
+    user_tmpl = (
+        cfg.user_templates.get("researcher_user")
+        if cfg and cfg.user_templates.get("researcher_user")
+        else load_prompt("researcher_user")
+    )
     user = (
-        f"WINNING CHARITY:\n{charity}\n\n"
-        f"TAVILY RESEARCH RESULTS:\n{results_block}\n\n"
-        "Return JSON ResearchOutputModel with all narrative fields filled "
-        "and all source-URL fields either populated (pointing to charity's "
-        "own domain) or null."
+        user_tmpl
+        .replace("{charity}", f"{charity}")
+        .replace("{results_block}", results_block)
     )
     return [
         {"role": "system", "content": system},
