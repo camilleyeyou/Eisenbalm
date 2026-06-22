@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to plan
-stopped_at: Completed 24-08-diff-rollback-testrun-ui-PLAN.md
-last_updated: "2026-06-22T22:24:35.046Z"
+stopped_at: Phase 25 context gathered
+last_updated: "2026-06-22T23:21:31.029Z"
 progress:
   total_phases: 27
   completed_phases: 23
@@ -546,6 +546,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T22:13:13.243Z
-Stopped at: Completed 24-08-diff-rollback-testrun-ui-PLAN.md
-Resume file: None
+Last session: 2026-06-22T23:21:31.016Z
+Stopped at: Phase 25 context gathered
+Resume file: .planning/phases/25-run-control/25-CONTEXT.md
