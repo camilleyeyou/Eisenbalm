@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to plan
-stopped_at: Completed 22-05-PLAN.md
-last_updated: "2026-06-22T05:24:28.991Z"
+stopped_at: Phase 23 context gathered
+last_updated: "2026-06-22T06:22:05.568Z"
 progress:
   total_phases: 27
   completed_phases: 21
@@ -516,6 +516,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T05:17:43.087Z
-Stopped at: Completed 22-05-PLAN.md
-Resume file: None
+Last session: 2026-06-22T06:22:05.552Z
+Stopped at: Phase 23 context gathered
+Resume file: .planning/phases/23-node-wrappers-read-only-dashboard/23-CONTEXT.md
