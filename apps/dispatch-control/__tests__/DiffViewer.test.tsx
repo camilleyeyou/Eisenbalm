@@ -34,8 +34,12 @@ describe('DiffViewer side-by-side columns (PRM-04)', () => {
   it('renders two [data-side] columns for left and right', () => {
     expect(DiffViewer).toBeDefined()
 
+    // Alias the require-guarded component to a capitalized const so it can be
+    // used as a JSX element (a non-null assertion in tag position —
+    // `<DiffViewer!>` — is invalid TS syntax and never compiles).
+    const Diff = DiffViewer!
     const { container } = render(
-      <DiffViewer!
+      <Diff
         left={{ label: 'v1', content: 'line A\nremoved line\nshared\n' }}
         right={{ label: 'v2', content: 'line A\nadded line\nshared\n' }}
       />,
@@ -50,8 +54,9 @@ describe('DiffViewer side-by-side columns (PRM-04)', () => {
   })
 
   it('shows removed-only text in the left column and added-only in the right', () => {
+    const Diff = DiffViewer!
     const { container } = render(
-      <DiffViewer!
+      <Diff
         left={{ label: 'v1', content: 'shared\nremoved line\n' }}
         right={{ label: 'v2', content: 'shared\nadded line\n' }}
       />,

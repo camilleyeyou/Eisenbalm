@@ -1,16 +1,19 @@
 'use client'
 /**
- * Phase 24 (PRM-04) — version-history list for one agent.
+ * Phase 24 (PRM-04) — version-history list + compare for one agent.
  *
  * Subscribes to api.promptVersions.listForAgent (newest-first) and renders each
  * version's number, author, timestamp, note, and an Active badge.
  *
- * Diff + activate/rollback controls land in Plan 08 — this panel leaves a
- * clearly-marked mount point (`data-rollback-mount`) for them rather than
- * shipping the controls now.
+ * Plan 08 adds:
+ *   - a two-version compare selector (pick A + B) that renders <DiffViewer> for
+ *     the chosen pair (default A = active version, B = the selected version).
+ *     (activate/rollback controls land in Task 2.)
  */
+import { useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import { DiffViewer } from './DiffViewer'
 
 interface VersionHistoryPanelProps {
   workspaceId: string
@@ -35,6 +38,28 @@ export default function VersionHistoryPanel({
     workspace_id: workspaceId,
     agentKey,
   })
+
+  // Compare selector state: which two versions to diff. Null until the user
+  // picks; defaults are derived (A = active, B = newest non-active) below.
+  const [compareA, setCompareA] = useState<number | null>(null)
+  const [compareB, setCompareB] = useState<number | null>(null)
+
+  const activeVersion = useMemo(
+    () => versions?.find(v => v.isActive)?.version ?? null,
+    [versions],
+  )
+
+  // Resolve the effective pair: explicit selection, else sensible defaults.
+  const effectiveA = compareA ?? activeVersion ?? versions?.[0]?.version ?? null
+  const effectiveB =
+    compareB ??
+    versions?.find(v => v.version !== effectiveA)?.version ??
+    effectiveA
+
+  const rowA = versions?.find(v => v.version === effectiveA) ?? null
+  const rowB = versions?.find(v => v.version === effectiveB) ?? null
+  const canCompare =
+    rowA !== null && rowB !== null && rowA.version !== rowB.version
 
   if (versions === undefined) {
     return (
@@ -88,11 +113,66 @@ export default function VersionHistoryPanel({
               {v.note && (
                 <p className="mt-1 text-xs text-neutral-600">{v.note}</p>
               )}
-              {/* Plan 08 mounts diff + activate/rollback controls here. */}
+              {/* Task 2 mounts activate/rollback controls here. */}
               <div data-rollback-mount={`${agentKey}:${v.version}`} />
             </li>
           ))}
         </ul>
+      )}
+
+      {/* ── Compare two versions (PRM-04 side-by-side diff) ──────────────── */}
+      {versions.length >= 2 && (
+        <div className="space-y-2 rounded-lg border border-neutral-200 bg-white p-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Compare versions
+          </h3>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <label className="flex items-center gap-1">
+              <span className="text-neutral-500">A</span>
+              <select
+                className="rounded border border-neutral-300 px-1.5 py-1"
+                value={effectiveA ?? ''}
+                onChange={e => setCompareA(Number(e.target.value))}
+                aria-label="Compare version A"
+              >
+                {versions.map(v => (
+                  <option key={v._id} value={v.version}>
+                    v{v.version}
+                    {v.isActive ? ' (active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="text-neutral-400">vs</span>
+            <label className="flex items-center gap-1">
+              <span className="text-neutral-500">B</span>
+              <select
+                className="rounded border border-neutral-300 px-1.5 py-1"
+                value={effectiveB ?? ''}
+                onChange={e => setCompareB(Number(e.target.value))}
+                aria-label="Compare version B"
+              >
+                {versions.map(v => (
+                  <option key={v._id} value={v.version}>
+                    v{v.version}
+                    {v.isActive ? ' (active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {canCompare && rowA && rowB ? (
+            <DiffViewer
+              left={{ label: `v${rowA.version}`, content: rowA.content }}
+              right={{ label: `v${rowB.version}`, content: rowB.content }}
+            />
+          ) : (
+            <p className="text-xs text-neutral-400">
+              Pick two different versions to see a side-by-side diff.
+            </p>
+          )}
+        </div>
       )}
     </div>
   )
