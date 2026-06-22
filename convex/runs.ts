@@ -70,6 +70,24 @@ export const byRunId = query({
   },
 })
 
+// ── listForWorkspace ─────────────────────────────────────────────────────────
+
+/**
+ * Returns all runs for a workspace, sorted newest-first (by startedAt desc).
+ * Used by the Runs history table (OBS-02) and cost roll-up (OBS-04).
+ * Frontend aggregation is acceptable at 52 runs/year per RESEARCH Pattern 5.
+ */
+export const listForWorkspace = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const rows = await ctx.db
+      .query('runs')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+    return rows.sort((a, b) => b.startedAt - a.startedAt)
+  },
+})
+
 // ── latest ───────────────────────────────────────────────────────────────────
 
 /**

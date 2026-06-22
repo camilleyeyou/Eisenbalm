@@ -21,6 +21,8 @@ export default defineConfig({
       // convex-test requires edge-runtime
       ['__tests__/agentRuns.test.ts', 'edge-runtime'],
       ['__tests__/auditLog.test.ts', 'edge-runtime'],
+      ['__tests__/runs.test.ts', 'edge-runtime'],
+      ['__tests__/auditViewer.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],
