@@ -2,7 +2,7 @@
 phase: 23
 slug: node-wrappers-read-only-dashboard
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-21
 ---
@@ -20,11 +20,11 @@ created: 2026-06-21
 
 | Property | Value |
 |----------|-------|
-| **Framework** | pytest (pipeline, Python) · vitest/convex-test (Convex) — confirm during planning |
-| **Config file** | `packages/pipeline/pyproject.toml` (pytest); dispatch-control test config — Wave 0 confirms |
-| **Quick run command** | `pnpm --filter pipeline test` / `uv run pytest packages/pipeline -k wrap_agent_node` |
-| **Full suite command** | `uv run pytest packages/pipeline && pnpm --filter dispatch-control test` |
-| **Estimated runtime** | ~TBD seconds (planner sets after Wave 0) |
+| **Framework** | pytest + pytest-asyncio (pipeline, Python) · vitest 3.2 + convex-test (Convex/edge-runtime) · vitest + jsdom + @testing-library/react (components) |
+| **Config file** | `packages/pipeline/pyproject.toml` (pytest); `apps/dispatch-control/vitest.config.ts` (environmentMatchGlobs: edge-runtime for convex-test, jsdom for *.test.tsx, node default) |
+| **Quick run command** | `pnpm --filter dispatch-control test:unit` / `uv run pytest packages/pipeline -k 'wrapper or cost_double'` |
+| **Full suite command** | `uv run pytest packages/pipeline && pnpm --filter dispatch-control test && pnpm --filter dispatch-control build` |
+| **Estimated runtime** | ~30s vitest unit · ~20s pipeline pytest subset · ~40s next build |
 
 ---
 
@@ -44,13 +44,17 @@ created: 2026-06-21
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 23-XX-XX | XX | 0 | (schema) | unit | `convex test` | ❌ W0 | ⬜ pending |
-| 23-XX-XX | XX | — | OBS-01 | unit/integration | TBD | ❌ W0 | ⬜ pending |
-| 23-XX-XX | XX | — | OBS-02 | integration | TBD | ❌ W0 | ⬜ pending |
-| 23-XX-XX | XX | — | OBS-03 | integration | TBD | ❌ W0 | ⬜ pending |
-| 23-XX-XX | XX | — | OBS-04 | integration | TBD (assert agent_runs cost == pipelineRuns.cost) | ❌ W0 | ⬜ pending |
-| 23-XX-XX | XX | — | OBS-05 | integration | TBD | ❌ W0 | ⬜ pending |
-| 23-XX-XX | XX | — | AUD-01 | unit | TBD (audit row shape: actor/timestamp/before/after) | ❌ W0 | ⬜ pending |
+| 23-01-T1 | 01 | 0 | (schema) | static | `grep -q agent_run_payloads convex/schema.ts` | ❌ W0 | ⬜ pending |
+| 23-01-T2 | 01 | 0 | OBS-03/05/AUD-01 | static | `grep export const agentRuns.ts + auditLog.ts` | ❌ W0 | ⬜ pending |
+| 23-01-T3 | 01 | 0 | OBS-04/AUD-01 | unit/integration | `pnpm --filter dispatch-control test:unit` (costRollup, agentRuns, auditLog) | ❌ W0 | ⬜ pending |
+| 23-01-T3 | 01 | 0 | OBS-04 (no-double-count) | unit (Python) | `uv run pytest packages/pipeline/tests/test_cost_double_count.py -x` | ❌ W0 | ⬜ pending |
+| 23-02-T1 | 02 | 1 | OBS-03/04/05 | unit (Python) | `uv run pytest packages/pipeline/tests/test_agent_wrapper.py -x` | ❌ W0 | ⬜ pending |
+| 23-02-T2 | 02 | 1 | OBS-03 | static/import | `grep -c wrap_agent_node builder.py ≥18 + queueForRun in runs.py` | ❌ W0 | ⬜ pending |
+| 23-03-T2 | 03 | 1 | OBS-01 | component (jsdom) | `pnpm --filter dispatch-control test:unit -- AgentNode` | ❌ W0 | ⬜ pending |
+| 23-03-T3 | 03 | 1 | OBS-03/05 | unit + build | `pnpm --filter dispatch-control test:unit -- pipelineTopology && build` | ❌ W0 | ⬜ pending |
+| 23-04-T1 | 04 | 1 | OBS-02 | integration (convex-test) | `pnpm --filter dispatch-control test:unit -- runs` | ❌ W0 | ⬜ pending |
+| 23-04-T2 | 04 | 1 | OBS-04 | build + manual reconcile | `pnpm --filter dispatch-control build` | ❌ W0 | ⬜ pending |
+| 23-04-T3 | 04 | 1 | AUD-01 | integration (convex-test) | `pnpm --filter dispatch-control test:unit -- auditViewer` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -58,10 +62,14 @@ created: 2026-06-21
 
 ## Wave 0 Requirements
 
-- [ ] Confirm/extend pytest harness for `wrap_agent_node` (pipeline) — stubs for OBS-03/05 wrapper behavior
-- [ ] Confirm Convex test harness (`convex-test`/vitest) for `agentRuns.ts` + `auditLog.ts` mutations/queries
-- [ ] Integration fixture asserting `agent_runs` cost values reconcile with `pipelineRuns.cost` (OBS-04, "no second recorder" guard)
-- [ ] Frontend test setup for dispatch-control if subscription/UI behavior is unit-tested (otherwise mark manual)
+All Wave 0 work lives in **Plan 23-01** (wave 0; every other plan depends_on it):
+
+- [ ] (23-01-T3) Install `convex-test` + `@edge-runtime/vm`; wire `environmentMatchGlobs` in vitest.config.ts + `__tests__/setup.ts` schema re-export
+- [ ] (23-01-T3) Convex test harness green for `agentRuns.ts` + `auditLog.ts` mutations/queries (agentRuns.test.ts, auditLog.test.ts)
+- [ ] (23-01-T3) `lib/costRollup.ts` (`parseCostJson`/`sumRunsCost`) + `costRollup.test.ts` (OBS-04 frontend aggregation)
+- [ ] (23-01-T3) `test_cost_double_count.py` — proves `get_cost_payload` is a pure read (OBS-04 "no second recorder" guard)
+- [ ] (23-02-T1) `test_agent_wrapper.py` created in Plan 23-02 (wave 1) covering OBS-03/05 wrapper emit/fail/no-cost behaviors
+- [ ] (23-03-T2) jsdom + @testing-library/react added in Plan 23-03 for `AgentNode.test.tsx` (OBS-01 component render)
 
 *Planner refines this list from RESEARCH.md.*
 

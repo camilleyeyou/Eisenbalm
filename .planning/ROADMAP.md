@@ -504,7 +504,12 @@ Plans:
   3. Operator can open any past run and inspect per-agent input/output payload and any error or retry message
   4. The pipeline graph view shows each agent as a node with its current config (model, enabled flag, description) sourced from Convex
   5. Every config/prompt change, review decision, and kill-switch flip emits a row to the `audit_log` table with actor, timestamp, and before/after values
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 23-01-PLAN.md — Convex schema extension (agent_runs + agent_run_payloads) + agentRuns.ts/auditLog.ts mutations+queries + cost-rollup util + convex-test/pytest harness (Wave 0)
+- [ ] 23-02-PLAN.md — wrap_agent_node() instrumentation across all agent nodes + queueForRun at run start (Wave 1)
+- [ ] 23-03-PLAN.md — Graph view: React Flow DAG with config-at-rest, live status, node-click I/O panel (Wave 1)
+- [ ] 23-04-PLAN.md — Runs history + run detail + cost roll-up + read-only audit-log viewer (Wave 1)
 **UI hint**: yes
 
 ### Phase 24: Prompt Editor + Versioning
