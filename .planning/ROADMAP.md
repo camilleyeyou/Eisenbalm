@@ -410,7 +410,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
-| 24. Prompt Editor + Versioning | 0/? | Not started | - |
+| 24. Prompt Editor + Versioning | 1/10 | In Progress|  |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
@@ -525,7 +525,7 @@ Plans:
   6. `VOICE_CONSTRAINTS` appears in the editor as a named config entry alongside agent prompts; editing and versioning it follows the same save-as-version flow
 **Plans**: 10 plans
 Plans:
-- [ ] 24-01-contracts-and-test-scaffold-PLAN.md — API_CONTRACTS amendment (mutations + test-run endpoint + RunConfig.voice_constraints) + 8 RED test files (Wave 1)
+- [x] 24-01-contracts-and-test-scaffold-PLAN.md — API_CONTRACTS amendment (mutations + test-run endpoint + RunConfig.voice_constraints) + 8 RED test files (Wave 1)
 - [ ] 24-02-convex-versioning-data-layer-PLAN.md — saveVersion/activate/listForAgent/getByVersion + by_workspace_agentKey_version index + in-progress guard + audit (Wave 2, PRM-03/04)
 - [ ] 24-03-pipeline-asset-loading-infra-PLAN.md — RunConfig asset fields + agentKey registries + config_loader hydration with disk fallback (Wave 2, PRM-01/06)
 - [ ] 24-04a-user-template-md-and-byte-test-PLAN.md — 11 *_user.md templates captured + byte-equivalence test green (Wave 3, PRM-01)

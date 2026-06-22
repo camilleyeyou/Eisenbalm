@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to plan
-stopped_at: Phase 24 context gathered
-last_updated: "2026-06-22T08:45:33.127Z"
+status: Ready to execute
+stopped_at: Completed 24-01-PLAN.md
+last_updated: "2026-06-22T09:55:46.222Z"
 progress:
   total_phases: 27
   completed_phases: 22
-  total_plans: 147
-  completed_plans: 145
+  total_plans: 157
+  completed_plans: 146
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 23 — node-wrappers-read-only-dashboard
+**Current focus:** Phase 24 — prompt-editor-versioning
 
 ## Current Position
 
-Phase: 24
-Plan: Not started
+Phase: 24 (prompt-editor-versioning) — EXECUTING
+Plan: 2 of 10
 
 ## Performance Metrics
 
@@ -175,6 +175,7 @@ Plan: Not started
 | Phase 23 P02 | 10 | 2 tasks | 4 files |
 | Phase 23 P03 | 30 | 3 tasks | 13 files |
 | Phase 23 P04 | 12 | 3 tasks | 12 files |
+| Phase 24 P01 | 18min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -447,6 +448,8 @@ Recent decisions affecting current work:
 - [Phase 23]: agentKey→displayName derived via toDisplayName() from snake_case; no displayName field on agents table
 - [Phase 23]: ConvexClientProvider D-16 null guard added to dispatch-control (mirrors apps/web) for env-less CI builds
 - [Phase 23]: force-dynamic required on all dispatch-control pages using Convex useQuery: D-16 null guard doesn't provide ConvexProvider context, so static prerendering throws; graph/page.tsx retroactively fixed alongside runs + settings
+- [Phase 24]: [Phase 24 Plan 01]: API_CONTRACTS amended contract-first for all Phase 24 boundaries (by_workspace_agentKey_version index, saveVersion/activate/listForAgent/getByVersion, §3A test-run endpoint, RunConfig.voice_constraints); frozen §4.1-4.5 untouched
+- [Phase 24]: [Phase 24 Plan 01]: founder_bio/case_study guidance externalized as two agentKeys each (_verified + _anonymous, D-06 Option A); voice_constraints seed stores full assembled VOICE_CONSTRAINTS; test-run isolation = direct acomplete call, no agent_runs/deliberationEvents writes
 
 ### Pending Todos
 
@@ -527,6 +530,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T08:45:33.118Z
-Stopped at: Phase 24 context gathered
-Resume file: .planning/phases/24-prompt-editor-versioning/24-CONTEXT.md
+Last session: 2026-06-22T09:55:33.559Z
+Stopped at: Completed 24-01-PLAN.md
+Resume file: None
