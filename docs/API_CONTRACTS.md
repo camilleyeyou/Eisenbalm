@@ -1648,6 +1648,9 @@ class RunConfig:
     auto_publish: bool                  # pipeline_config; default False
     schedule_enabled: bool              # pipeline_config; default False
     voice_constraints: Optional[str] = None  # Phase 24 PRM-06 ADD — None → use code-constant VOICE_CONSTRAINTS; hydrated from the active `voice_constraints` prompt_versions row at run start and threaded into assemble_voice(..., db_voice_override=voice_constraints). assemble_voice(None) without an override stays byte-identical to VOICE_CONSTRAINTS (import-time sentinel + test_voice.py invariants preserved).
+    user_templates: dict[str, str] = {}      # Phase 24 PRM-01 ADD (Plan 03) — per-agent user-message templates keyed by the USER_TEMPLATE_KEYS agentKeys (scout_user … bonus_spec_ad_user). Each entry hydrated at run start from the active prompt_versions row for the matching agentKey; disk/code fallback per CFG-03. Empty between Wave 2 and Wave 3 until Plan 04 seeds the .md files.
+    section_guidance: dict[str, str] = {}    # Phase 24 PRM-01 ADD (Plan 03) — section-guidance blocks keyed by the SECTION_GUIDANCE_KEYS agentKeys (section_guidance_origin/_problem + founder_bio/case_study _verified/_anonymous). Each entry hydrated at run start from the active prompt_versions row for the matching agentKey; disk/code fallback per CFG-03. Empty until Plan 05 seeds the .md files.
+    rubric: Optional[str] = None             # Phase 24 PRM-01 ADD (Plan 03) — QA rubric. Hydrated at run start from the active `rubric` prompt_versions row; disk/code fallback per CFG-03 (agents/qa/rubric.md byte-source). None until Plan 05 seeds the row/file.
 
 
 class DispatchState(TypedDict):
