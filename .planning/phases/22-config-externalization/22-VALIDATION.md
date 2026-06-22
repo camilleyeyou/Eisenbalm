@@ -1,8 +1,8 @@
 ---
 phase: 22
 slug: config-externalization
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-22
 ---
@@ -23,7 +23,7 @@ created: 2026-06-22
 | **Convex** | `pnpm --filter @eisenbalm/convex typecheck` + `codegen` (schema + seed/query compile) |
 | **Byte-verification** | `verify_prompt_seed.py` standalone (live Convex) + pytest parametrize (mocked Convex) — both per research |
 | **Config files** | `packages/pipeline/pyproject.toml` (exists) |
-| **Quick run command** | `cd packages/pipeline && uv run pytest tests/lib/test_config_loader.py tests/api/test_runs.py -q` |
+| **Quick run command** | `cd packages/pipeline && uv run pytest tests/lib/test_config_loader.py tests/api/test_runs_config_snapshot.py -q` |
 | **Full suite command** | `cd packages/pipeline && uv run pytest -q && pnpm --filter @eisenbalm/convex typecheck` |
 | **Estimated runtime** | ~30 seconds |
 
@@ -51,11 +51,22 @@ created: 2026-06-22
 
 ## Per-Task Verification Map
 
-*Planner fills this once PLAN.md tasks exist. Every task maps to an automated command or a Wave 0 dependency.*
-
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| TBD | — | — | — | — | — | — | ⬜ pending |
+| 01-T1 API_CONTRACTS §7 amend | 22-01 | 0 | CFG-01/02/03/04 | grep | `grep "config: NotRequired\|top_p\|configSnapshot" docs/API_CONTRACTS.md` | ❌ Wave 0 creates | ⬜ pending |
+| 01-T2 config_loader test scaffold | 22-01 | 0 | CFG-01/03/04 | unit (xfail) | `cd packages/pipeline && uv run pytest tests/lib/test_config_loader.py -q` | ❌ Wave 0 creates | ⬜ pending |
+| 01-T3 byte-parity/snapshot/wheel scaffolds | 22-01 | 0 | CFG-02/04 | unit (xfail + wheel pass) | `cd packages/pipeline && uv run pytest tests/lib/test_prompt_seed.py tests/api/test_runs_config_snapshot.py tests/test_package_data_prompts.py -q` | ❌ Wave 0 creates | ⬜ pending |
+| 02-T1 agents schema + agents.ts/pipelineConfig.ts | 22-02 | 1 | CFG-04 | typecheck | `pnpm --filter @eisenbalm/convex typecheck` | ✅ schema stub | ⬜ pending |
+| 02-T2 promptVersions.ts + runs.ts | 22-02 | 1 | CFG-02/04 | typecheck+codegen | `pnpm --filter @eisenbalm/convex typecheck && pnpm --filter @eisenbalm/convex codegen` | ✅ schema stub | ⬜ pending |
+| 03-T1 RunConfig + mapping + snapshot_config | 22-03 | 2 | CFG-01/04 | import check | `cd packages/pipeline && uv run python -c "from eisenbalm_pipeline.lib.config_loader import RunConfig,AGENT_KEY_TO_PROMPT_FILE; assert len(AGENT_KEY_TO_PROMPT_FILE)==11"` | ❌ 03 creates | ⬜ pending |
+| 03-T2 load_run_config two-tier fallback | 22-03 | 2 | CFG-01/03 | unit | `cd packages/pipeline && uv run pytest tests/lib/test_config_loader.py -q` | ❌ 03 creates | ⬜ pending |
+| 03-T3 DispatchState.config + green loader tests | 22-03 | 2 | CFG-01 | unit | `cd packages/pipeline && uv run pytest tests/lib/test_config_loader.py tests/test_builder_wiring.py tests/test_voice.py -q` | ✅ state.py | ⬜ pending |
+| 04-T1 seed_phase22.py | 22-04 | 3 | CFG-02 | ast/grep | `cd packages/pipeline && uv run python -c "import ast; s=open('scripts/seed_phase22.py').read(); ast.parse(s); assert 'load_prompt(' in s and 'open(' not in s"` | ❌ 04 creates | ⬜ pending |
+| 04-T2 verify_prompt_seed.py | 22-04 | 3 | CFG-02 | ast/grep | `grep "getActive" packages/pipeline/scripts/verify_prompt_seed.py` | ❌ 04 creates | ⬜ pending |
+| 04-T3 byte-parity pytest green | 22-04 | 3 | CFG-02 | unit | `cd packages/pipeline && uv run pytest tests/lib/test_prompt_seed.py -q` | ❌ 01 scaffolds, 04 greens | ⬜ pending |
+| 05-T1 run_weekly snapshot-before-task wiring | 22-05 | 3 | CFG-04 | ast/grep | `cd packages/pipeline && uv run python -c "s=open('src/eisenbalm_pipeline/api/runs.py').read(); assert s.count('snapshot_config(')==1 and 'load_run_config' in s"` | ✅ runs.py | ⬜ pending |
+| 05-T2 11 call-site swap | 22-05 | 3 | CFG-01 | unit | `cd packages/pipeline && uv run pytest tests/test_voice.py tests/test_section_writer_voice_propagation.py -q` | ✅ agent files | ⬜ pending |
+| 05-T3 snapshot-ordering tests + full suite | 22-05 | 3 | CFG-01/04 | unit | `cd packages/pipeline && uv run pytest tests/api/test_runs_config_snapshot.py -q && uv run pytest -q` | ❌ 01 scaffolds, 05 greens | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,12 +74,11 @@ created: 2026-06-22
 
 ## Wave 0 Requirements
 
-- [ ] `packages/pipeline/tests/lib/test_config_loader.py` — stubs for CFG-01/CFG-03 (load_run_config happy path + two-tier fallback)
-- [ ] `packages/pipeline/tests/lib/test_config_snapshot.py` (or in test_runs.py) — stub for CFG-04 (snapshot-before-invoke ordering)
-- [ ] `packages/pipeline/tests/lib/test_prompt_seed_byte_parity.py` — parametrized stub for CFG-02 (11-file byte comparison)
-- [ ] `packages/pipeline/tests/conftest.py` — shared fixtures (mock Convex query/mutation, caplog) if not already present
-
-*If existing pipeline test infra covers fixtures, note that and only add the new test files.*
+- [ ] `packages/pipeline/tests/lib/test_config_loader.py` — CFG-01/CFG-03/CFG-04 (load_run_config happy path + two-tier fallback + snapshot round-trip) — Plan 22-01 Task 2
+- [ ] `packages/pipeline/tests/lib/test_prompt_seed.py` — CFG-02 parametrized byte-comparison (11 pairs) + idempotency — Plan 22-01 Task 3
+- [ ] `packages/pipeline/tests/api/test_runs_config_snapshot.py` — CFG-04 snapshot-before-invoke ordering + resume-no-resnap — Plan 22-01 Task 3
+- [ ] `packages/pipeline/tests/test_package_data_prompts.py` — wheel-safe `load_prompt` resolution over the 11 stems (MUST pass at Wave 0) — Plan 22-01 Task 3
+- [x] `packages/pipeline/tests/conftest.py` — shared fixtures already present (env-guard + ASGI client); reuse, do not duplicate
 
 ---
 
@@ -76,18 +86,18 @@ created: 2026-06-22
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Live seed against the real Convex deployment | CFG-02 | Needs the live `modest-magpie-797` deployment | Run the seed mutation, then `uv run python verify_prompt_seed.py` against live Convex → expect zero diff across 11 rows |
+| Live seed against the real Convex deployment | CFG-02 | Needs the live `modest-magpie-797` deployment | `cd packages/pipeline && uv run python scripts/seed_phase22.py` then `uv run python scripts/verify_prompt_seed.py` → expect "11/11 byte-identical", exit 0 |
 | End-to-end live run shows a real `configSnapshot` | CFG-01/CFG-04 | Needs a full pipeline run on live infra | Trigger a run; inspect the `runs` record's `configSnapshot` field; confirm it matches the active prompt versions |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (new pipeline test files)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>`/grep verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (new pipeline test files)
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved (planner — 22-plan-phase)

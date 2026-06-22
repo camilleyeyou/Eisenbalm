@@ -487,7 +487,12 @@ Plans:
   2. The config snapshot is written to Convex and confirmed before `graph.ainvoke()` is called; editing a prompt mid-run does not change the in-flight run's behavior (the config was captured at start)
   3. All 12 agent prompt `.md` files appear in Convex `prompt_versions` as version-1 active rows; running the byte-comparison verification script shows zero diff between the seeded rows and the original files
   4. If Convex is unreachable at run start, the pipeline falls back to the on-disk `.md` files and logs a warning — it does not crash or silently ignore the degradation
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 22-01-PLAN.md — Wave 0: API_CONTRACTS §7 amendment (DispatchState.config) + failing test scaffolds (config_loader, byte-parity, snapshot-ordering) + wheel-safe prompt-data test
+- [ ] 22-02-PLAN.md — Convex schema flesh-out (agents top_p/max_tokens/description) + agents/promptVersions/pipelineConfig/runs functions (idempotent upserts + read queries + setConfigSnapshot)
+- [ ] 22-03-PLAN.md — lib/config_loader.py (RunConfig + AGENT_KEY_TO_PROMPT_FILE + load_run_config two-tier fallback + snapshot_config) + DispatchState.config field
+- [ ] 22-04-PLAN.md — Idempotent seed_phase22.py + standalone verify_prompt_seed.py + green mocked byte-parity pytest (CFG-02)
+- [ ] 22-05-PLAN.md — runs.py snapshot-before-invoke wiring + 11 prompt call-site swap + snapshot-ordering/resume-no-resnap tests
 
 ### Phase 23: Node Wrappers + Read-Only Dashboard
 **Goal**: Every LangGraph agent node is wrapped by `wrap_agent_node()`; the wrapper emits `agent_runs:started`/`completed`/`failed` to Convex (reading already-accumulated cost from `cost.py` — no second recorder); the operator dashboard shows the pipeline graph, full run history, a live run view with per-agent status and cost, and per-agent input/output inspection; audit infrastructure is in place
