@@ -2,7 +2,7 @@
 phase: 24-prompt-editor-versioning
 plan: 08
 type: execute
-wave: 6
+wave: 7
 depends_on: [24-02, 24-06, 24-07]
 files_modified:
   - apps/dispatch-control/app/(dashboard)/prompts/_components/DiffViewer.tsx

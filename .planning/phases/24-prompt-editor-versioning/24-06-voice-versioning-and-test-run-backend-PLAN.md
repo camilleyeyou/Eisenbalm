@@ -2,8 +2,8 @@
 phase: 24-prompt-editor-versioning
 plan: 06
 type: execute
-wave: 5
-depends_on: [24-03, 24-05]
+wave: 6
+depends_on: [24-03, 24-05b]
 files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/prompts/voice_constraints.md
   - packages/pipeline/src/eisenbalm_pipeline/lib/voice.py
@@ -191,9 +191,11 @@ main.py mounts routers via app.include_router(...). RunConfig.voice_constraints 
     - .planning/phases/24-prompt-editor-versioning/24-RESEARCH.md (Validation Architecture → Phase Requirements → Test Map)
   </read_first>
   <action>
-    Run the full pipeline suite and confirm green. Then populate 24-VALIDATION.md:
-    - Fill the Per-Task Verification Map table with one row per Phase 24 task (Plans 01-07), each mapping
-      to its PRM requirement, test type, and the automated command from that task's <verify>.
+    Run the full pipeline suite and confirm green. Then finalize 24-VALIDATION.md:
+    - The Per-Task Verification Map table was PRE-POPULATED by the planner (one row per Phase 24 task,
+      Plans 01-08, each mapping to its PRM requirement + test type + automated command). Verify each row's
+      automated command still matches the task as executed; update any command that drifted during
+      execution. Flip each row's Status to ✅ now that the backend is green.
     - Check off the Wave 0 Requirements (byte-equivalence oracles, voice invariants preserved, Convex
       mutation tests, dispatch-control harness) now that they exist.
     - Set `nyquist_compliant: true` and `wave_0_complete: true` in the frontmatter.
@@ -204,7 +206,7 @@ main.py mounts routers via app.include_router(...). RunConfig.voice_constraints 
   <acceptance_criteria>
     - `cd packages/pipeline && uv run pytest -x -q` exits 0 (full suite green)
     - 24-VALIDATION.md frontmatter has `nyquist_compliant: true` and `wave_0_complete: true`
-    - The Per-Task Verification Map has ≥7 rows (one per plan) — `grep -c "PRM-0" .planning/phases/24-prompt-editor-versioning/24-VALIDATION.md` returns ≥7
+    - The Per-Task Verification Map has ≥9 rows (one per plan task group) — `grep -c "PRM-0" .planning/phases/24-prompt-editor-versioning/24-VALIDATION.md` returns ≥9
   </acceptance_criteria>
   <done>Pipeline backend fully green; validation map populated; nyquist compliant.</done>
 </task>

@@ -82,7 +82,7 @@ workspace_id is the string "eisenbalm".
   <name>Task 1: Install CodeMirror deps + build VariableRegistry + highlight extension</name>
   <files>apps/dispatch-control/package.json, apps/dispatch-control/app/(dashboard)/prompts/_components/VariableRegistry.ts, apps/dispatch-control/app/(dashboard)/prompts/_components/variableHighlightExtension.ts, apps/dispatch-control/app/globals.css</files>
   <read_first>
-    - .planning/phases/24-prompt-editor-versioning/24-RESEARCH.md (Standard Stack versions; Pattern 2 highlight code; Pattern 8 complete variable map incl. the advocate row resolved in Plan 06 backend reads)
+    - .planning/phases/24-prompt-editor-versioning/24-RESEARCH.md (Standard Stack versions; Pattern 2 highlight code; Pattern 8 complete variable map — this is the AUTHORITATIVE token source for the registry, including the `*_user` token sets and the advocate-empty row; do NOT wait on Plan 04a/04b execution output, the tokens are fully enumerated in Pattern 8)
     - packages/pipeline/src/eisenbalm_pipeline/agents/advocate.py (CONFIRM advocate has NO .replace tokens — registry entry empty, per RESEARCH Open Question 1)
     - apps/dispatch-control/app/globals.css (where to add scoped CodeMirror styles)
   </read_first>
@@ -96,7 +96,8 @@ workspace_id is the string "eisenbalm".
     editor_final/researcher: VOICE_CONSTRAINTS; game: charity_name, VOICE_CONSTRAINTS, FORBIDDEN_CONSTRUCTS;
     design: display_list, body_list; bonus_*: VOICE_CONSTRAINTS, STRUCTURE_CONTRACT; advocate: []; section
     guidance keys + rubric + voice_constraints: []). Also map the `*_user` keys to the SAME token sets their
-    system prompts use where the user template carries those tokens (per the tokens captured in Plan 04).
+    system prompts use where the user template carries those tokens (token names come from RESEARCH Pattern 8,
+    NOT from Plan 04a/04b execution output — 07 runs in Wave 3 in parallel with 04a and must not depend on it).
     Export `findUnknownVariables(text: string, allowed: string[]): string[]` scanning `/\{([^}]+)\}/g`,
     returning trimmed token names NOT in allowed (dedup).
 
@@ -189,6 +190,38 @@ workspace_id is the string "eisenbalm".
     - PromptEditor + VariableRegistry tests still PASS
   </acceptance_criteria>
   <done>Prompts route live with agent list, editor page, and version history (rollback mount point ready).</done>
+</task>
+
+<task type="checkpoint:human-verify" gate="blocking">
+  <name>Task 4: Andrew verifies the CodeMirror editor renders correctly in-browser</name>
+  <what-built>
+    The first write-capable UI surface in dispatch-control: the /prompts route with a CodeMirror
+    editor, live `{variable}` highlighting (known vs unknown/mangled), an unknown-variable save-block
+    warning banner, the save-as-new-version flow, and the version-history list. VOICE_CONSTRAINTS and
+    all externalized assets appear as editable agents.
+  </what-built>
+  <action>
+    PAUSE for human verification. All implementation is already automated in Tasks 1-3 (CodeMirror
+    install, VariableRegistry, highlighter, editor, save flow, version history, prompts route). This
+    task adds NO code — Andrew manually confirms the editor renders and the variable highlight + save
+    gate behave correctly in a real browser, since this is the first write-capable UI surface and the
+    highlight/render is visual-only. If Andrew reports issues, fix them in the relevant Task 1-3 files
+    before resuming.
+  </action>
+  <how-to-verify>
+    1. Start dispatch-control locally (`cd apps/dispatch-control && pnpm dev`) and sign in.
+    2. Navigate to /prompts. Confirm the left nav lists the agents (system-prompt agents, `*_user`
+       templates, section-guidance keys, `rubric`, and `voice_constraints`) — no "coming in Phase 24"
+       placeholder.
+    3. Open one agent (e.g. `calibrator`). Confirm the CodeMirror editor renders the active version's
+       content (no SSR hydration error in the console).
+    4. Confirm known tokens (e.g. `{VOICE_CONSTRAINTS}`) render with the known-variable style and an
+       intentionally-typed unknown token (e.g. `{notavar}`) renders with the unknown/mangled style.
+    5. With an unknown token present, confirm the warning banner appears AND the "Save as new version"
+       button is disabled. Remove the unknown token and confirm save re-enables.
+    6. Open VOICE_CONSTRAINTS as an agent and confirm it is editable in the same editor.
+  </how-to-verify>
+  <resume-signal>Type "approved" or describe rendering/highlight/save-gate issues to fix.</resume-signal>
 </task>
 
 </tasks>
