@@ -25,6 +25,7 @@ from langgraph.types import Command
 from pydantic import BaseModel
 
 from eisenbalm_pipeline.api.auth import require_clerk_jwt
+from eisenbalm_pipeline.lib.config_loader import load_run_config, snapshot_config
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.cost import begin_run
 from eisenbalm_pipeline.lib.ids import new_run_id
@@ -211,6 +212,30 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         },
     )
 
+    # Phase 22 (CFG-04): create the `runs` row (the dashboard-facing run record,
+    # distinct from pipelineRuns), then load + snapshot the immutable RunConfig
+    # BEFORE launching the background task. The SAME run_id is the join key.
+    # triggerSource is REQUIRED by the Convex runs:create handler; status +
+    # startedAt are set server-side (status="running", startedAt=Date.now()) —
+    # the Python caller does NOT pass them.
+    await convex_mutation(
+        request.app.state.convex_http,
+        "runs:create",
+        {
+            "workspace_id": "eisenbalm",
+            "runId": run_id,
+            "triggerSource": "manual",
+        },
+    )
+
+    # CFG-01/CFG-04: resolve the full RunConfig (Convex-first, disk/code
+    # fallback) and write an immutable snapshot to runs.configSnapshot. The
+    # snapshot MUST be awaited here, BEFORE asyncio.create_task, so the run can
+    # never out-race its own config snapshot (22-RESEARCH Pitfall 1). The
+    # resume path deliberately does NOT re-snapshot (Pitfall 6).
+    run_config = await load_run_config(request.app.state.convex_http)
+    await snapshot_config(request.app.state.convex_http, run_id, run_config)
+
     # Build initial DispatchState. Underscore-prefixed test toggles carry the
     # forceNoWinner / forceFailAgent flags through state (graph/state.py).
     initial_state: dict = {
@@ -222,6 +247,9 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         .replace("+00:00", "Z"),
         "_force_no_winner": body.forceNoWinner,
         "_force_fail_agent": body.forceFailAgent,
+        # CFG-01: thread the resolved RunConfig so every agent reads its
+        # system_prompt from state["config"].agents[key].system_prompt.
+        "config": run_config,
     }
     # Phase 16 trigger-path: inject narrator_slug only when explicitly provided.
     # Absent key (vs None) preserves byte-equivalent legacy state shape for
