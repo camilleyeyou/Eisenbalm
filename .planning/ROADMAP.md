@@ -408,7 +408,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 19. Issue Page Redesign — Dispatch Magazine Layout | 5/5 | Complete    | 2026-06-03 |
 | 20. Post-Purchase Email Lifecycle | 3/5 | In Progress | - |
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
-| 22. Config Externalization | 1/5 | In Progress|  |
+| 22. Config Externalization | 2/5 | In Progress|  |
 | 23. Node Wrappers + Read-Only Dashboard | 0/? | Not started | - |
 | 24. Prompt Editor + Versioning | 0/? | Not started | - |
 | 25. Run Control | 0/? | Not started | - |
@@ -488,7 +488,7 @@ Plans:
   3. All 12 agent prompt `.md` files appear in Convex `prompt_versions` as version-1 active rows; running the byte-comparison verification script shows zero diff between the seeded rows and the original files
   4. If Convex is unreachable at run start, the pipeline falls back to the on-disk `.md` files and logs a warning — it does not crash or silently ignore the degradation
 **Plans**: 5 plans
-- [ ] 22-01-PLAN.md — Wave 0: API_CONTRACTS §7 amendment (DispatchState.config) + failing test scaffolds (config_loader, byte-parity, snapshot-ordering) + wheel-safe prompt-data test
+- [x] 22-01-PLAN.md — Wave 0: API_CONTRACTS §7 amendment (DispatchState.config) + failing test scaffolds (config_loader, byte-parity, snapshot-ordering) + wheel-safe prompt-data test
 - [x] 22-02-PLAN.md — Convex schema flesh-out (agents top_p/max_tokens/description) + agents/promptVersions/pipelineConfig/runs functions (idempotent upserts + read queries + setConfigSnapshot)
 - [ ] 22-03-PLAN.md — lib/config_loader.py (RunConfig + AGENT_KEY_TO_PROMPT_FILE + load_run_config two-tier fallback + snapshot_config) + DispatchState.config field
 - [ ] 22-04-PLAN.md — Idempotent seed_phase22.py + standalone verify_prompt_seed.py + green mocked byte-parity pytest (CFG-02)

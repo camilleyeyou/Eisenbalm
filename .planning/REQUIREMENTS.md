@@ -217,9 +217,9 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **AUTH-04**: Actions are attributed to the signed-in operator (consumed by the audit log and run-trigger attribution).
 
 ### Config Externalization & Reproducibility (CFG) — the §2 keystone
-- [ ] **CFG-01**: Active agent config (system prompt, user template, model, temperature, max tokens, enabled flag) lives in Convex and is the source the pipeline reads at run start.
+- [x] **CFG-01**: Active agent config (system prompt, user template, model, temperature, max tokens, enabled flag) lives in Convex and is the source the pipeline reads at run start.
 - [x] **CFG-02**: The 12 existing prompt `.md` files are migrated into the config store as version-1 active rows, byte-verified against the files.
-- [ ] **CFG-03**: The pipeline loads the full run config once at run start; if the config store is unavailable it falls back to the on-disk `.md` files rather than crashing or silently ignoring edits.
+- [x] **CFG-03**: The pipeline loads the full run config once at run start; if the config store is unavailable it falls back to the on-disk `.md` files rather than crashing or silently ignoring edits.
 - [x] **CFG-04**: Every run records an immutable snapshot of the exact config it used, written BEFORE the graph is invoked, so a mid-run edit cannot alter an in-flight run.
 - [x] **CFG-05**: Every new dashboard/config table carries a `workspace_id` (seeded to one "eisenbalm" workspace); no charity- or Eisenbalm-specific logic is hardcoded in the control plane.
 
@@ -477,9 +477,9 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | AUTH-03 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | AUTH-04 | Phase 21: Auth + App Shell + Convex Schema | Complete |
 | CFG-05 | Phase 21: Auth + App Shell + Convex Schema | Complete |
-| CFG-01 | Phase 22: Config Externalization | Pending |
+| CFG-01 | Phase 22: Config Externalization | Complete |
 | CFG-02 | Phase 22: Config Externalization | Complete |
-| CFG-03 | Phase 22: Config Externalization | Pending |
+| CFG-03 | Phase 22: Config Externalization | Complete |
 | CFG-04 | Phase 22: Config Externalization | Complete |
 | OBS-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
 | OBS-02 | Phase 23: Node Wrappers + Read-Only Dashboard | Pending |
