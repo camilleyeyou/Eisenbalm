@@ -49,6 +49,24 @@ from eisenbalm_pipeline.lib.config_loader import (
 )
 from eisenbalm_pipeline.lib.convex_client import convex_mutation
 from eisenbalm_pipeline.lib.prompts import _END, _START, _extract, load_prompt
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
+
+
+def _assert_voice_byte_equivalence() -> None:
+    """Fail-loud guard (PRM-06): the seeded voice_constraints asset MUST be
+    byte-identical to the code-constant VOICE_CONSTRAINTS.
+
+    load_prompt("voice_constraints") strips one leading + one trailing newline
+    from the marker block, so it must equal VOICE_CONSTRAINTS exactly. If this
+    trips, prompts/voice_constraints.md has drifted from lib/voice.py — refuse
+    to seed a mismatched v1 row.
+    """
+    loaded = load_prompt("voice_constraints")
+    assert loaded == VOICE_CONSTRAINTS, (
+        "voice byte-verify: load_prompt('voice_constraints') != VOICE_CONSTRAINTS. "
+        "prompts/voice_constraints.md drifted from lib/voice.VOICE_CONSTRAINTS — "
+        "the seeded v1 voice row would not match the sentinel'd code constant."
+    )
 
 
 def _build_client() -> AsyncClient:
@@ -150,14 +168,28 @@ async def main() -> None:
             ("rubric",),
             note="Phase 24 v1 seed — byte-verified section guidance/rubric",
         )
+
+        # Plan 06 (PRM-06): the voice_constraints singleton. Extra guard beyond
+        # the generic _byte_verify — assert the loaded asset is byte-identical
+        # to the code-constant VOICE_CONSTRAINTS so the seeded v1 row matches
+        # the import-time sentinel'd voice exactly (the dashboard edits this
+        # row; the run-start db_voice_override threads it back in).
+        print("\nSeeding Phase 24 voice_constraints (1 key) …")
+        _assert_voice_byte_equivalence()
+        n_voice = await seed_assets(
+            http,
+            ("voice_constraints",),
+            note="Phase 24 v1 seed — byte-verified voice_constraints (PRM-06)",
+        )
     finally:
         await http.aclose()
 
-    total = n_users + n_guidance + n_rubric
+    total = n_users + n_guidance + n_rubric + n_voice
     print(
         f"\nSeed complete — {total} prompt_versions rows "
         f"({n_users} user templates + {n_guidance} section guidance + "
-        f"{n_rubric} rubric; active v1; idempotent; re-runnable)."
+        f"{n_rubric} rubric + {n_voice} voice_constraints; "
+        f"active v1; idempotent; re-runnable)."
     )
 
 

@@ -152,7 +152,10 @@ assert JESSE_PERSONA_BLOCK + _SEPARATOR + UNIVERSAL_CORE == VOICE_CONSTRAINTS, (
 )
 
 
-def assemble_voice(narrator: Optional[dict[str, Any]]) -> str:
+def assemble_voice(
+    narrator: Optional[dict[str, Any]],
+    db_voice_override: Optional[str] = None,
+) -> str:
     """Assemble the final voice string the Calibrator writes to style_brief['voice'].
 
     Per CONTEXT D-05 (single injection point) and D-13 (byte-equivalence by
@@ -167,19 +170,42 @@ def assemble_voice(narrator: Optional[dict[str, Any]]) -> str:
         or inactive narrator — though D-14 has the Calibrator catch the
         inactive case earlier and emit a warning event)
 
-    Invariants (asserted by tests/test_voice.py):
+    Phase 24 (PRM-06) — ``db_voice_override``: when the active
+    ``voice_constraints`` ``prompt_versions`` row is hydrated into
+    ``RunConfig.voice_constraints``, the Calibrator threads that DB value here.
+    The DB value is the FULL assembled voice string (byte-seeded from
+    ``VOICE_CONSTRAINTS``), so when ``db_voice_override`` is not None it is
+    RETURNED VERBATIM — the narrator persona composition is bypassed entirely.
+    When ``db_voice_override`` is None, the EXISTING composition runs unchanged,
+    preserving the import-time sentinel + the ``test_voice.py`` invariants
+    (24-RESEARCH Pattern 6 / Pitfall 4):
+      - ``assemble_voice(None) == VOICE_CONSTRAINTS`` (no override → code constant)
+      - only the new ``db_voice_override`` codepath consults the DB value.
+
+    Invariants (asserted by tests/test_voice.py + tests/test_voice_db_override.py):
       - ``assemble_voice(None) == VOICE_CONSTRAINTS``
       - ``assemble_voice({'voiceConstraints': JESSE_PERSONA_BLOCK, 'active': True})
          == VOICE_CONSTRAINTS``
+      - ``assemble_voice(None, db_voice_override=VOICE_CONSTRAINTS) == VOICE_CONSTRAINTS``
+      - ``assemble_voice(None, db_voice_override="CUSTOM") == "CUSTOM"``
 
     Args:
         narrator: loaded NarratorProfile dict (state['narrator']) or None.
             Expected shape: {name, slug, voiceConstraints, voiceRubric,
             exampleSamples, active}.
+        db_voice_override: the active ``voice_constraints`` DB row content
+            (already the full assembled voice). When not None, returned
+            verbatim. When None, the code-constant composition runs.
 
     Returns:
         The composed voice string ready for ``style_brief['voice']``.
     """
+    # Phase 24 PRM-06: a hydrated DB voice row is the full assembled voice
+    # string — return it directly, bypassing the persona composition. This
+    # path is NEVER hit by assemble_voice(None) (no override), so the
+    # sentinel + test_voice.py invariants are untouched (Pitfall 4).
+    if db_voice_override is not None:
+        return db_voice_override
     if narrator and narrator.get("active", True):
         persona_block = narrator.get("voiceConstraints") or JESSE_PERSONA_BLOCK
     else:

@@ -99,12 +99,20 @@ def _build_messages(
     issue_number: int,
     previous_bonus_types: list[str],
     chosen_bonus_type: str,
+    resolved_voice: str = VOICE_CONSTRAINTS,
 ) -> list[dict]:
     """Assemble Calibrator system + user messages.
 
-    System prompt MUST contain VOICE_CONSTRAINTS verbatim (AGT-02). The
+    System prompt MUST contain the resolved voice verbatim (AGT-02). The
     voice block is NEVER re-authored here — Calibrator consumes the
     canonical string from lib/voice.py.
+
+    Phase 24 (PRM-06): the ``{VOICE_CONSTRAINTS}`` token is substituted with
+    ``resolved_voice`` — the run-start voice (active ``voice_constraints`` DB
+    override when present, else the code-constant ``VOICE_CONSTRAINTS``) — so
+    operator voice edits take effect end-to-end through the Calibrator's own
+    system prompt, not only through ``style_brief['voice']``. Defaults to
+    ``VOICE_CONSTRAINTS`` for zero-config / byte-equivalence callers.
 
     Phase 22 (CFG-01): base prompt read from
     state["config"].agents["calibrator"].system_prompt, disk fallback otherwise.
@@ -114,7 +122,7 @@ def _build_messages(
     base = cfg.agents["calibrator"].system_prompt if cfg else load_prompt("calibrator")
     system = (
         base
-        .replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)
+        .replace("{VOICE_CONSTRAINTS}", resolved_voice)
         .replace("{issue_number}", str(issue_number))
         .replace("{previous_bonus_types}", f"{previous_bonus_types}")
         .replace("{chosen_bonus_type}", chosen_bonus_type)
@@ -241,12 +249,17 @@ async def calibrator(state: DispatchState) -> DispatchState:
 
     # ── Phase 16 narrator resolution (NRR-03 single resolution point) ──────
     resolved_narrator, fellback = await _resolve_narrator(state)
+    # Phase 24 (PRM-06): hydrate the active voice_constraints DB row from
+    # RunConfig (loaded at run start). None → use the code-constant
+    # VOICE_CONSTRAINTS via assemble_voice's existing composition.
+    db_voice = state["config"].voice_constraints if state.get("config") else None
     # ``assemble_voice`` is the single composition surface (Phase 16 D-05).
-    # When resolved_narrator is None (Jesse default OR D-14 inactive
-    # fallback), this returns VOICE_CONSTRAINTS verbatim (NRR-10 byte
-    # equivalence). When set, it composes
+    # When db_voice is set it is returned verbatim (PRM-06 — the DB row is the
+    # full assembled voice). Else, when resolved_narrator is None (Jesse
+    # default OR D-14 inactive fallback), this returns VOICE_CONSTRAINTS
+    # verbatim (NRR-10 byte equivalence). When a narrator is set, it composes
     # ``narrator.voiceConstraints + UNIVERSAL_CORE``.
-    voice_for_brief = assemble_voice(resolved_narrator)
+    voice_for_brief = assemble_voice(resolved_narrator, db_voice_override=db_voice)
 
     previous = await _fetch_previous_bonus_types()
     chosen = _pick_bonus_type(previous, issue_number)
@@ -255,6 +268,7 @@ async def calibrator(state: DispatchState) -> DispatchState:
         issue_number=issue_number,
         previous_bonus_types=previous,
         chosen_bonus_type=chosen,
+        resolved_voice=voice_for_brief,
     )
 
     brief_obj, usage = await acomplete(
