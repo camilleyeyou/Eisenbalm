@@ -118,3 +118,131 @@ async def snapshot_config(http, run_id: str, config: RunConfig) -> None:
         "runs:setConfigSnapshot",
         {"runId": run_id, "configSnapshot": snapshot},
     )
+
+
+# ── Disk/code fallback oracle (D-06: all-or-nothing) ────────────────────────
+def _build_fallback_config() -> RunConfig:
+    """Full disk+code fallback (D-06).
+
+    Builds every key in ALL_AGENT_KEYS from ``llm_config`` defaults +
+    ``load_prompt()``. ``system_prompt`` bytes are byte-identical to
+    ``load_prompt(name)`` for all 11 prompted keys.
+    """
+    agents: dict[str, AgentConfig] = {}
+    for agent_key in ALL_AGENT_KEYS:
+        llm_key = _llm_key_for(agent_key)
+        sampling = SAMPLING_BY_AGENT.get(llm_key, {})
+        prompt_file = AGENT_KEY_TO_PROMPT_FILE.get(agent_key)
+        agents[agent_key] = AgentConfig(
+            model=MODEL_BY_AGENT[llm_key],
+            temperature=sampling.get("temperature", 0.3),
+            top_p=sampling.get("top_p", 1.0),
+            max_tokens=MAX_TOKENS_BY_AGENT.get(llm_key),
+            enabled=True,
+            system_prompt=load_prompt(prompt_file) if prompt_file else "",
+        )
+    return RunConfig(
+        workspace_id=WORKSPACE_ID,
+        agents=agents,
+        require_review=True,
+        auto_publish=False,
+        schedule_enabled=False,
+    )
+
+
+# ── Run-start loader (two-tier fallback) ────────────────────────────────────
+async def load_run_config(http) -> RunConfig:
+    """Resolve the full RunConfig for one run (Convex-first, disk/code fallback).
+
+    Called ONCE at run start (in the HTTP handler, before graph.ainvoke).
+
+    Two-tier fallback:
+      - Hard Convex failure (D-06): on ANY exception fetching agents/pipeline
+        config, log ONE WARNING and return the full disk/code fallback. Never
+        raises.
+      - Per-key gap (D-07): if Convex is reachable but a single prompt row is
+        missing/errors, only that agent falls back to its on-disk prompt + a
+        per-agent WARNING. Never raises on a single missing row.
+    """
+    # ── Single round-trip for agents + pipeline config (D-06 boundary) ──────
+    try:
+        agents_rows = await convex_query(
+            http, "agents:listForWorkspace", {"workspace_id": WORKSPACE_ID}
+        )
+        pc_rows = await convex_query(
+            http, "pipelineConfig:getAll", {"workspace_id": WORKSPACE_ID}
+        )
+        pc = {r["key"]: json.loads(r["value"]) for r in pc_rows}
+    except Exception:
+        log.warning(
+            "load_run_config: Convex unreachable — using full disk/llm_config "
+            "fallback for this run"
+        )
+        return _build_fallback_config()
+
+    agents_by_key: dict[str, Any] = {r["agentKey"]: r for r in agents_rows}
+
+    agents: dict[str, AgentConfig] = {}
+    for agent_key in ALL_AGENT_KEYS:
+        llm_key = _llm_key_for(agent_key)
+        row = agents_by_key.get(agent_key)
+
+        # Resolve model.
+        model = (row.get("model") if row else None) or MODEL_BY_AGENT[llm_key]
+
+        # Resolve sampling.
+        sampling = SAMPLING_BY_AGENT.get(llm_key, {})
+        temperature = row.get("temperature") if row else None
+        if temperature is None:
+            temperature = sampling.get("temperature", 0.3)
+        top_p = row.get("top_p") if row else None
+        if top_p is None:
+            top_p = sampling.get("top_p", 1.0)
+
+        max_tokens = (row.get("max_tokens") if row else None) or MAX_TOKENS_BY_AGENT.get(
+            llm_key
+        )
+        enabled = row.get("enabled", True) if row else True
+
+        # Resolve system_prompt (D-07 per-key fallback).
+        prompt_file = AGENT_KEY_TO_PROMPT_FILE.get(agent_key)
+        system_prompt: Optional[str] = None
+        if prompt_file is not None:
+            try:
+                pv = await convex_query(
+                    http,
+                    "promptVersions:getActive",
+                    {"workspace_id": WORKSPACE_ID, "agentKey": agent_key},
+                )
+                system_prompt = pv["content"] if pv else None
+            except Exception:
+                log.warning(
+                    "load_run_config: failed to fetch prompt for %s — using "
+                    "file fallback",
+                    agent_key,
+                )
+            if system_prompt is None:
+                log.warning(
+                    "load_run_config: no active prompt_version for %s — using "
+                    "file fallback",
+                    agent_key,
+                )
+                system_prompt = load_prompt(prompt_file)
+        # else: non-prompted key (e.g. chronicler/qa, D-02) → empty string.
+
+        agents[agent_key] = AgentConfig(
+            model=model,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            enabled=enabled,
+            system_prompt=system_prompt or "",
+        )
+
+    return RunConfig(
+        workspace_id=WORKSPACE_ID,
+        agents=agents,
+        require_review=pc.get("require_review", True),
+        auto_publish=pc.get("auto_publish", False),
+        schedule_enabled=pc.get("schedule_enabled", False),
+    )
