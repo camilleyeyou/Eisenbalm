@@ -14,6 +14,7 @@
  * filename. The seed (Plan 04) is responsible for mapping files → keys.
  */
 import { query, mutation } from './_generated/server'
+import { internal } from './_generated/api'
 import { v } from 'convex/values'
 
 export const upsertActive = mutation({
@@ -67,5 +68,169 @@ export const getActive = query({
       )
       .filter(q => q.eq(q.field('isActive'), true))
       .first()
+  },
+})
+
+// ── Phase 24 versioning control surface (PRM-03, PRM-04) ─────────────────────
+
+/**
+ * saveVersion (PRM-03) — immutable versioning.
+ *
+ * Computes the next version number for (workspace_id, agentKey) and inserts a
+ * NEW row. Never patches/overwrites an existing version. The new version is NOT
+ * auto-activated (isActive: false) — activation is an explicit, guarded step.
+ * Emits an audit_log row with action 'prompt_version.saved'.
+ */
+export const saveVersion = mutation({
+  args: {
+    workspace_id: v.string(),
+    agentKey: v.string(),
+    content: v.string(),
+    createdBy: v.optional(v.string()),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, { workspace_id, agentKey, content, createdBy, note }) => {
+    const rows = await ctx.db
+      .query('prompt_versions')
+      .withIndex('by_workspace_agentKey', q =>
+        q.eq('workspace_id', workspace_id).eq('agentKey', agentKey),
+      )
+      .collect()
+
+    const maxVersion = rows.length ? Math.max(...rows.map(r => r.version)) : 0
+    const nextVersion = maxVersion + 1
+
+    const id = await ctx.db.insert('prompt_versions', {
+      workspace_id,
+      agentKey,
+      version: nextVersion,
+      content,
+      isActive: false,
+      createdAt: Date.now(),
+      createdBy,
+      note,
+    })
+
+    await ctx.runMutation(internal.auditLog.write, {
+      workspace_id,
+      actorId: createdBy ?? 'unknown',
+      action: 'prompt_version.saved',
+      resourceType: 'prompt_version',
+      resourceId: `${agentKey}:${nextVersion}`,
+      after: JSON.stringify({ agentKey, version: nextVersion }),
+    })
+
+    return id
+  },
+})
+
+/**
+ * activate (PRM-04) — flip exactly one version active, guarded by in-progress runs.
+ *
+ * D-02 in-progress guard: if any run in this workspace has status === 'running',
+ * activation is blocked (no isActive flip) and a { blocked: true, reason } is
+ * returned. Otherwise: every currently-active row is set isActive:false, the
+ * target version is set isActive:true, and an audit_log row with action
+ * 'prompt_version.activated' is emitted. Rollback is just activate(olderVersion).
+ */
+export const activate = mutation({
+  args: {
+    workspace_id: v.string(),
+    agentKey: v.string(),
+    version: v.number(),
+    actorId: v.string(),
+  },
+  handler: async (ctx, { workspace_id, agentKey, version, actorId }) => {
+    // D-02: block activation while a run is in progress.
+    const runningRun = await ctx.db
+      .query('runs')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .filter(q => q.eq(q.field('status'), 'running'))
+      .first()
+
+    if (runningRun) {
+      return {
+        blocked: true,
+        reason:
+          'A run is in progress — activation will be available when it finishes.',
+      }
+    }
+
+    const rows = await ctx.db
+      .query('prompt_versions')
+      .withIndex('by_workspace_agentKey', q =>
+        q.eq('workspace_id', workspace_id).eq('agentKey', agentKey),
+      )
+      .collect()
+
+    const previousActive = rows.find(r => r.isActive)?.version
+
+    const target = rows.find(r => r.version === version)
+    if (!target) {
+      throw new Error(
+        `prompt_versions: no version ${version} for agentKey '${agentKey}' in workspace '${workspace_id}'`,
+      )
+    }
+
+    // Deactivate any currently-active rows, then activate the target.
+    for (const row of rows) {
+      if (row.isActive && row._id !== target._id) {
+        await ctx.db.patch(row._id, { isActive: false })
+      }
+    }
+    await ctx.db.patch(target._id, { isActive: true })
+
+    await ctx.runMutation(internal.auditLog.write, {
+      workspace_id,
+      actorId,
+      action: 'prompt_version.activated',
+      resourceType: 'prompt_version',
+      resourceId: `${agentKey}:${version}`,
+      before: JSON.stringify({ agentKey, previousActive }),
+      after: JSON.stringify({ agentKey, version }),
+    })
+
+    return { blocked: false }
+  },
+})
+
+/**
+ * listForAgent (PRM-04) — all versions for an agent, newest-first.
+ */
+export const listForAgent = query({
+  args: { workspace_id: v.string(), agentKey: v.string() },
+  handler: async (ctx, { workspace_id, agentKey }) => {
+    const rows = await ctx.db
+      .query('prompt_versions')
+      .withIndex('by_workspace_agentKey', q =>
+        q.eq('workspace_id', workspace_id).eq('agentKey', agentKey),
+      )
+      .collect()
+
+    return rows.sort((a, b) => b.version - a.version)
+  },
+})
+
+/**
+ * getByVersion (PRM-04) — fetch one exact version via the compound index.
+ */
+export const getByVersion = query({
+  args: {
+    workspace_id: v.string(),
+    agentKey: v.string(),
+    version: v.number(),
+  },
+  handler: async (ctx, { workspace_id, agentKey, version }) => {
+    const row = await ctx.db
+      .query('prompt_versions')
+      .withIndex('by_workspace_agentKey_version', q =>
+        q
+          .eq('workspace_id', workspace_id)
+          .eq('agentKey', agentKey)
+          .eq('version', version),
+      )
+      .first()
+
+    return row ?? null
   },
 })
