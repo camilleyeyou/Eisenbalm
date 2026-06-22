@@ -231,12 +231,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **OBS-05**: Operator can inspect per-agent input/output and any error/retry for a run.
 
 ### Prompt Editing & Versioning (PRM)
-- [ ] **PRM-01**: Operator can edit an agent's system prompt and user-prompt template in a UI editor.
+- [x] **PRM-01**: Operator can edit an agent's system prompt and user-prompt template in a UI editor.
 - [ ] **PRM-02**: The editor highlights the template variables available to that agent and warns on unknown/mangled variables before save.
 - [ ] **PRM-03**: Saving a prompt creates a new version (author + timestamp + optional note) and never overwrites a prior version.
 - [ ] **PRM-04**: Operator can diff any two versions and activate/rollback to a chosen version in one click; activation is blocked or safely queued while a run is in progress.
 - [ ] **PRM-05**: Operator can test-run a single agent against sample or prior-real input and see its output + cost, without running the whole pipeline.
-- [ ] **PRM-06**: The voice/persona text (`VOICE_CONSTRAINTS`) is editable and versioned as a first-class config entry alongside agent prompts.
+- [x] **PRM-06**: The voice/persona text (`VOICE_CONSTRAINTS`) is editable and versioned as a first-class config entry alongside agent prompts.
 
 ### Run Control (RUN)
 - [ ] **RUN-01**: Operator can trigger a new issue run on demand from the dashboard.
@@ -487,12 +487,12 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | OBS-04 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
 | OBS-05 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
 | AUD-01 | Phase 23: Node Wrappers + Read-Only Dashboard | Complete |
-| PRM-01 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-01 | Phase 24: Prompt Editor + Versioning | Complete |
 | PRM-02 | Phase 24: Prompt Editor + Versioning | Pending |
 | PRM-03 | Phase 24: Prompt Editor + Versioning | Pending |
 | PRM-04 | Phase 24: Prompt Editor + Versioning | Pending |
 | PRM-05 | Phase 24: Prompt Editor + Versioning | Pending |
-| PRM-06 | Phase 24: Prompt Editor + Versioning | Pending |
+| PRM-06 | Phase 24: Prompt Editor + Versioning | Complete |
 | RUN-01 | Phase 25: Run Control | Pending |
 | RUN-02 | Phase 25: Run Control | Pending |
 | RUN-03 | Phase 25: Run Control | Pending |
