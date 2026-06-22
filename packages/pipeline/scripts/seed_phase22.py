@@ -38,6 +38,7 @@ from httpx import AsyncClient
 from eisenbalm_pipeline.lib.config_loader import (
     AGENT_KEY_TO_PROMPT_FILE,
     ALL_AGENT_KEYS,
+    SYSTEM_PROMPT_KEYS,
     WORKSPACE_ID,
     _llm_key_for,
 )
@@ -95,9 +96,15 @@ async def _seed_agents(http: AsyncClient) -> int:
 
 
 async def _seed_prompts(http: AsyncClient) -> int:
-    """Upsert the 11 active v1 prompts; content via load_prompt() (byte oracle)."""
+    """Upsert the 11 active v1 prompts; content via load_prompt() (byte oracle).
+
+    Scoped to the canonical Phase 22 SYSTEM_PROMPT_KEYS — the Phase 24 asset keys
+    that also live in AGENT_KEY_TO_PROMPT_FILE are seeded by the Plan 04/05/06
+    migration seeds, not here.
+    """
     count = 0
-    for agent_key, prompt_file in AGENT_KEY_TO_PROMPT_FILE.items():
+    for agent_key in SYSTEM_PROMPT_KEYS:
+        prompt_file = AGENT_KEY_TO_PROMPT_FILE[agent_key]
         content = load_prompt(prompt_file)  # byte oracle, never a raw read (Pitfall 2)
         await convex_mutation(
             http,

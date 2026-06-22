@@ -120,6 +120,19 @@ AGENT_KEY_TO_PROMPT_FILE: dict[str, str] = {
     "voice_constraints":        "voice_constraints",
 }
 
+# ── Canonical Phase 22 system-prompt keys (the original 11) ─────────────────
+# Frozen subset of AGENT_KEY_TO_PROMPT_FILE that the Phase 22 seed owns. Phase 24
+# extended AGENT_KEY_TO_PROMPT_FILE with new asset keys; consumers that mean "the
+# 11 migrated system prompts" (e.g. scripts/seed_phase22) MUST iterate this tuple
+# rather than the now-larger mapping. The new asset keys are seeded by the
+# Plan 04/05/06 migration seeds, not by the Phase 22 seed.
+SYSTEM_PROMPT_KEYS: tuple[str, ...] = (
+    "scout", "advocate", "editor_gate1", "editor_final", "calibrator",
+    "researcher", "design", "game",
+    "bonus_big_budget", "bonus_jingle", "bonus_spec_ad",
+)
+
+
 # ── Phase 24: canonical new-asset key registries (data only) ────────────────
 # Migration plans 04/05/06 add a .md file + swap a call site; they must NOT
 # re-edit config_loader internals. These three tuples are the single source of
@@ -170,6 +183,59 @@ async def snapshot_config(http, run_id: str, config: RunConfig) -> None:
     )
 
 
+# ── Phase 24 asset hydration helpers (per-key disk fallback, missing-file safe) ─
+def _load_prompt_or_none(agent_key: str) -> Optional[str]:
+    """Disk-only read for a new asset key; None when the seed .md is absent.
+
+    Mirrors the per-key prompt fallback but is FileNotFoundError-safe: between
+    Wave 2 (this plan) and Wave 3 (Plans 04/05/06) the new asset .md files do
+    not exist yet, so a missing file must yield None — not raise — to keep the
+    pipeline bootable. Returns None when no file mapping exists for the key.
+    """
+    prompt_file = AGENT_KEY_TO_PROMPT_FILE.get(agent_key)
+    if prompt_file is None:
+        return None
+    try:
+        return load_prompt(prompt_file)
+    except FileNotFoundError:
+        # Missing seed file is an EXPECTED, benign state between Wave 2 (this
+        # plan) and Wave 3 (Plans 04/05/06). Logged at DEBUG — not WARNING — so
+        # it never breaks the D-06 single-WARNING-per-hard-failure contract.
+        log.debug(
+            "config_loader: asset seed file for %s not found yet — yielding None "
+            "(Plans 04/05/06 land the content)",
+            agent_key,
+        )
+        return None
+
+
+async def _hydrate_asset(http, agent_key: str) -> Optional[str]:
+    """Hydrate one new asset from its active prompt_versions row, disk-fallback.
+
+    Mirrors load_run_config's per-key prompt fallback (D-07): try
+    ``promptVersions:getActive``; on exception OR missing row, log a WARNING and
+    fall back to the on-disk seed via ``_load_prompt_or_none`` (which is itself
+    missing-file safe). Returns None when neither Convex nor disk yields content.
+    """
+    content: Optional[str] = None
+    try:
+        pv = await convex_query(
+            http,
+            "promptVersions:getActive",
+            {"workspace_id": WORKSPACE_ID, "agentKey": agent_key},
+        )
+        content = pv["content"] if pv else None
+    except Exception:
+        log.warning(
+            "config_loader: failed to fetch asset prompt for %s — using file "
+            "fallback",
+            agent_key,
+        )
+    if content is None:
+        content = _load_prompt_or_none(agent_key)
+    return content
+
+
 # ── Disk/code fallback oracle (D-06: all-or-nothing) ────────────────────────
 def _build_fallback_config() -> RunConfig:
     """Full disk+code fallback (D-06).
@@ -191,12 +257,23 @@ def _build_fallback_config() -> RunConfig:
             enabled=True,
             system_prompt=load_prompt(prompt_file) if prompt_file else "",
         )
+    # Phase 24 new assets: disk-only, missing-file safe (no Convex in fallback).
+    user_templates = {
+        k: v for k in USER_TEMPLATE_KEYS if (v := _load_prompt_or_none(k)) is not None
+    }
+    section_guidance = {
+        k: v for k in SECTION_GUIDANCE_KEYS if (v := _load_prompt_or_none(k)) is not None
+    }
     return RunConfig(
         workspace_id=WORKSPACE_ID,
         agents=agents,
         require_review=True,
         auto_publish=False,
         schedule_enabled=False,
+        voice_constraints=_load_prompt_or_none("voice_constraints"),
+        user_templates=user_templates,
+        section_guidance=section_guidance,
+        rubric=_load_prompt_or_none("rubric"),
     )
 
 
@@ -289,10 +366,29 @@ async def load_run_config(http) -> RunConfig:
             system_prompt=system_prompt or "",
         )
 
+    # ── Phase 24 new assets: hydrate each from its active prompt_versions row
+    # with per-key disk fallback (missing-file safe until Plans 04/05/06). ───
+    user_templates: dict[str, str] = {}
+    for k in USER_TEMPLATE_KEYS:
+        v = await _hydrate_asset(http, k)
+        if v is not None:
+            user_templates[k] = v
+    section_guidance: dict[str, str] = {}
+    for k in SECTION_GUIDANCE_KEYS:
+        v = await _hydrate_asset(http, k)
+        if v is not None:
+            section_guidance[k] = v
+    rubric = await _hydrate_asset(http, "rubric")
+    voice_constraints = await _hydrate_asset(http, "voice_constraints")
+
     return RunConfig(
         workspace_id=WORKSPACE_ID,
         agents=agents,
         require_review=pc.get("require_review", True),
         auto_publish=pc.get("auto_publish", False),
         schedule_enabled=pc.get("schedule_enabled", False),
+        voice_constraints=voice_constraints,
+        user_templates=user_templates,
+        section_guidance=section_guidance,
+        rubric=rubric,
     )

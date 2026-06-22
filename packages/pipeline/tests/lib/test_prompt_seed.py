@@ -18,14 +18,19 @@ from __future__ import annotations
 
 import pytest
 
-from eisenbalm_pipeline.lib.config_loader import AGENT_KEY_TO_PROMPT_FILE
+from eisenbalm_pipeline.lib.config_loader import (
+    AGENT_KEY_TO_PROMPT_FILE,
+    SYSTEM_PROMPT_KEYS,
+)
 from eisenbalm_pipeline.lib.prompts import load_prompt
 
 from scripts import seed_phase22
 
 
 # ── Canonical 11 (agentKey, prompt_file) pairs (the real migration set) ───────
-AGENT_KEY_PROMPT_PAIRS = list(AGENT_KEY_TO_PROMPT_FILE.items())
+# Scoped to SYSTEM_PROMPT_KEYS: Phase 24 extended AGENT_KEY_TO_PROMPT_FILE with
+# new asset keys, but the Phase 22 seed-content contract covers exactly these 11.
+AGENT_KEY_PROMPT_PAIRS = [(k, AGENT_KEY_TO_PROMPT_FILE[k]) for k in SYSTEM_PROMPT_KEYS]
 
 assert len(AGENT_KEY_PROMPT_PAIRS) == 11, "the canonical migration set is exactly 11 prompts"
 
@@ -72,7 +77,7 @@ async def test_seed_prompts_uses_load_prompt_content(monkeypatch) -> None:
 
     assert len(args_list) == 11, "seed must upsert all 11 prompts"
     by_key = {a["agentKey"]: a for a in args_list}
-    for agent_key, prompt_file in AGENT_KEY_TO_PROMPT_FILE.items():
+    for agent_key, prompt_file in AGENT_KEY_PROMPT_PAIRS:
         assert agent_key in by_key, f"seed skipped {agent_key}"
         assert by_key[agent_key]["content"] == load_prompt(prompt_file), (
             f"byte mismatch for {agent_key} ({prompt_file}.md)"
