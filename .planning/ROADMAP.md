@@ -410,7 +410,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
-| 24. Prompt Editor + Versioning | 4/10 | In Progress|  |
+| 24. Prompt Editor + Versioning | 5/10 | In Progress|  |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
@@ -529,7 +529,7 @@ Plans:
 - [ ] 24-02-convex-versioning-data-layer-PLAN.md — saveVersion/activate/listForAgent/getByVersion + by_workspace_agentKey_version index + in-progress guard + audit (Wave 2, PRM-03/04)
 - [x] 24-03-pipeline-asset-loading-infra-PLAN.md — RunConfig asset fields + agentKey registries + config_loader hydration with disk fallback (Wave 2, PRM-01/06)
 - [x] 24-04a-user-template-md-and-byte-test-PLAN.md — 11 *_user.md templates captured + byte-equivalence test green (Wave 3, PRM-01)
-- [ ] 24-04b-user-template-callsites-and-seed-PLAN.md — 8 agent call-site swaps + byte-verified user-template seed (Wave 4, PRM-01)
+- [x] 24-04b-user-template-callsites-and-seed-PLAN.md — 8 agent call-site swaps + byte-verified user-template seed (Wave 4, PRM-01)
 - [x] 24-05a-guidance-rubric-md-and-byte-test-PLAN.md — SECTION_GUIDANCE + GUIDANCE_VERIFIED/ANONYMOUS + qa/rubric.md captured + byte test green (Wave 4, PRM-01)
 - [ ] 24-05b-guidance-rubric-callsites-and-seed-PLAN.md — 5 section-writer/QA call-site swaps + seed extension (Wave 5, PRM-01)
 - [ ] 24-06-voice-versioning-and-test-run-backend-PLAN.md — VOICE_CONSTRAINTS versioned via db_voice_override + POST /agents/{key}/test-run (Wave 6, PRM-05/06)
