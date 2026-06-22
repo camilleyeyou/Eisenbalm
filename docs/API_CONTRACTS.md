@@ -1067,6 +1067,112 @@ const run = useQuery(api.pipelineRuns.byRunId, { runId })
 
 ---
 
+## 4A. Phase-22 control-plane tables (Mission Control config)
+
+These tables are the dashboard-writable / pipeline-readable control plane added
+for the v2.0 Mission Control milestone. They are **NOT** the frozen
+deliberation tables (`pipelineRuns`, `deliberationEvents`, `agentVotes`,
+`qaCorrections`, `pitchLog`) — those remain untouched. Every row is scoped by
+`workspace_id` (the slug string `"eisenbalm"` for the single tenant) and carries
+a `by_workspace` index, per the Phase-21 multi-tenant-bones convention.
+
+The pipeline reads these ONCE at run start via `load_run_config()` (Phase 22),
+resolves a full per-agent config, and freezes it to `runs.configSnapshot` before
+`graph.ainvoke()`. See §7 `DispatchState.config` for the in-memory shape.
+
+### 4A.1 — `agents` (per-agent model + sampling config)
+
+```typescript
+agents: defineTable({
+  workspace_id: v.string(),           // "eisenbalm"
+  agentKey: v.string(),               // canonical key, e.g. "editor_gate1", "bonus_big_budget"
+  enabled: v.boolean(),               // Phase 22: stored + snapshotted only (no skip-gating yet — D-08)
+  model: v.optional(v.string()),      // overrides llm_config.MODEL_BY_AGENT[agentKey]
+  temperature: v.optional(v.number()),// overrides SAMPLING_BY_AGENT[agentKey].temperature
+  top_p: v.optional(v.number()),      // Phase 22 ADD — overrides SAMPLING_BY_AGENT[agentKey].top_p
+  max_tokens: v.optional(v.number()), // Phase 22 ADD — overrides MAX_TOKENS_BY_AGENT[agentKey]
+  description: v.optional(v.string()),// Phase 22 ADD — Phase 23 dashboard display label
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
+```
+
+Seed roster = the full 15-key `llm_config.MODEL_BY_AGENT` set (D-04):
+`calibrator, chronicler, editor_gate1, editor_final, qa, researcher,
+origin_story, problem, founder_bio, case_study, bonus, game, scout, advocate,
+design`. `null`/absent override columns mean "use the in-code default"
+(`llm_config.py` remains the fallback source — D-05).
+
+### 4A.2 — `prompt_versions` (versioned system prompts)
+
+```typescript
+prompt_versions: defineTable({
+  workspace_id: v.string(),
+  agentKey: v.string(),               // canonical key (see AGENT_KEY_TO_PROMPT_FILE below)
+  version: v.number(),                // v1 at seed; bumped on dashboard edit (Phase 24)
+  content: v.string(),                // body between <!-- PROMPT START/END -->, byte-identical to load_prompt()
+  isActive: v.boolean(),              // exactly one active row per (workspace_id, agentKey)
+  createdAt: v.number(),
+  createdBy: v.optional(v.string()),  // Clerk userId
+  note: v.optional(v.string()),
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_workspace_agentKey', ['workspace_id', 'agentKey']),
+```
+
+Seed = the **11** migrated `.md` prompt files (CFG-02), each as a `version: 1`,
+`isActive: true` row whose `content` is **byte-identical** to `load_prompt()`
+output (NOT a raw file read — `load_prompt()` strips one leading + one trailing
+newline via `_extract()`). The canonical agentKey → prompt-file mapping:
+
+| agentKey | prompt file | llm_config key |
+|---|---|---|
+| `scout` | `scout` | `scout` |
+| `advocate` | `advocate` | `advocate` |
+| `editor_gate1` | `editor` | `editor_gate1` |
+| `editor_final` | `editor-final` | `editor_final` |
+| `calibrator` | `calibrator` | `calibrator` |
+| `researcher` | `researcher` | `researcher` |
+| `design` | `design` | `design` |
+| `game` | `game` | `game` |
+| `bonus_big_budget` | `bonus-big-budget` | `bonus` (shared) |
+| `bonus_jingle` | `bonus-jingle` | `bonus` (shared) |
+| `bonus_spec_ad` | `bonus-spec-ad` | `bonus` (shared) |
+
+`chronicler`, `qa`, `origin_story`, `problem`, `founder_bio`, `case_study` have
+no migrated prompt file this phase (Section-writer prompts deferred to Phase 24 —
+D-02); their `system_prompt` resolves to `""` in `RunConfig` until then.
+
+### 4A.3 — `pipeline_config` (global key/value settings)
+
+```typescript
+pipeline_config: defineTable({
+  workspace_id: v.string(),
+  key: v.string(),                    // "require_review" | "auto_publish" | "schedule_enabled" | ...
+  value: v.string(),                  // JSON-encoded value
+  updatedAt: v.number(),
+  updatedBy: v.optional(v.string()),  // Clerk userId
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_workspace_key', ['workspace_id', 'key']),
+```
+
+Phase 22 reads three keys at run start: `require_review` (default `true`),
+`auto_publish` (default `false`), `schedule_enabled` (default `false`).
+
+### 4A.4 — `runs.configSnapshot`
+
+The `runs` table (Phase-21 stub) carries `configSnapshot: v.optional(v.string())`.
+Phase 22 populates it with a **JSON string of the full resolved `RunConfig`**
+(post-fallback per-agent `{model, temperature, top_p, max_tokens, enabled,
+system_prompt}` + pipeline-level `{require_review, auto_publish,
+schedule_enabled}`). The snapshot write is the FIRST awaited op after
+`runs`/`pipelineRuns:create` and **BEFORE** `graph.ainvoke()` (D-10) so a
+mid-run dashboard edit cannot alter an in-flight run. The resume path does NOT
+re-snapshot — the original snapshot stays authoritative.
+
+---
+
 ## 5. Sanity → Pipeline (webhook: Andrew publishes)
 
 ### 5.1 — Sanity webhook configuration
@@ -1409,12 +1515,52 @@ class QACorrection(TypedDict):
     severity: Literal['minor', 'moderate', 'major']
     accepted: bool                      # set by Editor final
 
+
+# ── Phase 22: RunConfig (control-plane config snapshot) ───────────────────────
+#
+# The in-memory config object loaded ONCE at run start by
+# `lib/config_loader.load_run_config()`. It is a `@dataclass` (NOT a TypedDict)
+# so it serializes cleanly via `dataclasses.asdict()` + `json.dumps()` for the
+# `runs.configSnapshot` write (§4A.4). It captures the RESOLVED (post-fallback)
+# per-agent config — the exact prompts + model params that produced the issue.
+# See §4A for the Convex tables it is hydrated from.
+
+@dataclass
+class AgentConfig:
+    model: str                          # resolved model id (Convex override OR llm_config default)
+    temperature: float
+    top_p: float
+    max_tokens: Optional[int]
+    enabled: bool                       # Phase 22: snapshotted only — no skip-gating yet (D-08)
+    system_prompt: str                  # resolved prompt body (Convex active row OR load_prompt() fallback); "" for un-migrated agents
+
+@dataclass
+class RunConfig:
+    workspace_id: str                   # "eisenbalm"
+    agents: dict[str, AgentConfig]      # keyed by canonical agentKey (all 15 llm_config keys)
+    require_review: bool                # pipeline_config; default True
+    auto_publish: bool                  # pipeline_config; default False
+    schedule_enabled: bool              # pipeline_config; default False
+
+
 class DispatchState(TypedDict):
     # ── Identity ──────────────────────────────────────────────────────────────
     run_id: str                         # UUID, set at pipeline start
     issue_number: int
     publish_date: str                   # ISO 8601 date, e.g. "2026-05-14"
     pipeline_started_at: str            # ISO 8601 datetime
+
+    # ── Phase 22: control-plane config (loaded once at run start) ─────────────
+    # Loaded by `load_run_config()` in the HTTP handler and threaded into the
+    # initial state BEFORE `graph.ainvoke()`. IMMUTABLE after run start — the
+    # snapshot (§4A.4) commits before any agent runs. Consumed by all 11
+    # `load_prompt` call sites: each agent reads
+    # `state["config"].agents[<key>].system_prompt` instead of `load_prompt(...)`.
+    # Carries per-agent `{model, temperature, top_p, max_tokens, enabled,
+    # system_prompt}` plus pipeline-level `{require_review, auto_publish,
+    # schedule_enabled}`. `NotRequired`/`Optional` for backward-compat with
+    # pre-Phase-22 tests that construct DispatchState without it.
+    config: NotRequired[Optional[RunConfig]]
 
     # ── Phase 1: Selection ────────────────────────────────────────────────────
     style_brief: Optional[StyleBrief]
