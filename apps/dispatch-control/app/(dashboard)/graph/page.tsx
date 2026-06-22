@@ -1,4 +1,10 @@
 /**
+ * force-dynamic: Convex useQuery subscriptions (in PipelineGraph) require a
+ * live ConvexProvider context — static prerendering throws without this.
+ */
+export const dynamic = 'force-dynamic'
+
+/**
  * Phase 23 — Graph page (Server Component).
  *
  * Resolves the workspace_id server-side and passes it to the Client Component
