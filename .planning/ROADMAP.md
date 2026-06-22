@@ -25,7 +25,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 21: Auth + App Shell + Convex Schema** - Clerk auth on `dispatch-control`, `workspace_id` on all new tables, basic app shell with navigation (completed 2026-06-21)
 - [x] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap (completed 2026-06-22)
 - [x] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O (completed 2026-06-22)
-- [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run
+- [ ] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run (8 plans)
 - [ ] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts
 - [ ] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup
 - [ ] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator
@@ -523,7 +523,16 @@ Plans:
   4. Operator can select any two versions in a diff view and see a side-by-side diff of the prompt text
   5. Operator can trigger a test-run for a single agent, supply sample or prior-real input, and see the agent's output and cost without running the full pipeline
   6. `VOICE_CONSTRAINTS` appears in the editor as a named config entry alongside agent prompts; editing and versioning it follows the same save-as-version flow
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [ ] 24-01-contracts-and-test-scaffold-PLAN.md — API_CONTRACTS amendment (mutations + test-run endpoint + RunConfig.voice_constraints) + 8 RED test files (Wave 1)
+- [ ] 24-02-convex-versioning-data-layer-PLAN.md — saveVersion/activate/listForAgent/getByVersion + by_workspace_agentKey_version index + in-progress guard + audit (Wave 2, PRM-03/04)
+- [ ] 24-03-pipeline-asset-loading-infra-PLAN.md — RunConfig asset fields + agentKey registries + config_loader hydration with disk fallback (Wave 2, PRM-01/06)
+- [ ] 24-04-user-template-externalization-PLAN.md — 11 *_user.md templates + call-site swaps + byte-verified seed (Wave 3, PRM-01)
+- [ ] 24-05-section-guidance-rubric-migration-PLAN.md — SECTION_GUIDANCE + GUIDANCE_VERIFIED/ANONYMOUS + qa/rubric.md externalized (Wave 4, PRM-01)
+- [ ] 24-06-voice-versioning-and-test-run-backend-PLAN.md — VOICE_CONSTRAINTS versioned via db_voice_override + POST /agents/{key}/test-run (Wave 5, PRM-05/06)
+- [ ] 24-07-editor-ui-variable-awareness-PLAN.md — CodeMirror editor + variable registry/highlight + save-as-version + version history (Wave 3, PRM-01/02/03/06)
+- [ ] 24-08-diff-rollback-testrun-ui-PLAN.md — side-by-side diff + activate/rollback (in-progress block) + four-mode test-run UI (Wave 6, PRM-04/05)
 **UI hint**: yes
 
 ### Phase 25: Run Control
