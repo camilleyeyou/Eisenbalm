@@ -22,7 +22,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
@@ -66,6 +66,14 @@ class RunConfig:
     require_review: bool
     auto_publish: bool
     schedule_enabled: bool
+    # ── Phase 24 (PRM-01 / PRM-06) newly-externalized assets ────────────────
+    # Each hydrated at run start from the active prompt_versions row for the
+    # matching agentKey, with per-key disk/code fallback (CFG-03). None / empty
+    # when the seed .md is absent (Plans 04/05/06 land the content).
+    voice_constraints: Optional[str] = None
+    user_templates: dict[str, str] = field(default_factory=dict)
+    section_guidance: dict[str, str] = field(default_factory=dict)
+    rubric: Optional[str] = None
 
 
 # ── Canonical agentKey → prompt-file mapping (RESEARCH Pattern 7) ───────────
@@ -84,7 +92,49 @@ AGENT_KEY_TO_PROMPT_FILE: dict[str, str] = {
     "bonus_big_budget": "bonus-big-budget",
     "bonus_jingle":     "bonus-jingle",
     "bonus_spec_ad":    "bonus-spec-ad",
+    # ── Phase 24 newly-externalized assets (file stems match agentKeys, with
+    # the section-guidance variants prefixed `section_guidance_`). The .md seed
+    # files land in Plans 04/05/06; until then _hydrate_asset() yields None when
+    # the file is absent (FileNotFoundError is swallowed). ──────────────────
+    # User-message templates (one per agent _build_messages call site).
+    "scout_user":               "scout_user",
+    "advocate_user":            "advocate_user",
+    "calibrator_user":          "calibrator_user",
+    "editor_gate1_user":        "editor_gate1_user",
+    "editor_final_user":        "editor_final_user",
+    "researcher_user":          "researcher_user",
+    "game_user":                "game_user",
+    "design_user":              "design_user",
+    "bonus_big_budget_user":    "bonus_big_budget_user",
+    "bonus_jingle_user":        "bonus_jingle_user",
+    "bonus_spec_ad_user":       "bonus_spec_ad_user",
+    # Section guidance (origin/problem + the verified/anonymous bio + case-study).
+    "section_guidance_origin":  "section_guidance_origin",
+    "section_guidance_problem": "section_guidance_problem",
+    "founder_bio_verified":     "section_guidance_founder_bio_verified",
+    "founder_bio_anonymous":    "section_guidance_founder_bio_anonymous",
+    "case_study_verified":      "section_guidance_case_study_verified",
+    "case_study_anonymous":     "section_guidance_case_study_anonymous",
+    # Singleton assets.
+    "rubric":                   "rubric",
+    "voice_constraints":        "voice_constraints",
 }
+
+# ── Phase 24: canonical new-asset key registries (data only) ────────────────
+# Migration plans 04/05/06 add a .md file + swap a call site; they must NOT
+# re-edit config_loader internals. These three tuples are the single source of
+# truth for which agentKeys each new RunConfig asset field hydrates.
+USER_TEMPLATE_KEYS: tuple[str, ...] = (
+    "scout_user", "advocate_user", "calibrator_user", "editor_gate1_user",
+    "editor_final_user", "researcher_user", "game_user", "design_user",
+    "bonus_big_budget_user", "bonus_jingle_user", "bonus_spec_ad_user",
+)
+SECTION_GUIDANCE_KEYS: tuple[str, ...] = (
+    "section_guidance_origin", "section_guidance_problem",
+    "founder_bio_verified", "founder_bio_anonymous",
+    "case_study_verified", "case_study_anonymous",
+)
+SINGLETON_ASSET_KEYS: tuple[str, ...] = ("rubric", "voice_constraints")
 
 # ── All resolvable agent keys ───────────────────────────────────────────────
 # The 15 llm_config keys PLUS the three bonus-variant prompt keys. The three
