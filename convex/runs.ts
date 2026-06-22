@@ -69,3 +69,21 @@ export const byRunId = query({
       .first()
   },
 })
+
+// ── latest ───────────────────────────────────────────────────────────────────
+
+/**
+ * Returns the most recent run for a workspace (by startedAt desc).
+ * Used by the dashboard graph view to find the active run for live subscription.
+ * Frontend aggregation is acceptable at 52 runs/year per RESEARCH Pattern 5.
+ */
+export const latest = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const rows = await ctx.db
+      .query('runs')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+    return rows.sort((a, b) => b.startedAt - a.startedAt)[0] ?? null
+  },
+})
