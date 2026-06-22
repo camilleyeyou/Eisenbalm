@@ -410,7 +410,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 21. Auth + App Shell + Convex Schema | 5/5 | Complete    | 2026-06-22 |
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
-| 24. Prompt Editor + Versioning | 8/10 | In Progress|  |
+| 24. Prompt Editor + Versioning | 9/10 | In Progress|  |
 | 25. Run Control | 0/? | Not started | - |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
@@ -533,7 +533,7 @@ Plans:
 - [x] 24-05a-guidance-rubric-md-and-byte-test-PLAN.md — SECTION_GUIDANCE + GUIDANCE_VERIFIED/ANONYMOUS + qa/rubric.md captured + byte test green (Wave 4, PRM-01)
 - [x] 24-05b-guidance-rubric-callsites-and-seed-PLAN.md — 5 section-writer/QA call-site swaps + seed extension (Wave 5, PRM-01)
 - [x] 24-06-voice-versioning-and-test-run-backend-PLAN.md — VOICE_CONSTRAINTS versioned via db_voice_override + POST /agents/{key}/test-run (Wave 6, PRM-05/06)
-- [ ] 24-07-editor-ui-variable-awareness-PLAN.md — CodeMirror editor + variable registry/highlight + save-as-version + version history + render checkpoint (Wave 3, PRM-01/02/03/06)
+- [x] 24-07-editor-ui-variable-awareness-PLAN.md — CodeMirror editor + variable registry/highlight + save-as-version + version history + render checkpoint (Wave 3, PRM-01/02/03/06)
 - [ ] 24-08-diff-rollback-testrun-ui-PLAN.md — side-by-side diff + activate/rollback (in-progress block) + four-mode test-run UI (Wave 7, PRM-04/05)
 **UI hint**: yes
 
