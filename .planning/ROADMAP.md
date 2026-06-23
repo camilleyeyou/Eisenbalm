@@ -547,7 +547,13 @@ Plans:
   3. Operator clicks "Cancel" on a live run; the run ends in `cancelled` status within the span of one agent node completing; every subsequent agent node that checks the cancel flag before starting no-ops cleanly
   4. Operator uses the re-roll UI to regenerate a single agent/section within an existing run; the LangGraph checkpoint is read, the target node is re-executed, and the issue draft is updated in Sanity — the other sections are unchanged
   5. When a run's projected cost would exceed the configured monthly cap, the system refuses to start the run and shows a warning; when accumulated cost crosses the alert threshold, the operator receives a notification (Slack and/or email)
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 25-01-PLAN.md — Wave 1 foundation: amend docs/API_CONTRACTS.md (contract-first) for /pipeline/run·/pipeline/tick·/runs/{id}/cancel·re-roll + cancel-flag + new pipeline_config keys; additive runs.cancelRequested schema field; RunCancelled exception; idempotent config seed; 5 RED Wave 0 pytest scaffolds + conftest Convex stub fixture
+- [ ] 25-02-PLAN.md — Wave 2 trigger + scheduler (RUN-01/02/03): refactor run_weekly into _start_run; api/control.py /pipeline/run (operator-attributed) + /pipeline/tick (kill-switch-first, due-gated, cursor-advancing); lib/scheduler.py cadence engine; auditLog public record mutation; repoint cli trigger_weekly -> /pipeline/tick
+- [ ] 25-03-PLAN.md — Wave 3 cancel + re-roll (RUN-04/05): cooperative cancel-flag poll in wrap_agent_node + RunCancelled landing in _execute_run; convex runs requestCancel/isCancelRequested/updateStatus; /runs/{id}/cancel + /runs/{id}/agents/{key}/rerun (section-only, D-04-guarded, isolated checkpoint fork)
+- [ ] 25-04-PLAN.md — Wave 4 budget caps (RUN-06): DB-sourced per-run cap snapshotted at run start; monthly cost-warning alert (scope=monthly, no cancel); lib/budget.py trailing-average start-gate + convex runs:monthToDateCost; wire both control seams
+- [ ] 25-05-PLAN.md — Wave 5 dashboard UI (RUN-01..06): pipelineControlClient + Runs control bar (Trigger Run two-step) + budget alert banner + cancelled badge; Run-detail Cancel Run + per-section Re-roll; Config page Automation (kill-switch focal point + schedule editor) + Budget Caps + Danger Zone + next-run local/UTC display
+**UI hint**: yes
 
 ### Phase 26: Review Gate + Charity Registry
 **Goal**: Every finished run lands in `awaiting_review` by default; operator sees a full rendered preview + cost before deciding; operator can approve-and-publish, approve-and-schedule, re-roll sections, or reject; enabling `auto_publish` requires explicit friction and is audit-logged; every factual claim is surfaced as a sign-off checklist; the charity registry tracks candidate/featured/blocklisted states and the Scout deduplicates against it
