@@ -79,9 +79,14 @@ async def test_snapshot_before_task(monkeypatch) -> None:
         runs, "load_run_config", AsyncMock(return_value=MagicMock()), raising=True
     )
     monkeypatch.setattr(runs.asyncio, "create_task", fake_create_task)
+    _convex_mock = AsyncMock(return_value={"status": "success"})
     monkeypatch.setattr(
-        runs, "convex_mutation", AsyncMock(return_value={"status": "success"})
+        runs, "convex_mutation", _convex_mock
     )
+    # Also patch _cc.convex_mutation (module-level) — _start_run uses _cc.convex_mutation
+    # since Phase 25 import refactor; patching only the local name is insufficient.
+    import eisenbalm_pipeline.lib.convex_client as _cc
+    monkeypatch.setattr(_cc, "convex_mutation", _convex_mock)
     monkeypatch.setattr(runs, "begin_run", lambda *a, **k: None)
     monkeypatch.setattr(runs, "new_run_id", lambda: "run-snap-test-001")
     # Explicit issueNumber → _resolve_issue_number short-circuits (no Sanity read).

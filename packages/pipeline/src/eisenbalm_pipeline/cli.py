@@ -115,22 +115,27 @@ async def setup_webhook_idempotency() -> None:
 
 
 async def trigger_weekly() -> None:
-    """Fire the weekly run by POSTing to {PIPELINE_SELF_URL}/run/weekly (V2-03).
+    """Fire the weekly run by POSTing to {PIPELINE_SELF_URL}/pipeline/tick (Phase 25 RUN-03).
 
     Run by a SEPARATE Railway cron service (schedule `0 14 * * 4`), NOT the
     always-on web service. The cron only FIRES the trigger; the web service
     runs the actual graph in a long-lived background task (the graph pauses at
     Editor Gate 1 for hours/days — far longer than a cron job should live).
 
-    Exits 0 on a 2xx response (printing the returned runId). Exits nonzero with
-    a stderr message on missing secret / non-2xx / network error so Railway
-    marks the cron run as failed.
+    /pipeline/tick applies the full five-step guard (kill switch → _is_due →
+    one-at-a-time → budget projection → fire) so the CLI no longer needs to
+    duplicate any of that logic. Previous endpoint /run/weekly is retained for
+    direct manual use but is no longer the canonical cron path.
+
+    Exits 0 on a 2xx response (printing the returned runId or skip reason).
+    Exits nonzero with a stderr message on missing secret / non-2xx / network
+    error so Railway marks the cron run as failed.
     """
     secret = os.environ.get("PIPELINE_TRIGGER_SECRET")
     if not secret:
         print(
             "ERROR: PIPELINE_TRIGGER_SECRET is not set — cannot authenticate "
-            "/run/weekly.",
+            "/pipeline/tick.",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -138,7 +143,7 @@ async def trigger_weekly() -> None:
     base_url = os.environ.get(
         "PIPELINE_SELF_URL", DEFAULT_PIPELINE_SELF_URL
     ).rstrip("/")
-    url = f"{base_url}/run/weekly"
+    url = f"{base_url}/pipeline/tick"
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -159,8 +164,15 @@ async def trigger_weekly() -> None:
         print(f"ERROR: request to {url} failed: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    run_id = resp.json().get("runId")
-    print(f"Triggered weekly run: runId={run_id}")
+    body = resp.json()
+    if body.get("status") == "skipped":
+        # /pipeline/tick returns {"status": "skipped", "reason": "..."} when
+        # a guard (kill switch, not-due, one-at-a-time, budget) fires.
+        # This is a successful cron response — Railway marks the job as passed.
+        print(f"Tick skipped: reason={body.get('reason')}")
+    else:
+        run_id = body.get("runId")
+        print(f"Triggered weekly run: runId={run_id}")
 
 
 _SUBCOMMANDS = {

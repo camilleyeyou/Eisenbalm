@@ -37,7 +37,7 @@ async def test_cancel_lands_cancelled(
 
     # Seed a running run row and set the cancel flag
     convex_runs_store.seed({"runId": run_id, "status": "running", "workspace_id": "eisenbalm"})
-    await convex_runs_store._handle_mutation("runs:requestCancel", {"runId": run_id})
+    await convex_runs_store._handle_mutation(None, "runs:requestCancel", {"runId": run_id})
 
     # A bare no-op node that should NOT execute when cancel is set
     call_tracker = {"called": False}

@@ -6,13 +6,20 @@
  * actual emissions (config changes, review decisions, kill-switch flips)
  * land in Phases 24–26 when those actions are implemented.
  *
+ * `record` is a public `mutation` for callers outside Convex (e.g. the
+ * FastAPI pipeline) that need to emit an audit row directly via the HTTP API.
+ * It has the same args as `write` and delegates to the same db.insert.
+ * Added in Phase 25 (RUN-01/RUN-02) so /pipeline/run and /pipeline/tick
+ * can emit operator-attributed audit rows without going through an internal
+ * mutation chain.
+ *
  * `listForWorkspace` is a public `query` returning audit rows newest-first
  * for the read-only audit viewer in the dashboard Settings or Config page.
  *
  * Table: `audit_log` — already defined in schema.ts (Phase 21 AUTH-04).
  * Indexes used: `by_workspace_timestamp` (compound — for newest-first order).
  */
-import { internalMutation, query } from './_generated/server'
+import { internalMutation, mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 
 // ── write (internal — called from other mutations) ───────────────────────────
@@ -35,6 +42,31 @@ export const write = internalMutation({
     resourceId: v.optional(v.string()),
     before: v.optional(v.string()),  // JSON snapshot
     after: v.optional(v.string()),   // JSON snapshot
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert('audit_log', { ...args, timestamp: Date.now() })
+  },
+})
+
+// ── record (public mutation — called from FastAPI pipeline, Phase 25) ───────
+
+/**
+ * Public mutation version of `write`. Called by the FastAPI pipeline via the
+ * Convex HTTP API when /pipeline/run or /pipeline/tick fires, to emit an
+ * operator-attributed or cron-attributed audit row without going through an
+ * internal mutation chain.
+ *
+ * Args are identical to `write`. Timestamp is injected server-side.
+ */
+export const record = mutation({
+  args: {
+    workspace_id: v.string(),
+    actorId: v.string(),
+    action: v.string(),
+    resourceType: v.optional(v.string()),
+    resourceId: v.optional(v.string()),
+    before: v.optional(v.string()),
+    after: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert('audit_log', { ...args, timestamp: Date.now() })

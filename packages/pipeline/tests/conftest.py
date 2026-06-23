@@ -400,7 +400,7 @@ class _ConvexRunsStore:
 
     # ── Mutation handlers ─────────────────────────────────────────────────
 
-    async def _handle_mutation(self, path: str, args: dict) -> Any:
+    async def _handle_mutation(self, http: Any, path: str, args: dict) -> Any:
         self._call_log.append((path, dict(args)))
         if path == "runs:create":
             row = dict(args)
@@ -423,7 +423,7 @@ class _ConvexRunsStore:
         return {"status": "success"}
 
     async def _handle_mutation_safe(self, path: str, args: dict) -> None:
-        await self._handle_mutation(path, args)
+        await self._handle_mutation(None, path, args)
 
     async def _handle_query(self, http: Any, path: str, args: dict) -> Any:
         if path == "runs:byRunId":
@@ -466,7 +466,7 @@ class _ConvexConfigStore:
 
     # ── Mutation / query handlers ─────────────────────────────────────────
 
-    async def _handle_mutation(self, path: str, args: dict) -> Any:
+    async def _handle_mutation(self, http: Any, path: str, args: dict) -> Any:
         self._call_log.append((path, dict(args)))
         if path == "pipelineConfig:upsert":
             import json as _json
@@ -479,7 +479,7 @@ class _ConvexConfigStore:
         return {"status": "success"}
 
     async def _handle_mutation_safe(self, path: str, args: dict) -> None:
-        await self._handle_mutation(path, args)
+        await self._handle_mutation(None, path, args)
 
     async def _handle_query(self, http: Any, path: str, args: dict) -> Any:
         import json as _json
@@ -502,15 +502,41 @@ def convex_runs_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexRunsStore":
     handlers. Returns the store object so tests can call
     ``store.seed(row)``, ``store.mutation_calls(path)``, etc.
 
+    When used together with ``convex_config_store``, chaining is handled via
+    path-prefix routing in the shared ``_ConvexMultiStore`` dispatcher
+    installed by whichever fixture is applied second.
+
     Source: 25-01-PLAN.md Task 3.
     """
     store = _ConvexRunsStore()
 
     import eisenbalm_pipeline.lib.convex_client as _cc
 
-    monkeypatch.setattr(_cc, "convex_mutation", store._handle_mutation)
-    monkeypatch.setattr(_cc, "convex_mutation_safe", store._handle_mutation_safe)
-    monkeypatch.setattr(_cc, "convex_query", store._handle_query)
+    # Capture any previously-installed handler (e.g. from convex_config_store
+    # applied first in a different fixture ordering).
+    prev_mutation = _cc.convex_mutation
+    prev_mutation_safe = _cc.convex_mutation_safe
+    prev_query = _cc.convex_query
+
+    async def _dispatch_mutation(http: Any, path: str, args: dict) -> Any:
+        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+            return await store._handle_mutation(http, path, args)
+        return await prev_mutation(http, path, args)
+
+    async def _dispatch_mutation_safe(path: str, args: dict) -> None:
+        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+            await store._handle_mutation_safe(path, args)
+        else:
+            await prev_mutation_safe(path, args)
+
+    async def _dispatch_query(http: Any, path: str, args: dict) -> Any:
+        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+            return await store._handle_query(http, path, args)
+        return await prev_query(http, path, args)
+
+    monkeypatch.setattr(_cc, "convex_mutation", _dispatch_mutation)
+    monkeypatch.setattr(_cc, "convex_mutation_safe", _dispatch_mutation_safe)
+    monkeypatch.setattr(_cc, "convex_query", _dispatch_query)
     return store
 
 
@@ -524,15 +550,41 @@ def convex_config_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexConfigStore"
     in-memory handlers. Tests call ``store.seed(key, value)`` to pre-populate
     config before invoking the system under test.
 
+    When used together with ``convex_runs_store``, chaining is handled via
+    path-prefix routing — pipelineConfig:* paths go to this store; everything
+    else falls through to the previously-installed handler (including runs:*
+    paths already claimed by convex_runs_store).
+
     Source: 25-01-PLAN.md Task 3.
     """
     store = _ConvexConfigStore()
 
     import eisenbalm_pipeline.lib.convex_client as _cc
 
-    monkeypatch.setattr(_cc, "convex_mutation", store._handle_mutation)
-    monkeypatch.setattr(_cc, "convex_mutation_safe", store._handle_mutation_safe)
-    monkeypatch.setattr(_cc, "convex_query", store._handle_query)
+    # Capture any previously-installed handler (e.g. from convex_runs_store).
+    prev_mutation = _cc.convex_mutation
+    prev_mutation_safe = _cc.convex_mutation_safe
+    prev_query = _cc.convex_query
+
+    async def _dispatch_mutation(http: Any, path: str, args: dict) -> Any:
+        if path.startswith("pipelineConfig:") or path.startswith("auditLog:"):
+            return await store._handle_mutation(http, path, args)
+        return await prev_mutation(http, path, args)
+
+    async def _dispatch_mutation_safe(path: str, args: dict) -> None:
+        if path.startswith("pipelineConfig:") or path.startswith("auditLog:"):
+            await store._handle_mutation_safe(path, args)
+        else:
+            await prev_mutation_safe(path, args)
+
+    async def _dispatch_query(http: Any, path: str, args: dict) -> Any:
+        if path.startswith("pipelineConfig:"):
+            return await store._handle_query(http, path, args)
+        return await prev_query(http, path, args)
+
+    monkeypatch.setattr(_cc, "convex_mutation", _dispatch_mutation)
+    monkeypatch.setattr(_cc, "convex_mutation_safe", _dispatch_mutation_safe)
+    monkeypatch.setattr(_cc, "convex_query", _dispatch_query)
     return store
 
 

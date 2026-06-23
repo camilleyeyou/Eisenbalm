@@ -25,6 +25,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.llm_config import (
     MAX_TOKENS_BY_AGENT,
@@ -176,7 +177,7 @@ async def snapshot_config(http, run_id: str, config: RunConfig) -> None:
     awaited (not fire-and-forget) — otherwise the snapshot races the run.
     """
     snapshot = json.dumps(dataclasses.asdict(config))
-    await convex_mutation(
+    await _cc.convex_mutation(
         http,
         "runs:setConfigSnapshot",
         {"runId": run_id, "configSnapshot": snapshot},

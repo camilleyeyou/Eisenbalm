@@ -158,6 +158,7 @@ async def test_resolve_issue_number_auto_increments_from_max_list(monkeypatch):
     """None body -> max(existing)+1. groq_query returns a one-item LIST shape."""
     from eisenbalm_pipeline.api.runs import _resolve_issue_number
 
+    monkeypatch.setenv("NEXT_PUBLIC_SANITY_PROJECT_ID", "fake-project-id")
     fake_groq = AsyncMock(return_value=[{"issueNumber": 7}])
     monkeypatch.setattr(
         "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
@@ -172,6 +173,7 @@ async def test_resolve_issue_number_auto_increments_from_max_dict(monkeypatch):
     (GROQ [0]{...} unwraps to a single object) — both shapes are normalized."""
     from eisenbalm_pipeline.api.runs import _resolve_issue_number
 
+    monkeypatch.setenv("NEXT_PUBLIC_SANITY_PROJECT_ID", "fake-project-id")
     fake_groq = AsyncMock(return_value={"issueNumber": 12})
     monkeypatch.setattr(
         "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
@@ -184,6 +186,7 @@ async def test_resolve_issue_number_empty_dataset_base_one(monkeypatch):
     """No weeklyIssue docs (groq_query -> []) -> base 1, never a collision."""
     from eisenbalm_pipeline.api.runs import _resolve_issue_number
 
+    monkeypatch.setenv("NEXT_PUBLIC_SANITY_PROJECT_ID", "fake-project-id")
     fake_groq = AsyncMock(return_value=[])
     monkeypatch.setattr(
         "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
@@ -209,9 +212,16 @@ async def test_resolve_issue_number_explicit_override_skips_read(monkeypatch):
 async def test_resolve_issue_number_read_failure_propagates(monkeypatch):
     """Fail-loud: a GROQ read error on the auto path MUST propagate (caller
     turns it into a 5xx + failed run) rather than silently defaulting to a
-    colliding number."""
+    colliding number.
+
+    Sets NEXT_PUBLIC_SANITY_PROJECT_ID so the code proceeds past the
+    'env not configured' early-return guard (added in Phase 25 to support
+    local dev / test mode without Sanity) and actually calls groq_query,
+    where the RuntimeError is then allowed to propagate.
+    """
     from eisenbalm_pipeline.api.runs import _resolve_issue_number
 
+    monkeypatch.setenv("NEXT_PUBLIC_SANITY_PROJECT_ID", "fake-project-id")
     fake_groq = AsyncMock(side_effect=RuntimeError("sanity down"))
     monkeypatch.setattr(
         "eisenbalm_pipeline.lib.sanity_client.groq_query", fake_groq
