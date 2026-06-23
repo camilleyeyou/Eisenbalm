@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to plan
-stopped_at: Completed 26-05-dashboard-review-screen-PLAN.md
+stopped_at: Phase 26 complete, ready to plan Phase 27
 last_updated: "2026-06-23T11:41:01.385Z"
 progress:
   total_phases: 27
@@ -16,10 +16,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-09)
+See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 26 — review-gate-charity-registry
+**Current focus:** Phase 27 — money-+-notifications
 
 ## Current Position
 
