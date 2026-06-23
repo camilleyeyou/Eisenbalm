@@ -228,6 +228,7 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
     cost: v.optional(v.string()),    // JSON cost summary — sourced from pipelineRuns.cost
     durationMs: v.optional(v.number()),
+    cancelRequested: v.optional(v.boolean()), // Phase 25 RUN-04 cooperative cancel flag the wrapper polls
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId', ['runId']),

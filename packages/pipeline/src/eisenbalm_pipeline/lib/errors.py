@@ -25,6 +25,20 @@ class CostCapExceeded(Exception):
         )
 
 
+class RunCancelled(Exception):
+    """Raised by ``wrap_agent_node`` when the cooperative cancel flag is set (RUN-04, D-02).
+
+    The wrapper no-ops the node cleanly (no started/completed emit) and raises
+    this; ``api/runs.py::_execute_run`` catches it and writes
+    ``runs.status='cancelled'`` (Pitfall 1: ``pipelineRuns.status`` stays
+    ``'failed'`` + ``errorMessage='cancelled by operator'``).
+    """
+
+    def __init__(self, run_id: str) -> None:
+        self.run_id = run_id
+        super().__init__(f"run-cancelled: {run_id}")
+
+
 class AgentToolCallLimitExceeded(Exception):
     """Raised when an ``@agent_node`` body exceeds its ``max_tool_calls`` budget (D-21, AGT-18).
 
