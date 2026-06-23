@@ -1,164 +1,235 @@
 """
-Wave 0 scaffold — Phase 26 RVW-01/RVW-02/RVW-03: Review FastAPI endpoint tests.
+Phase 26 RVW-03: Review FastAPI endpoint tests.
 
-Pre-written stubs for the three FastAPI endpoints defined in API_CONTRACTS §26.7:
+Tests for the three FastAPI endpoints defined in API_CONTRACTS §26.7:
   POST /issues/{run_id}/publish
   POST /issues/{run_id}/schedule
   POST /issues/{run_id}/reject
 
-All tests skip at import time if the router is not yet present.
-The router path will be: packages/pipeline/eisenbalm_pipeline/api/review.py
-
-Implementation target (Plan 26-02):
-  - publish requires all claim_checks to be signed off (allSignedOff gate)
-  - publish flips Sanity weeklyIssue.status='published' (reuses existing webhook path)
-  - schedule stores scheduledPublishAt via runs.setScheduledPublish
-  - reject writes a review_actions row with action="rejected"
+All tests monkeypatch Convex queries/mutations and the Sanity flip helper.
 """
+from __future__ import annotations
+
+from datetime import datetime, timezone, timedelta
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-# ── Import guard ──────────────────────────────────────────────────────────────
+from fastapi.testclient import TestClient
+from fastapi import FastAPI
 
-try:
-    from fastapi.testclient import TestClient  # type: ignore[import]
-    _FASTAPI_AVAILABLE = True
-except ImportError:
-    _FASTAPI_AVAILABLE = False
+from eisenbalm_pipeline.api.review import router
 
-try:
-    from eisenbalm_pipeline.api.review import router  # type: ignore[import]
-    from fastapi import FastAPI
+# Build a minimal test app with the review router and mocked app.state.
+_app = FastAPI()
+_app.include_router(router)
 
-    _app = FastAPI()
-    _app.include_router(router, prefix="/issues")
-    _client = TestClient(_app)
-    _ROUTER_AVAILABLE = True
-except (ImportError, Exception):
-    _ROUTER_AVAILABLE = False
-    _client = None
+# Inject a mock convex_http and sanity_http into app.state.
+_mock_convex_http = MagicMock()
+_mock_sanity_http = MagicMock()
+_app.state.convex_http = _mock_convex_http
+_app.state.sanity_http = _mock_sanity_http
+_app.state.graph = None
+_app.state.background_tasks = set()
 
+_client = TestClient(_app, raise_server_exceptions=True)
 
-skip_if_no_router = pytest.mark.skipif(
-    not _ROUTER_AVAILABLE,
-    reason="eisenbalm_pipeline.api.review router not yet implemented (Plan 26-02)",
-)
-
-skip_if_no_fastapi = pytest.mark.skipif(
-    not _FASTAPI_AVAILABLE,
-    reason="fastapi not installed in test environment",
-)
+pytestmark = pytest.mark.anyio
 
 
-# ── publish_requires_claims_signoff ───────────────────────────────────────────
+# ── Helpers ────────────────────────────────────────────────────────────────
+
+def _future_ts() -> int:
+    """Unix ms 1 hour from now."""
+    return int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp() * 1000)
 
 
-@skip_if_no_router
+def _awaiting_run(sanity_id: str = "issue-42") -> dict:
+    return {"status": "awaiting-review", "sanityIssueId": sanity_id, "runId": "run-abc"}
+
+
+# ── test_publish_requires_claims_signoff ──────────────────────────────────
+
+
 def test_publish_requires_claims_signoff(monkeypatch):
     """
-    POST /issues/{run_id}/publish → 422 when allSignedOff is false.
+    POST /issues/{run_id}/publish → 409 when allSignedOff is false.
 
-    The endpoint should reject publish requests when not all claim_checks
-    have been signed off (checked or skipped). This guards the race window
-    between the operator clicking "Approve" and claims loading from Convex
-    (Pitfall 5 in plan 26-01).
+    Server-side claims gate must reject the request even when the run is
+    in awaiting-review status (Pitfall 6 in plan 26-01).
     """
-    # Mock the Convex allSignedOff query to return "not ready"
-    def mock_all_signed_off(run_id: str):
-        return {"total": 3, "signedOff": 1, "allSignedOff": False}
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run()
+        if path == "claimChecks:allSignedOff":
+            return {"total": 3, "signedOff": 1, "allSignedOff": False}
+        return None
 
-    # The implementation may call this via convex_client or a dependency;
-    # the exact monkeypatch target will be known after Plan 26-02 implementation.
-    # For now, stub the most likely path.
-    try:
-        import eisenbalm_pipeline.lib.convex_client as cc  # type: ignore[import]
-        monkeypatch.setattr(cc, "claim_checks_all_signed_off", mock_all_signed_off, raising=False)
-    except (ImportError, AttributeError):
-        pytest.skip("convex_client module not yet available — update monkeypatch target in Plan 26-02")
-
-    response = _client.post(
-        "/issues/test-run-id/publish",
-        json={"actor_id": "user_test123"},
-    )
-    # Expect 422 Unprocessable Entity (claims gate blocked)
-    assert response.status_code == 422, (
-        f"Expected 422 (claims not signed off), got {response.status_code}: {response.text}"
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
     )
 
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 409, (
+        f"Expected 409 (claims not signed off), got {response.status_code}: {response.text}"
+    )
+    data = response.json()
+    # FastAPI wraps HTTPException detail in {"detail": ...}
+    detail = data.get("detail", {})
+    reason = detail.get("reason") if isinstance(detail, dict) else str(detail)
+    assert "claims_not_signed_off" in reason, (
+        f"Expected reason='claims_not_signed_off' in {detail}"
+    )
 
-@skip_if_no_router
+
+# ── test_publish_success ──────────────────────────────────────────────────
+
+
 def test_publish_success(monkeypatch):
     """
     POST /issues/{run_id}/publish → 200 + {published: true} when all claims signed off.
 
-    When allSignedOff=true, the endpoint should:
+    The endpoint should:
       1. Flip Sanity weeklyIssue.status='published' (D-01 path)
       2. Write a review_actions row with action='approved_and_published'
-      3. Return 200 with {published: true, sanity_issue_id: <id>}
+      3. Return 200 with {published: true, issueId: <id>}
     """
-    def mock_all_signed_off(run_id: str):
-        return {"total": 3, "signedOff": 3, "allSignedOff": True}
+    sanity_flip_calls = []
 
-    def mock_sanity_publish(issue_id: str):
-        return {"_id": issue_id, "status": "published"}
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run("issue-42")
+        if path == "claimChecks:allSignedOff":
+            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        return None
 
-    try:
-        import eisenbalm_pipeline.lib.convex_client as cc  # type: ignore[import]
-        import eisenbalm_pipeline.lib.sanity_client as sc  # type: ignore[import]
-        monkeypatch.setattr(cc, "claim_checks_all_signed_off", mock_all_signed_off, raising=False)
-        monkeypatch.setattr(sc, "publish_issue", mock_sanity_publish, raising=False)
-    except (ImportError, AttributeError):
-        pytest.skip("required modules not yet available — update monkeypatch targets in Plan 26-02")
+    async def mock_convex_mutation(http, path, args):
+        return None
 
-    response = _client.post(
-        "/issues/test-run-id/publish",
-        json={"actor_id": "user_test123"},
+    async def mock_flip(http, sanity_issue_id: str):
+        sanity_flip_calls.append(sanity_issue_id)
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
     )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_mutation",
+        mock_convex_mutation,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._flip_sanity_published",
+        mock_flip,
+    )
+
+    response = _client.post("/issues/run-abc/publish")
     assert response.status_code == 200, (
         f"Expected 200 (publish success), got {response.status_code}: {response.text}"
     )
     data = response.json()
     assert data.get("published") is True
+    assert data.get("issueId") == "issue-42"
+
+    # Sanity flip was called with the correct issue ID.
+    assert sanity_flip_calls == ["issue-42"], (
+        f"Expected _flip_sanity_published called with issue-42, got {sanity_flip_calls}"
+    )
 
 
-@skip_if_no_router
+# ── test_schedule_writes_scheduled_at ────────────────────────────────────
+
+
 def test_schedule_writes_scheduled_at(monkeypatch):
     """
-    POST /issues/{run_id}/schedule → 200 + {scheduled: true, scheduled_at: <timestamp>}.
+    POST /issues/{run_id}/schedule → 200 + {scheduledAt: <timestamp>, issueId: <id>}.
 
-    The endpoint should call runs.setScheduledPublish and write a review_actions row
+    The endpoint should call runs:setScheduledPublish and write a review_actions row
     with action='approved_and_scheduled'.
     """
-    from datetime import datetime, timezone, timedelta
-
-    # A valid future timestamp (1 hour from now)
-    future_ts = int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp() * 1000)
-
+    future_ts = _future_ts()
     scheduled_at_written = []
 
-    def mock_set_scheduled_publish(run_id: str, scheduled_publish_at: int):
-        scheduled_at_written.append(scheduled_publish_at)
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run("issue-42")
+        if path == "claimChecks:allSignedOff":
+            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        return None
 
-    try:
-        import eisenbalm_pipeline.lib.convex_client as cc  # type: ignore[import]
-        monkeypatch.setattr(
-            cc, "runs_set_scheduled_publish", mock_set_scheduled_publish, raising=False
-        )
-    except (ImportError, AttributeError):
-        pytest.skip("convex_client module not yet available — update monkeypatch target in Plan 26-02")
+    async def mock_convex_mutation(http, path, args):
+        if path == "runs:setScheduledPublish":
+            scheduled_at_written.append(args.get("scheduledPublishAt"))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_mutation",
+        mock_convex_mutation,
+    )
 
     response = _client.post(
-        "/issues/test-run-id/schedule",
-        json={"actor_id": "user_test123", "scheduled_at": future_ts},
+        "/issues/run-abc/schedule",
+        json={"scheduledAt": future_ts},
     )
     assert response.status_code == 200, (
         f"Expected 200, got {response.status_code}: {response.text}"
     )
     data = response.json()
-    assert data.get("scheduled") is True
-    assert "scheduled_at" in data
+    assert data.get("scheduledAt") == future_ts
+    assert data.get("issueId") == "issue-42"
 
-    # Verify the correct timestamp was written to Convex
+    # Verify the correct timestamp was written to Convex.
     assert scheduled_at_written == [future_ts], (
-        f"Expected runs.setScheduledPublish called with {future_ts}, got {scheduled_at_written}"
+        f"Expected runs:setScheduledPublish called with {future_ts}, got {scheduled_at_written}"
     )
+
+
+# ── test_reject_records_action ────────────────────────────────────────────
+
+
+def test_reject_records_action(monkeypatch):
+    """
+    POST /issues/{run_id}/reject → 200 + {rejected: true} and writes review_actions row.
+    """
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run("issue-42")
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_mutation",
+        mock_convex_mutation,
+    )
+
+    response = _client.post(
+        "/issues/run-abc/reject",
+        json={"note": "Content needs revision"},
+    )
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
+    data = response.json()
+    assert data.get("rejected") is True
+    assert data.get("issueId") == "issue-42"
+
+    # reviewActions:record was called with action="rejected".
+    review_action_calls = [
+        args for path, args in mutation_calls
+        if path == "reviewActions:record"
+    ]
+    assert review_action_calls, "reviewActions:record should have been called"
+    assert review_action_calls[0]["action"] == "rejected"
