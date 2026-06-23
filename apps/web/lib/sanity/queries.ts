@@ -174,6 +174,99 @@ export const QUERY_CHARITY_BY_SLUG = groq`
 `
 
 /**
+ * §26.8 — Draft-preview query (Plan 26-04). Used by /issue/[slug]/preview.
+ *
+ * IDENTICAL field projection to QUERY_ISSUE_BY_SLUG above — intentionally so the
+ * preview renders the exact same component tree. The ONLY difference is that the
+ * status == "published" filter is absent, so Sanity DRAFT documents are returned
+ * when the previewDrafts perspective is active.
+ *
+ * DO NOT add a status filter here — that is the entire point of the preview route.
+ */
+export const QUERY_ISSUE_PREVIEW_BY_SLUG = groq`
+  *[_type == "weeklyIssue" && slug.current == $slug][0] {
+    issueNumber,
+    publishDate,
+    bonusType,
+    "runId": pipelineMetadata.runId,
+
+    charity-> {
+      name,
+      "slug": slug.current,
+      location,
+      website,
+      charityNavigatorUrl,
+      foundingYear,
+      assetRange,
+      focusArea,
+      missionStatement,
+    },
+
+    narrator-> {
+      name,
+      "slug": slug.current,
+      active,
+    },
+
+    theme {
+      primaryColor,
+      accentColor,
+      backgroundColor,
+      textColor,
+      fontDisplay,
+      fontBody,
+      visualDirection,
+    },
+
+    originStory { headline, body },
+    problemStatement { headline, body },
+    "problemPdfUrl": problemPdf.asset->url,
+
+    founderBio { headline, body },
+
+    caseStudy {
+      subjectName,
+      headline,
+      body,
+    },
+
+    game {
+      headline,
+      description,
+      embedCode,
+    },
+
+    bonus {
+      headline,
+      body,
+      lyrics,
+      sunoPrompt,
+      sunoAudioUrl,
+      storyboards[] { asset->{ url } },
+    },
+
+    podcast {
+      "audioUrl": audioFile.asset->url,
+      podcastDescription,
+      duration,
+      deliberationTranscript,
+    },
+
+    selectionDeliberation {
+      candidates[] {
+        charity->{ name, "slug": slug.current, location },
+        scoutSummary,
+        advocateArgument,
+        advocateScore,
+      },
+      editorDecision,
+      runnerUpNotes,
+      conversation[] { speaker, text },
+    },
+  }
+`
+
+/**
  * §1.7 — Issue runId only (for Phase 9 Convex subscriptions; reserved here).
  */
 export const QUERY_ISSUE_RUN_ID = groq`
