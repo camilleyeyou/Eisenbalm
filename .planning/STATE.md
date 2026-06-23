@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 25-run-control 25-03-PLAN.md
-last_updated: "2026-06-23T07:17:32.309Z"
+stopped_at: Completed 25-run-control 25-04-PLAN.md
+last_updated: "2026-06-23T07:29:58.591Z"
 progress:
   total_phases: 27
   completed_phases: 23
   total_plans: 162
-  completed_plans: 158
+  completed_plans: 159
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 25 (run-control) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -186,6 +186,7 @@ Plan: 4 of 5
 | Phase 25-run-control P01 | 595 | 3 tasks | 8 files |
 | Phase 25-run-control P02 | 90 | 2 tasks | 11 files |
 | Phase 25-run-control P03 | 12 | 2 tasks | 6 files |
+| Phase 25-run-control P04 | 7 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -478,6 +479,9 @@ Recent decisions affecting current work:
 - [Phase 25-run-control]: _cc.convex_query_safe module-attribute pattern in agent_wrapper: prevents monkeypatch miss (same as Plan 02's _cc.convex_mutation pattern)
 - [Phase 25-run-control]: Re-roll seeds current_state with None for all section keys before graph checkpoint overlay — ensures merged state always contains sibling fields in test/degraded mode
 - [Phase 25-run-control]: RE_ROLLABLE = set(SECTION_WRITERS) derives from builder constant — automatically honors DESIGNAGENT_SUPPRESSED env flag at import time
+- [Phase 25-run-control]: In-memory per-run cap registry (_run_caps) avoids Convex read in hot acomplete path — RESEARCH Pattern 4 satisfied
+- [Phase 25-run-control]: Trailing-average projection uses last-4 completed runs; zero-history returns None → first run always allowed (D-06)
+- [Phase 25-run-control]: Monthly alert reuses cost-warning eventType with scope=monthly payload — frozen deliberationEvents.eventType union untouched
 
 ### Pending Todos
 
@@ -558,6 +562,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T07:17:32.299Z
-Stopped at: Completed 25-run-control 25-03-PLAN.md
+Last session: 2026-06-23T07:29:58.580Z
+Stopped at: Completed 25-run-control 25-04-PLAN.md
 Resume file: None

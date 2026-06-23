@@ -411,7 +411,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
-| 25. Run Control | 3/5 | In Progress|  |
+| 25. Run Control | 4/5 | In Progress|  |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
 
@@ -551,7 +551,7 @@ Plans:
 - [x] 25-01-PLAN.md — Wave 1 foundation: amend docs/API_CONTRACTS.md (contract-first) for /pipeline/run·/pipeline/tick·/runs/{id}/cancel·re-roll + cancel-flag + new pipeline_config keys; additive runs.cancelRequested schema field; RunCancelled exception; idempotent config seed; 5 RED Wave 0 pytest scaffolds + conftest Convex stub fixture
 - [x] 25-02-PLAN.md — Wave 2 trigger + scheduler (RUN-01/02/03): refactor run_weekly into _start_run; api/control.py /pipeline/run (operator-attributed) + /pipeline/tick (kill-switch-first, due-gated, cursor-advancing); lib/scheduler.py cadence engine; auditLog public record mutation; repoint cli trigger_weekly -> /pipeline/tick
 - [x] 25-03-PLAN.md — Wave 3 cancel + re-roll (RUN-04/05): cooperative cancel-flag poll in wrap_agent_node + RunCancelled landing in _execute_run; convex runs requestCancel/isCancelRequested/updateStatus; /runs/{id}/cancel + /runs/{id}/agents/{key}/rerun (section-only, D-04-guarded, isolated checkpoint fork)
-- [ ] 25-04-PLAN.md — Wave 4 budget caps (RUN-06): DB-sourced per-run cap snapshotted at run start; monthly cost-warning alert (scope=monthly, no cancel); lib/budget.py trailing-average start-gate + convex runs:monthToDateCost; wire both control seams
+- [x] 25-04-PLAN.md — Wave 4 budget caps (RUN-06): DB-sourced per-run cap snapshotted at run start; monthly cost-warning alert (scope=monthly, no cancel); lib/budget.py trailing-average start-gate + convex runs:monthToDateCost; wire both control seams
 - [ ] 25-05-PLAN.md — Wave 5 dashboard UI (RUN-01..06): pipelineControlClient + Runs control bar (Trigger Run two-step) + budget alert banner + cancelled badge; Run-detail Cancel Run + per-section Re-roll; Config page Automation (kill-switch focal point + schedule editor) + Budget Caps + Danger Zone + next-run local/UTC display
 **UI hint**: yes
 
