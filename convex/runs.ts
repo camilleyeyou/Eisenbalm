@@ -236,3 +236,55 @@ export const updateStatus = mutation({
     })
   },
 })
+
+// ── Phase 26 RVW-03 — Scheduled publish mutations/queries ─────────────────
+
+/**
+ * Set (or clear) the scheduled publish time for a run (approve-and-schedule).
+ * Pass `scheduledPublishAt: undefined` to clear (cancel a scheduled publish).
+ * The Phase 25 `/pipeline/tick` sweep calls `dueForPublish` each tick and
+ * fires the publish path for any due runs.
+ */
+export const setScheduledPublish = mutation({
+  args: {
+    runId: v.string(),
+    scheduledPublishAt: v.optional(v.number()), // Unix ms; undefined to clear
+  },
+  handler: async (ctx, { runId, scheduledPublishAt }) => {
+    const run = await ctx.db
+      .query('runs')
+      .withIndex('by_runId', q => q.eq('runId', runId))
+      .first()
+    if (!run) throw new Error(`Run not found: ${runId}`)
+    await ctx.db.patch(run._id, { scheduledPublishAt })
+  },
+})
+
+/**
+ * Returns runs that are due for scheduled publish:
+ *   - status === "awaiting-review"
+ *   - scheduledPublishAt is set (not undefined)
+ *   - scheduledPublishAt <= nowMs
+ *
+ * Called by the Phase 25 /pipeline/tick sweep (after the cadence gate check)
+ * to fire the same Sanity status-flip publish path (D-01) for scheduled runs.
+ */
+export const dueForPublish = query({
+  args: {
+    workspace_id: v.string(),
+    nowMs: v.number(),
+  },
+  handler: async (ctx, { workspace_id, nowMs }) => {
+    const rows = await ctx.db
+      .query('runs')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+
+    return rows.filter(
+      r =>
+        r.status === 'awaiting-review' &&
+        r.scheduledPublishAt !== undefined &&
+        r.scheduledPublishAt <= nowMs,
+    )
+  },
+})

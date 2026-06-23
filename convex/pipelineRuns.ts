@@ -40,6 +40,8 @@ export const updateStatus = mutation({
     durationMs: v.optional(v.number()),
     cost: v.optional(v.string()),
     awaitingHumanAt: v.optional(v.number()), // PIP-10: Unix ms when Editor gate 1 interrupted for Andrew review
+    // ── Phase 26 addition (API_CONTRACTS §26.4) ──────────────────────────
+    sanityIssueId: v.optional(v.string()), // Sanity weeklyIssue _id — written by publisher so publish endpoint can resolve Sanity issue from runId
   },
   handler: async (ctx, args) => {
     const run = await ctx.db
