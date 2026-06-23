@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 25-01-PLAN.md (contract-first foundation)
-last_updated: "2026-06-23T06:33:56.307Z"
+stopped_at: Completed 25-02-PLAN.md
+last_updated: "2026-06-23T07:02:20.843Z"
 progress:
   total_phases: 27
   completed_phases: 23
   total_plans: 162
-  completed_plans: 156
+  completed_plans: 157
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 25 (run-control) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -184,6 +184,7 @@ Plan: 2 of 5
 | Phase 24 P06 | 22min | 3 tasks | 7 files |
 | Phase 24 P08 | 8min | 3 tasks | 8 files |
 | Phase 25-run-control P01 | 595 | 3 tasks | 8 files |
+| Phase 25-run-control P02 | 90 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -470,6 +471,9 @@ Recent decisions affecting current work:
 - [Phase 25-run-control]: Cancel-flag via Convex runs.cancelRequested (free boolean) — survives Railway restart, dashboard-visible; pipelineRuns.status frozen union untouched (Pitfall 1 documented)
 - [Phase 25-run-control]: schedule_enabled NOT seeded by Phase 25 — Phase 22 automation-off default preserved; 5 new pipeline_config keys seeded (per_run_cap, monthly_cap, alert_threshold, schedule_cadence, schedule_next_run_at)
 - [Phase 25-run-control]: Re-rollable agent set = 7 section writers only (D-03); 422 for qa/scout/advocate/editor/researcher/chronicler
+- [Phase 25-run-control]: Module-level _cc.* import pattern for all Convex calls in run-control path ensures monkeypatch compatibility for test isolation
+- [Phase 25-run-control]: Fixture chaining dispatch pattern: each conftest store captures prev handler and routes by path prefix, so runs_store + config_store can coexist in same test
+- [Phase 25-run-control]: auditLog:record public mutation added alongside internalMutation write so FastAPI can emit audit rows directly without internal mutation chain
 
 ### Pending Todos
 
@@ -550,6 +554,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T06:33:56.296Z
-Stopped at: Completed 25-01-PLAN.md (contract-first foundation)
+Last session: 2026-06-23T07:02:20.832Z
+Stopped at: Completed 25-02-PLAN.md
 Resume file: None
