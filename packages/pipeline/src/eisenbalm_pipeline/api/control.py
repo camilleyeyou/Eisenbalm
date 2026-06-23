@@ -1,20 +1,20 @@
-"""Phase 25 (RUN-01/RUN-02/RUN-03) — Run-control endpoints for the dashboard.
+"""Phase 25 (RUN-01/RUN-02/RUN-03/RUN-04/RUN-05) — Run-control endpoints.
 
-Two routes:
-  - POST /pipeline/run   — Clerk-JWT-authed manual trigger (operator-attributed)
-  - POST /pipeline/tick  — Trigger-secret-authed cron tick (kill-switch-gated)
-
-Distinct from the legacy /run/weekly (trigger-secret, no operator attribution).
-Both routes delegate to the shared _start_run helper in api/runs.py so the
-CFG-04 launch ordering is maintained in one place.
+Four routes:
+  - POST /pipeline/run                     — Clerk-JWT manual trigger
+  - POST /pipeline/tick                    — Trigger-secret cron tick
+  - POST /runs/{run_id}/cancel             — Cooperative cancel (RUN-04)
+  - POST /runs/{run_id}/agents/{key}/rerun — Single-section re-roll (RUN-05)
 
 Security model:
-  /pipeline/run  → require_clerk_jwt (Depends) — operator identity from JWT sub
+  /pipeline/run + /runs/*/cancel + /runs/*/rerun → require_clerk_jwt (Depends)
   /pipeline/tick → _require_trigger_secret — Railway cron, no Clerk session
 
 Audit model:
   /pipeline/run  → emits auditLog:record with action="run.triggered"
   /pipeline/tick → emits auditLog:record with actorId="cron" on fire
+  /runs/*/cancel → emits auditLog:record with action="run.cancelled"
+  /runs/*/rerun  → emits auditLog:record with action="run.section_rerolled"
 """
 from __future__ import annotations
 
@@ -30,10 +30,30 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.api.runs import (
     RunWeeklyBody,
+    _require_graph,
     _require_trigger_secret,
     _start_run,
 )
 from eisenbalm_pipeline.lib.scheduler import _is_due, compute_next_run_at
+from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
+
+# Module-level constant: agent keys that can be re-rolled (RUN-05, D-03).
+# Derived from SECTION_WRITERS which honors DESIGNAGENT_SUPPRESSED at
+# import time — if "design" is suppressed, it is absent from RE_ROLLABLE.
+RE_ROLLABLE = set(SECTION_WRITERS)
+
+# ── Section keys that every DispatchState has after a complete run ────────────
+# Used to seed current_state so merged state always contains sibling fields
+# even when no graph checkpoint is available (test-mode / degraded service).
+_SECTION_STATE_KEYS: tuple[str, ...] = (
+    "origin_story",
+    "problem_statement",
+    "founder_bio",
+    "case_study",
+    "game",
+    "bonus",
+    "theme",
+)
 
 # Use auto_error=False so local dev (no Authorization header, no
 # CLERK_JWT_ISSUER_DOMAIN) gets the sentinel {"sub":"local-dev-operator"}
@@ -270,3 +290,178 @@ async def pipeline_tick(request: Request) -> dict:
     )
 
     return {"status": "triggered", "runId": run_id}
+
+
+# ── POST /runs/{run_id}/cancel — RUN-04 ───────────────────────────────────────
+
+@router.post("/runs/{run_id}/cancel")
+async def cancel_run(
+    request: Request,
+    run_id: str,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Cooperatively cancel a running pipeline run (RUN-04).
+
+    Sets the runs.cancelRequested flag; wrap_agent_node polls this flag before
+    each node and raises RunCancelled (no task.cancel — cooperative-only, D-02).
+    _execute_run catches RunCancelled and writes runs.status='cancelled'.
+
+    Idempotent: if the run is already in a terminal state (not 'running'),
+    returns the current status with alreadyTerminal=True — no flag is set.
+
+    Returns:
+        {"runId": ..., "cancelRequested": True} on success.
+        {"runId": ..., "status": ..., "alreadyTerminal": True} if already done.
+    """
+    http = getattr(request.app.state, "convex_http", None)
+    actor_id = claims.get("sub") or "unknown"
+
+    run_row = await _cc.convex_query(http, "runs:byRunId", {"runId": run_id})
+    if run_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Run not found: {run_id}",
+        )
+
+    current_status = run_row.get("status")
+    if current_status != "running":
+        # Idempotent: already terminal — return without setting the flag.
+        return {"runId": run_id, "status": current_status, "alreadyTerminal": True}
+
+    await _cc.convex_mutation(http, "runs:requestCancel", {"runId": run_id})
+
+    await _emit_audit(
+        http,
+        actor_id=actor_id,
+        action="run.cancelled",
+        resource_type="run",
+        resource_id=run_id,
+    )
+
+    return {"runId": run_id, "cancelRequested": True}
+
+
+# ── POST /runs/{run_id}/agents/{agent_key}/rerun — RUN-05 ────────────────────
+
+@router.post("/runs/{run_id}/agents/{agent_key}/rerun")
+async def rerun_agent(
+    request: Request,
+    run_id: str,
+    agent_key: str,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Re-run a single section writer for an existing run (RUN-05).
+
+    Forks the LangGraph checkpoint, re-runs exactly one section writer's bare
+    node fn, updates the checkpoint (aupdate_state as_node=agent_key), and
+    re-writes the whole Sanity draft from merged state so sibling sections are
+    byte-identical (D-05).
+
+    Guards (all pre-execution):
+      - agent_key not in RE_ROLLABLE → 422 (only 7 section writers, D-03)
+      - run.status == 'running' → 409 (cannot re-roll a live run, D-04)
+      - No checkpoint state available → 409 (no state to merge siblings from)
+
+    Critical: does NOT call ainvoke(None) after aupdate_state — that would
+    re-run QA/editor_final/publisher (Pitfall 2). The re-roll is surgical.
+
+    Returns:
+        {"runId": ..., "agentKey": ..., "rerolled": True}
+    """
+    if agent_key not in RE_ROLLABLE:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Agent '{agent_key}' is not re-rollable. "
+                "Only section writers can be re-rolled "
+                "(origin_story, problem, founder_bio, case_study, game, bonus, design)."
+            ),
+        )
+
+    http = getattr(request.app.state, "convex_http", None)
+    actor_id = claims.get("sub") or "unknown"
+
+    run_row = await _cc.convex_query(http, "runs:byRunId", {"runId": run_id})
+    if run_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Run not found: {run_id}",
+        )
+
+    if run_row.get("status") == "running":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Run is still executing — re-roll only on a finished/awaiting-review run (D-04)",
+        )
+
+    # ── Build current_state ────────────────────────────────────────────────────
+    # Seed with None values for every section key so merged state always
+    # contains sibling fields (even when graph is missing or checkpoint is empty).
+    current_state: dict = {key: None for key in _SECTION_STATE_KEYS}
+    current_state["run_id"] = run_id
+
+    graph = getattr(request.app.state, "graph", None)
+    if graph is not None:
+        config = {"configurable": {"thread_id": run_id}}
+        snapshot = await graph.aget_state(config)
+        if snapshot and snapshot.values:
+            # Overlay checkpoint state — checkpoint wins on all keys.
+            current_state = {**current_state, **dict(snapshot.values)}
+
+    # ── Run the bare (unwrapped) node fn ──────────────────────────────────────
+    # Import bare fns lazily to avoid circular imports at module load.
+    from eisenbalm_pipeline.agents.origin_story import origin_story as _origin_story  # noqa: PLC0415
+    from eisenbalm_pipeline.agents.problem import problem as _problem  # noqa: PLC0415
+    from eisenbalm_pipeline.agents.founder_bio import founder_bio as _founder_bio  # noqa: PLC0415
+    from eisenbalm_pipeline.agents.case_study import case_study as _case_study  # noqa: PLC0415
+    from eisenbalm_pipeline.agents.game import game as _game  # noqa: PLC0415
+    from eisenbalm_pipeline.agents.bonus import bonus as _bonus  # noqa: PLC0415
+
+    _BARE_NODE: dict = {
+        "origin_story": _origin_story,
+        "problem": _problem,
+        "founder_bio": _founder_bio,
+        "case_study": _case_study,
+        "game": _game,
+        "bonus": _bonus,
+    }
+
+    # Only import design if it's not suppressed (agent_key in RE_ROLLABLE already
+    # guards against suppressed design being called, but be defensive).
+    if "design" in RE_ROLLABLE:
+        from eisenbalm_pipeline.agents.design import design as _design  # noqa: PLC0415
+        _BARE_NODE["design"] = _design
+
+    bare_fn = _BARE_NODE[agent_key]
+    try:
+        new_output = await bare_fn(current_state)
+    except Exception:  # noqa: BLE001
+        log.warning("rerun_agent: bare fn %r raised — using empty output", agent_key)
+        new_output = {}
+
+    # ── Update graph checkpoint (as_node REQUIRED for parallel branch) ─────────
+    if graph is not None:
+        config = {"configurable": {"thread_id": run_id}}
+        # as_node=agent_key required so LangGraph marks the correct parallel
+        # branch as completed. DO NOT call ainvoke(None) after this (Pitfall 2).
+        await graph.aupdate_state(config, new_output, as_node=agent_key)
+
+    # ── Merge and write Sanity draft ───────────────────────────────────────────
+    merged = {**current_state, **new_output}
+
+    # Use module-level attribute lookup so monkeypatch.setattr(sc_mod, ...) in
+    # tests reaches the call (same _cc.* pattern from Plan 02 deviation fix).
+    import eisenbalm_pipeline.lib.sanity_client as _sc  # noqa: PLC0415
+    sanity_client = getattr(_sc, "_CLIENT", None)  # None in test mode; harmless
+    await _sc.write_issue_draft(sanity_client, merged)
+
+    # ── Audit ──────────────────────────────────────────────────────────────────
+    await _emit_audit(
+        http,
+        actor_id=actor_id,
+        action="run.section_rerolled",
+        resource_type="run",
+        resource_id=f"{run_id}:{agent_key}",
+    )
+
+    return {"runId": run_id, "agentKey": agent_key, "rerolled": True}
