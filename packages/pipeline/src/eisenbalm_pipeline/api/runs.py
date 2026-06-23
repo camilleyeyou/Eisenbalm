@@ -10,6 +10,10 @@ Background execution uses asyncio.create_task (research §3 Pattern 3) rather
 than FastAPI BackgroundTasks: BackgroundTasks is cancelled on client
 disconnect, which can leave pipelineRuns.status='running' forever. CONTEXT
 D-06 explicitly defers this choice to the planner/executor.
+
+Phase 25: _start_run is the single shared trigger body used by both
+/run/weekly (legacy, trigger-secret auth) and the new /pipeline/run +
+/pipeline/tick control endpoints (control.py, Clerk/secret auth).
 """
 from __future__ import annotations
 
@@ -175,36 +179,67 @@ async def _execute_run(
         log.exception("Run %s background task raised", run_id)
 
 
-# ── POST /run/weekly ──────────────────────────────────────────────────────
+# ── Shared run-launch helper (Phase 25, RUN-01/RUN-02/RUN-03) ───────────────
+#
+# _start_run contains the SINGLE authoritative trigger body, factored out from
+# run_weekly so /pipeline/run (Clerk-authed manual trigger) and /pipeline/tick
+# (cron-authed schedule tick) can both call it without duplicating the
+# CFG-04-critical ordering or the agent_runs pre-population logic.
+#
+# Callers pass `app` (the FastAPI application) rather than `request` so
+# _start_run can be called from control.py without a live Request object.
+# app.state.{graph, convex_http, background_tasks} are the three state slots
+# this helper reads — the same ones run_weekly accessed via request.app.state.
 
-@router.post("/run/weekly")
-async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
-    """Trigger a new pipeline run. Returns {runId} immediately.
+async def _start_run(
+    app: Any,
+    *,
+    issue_number: Optional[int],
+    trigger_source: str,
+    triggered_by: Optional[str] = None,
+    force_no_winner: bool = False,
+    force_fail_agent: Optional[str] = None,
+    narrator_slug: Optional[str] = None,
+) -> str:
+    """Shared pipeline run launcher. Returns run_id.
 
-    Run continues in background (strong-ref'd asyncio.create_task).
-    Poll GET /run/{runId}/status for terminal state.
+    Accepts:
+        app:            The FastAPI application (provides app.state.*).
+        issue_number:   Explicit issue number (None → auto-increment via Sanity).
+        trigger_source: "manual" | "cron" — written to runs:create.
+        triggered_by:   Clerk userId (sub claim) for operator attribution, or
+                        "cron" for automated tick triggers, or None.
+        force_no_winner:    Dev toggle — bypasses winner selection (D-36).
+        force_fail_agent:   Dev toggle — forces a named agent to fail (D-37).
+        narrator_slug:  Optional narrator override (Phase 16 NRR-05).
+
+    Returns:
+        The new run_id string.
+
+    CFG-04 ordering (PRESERVED — do not reorder):
+        1. _resolve_issue_number
+        2. new_run_id / begin_run
+        3. convex_mutation pipelineRuns:create
+        4. convex_mutation runs:create (with triggeredBy)
+        5. convex_mutation agentRuns:queueForRun
+        6. load_run_config + snapshot_config   ← BEFORE asyncio.create_task
+        7. asyncio.create_task(_execute_run)
     """
-    _require_trigger_secret(request)
-    graph = _require_graph(request)
+    # Step 1: Resolve issue number (no Sanity read when explicit).
+    if issue_number is None:
+        issue_number = await _resolve_issue_number(None)
 
-    # Resolve the issue number BEFORE generating run_id / writing the Convex
-    # row / building initial_state, so a failed auto-increment read aborts the
-    # whole trigger (5xx) without leaving an orphan pipelineRuns row. When
-    # body.issueNumber is explicit, this is a no-op pass-through (no Sanity read).
-    issue_number = await _resolve_issue_number(body.issueNumber)
-
-    # CONTEXT D-09: generated EXACTLY ONCE.
+    # Step 2: Generate identifiers and start cost tracking.
     run_id = new_run_id()
     started_at_ms = int(time.time() * 1000)
-
-    # Mark cost-recording start (lib/cost — CONTEXT D-22/D-23).
     begin_run(run_id)
 
-    # CRITICAL: insert pipelineRuns row BEFORE launching the graph (research
-    # Anti-Patterns — otherwise the wrapper's failure path would call
-    # updateStatus on a missing row, which throws "Run not found").
+    http = app.state.convex_http
+
+    # Step 3: Insert pipelineRuns row BEFORE launching the graph (Anti-Pattern:
+    # otherwise the wrapper's failure path calls updateStatus on a missing row).
     await convex_mutation(
-        request.app.state.convex_http,
+        http,
         "pipelineRuns:create",
         {
             "runId": run_id,
@@ -213,26 +248,19 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         },
     )
 
-    # Phase 22 (CFG-04): create the `runs` row (the dashboard-facing run record,
-    # distinct from pipelineRuns), then load + snapshot the immutable RunConfig
-    # BEFORE launching the background task. The SAME run_id is the join key.
-    # triggerSource is REQUIRED by the Convex runs:create handler; status +
-    # startedAt are set server-side (status="running", startedAt=Date.now()) —
-    # the Python caller does NOT pass them.
-    await convex_mutation(
-        request.app.state.convex_http,
-        "runs:create",
-        {
-            "workspace_id": "eisenbalm",
-            "runId": run_id,
-            "triggerSource": "manual",
-        },
-    )
+    # Step 4: Create the dashboard-facing runs row with trigger attribution.
+    # Phase 25: pass triggeredBy from the Clerk JWT sub claim (RUN-01 operator
+    # attribution). status + startedAt are set server-side by Convex.
+    runs_create_args: dict = {
+        "workspace_id": "eisenbalm",
+        "runId": run_id,
+        "triggerSource": trigger_source,
+    }
+    if triggered_by is not None:
+        runs_create_args["triggeredBy"] = triggered_by
+    await convex_mutation(http, "runs:create", runs_create_args)
 
-    # Phase 23 OBS-03: pre-populate all agent_runs rows as "queued" so the
-    # dashboard graph shows the full pipeline shape immediately when a run
-    # begins. SECTION_WRITERS already respects DESIGNAGENT_SUPPRESSED, so the
-    # queued node set stays in lockstep with the wrapped node set (Pitfall 4).
+    # Step 5: Pre-populate agent_runs rows as "queued" (OBS-03).
     agent_keys = [
         "calibrator", "scout", "advocate", "editor_gate_1", "chronicler",
         "researcher", "verify_research",
@@ -240,7 +268,7 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         "validate_sections", "qa", "editor_final", "publisher",
     ]
     await convex_mutation(
-        request.app.state.convex_http,
+        http,
         "agentRuns:queueForRun",
         {
             "workspace_id": "eisenbalm",
@@ -249,16 +277,11 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         },
     )
 
-    # CFG-01/CFG-04: resolve the full RunConfig (Convex-first, disk/code
-    # fallback) and write an immutable snapshot to runs.configSnapshot. The
-    # snapshot MUST be awaited here, BEFORE asyncio.create_task, so the run can
-    # never out-race its own config snapshot (22-RESEARCH Pitfall 1). The
-    # resume path deliberately does NOT re-snapshot (Pitfall 6).
-    run_config = await load_run_config(request.app.state.convex_http)
-    await snapshot_config(request.app.state.convex_http, run_id, run_config)
+    # Step 6: Load + snapshot RunConfig BEFORE create_task (CFG-04).
+    run_config = await load_run_config(http)
+    await snapshot_config(http, run_id, run_config)
 
-    # Build initial DispatchState. Underscore-prefixed test toggles carry the
-    # forceNoWinner / forceFailAgent flags through state (graph/state.py).
+    # Build initial DispatchState.
     initial_state: dict = {
         "run_id": run_id,
         "issue_number": issue_number,
@@ -266,27 +289,47 @@ async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
         "pipeline_started_at": datetime.now(timezone.utc)
         .isoformat()
         .replace("+00:00", "Z"),
-        "_force_no_winner": body.forceNoWinner,
-        "_force_fail_agent": body.forceFailAgent,
-        # CFG-01: thread the resolved RunConfig so every agent reads its
-        # system_prompt from state["config"].agents[key].system_prompt.
+        "_force_no_winner": force_no_winner,
+        "_force_fail_agent": force_fail_agent,
         "config": run_config,
     }
-    # Phase 16 trigger-path: inject narrator_slug only when explicitly provided.
-    # Absent key (vs None) preserves byte-equivalent legacy state shape for
-    # Jesse-default runs — the calibrator's resolution chain treats missing
-    # and None the same (state.get("narrator_slug") falls through), but
-    # omitting the key keeps the state diff minimal in checkpointer storage.
-    if body.narratorSlug is not None:
-        initial_state["narrator_slug"] = body.narratorSlug
+    if narrator_slug is not None:
+        initial_state["narrator_slug"] = narrator_slug
     config = {"configurable": {"thread_id": run_id}}
 
-    # Pattern 3: strong-ref'd background task (research §3).
+    # Step 7: Strong-ref'd background task (research Pattern 3).
     task = asyncio.create_task(
-        _execute_run(request.app, run_id, initial_state, config)
+        _execute_run(app, run_id, initial_state, config)
     )
-    request.app.state.background_tasks.add(task)
-    task.add_done_callback(request.app.state.background_tasks.discard)
+    app.state.background_tasks.add(task)
+    task.add_done_callback(app.state.background_tasks.discard)
+
+    return run_id
+
+
+# ── POST /run/weekly ──────────────────────────────────────────────────────
+
+@router.post("/run/weekly")
+async def run_weekly(request: Request, body: RunWeeklyBody) -> dict:
+    """Trigger a new pipeline run. Returns {runId} immediately.
+
+    Run continues in background (strong-ref'd asyncio.create_task).
+    Poll GET /run/{runId}/status for terminal state.
+
+    Phase 25: delegates to _start_run (the shared trigger body). Behavior is
+    byte-equivalent to the pre-Phase-25 inlined body — existing tests stay green.
+    """
+    _require_trigger_secret(request)
+    _require_graph(request)
+
+    run_id = await _start_run(
+        request.app,
+        issue_number=body.issueNumber,
+        trigger_source="manual",
+        narrator_slug=body.narratorSlug,
+        force_no_winner=body.forceNoWinner,
+        force_fail_agent=body.forceFailAgent,
+    )
 
     return {"runId": run_id}
 
