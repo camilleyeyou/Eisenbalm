@@ -353,6 +353,189 @@ async def webhook_idempotency_clean():
         await pool.close()
 
 
+# ── Phase 25 — runs/pipeline_config Convex stub fixtures ──────────────────
+#
+# ``convex_runs_store`` and ``convex_config_store`` provide in-memory dict-backed
+# stubs for every Convex mutation/query that Phase 25 run-control code touches.
+# They monkeypatch ``lib.convex_client.convex_mutation``,
+# ``lib.convex_client.convex_mutation_safe``, and ``lib.convex_client.convex_query``
+# the same way the existing ``mock_convex_mutation`` fixture does, but with
+# behaviour-faithful in-memory stores so tests can assert on stored state +
+# recorded call sequences rather than just call counts.
+#
+# Usage in tests:
+#   async def test_something(convex_runs_store, convex_config_store, monkeypatch):
+#       convex_config_store.seed("schedule_enabled", False)
+#       convex_runs_store.seed({"runId": "run-001", "status": "running"})
+#       # ... call endpoint / fn under test ...
+#       assert convex_runs_store.mutation_calls("runs:create") == 0
+
+
+class _ConvexRunsStore:
+    """In-memory stub for runs:* Convex mutations and queries.
+
+    Seeded rows are queryable by runId; mutation calls are recorded so tests
+    can assert counts / args (e.g. assert zero ``runs:create`` calls when the
+    kill switch is off).
+    """
+
+    def __init__(self) -> None:
+        self._rows: list[dict] = []
+        self._call_log: list[tuple[str, dict]] = []
+        self._cancel_flags: dict[str, bool] = {}
+
+    # ── Test helpers ──────────────────────────────────────────────────────
+
+    def seed(self, row: dict) -> None:
+        """Pre-populate a runs row (must include at least ``runId``)."""
+        self._rows.append(dict(row))
+
+    def mutation_calls(self, path: str) -> int:
+        """Return the number of recorded mutation calls matching ``path``."""
+        return sum(1 for p, _ in self._call_log if p == path)
+
+    def all_calls(self) -> list[tuple[str, dict]]:
+        """Return every (path, args) pair recorded so far."""
+        return list(self._call_log)
+
+    # ── Mutation handlers ─────────────────────────────────────────────────
+
+    async def _handle_mutation(self, path: str, args: dict) -> Any:
+        self._call_log.append((path, dict(args)))
+        if path == "runs:create":
+            row = dict(args)
+            row.setdefault("cancelRequested", False)
+            self._rows.append(row)
+            return {"status": "success"}
+        if path == "runs:updateStatus":
+            for row in self._rows:
+                if row.get("runId") == args.get("runId"):
+                    row.update({k: v for k, v in args.items() if k != "runId"})
+            return {"status": "success"}
+        if path == "runs:requestCancel":
+            run_id = args.get("runId", "")
+            self._cancel_flags[run_id] = True
+            for row in self._rows:
+                if row.get("runId") == run_id:
+                    row["cancelRequested"] = True
+            return {"status": "success"}
+        # Default no-op for other mutations
+        return {"status": "success"}
+
+    async def _handle_mutation_safe(self, path: str, args: dict) -> None:
+        await self._handle_mutation(path, args)
+
+    async def _handle_query(self, http: Any, path: str, args: dict) -> Any:
+        if path == "runs:byRunId":
+            run_id = args.get("runId")
+            for row in self._rows:
+                if row.get("runId") == run_id:
+                    return dict(row)
+            return None
+        if path == "runs:latest":
+            ws = args.get("workspace_id", "eisenbalm")
+            matches = [r for r in self._rows if r.get("workspace_id", "eisenbalm") == ws]
+            return dict(matches[-1]) if matches else None
+        if path == "runs:isCancelRequested":
+            run_id = args.get("runId", "")
+            return self._cancel_flags.get(run_id, False)
+        return None
+
+
+class _ConvexConfigStore:
+    """In-memory stub for pipelineConfig:* Convex mutations and queries.
+
+    Tests call ``seed(key, value)`` to pre-populate config rows before
+    invoking the system-under-test; the store records all upsert calls so
+    tests can verify config writes.
+    """
+
+    def __init__(self) -> None:
+        self._config: dict[str, Any] = {}
+        self._call_log: list[tuple[str, dict]] = []
+
+    # ── Test helpers ──────────────────────────────────────────────────────
+
+    def seed(self, key: str, value: Any) -> None:
+        """Pre-populate a config key/value pair."""
+        self._config[key] = value
+
+    def mutation_calls(self, path: str) -> int:
+        """Return the number of recorded mutation calls matching ``path``."""
+        return sum(1 for p, _ in self._call_log if p == path)
+
+    # ── Mutation / query handlers ─────────────────────────────────────────
+
+    async def _handle_mutation(self, path: str, args: dict) -> Any:
+        self._call_log.append((path, dict(args)))
+        if path == "pipelineConfig:upsert":
+            import json as _json
+            key = args.get("key", "")
+            raw = args.get("value", "null")
+            try:
+                self._config[key] = _json.loads(raw)
+            except Exception:
+                self._config[key] = raw
+        return {"status": "success"}
+
+    async def _handle_mutation_safe(self, path: str, args: dict) -> None:
+        await self._handle_mutation(path, args)
+
+    async def _handle_query(self, http: Any, path: str, args: dict) -> Any:
+        import json as _json
+        if path == "pipelineConfig:getAll":
+            ws = args.get("workspace_id", "eisenbalm")
+            return [
+                {"workspace_id": ws, "key": k, "value": _json.dumps(v)}
+                for k, v in self._config.items()
+            ]
+        return None
+
+
+@pytest.fixture
+def convex_runs_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexRunsStore":
+    """In-memory dict-backed stub for runs:* Convex mutations and queries.
+
+    Monkeypatches ``lib.convex_client.convex_mutation``,
+    ``lib.convex_client.convex_mutation_safe``, and
+    ``lib.convex_client.convex_query`` to route runs:* paths to in-memory
+    handlers. Returns the store object so tests can call
+    ``store.seed(row)``, ``store.mutation_calls(path)``, etc.
+
+    Source: 25-01-PLAN.md Task 3.
+    """
+    store = _ConvexRunsStore()
+
+    import eisenbalm_pipeline.lib.convex_client as _cc
+
+    monkeypatch.setattr(_cc, "convex_mutation", store._handle_mutation)
+    monkeypatch.setattr(_cc, "convex_mutation_safe", store._handle_mutation_safe)
+    monkeypatch.setattr(_cc, "convex_query", store._handle_query)
+    return store
+
+
+@pytest.fixture
+def convex_config_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexConfigStore":
+    """In-memory dict-backed stub for pipelineConfig:* Convex mutations and queries.
+
+    Monkeypatches ``lib.convex_client.convex_mutation``,
+    ``lib.convex_client.convex_mutation_safe``, and
+    ``lib.convex_client.convex_query`` to route pipelineConfig:* paths to
+    in-memory handlers. Tests call ``store.seed(key, value)`` to pre-populate
+    config before invoking the system under test.
+
+    Source: 25-01-PLAN.md Task 3.
+    """
+    store = _ConvexConfigStore()
+
+    import eisenbalm_pipeline.lib.convex_client as _cc
+
+    monkeypatch.setattr(_cc, "convex_mutation", store._handle_mutation)
+    monkeypatch.setattr(_cc, "convex_mutation_safe", store._handle_mutation_safe)
+    monkeypatch.setattr(_cc, "convex_query", store._handle_query)
+    return store
+
+
 # ── Phase 6 — vercel deploy hook stub fixture ─────────────────────────────
 
 
