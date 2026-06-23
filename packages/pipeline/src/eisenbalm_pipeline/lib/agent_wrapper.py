@@ -21,7 +21,9 @@ import time
 from typing import Any, Callable
 
 from eisenbalm_pipeline.lib.cost import get_cost_payload
+import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
+from eisenbalm_pipeline.lib.errors import RunCancelled
 
 log = logging.getLogger(__name__)
 
@@ -114,6 +116,15 @@ def wrap_agent_node(agent_key: str, fn: Callable) -> Callable:
     async def wrapped(state: dict) -> dict:
         run_id: str = state["run_id"]
         ws: str = _resolve_workspace(state)
+
+        # 0. Cancel-flag check (RUN-04) — BEFORE started emit and BEFORE fn(state).
+        # Cooperative-only: raises RunCancelled so the in-flight node never starts;
+        # a node that has already begun executing is allowed to finish (D-02).
+        # Uses _cc.convex_query_safe (module-level) so monkeypatch.setattr(_cc, ...)
+        # in tests reaches this call site.
+        cancel = await _cc.convex_query_safe("runs:isCancelRequested", {"runId": run_id})
+        if cancel:
+            raise RunCancelled(run_id)
 
         # 1. Emit started
         await convex_mutation_safe(

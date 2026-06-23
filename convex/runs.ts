@@ -105,3 +105,66 @@ export const latest = query({
     return rows.sort((a, b) => b.startedAt - a.startedAt)[0] ?? null
   },
 })
+
+// ── Phase 25 RUN-04 — Cooperative cancel mutations ────────────────────────────
+
+/**
+ * Set the cancelRequested flag on a run (RUN-04). The flag is polled by
+ * wrap_agent_node before each node executes — when true, the next node
+ * raises RunCancelled instead of starting (cooperative-only, no task.cancel).
+ */
+export const requestCancel = mutation({
+  args: { runId: v.string() },
+  handler: async (ctx, { runId }) => {
+    const run = await ctx.db
+      .query('runs')
+      .withIndex('by_runId', q => q.eq('runId', runId))
+      .first()
+    if (!run) throw new Error(`Run not found: ${runId}`)
+    await ctx.db.patch(run._id, { cancelRequested: true })
+  },
+})
+
+/**
+ * Query the cancelRequested flag for a run (RUN-04). Called by
+ * convex_query_safe in wrap_agent_node before each node starts.
+ * Returns false (not null) when the run does not exist so the wrapper
+ * fails-open and doesn't crash a node on a Convex miss.
+ */
+export const isCancelRequested = query({
+  args: { runId: v.string() },
+  handler: async (ctx, { runId }) => {
+    const run = await ctx.db
+      .query('runs')
+      .withIndex('by_runId', q => q.eq('runId', runId))
+      .first()
+    return Boolean(run?.cancelRequested)
+  },
+})
+
+/**
+ * Update the status (and optionally completedAt) of a runs row.
+ * Used by _execute_run to land RunCancelled / CostCapExceeded as
+ * runs.status='cancelled' (Pitfall 1: pipelineRuns.status stays 'failed').
+ * errorMessage is accepted for API symmetry but not stored (runs schema
+ * has no errorMessage field — that lives on pipelineRuns).
+ */
+export const updateStatus = mutation({
+  args: {
+    runId: v.string(),
+    status: v.string(),
+    completedAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, status, completedAt }) => {
+    const run = await ctx.db
+      .query('runs')
+      .withIndex('by_runId', q => q.eq('runId', runId))
+      .first()
+    if (!run) throw new Error(`Run not found: ${runId}`)
+    await ctx.db.patch(run._id, {
+      status,
+      ...(completedAt !== undefined ? { completedAt } : {}),
+    })
+  },
+})

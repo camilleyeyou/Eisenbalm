@@ -106,3 +106,30 @@ async def convex_query(http: AsyncClient, path: str, args: dict) -> Any:
             f"Convex query failed: path={path} → {body.get('errorMessage')}"
         )
     return body.get("value")
+
+
+async def convex_query_safe(path: str, args: dict) -> Any:
+    """Fire-safe query variant (RUN-04 cancel-flag poll).
+
+    Uses the module-level shared client. Returns None on any error — a missed
+    poll just delays cancel by one node (fail-OPEN is intentional; a Convex
+    blip must never crash a node).
+
+    NOTE: agent_wrapper.py imports this as a module attribute
+    (``import eisenbalm_pipeline.lib.convex_client as _cc``, then
+    ``_cc.convex_query_safe``) so that monkeypatch.setattr(_cc, ...) reaches
+    this call site in tests. The internal call goes through ``convex_query``
+    which is ALSO patchable at the module level.
+    """
+    client = _CLIENT
+    if client is None:
+        log.warning(
+            "convex_query_safe called before set_client(); returning None: %s",
+            path,
+        )
+        return None
+    try:
+        return await convex_query(client, path, args)
+    except Exception as e:
+        log.warning("convex_query_safe failed: %s %s — %r", path, args, e)
+        return None

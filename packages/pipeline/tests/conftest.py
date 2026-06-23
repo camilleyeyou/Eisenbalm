@@ -517,6 +517,7 @@ def convex_runs_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexRunsStore":
     prev_mutation = _cc.convex_mutation
     prev_mutation_safe = _cc.convex_mutation_safe
     prev_query = _cc.convex_query
+    prev_query_safe = getattr(_cc, "convex_query_safe", None)
 
     async def _dispatch_mutation(http: Any, path: str, args: dict) -> Any:
         if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
@@ -534,9 +535,17 @@ def convex_runs_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexRunsStore":
             return await store._handle_query(http, path, args)
         return await prev_query(http, path, args)
 
+    async def _dispatch_query_safe(path: str, args: dict) -> Any:
+        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+            return await store._handle_query(None, path, args)
+        if prev_query_safe is not None:
+            return await prev_query_safe(path, args)
+        return None
+
     monkeypatch.setattr(_cc, "convex_mutation", _dispatch_mutation)
     monkeypatch.setattr(_cc, "convex_mutation_safe", _dispatch_mutation_safe)
     monkeypatch.setattr(_cc, "convex_query", _dispatch_query)
+    monkeypatch.setattr(_cc, "convex_query_safe", _dispatch_query_safe)
     return store
 
 
@@ -565,6 +574,7 @@ def convex_config_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexConfigStore"
     prev_mutation = _cc.convex_mutation
     prev_mutation_safe = _cc.convex_mutation_safe
     prev_query = _cc.convex_query
+    prev_query_safe = getattr(_cc, "convex_query_safe", None)
 
     async def _dispatch_mutation(http: Any, path: str, args: dict) -> Any:
         if path.startswith("pipelineConfig:") or path.startswith("auditLog:"):
@@ -582,9 +592,16 @@ def convex_config_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexConfigStore"
             return await store._handle_query(http, path, args)
         return await prev_query(http, path, args)
 
+    async def _dispatch_query_safe(path: str, args: dict) -> Any:
+        # pipelineConfig has no query_safe paths; fall through to previous handler
+        if prev_query_safe is not None:
+            return await prev_query_safe(path, args)
+        return None
+
     monkeypatch.setattr(_cc, "convex_mutation", _dispatch_mutation)
     monkeypatch.setattr(_cc, "convex_mutation_safe", _dispatch_mutation_safe)
     monkeypatch.setattr(_cc, "convex_query", _dispatch_query)
+    monkeypatch.setattr(_cc, "convex_query_safe", _dispatch_query_safe)
     return store
 
 

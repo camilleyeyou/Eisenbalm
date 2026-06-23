@@ -33,6 +33,7 @@ from eisenbalm_pipeline.lib.config_loader import load_run_config, snapshot_confi
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.cost import begin_run
+from eisenbalm_pipeline.lib.errors import CostCapExceeded, RunCancelled
 from eisenbalm_pipeline.lib.ids import new_run_id
 from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
 
@@ -176,6 +177,7 @@ async def _execute_run(
 ) -> None:
     """Background coroutine. Strong-ref'd in app.state.background_tasks
     so it survives client disconnect (research §3 + Pitfall 4)."""
+    http = getattr(app.state, "convex_http", None)
     try:
         result = await app.state.graph.ainvoke(initial_state, config=config)
         # On interrupt: result contains __interrupt__. The Editor node already
@@ -186,6 +188,26 @@ async def _execute_run(
             "Run %s background task complete (state.keys=%d)",
             run_id, len(result or {}),
         )
+    except RunCancelled:
+        # Cooperative cancel (RUN-04, D-01): wrap_agent_node raised RunCancelled
+        # instead of starting the next node. Land runs.status='cancelled'.
+        # NOTE (Pitfall 1): pipelineRuns.status stays 'failed' (frozen union —
+        # the @agent_node wrapper already wrote that). Only the runs table gets
+        # the operator-visible 'cancelled' terminal status.
+        await _cc.convex_mutation(
+            http,
+            "runs:updateStatus",
+            {"runId": run_id, "status": "cancelled", "completedAt": int(time.time() * 1000)},
+        )
+        log.info("Run %s cancelled cooperatively", run_id)
+    except CostCapExceeded:
+        # Per-run cost cap reached (D-07): same terminal landing as cancel.
+        await _cc.convex_mutation(
+            http,
+            "runs:updateStatus",
+            {"runId": run_id, "status": "cancelled", "completedAt": int(time.time() * 1000)},
+        )
+        log.warning("Run %s ended: per-run cost cap exceeded", run_id)
     except Exception:
         # The @agent_node wrapper already wrote 'failed' to Convex.
         # Let the task die quietly.
