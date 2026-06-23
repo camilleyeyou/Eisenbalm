@@ -51,19 +51,20 @@ Exceptions:
 
 ## Typography
 
-Source: Existing dashboard components (`RunsTable.tsx`, `CostRollup.tsx`, `AppSidebar.tsx`) establish the 3-size type scale — carry it forward unchanged.
+Source: Existing dashboard components (`RunsTable.tsx`, `CostRollup.tsx`, `AppSidebar.tsx`) establish the type scale — carry it forward unchanged. Exactly 4 sizes (12 / 14 / 16 / 20px) and exactly 2 weights (400 normal, 600 semibold).
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body / table cell | 14px (`text-sm`) | 400 (normal) | 1.5 |
-| Label / eyebrow / badge | 12px (`text-xs`) | 400–500 | 1.4 |
+| Label / eyebrow / badge | 12px (`text-xs`) | 400 (normal) | 1.4 |
 | Section heading | 16px (`text-base`) or 20px (`text-xl`) | 600 (semibold) | 1.2 |
 | Page title | 20px (`text-xl`) | 600 (semibold) | 1.2 |
 
 Notes:
 - Page title pattern from prior phases: `<h1 className="text-xl font-semibold text-neutral-900">Finance</h1>` — replicate exactly.
-- Monetary figures (gross, fees, net, payout amounts): `text-sm font-medium tabular-nums text-neutral-900`. Use `tabular-nums` for all currency columns so amounts align vertically.
-- Projection/staleness label: `text-xs text-neutral-400` — visually subordinate to actuals.
+- FinanceSummaryCard stat values use `text-xl` (20px — already in the scale) at weight 600 (semibold). Prominence comes from semibold weight + whitespace contrast within the card, NOT from a larger font size. Do not introduce `text-2xl`.
+- Monetary figures in table cells (gross, fees, net, payout amounts): `text-sm tabular-nums text-neutral-900` at weight 400. Use `tabular-nums` for all currency columns so amounts align vertically.
+- Projection/staleness label: `text-xs text-neutral-400` at weight 400 — visually subordinate to actuals.
 
 ---
 
@@ -79,7 +80,7 @@ Source: `apps/dispatch-control/app/globals.css :root` (neutral shadcn shim). All
 | Destructive | `#ef4444` / `--destructive` | Destructive actions only (none in this phase — "reject" was Phase 26; payout mark-sent is constructive) |
 
 Accent reserved for:
-- "Mark payout sent" primary action button (the one constructive write in this phase)
+- "Mark sent" primary action button (the one constructive write in this phase)
 - Active state on the Finance sidebar nav item
 - Staleness indicator badge border when `model_pricing` row is > 30 days old
 
@@ -97,11 +98,13 @@ Components to build for this phase, in addition to the existing shadcn primitive
 
 ### Finance Page (`/finance/page.tsx`)
 
-Replace the current placeholder with three sections, stacked vertically with `space-y-4` (matching `runs/page.tsx` page-level gap):
+Replace the current placeholder with three sections, stacked vertically with `space-y-4` (matching `runs/page.tsx` page-level gap).
 
-1. **FinanceSummaryCard** — Gross / Stripe fees / Net-to-charity for the current issue window. Three stat cells side-by-side in a `rounded-lg border border-neutral-200 bg-white` card. Each cell: label (`text-xs text-neutral-500`), value (`text-2xl font-semibold tabular-nums text-neutral-900`), sub-label where relevant (`text-xs text-neutral-400`).
+**Primary visual anchor:** the FinanceSummaryCard stat row (gross / fees / net), which draws the eye first via size and whitespace contrast before the operator scans the issue table below. Everything else on the page is secondary to confirming the three top-line numbers at a glance.
 
-2. **IssueRevenueTable** — Per-issue reconciliation rows. Columns: Issue # / Charity / Sales window / Orders / Gross / Stripe fees / Net-to-charity / Payout status / Action. Table style mirrors `RegistryTable`: `w-full text-sm`, `<thead>` with `text-xs text-neutral-500 font-medium uppercase tracking-wide`, `<tbody>` rows with `border-t border-neutral-100`. Payout status column uses the payout status badge (yellow/green). Action cell: "Mark sent" button — only shown for `pending` rows, primary variant (`bg-neutral-900 text-white`), with inline confirmation (see Copywriting § destructive actions).
+1. **FinanceSummaryCard** — Gross / Stripe fees / Net-to-charity for the current issue window. Three stat cells side-by-side in a `rounded-lg border border-neutral-200 bg-white` card. Each cell: label (`text-xs text-neutral-500`), value (`text-xl font-semibold tabular-nums text-neutral-900`), sub-label where relevant (`text-xs text-neutral-400`).
+
+2. **IssueRevenueTable** — Per-issue reconciliation rows. Columns: Issue # / Charity / Sales window / Orders / Gross / Stripe fees / Net-to-charity / Payout status / Action. Table style mirrors `RegistryTable`: `w-full text-sm`, `<thead>` with `text-xs text-neutral-500 uppercase tracking-wide`, `<tbody>` rows with `border-t border-neutral-100`. Payout status column uses the payout status badge (yellow/green). Action cell: "Mark sent" button — only shown for `pending` rows, primary variant (`bg-neutral-900 text-white`), with inline confirmation (see Copywriting § destructive actions).
 
 3. **ModelPricingCard** — Read-only table of `model_pricing` rows. Labeled `text-sm font-semibold text-neutral-800` heading "Projection Pricing". Staleness badge shown when any row's `updatedAt` > 30 days: amber pill `"Prices may be outdated — last updated {N} days ago"`. Columns: model / input $/1K / output $/1K / last updated. Entire card marked `"(Projection only — not actual cost)"` in `text-xs text-neutral-400` beneath the heading.
 
@@ -129,8 +132,8 @@ Add a "Notifications" subsection beneath existing settings content. Two channel 
 | Unattributed orders sub-label | `Orders outside any issue window (pre-launch or between issues).` |
 | IssueRevenueTable — payout "Mark sent" button | `Mark sent` |
 | Mark-sent inline confirmation prompt | `Confirm this payout was sent. This action is audit-logged and cannot be undone automatically.` |
-| Mark-sent inline confirm button | `Confirm` |
-| Mark-sent inline cancel button | `Cancel` |
+| Mark-sent inline confirm button | `Mark as sent` |
+| Mark-sent inline cancel button | `Keep pending` |
 | Payout status — pending | `Pending` |
 | Payout status — sent | `Sent` |
 | ModelPricingCard heading | `Projection Pricing` |
@@ -145,11 +148,13 @@ Add a "Notifications" subsection beneath existing settings content. Two channel 
 | Notification event — failed | `Run failed` |
 | Notification event — awaiting-review | `Awaiting review` |
 | Notification event — budget threshold | `Budget threshold crossed` |
+| Save Slack channel settings | `Save Slack settings` |
+| Save email channel settings | `Save email settings` |
 | Notification config empty/unconfigured | `No notification channels configured. Add a Slack webhook or email address to receive run alerts.` |
 | Error state — Stripe fee fetch failed | `Stripe fee data unavailable. Gross and net figures are accurate; fee column shows "—". Retry in a moment.` |
 
 Destructive actions in this phase:
-- **Mark payout sent**: This is a one-way operator write (not truly destructive, but irreversible in that it sets `status: "sent"`). Use an inline confirmation — NOT a modal dialog. Pattern: clicking "Mark sent" replaces the button with `[Confirm] [Cancel]` inline in the row, same row height. No separate dialog. This matches the blocklist confirmation pattern in `RegistryTable`.
+- **Mark payout sent**: This is a one-way operator write (not truly destructive, but irreversible in that it sets `status: "sent"`). Use an inline confirmation — NOT a modal dialog. Pattern: clicking "Mark sent" replaces the button with `[Mark as sent] [Keep pending]` inline in the row, same row height. No separate dialog. This matches the blocklist confirmation pattern in `RegistryTable`.
 
 ---
 
@@ -167,7 +172,7 @@ Destructive actions in this phase:
 ### Notification config — channel toggle behavior
 
 - Slack webhook URL input and email input appear/disappear with CSS `hidden` / `block` (no height animation to avoid layout shift) when their respective toggle is flipped.
-- Save happens on blur or explicit Save button (one Save button per subsection, `bg-neutral-900 text-white text-sm`, full-width within the form block).
+- Save happens via an explicit per-subsection save button — `Save Slack settings` in the Slack block and `Save email settings` in the Email block (`bg-neutral-900 text-white text-sm`, full-width within the form block). Each saves only its own channel's config keys.
 
 ### Payout mark-sent — audit trace
 
