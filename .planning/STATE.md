@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 25-run-control 25-04-PLAN.md
-last_updated: "2026-06-23T07:29:58.591Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 25-05-PLAN.md
+last_updated: "2026-06-23T07:47:34.456Z"
 progress:
   total_phases: 27
-  completed_phases: 23
+  completed_phases: 24
   total_plans: 162
-  completed_plans: 159
+  completed_plans: 160
 ---
 
 # Project State
@@ -187,6 +187,7 @@ Plan: 5 of 5
 | Phase 25-run-control P02 | 90 | 2 tasks | 11 files |
 | Phase 25-run-control P03 | 12 | 2 tasks | 6 files |
 | Phase 25-run-control P04 | 7 | 2 tasks | 6 files |
+| Phase 25 P05 | 45 | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -482,6 +483,8 @@ Recent decisions affecting current work:
 - [Phase 25-run-control]: In-memory per-run cap registry (_run_caps) avoids Convex read in hot acomplete path — RESEARCH Pattern 4 satisfied
 - [Phase 25-run-control]: Trailing-average projection uses last-4 completed runs; zero-history returns None → first run always allowed (D-06)
 - [Phase 25-run-control]: Monthly alert reuses cost-warning eventType with scope=monthly payload — frozen deliberationEvents.eventType union untouched
+- [Phase 25]: afterEach(cleanup) must be added explicitly in vitest+jsdom for multi-describe files — auto-cleanup unreliable
+- [Phase 25]: Config page Danger Zone is copy-only in Phase 25 (no destructive actions beyond Cancel Run on /runs)
 
 ### Pending Todos
 
@@ -562,6 +565,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T07:29:58.580Z
-Stopped at: Completed 25-run-control 25-04-PLAN.md
+Last session: 2026-06-23T07:47:34.445Z
+Stopped at: Completed 25-05-PLAN.md
 Resume file: None

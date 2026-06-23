@@ -26,7 +26,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 22: Config Externalization** - `load_run_config()` reads from Convex at run start; `snapshot_config()` before graph; 12-prompt migration with byte-verification; agent call-site swap (completed 2026-06-22)
 - [x] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O (completed 2026-06-22)
 - [x] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run (10 plans) (completed 2026-06-22)
-- [ ] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts
+- [x] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts (completed 2026-06-23)
 - [ ] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup
 - [ ] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator
 
@@ -411,7 +411,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
-| 25. Run Control | 4/5 | In Progress|  |
+| 25. Run Control | 5/5 | Complete   | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
 
@@ -552,7 +552,7 @@ Plans:
 - [x] 25-02-PLAN.md — Wave 2 trigger + scheduler (RUN-01/02/03): refactor run_weekly into _start_run; api/control.py /pipeline/run (operator-attributed) + /pipeline/tick (kill-switch-first, due-gated, cursor-advancing); lib/scheduler.py cadence engine; auditLog public record mutation; repoint cli trigger_weekly -> /pipeline/tick
 - [x] 25-03-PLAN.md — Wave 3 cancel + re-roll (RUN-04/05): cooperative cancel-flag poll in wrap_agent_node + RunCancelled landing in _execute_run; convex runs requestCancel/isCancelRequested/updateStatus; /runs/{id}/cancel + /runs/{id}/agents/{key}/rerun (section-only, D-04-guarded, isolated checkpoint fork)
 - [x] 25-04-PLAN.md — Wave 4 budget caps (RUN-06): DB-sourced per-run cap snapshotted at run start; monthly cost-warning alert (scope=monthly, no cancel); lib/budget.py trailing-average start-gate + convex runs:monthToDateCost; wire both control seams
-- [ ] 25-05-PLAN.md — Wave 5 dashboard UI (RUN-01..06): pipelineControlClient + Runs control bar (Trigger Run two-step) + budget alert banner + cancelled badge; Run-detail Cancel Run + per-section Re-roll; Config page Automation (kill-switch focal point + schedule editor) + Budget Caps + Danger Zone + next-run local/UTC display
+- [x] 25-05-PLAN.md — Wave 5 dashboard UI (RUN-01..06): pipelineControlClient + Runs control bar (Trigger Run two-step) + budget alert banner + cancelled badge; Run-detail Cancel Run + per-section Re-roll; Config page Automation (kill-switch focal point + schedule editor) + Budget Caps + Danger Zone + next-run local/UTC display
 **UI hint**: yes
 
 ### Phase 26: Review Gate + Charity Registry
