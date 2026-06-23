@@ -1,10 +1,11 @@
 ---
 phase: 26
 slug: review-gate-charity-registry
-status: draft
+status: approved
 shadcn_initialized: true
 preset: default / neutral / css-variables
 created: 2026-06-23
+reviewed_at: 2026-06-23
 ---
 
 # Phase 26 — UI Design Contract
