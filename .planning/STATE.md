@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to plan
-stopped_at: Phase 25 context gathered
-last_updated: "2026-06-22T23:21:31.029Z"
+status: Ready to execute
+stopped_at: Completed 25-01-PLAN.md (contract-first foundation)
+last_updated: "2026-06-23T06:33:56.307Z"
 progress:
   total_phases: 27
   completed_phases: 23
-  total_plans: 157
-  completed_plans: 155
+  total_plans: 162
+  completed_plans: 156
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 24 — prompt-editor-versioning
+**Current focus:** Phase 25 — run-control
 
 ## Current Position
 
-Phase: 25
-Plan: Not started
+Phase: 25 (run-control) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -183,6 +183,7 @@ Plan: Not started
 | Phase 24 P05b | 12 | 2 tasks | 7 files |
 | Phase 24 P06 | 22min | 3 tasks | 7 files |
 | Phase 24 P08 | 8min | 3 tasks | 8 files |
+| Phase 25-run-control P01 | 595 | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -466,6 +467,9 @@ Recent decisions affecting current work:
 - [Phase 24]: Plan 06: test-run endpoint uses a local optional-bearer (_require_operator, HTTPBearer auto_error=False) so the dev-mode Clerk bypass is header-free per the Plan-01 test, without weakening prod auth on other routes; calls acomplete directly with a transient run_id (no @agent_node) for full real-table isolation
 - [Phase 24]: Plan 24-08: introduced NEXT_PUBLIC_PIPELINE_URL (no pipeline base-URL env existed) for the single-agent test-run client; documented in dispatch-control .env.example
 - [Phase 24]: Plan 24-08: DiffViewer = diff v9 diffLines + custom two-column renderer (data-side left/right); rollback == activate(olderVersion), guarded by api.runs.latest.status==='running'
+- [Phase 25-run-control]: Cancel-flag via Convex runs.cancelRequested (free boolean) — survives Railway restart, dashboard-visible; pipelineRuns.status frozen union untouched (Pitfall 1 documented)
+- [Phase 25-run-control]: schedule_enabled NOT seeded by Phase 25 — Phase 22 automation-off default preserved; 5 new pipeline_config keys seeded (per_run_cap, monthly_cap, alert_threshold, schedule_cadence, schedule_next_run_at)
+- [Phase 25-run-control]: Re-rollable agent set = 7 section writers only (D-03); 422 for qa/scout/advocate/editor/researcher/chronicler
 
 ### Pending Todos
 
@@ -546,6 +550,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T23:21:31.016Z
-Stopped at: Phase 25 context gathered
-Resume file: .planning/phases/25-run-control/25-CONTEXT.md
+Last session: 2026-06-23T06:33:56.296Z
+Stopped at: Completed 25-01-PLAN.md (contract-first foundation)
+Resume file: None

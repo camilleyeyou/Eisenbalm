@@ -239,12 +239,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **PRM-06**: The voice/persona text (`VOICE_CONSTRAINTS`) is editable and versioned as a first-class config entry alongside agent prompts.
 
 ### Run Control (RUN)
-- [ ] **RUN-01**: Operator can trigger a new issue run on demand from the dashboard.
-- [ ] **RUN-02**: A master `schedule_enabled` kill switch exists; the scheduler tick checks it FIRST and no-ops when off (automation controlled by data, not by enabling/disabling the cron).
-- [ ] **RUN-03**: A Railway cron calls the tick endpoint on the configured cadence; operator can edit cadence / pause / resume and see the next scheduled run with timezone shown explicitly.
-- [ ] **RUN-04**: Operator can cancel an in-flight run; the pipeline stops cooperatively and the run ends in a consistent `cancelled` state.
-- [ ] **RUN-05**: Operator can re-roll a single agent/section within an existing issue without rerunning the whole pipeline. *(absorbs former V2-05)*
-- [ ] **RUN-06**: Operator can set per-run and monthly budget caps with alert thresholds; the system warns at threshold and can refuse to start a run that would exceed the cap.
+- [x] **RUN-01**: Operator can trigger a new issue run on demand from the dashboard.
+- [x] **RUN-02**: A master `schedule_enabled` kill switch exists; the scheduler tick checks it FIRST and no-ops when off (automation controlled by data, not by enabling/disabling the cron).
+- [x] **RUN-03**: A Railway cron calls the tick endpoint on the configured cadence; operator can edit cadence / pause / resume and see the next scheduled run with timezone shown explicitly.
+- [x] **RUN-04**: Operator can cancel an in-flight run; the pipeline stops cooperatively and the run ends in a consistent `cancelled` state.
+- [x] **RUN-05**: Operator can re-roll a single agent/section within an existing issue without rerunning the whole pipeline. *(absorbs former V2-05)*
+- [x] **RUN-06**: Operator can set per-run and monthly budget caps with alert thresholds; the system warns at threshold and can refuse to start a run that would exceed the cap.
 
 ### Review & Publish Gate (RVW)
 - [ ] **RVW-01**: `require_review` is on by default; a finished run lands in `awaiting_review` rather than auto-publishing.
@@ -493,12 +493,12 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | PRM-04 | Phase 24: Prompt Editor + Versioning | Complete |
 | PRM-05 | Phase 24: Prompt Editor + Versioning | Complete |
 | PRM-06 | Phase 24: Prompt Editor + Versioning | Complete |
-| RUN-01 | Phase 25: Run Control | Pending |
-| RUN-02 | Phase 25: Run Control | Pending |
-| RUN-03 | Phase 25: Run Control | Pending |
-| RUN-04 | Phase 25: Run Control | Pending |
-| RUN-05 | Phase 25: Run Control | Pending |
-| RUN-06 | Phase 25: Run Control | Pending |
+| RUN-01 | Phase 25: Run Control | Complete |
+| RUN-02 | Phase 25: Run Control | Complete |
+| RUN-03 | Phase 25: Run Control | Complete |
+| RUN-04 | Phase 25: Run Control | Complete |
+| RUN-05 | Phase 25: Run Control | Complete |
+| RUN-06 | Phase 25: Run Control | Complete |
 | RVW-01 | Phase 26: Review Gate + Charity Registry | Pending |
 | RVW-02 | Phase 26: Review Gate + Charity Registry | Pending |
 | RVW-03 | Phase 26: Review Gate + Charity Registry | Pending |

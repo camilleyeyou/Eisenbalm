@@ -411,7 +411,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 22. Config Externalization | 5/5 | Complete    | 2026-06-22 |
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
-| 25. Run Control | 0/? | Not started | - |
+| 25. Run Control | 1/5 | In Progress|  |
 | 26. Review Gate + Charity Registry | 0/? | Not started | - |
 | 27. Money + Notifications | 0/? | Not started | - |
 
@@ -548,7 +548,7 @@ Plans:
   4. Operator uses the re-roll UI to regenerate a single agent/section within an existing run; the LangGraph checkpoint is read, the target node is re-executed, and the issue draft is updated in Sanity — the other sections are unchanged
   5. When a run's projected cost would exceed the configured monthly cap, the system refuses to start the run and shows a warning; when accumulated cost crosses the alert threshold, the operator receives a notification (Slack and/or email)
 **Plans**: 5 plans
-- [ ] 25-01-PLAN.md — Wave 1 foundation: amend docs/API_CONTRACTS.md (contract-first) for /pipeline/run·/pipeline/tick·/runs/{id}/cancel·re-roll + cancel-flag + new pipeline_config keys; additive runs.cancelRequested schema field; RunCancelled exception; idempotent config seed; 5 RED Wave 0 pytest scaffolds + conftest Convex stub fixture
+- [x] 25-01-PLAN.md — Wave 1 foundation: amend docs/API_CONTRACTS.md (contract-first) for /pipeline/run·/pipeline/tick·/runs/{id}/cancel·re-roll + cancel-flag + new pipeline_config keys; additive runs.cancelRequested schema field; RunCancelled exception; idempotent config seed; 5 RED Wave 0 pytest scaffolds + conftest Convex stub fixture
 - [ ] 25-02-PLAN.md — Wave 2 trigger + scheduler (RUN-01/02/03): refactor run_weekly into _start_run; api/control.py /pipeline/run (operator-attributed) + /pipeline/tick (kill-switch-first, due-gated, cursor-advancing); lib/scheduler.py cadence engine; auditLog public record mutation; repoint cli trigger_weekly -> /pipeline/tick
 - [ ] 25-03-PLAN.md — Wave 3 cancel + re-roll (RUN-04/05): cooperative cancel-flag poll in wrap_agent_node + RunCancelled landing in _execute_run; convex runs requestCancel/isCancelRequested/updateStatus; /runs/{id}/cancel + /runs/{id}/agents/{key}/rerun (section-only, D-04-guarded, isolated checkpoint fork)
 - [ ] 25-04-PLAN.md — Wave 4 budget caps (RUN-06): DB-sourced per-run cap snapshotted at run start; monthly cost-warning alert (scope=monthly, no cancel); lib/budget.py trailing-average start-gate + convex runs:monthToDateCost; wire both control seams
