@@ -53,14 +53,16 @@ Exceptions:
 
 ## Typography
 
-Source: existing dashboard pages confirm exactly two weights and three sizes in active use.
+Source: existing dashboard pages confirm exactly two weights in active use. Size difference (`text-xs` vs `text-sm`) provides sufficient role distinction for labels without requiring a third weight.
 
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 14px (text-sm) | 400 (regular) | 1.5 | Table cells, panel body text, checklist claim text, registry row data |
-| Label | 12px (text-xs) | 500 (medium) | 1.4 | Section eyebrows, column headers, badge labels, status tags, cost rollup labels |
+| Label | 12px (text-xs) | 400 (regular) | 1.4 | Section eyebrows, column headers, badge labels, status tags, cost rollup labels |
 | Heading | 16px (text-base) | 600 (semibold) | 1.25 | Panel section headers (h2), cost summary heading, checklist section title |
 | Page title | 20px (text-xl) | 600 (semibold) | 1.25 | Page-level h1 — matches existing `text-xl font-semibold` on Runs / Settings pages |
+
+Exactly two weights: 400 (regular) and 600 (semibold). Do not introduce `font-medium` (500) in any component. Use size (`text-xs` vs `text-sm`) to distinguish label roles from body roles.
 
 Source: `RunControlBar.tsx` (`text-xl font-semibold`), `BudgetAlertBanner.tsx` (`text-sm`), `SettingsPage` (`text-sm text-neutral-500`).
 
@@ -128,7 +130,7 @@ Source: `config/page.tsx` Danger Zone panel pattern (`border-red-200 bg-white`) 
 | State badge: blocklisted | "Blocklisted" |
 | Blocklist confirmation heading | "Blocklist this charity?" |
 | Blocklist confirmation body | "The Scout will skip [charity name] in all future runs." |
-| Blocklist confirmation CTA | **Blocklist** |
+| Blocklist confirmation CTA | **Blocklist Charity** |
 | Unblocklist action label | **Remove from Blocklist** |
 | Times featured label | "Featured [N] time" / "Featured [N] times" (pluralize correctly) |
 
@@ -185,7 +187,7 @@ Source: `config/page.tsx` Danger Zone panel pattern (`border-red-200 bg-white`) 
 | Action | Confirmation Approach |
 |--------|----------------------|
 | Reject run | Inline modal (not browser `confirm()`) — requires explicit "Confirm Reject" click; optional note field |
-| Blocklist charity | Inline confirmation popover — names the charity explicitly; "Blocklist" is the confirm CTA |
+| Blocklist charity | Inline confirmation popover — names the charity explicitly; "Blocklist Charity" is the confirm CTA |
 | Enable `auto_publish` | Non-dismissible modal (no "don't show again") — requires explicit "Enable Auto-publish" CTA; described consequences visible |
 | Re-roll section | Inline two-step confirm (matches existing RunControlBar pattern) — no modal |
 
@@ -239,9 +241,7 @@ On <1280px (narrow viewport): single column — decision controls collapse into 
 - Status badge (candidate / featured / blocklisted — color-coded: neutral for candidate, green-tinted for featured, red-tinted for blocklisted)
 - Times Featured (text-sm, numeric, right-aligned)
 - Last Featured (relative time, text-xs muted)
-- Actions column: status toggle button (e.g., "Blocklist" or "Remove from Blocklist") — text-sm, no background, `text-neutral-600 hover:text-neutral-900`
-
-**Add Charity modal:** Inline drawer or dialog (shadcn Dialog component). Fields: Name (required), Website URL (optional). Submit: "Add Charity". Cancel: "Cancel".
+- Actions column: status toggle button (e.g., "Blocklist Charity" or "Remove from Blocklist") — text-sm, no background, `text-neutral-600 hover:text-neutral-900`
 
 ### Screen 4: `auto_publish` Toggle (within `/config` AutomationPanel)
 
