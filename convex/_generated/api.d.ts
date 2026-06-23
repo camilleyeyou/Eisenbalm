@@ -12,6 +12,7 @@ import type * as agentRuns from "../agentRuns.js";
 import type * as agentVotes from "../agentVotes.js";
 import type * as agents from "../agents.js";
 import type * as auditLog from "../auditLog.js";
+import type * as charities from "../charities.js";
 import type * as charityLedger from "../charityLedger.js";
 import type * as crons from "../crons.js";
 import type * as deliberationEvents from "../deliberationEvents.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   agentVotes: typeof agentVotes;
   agents: typeof agents;
   auditLog: typeof auditLog;
+  charities: typeof charities;
   charityLedger: typeof charityLedger;
   crons: typeof crons;
   deliberationEvents: typeof deliberationEvents;
