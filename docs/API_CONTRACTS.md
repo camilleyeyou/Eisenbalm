@@ -1909,6 +1909,311 @@ class DispatchState(TypedDict):
 
 ---
 
+---
+
+## Phase 26 — Review Gate + Charity Registry
+
+**Phase 26 additive — frozen pipelineRuns/deliberationEvents shapes unchanged.**
+
+All new fields are additive only. No existing field is renamed or removed.
+Amend this section before consuming any new endpoint, table field, mutation, or query.
+
+---
+
+### §26.1 — charities table additive fields
+
+The existing stub table at `convex/schema.ts` has 5 fields (workspace_id, name, status,
+timesFeatured, lastFeaturedAt) and 1 index (by_workspace). Phase 26 adds:
+
+```typescript
+// additive fields (after lastFeaturedAt):
+dedupKey: v.optional(v.string()),        // case-folded "{name.trim().toLowerCase()}|{domain}" — pipe separator
+website: v.optional(v.string()),          // raw website URL for display + domain extraction
+domain: v.optional(v.string()),           // bare domain, case-folded (pre-computed via _domain_of)
+sanityCharityId: v.optional(v.string()),  // Sanity charity slug/_id cross-reference
+firstSeenRunId: v.optional(v.string()),   // runId that first logged this entry as a candidate
+
+// additive indexes (after by_workspace):
+.index('by_workspace_dedupKey', ['workspace_id', 'dedupKey'])  // dedup lookup
+.index('by_workspace_status', ['workspace_id', 'status'])       // Scout filter
+```
+
+**Status enum** (unchanged): `"candidate"` | `"featured"` | `"blocklisted"`
+
+**Dedup key construction:** `dedupKey = f"{name.strip().lower()}|{domain}"` where
+`domain = _domain_of(website)`. Matches the existing `scout.py:104-110` `_candidate_keys()` logic.
+The `|` separator makes the two components clearly distinct.
+
+---
+
+### §26.2 — claim_checks table (NEW)
+
+```typescript
+claim_checks: defineTable({
+  workspace_id: v.string(),
+  runId: v.string(),
+  claimIndex: v.number(),       // stable ordinal position from extraction
+  text: v.string(),             // extracted claim text
+  claimType: v.string(),        // "number" | "date" | "proper_noun"
+  context: v.string(),          // 60-char surrounding window for review
+  status: v.string(),           // "pending" | "checked" | "skipped"
+})
+  .index('by_runId', ['runId'])
+  .index('by_workspace', ['workspace_id'])
+```
+
+**Status enum:** `"pending"` (initial) | `"checked"` (operator verified) | `"skipped"` (operator dismissed)
+
+**Approve gate:** The FastAPI publish endpoint and the dashboard approve button both require
+`claimChecks:allSignedOff(runId)` → true before proceeding. Empty list = false (conservative:
+if extraction hasn't run yet, do not enable approve).
+
+---
+
+### §26.3 — runs table additive field
+
+```typescript
+// additive field (after cancelRequested):
+scheduledPublishAt: v.optional(v.number()), // Unix ms — D-02: approve-and-schedule target time
+```
+
+**Query:** `runs:dueForPublish({workspace_id, nowMs})` — returns runs where
+`status === "awaiting-review"` AND `scheduledPublishAt !== undefined` AND `scheduledPublishAt <= nowMs`.
+Called by the Phase 25 `/pipeline/tick` sweep to fire scheduled publishes.
+
+---
+
+### §26.4 — pipelineRuns table additive field
+
+```typescript
+// additive field (after awaitingHumanAt):
+sanityIssueId: v.optional(v.string()), // Phase 26 — Sanity weeklyIssue _id; written by publisher so publish endpoint can resolve the Sanity issue from a runId
+```
+
+Used by `POST /issues/{run_id}/publish` to resolve the Sanity issue document from a runId
+without requiring the caller to know the Sanity ID.
+
+---
+
+### §26.5 — review_actions action enum (canonical vocabulary)
+
+The `action` field in `review_actions` MUST use exactly these strings (Pitfall 7):
+
+| Value | When written |
+|-------|-------------|
+| `"approved_and_published"` | Operator approved + issue published immediately |
+| `"approved_and_scheduled"` | Operator approved + scheduled for later publish |
+| `"rejected"` | Operator rejected the run |
+| `"section_rerolled"` | Operator re-rolled a section from the review screen |
+| `"auto_publish_enabled"` | Operator enabled auto_publish |
+| `"auto_publish_disabled"` | Operator disabled auto_publish |
+| `"charity_blocklisted"` | Operator blocklisted a charity from the registry |
+| `"charity_status_changed"` | Operator changed charity status (other changes) |
+
+`review_actions` is the per-run decision trail. `audit_log` is the workspace-level trail.
+Both should be written for approve/reject/schedule decisions; `audit_log` alone is sufficient
+for registry mutations (setStatus).
+
+---
+
+### §26.6 — Convex function signatures
+
+All new functions — one-line signatures. Thread `workspace_id` on every row.
+
+**convex/charities.ts:**
+
+```typescript
+// Mutations
+upsertCandidate({ workspace_id, name, website, runId }): Promise<void>
+  // Guard: never downgrade featured|blocklisted → candidate (Pitfall 3)
+  // Computes dedupKey = name.trim().toLowerCase() + "|" + bareDomain(website)
+  // Looks up by_workspace_dedupKey; if existing.status in ["featured","blocklisted"] → return without change
+  // If existing candidate → patch website/domain only
+  // If none → insert {workspace_id, name, status:"candidate", website, domain, dedupKey, firstSeenRunId: runId, timesFeatured:0}
+
+upsertFeatured({ workspace_id, name, website, sanityCharityId }): Promise<void>
+  // Finds via by_workspace_dedupKey; if exists → patch status:"featured", timesFeatured+1, lastFeaturedAt, sanityCharityId
+  // If not → insert with status:"featured", timesFeatured:1, lastFeaturedAt: Date.now()
+
+setStatus({ workspace_id, charityId: Id<'charities'>, status }): Promise<void>
+  // Validates status in ["candidate","featured","blocklisted"]; throws on invalid
+
+seedFromPublished({ workspace_id, rows: Array<{name, website?, sanityCharityId?}> }): Promise<void>
+  // Idempotent backfill — calls upsertFeatured logic for each row
+
+// Queries
+listByWorkspace({ workspace_id, status?: string }): Promise<Doc<'charities'>[]>
+  // Uses by_workspace index; filters by status when provided; sorted by name
+
+listForDedup({ workspace_id }): Promise<Array<{dedupKey,name,domain,status}>>
+  // Returns only featured + blocklisted rows (Scout dedup set); projects minimal shape
+
+getByDedupKey({ workspace_id, dedupKey }): Promise<Doc<'charities'> | null>
+  // Uses by_workspace_dedupKey index; returns first() or null
+```
+
+**convex/claimChecks.ts:**
+
+```typescript
+insertBatch({ workspace_id, runId, claims: Array<{claimIndex,text,claimType,context}> }): Promise<void>
+  // Idempotent: first deletes existing claim_checks for runId, then inserts each with status:"pending"
+
+setStatus({ runId, claimIndex, status }): Promise<void>
+  // Finds via by_runId matching claimIndex; validates status in ["pending","checked","skipped"]
+
+listByRunId({ runId }): Promise<Doc<'claim_checks'>[]>
+  // Uses by_runId index; sorted by claimIndex asc
+
+allSignedOff({ runId }): Promise<{total: number, signedOff: number, allSignedOff: boolean}>
+  // allSignedOff = total > 0 && every row status != "pending"
+  // Empty list → {total:0, signedOff:0, allSignedOff:false} (conservative — prevents race at dashboard load)
+```
+
+**convex/reviewActions.ts:**
+
+```typescript
+record({ workspace_id, runId, actorId, action, note?: string }): Promise<void>
+  // Inserts into review_actions with timestamp: Date.now()
+  // Canonical action values: see §26.5
+
+listByRunId({ runId }): Promise<Doc<'review_actions'>[]>
+  // Uses by_runId index; sorted by timestamp desc
+```
+
+**convex/runs.ts additions:**
+
+```typescript
+setScheduledPublish({ runId, scheduledPublishAt?: number }): Promise<void>
+  // Finds via by_runId; patches scheduledPublishAt field (undefined to clear)
+
+dueForPublish({ workspace_id, nowMs }): Promise<Doc<'runs'>[]>
+  // Uses by_workspace index; filters status === "awaiting-review" && scheduledPublishAt !== undefined && scheduledPublishAt <= nowMs
+```
+
+**convex/pipelineRuns.ts additions:**
+
+```typescript
+// Extend existing updateStatus — add optional sanityIssueId arg:
+updateStatus({ runId, status, completedAt?, errorMessage?, durationMs?, cost?, awaitingHumanAt?, sanityIssueId? }): Promise<void>
+  // Same behavior as existing; patches sanityIssueId when provided
+  // Callers that don't pass sanityIssueId are unaffected (backward-compatible)
+```
+
+**convex/pipelineConfig.ts additions:**
+
+```typescript
+setAutoPublish({ workspace_id, enabled: boolean, actorId: string }): Promise<void>
+  // 1. Read auto_publish_enabled_at config key
+  // 2. If enabled === true AND prior enabled timestamp exists within 24h → throw new Error("rate_limited")
+  // 3. Upsert auto_publish = JSON.stringify(enabled)
+  // 4. If enabling: upsert auto_publish_enabled_at = JSON.stringify(Date.now())
+  // 5. If enabling: insert deliberationEvents row with eventType:"auto-publish-enabled" (Phase 27 NTF hook)
+  // 6. Call auditLog:write with action: enabled ? "auto_publish_enabled" : "auto_publish_disabled"
+  // Rate-limit window: 24 hours after last enable (re-disable is immediate; re-enable requires 24h cooldown)
+```
+
+---
+
+### §26.7 — FastAPI endpoints (review gate)
+
+These endpoints live in `packages/pipeline/src/eisenbalm_pipeline/api/review.py`
+(or extend `api/control.py`). Auth guard: `Depends(require_clerk_jwt)`.
+
+#### `POST /issues/{run_id}/publish`
+
+```
+Auth:    Depends(require_clerk_jwt)
+Path:    run_id — the pipeline run UUID (NOT the Sanity _id)
+Guards:
+  - Resolve pipelineRuns.sanityIssueId via pipelineRuns:byRunId (run_id)
+  - Check run.status == "awaiting-review" (409 if not)
+  - Check claimChecks:allSignedOff(run_id) → allSignedOff == true (409 {"reason":"claims_not_signed_off"} if not)
+  - If pipelineRuns.status == "complete" already → 200 {"alreadyPublished":true} (idempotency guard)
+Action:
+  - Patch Sanity weeklyIssue.status = "published" (Sanity Python client)
+  - Write review_actions row: action="approved_and_published"
+  - Write audit_log row: action="run.approved_and_published", resourceType="run", resourceId=run_id
+Response: {"issueId": str, "published": true}
+Note:    Does NOT call _run_publisher directly — Sanity webhook fires _run_publisher (D-01)
+```
+
+#### `POST /issues/{run_id}/schedule`
+
+```
+Auth:    Depends(require_clerk_jwt)
+Body:    {"scheduledAt": int}  # Unix ms
+Guards:
+  - run.status == "awaiting-review" (409 if not)
+  - claimChecks:allSignedOff(run_id) → allSignedOff == true (409 {"reason":"claims_not_signed_off"} if not)
+  - scheduledAt > now (422 if in the past)
+Action:
+  - Write runs.scheduledPublishAt via runs:setScheduledPublish
+  - Write review_actions row: action="approved_and_scheduled"
+  - Write audit_log row: action="run.approved_and_scheduled"
+Response: {"issueId": str, "scheduledAt": int}
+Note:    The Phase 25 /pipeline/tick sweep checks runs:dueForPublish and fires publish for due runs
+```
+
+#### `POST /issues/{run_id}/reject`
+
+```
+Auth:    Depends(require_clerk_jwt)
+Body:    {"note": Optional[str]}
+Guards:  None (reject is always allowed while awaiting-review)
+Action:
+  - Write review_actions row: action="rejected", note=body.note
+  - Write audit_log row: action="run.rejected"
+  - runs.status unchanged (the run stays in awaiting-review for reference)
+Response: {"issueId": str, "rejected": true}
+```
+
+---
+
+### §26.8 — apps/web draft-preview route
+
+**Route:** `GET /issue/[slug]/preview` (file: `apps/web/app/issue/[slug]/preview/page.tsx`)
+
+**Token auth:**
+```
+HMAC-SHA256(PREVIEW_SECRET, runId + ":" + slug + ":" + floor(now/300000))
+```
+5-minute TOTP-style sliding window. `dispatch-control` generates the token server-side.
+Preview URL: `https://<web-domain>/issue/<slug>/preview?token=<hmac>&runId=<runId>`
+
+**Server-side GROQ query (no status filter — differs from published page):**
+```groq
+*[_type == "weeklyIssue" && slug.current == $slug][0]{ ...same projections as QUERY_ISSUE_BY_SLUG... }
+```
+Note: MUST omit `&& status == "published"` filter or drafts return null (Pitfall 1).
+
+**Sanity client:** Server-only instance with `perspective: 'previewDrafts'` and
+`token: process.env.SANITY_API_TOKEN` (read-only token). MUST NOT be exported to client components.
+
+**CSP header (per-route only — does not affect public pages):**
+```typescript
+// next.config.ts headers() — additive, scoped to preview route
+{
+  source: '/issue/:slug/preview',
+  headers: [
+    { key: 'Content-Security-Policy',
+      value: "frame-ancestors 'self' ${PREVIEW_ALLOWED_ORIGIN}" },
+    { key: 'X-Frame-Options', value: 'ALLOWALL' },
+  ],
+}
+```
+`PREVIEW_ALLOWED_ORIGIN` env var — production dispatch-control domain. For local dev:
+include `http://localhost:3001` as a comma-separated value.
+
+**frame-ancestors** is a per-route override — public issue pages at `/issue/[slug]`
+do NOT get this header (they remain unembeddable by default). (Pitfall 2)
+
+---
+
+*All Phase 26 changes are additive. Frozen shapes: pipelineRuns (except sanityIssueId addition),
+deliberationEvents, agentVotes, qaCorrections, pitchLog — unchanged.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
