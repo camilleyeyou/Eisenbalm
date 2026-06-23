@@ -827,6 +827,204 @@ Auth: Depends(require_clerk_jwt)   # returns {"sub": <clerkUserId>}; same guard 
 
 ---
 
+## 3B. Dashboard → Pipeline (run control)
+
+Phase 25 (RUN-01..RUN-06) adds four run-control endpoints to the FastAPI pipeline
+service. All are authenticated; the operator identity from Clerk is threaded into
+every audit row and the `triggeredBy` field on `runs`.
+
+**Status-split invariant (Pitfall 1):** `runs.status = "cancelled"` is the
+dashboard-facing record (free `v.string()` — no migration). `pipelineRuns.status`
+stays on the frozen union (`running|awaiting-review|complete|failed`); a cancelled
+run writes `pipelineRuns.status = "failed"` with `errorMessage = "cancelled by
+operator"`. The public site only reads `pipelineRuns`; it never needs to
+distinguish `cancelled` from `failed`.
+
+---
+
+### 3B.1 — `POST /pipeline/run`
+
+```python
+POST /pipeline/run
+Auth: Depends(require_clerk_jwt)   # Clerk JWT → claims["sub"] = triggeredBy
+
+# Request body (Pydantic)
+{
+  "issueNumber": Optional[int],     # override if omitted: auto-increment
+  "narratorSlug": Optional[str],    # optional narrator profile slug
+}
+
+# Response body
+{ "runId": str }
+```
+
+**Behavior (D-12):** One-at-a-time gate — returns `409 "A run is already in
+progress"` when `runs:latest` status == `"running"`. Budget start-gate — returns
+`409 "Projected cost would exceed monthly cap"` when month-to-date + trailing
+average projection exceeds `monthly_cap_usd` (D-06). On pass, runs the same work
+as `/run/weekly` with `triggerSource="manual"` and `triggeredBy` set from the
+Clerk JWT `sub` claim. Emits an `audit_log` row for `"run.triggered"`.
+
+---
+
+### 3B.2 — `POST /pipeline/tick`
+
+```python
+POST /pipeline/tick
+Auth: X-Pipeline-Trigger-Secret header   # Railway cron calls this, NOT Clerk
+
+# Response body
+{
+  "status": "triggered" | "skipped",
+  "reason": Optional[str],               # present when status == "skipped"
+  "runId": Optional[str],                # present when status == "triggered"
+}
+```
+
+**Behavior order (D-10, Pitfall 4 — kill switch FIRST):**
+
+1. Read `schedule_enabled` from `pipelineConfig:getAll` — return
+   `{"status":"skipped","reason":"schedule_disabled"}` when `false`.
+2. `_is_due` check against `schedule_cadence` / `schedule_next_run_at` (UTC) —
+   return `{"status":"skipped","reason":"not_due"}` when not due.
+3. One-at-a-time gate via `runs:latest` — return
+   `{"status":"skipped","reason":"run_in_progress"}` when a run is `"running"`.
+4. Budget start-gate projection — return
+   `{"status":"skipped","reason":"budget_projection_exceeds_cap"}` when MTD +
+   projection > `monthly_cap_usd`.
+5. Fire run with `triggerSource="cron"`, advance `schedule_next_run_at` to the
+   next occurrence strictly after `now`, return
+   `{"status":"triggered","runId":"<uuid>"}`.
+
+**Note:** Do NOT call `/run/weekly` from this handler — that route bypasses the
+kill switch. Call the internal `_start_run` logic only after all gates pass
+(Pitfall 4.2).
+
+---
+
+### 3B.3 — `POST /runs/{run_id}/cancel`
+
+```python
+POST /runs/{run_id}/cancel
+Auth: Depends(require_clerk_jwt)
+
+# Response body
+{
+  "runId": str,
+  "status": str,                     # current runs.status
+  "alreadyTerminal": Optional[bool], # true when run is not "running"
+  "cancelRequested": Optional[bool], # true when flag was set
+}
+```
+
+**Behavior (D-01/D-02):**
+
+- `404` if `runs:byRunId` returns no row.
+- Idempotent no-op `{"runId":..., "status":..., "alreadyTerminal":true}` if the
+  run is not in status `"running"` (already terminal or never started).
+- When the run IS `"running"`: set the cooperative cancel flag via
+  `runs:requestCancel` and return `{"runId":..., "cancelRequested":true}`.
+  The `wrap_agent_node` wrapper polls `runs:isCancelRequested` before running each
+  node; when set, it raises `RunCancelled` (no-op the node cleanly — no
+  started/completed emit). `_execute_run` in `api/runs.py` catches `RunCancelled`
+  and writes `runs.status="cancelled"` / `pipelineRuns.status="failed"` +
+  `errorMessage="cancelled by operator"`. Emits an `audit_log` row for
+  `"run.cancel_requested"`.
+
+---
+
+### 3B.4 — `POST /runs/{run_id}/agents/{agent_key}/rerun`
+
+```python
+POST /runs/{run_id}/agents/{agent_key}/rerun
+Auth: Depends(require_clerk_jwt)
+
+# Response body
+{
+  "runId": str,
+  "agentKey": str,
+  "rerolled": bool,   # always true on success
+}
+```
+
+**Behavior (D-03/D-04/D-05):**
+
+- `422` if `agent_key` is not in the re-rollable set — the 7 section writers:
+  `origin_story`, `problem`, `founder_bio`, `case_study`, `game`, `bonus`,
+  `design`. (`design` respects `DESIGNAGENT_SUPPRESSED` automatically because
+  `RE_ROLLABLE` derives from `SECTION_WRITERS`.)
+- `409 "Run is still executing — re-roll only on a finished/awaiting-review run"` 
+  if `runs:byRunId` status == `"running"` (D-04).
+- `409 "No checkpoint state for run {run_id}"` if the LangGraph checkpoint has no
+  state for the given `run_id`.
+- On success: fork the checkpoint (`aget_state` → call bare node fn → 
+  `aupdate_state(as_node=agent_key)` → re-call `write_issue_draft(merged_state)`).
+  Returns `{"runId":..., "agentKey":..., "rerolled":true}`.
+
+**CRITICAL (Pitfall 2):** Does NOT call `ainvoke(None, config)` after
+`aupdate_state`. Running the successor chain (validate_sections → QA →
+editor_final → publisher) is NOT automatic — sibling sections are untouched by
+construction (`write_issue_draft` createOrReplace's the whole doc from merged
+state). Emits an `audit_log` row for `"run.agent_rerolled"`.
+
+---
+
+### 3B.5 — Cancel-flag contract
+
+**Schema addition (additive — no migration):**
+
+```typescript
+// convex/schema.ts — runs table addition
+cancelRequested: v.optional(v.boolean()), // Phase 25 RUN-04 cooperative cancel flag
+```
+
+**New Convex mutations (convex/runs.ts — Plan 03 implements):**
+
+| Mutation | Args | Behavior |
+|----------|------|----------|
+| `runs:requestCancel` | `{ runId: str }` | Sets `cancelRequested = true` on the row |
+| `runs:isCancelRequested` | `{ runId: str }` | Returns `boolean` (false if field absent) |
+| `runs:updateStatus` | `{ runId: str, status: str, completedAt?: number, cost?: str, durationMs?: number }` | Patches the row |
+
+**Wrapper polling (lib/agent_wrapper.py):** `wrap_agent_node` calls
+`runs:isCancelRequested` BEFORE emitting the `agentRuns:started` event. If set,
+raises `RunCancelled(run_id)` — the node never shows as "running" and no work is
+done. `_execute_run` in `api/runs.py` catches `RunCancelled` at the top level and
+writes terminal status.
+
+**`RunCancelled` exception (lib/errors.py):**
+
+```python
+class RunCancelled(Exception):
+    """Raised by wrap_agent_node when the cooperative cancel flag is set (RUN-04,
+    D-02). The wrapper no-ops the node cleanly (no started/completed emit) and
+    raises this; api/runs.py::_execute_run catches it and writes
+    runs.status='cancelled' (Pitfall 1: pipelineRuns.status stays 'failed' +
+    errorMessage)."""
+    def __init__(self, run_id: str) -> None: ...
+```
+
+---
+
+### 3B.6 — `pipeline_config` run-control keys (extends §4A.3)
+
+Five new keys added by Phase 25. Values are JSON-encoded strings (same contract
+as existing `require_review` / `auto_publish` / `schedule_enabled` keys):
+
+| Key | Default JSON value | Description |
+|-----|--------------------|-------------|
+| `per_run_cap_usd` | `10.0` | Per-run hard-stop cap (USD). Overrides `PIPELINE_COST_CAP_USD` env var when set. |
+| `monthly_cap_usd` | `200.0` | Monthly budget cap (USD). Exceeded at run start → refuse to start (D-06). Exceeded mid-run → alert only, not cancel (D-07). |
+| `alert_threshold_pct` | `80` | Percentage of `monthly_cap_usd` at which a `cost-warning` event is emitted (50–100). |
+| `schedule_cadence` | `{"dayOfWeek":4,"hourUtc":14,"minuteUtc":0}` | Structured cadence (Thursday 14:00 UTC, matching `cli.py 0 14 * * 4`). Used by `_is_due` to compute the next fire time. |
+| `schedule_next_run_at` | `0` | Unix milliseconds (UTC). The tick fires when `now >= schedule_next_run_at`; advanced to the next occurrence strictly after `now` on every fire. `0` means never triggered yet. |
+
+**`schedule_enabled`** is intentionally NOT seeded by the Phase 25 seed script —
+it was seeded by Phase 22 with a default of `false`, and automation stays off by
+default until the operator explicitly enables it.
+
+---
+
 ## 4. Next.js → Convex (TypeScript query hooks)
 
 These are the Convex query function files.
