@@ -24,6 +24,9 @@ import os
 import time
 from typing import Any, Optional
 
+from eisenbalm_pipeline.lib.budget import would_exceed_monthly_cap
+from eisenbalm_pipeline.lib.cost import emit_monthly_alert
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -166,7 +169,8 @@ async def pipeline_run(
     progress. The operator must wait for the current run to complete or cancel
     it via POST /runs/{run_id}/cancel (Plan 03).
 
-    # Budget start-gate inserted by Plan 04 (RUN-06) here
+    Budget start-gate (RUN-06): rejects with 409 when the trailing-average
+    projection would exceed the monthly cap.
 
     Returns:
         {"runId": "<run_id>"}
@@ -182,7 +186,29 @@ async def pipeline_run(
             detail="A run is already in progress. Wait for it to complete or cancel it first.",
         )
 
-    # Budget start-gate inserted by Plan 04 (RUN-06) here
+    # ── Budget start-gate (RUN-06) ────────────────────────────────────────────
+    # Read monthly cap from pipeline_config (one round-trip, not in hot path).
+    pc_rows = await _cc.convex_query(
+        http, "pipelineConfig:getAll", {"workspace_id": WORKSPACE_ID}
+    ) or []
+    _pc: dict = {}
+    for row in pc_rows:
+        try:
+            _pc[row["key"]] = json.loads(row["value"])
+        except Exception:  # noqa: BLE001
+            _pc[row["key"]] = row["value"]
+    over, info = await would_exceed_monthly_cap(
+        http, monthly_cap_usd=float(_pc.get("monthly_cap_usd", 0.0))
+    )
+    if over:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Projected cost would exceed the monthly cap "
+                f"(${info['mtdUsd']:.2f} MTD + ${info['projected']:.2f} projected"
+                f" > ${info['cap']:.2f} cap). Raise the cap or wait until next month."
+            ),
+        )
 
     run_id = await _start_run(
         request.app,
@@ -250,9 +276,19 @@ async def pipeline_tick(request: Request) -> dict:
     if latest and latest.get("status") == "running":
         return {"status": "skipped", "reason": "run_in_progress"}
 
-    # ── STEP 4: Budget start-gate (Plan 04 seam) ──────────────────────────
-    # Budget start-gate inserted by Plan 04 (RUN-06) here
-    # (returns {"status":"skipped","reason":"budget_projection_exceeds_cap"} when over)
+    # ── STEP 4: Budget start-gate (RUN-06) ────────────────────────────────────
+    over, budget_info = await would_exceed_monthly_cap(
+        http, monthly_cap_usd=float(pc.get("monthly_cap_usd", 0.0))
+    )
+    if over:
+        # Emit monthly-scope cost-warning (alert only — D-07: no auto-cancel).
+        await emit_monthly_alert(
+            run_id="",  # no run started yet — use empty string as placeholder
+            mtd_usd=float(budget_info.get("mtdUsd", 0.0)),
+            monthly_cap=float(budget_info.get("cap", 0.0)),
+            threshold_pct=float(pc.get("alert_threshold_pct", 80.0)),
+        )
+        return {"status": "skipped", "reason": "budget_projection_exceeds_cap"}
 
     # ── STEP 5: Fire + advance cursor ─────────────────────────────────────
     run_id = await _start_run(

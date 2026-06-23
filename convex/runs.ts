@@ -106,6 +106,74 @@ export const latest = query({
   },
 })
 
+// ── Phase 25 RUN-06 — Month-to-date cost roll-up ─────────────────────────────
+
+/**
+ * Sums the cost of all runs for a workspace that started in the current
+ * calendar month (UTC). Returns the MTD total, total completed run count, and
+ * the per-run `.total` values of the last up-to-4 completed runs (newest-first)
+ * for use by the trailing-average start-gate projection.
+ *
+ * Budget math reads actual recorded runs.cost ONLY (single-cost-writer rule —
+ * Phase 23 Pitfall 3). Never reads model_pricing or derives cost.
+ */
+export const monthToDateCost = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const rows = await ctx.db
+      .query('runs')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+
+    // Current month boundaries (UTC).
+    const now = new Date()
+    const monthStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+    const monthEnd = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)
+
+    let mtdUsd = 0
+    for (const row of rows) {
+      if (row.startedAt >= monthStart && row.startedAt < monthEnd) {
+        if (row.cost) {
+          try {
+            const parsed = JSON.parse(row.cost as string)
+            if (typeof parsed?.total === 'number') {
+              mtdUsd += parsed.total
+            }
+          } catch {
+            // Unparseable cost — skip row (don't double-count)
+          }
+        }
+      }
+    }
+
+    // Trailing costs: last up-to-4 completed runs (newest-first) for projection.
+    const completed = rows
+      .filter(r => r.status === 'complete' || r.status === 'awaiting-review')
+      .sort((a, b) => b.startedAt - a.startedAt)
+      .slice(0, 4)
+
+    const trailingCosts: number[] = []
+    for (const row of completed) {
+      if (row.cost) {
+        try {
+          const parsed = JSON.parse(row.cost as string)
+          if (typeof parsed?.total === 'number') {
+            trailingCosts.push(parsed.total)
+          }
+        } catch {
+          // Unparseable — skip
+        }
+      }
+    }
+
+    return {
+      mtdUsd,
+      completedCount: completed.length,
+      trailingCosts,
+    }
+  },
+})
+
 // ── Phase 25 RUN-04 — Cooperative cancel mutations ────────────────────────────
 
 /**

@@ -426,6 +426,7 @@ class _ConvexRunsStore:
         await self._handle_mutation(None, path, args)
 
     async def _handle_query(self, http: Any, path: str, args: dict) -> Any:
+        import json as _json
         if path == "runs:byRunId":
             run_id = args.get("runId")
             for row in self._rows:
@@ -439,6 +440,45 @@ class _ConvexRunsStore:
         if path == "runs:isCancelRequested":
             run_id = args.get("runId", "")
             return self._cancel_flags.get(run_id, False)
+        if path == "runs:monthToDateCost":
+            # In-memory stub: sums ALL seeded runs' cost as MTD (no timestamp
+            # filtering in tests — unit tests verify gate logic, not date math).
+            # trailingCosts = last up-to-4 completed/awaiting-review run totals.
+            completed = [
+                r for r in self._rows
+                if r.get("status") in ("complete", "awaiting-review") and r.get("cost")
+            ]
+            # Sort newest-first by startedAt (or insertion order if equal).
+            completed_sorted = sorted(
+                completed,
+                key=lambda r: r.get("startedAt", 0),
+                reverse=True,
+            )[:4]
+            trailing_costs: list[float] = []
+            mtd_usd = 0.0
+            for row in self._rows:
+                cost_raw = row.get("cost")
+                if cost_raw:
+                    try:
+                        parsed = _json.loads(cost_raw)
+                        if isinstance(parsed.get("total"), (int, float)):
+                            mtd_usd += float(parsed["total"])
+                    except Exception:
+                        pass
+            for row in completed_sorted:
+                cost_raw = row.get("cost")
+                if cost_raw:
+                    try:
+                        parsed = _json.loads(cost_raw)
+                        if isinstance(parsed.get("total"), (int, float)):
+                            trailing_costs.append(float(parsed["total"]))
+                    except Exception:
+                        pass
+            return {
+                "mtdUsd": mtd_usd,
+                "completedCount": len(completed),
+                "trailingCosts": trailing_costs,
+            }
         return None
 
 
