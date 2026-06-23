@@ -27,7 +27,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 23: Node Wrappers + Read-Only Dashboard** - `wrap_agent_node()` emits live progress to `agent_runs`; operator views graph, run history, live run, cost roll-ups, per-agent I/O (completed 2026-06-22)
 - [x] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run (10 plans) (completed 2026-06-22)
 - [x] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts (completed 2026-06-23)
-- [ ] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup
+- [x] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup (completed 2026-06-23)
 - [ ] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator
 
 ## Phase Details
@@ -412,7 +412,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
-| 26. Review Gate + Charity Registry | 5/6 | In Progress|  |
+| 26. Review Gate + Charity Registry | 6/6 | Complete   | 2026-06-23 |
 | 27. Money + Notifications | 0/? | Not started | - |
 
 ## Backlog
@@ -570,7 +570,7 @@ Plans:
 - [x] 26-02-pipeline-claims-scout-PLAN.md — Deterministic claims extractor (RVW-05) + Scout registry re-point & candidate logging (REG-02) + idempotent registry backfill script
 - [x] 26-03-pipeline-review-endpoints-PLAN.md — FastAPI publish/schedule/reject endpoints (claims-signoff gate) + shared Sanity-flip helper + tick scheduled-publish sweep (RVW-01/03)
 - [x] 26-04-web-draft-preview-route-PLAN.md — Token-guarded apps/web draft-preview route (previewDrafts perspective) + per-route frame-ancestors CSP (RVW-02)
-- [ ] 26-05-dashboard-review-screen-PLAN.md — Review queue + preview-centric review screen (iframe + cost + claims checklist + approve/schedule/reject/re-roll) (RVW-01/02/03/05)
+- [x] 26-05-dashboard-review-screen-PLAN.md — Review queue + preview-centric review screen (iframe + cost + claims checklist + approve/schedule/reject/re-roll) (RVW-01/02/03/05)
 - [x] 26-06-dashboard-registry-autopublish-PLAN.md — Charity registry UI (REG-01) + friction-gated auto_publish toggle with alarming layout banner (RVW-04)
 **UI hint**: yes
 

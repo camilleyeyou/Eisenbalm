@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 26-06-dashboard-registry-autopublish-PLAN.md
-last_updated: "2026-06-23T11:19:55.837Z"
+stopped_at: Completed 26-05-dashboard-review-screen-PLAN.md
+last_updated: "2026-06-23T11:24:19.617Z"
 progress:
   total_phases: 27
-  completed_phases: 24
+  completed_phases: 25
   total_plans: 168
-  completed_plans: 165
+  completed_plans: 166
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 26 (review-gate-charity-registry) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -192,6 +192,7 @@ Plan: 5 of 6
 | Phase 26 P03 | 17 | 3 tasks | 8 files |
 | Phase 26 P04 | 10 | 3 tasks | 9 files |
 | Phase 26 P06 | 7 | 2 tasks | 10 files |
+| Phase 26-review-gate-charity-registry P05 | 10 | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -498,6 +499,9 @@ Recent decisions affecting current work:
 - [Phase 26]: frame-ancestors CSP scoped ONLY to /issue/:slug/preview in next.config.ts — public issue pages unaffected
 - [Phase 26]: AutoPublishToggle placed in separate Advanced panel below AutomationPanel (not inside) to avoid modifying Phase 25 component
 - [Phase 26]: AddCharityDialogTrigger wrapper added to maintain Server/Client boundary in registry/page.tsx (Server Component)
+- [Phase 26-05]: Review screen: slug resolution chain (?slug → sanityIssueId → runId fallback) until pipeline writes issueSlug to run metadata (TODO D-slug)
+- [Phase 26-05]: claimChecks API: type-asserted (api as any) pending npx convex dev regeneration of _generated/api.d.ts
+- [Phase 26-05]: Review inline confirm panels (not shadcn Dialog) — matches existing PromptSaveDialog convention; Dialog not installed
 
 ### Pending Todos
 
@@ -578,6 +582,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T11:19:55.826Z
-Stopped at: Completed 26-06-dashboard-registry-autopublish-PLAN.md
+Last session: 2026-06-23T11:24:19.606Z
+Stopped at: Completed 26-05-dashboard-review-screen-PLAN.md
 Resume file: None
