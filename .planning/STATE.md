@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to plan
-stopped_at: Completed 25-05-PLAN.md
-last_updated: "2026-06-23T07:59:38.753Z"
+stopped_at: Phase 26 context gathered
+last_updated: "2026-06-23T08:23:24.757Z"
 progress:
   total_phases: 27
   completed_phases: 24
@@ -565,6 +565,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T07:47:34.445Z
-Stopped at: Completed 25-05-PLAN.md
-Resume file: None
+Last session: 2026-06-23T08:23:24.746Z
+Stopped at: Phase 26 context gathered
+Resume file: .planning/phases/26-review-gate-charity-registry/26-CONTEXT.md
