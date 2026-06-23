@@ -1,4 +1,10 @@
-"""Phase 25 Wave 0 — RED tests for scheduler tick and cadence cursor (RUN-03).
+"""Phase 25 + Phase 26 — Scheduler tick and cadence cursor tests.
+
+Phase 25 (RUN-03): _is_due + compute_next_run_at unit tests.
+Phase 26 (D-02): test_tick_fires_due_scheduled_runs — the hourly tick fires
+  scheduled publishes via runs:dueForPublish + _flip_sanity_published BEFORE
+  the cadence gate, so they fire even when no new run is due.
+
 
 RED state: ``eisenbalm_pipeline.lib.scheduler`` does not exist yet. The top-level
 import ensures collection FAILS RED until Plan 02 lands the scheduler module.
@@ -15,11 +21,14 @@ import ensures collection FAILS RED until Plan 02 lands the scheduler module.
 """
 from __future__ import annotations
 
+import json
+import os
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from eisenbalm_pipeline.lib.scheduler import _is_due, compute_next_run_at  # RED until Plan 02
+from eisenbalm_pipeline.lib.scheduler import _is_due, compute_next_run_at
 
 pytestmark = pytest.mark.anyio
 
@@ -85,3 +94,117 @@ def test_next_run_cursor_advances() -> None:
         f"Next run should be within the next cadence period (~1 week for Thu weekly): "
         f"got {next_run.isoformat()!r}"
     )
+
+
+# ── Phase 26 D-02: scheduled-publish sweep ────────────────────────────────
+
+
+async def test_tick_fires_due_scheduled_runs(monkeypatch) -> None:
+    """Phase 26 D-02: pipeline_tick fires _flip_sanity_published for each
+    awaiting-review run whose scheduledPublishAt is now due.
+
+    The sweep MUST run BEFORE the cadence gate so it fires even when no new
+    run is due (e.g. _is_due returns False).
+
+    Test setup:
+      - schedule_enabled = True
+      - _is_due = False (cadence cursor in the future — tick would normally skip)
+      - runs:dueForPublish returns one due run
+      - pipelineRuns:byRunId returns a run with sanityIssueId="issue-77"
+      - _flip_sanity_published is mocked and asserted to have been called
+
+    Expected: tick returns {"status":"skipped","reason":"not_due"} BUT also
+    {"scheduledPublished": ["run-due-01"]} in the response, and
+    _flip_sanity_published was awaited with "issue-77".
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from eisenbalm_pipeline.api.control import router as control_router
+
+    flip_calls: list[str] = []
+
+    async def mock_flip(http, sanity_issue_id: str) -> None:
+        flip_calls.append(sanity_issue_id)
+
+    # Config values returned from pipelineConfig:getAll
+    config_data = [
+        {"key": "schedule_enabled", "value": json.dumps(True)},
+        # Cursor 1 hour in the future → cadence gate will skip new-run triggering
+        {"key": "schedule_next_run_at", "value": json.dumps(
+            int(datetime.now(timezone.utc).timestamp() * 1000) + 3_600_000
+        )},
+    ]
+
+    async def mock_convex_query(http, path: str, args: dict):
+        if path == "pipelineConfig:getAll":
+            return config_data
+        if path == "runs:dueForPublish":
+            return [{"runId": "run-due-01"}]
+        if path == "pipelineRuns:byRunId":
+            return {"runId": "run-due-01", "status": "awaiting-review", "sanityIssueId": "issue-77"}
+        if path == "runs:latest":
+            return None
+        return None
+
+    mutation_calls: list[tuple] = []
+
+    async def mock_convex_mutation(http, path: str, args: dict):
+        mutation_calls.append((path, args))
+        return None
+
+    # Build test app
+    app = FastAPI()
+    app.include_router(control_router)
+    app.state.convex_http = MagicMock()
+    app.state.sanity_http = MagicMock()
+    app.state.graph = None
+    app.state.background_tasks = set()
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._cc.convex_query",
+        mock_convex_query,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._cc.convex_mutation",
+        mock_convex_mutation,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._flip_sanity_published",
+        mock_flip,
+    )
+    # Ensure trigger secret works
+    trigger_secret = "test-schedule-secret"
+    monkeypatch.setenv("PIPELINE_TRIGGER_SECRET", trigger_secret)
+
+    client = TestClient(app, raise_server_exceptions=True)
+    response = client.post(
+        "/pipeline/tick",
+        headers={"X-Pipeline-Trigger-Secret": trigger_secret},
+    )
+
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+    body = response.json()
+
+    # Cadence gate should have skipped new-run triggering (cursor in future).
+    assert body.get("status") == "skipped", (
+        f"Expected status='skipped' (cadence gate), got {body!r}"
+    )
+    assert body.get("reason") == "not_due", (
+        f"Expected reason='not_due', got {body.get('reason')!r}"
+    )
+
+    # But the scheduled-publish sweep MUST have fired before the gate.
+    assert "run-due-01" in body.get("scheduledPublished", []), (
+        f"Expected 'run-due-01' in scheduledPublished: {body.get('scheduledPublished')!r}"
+    )
+    assert flip_calls == ["issue-77"], (
+        f"Expected _flip_sanity_published called with 'issue-77', got {flip_calls!r}"
+    )
+
+    # runs:setScheduledPublish was called to clear the scheduledPublishAt.
+    clear_calls = [
+        args for path, args in mutation_calls
+        if path == "runs:setScheduledPublish"
+    ]
+    assert clear_calls, "Expected runs:setScheduledPublish to be called to clear scheduledPublishAt"
+    assert clear_calls[0]["runId"] == "run-due-01"

@@ -38,6 +38,7 @@ from eisenbalm_pipeline.api.runs import (
     _start_run,
 )
 from eisenbalm_pipeline.lib.scheduler import _is_due, compute_next_run_at
+from eisenbalm_pipeline.lib.sanity_publish import _flip_sanity_published
 from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
 
 # Module-level constant: agent keys that can be re-rolled (RUN-05, D-03).
@@ -266,15 +267,62 @@ async def pipeline_tick(request: Request) -> dict:
     if not pc.get("schedule_enabled", False):
         return {"status": "skipped", "reason": "schedule_disabled"}
 
-    # ── STEP 2: Cadence gate ───────────────────────────────────────────────
+    # ── Scheduled-publish sweep (Phase 26 D-02) — runs every tick ─────────
+    # Fires BEFORE the cadence gate so due scheduled publishes are processed
+    # even when no new run is due (i.e., the cadence cursor is in the future).
+    #
+    # Flow: runs:dueForPublish → _flip_sanity_published → existing Sanity
+    # webhook → _run_publisher (PDF + Vercel + charities:upsertFeatured D-03).
+    # The registry upsert is NOT done here — it rides the webhook path from
+    # agents/publisher/__init__.py so it fires exactly once per publish.
     now_ms = int(time.time() * 1000)
+    _scheduled_published: list[str] = []
+    try:
+        due = await _cc.convex_query(
+            http,
+            "runs:dueForPublish",
+            {"workspace_id": WORKSPACE_ID, "nowMs": now_ms},
+        ) or []
+        sanity_http = getattr(request.app.state, "sanity_http", None)
+        for r in due:
+            try:
+                pr = await _cc.convex_query(
+                    http, "pipelineRuns:byRunId", {"runId": r["runId"]}
+                )
+                sanity_id = (pr or {}).get("sanityIssueId")
+                if sanity_id:
+                    await _flip_sanity_published(sanity_http, sanity_id)
+                    # Clear scheduledPublishAt to prevent re-fire on the next tick.
+                    await _cc.convex_mutation(
+                        http,
+                        "runs:setScheduledPublish",
+                        {"runId": r["runId"], "scheduledPublishAt": None},
+                    )
+                    _scheduled_published.append(r["runId"])
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "tick scheduled-publish failed for %s: %r",
+                    r.get("runId"), exc,
+                )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("tick scheduled-publish sweep error: %r", exc)
+
+    # ── STEP 2: Cadence gate ───────────────────────────────────────────────
     if not _is_due(pc, now_ms):
-        return {"status": "skipped", "reason": "not_due"}
+        return {
+            "status": "skipped",
+            "reason": "not_due",
+            "scheduledPublished": _scheduled_published,
+        }
 
     # ── STEP 3: One-at-a-time ──────────────────────────────────────────────
     latest = await _cc.convex_query(http, "runs:latest", {"workspace_id": WORKSPACE_ID})
     if latest and latest.get("status") == "running":
-        return {"status": "skipped", "reason": "run_in_progress"}
+        return {
+            "status": "skipped",
+            "reason": "run_in_progress",
+            "scheduledPublished": _scheduled_published,
+        }
 
     # ── STEP 4: Budget start-gate (RUN-06) ────────────────────────────────────
     over, budget_info = await would_exceed_monthly_cap(
@@ -288,7 +336,11 @@ async def pipeline_tick(request: Request) -> dict:
             monthly_cap=float(budget_info.get("cap", 0.0)),
             threshold_pct=float(pc.get("alert_threshold_pct", 80.0)),
         )
-        return {"status": "skipped", "reason": "budget_projection_exceeds_cap"}
+        return {
+            "status": "skipped",
+            "reason": "budget_projection_exceeds_cap",
+            "scheduledPublished": _scheduled_published,
+        }
 
     # ── STEP 5: Fire + advance cursor ─────────────────────────────────────
     run_id = await _start_run(
@@ -325,7 +377,11 @@ async def pipeline_tick(request: Request) -> dict:
         resource_id=run_id,
     )
 
-    return {"status": "triggered", "runId": run_id}
+    return {
+        "status": "triggered",
+        "runId": run_id,
+        "scheduledPublished": _scheduled_published,
+    }
 
 
 # ── POST /runs/{run_id}/cancel — RUN-04 ───────────────────────────────────────
