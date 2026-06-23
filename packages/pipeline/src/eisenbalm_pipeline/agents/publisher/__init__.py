@@ -30,12 +30,16 @@ from slugify import slugify
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
+from eisenbalm_pipeline.lib.claims import extract_claims
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.cost import cost_payload_to_json, end_run
 from eisenbalm_pipeline.lib.sanity_client import (
     get_client as get_sanity_http,
     write_issue_draft,
 )
+
+# Workspace ID — matches the canonical WORKSPACE_ID in config_loader.py.
+WORKSPACE_ID = "eisenbalm"
 
 
 def _publisher_payload(state: DispatchState) -> dict:
@@ -75,6 +79,9 @@ async def publisher(state: DispatchState) -> DispatchState:
             "completedAt": int(time.time() * 1000),
             "durationMs": duration_ms,
             "cost": cost_payload_to_json(cost_payload),
+            # Phase 26: persist the Sanity _id so the review/publish endpoint
+            # can resolve the Sanity issue from a runId (API_CONTRACTS §26.4).
+            "sanityIssueId": issue_id,
         },
     )
 
@@ -122,6 +129,11 @@ QUERY_ISSUE_FOR_PUBLISH = (
     '_id, '
     'issueNumber, '
     '"charityName": charity->name, '
+    # Phase 26 D-03: also fetch charity website + slug so _run_publisher can
+    # upsert the featured charity into the Convex registry (REG-01).
+    # Mirrors scout.py:137's `charity->{ name, ..., website }` projection.
+    '"charityWebsite": charity->website, '
+    '"charitySlug": charity->slug.current, '
     'theme{primaryColor, accentColor, backgroundColor, textColor, '
     '      fontDisplay, fontBody, visualDirection}, '
     '"pdfContent": problemStatement.pdfContent{problemStatement, '
@@ -261,6 +273,40 @@ async def _run_publisher(
             "timestamp": now_ms,
         },
     )
+
+    # Phase 26 D-03 / REG-01: upsert the featured charity into the Convex
+    # registry so timesFeatured increments and lastFeaturedAt is set.
+    #
+    # This is the SINGLE correct call site: BOTH the manual publish endpoint
+    # (api/review.py) AND the scheduled-publish tick (api/control.py) flow
+    # through _flip_sanity_published → webhook → _run_publisher, so the upsert
+    # fires exactly once per publish regardless of trigger path.
+    #
+    # run_id=None branch (manually-authored issues) returns above — the upsert
+    # is intentionally skipped for those (no pipeline run / no registry charity).
+    #
+    # Uses convex_mutation_safe: a registry write failure never un-finalizes the
+    # run (CLAUDE.md "Convex mutation fails → log and continue").
+    charity_name = issue.get("charityName")
+    if charity_name:
+        await convex_mutation_safe(
+            "charities:upsertFeatured",
+            {
+                "workspace_id": "eisenbalm",
+                "name": charity_name,
+                "website": issue.get("charityWebsite"),
+                "sanityCharityId": (
+                    issue.get("charitySlug")
+                    or f"charity-{slugify(charity_name)}"
+                ),
+            },
+        )
+        log.info(
+            "Publisher: charities:upsertFeatured fired for charity=%r "
+            "(timesFeatured++, lastFeaturedAt set — D-03/REG-01).",
+            charity_name,
+        )
+
     log.info(
         "Publisher: Convex writes complete (status=complete, "
         "publisher-deploy emitted)."

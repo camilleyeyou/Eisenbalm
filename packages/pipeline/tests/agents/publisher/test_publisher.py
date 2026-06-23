@@ -366,3 +366,104 @@ async def test_deploy_failure_manual_branch_does_not_crash(
 
     # run_id=None → early return before Convex writes (branch preserved).
     assert mock_convex_mutation.await_count == 0
+
+
+def _sample_groq_result_with_website() -> dict:
+    """Extended GROQ result that includes charityWebsite + charitySlug (Phase 26 D-03)."""
+    base = _sample_groq_result()
+    base["charityWebsite"] = "https://quiet.foundation"
+    base["charitySlug"] = "charity-the-quiet-foundation"
+    return base
+
+
+async def test_publisher_upserts_featured_charity(
+    monkeypatch, mock_convex_mutation, mock_vercel_trigger
+):
+    """Phase 26 D-03 / REG-01: after status=complete, _run_publisher calls
+    charities:upsertFeatured with charity name + website so timesFeatured
+    increments and lastFeaturedAt is set exactly once per publish.
+    """
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.groq_query",
+        AsyncMock(return_value=[_sample_groq_result_with_website()]),
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.upload_pdf_to_issue", AsyncMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.asyncio.sleep", AsyncMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.trigger_vercel_deploy",
+        mock_vercel_trigger,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.convex_mutation_safe",
+        mock_convex_mutation,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.get_sanity_http", lambda: MagicMock()
+    )
+
+    app = _build_fake_app()
+    await _run_publisher(app, issue_id="issue-42", issue_number=42, run_id="run-abc")
+
+    # Collect all mutation names called.
+    mutation_names = [call.args[0] for call in mock_convex_mutation.await_args_list]
+
+    # charities:upsertFeatured MUST have been called.
+    assert "charities:upsertFeatured" in mutation_names, (
+        f"Expected charities:upsertFeatured in {mutation_names}"
+    )
+
+    # Inspect the upsertFeatured call — must carry name + website (D-03).
+    upsert_call = next(
+        c for c in mock_convex_mutation.await_args_list
+        if c.args[0] == "charities:upsertFeatured"
+    )
+    upsert_args = upsert_call.args[1]
+    assert upsert_args["name"] == "The Quiet Foundation"
+    assert upsert_args["website"] == "https://quiet.foundation"
+    assert upsert_args["workspace_id"] == "eisenbalm"
+    assert "sanityCharityId" in upsert_args
+
+
+async def test_publisher_upsert_skipped_when_no_charity_name(
+    monkeypatch, mock_convex_mutation, mock_vercel_trigger
+):
+    """Phase 26 D-03: no charities:upsertFeatured if charityName is absent
+    (manually-authored issue or missing GROQ projection).
+    """
+    groq_result = _sample_groq_result()
+    groq_result.pop("charityName", None)  # simulate missing charityName
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.groq_query",
+        AsyncMock(return_value=[groq_result]),
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.upload_pdf_to_issue", AsyncMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.asyncio.sleep", AsyncMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.trigger_vercel_deploy",
+        mock_vercel_trigger,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.convex_mutation_safe",
+        mock_convex_mutation,
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.get_sanity_http", lambda: MagicMock()
+    )
+
+    app = _build_fake_app()
+    await _run_publisher(app, issue_id="issue-42", issue_number=42, run_id="run-abc")
+
+    # charities:upsertFeatured MUST NOT have been called.
+    mutation_names = [call.args[0] for call in mock_convex_mutation.await_args_list]
+    assert "charities:upsertFeatured" not in mutation_names, (
+        "charities:upsertFeatured should not be called when charityName is absent"
+    )
