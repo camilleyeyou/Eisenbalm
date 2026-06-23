@@ -2,7 +2,7 @@
 phase: 27
 slug: money-notifications
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-23
 ---
@@ -38,13 +38,17 @@ created: 2026-06-23
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 27-00-01 | 00 | 0 | RCN-01 | unit | `cd apps/web && npx vitest run __tests__/stripe-reconciliation.test.ts` | ❌ W0 | ⬜ pending |
-| 27-00-02 | 00 | 0 | NTF-01/02 | unit | `cd apps/web && npx vitest run __tests__/notifications-ledger.test.ts` | ❌ W0 | ⬜ pending |
-| 27-00-03 | 00 | 0 | D-13 | unit | `cd apps/web && npx vitest run __tests__/model-pricing-staleness.test.ts` | ❌ W0 | ⬜ pending |
-| 27-xx-RCN | — | — | RCN-01 | unit | `cd apps/web && npx vitest run __tests__/stripe-reconciliation.test.ts` | ❌ W0 | ⬜ pending |
-| 27-xx-NTF | — | — | NTF-01/02 | unit | `cd apps/web && npx vitest run __tests__/notifications-ledger.test.ts` | ❌ W0 | ⬜ pending |
-| 27-xx-PAYOUT | — | — | RCN-02 | integration (Convex) | manual — Convex dashboard / `npx convex run` | ❌ W0 | ⬜ pending |
-| 27-xx-STALE | — | — | D-13 | unit | `cd apps/web && npx vitest run __tests__/model-pricing-staleness.test.ts` | ❌ W0 | ⬜ pending |
+| 27-00-03 | 00 | 0 | RCN-01/NTF/D-13 | unit (RED scaffold) | `cd apps/web && npx vitest run __tests__/stripe-reconciliation.test.ts __tests__/notifications-ledger.test.ts __tests__/model-pricing-staleness.test.ts` | ❌ W0 → creates | ⬜ pending |
+| 27-02-01 | 02 | 2 | RCN-01 / D-13 | unit (GREEN) | `cd apps/web && npx vitest run __tests__/stripe-reconciliation.test.ts __tests__/model-pricing-staleness.test.ts` | ✅ from W0 | ⬜ pending |
+| 27-02-02 | 02 | 2 | RCN-01 | manual (Convex) | finance internalAction fee fetch — Convex dashboard | n/a | ⬜ pending |
+| 27-02-03 | 02 | 2 | RCN-02 | manual (Convex) | payouts:markPayoutSent audit log — Convex dashboard | n/a | ⬜ pending |
+| 27-03-01 | 03 | 2 | NTF-01/02 | unit (GREEN) | `cd apps/web && npx vitest run __tests__/notifications-ledger.test.ts` | ✅ from W0 | ⬜ pending |
+| 27-03-02 | 03 | 2 | NTF-01/02 | manual (Convex) | sendNotification end-to-end delivery + ledger sent | n/a | ⬜ pending |
+| 27-03-03 | 03 | 2 | NTF-01/02 | unit (codegen) | `cd convex && npx convex codegen` | n/a | ⬜ pending |
+| 27-04-01 | 04 | 3 | RCN-01 | build | `cd apps/dispatch-control && npx next build` | n/a | ⬜ pending |
+| 27-04-02 | 04 | 3 | RCN-02 | manual (UI) | /finance mark-sent inline confirm → green Sent + audit | n/a | ⬜ pending |
+| 27-05-01 | 05 | 3 | NTF-01/02 | unit (codegen) | `cd convex && npx convex codegen` | n/a | ⬜ pending |
+| 27-05-02 | 05 | 3 | NTF-01/02 | build | `cd apps/dispatch-control && npx next build` | n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -80,4 +84,4 @@ created: 2026-06-23
 - [ ] Feedback latency < 15s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved — task IDs assigned by planner (2026-06-23)
