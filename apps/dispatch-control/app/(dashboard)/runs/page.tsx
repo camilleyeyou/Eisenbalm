@@ -17,6 +17,7 @@ import BudgetAlertBanner from './_components/BudgetAlertBanner'
 import RunControlBar from './_components/RunControlBar'
 import CostRollup from './_components/CostRollup'
 import RunsTable from './_components/RunsTable'
+import ReviewQueue from './_components/ReviewQueue'
 
 export default async function RunsPage() {
   const workspace_id = await getCurrentWorkspace()
@@ -26,6 +27,8 @@ export default async function RunsPage() {
       <BudgetAlertBanner workspace_id={workspace_id} />
       <RunControlBar workspace_id={workspace_id} />
       <CostRollup workspace_id={workspace_id} />
+      {/* Phase 26 RVW-01/02: Awaiting-review queue above run history */}
+      <ReviewQueue workspace_id={workspace_id} />
       <RunsTable workspace_id={workspace_id} />
     </div>
   )
