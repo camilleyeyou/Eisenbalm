@@ -1,23 +1,25 @@
 'use client'
 /**
- * Phase 23 — OBS-04: Run detail view.
+ * Phase 23 — OBS-04 + Phase 25 RUN-04/RUN-05: Run detail view.
  *
  * Displays full information for a single run:
  *   - Run header: status, trigger source, who triggered, duration, cost
- *   - Per-agent table: agentKey, status, costUsd, durationMs, tokensIn, tokensOut, error
+ *   - Cancel Run button (running-only, two-step inline confirm — RUN-04)
+ *   - Per-agent table: agentKey, status, costUsd, durationMs, tokensIn,
+ *     tokensOut, error, Re-roll (section writers only — RUN-05)
  *   - Reconciliation panel: per-agent sum (from parseCostJson(run.cost).agents)
  *     vs. runs.cost.total — both rendered side-by-side for OBS-04 visibility
  *
  * Data sources:
  *   api.runs.byRunId       → run header + cost.total
  *   api.agentRuns.byRunId  → per-agent live status rows
- *
- * Read-only.
  */
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
+import CancelRunButton from './CancelRunButton'
+import RerollButton from './RerollButton'
 
 interface RunDetailProps {
   runId: string
@@ -50,6 +52,7 @@ const STATUS_CLASSES: Record<string, string> = {
   done: 'bg-green-100 text-green-800',
   failed: 'bg-red-100 text-red-800',
   'awaiting-review': 'bg-yellow-100 text-yellow-800',
+  cancelled: 'bg-neutral-100 text-neutral-600',
 }
 
 export default function RunDetail({ runId }: RunDetailProps) {
@@ -135,6 +138,9 @@ export default function RunDetail({ runId }: RunDetailProps) {
         </div>
       </div>
 
+      {/* Cancel Run button (running-only — RUN-04) */}
+      <CancelRunButton runId={runId} status={run.status} />
+
       {/* Per-agent table */}
       <div className="rounded-lg border border-neutral-200 bg-white overflow-x-auto">
         <div className="px-5 py-3 border-b border-neutral-100">
@@ -157,6 +163,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                 <th className="px-4 py-3 font-medium text-neutral-600">Tokens In</th>
                 <th className="px-4 py-3 font-medium text-neutral-600">Tokens Out</th>
                 <th className="px-4 py-3 font-medium text-neutral-600">Error</th>
+                <th className="px-4 py-3 font-medium text-neutral-600">Re-roll</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -189,6 +196,13 @@ export default function RunDetail({ runId }: RunDetailProps) {
                     </td>
                     <td className="px-4 py-3 text-red-600 text-xs">
                       {ar.error ?? '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <RerollButton
+                        runId={runId}
+                        agentKey={ar.agentKey}
+                        runStatus={run.status}
+                      />
                     </td>
                   </tr>
                 )
