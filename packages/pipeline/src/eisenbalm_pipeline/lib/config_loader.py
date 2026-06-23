@@ -67,6 +67,10 @@ class RunConfig:
     require_review: bool
     auto_publish: bool
     schedule_enabled: bool
+    # ── Phase 25 (RUN-06) budget cap fields ──────────────────────────────────
+    per_run_cap_usd: float = 10.0
+    monthly_cap_usd: float = 0.0        # 0 = unset/disabled
+    alert_threshold_pct: float = 80.0
     # ── Phase 24 (PRM-01 / PRM-06) newly-externalized assets ────────────────
     # Each hydrated at run start from the active prompt_versions row for the
     # matching agentKey, with per-key disk/code fallback (CFG-03). None / empty
@@ -271,6 +275,9 @@ def _build_fallback_config() -> RunConfig:
         require_review=True,
         auto_publish=False,
         schedule_enabled=False,
+        per_run_cap_usd=10.0,
+        monthly_cap_usd=0.0,
+        alert_threshold_pct=80.0,
         voice_constraints=_load_prompt_or_none("voice_constraints"),
         user_templates=user_templates,
         section_guidance=section_guidance,
@@ -388,6 +395,9 @@ async def load_run_config(http) -> RunConfig:
         require_review=pc.get("require_review", True),
         auto_publish=pc.get("auto_publish", False),
         schedule_enabled=pc.get("schedule_enabled", False),
+        per_run_cap_usd=float(pc.get("per_run_cap_usd", 10.0)),
+        monthly_cap_usd=float(pc.get("monthly_cap_usd", 0.0)),
+        alert_threshold_pct=float(pc.get("alert_threshold_pct", 80.0)),
         voice_constraints=voice_constraints,
         user_templates=user_templates,
         section_guidance=section_guidance,

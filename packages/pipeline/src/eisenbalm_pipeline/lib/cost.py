@@ -35,6 +35,8 @@ __all__ = [
     "end_run",
     "cost_payload_to_json",
     "get_recorder",
+    "set_run_cap",
+    "emit_monthly_alert",
 ]
 
 
@@ -56,6 +58,63 @@ _start_times: dict[str, float] = {}
 
 # Module-level dedup for cost-warning emissions (D-08 — one warn per run).
 _warned_runs: set[str] = set()
+
+# ── Phase 25 (RUN-06) per-run cap registry ────────────────────────────────────
+# Keyed by run_id. Populated once at run start from RunConfig.per_run_cap_usd
+# (DB-sourced). check_cap reads from here to avoid any Convex call in the hot
+# acomplete path (RESEARCH Pattern 4). Falls back to env var when absent.
+_run_caps: dict[str, float] = {}
+
+
+def set_run_cap(run_id: str, cap_usd: float) -> None:
+    """Snapshot the DB-sourced per-run cap for this run.
+
+    Called once at run start (in _start_run, after load_run_config) before
+    asyncio.create_task so check_cap can read from memory on every acomplete call.
+    The resolved cap is RunConfig.per_run_cap_usd (from pipeline_config key
+    'per_run_cap_usd'); it overrides the PIPELINE_COST_CAP_USD env var.
+
+    Thread-safe: stores an immutable float keyed by run_id.
+    """
+    _run_caps[run_id] = cap_usd
+
+
+async def emit_monthly_alert(
+    run_id: str,
+    mtd_usd: float,
+    monthly_cap: float,
+    threshold_pct: float,  # noqa: ARG001 — kept for caller symmetry; not stored
+) -> None:
+    """Fire-and-forget a cost-warning deliberationEvent with scope='monthly'.
+
+    Reuses the existing 'cost-warning' eventType (frozen union — no new type
+    added). Distinguishes monthly alerts from the per-run 70% warn via a
+    ``scope`` field in the payload.
+
+    Contract:
+      - MUST NOT raise (swallows all exceptions — never blocks a run).
+      - MUST NOT call record_cost (read-only; single-cost-writer rule preserved).
+    """
+    try:
+        percent = (mtd_usd / monthly_cap) if monthly_cap > 0 else 0.0
+        payload_json = json.dumps({
+            "scope": "monthly",
+            "mtdUsd": mtd_usd,
+            "monthlyCapUsd": monthly_cap,
+            "percentOfCap": percent,
+        })
+        from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
+        asyncio.create_task(convex_mutation_safe(
+            "deliberationEvents:insert",
+            {
+                "runId": run_id,
+                "agentId": "cost-monitor",
+                "eventType": "cost-warning",
+                "payload": payload_json,
+            },
+        ))
+    except Exception as exc:  # noqa: BLE001 — never let emit break a run
+        log.warning("monthly cost-warning emission failed: %r", exc)
 
 
 def get_recorder(run_id: str) -> "CostRecorder":
@@ -212,17 +271,23 @@ class CostRecorder:
         )
 
     async def check_cap(self) -> None:
-        """Soft-warn at 70% of PIPELINE_COST_CAP_USD; hard-raise at 100% (D-08).
+        """Soft-warn at 70% of the per-run cap; hard-raise at 100% (D-08).
+
+        Cap resolution order (no Convex read in this hot path — RESEARCH Pattern 4):
+          1. In-memory per-run cap set via ``set_run_cap(run_id, cap)`` at run start
+             (DB-sourced from RunConfig.per_run_cap_usd). This overrides the env var.
+          2. ``PIPELINE_COST_CAP_USD`` env var (fallback for runs that pre-date RUN-06
+             or whose cap was not snapshotted).
 
         Called by ``lib.openrouter_client.acomplete`` after every LLM call.
-        Reads env vars on each call so test fixtures can monkeypatch.
 
         Raises:
             CostCapExceeded: when cumulative USD >= cap. Caller's
                 ``@agent_node`` wrapper translates this into
                 ``pipelineRuns.status='failed'``.
         """
-        cap = float(os.environ.get("PIPELINE_COST_CAP_USD", "10.0"))
+        # DB-sourced cap takes precedence (snapshotted once at run start via set_run_cap).
+        cap = _run_caps.get(self.run_id, float(os.environ.get("PIPELINE_COST_CAP_USD", "10.0")))
         warn_pct = float(os.environ.get("PIPELINE_COST_WARN_PCT", "0.7"))
 
         # Total USD = sum across all per-agent records for this run_id.

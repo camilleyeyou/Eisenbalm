@@ -32,7 +32,7 @@ from eisenbalm_pipeline.api.auth import require_clerk_jwt
 from eisenbalm_pipeline.lib.config_loader import load_run_config, snapshot_config
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
-from eisenbalm_pipeline.lib.cost import begin_run
+from eisenbalm_pipeline.lib.cost import begin_run, set_run_cap
 from eisenbalm_pipeline.lib.errors import CostCapExceeded, RunCancelled
 from eisenbalm_pipeline.lib.ids import new_run_id
 from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
@@ -317,6 +317,10 @@ async def _start_run(
     # load_run_config uses convex_query internally via _cc module ref.
     run_config = await load_run_config(http)
     await snapshot_config(http, run_id, run_config)
+
+    # Phase 25 (RUN-06): snapshot the DB-sourced per-run cap so check_cap reads
+    # from memory (no Convex call inside the hot acomplete path).
+    set_run_cap(run_id, run_config.per_run_cap_usd)
 
     # Build initial DispatchState.
     initial_state: dict = {
