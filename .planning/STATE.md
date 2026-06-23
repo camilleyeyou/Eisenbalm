@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 26-03-pipeline-review-endpoints-PLAN.md
-last_updated: "2026-06-23T10:18:26.758Z"
+stopped_at: Completed 26-04-web-draft-preview-route-PLAN.md
+last_updated: "2026-06-23T11:04:30.798Z"
 progress:
   total_phases: 27
   completed_phases: 24
   total_plans: 168
-  completed_plans: 162
+  completed_plans: 164
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 26 (review-gate-charity-registry) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -190,6 +190,7 @@ Plan: 3 of 6
 | Phase 25 P05 | 45 | 3 tasks | 14 files |
 | Phase 26 P01 | 45 | 4 tasks | 17 files |
 | Phase 26 P03 | 17 | 3 tasks | 8 files |
+| Phase 26 P04 | 10 | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -492,6 +493,8 @@ Recent decisions affecting current work:
 - [Phase 26]: setAutoPublish 24h rate-limit stored as pipeline_config key auto_publish_enabled_at
 - [Phase 26]: registry upsert placed in _run_publisher step-6 so both manual publish + scheduled tick fire it once per publish via webhook chain (D-03)
 - [Phase 26]: scheduled-publish sweep inserted before STEP 2 cadence gate in pipeline_tick so due runs publish even when no new run is due (D-02)
+- [Phase 26]: IssueLayout extracted as shared component so preview page is byte-equivalent to published page — prevents render drift (D-09 fidelity)
+- [Phase 26]: frame-ancestors CSP scoped ONLY to /issue/:slug/preview in next.config.ts — public issue pages unaffected
 
 ### Pending Todos
 
@@ -572,6 +575,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T10:18:26.650Z
-Stopped at: Completed 26-03-pipeline-review-endpoints-PLAN.md
+Last session: 2026-06-23T11:04:30.787Z
+Stopped at: Completed 26-04-web-draft-preview-route-PLAN.md
 Resume file: None

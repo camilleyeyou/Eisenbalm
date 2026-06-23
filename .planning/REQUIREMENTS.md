@@ -247,15 +247,15 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **RUN-06**: Operator can set per-run and monthly budget caps with alert thresholds; the system warns at threshold and can refuse to start a run that would exceed the cap.
 
 ### Review & Publish Gate (RVW)
-- [ ] **RVW-01**: `require_review` is on by default; a finished run lands in `awaiting_review` rather than auto-publishing.
-- [ ] **RVW-02**: Operator sees a full rendered preview of the issue + deliberation + cost before deciding.
-- [ ] **RVW-03**: Operator can approve-and-publish, approve-and-schedule, re-roll sections, or reject a run from the review screen.
-- [ ] **RVW-04**: Enabling `auto_publish` requires explicit friction — it is off by default, takes a confirmation step, and is alerted + audit-logged.
-- [ ] **RVW-05**: Every factual claim (number / name / date) in a finished issue is surfaced as a checklist for human sign-off before publish.
+- [x] **RVW-01**: `require_review` is on by default; a finished run lands in `awaiting_review` rather than auto-publishing.
+- [x] **RVW-02**: Operator sees a full rendered preview of the issue + deliberation + cost before deciding.
+- [x] **RVW-03**: Operator can approve-and-publish, approve-and-schedule, re-roll sections, or reject a run from the review screen.
+- [x] **RVW-04**: Enabling `auto_publish` requires explicit friction — it is off by default, takes a confirmation step, and is alerted + audit-logged.
+- [x] **RVW-05**: Every factual claim (number / name / date) in a finished issue is surfaced as a checklist for human sign-off before publish.
 
 ### Charity Registry (REG)
-- [ ] **REG-01**: Operator can manage a charity registry with states candidate/featured/blocklisted, plus `times_featured`, `last_featured_at`, and a dedup key.
-- [ ] **REG-02**: The Scout consults the registry so an already-featured or blocklisted charity is not selected again.
+- [x] **REG-01**: Operator can manage a charity registry with states candidate/featured/blocklisted, plus `times_featured`, `last_featured_at`, and a dedup key.
+- [x] **REG-02**: The Scout consults the registry so an already-featured or blocklisted charity is not selected again.
 
 ### Donation Reconciliation (RCN)
 - [ ] **RCN-01**: Operator can see, per issue, gross sales / Stripe fees / net-to-charity for that issue's sales window (from the Stripe API + existing order records).
@@ -499,13 +499,13 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | RUN-04 | Phase 25: Run Control | Complete |
 | RUN-05 | Phase 25: Run Control | Complete |
 | RUN-06 | Phase 25: Run Control | Complete |
-| RVW-01 | Phase 26: Review Gate + Charity Registry | Pending |
-| RVW-02 | Phase 26: Review Gate + Charity Registry | Pending |
-| RVW-03 | Phase 26: Review Gate + Charity Registry | Pending |
-| RVW-04 | Phase 26: Review Gate + Charity Registry | Pending |
-| RVW-05 | Phase 26: Review Gate + Charity Registry | Pending |
-| REG-01 | Phase 26: Review Gate + Charity Registry | Pending |
-| REG-02 | Phase 26: Review Gate + Charity Registry | Pending |
+| RVW-01 | Phase 26: Review Gate + Charity Registry | Complete |
+| RVW-02 | Phase 26: Review Gate + Charity Registry | Complete |
+| RVW-03 | Phase 26: Review Gate + Charity Registry | Complete |
+| RVW-04 | Phase 26: Review Gate + Charity Registry | Complete |
+| RVW-05 | Phase 26: Review Gate + Charity Registry | Complete |
+| REG-01 | Phase 26: Review Gate + Charity Registry | Complete |
+| REG-02 | Phase 26: Review Gate + Charity Registry | Complete |
 | RCN-01 | Phase 27: Money + Notifications | Pending |
 | RCN-02 | Phase 27: Money + Notifications | Pending |
 | NTF-01 | Phase 27: Money + Notifications | Pending |
