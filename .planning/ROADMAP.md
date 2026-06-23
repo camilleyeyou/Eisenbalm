@@ -412,7 +412,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
-| 26. Review Gate + Charity Registry | 0/? | Not started | - |
+| 26. Review Gate + Charity Registry | 1/6 | In Progress|  |
 | 27. Money + Notifications | 0/? | Not started | - |
 
 ## Backlog
@@ -566,7 +566,7 @@ Plans:
   4. `auto_publish` is `false` by default; enabling it requires a modal confirmation step, is rate-limited, emits an audit log entry, and triggers an email alert to the operator — the dashboard makes the enabled state visually alarming
   5. The charity registry shows each charity's current state (candidate/featured/blocklisted), `times_featured`, and `last_featured_at`; the Scout queries the registry at run start and skips any already-featured or blocklisted charity
 **Plans**: 6 plans
-- [ ] 26-01-contracts-convex-foundation-PLAN.md — API_CONTRACTS amendments + additive Convex schema (charities/claim_checks/runs/pipelineRuns) + registry/claims/review/config functions + Wave 0 test scaffolds
+- [x] 26-01-contracts-convex-foundation-PLAN.md — API_CONTRACTS amendments + additive Convex schema (charities/claim_checks/runs/pipelineRuns) + registry/claims/review/config functions + Wave 0 test scaffolds
 - [ ] 26-02-pipeline-claims-scout-PLAN.md — Deterministic claims extractor (RVW-05) + Scout registry re-point & candidate logging (REG-02) + idempotent registry backfill script
 - [ ] 26-03-pipeline-review-endpoints-PLAN.md — FastAPI publish/schedule/reject endpoints (claims-signoff gate) + shared Sanity-flip helper + tick scheduled-publish sweep (RVW-01/03)
 - [ ] 26-04-web-draft-preview-route-PLAN.md — Token-guarded apps/web draft-preview route (previewDrafts perspective) + per-route frame-ancestors CSP (RVW-02)

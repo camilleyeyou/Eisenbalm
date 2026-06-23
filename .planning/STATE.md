@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to plan
-stopped_at: Phase 26 context gathered
-last_updated: "2026-06-23T08:23:24.757Z"
+status: Ready to execute
+stopped_at: Completed 26-01-contracts-convex-foundation-PLAN.md
+last_updated: "2026-06-23T09:49:43.096Z"
 progress:
   total_phases: 27
   completed_phases: 24
-  total_plans: 162
-  completed_plans: 160
+  total_plans: 168
+  completed_plans: 161
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 25 — run-control
+**Current focus:** Phase 26 — review-gate-charity-registry
 
 ## Current Position
 
-Phase: 26
-Plan: Not started
+Phase: 26 (review-gate-charity-registry) — EXECUTING
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -188,6 +188,7 @@ Plan: Not started
 | Phase 25-run-control P03 | 12 | 2 tasks | 6 files |
 | Phase 25-run-control P04 | 7 | 2 tasks | 6 files |
 | Phase 25 P05 | 45 | 3 tasks | 14 files |
+| Phase 26 P01 | 45 | 4 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -485,6 +486,9 @@ Recent decisions affecting current work:
 - [Phase 25-run-control]: Monthly alert reuses cost-warning eventType with scope=monthly payload — frozen deliberationEvents.eventType union untouched
 - [Phase 25]: afterEach(cleanup) must be added explicitly in vitest+jsdom for multi-describe files — auto-cleanup unreliable
 - [Phase 25]: Config page Danger Zone is copy-only in Phase 25 (no destructive actions beyond Cancel Run on /runs)
+- [Phase 26]: Dedup key uses pipe separator (name|domain) matching scout.py — no migration needed
+- [Phase 26]: allSignedOff: empty list → false (conservative approve gate prevents race window)
+- [Phase 26]: setAutoPublish 24h rate-limit stored as pipeline_config key auto_publish_enabled_at
 
 ### Pending Todos
 
@@ -565,6 +569,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T08:23:24.746Z
-Stopped at: Phase 26 context gathered
-Resume file: .planning/phases/26-review-gate-charity-registry/26-CONTEXT.md
+Last session: 2026-06-23T09:49:43.084Z
+Stopped at: Completed 26-01-contracts-convex-foundation-PLAN.md
+Resume file: None
