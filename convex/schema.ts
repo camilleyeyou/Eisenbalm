@@ -19,6 +19,7 @@ export default defineSchema({
     durationMs: v.optional(v.number()),  // PIP-12: pipeline wall-clock ms
     cost: v.optional(v.string()),         // PIP-11 + OPS-03: JSON-stringified per-agent cost summary
     awaitingHumanAt: v.optional(v.number()), // PIP-10: Unix ms when Editor gate 1 called interrupt() and paused for Andrew. Enables SLA alerting on stuck runs.
+    sanityIssueId: v.optional(v.string()), // Phase 26 — Sanity weeklyIssue _id; written by publisher so publish endpoint can resolve Sanity issue from runId
   })
     .index('by_runId', ['runId'])
     .index('by_issueNumber', ['issueNumber']),
@@ -229,6 +230,7 @@ export default defineSchema({
     cost: v.optional(v.string()),    // JSON cost summary — sourced from pipelineRuns.cost
     durationMs: v.optional(v.number()),
     cancelRequested: v.optional(v.boolean()), // Phase 25 RUN-04 cooperative cancel flag the wrapper polls
+    scheduledPublishAt: v.optional(v.number()), // Phase 26 RVW-03 / D-02: approve-and-schedule target time (Unix ms)
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId', ['runId']),
@@ -324,8 +326,16 @@ export default defineSchema({
     status: v.string(),          // "candidate" | "featured" | "blocklisted"
     timesFeatured: v.optional(v.number()),
     lastFeaturedAt: v.optional(v.number()),
+    // ── Phase 26 additive fields (API_CONTRACTS §26.1) ────────────────────────
+    dedupKey: v.optional(v.string()),        // case-folded "{name.trim().toLowerCase()}|{domain}"
+    website: v.optional(v.string()),          // raw website URL
+    domain: v.optional(v.string()),           // bare domain, case-folded
+    sanityCharityId: v.optional(v.string()),  // Sanity charity slug/_id cross-reference
+    firstSeenRunId: v.optional(v.string()),   // runId that first logged this as candidate
   })
-    .index('by_workspace', ['workspace_id']),
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_dedupKey', ['workspace_id', 'dedupKey'])  // dedup lookup
+    .index('by_workspace_status', ['workspace_id', 'status']),      // Scout filter
 
   // ── model_pricing: cost projection table (Phase 27) ─────────────────────────
   model_pricing: defineTable({
@@ -337,6 +347,22 @@ export default defineSchema({
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_workspace_model', ['workspace_id', 'model']),
+
+  // ── claim_checks: per-claim factual sign-off checklist (Phase 26 RVW-05) ─────
+  // One row per extracted factual claim from an issue run (number/date/proper_noun).
+  // The operator checks or skips each before the approve action is enabled.
+  // API_CONTRACTS §26.2
+  claim_checks: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),
+    claimIndex: v.number(),       // stable ordinal position from extraction
+    text: v.string(),             // extracted claim text
+    claimType: v.string(),        // "number" | "date" | "proper_noun"
+    context: v.string(),          // 60-char surrounding window for review
+    status: v.string(),           // "pending" | "checked" | "skipped"
+  })
+    .index('by_runId', ['runId'])
+    .index('by_workspace', ['workspace_id']),
 
   // ── review_actions: content review trail (Phase 26) ─────────────────────────
   review_actions: defineTable({
