@@ -412,7 +412,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 23. Node Wrappers + Read-Only Dashboard | 4/4 | Complete    | 2026-06-22 |
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
-| 26. Review Gate + Charity Registry | 4/6 | In Progress|  |
+| 26. Review Gate + Charity Registry | 5/6 | In Progress|  |
 | 27. Money + Notifications | 0/? | Not started | - |
 
 ## Backlog
@@ -571,7 +571,7 @@ Plans:
 - [x] 26-03-pipeline-review-endpoints-PLAN.md — FastAPI publish/schedule/reject endpoints (claims-signoff gate) + shared Sanity-flip helper + tick scheduled-publish sweep (RVW-01/03)
 - [x] 26-04-web-draft-preview-route-PLAN.md — Token-guarded apps/web draft-preview route (previewDrafts perspective) + per-route frame-ancestors CSP (RVW-02)
 - [ ] 26-05-dashboard-review-screen-PLAN.md — Review queue + preview-centric review screen (iframe + cost + claims checklist + approve/schedule/reject/re-roll) (RVW-01/02/03/05)
-- [ ] 26-06-dashboard-registry-autopublish-PLAN.md — Charity registry UI (REG-01) + friction-gated auto_publish toggle with alarming layout banner (RVW-04)
+- [x] 26-06-dashboard-registry-autopublish-PLAN.md — Charity registry UI (REG-01) + friction-gated auto_publish toggle with alarming layout banner (RVW-04)
 **UI hint**: yes
 
 ### Phase 27: Money + Notifications
