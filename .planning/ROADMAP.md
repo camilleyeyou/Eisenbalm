@@ -565,7 +565,13 @@ Plans:
   3. The factual-claims checklist surfaces every number, proper name, and date from the issue text; the operator must check off each claim (or explicitly skip) before the approve action is enabled
   4. `auto_publish` is `false` by default; enabling it requires a modal confirmation step, is rate-limited, emits an audit log entry, and triggers an email alert to the operator — the dashboard makes the enabled state visually alarming
   5. The charity registry shows each charity's current state (candidate/featured/blocklisted), `times_featured`, and `last_featured_at`; the Scout queries the registry at run start and skips any already-featured or blocklisted charity
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 26-01-contracts-convex-foundation-PLAN.md — API_CONTRACTS amendments + additive Convex schema (charities/claim_checks/runs/pipelineRuns) + registry/claims/review/config functions + Wave 0 test scaffolds
+- [ ] 26-02-pipeline-claims-scout-PLAN.md — Deterministic claims extractor (RVW-05) + Scout registry re-point & candidate logging (REG-02) + idempotent registry backfill script
+- [ ] 26-03-pipeline-review-endpoints-PLAN.md — FastAPI publish/schedule/reject endpoints (claims-signoff gate) + shared Sanity-flip helper + tick scheduled-publish sweep (RVW-01/03)
+- [ ] 26-04-web-draft-preview-route-PLAN.md — Token-guarded apps/web draft-preview route (previewDrafts perspective) + per-route frame-ancestors CSP (RVW-02)
+- [ ] 26-05-dashboard-review-screen-PLAN.md — Review queue + preview-centric review screen (iframe + cost + claims checklist + approve/schedule/reject/re-roll) (RVW-01/02/03/05)
+- [ ] 26-06-dashboard-registry-autopublish-PLAN.md — Charity registry UI (REG-01) + friction-gated auto_publish toggle with alarming layout banner (RVW-04)
 **UI hint**: yes
 
 ### Phase 27: Money + Notifications
