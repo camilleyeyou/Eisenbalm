@@ -36,11 +36,12 @@ function formatDuration(ms: number | undefined): string {
   return rem > 0 ? `${m}m ${rem}s` : `${m}m`
 }
 
-const STATUS_CLASSES: Record<string, string> = {
+export const STATUS_CLASSES: Record<string, string> = {
   running: 'bg-blue-100 text-blue-800',
   done: 'bg-green-100 text-green-800',
   failed: 'bg-red-100 text-red-800',
   'awaiting-review': 'bg-yellow-100 text-yellow-800',
+  cancelled: 'bg-neutral-100 text-neutral-600',
 }
 
 export default function RunsTable({ workspace_id }: RunsTableProps) {
