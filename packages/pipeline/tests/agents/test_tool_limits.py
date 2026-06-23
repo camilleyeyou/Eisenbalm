@@ -52,8 +52,11 @@ async def test_wrapper_emits_tool_limit_event_on_overrun(
         "eisenbalm_pipeline.agents.scout.web_search",
         AsyncMock(return_value=[]),
     ), patch(
-        "eisenbalm_pipeline.agents.scout._load_featured_keys",
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
         AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),
     ), patch(
         "eisenbalm_pipeline.agents._wrapper.convex_mutation_safe",
         mock_convex,
@@ -132,8 +135,11 @@ async def test_wrapper_event_emits_before_status_failed(
         "eisenbalm_pipeline.agents.scout.web_search",
         AsyncMock(return_value=[]),
     ), patch(
-        "eisenbalm_pipeline.agents.scout._load_featured_keys",
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
         AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),
     ), patch(
         "eisenbalm_pipeline.agents._wrapper.convex_mutation_safe",
         side_effect=_record_call,

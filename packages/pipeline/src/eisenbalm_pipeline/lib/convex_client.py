@@ -108,6 +108,27 @@ async def convex_query(http: AsyncClient, path: str, args: dict) -> Any:
     return body.get("value")
 
 
+def charities_list_for_dedup(workspace_id: str) -> list[dict]:
+    """Synchronous shim used by charity_registry.load_dedup_keys.
+
+    In production this calls the Convex ``charities:listForDedup`` query
+    synchronously via a blocking asyncio.run_coroutine_threadsafe approach —
+    but since the pipeline is already async, callers should prefer
+    ``convex_query_safe("charities:listForDedup", {"workspace_id": workspace_id})``
+    and await it.
+
+    This stub exists as a monkeypatching seam for test_scout_registry.py.
+    The real implementation is the async ``convex_query_safe`` path inside
+    ``charity_registry.load_dedup_keys``.
+
+    DO NOT call this function directly in production code.
+    """
+    raise NotImplementedError(
+        "charities_list_for_dedup is a test seam only. "
+        "Use await convex_query_safe('charities:listForDedup', ...) in production."
+    )
+
+
 async def convex_query_safe(path: str, args: dict) -> Any:
     """Fire-safe query variant (RUN-04 cancel-flag poll).
 

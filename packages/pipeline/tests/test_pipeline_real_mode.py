@@ -350,10 +350,14 @@ def _build_patches(stub_mode: bool) -> list:
         AsyncMock(return_value=fake_results),
     ))
 
-    # Scout's GROQ dedup load — return empty (no archive).
+    # Scout's registry dedup load — return empty (no archive).
     patches.append(patch(
-        "eisenbalm_pipeline.agents.scout._load_featured_keys",
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
         AsyncMock(return_value=[]),
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),  # non-None sentinel
     ))
 
     # Calibrator's GROQ for previousBonusTypes.

@@ -81,8 +81,11 @@ async def test_candidate_count(sample_dispatch_state) -> None:
             )
         ),
     ), patch(
-        "eisenbalm_pipeline.agents.scout._load_featured_keys",
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
         AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),  # non-None sentinel so the None branch isn't taken
     ), patch(
         "eisenbalm_pipeline.agents.scout.write_charity",
         AsyncMock(
@@ -130,8 +133,11 @@ async def test_dedup(sample_dispatch_state) -> None:
             )
         ),
     ), patch(
-        "eisenbalm_pipeline.agents.scout._load_featured_keys",
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
         AsyncMock(return_value=featured),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),  # non-None sentinel
     ), patch(
         "eisenbalm_pipeline.agents.scout.write_charity",
         AsyncMock(
@@ -169,8 +175,11 @@ async def test_tool_limit_exceeded(sample_dispatch_state) -> None:
         "eisenbalm_pipeline.agents.scout.web_search",
         AsyncMock(return_value=[]),
     ), patch(
-        "eisenbalm_pipeline.agents.scout._load_featured_keys",
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
         AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),  # non-None sentinel
     ):
         with pytest.raises(AgentToolCallLimitExceeded) as excinfo:
             await scout(sample_dispatch_state)

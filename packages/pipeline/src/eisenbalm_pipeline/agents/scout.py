@@ -21,24 +21,28 @@ Plan 05-07 (Advocate) emits the first 'advocate-argument' event downstream.
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
-from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
+from eisenbalm_pipeline.lib.convex_client import (
+    convex_mutation_safe,
+    convex_query,
+    get_client as get_convex_http,
+)
 from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.sanity_client import (
-    API_VERSION,
-    _dataset,
     get_client as get_sanity_http,
     write_charity,
 )
 from eisenbalm_pipeline.lib.search_client import SearchResult, web_search
+
+# Workspace ID — matches the canonical WORKSPACE_ID in config_loader.py.
+WORKSPACE_ID = "eisenbalm"
 
 log = logging.getLogger(__name__)
 
@@ -110,69 +114,47 @@ def _candidate_keys(c: CharityCandidate) -> set[str]:
     return keys
 
 
-async def _load_featured_keys() -> list[str]:
-    """One Sanity GROQ at Scout start (D-10). Returns list (JSON-safe per Pitfall 7).
+async def _load_registry_keys(http) -> list[str]:
+    """Query Convex charities registry for featured + blocklisted dedup keys.
 
-    Keys: lowercase name, lowercase slug, lowercase website-domain.
+    Replaces the previous GROQ-based ``_load_featured_keys()`` (D-03 / REG-02).
+    The Convex charities registry is now the single authoritative dedup source.
 
-    Uses Sanity's HTTP GROQ endpoint (no maintained Python SDK per Plan 04
-    sanity_client.py docstring). Endpoint:
-        GET /{API_VERSION}/data/query/{dataset}?query=<encoded GROQ>
+    The Convex query ``charities:listForDedup`` returns only featured +
+    blocklisted rows (API_CONTRACTS §26.6). Each row carries a ``dedupKey``
+    of the form ``"name_lower|domain"`` — we split on ``"|"`` to get both
+    components, matching the flat key set that ``_candidate_keys()`` produces.
 
-    On any failure (missing token, transient network, empty archive)
-    returns [] — first-run safety. Scout still writes new charities; the
-    dedup just doesn't filter anything.
+    On any Convex exception (cold environment, missing CONVEX_DEPLOY_KEY,
+    transient network) returns [] — first-run safety. Scout still runs; the
+    dedup just doesn't filter anything on the first ever run.
+
+    Args:
+        http: The httpx.AsyncClient registered for Convex. Passed in so this
+              function can be unit-tested without a live client.
+
+    Returns:
+        Sorted list of dedup key strings (JSON-serializable — no set).
     """
-    # AGT-04: dedup against FEATURED charities only (those referenced by a
-    # PUBLISHED weeklyIssue). Earlier draft queried `*[_type == "charity"]`
-    # which pulled every charity ever written to Sanity, including those from
-    # failed or test runs that never reached publish. Live-run regression
-    # caught by Plan 05-15 smoke (issue 999): after 4 retries the LLM kept
-    # suggesting the same well-known obscure charities, the dedup matched all
-    # of them as "already in Sanity", surviving collapsed to [], and Editor
-    # gate-1 failed. Now the dedup query joins through weeklyIssue.charity ref
-    # so only actually-featured charities count.
-    query = (
-        '*[_type == "weeklyIssue" && status == "published" && defined(charity)]'
-        '.charity->{ name, "slug": slug.current, website }'
-    )
-
     try:
-        http = get_sanity_http()
-    except RuntimeError as exc:
-        log.warning("Scout dedup: Sanity client unset (%r) — empty archive fallback", exc)
-        return []
-
-    token = os.environ.get("SANITY_API_TOKEN")
-    if not token:
-        log.warning("Scout dedup: SANITY_API_TOKEN unset — empty archive fallback")
-        return []
-
-    try:
-        r = await http.get(
-            f"/{API_VERSION}/data/query/{_dataset()}",
-            params={"query": query},
-            headers={"Authorization": f"Bearer {token}"},
+        rows = await convex_query(
+            http,
+            "charities:listForDedup",
+            {"workspace_id": WORKSPACE_ID},
         )
-        r.raise_for_status()
-        body = r.json()
-        rows: list[dict[str, Any]] = body.get("result") or []
-    except Exception as exc:  # noqa: BLE001 — first-run / transient-network safety
-        log.warning("Scout dedup: GROQ load failed (%r) — empty archive fallback", exc)
+        # rows: list of {dedupKey, name, domain, status}
+        keys: set[str] = set()
+        for r in rows or []:
+            if r.get("dedupKey"):
+                for part in r["dedupKey"].split("|"):
+                    if part:
+                        keys.add(part)
+        return sorted(keys)  # deterministic order for testing + JSON-safe
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "Scout registry dedup: Convex failed (%r) — empty fallback", exc
+        )
         return []
-
-    keys: set[str] = set()
-    for row in rows:
-        name = row.get("name")
-        if name:
-            keys.add(name.strip().lower())
-        slug = row.get("slug")
-        if slug:
-            keys.add(slug.strip().lower())
-        d = _domain_of(row.get("website", "") or "")
-        if d:
-            keys.add(d)
-    return sorted(keys)  # deterministic order for testing
 
 
 # ── Prompt construction ─────────────────────────────────────────────────
@@ -217,8 +199,19 @@ async def scout(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
     max_calls = 8  # mirrors @agent_node decorator parameter (AGT-18)
 
-    # 1. Archive dedup load (D-10) — single GROQ at Scout start.
-    featured_keys = await _load_featured_keys()
+    # 1. Registry dedup load (D-03 / REG-02) — Convex charities registry.
+    # Replaces the prior GROQ-based _load_featured_keys() (D-10).
+    # _load_registry_keys returns [] on any Convex failure (first-run safety).
+    try:
+        convex_http = get_convex_http()
+    except RuntimeError:
+        convex_http = None  # type: ignore[assignment]
+
+    if convex_http is not None:
+        featured_keys = await _load_registry_keys(convex_http)
+    else:
+        log.warning("Scout: Convex client unavailable — empty registry fallback")
+        featured_keys = []
     featured_set = set(featured_keys)
 
     # 2. Tavily searches with iteration-limit enforcement (AGT-18).
@@ -306,6 +299,26 @@ async def scout(state: DispatchState) -> DispatchState:
                 "selected": False,
             },
         )
+
+        # Phase 26 REG-01: log surviving candidate to Convex charity registry.
+        # Best-effort: per-candidate try/except so one failure doesn't abort the rest.
+        # Pitfall 3 (RESEARCH): upsertCandidate never downgrades featured/blocklisted.
+        try:
+            await convex_mutation_safe(
+                "charities:upsertCandidate",
+                {
+                    "workspace_id": WORKSPACE_ID,
+                    "name": candidate["name"],
+                    "website": candidate.get("website"),
+                    "runId": run_id,
+                },
+            )
+        except Exception as _upsert_exc:  # noqa: BLE001
+            log.warning(
+                "Scout: charities:upsertCandidate failed for %r (%r) — continuing",
+                candidate.get("name"),
+                _upsert_exc,
+            )
 
     # 6. AGT-17: record resolved model.
     model_versions = dict(state.get("model_versions") or {})
