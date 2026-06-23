@@ -71,6 +71,43 @@ async def publisher(state: DispatchState) -> DispatchState:
 
     issue_id = await write_issue_draft(sanity_http, state, cost_payload)
 
+    # Phase 26 RVW-05: deterministic claims extraction at run-end.
+    # Extract BEFORE flipping to awaiting-review so claims are ready the instant
+    # the run hits the review queue. Wrapped in try/except — claims are
+    # best-effort; a Convex failure here must never block the run from landing.
+    try:
+        sections = {
+            "origin_story": state.get("origin_story"),
+            "problem_statement": state.get("problem_statement"),
+            "founder_bio": state.get("founder_bio"),
+            "case_study": state.get("case_study"),
+            "bonus": state.get("bonus"),
+        }
+        claims = extract_claims(sections)
+        claim_rows = [
+            {
+                "claimIndex": c["claimIndex"],
+                "text": c["text"],
+                "claimType": c["claimType"],
+                "context": c["context"],
+            }
+            for c in claims
+        ]
+        await convex_mutation_safe(
+            "claimChecks:insertBatch",
+            {
+                "workspace_id": WORKSPACE_ID,
+                "runId": run_id,
+                "claims": claim_rows,
+            },
+        )
+    except Exception as _claims_exc:  # noqa: BLE001
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "Publisher: claims extraction/insert failed (%r) — continuing",
+            _claims_exc,
+        )
+
     await convex_mutation_safe(
         "pipelineRuns:updateStatus",
         {
