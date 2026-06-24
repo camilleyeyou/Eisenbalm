@@ -1,0 +1,1 @@
+- [Plan 28-03] tests/lib/test_vercel_client.py fails collection: `ModuleNotFoundError: No module named 'respx'`. Pre-existing, unrelated to scoring endpoint. Missing dev dependency `respx`. Out of scope.

@@ -36,6 +36,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
+from eisenbalm_pipeline.agents.qa import judge as judge_module
 from eisenbalm_pipeline.api.auth import require_clerk_jwt
 from eisenbalm_pipeline.lib import convex_client
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
@@ -276,6 +277,120 @@ async def test_run_agent(
 
     return TestRunResponse(
         output=str(content),
+        cost_usd=float(usage["usd"]),
+        tokens_in=int(usage["tokens_in"]),
+        tokens_out=int(usage["tokens_out"]),
+        model=str(usage["resolved_model"]),
+        duration_ms=duration_ms,
+    )
+
+
+# ── Phase 28 PRC-09: voice-rubric scoring (§3A.2) ─────────────────────────────
+
+
+class ScoreRequest(BaseModel):
+    """Body for ``POST /agents/{agent_key}/score`` (PRC-09, API_CONTRACTS §3A.2)."""
+
+    workspace_id: str
+    agent_key: str = Field(
+        default="",
+        description="Advisory/labeling only — the rubric is global. The path "
+        "param is canonical; the body value is echo.",
+    )
+    output: str = Field(
+        ..., description="A SINGLE arbitrary agent output to score against the rubric."
+    )
+
+
+class AxisOut(BaseModel):
+    """One per-axis score line in the response (§3A.2)."""
+
+    axis: str
+    score: float
+    pass_: bool = Field(serialization_alias="pass")
+    note: str
+
+    model_config = {"populate_by_name": True}
+
+
+class ScoreResponse(BaseModel):
+    """Voice-score response shape (API_CONTRACTS §3A.2)."""
+
+    overall: float
+    axes: list[AxisOut]
+    rationale: str
+    rubric_source: str
+    cost_usd: float
+    tokens_in: int
+    tokens_out: int
+    model: str
+    duration_ms: int
+
+
+async def _resolve_rubric(workspace_id: str) -> tuple[str, str]:
+    """Resolve the active voice rubric (Convex active row → disk fallback).
+
+    Mirrors ``config_loader._hydrate_asset``: try ``promptVersions:getActive``
+    for the global ``rubric`` asset; on a missing row OR any error, fall back to
+    the on-disk ``rubric.md`` via ``judge._load_rubric``. Returns
+    ``(rubric_text, rubric_source)`` where rubric_source is "convex" | "disk".
+    """
+    try:
+        http = convex_client.get_client()
+        row = await convex_client.convex_query(
+            http,
+            "promptVersions:getActive",
+            {"workspace_id": workspace_id, "agentKey": "rubric"},
+        )
+        if row and row.get("content"):
+            return str(row["content"]), "convex"
+    except Exception as exc:  # noqa: BLE001 — never 500-leak; fall back to disk
+        log.warning(
+            "score: active rubric fetch failed (workspace=%s) — disk fallback: %r",
+            workspace_id,
+            exc,
+        )
+    return judge_module._load_rubric(), "disk"
+
+
+@router.post("/{agent_key}/score", response_model=ScoreResponse)
+async def score_agent_output(
+    agent_key: str,
+    body: ScoreRequest,
+    _: dict = Depends(_require_operator),
+) -> ScoreResponse:
+    """Score a SINGLE agent output against the live active voice rubric (PRC-09).
+
+    Loads the SAME rubric the QA judge uses (active ``rubric`` row → disk
+    fallback) and runs ``judge.score_output`` — a single ``acomplete`` call over
+    ONE output. Advisory ONLY: it NEVER gates, and writes to NO real run / issue
+    table. Cost comes from the existing ``acomplete`` usage path (no second
+    cost recorder).
+    """
+    rubric, rubric_source = await _resolve_rubric(body.workspace_id)
+
+    started = time.monotonic()
+    voice_score, usage = await judge_module.score_output(
+        output=body.output,
+        rubric=rubric,
+        run_id=f"score-{uuid4()}",
+        agent_key=agent_key,
+    )
+    duration_ms = int((time.monotonic() - started) * 1000)
+
+    return ScoreResponse(
+        overall=float(voice_score.overall),
+        axes=[
+            AxisOut(
+                axis=a.axis,
+                score=float(a.score),
+                pass_=bool(a.pass_),
+                note=a.note,
+            )
+            for a in voice_score.axes
+        ],
+        rationale=str(voice_score.rationale),
+        rubric_source=rubric_source,
         cost_usd=float(usage["usd"]),
         tokens_in=int(usage["tokens_in"]),
         tokens_out=int(usage["tokens_out"]),
