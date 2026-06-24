@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 28-04-PLAN.md
-last_updated: "2026-06-24T12:37:48.388Z"
+stopped_at: Completed 28-02-PLAN.md
+last_updated: "2026-06-24T12:39:05.200Z"
 progress:
   total_phases: 28
-  completed_phases: 26
+  completed_phases: 27
   total_plans: 178
-  completed_plans: 175
+  completed_plans: 176
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 28 (prompt-console) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -202,6 +202,7 @@ Plan: 3 of 4
 | Phase 28-prompt-console P03 | 9 | 3 tasks | 4 files |
 | Phase 28 P01 | 8 | 3 tasks | 7 files |
 | Phase 28 P04 | 4 | 2 tasks | 4 files |
+| Phase 28 P02 | 7 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -522,6 +523,7 @@ Recent decisions affecting current work:
 - [Phase 28-prompt-console]: Plan 28-03: voice scorer reuses acomplete usage (no second cost recorder); rubric resolves active row→disk fallback; score endpoint advisory-only, no real-table writes
 - [Phase 28]: api.d.ts acceptance grep adjusted — Convex codegen uses module-reference (typeof promptVersions), so query names are not literal in api.d.ts; typed-ness confirmed via clean codegen + strict build
 - [Phase 28]: Plan 04: exported shared pipelineBaseUrl from testRunClient (DRY); compare-against-active runs the active version on demand so the default Run stays 1x (D-07); voice score is advisory-only — no disabled state references a score (D-06)
+- [Phase 28]: Plan 02: variable description+sample maps added additively next to VARIABLE_REGISTRY (shape unchanged); in-app window.confirm unsaved guard (no beforeunload, D-11); agentKey-switch confirm fires as heads-up but reset proceeds
 
 ### Pending Todos
 
@@ -603,6 +605,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-24T12:37:20.919Z
-Stopped at: Completed 28-04-PLAN.md
+Last session: 2026-06-24T12:39:05.115Z
+Stopped at: Completed 28-02-PLAN.md
 Resume file: None

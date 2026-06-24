@@ -525,14 +525,14 @@ Derived 2026-06-24 in `/gsd:plan-phase 28` from the four capability areas and lo
 
 - [x] **PRC-01**: Every editable prompt card and detail pane displays the agent's editorial role/description, sourced from a single brand-agnostic console-side descriptions map keyed by `agentKey` covering all editable keys (system prompts, `*_user` templates, six section-guidance keys, `rubric`/`voice_constraints`) (D-09)
 - [x] **PRC-02**: A "drift" badge marks prompts whose active version content differs from the seeded v1, surfaced on list cards and the detail pane (D-10, D-03)
-- [ ] **PRC-03**: An in-app unsaved-changes guard (confirm dialog + visible "unsaved changes" indicator) fires on navigate-away, `agentKey` switch, or view-toggle while the draft is dirty; no native `beforeunload` (D-11)
+- [x] **PRC-03**: An in-app unsaved-changes guard (confirm dialog + visible "unsaved changes" indicator) fires on navigate-away, `agentKey` switch, or view-toggle while the draft is dirty; no native `beforeunload` (D-11)
 - [x] **PRC-04**: The prompt list is filterable by name text, by group (`system`/`user-template`/`section-guidance`/`asset` via `groupForAgentKey`), and by drift (D-12)
 
 ### Variable tooling
 
-- [ ] **PRC-05**: Click-to-insert variable chips with tooltips, sourced from a global `{variable}→description` map keyed by variable name, pairing with `VARIABLE_REGISTRY` without changing its shape (D-13)
-- [ ] **PRC-06**: An "assembled with sample values" preview substitutes a client-side `{variable}→sampleValue` map into the draft instantly with no server call (D-14)
-- [ ] **PRC-07**: A passive "unused variable" advisory hint flags registry-allowed variables absent from the draft, without gating save (the Phase 24 unknown-var gate stays the only gate) (D-15)
+- [x] **PRC-05**: Click-to-insert variable chips with tooltips, sourced from a global `{variable}→description` map keyed by variable name, pairing with `VARIABLE_REGISTRY` without changing its shape (D-13)
+- [x] **PRC-06**: An "assembled with sample values" preview substitutes a client-side `{variable}→sampleValue` map into the draft instantly with no server call (D-14)
+- [x] **PRC-07**: A passive "unused variable" advisory hint flags registry-allowed variables absent from the draft, without gating save (the Phase 24 unknown-var gate stays the only gate) (D-15)
 
 ### The authoring loop
 
