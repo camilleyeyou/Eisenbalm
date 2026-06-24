@@ -192,3 +192,86 @@ export const setAutoPublish = mutation({
     })
   },
 })
+
+// ── Phase 27 NTF-01/02 — notification channel config (D-03/D-06) ──────────
+
+/**
+ * Set the notification channel config keys (API_CONTRACTS §27.4).
+ *
+ * Writes the `notify_*` pipeline_config keys the Plan 03 notifier reads at
+ * dispatch time. All args are optional so each Settings channel block (Slack /
+ * Email) saves ONLY its own keys — the Slack save never clobbers email keys and
+ * vice versa (the empty-arg keys are simply skipped).
+ *
+ * Channels are independently toggleable (Slack and/or email — either, both, or
+ * neither; D-03). Each provided key is upserted (JSON-encoded) and individually
+ * audit-logged with action `config:set:<key>`.
+ *
+ * Mirrors `setAutoPublish`: Clerk-JWT guard via `ctx.auth.getUserIdentity()`,
+ * inline upsert against the `by_workspace_key` index (the project's
+ * deterministic-upsert convention), and `internal.auditLog.write` audit rows.
+ */
+export const setNotificationConfig = mutation({
+  args: {
+    workspace_id: v.string(),
+    notify_email: v.optional(v.string()),
+    notify_slack_webhook_url: v.optional(v.string()),
+    notify_on_complete: v.optional(v.boolean()),
+    notify_on_failed: v.optional(v.boolean()),
+    notify_on_awaiting_review: v.optional(v.boolean()),
+    notify_on_budget: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    // ── Clerk-JWT guard ──────────────────────────────────────────────────
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthorized')
+
+    const actorId = identity.subject
+    const now = Date.now()
+    const { workspace_id, ...rest } = args
+
+    // Only the notify_* keys that were actually passed get written, so each
+    // channel block saves only its own config (Slack vs Email isolation).
+    const entries = Object.entries(rest).filter(
+      ([, value]) => value !== undefined,
+    ) as [string, string | boolean][]
+
+    for (const [key, value] of entries) {
+      const encoded = JSON.stringify(value)
+
+      // ── Upsert (inline, mirrors setAutoPublish + `upsert`) ──────────────
+      const existing = await ctx.db
+        .query('pipeline_config')
+        .withIndex('by_workspace_key', q =>
+          q.eq('workspace_id', workspace_id).eq('key', key),
+        )
+        .unique()
+
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          value: encoded,
+          updatedAt: now,
+          updatedBy: actorId,
+        })
+      } else {
+        await ctx.db.insert('pipeline_config', {
+          workspace_id,
+          key,
+          value: encoded,
+          updatedAt: now,
+          updatedBy: actorId,
+        })
+      }
+
+      // ── Audit log (one row per key) ─────────────────────────────────────
+      await ctx.runMutation(internal.auditLog.write, {
+        workspace_id,
+        actorId,
+        action: `config:set:${key}`,
+        resourceType: 'pipeline_config',
+        resourceId: key,
+        after: JSON.stringify({ [key]: value }),
+      })
+    }
+  },
+})
