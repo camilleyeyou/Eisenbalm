@@ -2214,6 +2214,216 @@ deliberationEvents, agentVotes, qaCorrections, pitchLog — unchanged.*
 
 ---
 
+## 27. Money + Notifications (Phase 27)
+
+Two operator-facing capabilities, both observe-first (no new money movement):
+financial reconciliation (RCN-01/02) and operational notifications (NTF-01/02).
+This section is the **contract-first** source of truth (CLAUDE.md D-14) — all
+Wave 1+ schema and code implement against these shapes. **All Phase 27 schema
+changes are additive.**
+
+---
+
+### §27.1 — Finance queries (RCN-01)
+
+**Convex query `finance:perIssueRevenue`** — returns one row per published issue,
+computed from **actual recorded `stripeOrders` rows** (NEVER from `model_pricing`
+estimates — `model_pricing` is projection-only, see §27 close).
+
+Return shape (per issue):
+
+```typescript
+{
+  issueNumber: number,
+  issueId: string,              // Sanity weeklyIssue _id
+  charitySlug: string,
+  charityName: string,
+  windowStart: number,          // issue.publishedAt (Unix ms)
+  windowEnd: number | null,     // next issue's publishedAt; null for the latest/open issue
+  orderCount: number,
+  grossCents: number,           // sum(stripeOrders.amountTotal)
+  feeCents: number | null,      // sum(stripeOrders.stripeFee); null until fees fetched
+  netCents: number,             // sum(stripeOrders.donationAmount) (== amountSubtotal, 100%-to-charity)
+}
+```
+
+Aggregation rules:
+- `grossCents` = sum of `stripeOrders.amountTotal` (gross charged, cents).
+- `netCents` = sum of `stripeOrders.donationAmount` (== `amountSubtotal`, the
+  100%-to-charity figure).
+- `feeCents` = sum of the cached `stripeOrders.stripeFee` (cents); `null` while
+  any contributing order's fee is unfetched.
+- Reconciliation is computed **from actuals, NEVER from `model_pricing`** (D-08).
+  `model_pricing` is a cost projection only and is rendered read-only (D-13, §27 close).
+
+**Sales-window attribution (D-10):** an order attributes to the issue whose window
+is `[issue.publishedAt, nextIssue.publishedAt)`, matched by `charitySlug`. Issues are
+ordered by `publishedAt`; each issue's window upper bound is the next issue's
+`publishedAt`. The **latest** issue's window is open: upper bound =
+`nextIssuePublishedAt ?? Date.now()`.
+
+**Unattributed orders fallback:** orders whose `(charitySlug, createdAt)` does not
+fall within any issue window (e.g. pre-launch or between-issue orders) are collected
+into an **"Unattributed orders"** bucket surfaced separately in the finance view.
+
+---
+
+### §27.2 — Stripe fee reconciliation (RCN-01, D-08)
+
+Stripe fees are fetched server-side via the **sessionId path** — the `paymentIntentId`
+field does **NOT** exist in `stripeOrders`, so fees are resolved from the session:
+
+```typescript
+const session = await stripe.checkout.sessions.retrieve(sessionId, {
+  expand: ['payment_intent.latest_charge.balance_transaction'],
+})
+const feeCents = (session.payment_intent as Stripe.PaymentIntent)
+  .latest_charge.balance_transaction.fee   // cents
+```
+
+- Stripe API version pin: `'2025-04-30.basil'`.
+- Fee value (cents) comes from `balance_transaction.fee`.
+
+**Additive cache field (frozen-shape exception):**
+
+```typescript
+stripeOrders.stripeFee: v.optional(v.number())   // cached Stripe fee in cents
+```
+
+Written **once per order** by a Convex `internalAction` (only `internalAction` may
+make external HTTP calls); subsequent reads skip the Stripe API and read the cache.
+
+**`STRIPE_SECRET_KEY` must be present in the Convex deployment environment** (the
+finance `internalAction` reads `process.env.STRIPE_SECRET_KEY` from Convex's node
+runtime — the `apps/web` Next.js env is separate and does NOT cover Convex). There is
+no fallback; the fee fetch fails silently without it.
+
+---
+
+### §27.3 — `payouts` table + mutations (RCN-02, D-11/D-12)
+
+**Additive `payouts` table:**
+
+```typescript
+payouts: defineTable({
+  workspace_id: v.string(),
+  issueNumber: v.number(),
+  issueId: v.optional(v.string()),
+  charitySlug: v.string(),
+  amount: v.number(),                                  // net cents to charity
+  status: v.union(v.literal('pending'), v.literal('sent')),
+  sentAt: v.optional(v.number()),
+  reference: v.optional(v.string()),                   // payout reference / memo
+  actor: v.optional(v.string()),                       // Clerk user who marked sent
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber'])
+  .index('by_workspace_status', ['workspace_id', 'status'])
+```
+
+**Mutation `payouts:markPayoutSent({ payoutId, reference, sentAt })`:**
+- Clerk-JWT-guarded: `ctx.auth.getUserIdentity()` (reject if null).
+- Sets `status: 'sent'`, `sentAt`, `reference`, `actor`, `updatedAt`.
+- Audit-logged via `internal.auditLog.write` with `action: 'payout:markSent'` and
+  `before`/`after` JSON of the payout row (D-12, AUD-01).
+
+**Query `payouts:listByWorkspace`** — returns all payout rows for the workspace,
+for the finance dashboard's at-a-glance payout-status view across all issues.
+
+---
+
+### §27.4 — `notificationsLedger` table + config keys (NTF-01/02, D-06/D-07)
+
+**Additive `notificationsLedger` table** (mirrors the `emailSends` idempotency pattern):
+
+```typescript
+notificationsLedger: defineTable({
+  workspace_id: v.string(),
+  runId: v.string(),                  // pipeline runId, or eventKey for budget events
+  eventType: v.string(),              // 'complete' | 'failed' | 'awaiting-review' | 'budget'
+  channel: v.string(),                // 'email' | 'slack'
+  status: v.string(),                 // 'queued' | 'sent' | 'failed' | 'skipped'
+  providerId: v.optional(v.string()), // Resend id / 'slack-<ts>'
+  sentAt: v.optional(v.number()),
+  errorMessage: v.optional(v.string()),
+  createdAt: v.number(),
+})
+  .index('by_runId_eventType_channel', ['runId', 'eventType', 'channel'])
+  .index('by_workspace_createdAt', ['workspace_id', 'createdAt'])
+```
+
+**Idempotency key (D-07):** `(runId|eventKey, eventType, channel)` — each event sends
+at most once per channel. Re-fires / retries are safe. Mirror the `emailSends`
+two-step pattern: `insertScheduled` (status `queued`) → `markSent` / `markFailed` /
+`markSkipped`. A second dispatch decision for an existing `sent` ledger row is a no-op.
+
+**`pipeline_config` keys (D-06):**
+- `notify_email` — recipient email address.
+- `notify_slack_webhook_url` — Slack incoming-webhook URL (secret).
+- `notify_on_complete` — enable flag for run-complete notifications.
+- `notify_on_failed` — enable flag for run-failed notifications.
+- `notify_on_awaiting_review` — enable flag for awaiting-review notifications.
+- `notify_on_budget` — enable flag for budget-threshold notifications.
+
+Both channels are independently toggleable (Slack and/or email — either, both, or
+neither; D-03).
+
+---
+
+### §27.5 — Notification dispatch seams (NTF-01/02, D-01/D-04/D-05)
+
+Notifications originate **Convex-side** — no new outbound HTTP egress is added to the
+Python pipeline (D-01). External sends run in an `internalAction`, dispatched via
+`scheduler.runAfter(0, …)` so the triggering mutation stays non-blocking and a
+transport failure never wedges a run's status write (D-05).
+
+- **complete / failed / awaiting-review** dispatch from `pipelineRuns:updateStatus`:
+  ```typescript
+  scheduler.runAfter(0, internal.notificationActions.sendNotification, {
+    runId, eventType: status,   // status ∈ 'complete' | 'failed' | 'awaiting-review'
+  })
+  ```
+- **budget** dispatch from the `deliberationEvents:insert` mutation when
+  `eventType === 'cost-warning'` → dispatch with `eventType: 'budget'`.
+
+The `deliberationEvents.eventType` union stays **FROZEN** (reuse the existing
+`cost-warning` literal — do NOT add new literals; D-04).
+
+---
+
+### §27.6 — Slack provider shape (NTF-01, D-02)
+
+Reuse the Phase 20 `SendEmailProvider` seam (`packages/emails`). Add a Slack
+incoming-webhook provider behind the same selection seam — do NOT fork a second
+send path. No new npm package (native `fetch`).
+
+```typescript
+// packages/emails/src/slackProvider.ts
+class SlackWebhookProvider implements SendEmailProvider {
+  constructor(private webhookUrl: string) {}
+  async send(params: SendEmailParams): Promise<{ id: string }> {
+    const res = await fetch(this.webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: params.subject + '\n' + stripHtml(params.html) }),
+    })
+    if (!res.ok) throw new Error(`slack webhook failed: ${res.status}`)
+    return { id: `slack-${Date.now()}` }
+  }
+}
+
+export function selectSlackProvider(webhookUrl: string): SendEmailProvider
+```
+
+---
+
+*All Phase 27 changes are additive. Frozen shapes: `stripeOrders` (except the additive
+`stripeFee` field), `model_pricing`, `emailSends`, and the `deliberationEvents.eventType`
+union — unchanged.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
