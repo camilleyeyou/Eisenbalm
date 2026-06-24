@@ -140,6 +140,78 @@ export const perIssueRevenue = query({
   },
 })
 
+// ── publishedIssues (query) ──────────────────────────────────────────────────
+
+/**
+ * The published-issue list that `perIssueRevenue` consumes, derived entirely
+ * from data already in Convex so the dispatch-control finance dashboard does
+ * not need its own Sanity client (dispatch-control has no Sanity dependency).
+ *
+ * Source of record: the `payouts` table — `payouts.upsertForIssue` writes one
+ * row per reconciled/published issue (issueNumber, issueId, charitySlug). The
+ * window-start `publishedAt` for each issue is approximated by the earliest
+ * `stripeOrders.createdAt` for that issue's charitySlug; if no order exists yet
+ * we fall back to the payout row's `createdAt`. `charityName` falls back to the
+ * slug (no separate name source in Convex). Rows are returned sorted by
+ * issueNumber so the caller's window math (next-issue boundary) is stable.
+ *
+ * This is intentionally an approximation of the canonical Sanity-sourced list
+ * (§27.1) — accurate for gross/net/payout reconciliation, which is what the
+ * finance view audits. The exact publish timestamp can be threaded in later
+ * once dispatch-control reads Sanity directly.
+ */
+export const publishedIssues = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const payouts = await ctx.db
+      .query('payouts')
+      .withIndex('by_workspace_issueNumber', q =>
+        q.eq('workspace_id', workspace_id),
+      )
+      .collect()
+
+    const orders = await ctx.db.query('stripeOrders').collect()
+
+    // earliest order createdAt per charitySlug → publishedAt proxy
+    const earliestBySlug = new Map<string, number>()
+    for (const o of orders) {
+      if (!o.charitySlug) continue
+      const createdAt = o.createdAt ?? 0
+      const prev = earliestBySlug.get(o.charitySlug)
+      if (prev === undefined || createdAt < prev) {
+        earliestBySlug.set(o.charitySlug, createdAt)
+      }
+    }
+
+    return payouts
+      .map(p => ({
+        issueNumber: p.issueNumber,
+        issueId: p.issueId,
+        charitySlug: p.charitySlug,
+        charityName: p.charitySlug,
+        publishedAt: earliestBySlug.get(p.charitySlug) ?? p.createdAt,
+      }))
+      .sort((a, b) => a.issueNumber - b.issueNumber)
+  },
+})
+
+// ── listModelPricing (query) ─────────────────────────────────────────────────
+
+/**
+ * Read-only `model_pricing` rows for the workspace, powering the
+ * ModelPricingCard "Projection Pricing" table + 30-day staleness badge (D-13).
+ * Projection only — NEVER used to derive reconciliation figures (D-08).
+ */
+export const listModelPricing = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    return await ctx.db
+      .query('model_pricing')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+  },
+})
+
 // ── getOrderForFee (internalQuery) ───────────────────────────────────────────
 
 /** Internal: read one order (sessionId + cached fee) for the fee-fetch action. */
