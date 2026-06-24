@@ -536,7 +536,7 @@ Derived 2026-06-24 in `/gsd:plan-phase 28` from the four capability areas and lo
 
 ### The authoring loop
 
-- [ ] **PRC-08**: A draft-vs-active side-by-side test-run compare runs the active version on demand and shows both outputs with real cost + token counts; the unsaved draft runs by default at 1× cost (D-07)
+- [x] **PRC-08**: A draft-vs-active side-by-side test-run compare runs the active version on demand and shows both outputs with real cost + token counts; the unsaved draft runs by default at 1× cost (D-07)
 - [x] **PRC-09**: A voice-rubric score on test-run output — per-axis breakdown + overall headline number + 1–2 line rationale, advisory only (never gates save/activate) — loading the live active `rubric` (disk fallback); scores the draft always and the active side when compared, showing the delta (D-04, D-05, D-06, D-08)
 
 ### Prompt source-of-truth sync
