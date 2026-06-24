@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to plan
-stopped_at: Phase 27 context gathered
-last_updated: "2026-06-23T11:50:37.455Z"
+status: Ready to execute
+stopped_at: Completed 27-00-PLAN.md
+last_updated: "2026-06-24T00:24:45.036Z"
 progress:
   total_phases: 27
   completed_phases: 25
-  total_plans: 168
-  completed_plans: 166
+  total_plans: 174
+  completed_plans: 167
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 27 — money-+-notifications
+**Current focus:** Phase 27 — money-notifications
 
 ## Current Position
 
-Phase: 27
-Plan: Not started
+Phase: 27 (money-notifications) — EXECUTING
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -193,6 +193,7 @@ Plan: Not started
 | Phase 26 P04 | 10 | 3 tasks | 9 files |
 | Phase 26 P06 | 7 | 2 tasks | 10 files |
 | Phase 26-review-gate-charity-registry P05 | 10 | 3 tasks | 9 files |
+| Phase 27 P00 | 16 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -502,6 +503,7 @@ Recent decisions affecting current work:
 - [Phase 26-05]: Review screen: slug resolution chain (?slug → sanityIssueId → runId fallback) until pipeline writes issueSlug to run metadata (TODO D-slug)
 - [Phase 26-05]: claimChecks API: type-asserted (api as any) pending npx convex dev regeneration of _generated/api.d.ts
 - [Phase 26-05]: Review inline confirm panels (not shadcn Dialog) — matches existing PromptSaveDialog convention; Dialog not installed
+- [Phase 27]: [Phase 27 Plan 00]: §27 contract written first (D-14); Slack provider reuses SendEmailProvider seam (no new npm dep); stripeFee via sessionId path (no paymentIntentId field), API 2025-04-30.basil; staleness inclusive at exactly 30 days
 
 ### Pending Todos
 
@@ -582,6 +584,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T11:50:37.443Z
-Stopped at: Phase 27 context gathered
-Resume file: .planning/phases/27-money-notifications/27-CONTEXT.md
+Last session: 2026-06-24T00:24:34.402Z
+Stopped at: Completed 27-00-PLAN.md
+Resume file: None

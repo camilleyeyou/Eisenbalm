@@ -413,7 +413,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
-| 27. Money + Notifications | 0/? | Not started | - |
+| 27. Money + Notifications | 1/6 | In Progress|  |
 
 ## Backlog
 
@@ -584,7 +584,7 @@ Plans:
   3. The `model_pricing` table view is labeled "Projection pricing (not actual cost)" and shows a staleness indicator when any row's pricing data is more than 30 days old
   4. Operator receives a Slack notification and/or email within 5 minutes of: a run completing successfully, a run failing, a run entering `awaiting_review`, or a budget threshold being crossed
 **Plans**: 6 plans
-- [ ] 27-00-contract-env-test-scaffold-PLAN.md — API_CONTRACTS §27 (contract-first), STRIPE_SECRET_KEY in Convex env, 3 Vitest RED scaffolds
+- [x] 27-00-contract-env-test-scaffold-PLAN.md — API_CONTRACTS §27 (contract-first), STRIPE_SECRET_KEY in Convex env, 3 Vitest RED scaffolds
 - [ ] 27-01-additive-schema-PLAN.md — Additive Convex schema: notificationsLedger + payouts tables, stripeOrders.stripeFee
 - [ ] 27-02-finance-backend-PLAN.md — Reconciliation/staleness helpers + convex finance (fee fetch) + payouts mutations (RCN-01/02)
 - [ ] 27-03-notifications-backend-PLAN.md — Slack provider + dispatch helper + notificationsLedger + sendNotification + trigger seams (NTF-01/02)

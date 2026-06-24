@@ -258,12 +258,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **REG-02**: The Scout consults the registry so an already-featured or blocklisted charity is not selected again.
 
 ### Donation Reconciliation (RCN)
-- [ ] **RCN-01**: Operator can see, per issue, gross sales / Stripe fees / net-to-charity for that issue's sales window (from the Stripe API + existing order records).
-- [ ] **RCN-02**: Operator can track payout status per issue so the "100% of proceeds" promise is auditable.
+- [x] **RCN-01**: Operator can see, per issue, gross sales / Stripe fees / net-to-charity for that issue's sales window (from the Stripe API + existing order records).
+- [x] **RCN-02**: Operator can track payout status per issue so the "100% of proceeds" promise is auditable.
 
 ### Notifications (NTF)
-- [ ] **NTF-01**: Operator receives a notification (Slack and/or email) on run complete, run failed, and run awaiting review.
-- [ ] **NTF-02**: Operator receives a notification when a budget threshold is hit.
+- [x] **NTF-01**: Operator receives a notification (Slack and/or email) on run complete, run failed, and run awaiting review.
+- [x] **NTF-02**: Operator receives a notification when a budget threshold is hit.
 
 ### Audit Log (AUD)
 - [x] **AUD-01**: Every config/prompt change, review decision, and kill-switch flip is recorded in an audit log with actor, timestamp, and before/after values.
@@ -506,10 +506,10 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 | RVW-05 | Phase 26: Review Gate + Charity Registry | Complete |
 | REG-01 | Phase 26: Review Gate + Charity Registry | Complete |
 | REG-02 | Phase 26: Review Gate + Charity Registry | Complete |
-| RCN-01 | Phase 27: Money + Notifications | Pending |
-| RCN-02 | Phase 27: Money + Notifications | Pending |
-| NTF-01 | Phase 27: Money + Notifications | Pending |
-| NTF-02 | Phase 27: Money + Notifications | Pending |
+| RCN-01 | Phase 27: Money + Notifications | Complete |
+| RCN-02 | Phase 27: Money + Notifications | Complete |
+| NTF-01 | Phase 27: Money + Notifications | Complete |
+| NTF-02 | Phase 27: Money + Notifications | Complete |
 
 **Coverage (v2.0):**
 - v2.0 requirements: 38 total (AUTH:4, CFG:5, OBS:5, PRM:6, RUN:6, RVW:5, REG:2, RCN:2, NTF:2, AUD:1)
