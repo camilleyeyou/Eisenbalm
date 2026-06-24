@@ -58,3 +58,21 @@ export const GROUP_LABELS: Record<EditableAgentGroup, string> = {
   'section-guidance': 'Section guidance',
   asset: 'Shared assets',
 }
+
+/**
+ * Humanize an agentKey into a Title Case display label (quick 260624-4ru).
+ *
+ * Deterministic, no deps: splits on underscores, Title-Cases each word, e.g.
+ *   editor_gate1          → "Editor Gate1"
+ *   origin_story          → "Origin Story"
+ *   founder_bio_verified  → "Founder Bio Verified"
+ *   calibrator_user       → "Calibrator User"
+ *   voice_constraints     → "Voice Constraints"
+ */
+export function humanizeAgentKey(key: string): string {
+  return key
+    .split('_')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
