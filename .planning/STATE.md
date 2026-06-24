@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 27-01-PLAN.md
-last_updated: "2026-06-24T00:28:31.573Z"
+stopped_at: Completed 27-03-PLAN.md
+last_updated: "2026-06-24T00:37:18.724Z"
 progress:
   total_phases: 27
   completed_phases: 25
   total_plans: 174
-  completed_plans: 168
+  completed_plans: 169
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 27 (money-notifications) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -195,6 +195,7 @@ Plan: 3 of 6
 | Phase 26-review-gate-charity-registry P05 | 10 | 3 tasks | 9 files |
 | Phase 27 P00 | 16 | 3 tasks | 5 files |
 | Phase 27 P01 | 4 | 1 tasks | 2 files |
+| Phase 27 P03 | 16 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -506,6 +507,7 @@ Recent decisions affecting current work:
 - [Phase 26-05]: Review inline confirm panels (not shadcn Dialog) — matches existing PromptSaveDialog convention; Dialog not installed
 - [Phase 27]: [Phase 27 Plan 00]: §27 contract written first (D-14); Slack provider reuses SendEmailProvider seam (no new npm dep); stripeFee via sessionId path (no paymentIntentId field), API 2025-04-30.basil; staleness inclusive at exactly 30 days
 - [Phase 27]: notificationsLedger.status typed as v.string() per authoritative API_CONTRACTS §27.4 (contract of record over plan's v.union illustration); schema change strictly additive per D-14
+- [Phase 27]: 27-03 NTF: Slack reuses the SendEmailProvider seam (native fetch, no new dep); notificationsLedger keyed on (runId, eventType, channel); dispatch is Convex-side only (D-01) via scheduler.runAfter(0); deliberationEvents.eventType union stays FROZEN (reuse cost-warning → budget, D-04)
 
 ### Pending Todos
 
@@ -586,6 +588,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-24T00:28:22.266Z
-Stopped at: Completed 27-01-PLAN.md
+Last session: 2026-06-24T00:37:07.253Z
+Stopped at: Completed 27-03-PLAN.md
 Resume file: None
