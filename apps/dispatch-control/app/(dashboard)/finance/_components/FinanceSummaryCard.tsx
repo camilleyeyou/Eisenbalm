@@ -9,7 +9,12 @@
  *
  * The fees cell shows "—" until the Stripe fee is resolved/cached (feeCents
  * null) and never blocks the gross/net figures.
+ *
+ * Self-fetches: finance:publishedIssues → finance:perIssueRevenue and renders
+ * the latest issue's window (highest issueNumber).
  */
+import { useQuery } from 'convex/react'
+import { api } from '@convex/_generated/api'
 
 /** A single reconciled issue row from finance:perIssueRevenue. */
 export interface IssueRevenueRow {
@@ -25,9 +30,18 @@ export interface IssueRevenueRow {
   feeCents: number | null
 }
 
+interface PerIssueRevenueResult {
+  issues: IssueRevenueRow[]
+  unattributed: {
+    orderCount: number
+    grossCents: number
+    netCents: number
+    feeCents: number | null
+  }
+}
+
 interface FinanceSummaryCardProps {
-  /** The current (latest) issue's reconciliation row, or null/undefined while loading. */
-  row: IssueRevenueRow | null | undefined
+  workspace_id: string
   /** Currency code for formatting (defaults to USD). */
   currency?: string
 }
@@ -58,9 +72,25 @@ function StatCell({
 }
 
 export default function FinanceSummaryCard({
-  row,
+  workspace_id,
   currency = 'USD',
 }: FinanceSummaryCardProps) {
+  const issues = useQuery(api.finance.publishedIssues, { workspace_id })
+  const revenue = useQuery(
+    api.finance.perIssueRevenue,
+    issues === undefined ? 'skip' : { issues },
+  ) as PerIssueRevenueResult | undefined
+
+  // The latest issue = highest issueNumber; null when no issues exist.
+  const row: IssueRevenueRow | null | undefined =
+    issues === undefined || revenue === undefined
+      ? undefined
+      : revenue.issues.length === 0
+        ? null
+        : revenue.issues.reduce((latest, r) =>
+            r.issueNumber > latest.issueNumber ? r : latest,
+          )
+
   // Skeleton state — section loads independently (no full-page spinner).
   if (row === undefined) {
     return (
