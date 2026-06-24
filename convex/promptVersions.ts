@@ -250,6 +250,38 @@ export const listActiveForWorkspace = query({
 })
 
 /**
+ * listSeedV1ForWorkspace (Phase 28, PRC-02) — one v1 SEED row per agentKey.
+ *
+ * Additive drift oracle for the /prompts console. Collects every row in the
+ * workspace via the `by_workspace` index, keeps only `version === 1` (the
+ * Phase 22 seed, which persists because saveVersion increments and never
+ * overwrites v1), and returns a compact `{ agentKey, content }[]`.
+ *
+ * A key has DRIFTED when its active content (listActiveForWorkspace) differs
+ * from its v1 seed content (this query) — a pure content compare that stays
+ * exact even after a rollback re-activates v1 (D-10). If duplicate v1 rows
+ * ever exist we keep the FIRST encountered per agentKey (defensive).
+ */
+export const listSeedV1ForWorkspace = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const rows = await ctx.db
+      .query('prompt_versions')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+
+    const byKey = new Map<string, { agentKey: string; content: string }>()
+    for (const row of rows) {
+      if (row.version !== 1) continue
+      if (byKey.has(row.agentKey)) continue
+      byKey.set(row.agentKey, { agentKey: row.agentKey, content: row.content })
+    }
+
+    return Array.from(byKey.values())
+  },
+})
+
+/**
  * getByVersion (PRM-04) — fetch one exact version via the compound index.
  */
 export const getByVersion = query({
