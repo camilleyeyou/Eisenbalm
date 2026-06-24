@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 27-02-PLAN.md
-last_updated: "2026-06-24T00:40:09.891Z"
+stopped_at: Completed 27-05-PLAN.md
+last_updated: "2026-06-24T00:49:12.185Z"
 progress:
   total_phases: 27
   completed_phases: 25
   total_plans: 174
-  completed_plans: 170
+  completed_plans: 171
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 27 (money-notifications) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -197,6 +197,7 @@ Plan: 5 of 6
 | Phase 27 P01 | 4 | 1 tasks | 2 files |
 | Phase 27 P03 | 16 | 3 tasks | 7 files |
 | Phase 27 P02 | 8 | 3 tasks | 6 files |
+| Phase 27 P05 | 5m | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -511,6 +512,7 @@ Recent decisions affecting current work:
 - [Phase 27]: 27-03 NTF: Slack reuses the SendEmailProvider seam (native fetch, no new dep); notificationsLedger keyed on (runId, eventType, channel); dispatch is Convex-side only (D-01) via scheduler.runAfter(0); deliberationEvents.eventType union stays FROZEN (reuse cost-warning → budget, D-04)
 - [Phase 27]: 27-02: Split Stripe fee internalAction into convex/financeActions.ts (use node) — Convex forbids query/mutation in a node module; finance.ts keeps perIssueRevenue+cacheFee, preserving the finance:perIssueRevenue contract name
 - [Phase 27]: 27-02: Added stripe@^21 to convex workspace deps (fee action could not bundle without it); reconcileIssue signature is (orders, fees-map) per the Wave 0 scaffold, feeCents null if any fee uncached
+- [Phase 27]: 27-05: Notification config writes notify_* keys via setNotificationConfig (Clerk-guarded, per-key audit); each Settings channel block saves only its own keys
 
 ### Pending Todos
 
@@ -591,6 +593,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-24T00:40:09.881Z
-Stopped at: Completed 27-02-PLAN.md
+Last session: 2026-06-24T00:49:02.891Z
+Stopped at: Completed 27-05-PLAN.md
 Resume file: None

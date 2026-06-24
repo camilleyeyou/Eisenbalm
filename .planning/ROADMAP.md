@@ -413,7 +413,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
-| 27. Money + Notifications | 4/6 | In Progress|  |
+| 27. Money + Notifications | 5/6 | In Progress|  |
 
 ## Backlog
 
@@ -589,4 +589,4 @@ Plans:
 - [x] 27-02-finance-backend-PLAN.md — Reconciliation/staleness helpers + convex finance (fee fetch) + payouts mutations (RCN-01/02)
 - [x] 27-03-notifications-backend-PLAN.md — Slack provider + dispatch helper + notificationsLedger + sendNotification + trigger seams (NTF-01/02)
 - [ ] 27-04-finance-ui-PLAN.md — /finance view: summary card + issue revenue table + inline payout mark-sent + projection pricing
-- [ ] 27-05-notification-settings-ui-PLAN.md — Settings Notifications subsection + setNotificationConfig mutation
+- [x] 27-05-notification-settings-ui-PLAN.md — Settings Notifications subsection + setNotificationConfig mutation
