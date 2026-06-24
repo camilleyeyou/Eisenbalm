@@ -827,6 +827,68 @@ Auth: Depends(require_clerk_jwt)   # returns {"sub": <clerkUserId>}; same guard 
 
 ---
 
+### 3A.2 — `POST /agents/{agent_key}/score`
+
+Phase 28 (PRC-09) adds a voice-rubric scoring endpoint to the FastAPI pipeline.
+It scores ONE arbitrary agent output against the live active voice rubric and
+returns a per-axis breakdown + an overall headline number + a 1-2 line
+rationale. It is the standout authoring-loop guardrail: Andrew sees WHICH voice
+axis drifted on a test-run output. **Advisory only — it never gates anything.**
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/api/agents.py
+
+POST /agents/{agent_key}/score
+Auth: Depends(_require_operator)   # same Clerk-operator gate as §3A.1 test-run
+
+# Request body (Pydantic ScoreRequest)
+{
+  "workspace_id": str,
+  "agent_key": str,                  # advisory/labeling only — the rubric is global;
+                                     #   the path param is canonical, the body is echo
+  "output": str,                     # a SINGLE arbitrary agent output (ANY agent, not
+                                     #   only the six narrative sections)
+}
+
+# Response body (Pydantic ScoreResponse)
+{
+  "overall": float,                  # headline 0-10
+  "axes": [
+    { "axis": str, "score": float, "pass": bool, "note": str }  # per-axis breakdown
+  ],
+  "rationale": str,                  # 1-2 line summary
+  "rubric_source": "convex" | "disk",# which rubric the scorer resolved
+  "cost_usd": float,
+  "tokens_in": int,
+  "tokens_out": int,
+  "model": str,
+  "duration_ms": int,
+}
+```
+
+**Isolation contract (PRC-09, mirrors §3A.1):**
+
+- Loads the SAME rubric the QA judge uses: the active `rubric` row via
+  `promptVersions:getActive` (`{workspace_id, agentKey: "rubric"}`) → on missing
+  row or any error, the on-disk `rubric.md` via `judge._load_rubric` (records
+  which in `rubric_source`). This mirrors `config_loader._hydrate_asset`'s
+  active-row-then-disk resolution.
+- A SINGLE `acomplete` call over ONE output — NOT `run_llm_judge`'s six-section
+  batch (`sections_json`) shape. The scorer is `judge.score_output`, a standalone
+  single-output call.
+- Brand-agnostic: scores against whatever the rubric defines; no Eisenbalm-hardcoded
+  axes. The per-output-applicable axes are gravity / sentiment / irony-signaling /
+  precision (cross-section-consistency and structural-variety are batch-only and
+  do not apply to a single output).
+- Advisory ONLY — it NEVER gates save/activate (D-06). It writes to NO real run /
+  issue table (no `pipelineRuns`, no `deliberationEvents`, no `agent_runs`, no
+  Sanity write).
+- Cost is read from the EXISTING `acomplete` usage path (`{tokens_in, tokens_out,
+  usd, resolved_model}`) — there is **no second cost recorder**.
+- Additive: frozen `pipelineRuns` (§4) and `deliberationEvents` are unchanged.
+
+---
+
 ## 3B. Dashboard → Pipeline (run control)
 
 Phase 25 (RUN-01..RUN-06) adds four run-control endpoints to the FastAPI pipeline
