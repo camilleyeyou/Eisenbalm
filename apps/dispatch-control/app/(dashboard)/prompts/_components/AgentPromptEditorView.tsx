@@ -12,7 +12,7 @@
  * allowedVariables come from VARIABLE_REGISTRY[agentKey] (empty array when the
  * asset has no {tokens}, e.g. voice_constraints / rubric / section guidance).
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
@@ -20,6 +20,8 @@ import { PromptEditor } from './PromptEditor'
 import VersionHistoryPanel from './VersionHistoryPanel'
 import TestRunPanel from './TestRunPanel'
 import PromptMarkerExport from './PromptMarkerExport'
+import VariableChips from './VariableChips'
+import AssembledPreview from './AssembledPreview'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
 import { descriptionFor } from './promptDescriptions'
 
@@ -74,9 +76,29 @@ export default function AgentPromptEditorView({
   // View-first: default to the read-only pane; Edit reveals the editor.
   const [editing, setEditing] = useState(false)
 
+  // PRC-03 dirty tracking: the draft diverges from the active version, or (for
+  // an unseeded key) has any content. Used by the visible indicator + guards.
+  const dirty =
+    active != null ? draft !== active.content : draft.trim().length > 0
+
+  // Keep a ref of the latest dirty value so the agentKey-switch effect (which
+  // only runs on [agentKey]) can read it without re-subscribing.
+  const dirtyRef = useRef(dirty)
+  dirtyRef.current = dirty
+  const prevAgentKeyRef = useRef(agentKey)
+
   // Seed the draft from the active version once it loads. Re-seed when the
   // agentKey changes (new editor target). Also reset to view-first on switch.
+  // PRC-03: when the prior key's draft was dirty, fire an in-app confirm before
+  // discarding it. The route has already navigated to the new key by the time
+  // this effect runs, so the reset proceeds regardless of the operator's
+  // choice — the requirement is that the CONFIRM fires (a visible heads-up that
+  // unsaved work on the previous prompt is being abandoned).
   useEffect(() => {
+    if (prevAgentKeyRef.current !== agentKey && dirtyRef.current) {
+      window.confirm('You have unsaved changes. Leave the editor?')
+    }
+    prevAgentKeyRef.current = agentKey
     setSeeded(false)
     setDraft('')
     setEditing(false)
@@ -88,6 +110,14 @@ export default function AgentPromptEditorView({
     setDraft(active?.content ?? '')
     setSeeded(true)
   }, [active, seeded])
+
+  // PRC-03: view-toggle guard — confirm before leaving the editor when dirty.
+  function requestStopEditing() {
+    if (dirty && !window.confirm('You have unsaved changes. Leave the editor?')) {
+      return
+    }
+    setEditing(false)
+  }
 
   const loading = active === undefined && !seeded
 
@@ -135,15 +165,29 @@ export default function AgentPromptEditorView({
                   ? `Editing — active v${active.version} · updated ${formatTimestamp(active.createdAt)}`
                   : 'Editing — no active version yet'}
                 {drifted && <DriftBadge />}
+                {dirty && (
+                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
+                    unsaved changes
+                  </span>
+                )}
               </span>
               <button
                 type="button"
-                onClick={() => setEditing(false)}
+                onClick={requestStopEditing}
                 className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
               >
                 Done / View
               </button>
             </div>
+
+            {/* PRC-05: click-to-insert variable chips + unused hint above the
+                editor. Append-at-end insertion (CodeMirror cursor insertion is
+                optional polish). */}
+            <VariableChips
+              allowed={allowedVariables}
+              draft={draft}
+              onInsert={t => setDraft(d => d + t)}
+            />
 
             <PromptEditor
               value={draft}
@@ -164,6 +208,10 @@ export default function AgentPromptEditorView({
               agentKey={agentKey}
               draftPrompt={draft}
             />
+
+            {/* PRC-06: instant client-side assembled-with-sample-values preview.
+                Readability aid only — no server call. */}
+            <AssembledPreview draft={draft} allowed={allowedVariables} />
           </>
         ) : active ? (
           <>
