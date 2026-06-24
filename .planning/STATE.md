@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 27-05-PLAN.md
-last_updated: "2026-06-24T00:49:12.185Z"
+stopped_at: Completed 27-04-finance-ui-PLAN.md
+last_updated: "2026-06-24T00:52:38.897Z"
 progress:
   total_phases: 27
-  completed_phases: 25
+  completed_phases: 26
   total_plans: 174
-  completed_plans: 171
+  completed_plans: 172
 ---
 
 # Project State
@@ -198,6 +198,7 @@ Plan: 6 of 6
 | Phase 27 P03 | 16 | 3 tasks | 7 files |
 | Phase 27 P02 | 8 | 3 tasks | 6 files |
 | Phase 27 P05 | 5m | 2 tasks | 6 files |
+| Phase 27 P04 | 18 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -513,6 +514,7 @@ Recent decisions affecting current work:
 - [Phase 27]: 27-02: Split Stripe fee internalAction into convex/financeActions.ts (use node) — Convex forbids query/mutation in a node module; finance.ts keeps perIssueRevenue+cacheFee, preserving the finance:perIssueRevenue contract name
 - [Phase 27]: 27-02: Added stripe@^21 to convex workspace deps (fee action could not bundle without it); reconcileIssue signature is (orders, fees-map) per the Wave 0 scaffold, feeCents null if any fee uncached
 - [Phase 27]: 27-05: Notification config writes notify_* keys via setNotificationConfig (Clerk-guarded, per-key audit); each Settings channel block saves only its own keys
+- [Phase 27]: 27-04: dispatch-control /finance derives its published-issue list from Convex (finance:publishedIssues over payouts + stripeOrders) instead of adding a Sanity client; reconciliation totals exact, window-start date is an approximation until Sanity is wired
 
 ### Pending Todos
 
@@ -593,6 +595,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-24T00:49:02.891Z
-Stopped at: Completed 27-05-PLAN.md
+Last session: 2026-06-24T00:52:38.888Z
+Stopped at: Completed 27-04-finance-ui-PLAN.md
 Resume file: None

@@ -28,7 +28,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 24: Prompt Editor + Versioning** - CodeMirror editor with `{variable}` highlighting, save-as-version, diff, activate/rollback with in-progress lock, `VOICE_CONSTRAINTS` as versioned asset, single-agent test-run (10 plans) (completed 2026-06-22)
 - [x] **Phase 25: Run Control** - On-demand trigger, kill switch, Railway cron tick, cooperative cancel, single-agent re-roll via LangGraph checkpoint, budget caps + alerts (completed 2026-06-23)
 - [x] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup (completed 2026-06-23)
-- [ ] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator
+- [x] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator (completed 2026-06-24)
 
 ## Phase Details
 
@@ -413,7 +413,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
-| 27. Money + Notifications | 5/6 | In Progress|  |
+| 27. Money + Notifications | 6/6 | Complete   | 2026-06-24 |
 
 ## Backlog
 
@@ -588,5 +588,5 @@ Plans:
 - [x] 27-01-additive-schema-PLAN.md — Additive Convex schema: notificationsLedger + payouts tables, stripeOrders.stripeFee
 - [x] 27-02-finance-backend-PLAN.md — Reconciliation/staleness helpers + convex finance (fee fetch) + payouts mutations (RCN-01/02)
 - [x] 27-03-notifications-backend-PLAN.md — Slack provider + dispatch helper + notificationsLedger + sendNotification + trigger seams (NTF-01/02)
-- [ ] 27-04-finance-ui-PLAN.md — /finance view: summary card + issue revenue table + inline payout mark-sent + projection pricing
+- [x] 27-04-finance-ui-PLAN.md — /finance view: summary card + issue revenue table + inline payout mark-sent + projection pricing
 - [x] 27-05-notification-settings-ui-PLAN.md — Settings Notifications subsection + setNotificationConfig mutation
