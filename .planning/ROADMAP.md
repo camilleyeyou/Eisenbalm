@@ -413,7 +413,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 24. Prompt Editor + Versioning | 10/10 | Complete    | 2026-06-22 |
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
-| 27. Money + Notifications | 6/6 | Complete   | 2026-06-24 |
+| 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 
 ## Backlog
 
