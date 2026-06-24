@@ -212,6 +212,44 @@ export const listForAgent = query({
 })
 
 /**
+ * listActiveForWorkspace (quick 260624-4ru) — one active row per agentKey.
+ *
+ * Additive read for the view-first /prompts list cards: collects every row in
+ * the workspace via the `by_workspace` index, filters to isActive === true, and
+ * returns one compact row per agentKey shaped for list previews. The seed
+ * guarantees exactly one active row per key; if duplicates ever exist we keep
+ * the FIRST active row encountered per agentKey (defensive). `updatedAt` maps to
+ * `createdAt` — the prompt_versions table has no separate updatedAt field, and
+ * createdAt is the version's timestamp.
+ */
+export const listActiveForWorkspace = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const rows = await ctx.db
+      .query('prompt_versions')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+
+    const byKey = new Map<
+      string,
+      { agentKey: string; version: number; content: string; updatedAt: number }
+    >()
+    for (const row of rows) {
+      if (!row.isActive) continue
+      if (byKey.has(row.agentKey)) continue
+      byKey.set(row.agentKey, {
+        agentKey: row.agentKey,
+        version: row.version,
+        content: row.content,
+        updatedAt: row.createdAt,
+      })
+    }
+
+    return Array.from(byKey.values())
+  },
+})
+
+/**
  * getByVersion (PRM-04) — fetch one exact version via the compound index.
  */
 export const getByVersion = query({
