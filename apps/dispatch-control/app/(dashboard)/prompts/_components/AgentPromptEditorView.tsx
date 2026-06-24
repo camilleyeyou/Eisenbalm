@@ -1,11 +1,13 @@
 'use client'
 /**
- * Phase 24 (PRM-01/PRM-02/PRM-03/PRM-06) — per-agent editor view.
+ * Phase 24 (PRM-01/PRM-02/PRM-03/PRM-06) + quick 260624-4ru (view-first).
  *
  * Client Component: loads the active version for the agent
- * (api.promptVersions.getActive), seeds the CodeMirror draft, and renders the
- * variable-aware PromptEditor (highlight + unknown-var save gate + save-as-
- * version) beside the VersionHistoryPanel.
+ * (api.promptVersions.getActive), seeds the CodeMirror draft, and renders a
+ * view-first read-only pane FIRST (active prompt + metadata + variable chips).
+ * An explicit Edit button reveals the variable-aware PromptEditor (highlight +
+ * unknown-var save gate + save-as-version) and TestRunPanel — all existing
+ * editing behavior preserved. VersionHistoryPanel stays mounted in both states.
  *
  * allowedVariables come from VARIABLE_REGISTRY[agentKey] (empty array when the
  * asset has no {tokens}, e.g. voice_constraints / rubric / section guidance).
@@ -24,6 +26,16 @@ interface AgentPromptEditorViewProps {
   agentKey: string
 }
 
+function formatTimestamp(ms: number): string {
+  return new Date(ms).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export default function AgentPromptEditorView({
   workspaceId,
   agentKey,
@@ -38,12 +50,15 @@ export default function AgentPromptEditorView({
 
   const [draft, setDraft] = useState('')
   const [seeded, setSeeded] = useState(false)
+  // View-first: default to the read-only pane; Edit reveals the editor.
+  const [editing, setEditing] = useState(false)
 
   // Seed the draft from the active version once it loads. Re-seed when the
-  // agentKey changes (new editor target).
+  // agentKey changes (new editor target). Also reset to view-first on switch.
   useEffect(() => {
     setSeeded(false)
     setDraft('')
+    setEditing(false)
   }, [agentKey])
 
   useEffect(() => {
@@ -87,28 +102,77 @@ export default function AgentPromptEditorView({
 
         {loading ? (
           <div className="h-64 bg-neutral-100 animate-pulse rounded" />
-        ) : (
-          <PromptEditor
-            value={draft}
-            onChange={setDraft}
-            allowedVariables={allowedVariables}
-            agentKey={agentKey}
-            workspaceId={workspaceId}
-            createdBy={user?.id}
-            onSaved={() => {
-              /* version list updates reactively via useQuery */
-            }}
-          />
-        )}
+        ) : editing ? (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-neutral-500">
+                {active
+                  ? `Editing — active v${active.version} · updated ${formatTimestamp(active.createdAt)}`
+                  : 'Editing — no active version yet'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+              >
+                Done / View
+              </button>
+            </div>
 
-        {/* Test-run the CURRENT unsaved draft (D-03) — does NOT run the
-            pipeline. Wired to the live editor draft state above. */}
-        {!loading && (
-          <TestRunPanel
-            workspaceId={workspaceId}
-            agentKey={agentKey}
-            draftPrompt={draft}
-          />
+            <PromptEditor
+              value={draft}
+              onChange={setDraft}
+              allowedVariables={allowedVariables}
+              agentKey={agentKey}
+              workspaceId={workspaceId}
+              createdBy={user?.id}
+              onSaved={() => {
+                /* version list updates reactively via useQuery */
+              }}
+            />
+
+            {/* Test-run the CURRENT unsaved draft (D-03) — does NOT run the
+                pipeline. Wired to the live editor draft state above. */}
+            <TestRunPanel
+              workspaceId={workspaceId}
+              agentKey={agentKey}
+              draftPrompt={draft}
+            />
+          </>
+        ) : active ? (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-neutral-500">
+                active v{active.version} · updated{' '}
+                {formatTimestamp(active.createdAt)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="rounded border border-neutral-900 bg-neutral-900 px-3 py-1 text-xs font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+              >
+                Edit
+              </button>
+            </div>
+
+            <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-200 bg-white p-4 font-mono text-sm text-neutral-800">
+              {active.content}
+            </pre>
+          </>
+        ) : (
+          /* EMPTY / never-seeded: loaded with no active version. */
+          <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-6 text-center">
+            <p className="text-sm text-neutral-500">
+              This prompt has not been seeded yet.
+            </p>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="rounded border border-neutral-900 bg-neutral-900 px-3 py-1 text-xs font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+            >
+              Create first version
+            </button>
+          </div>
         )}
       </div>
 
