@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@eisenbalm/emails": "workspace:*",
-    "resend": "^6.12.4"
+    "resend": "^6.12.4",
+    "stripe": "^21.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
