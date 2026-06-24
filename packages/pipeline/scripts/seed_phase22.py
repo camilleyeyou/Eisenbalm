@@ -89,6 +89,10 @@ async def _seed_agents(http: AsyncClient) -> int:
             "max_tokens": MAX_TOKENS_BY_AGENT.get(llm_key),
             "description": f"{agent_key} agent",
         }
+        # Drop None-valued optionals: the agents:upsert validator uses
+        # v.optional(v.number()), which accepts an ABSENT key but rejects an
+        # explicit null. max_tokens is None for agents with no token cap.
+        args = {k: v for k, v in args.items() if v is not None}
         await convex_mutation(http, "agents:upsert", args)
         count += 1
         print(f"  OK agents:upsert        {agent_key:18s} model={args['model']}")
