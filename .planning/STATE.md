@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 28 context gathered
-last_updated: "2026-06-24T11:34:33.029Z"
+status: Executing Phase 28
+stopped_at: Completed 28-03-PLAN.md
+last_updated: "2026-06-24T12:25:45.815Z"
 progress:
   total_phases: 28
   completed_phases: 26
-  total_plans: 174
-  completed_plans: 172
+  total_plans: 178
+  completed_plans: 173
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 27 — money-notifications
+**Current focus:** Phase 28 — prompt-console
 
 ## Current Position
 
-Phase: 27
-Plan: Not started
+Phase: 28 (prompt-console) — EXECUTING
+Plan: 1 of 4
 
 ## Performance Metrics
 
@@ -199,6 +199,7 @@ Plan: Not started
 | Phase 27 P02 | 8 | 3 tasks | 6 files |
 | Phase 27 P05 | 5m | 2 tasks | 6 files |
 | Phase 27 P04 | 18 | 2 tasks | 6 files |
+| Phase 28-prompt-console P03 | 9 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -516,6 +517,7 @@ Recent decisions affecting current work:
 - [Phase 27]: 27-02: Added stripe@^21 to convex workspace deps (fee action could not bundle without it); reconcileIssue signature is (orders, fees-map) per the Wave 0 scaffold, feeCents null if any fee uncached
 - [Phase 27]: 27-05: Notification config writes notify_* keys via setNotificationConfig (Clerk-guarded, per-key audit); each Settings channel block saves only its own keys
 - [Phase 27]: 27-04: dispatch-control /finance derives its published-issue list from Convex (finance:publishedIssues over payouts + stripeOrders) instead of adding a Sanity client; reconciliation totals exact, window-start date is an approximation until Sanity is wired
+- [Phase 28-prompt-console]: Plan 28-03: voice scorer reuses acomplete usage (no second cost recorder); rubric resolves active row→disk fallback; score endpoint advisory-only, no real-table writes
 
 ### Pending Todos
 
@@ -597,6 +599,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-24T11:34:33.016Z
-Stopped at: Phase 28 context gathered
-Resume file: .planning/phases/28-prompt-console/28-CONTEXT.md
+Last session: 2026-06-24T12:25:21.273Z
+Stopped at: Completed 28-03-PLAN.md
+Resume file: None
