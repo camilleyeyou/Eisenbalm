@@ -458,7 +458,7 @@ Plans:
 ### Phase 28: Prompt Console — Editorial Authoring
 
 **Goal:** Make dispatch-control `/prompts` a best-in-class editorial authoring console for Jesse's voice — Andrew can understand, safely edit, and validate any agent prompt before it ships. Four capability areas: (1) editorial context + safety (agent role/description on cards + detail, "edited since seed" drift badge, unsaved-changes guard, search/filter); (2) variable tooling (click-to-insert variable chips with descriptions, an assembled-with-sample-values preview, unused-variable hints); (3) the authoring loop (draft-vs-active side-by-side test-run with real cost + token count + a voice-rubric score on the output); (4) prompt source-of-truth sync (surface DB-vs-`.md` divergence and reconcile the dashboard / `.md` files / Google-Docs round-trip per a locked canonical-source decision). Voice-drift guardrails are the throughline.
-**Requirements**: TBD (derive in /gsd:plan-phase; expect PRC-* prompt-console IDs)
+**Requirements**: PRC-01..10 (derived 2026-06-24 in /gsd:plan-phase; see REQUIREMENTS.md → Prompt Console)
 **Depends on:** Phase 24 (prompt editor + versioning), Phase 27 (dashboard money/notifications surfaces), and the seeded `prompt_versions` table (30 active v1 rows)
 **Plans:** 0 plans
 

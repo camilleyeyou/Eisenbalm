@@ -517,6 +517,52 @@ Added 2026-06-21 during v2.0 roadmap creation. All 38 v2.0 requirements mapped t
 - Unmapped: 0 ✓
 - V2-PROD-01..04 deferred to future milestone (not in Phases 21-27) ✓
 
+## Prompt Console (Phase 28)
+
+Derived 2026-06-24 in `/gsd:plan-phase 28` from the four capability areas and locked decisions D-01–D-15 (see `.planning/phases/28-prompt-console/28-CONTEXT.md`). Extends the Phase 24 PRM-* prompt editor.
+
+### Editorial context + safety
+
+- [ ] **PRC-01**: Every editable prompt card and detail pane displays the agent's editorial role/description, sourced from a single brand-agnostic console-side descriptions map keyed by `agentKey` covering all editable keys (system prompts, `*_user` templates, six section-guidance keys, `rubric`/`voice_constraints`) (D-09)
+- [ ] **PRC-02**: A "drift" badge marks prompts whose active version content differs from the seeded v1, surfaced on list cards and the detail pane (D-10, D-03)
+- [ ] **PRC-03**: An in-app unsaved-changes guard (confirm dialog + visible "unsaved changes" indicator) fires on navigate-away, `agentKey` switch, or view-toggle while the draft is dirty; no native `beforeunload` (D-11)
+- [ ] **PRC-04**: The prompt list is filterable by name text, by group (`system`/`user-template`/`section-guidance`/`asset` via `groupForAgentKey`), and by drift (D-12)
+
+### Variable tooling
+
+- [ ] **PRC-05**: Click-to-insert variable chips with tooltips, sourced from a global `{variable}→description` map keyed by variable name, pairing with `VARIABLE_REGISTRY` without changing its shape (D-13)
+- [ ] **PRC-06**: An "assembled with sample values" preview substitutes a client-side `{variable}→sampleValue` map into the draft instantly with no server call (D-14)
+- [ ] **PRC-07**: A passive "unused variable" advisory hint flags registry-allowed variables absent from the draft, without gating save (the Phase 24 unknown-var gate stays the only gate) (D-15)
+
+### The authoring loop
+
+- [ ] **PRC-08**: A draft-vs-active side-by-side test-run compare runs the active version on demand and shows both outputs with real cost + token counts; the unsaved draft runs by default at 1× cost (D-07)
+- [ ] **PRC-09**: A voice-rubric score on test-run output — per-axis breakdown + overall headline number + 1–2 line rationale, advisory only (never gates save/activate) — loading the live active `rubric` (disk fallback); scores the draft always and the active side when compared, showing the delta (D-04, D-05, D-06, D-08)
+
+### Prompt source-of-truth sync
+
+- [ ] **PRC-10**: DB (`prompt_versions`) is authoritative; a copyable export renders the active version's exact `.md`-marker byte form (`<!-- PROMPT START/END -->`) for copy→commit, with no direct repo write; the client `.docx`/Google-Docs round-trip is retired for prompts (D-01, D-02, D-03)
+
+## Phase 28 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PRC-01 | Phase 28: Prompt Console | Planned |
+| PRC-02 | Phase 28: Prompt Console | Planned |
+| PRC-03 | Phase 28: Prompt Console | Planned |
+| PRC-04 | Phase 28: Prompt Console | Planned |
+| PRC-05 | Phase 28: Prompt Console | Planned |
+| PRC-06 | Phase 28: Prompt Console | Planned |
+| PRC-07 | Phase 28: Prompt Console | Planned |
+| PRC-08 | Phase 28: Prompt Console | Planned |
+| PRC-09 | Phase 28: Prompt Console | Planned |
+| PRC-10 | Phase 28: Prompt Console | Planned |
+
+**Coverage (Phase 28):**
+- Phase 28 requirements: 10 total (PRC:10)
+- Mapped to phase: 10
+- Unmapped: 0 ✓
+
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-06-21 — added v2.0 traceability (AUTH/CFG/OBS/PRM/RUN/RVW/REG/RCN/NTF/AUD → Phases 21-27)*
+*Last updated: 2026-06-24 — added PRC-01..10 (Prompt Console → Phase 28)*
