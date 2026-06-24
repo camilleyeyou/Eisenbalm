@@ -143,6 +143,7 @@ export default defineSchema({
     amountSubtotal: v.optional(v.number()),   // product subtotal in cents (excludes shipping)
     amountShipping: v.optional(v.number()),   // shipping in cents
     donationAmount: v.optional(v.number()),   // == amountSubtotal; 100%-to-charity figure
+    stripeFee: v.optional(v.number()),        // cached Stripe fee in cents (Phase 27 RCN-01, D-08)
     customerName: v.optional(v.string()),
     phone: v.optional(v.string()),
     shippingAddress: v.optional(v.object({
@@ -193,6 +194,24 @@ export default defineSchema({
     .index('by_orderId_step', ['orderId', 'step'])
     .index('by_email_step', ['email', 'step'])
     .index('by_status', ['status']),
+
+  // ── notificationsLedger: operational notification idempotency (Phase 27 NTF-01/02) ──
+  // Mirrors the emailSends idempotency pattern: insertScheduled (queued) →
+  // markSent / markFailed / markSkipped. The (runId, eventType, channel) index
+  // guarantees each event sends at most once per channel; re-fires are safe.
+  notificationsLedger: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),                  // pipeline runId, or eventKey for budget events
+    eventType: v.string(),              // 'complete' | 'failed' | 'awaiting-review' | 'budget'
+    channel: v.string(),                // 'email' | 'slack'
+    status: v.string(),                 // 'queued' | 'sent' | 'failed' | 'skipped'
+    providerId: v.optional(v.string()), // Resend id / 'slack-<ts>'
+    sentAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_runId_eventType_channel', ['runId', 'eventType', 'channel'])
+    .index('by_workspace_createdAt', ['workspace_id', 'createdAt']),
 
   // ── Mission Control v2.0 — Phase 21 ─────────────────────────────────────────
 
@@ -347,6 +366,27 @@ export default defineSchema({
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_workspace_model', ['workspace_id', 'model']),
+
+  // ── payouts: per-issue payout tracking (Phase 27 RCN-02) ─────────────────────
+  // Operator marks a payout sent (date + reference) from the finance view so the
+  // "100% of proceeds" promise is auditable across all issues. Mutations are
+  // Clerk-JWT-guarded + audit-logged (D-11/D-12, AUD-01). Tracking only — no
+  // disbursement integration this phase.
+  payouts: defineTable({
+    workspace_id: v.string(),
+    issueNumber: v.number(),
+    issueId: v.optional(v.string()),
+    charitySlug: v.string(),
+    amount: v.number(),                                  // net cents to charity
+    status: v.union(v.literal('pending'), v.literal('sent')),
+    sentAt: v.optional(v.number()),
+    reference: v.optional(v.string()),                   // payout reference / memo
+    actor: v.optional(v.string()),                       // Clerk user who marked sent
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber'])
+    .index('by_workspace_status', ['workspace_id', 'status']),
 
   // ── claim_checks: per-claim factual sign-off checklist (Phase 26 RVW-05) ─────
   // One row per extracted factual claim from an issue run (number/date/proper_noun).
