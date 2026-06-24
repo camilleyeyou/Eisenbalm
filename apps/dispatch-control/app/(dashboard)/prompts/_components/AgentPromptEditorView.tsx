@@ -19,7 +19,17 @@ import { api } from '@convex/_generated/api'
 import { PromptEditor } from './PromptEditor'
 import VersionHistoryPanel from './VersionHistoryPanel'
 import TestRunPanel from './TestRunPanel'
+import PromptMarkerExport from './PromptMarkerExport'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
+import { descriptionFor } from './promptDescriptions'
+
+function DriftBadge() {
+  return (
+    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-800">
+      edited since seed
+    </span>
+  )
+}
 
 interface AgentPromptEditorViewProps {
   workspaceId: string
@@ -47,6 +57,17 @@ export default function AgentPromptEditorView({
     workspace_id: workspaceId,
     agentKey,
   })
+
+  // PRC-02 drift: compare active content against the v1 seed for this key.
+  const seedV1 = useQuery(api.promptVersions.getByVersion, {
+    workspace_id: workspaceId,
+    agentKey,
+    version: 1,
+  })
+  const drifted =
+    active != null && seedV1 != null && active.content !== seedV1.content
+
+  const description = descriptionFor(agentKey)
 
   const [draft, setDraft] = useState('')
   const [seeded, setSeeded] = useState(false)
@@ -87,6 +108,10 @@ export default function AgentPromptEditorView({
           )}
         </div>
 
+        {description && (
+          <p className="text-sm text-neutral-500">{description}</p>
+        )}
+
         {allowedVariables.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {allowedVariables.map(name => (
@@ -105,10 +130,11 @@ export default function AgentPromptEditorView({
         ) : editing ? (
           <>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-neutral-500">
+              <span className="flex items-center gap-2 text-xs text-neutral-500">
                 {active
                   ? `Editing — active v${active.version} · updated ${formatTimestamp(active.createdAt)}`
                   : 'Editing — no active version yet'}
+                {drifted && <DriftBadge />}
               </span>
               <button
                 type="button"
@@ -142,9 +168,10 @@ export default function AgentPromptEditorView({
         ) : active ? (
           <>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-neutral-500">
+              <span className="flex items-center gap-2 text-xs text-neutral-500">
                 active v{active.version} · updated{' '}
                 {formatTimestamp(active.createdAt)}
+                {drifted && <DriftBadge />}
               </span>
               <button
                 type="button"
@@ -158,6 +185,8 @@ export default function AgentPromptEditorView({
             <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-200 bg-white p-4 font-mono text-sm text-neutral-800">
               {active.content}
             </pre>
+
+            <PromptMarkerExport content={active.content} />
           </>
         ) : (
           /* EMPTY / never-seeded: loaded with no active version. */
