@@ -460,12 +460,12 @@ Plans:
 **Goal:** Make dispatch-control `/prompts` a best-in-class editorial authoring console for Jesse's voice — Andrew can understand, safely edit, and validate any agent prompt before it ships. Four capability areas: (1) editorial context + safety (agent role/description on cards + detail, "edited since seed" drift badge, unsaved-changes guard, search/filter); (2) variable tooling (click-to-insert variable chips with descriptions, an assembled-with-sample-values preview, unused-variable hints); (3) the authoring loop (draft-vs-active side-by-side test-run with real cost + token count + a voice-rubric score on the output); (4) prompt source-of-truth sync (surface DB-vs-`.md` divergence and reconcile the dashboard / `.md` files / Google-Docs round-trip per a locked canonical-source decision). Voice-drift guardrails are the throughline.
 **Requirements**: PRC-01..10 (derived 2026-06-24 in /gsd:plan-phase; see REQUIREMENTS.md → Prompt Console)
 **Depends on:** Phase 24 (prompt editor + versioning), Phase 27 (dashboard money/notifications surfaces), and the seeded `prompt_versions` table (30 active v1 rows)
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 **Decisions:** Locked in 28-CONTEXT.md (D-01..D-15). Both open decisions resolved — (1) standalone single-output scorer loading the live active rubric (D-04); (2) DB authoritative, `.md` becomes seed-only + runtime fallback, Google-Docs round-trip retired for prompts, drift surfaced as badge + copyable `.md`-marker export (D-01/02/03).
 
 Plans:
-- [ ] 28-01-editorial-context-drift-export-PLAN.md — Wave 1: editorial descriptions map (PRC-01) + drift query/badge (PRC-02) + list search/group/drift filter (PRC-04) + copyable `.md`-marker export (PRC-10)
+- [x] 28-01-editorial-context-drift-export-PLAN.md — Wave 1: editorial descriptions map (PRC-01) + drift query/badge (PRC-02) + list search/group/drift filter (PRC-04) + copyable `.md`-marker export (PRC-10)
 - [ ] 28-02-variable-tooling-unsaved-guard-PLAN.md — Wave 2 (after 01): variable description+sample maps + click-to-insert chips (PRC-05) + assembled-with-samples preview (PRC-06) + unused-var hint (PRC-07) + in-app unsaved-changes guard (PRC-03)
 - [x] 28-03-scoring-endpoint-contract-first-PLAN.md — Wave 1: API_CONTRACTS §3A.2 (contract-first) + standalone `score_output` scorer (active rubric, disk fallback) + `POST /agents/{key}/score` + pytest (PRC-09 backend)
 - [ ] 28-04-side-by-side-compare-score-ui-PLAN.md — Wave 2 (after 03): scoreClient + active-version run helper + TestRunPanel draft-vs-active side-by-side compare + voice-score display + delta (PRC-08, PRC-09 UI)

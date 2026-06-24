@@ -523,10 +523,10 @@ Derived 2026-06-24 in `/gsd:plan-phase 28` from the four capability areas and lo
 
 ### Editorial context + safety
 
-- [ ] **PRC-01**: Every editable prompt card and detail pane displays the agent's editorial role/description, sourced from a single brand-agnostic console-side descriptions map keyed by `agentKey` covering all editable keys (system prompts, `*_user` templates, six section-guidance keys, `rubric`/`voice_constraints`) (D-09)
-- [ ] **PRC-02**: A "drift" badge marks prompts whose active version content differs from the seeded v1, surfaced on list cards and the detail pane (D-10, D-03)
+- [x] **PRC-01**: Every editable prompt card and detail pane displays the agent's editorial role/description, sourced from a single brand-agnostic console-side descriptions map keyed by `agentKey` covering all editable keys (system prompts, `*_user` templates, six section-guidance keys, `rubric`/`voice_constraints`) (D-09)
+- [x] **PRC-02**: A "drift" badge marks prompts whose active version content differs from the seeded v1, surfaced on list cards and the detail pane (D-10, D-03)
 - [ ] **PRC-03**: An in-app unsaved-changes guard (confirm dialog + visible "unsaved changes" indicator) fires on navigate-away, `agentKey` switch, or view-toggle while the draft is dirty; no native `beforeunload` (D-11)
-- [ ] **PRC-04**: The prompt list is filterable by name text, by group (`system`/`user-template`/`section-guidance`/`asset` via `groupForAgentKey`), and by drift (D-12)
+- [x] **PRC-04**: The prompt list is filterable by name text, by group (`system`/`user-template`/`section-guidance`/`asset` via `groupForAgentKey`), and by drift (D-12)
 
 ### Variable tooling
 
@@ -541,7 +541,7 @@ Derived 2026-06-24 in `/gsd:plan-phase 28` from the four capability areas and lo
 
 ### Prompt source-of-truth sync
 
-- [ ] **PRC-10**: DB (`prompt_versions`) is authoritative; a copyable export renders the active version's exact `.md`-marker byte form (`<!-- PROMPT START/END -->`) for copy→commit, with no direct repo write; the client `.docx`/Google-Docs round-trip is retired for prompts (D-01, D-02, D-03)
+- [x] **PRC-10**: DB (`prompt_versions`) is authoritative; a copyable export renders the active version's exact `.md`-marker byte form (`<!-- PROMPT START/END -->`) for copy→commit, with no direct repo write; the client `.docx`/Google-Docs round-trip is retired for prompts (D-01, D-02, D-03)
 
 ## Phase 28 Traceability
 
