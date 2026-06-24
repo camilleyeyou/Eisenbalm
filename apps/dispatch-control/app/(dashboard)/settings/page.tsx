@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic'
 
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AuditLogViewer from './_components/AuditLogViewer'
+import NotificationSettings from './_components/NotificationSettings'
 
 export default async function SettingsPage() {
   const workspace_id = await getCurrentWorkspace()
@@ -24,6 +25,11 @@ export default async function SettingsPage() {
           Workspace settings, operator roles, and secrets management — coming in Phase 28.
         </p>
       </div>
+
+      <hr className="border-neutral-200" />
+
+      {/* NTF-01/02: notification channel config (Slack / Email) */}
+      <NotificationSettings workspace_id={workspace_id} />
 
       <hr className="border-neutral-200" />
 
