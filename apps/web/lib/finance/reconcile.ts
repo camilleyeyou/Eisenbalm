@@ -110,8 +110,10 @@ export function attributeOrderToWindow(
 
   for (let i = 0; i < sorted.length; i++) {
     const issue = sorted[i]
+    if (!issue) continue
+    const next = sorted[i + 1]
     const windowStart = issue.publishedAt
-    const windowEnd = i + 1 < sorted.length ? sorted[i + 1].publishedAt : now
+    const windowEnd = next ? next.publishedAt : now
 
     if (
       order.charitySlug === issue.charitySlug &&
