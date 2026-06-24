@@ -1,4 +1,5 @@
 import { query, mutation } from './_generated/server'
+import { internal } from './_generated/api'
 import { v } from 'convex/values'
 
 export const byRunId = query({
@@ -51,5 +52,20 @@ export const updateStatus = mutation({
     if (!run) throw new Error(`Run not found: ${args.runId}`)
     const { runId, ...updates } = args
     await ctx.db.patch(run._id, updates)
+
+    // ── Phase 27 NTF-01 seam (§27.5): non-blocking operational notification ──
+    // Dispatch ONLY for the three notifiable statuses (never 'running'). Fired
+    // via scheduler.runAfter(0, …) so a transport failure never wedges the
+    // status write (D-05). All transport is Convex-side (D-01).
+    if (
+      args.status === 'complete' ||
+      args.status === 'failed' ||
+      args.status === 'awaiting-review'
+    ) {
+      await ctx.scheduler.runAfter(0, internal.notificationActions.sendNotification, {
+        runId: args.runId,
+        eventType: args.status,
+      })
+    }
   },
 })

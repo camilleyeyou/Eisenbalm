@@ -1,4 +1,5 @@
 import { query, mutation } from './_generated/server'
+import { internal } from './_generated/api'
 import { v } from 'convex/values'
 
 export const byRunId = query({
@@ -48,9 +49,22 @@ export const insert = mutation({
     sectionName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert('deliberationEvents', {
+    const id = await ctx.db.insert('deliberationEvents', {
       ...args,
       timestamp: Date.now(),
     })
+
+    // ── Phase 27 NTF-02 seam (§27.5): budget alert off the FROZEN cost-warning ──
+    // eventType. The deliberationEvents.eventType union stays FROZEN (D-04) —
+    // reuse 'cost-warning', add no literals. Maps to dispatch eventType 'budget'.
+    // Fired via scheduler.runAfter(0, …) so dispatch is non-blocking (D-05).
+    if (args.eventType === 'cost-warning') {
+      await ctx.scheduler.runAfter(0, internal.notificationActions.sendNotification, {
+        runId: args.runId,
+        eventType: 'budget',
+      })
+    }
+
+    return id
   },
 })
