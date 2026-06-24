@@ -455,6 +455,20 @@ Plans:
 - [ ] 20-04-react-email-templates-PLAN.md — Wave 3: 8 Jesse-voice React Email DRAFT templates + transactional/marketing layouts + CAN-SPAM footer + real `renderEmailStep` + Next `serverExternalPackages` (EMAIL-04/05/06/08)
 - [ ] 20-05-unsubscribe-route-and-cancellation-PLAN.md — Wave 3: `GET/POST /api/email/unsubscribe` one-click route + `unsubscribeByToken` cancellation mutation (cancels pending marketing steps only) (EMAIL-03/10)
 
+### Phase 28: Prompt Console — Editorial Authoring
+
+**Goal:** Make dispatch-control `/prompts` a best-in-class editorial authoring console for Jesse's voice — Andrew can understand, safely edit, and validate any agent prompt before it ships. Four capability areas: (1) editorial context + safety (agent role/description on cards + detail, "edited since seed" drift badge, unsaved-changes guard, search/filter); (2) variable tooling (click-to-insert variable chips with descriptions, an assembled-with-sample-values preview, unused-variable hints); (3) the authoring loop (draft-vs-active side-by-side test-run with real cost + token count + a voice-rubric score on the output); (4) prompt source-of-truth sync (surface DB-vs-`.md` divergence and reconcile the dashboard / `.md` files / Google-Docs round-trip per a locked canonical-source decision). Voice-drift guardrails are the throughline.
+**Requirements**: TBD (derive in /gsd:plan-phase; expect PRC-* prompt-console IDs)
+**Depends on:** Phase 24 (prompt editor + versioning), Phase 27 (dashboard money/notifications surfaces), and the seeded `prompt_versions` table (30 active v1 rows)
+**Plans:** 0 plans
+
+**Open decisions for /gsd:discuss-phase 28:**
+1. Rubric-scoring mechanism for the authoring loop — reuse the QA agent's scoring via a new pipeline endpoint, or a lighter standalone scoring call (backend + API_CONTRACTS § contract-first).
+2. Canonical source of truth — DB authoritative (`.md` becomes seed-only + a publish/export action) vs `.md` authoritative (DB as override + drift/import surface); and whether the client's Google-Docs round-trip is retired in favor of the dashboard.
+
+Plans:
+- [ ] TBD (run /gsd:discuss-phase 28 to lock decisions, then /gsd:plan-phase 28 to break down)
+
 ---
 
 ## v2.0 Phase Details — Mission Control Dashboard
