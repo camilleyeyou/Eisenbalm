@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from eisenbalm_pipeline.agents.qa.rules import QAFinding
 from eisenbalm_pipeline.graph.state import Narrator
@@ -196,3 +196,114 @@ async def run_llm_judge(
             )
         )
     return findings, usage["resolved_model"]
+
+
+# ── Phase 28 PRC-09: standalone single-output voice scorer ────────────────────
+# A brand-agnostic advisory scorer. It loads the SAME rubric the QA judge uses
+# (the caller passes the resolved active-or-disk rubric) but scores ONE arbitrary
+# agent output, returning a per-axis breakdown + an overall headline + a 1-2 line
+# rationale. It is NOT run_llm_judge's six-section batch shape, and it never
+# gates anything. Cost is captured inside ``acomplete`` — no second recorder.
+
+
+class VoiceAxisScore(BaseModel):
+    """One per-axis score line in a single-output voice score.
+
+    ``pass_`` carries the JSON key ``pass`` (a Python keyword) via an alias.
+    """
+
+    axis: str
+    score: float
+    pass_: bool = Field(alias="pass")
+    note: str
+
+    model_config = {"populate_by_name": True}
+
+
+class VoiceScore(BaseModel):
+    """Single-output voice score envelope (PRC-09).
+
+    ``overall`` is a 0-10 headline; ``axes`` is the per-axis breakdown;
+    ``rationale`` is a 1-2 line summary. NOT the six-section JudgeFindings shape.
+    """
+
+    overall: float = 0.0
+    axes: list[VoiceAxisScore] = Field(default_factory=list)
+    rationale: str = ""
+
+
+async def score_output(
+    *,
+    output: str,
+    rubric: str,
+    run_id: str,
+    agent_key: str = "",
+) -> tuple[VoiceScore, dict]:
+    """Score a SINGLE agent output against the supplied voice rubric.
+
+    Args:
+        output: One arbitrary agent output (ANY agent, not only the six
+            narrative sections).
+        rubric: The voice rubric text — the SAME rubric the judge uses. The
+            caller resolves the active ``rubric`` row (disk ``rubric.md``
+            fallback) and passes it in, so this function does no I/O.
+        run_id: Transient run id (``score-{uuid4()}``) — required by
+            ``acomplete`` for cost recording. Writes to NO real table.
+        agent_key: Advisory/labeling only — the rubric is global.
+
+    Returns:
+        ``(voice_score, usage)`` where ``usage`` is the existing ``acomplete``
+        usage dict (``{tokens_in, tokens_out, usd, resolved_model}``). Cost is
+        captured inside ``acomplete`` — there is no second cost recorder.
+
+    This is a SINGLE ``acomplete`` call over ONE output — NOT the six-section
+    ``sections_json`` payload ``run_llm_judge`` sends.
+    """
+    label = f" (agent: {agent_key})" if agent_key else ""
+    messages = [
+        {"role": "system", "content": rubric},
+        {
+            "role": "user",
+            "content": (
+                "Score the SINGLE agent output below against this voice rubric"
+                f"{label}. Return JSON VoiceScore with:\n"
+                "  - `overall`: a 0-10 headline score for the output's voice fidelity.\n"
+                "  - `axes`: a per-axis breakdown — one entry per applicable rubric "
+                "axis, each with `axis` (the axis name), `score` (0-10), `pass` "
+                "(boolean), and `note` (a 1-line observation).\n"
+                "  - `rationale`: a 1-2 line summary of where the voice held or drifted.\n"
+                "Score against whatever axes the rubric defines — do not invent axes.\n\n"
+                f"OUTPUT:\n{output}"
+            ),
+        },
+    ]
+
+    result_obj, usage = await acomplete(
+        agent_id="qa",
+        run_id=run_id,
+        messages=messages,
+        response_format=VoiceScore,
+    )
+
+    # Normalize like run_llm_judge: with_structured_output returns a Pydantic
+    # instance; FakeOpenRouterClient (stub mode) may return a dict-like or a
+    # model_construct'd instance with empty defaults.
+    if isinstance(result_obj, VoiceScore):
+        voice_score = result_obj
+    elif isinstance(result_obj, dict):
+        voice_score = VoiceScore(**result_obj)
+    elif hasattr(result_obj, "overall"):
+        # A Pydantic-ish instance from another path — re-validate defensively.
+        voice_score = VoiceScore(
+            overall=float(getattr(result_obj, "overall", 0.0) or 0.0),
+            axes=[
+                a if isinstance(a, VoiceAxisScore) else VoiceAxisScore(**a)
+                for a in (getattr(result_obj, "axes", []) or [])
+            ],
+            rationale=str(getattr(result_obj, "rationale", "") or ""),
+        )
+    else:
+        # Stub mode / empty — deterministic minimal score so offline tests pass.
+        voice_score = VoiceScore()
+
+    return voice_score, usage
