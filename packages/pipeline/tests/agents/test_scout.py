@@ -161,6 +161,91 @@ async def test_dedup(sample_dispatch_state) -> None:
     assert result["featured_charity_keys"] == featured
 
 
+async def test_empty_then_populated_retry(sample_dispatch_state) -> None:
+    """Corrective-retry: first acomplete returns empty candidates, second returns 3.
+
+    Scout must call acomplete exactly twice and return the populated batch.
+    AGT-17: the retry's resolved_model is recorded in model_versions.
+    """
+    USAGE = {
+        "tokens_in": 100,
+        "tokens_out": 50,
+        "usd": 0.01,
+        "resolved_model": "anthropic/claude-haiku-4-5",
+    }
+    empty_batch = ScoutBatchOutput(candidates=[])
+    populated_batch = ScoutBatchOutput(
+        candidates=[_make_candidate(f"Org {i}", f"https://org{i}.example") for i in range(3)]
+    )
+
+    acomplete_mock = AsyncMock(side_effect=[(empty_batch, USAGE), (populated_batch, USAGE)])
+
+    with patch(
+        "eisenbalm_pipeline.agents.scout.web_search",
+        AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.acomplete",
+        acomplete_mock,
+    ), patch(
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
+        AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.write_charity",
+        AsyncMock(
+            side_effect=lambda http, c: f"charity-{c['name'].lower().replace(' ', '-')}"
+        ),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.convex_mutation_safe",
+        AsyncMock(),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_sanity_http",
+        return_value=None,
+    ):
+        result = await scout(sample_dispatch_state)
+
+    assert acomplete_mock.call_count == 2, "Scout must call acomplete exactly twice on empty-then-retry"
+    assert len(result["candidates"]) == 3
+    assert result["model_versions"]["scout"] == "anthropic/claude-haiku-4-5"
+
+
+async def test_empty_twice_raises_runtimeerror(sample_dispatch_state) -> None:
+    """Corrective-retry: both acomplete calls return empty candidates.
+
+    Scout must raise a descriptive RuntimeError (not pydantic ValidationError)
+    and call acomplete exactly twice.
+    """
+    USAGE = {
+        "tokens_in": 100,
+        "tokens_out": 50,
+        "usd": 0.01,
+        "resolved_model": "anthropic/claude-haiku-4-5",
+    }
+    empty_batch = ScoutBatchOutput(candidates=[])
+
+    acomplete_mock = AsyncMock(side_effect=[(empty_batch, USAGE), (empty_batch, USAGE)])
+
+    with patch(
+        "eisenbalm_pipeline.agents.scout.web_search",
+        AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.acomplete",
+        acomplete_mock,
+    ), patch(
+        "eisenbalm_pipeline.agents.scout._load_registry_keys",
+        AsyncMock(return_value=[]),
+    ), patch(
+        "eisenbalm_pipeline.agents.scout.get_convex_http",
+        return_value=object(),
+    ):
+        with pytest.raises(RuntimeError):
+            await scout(sample_dispatch_state)
+
+    assert acomplete_mock.call_count == 2, "Scout must call acomplete exactly twice before giving up"
+
+
 async def test_tool_limit_exceeded(sample_dispatch_state) -> None:
     """AGT-18: Scout raises AgentToolCallLimitExceeded when web_search budget exceeded.
 
