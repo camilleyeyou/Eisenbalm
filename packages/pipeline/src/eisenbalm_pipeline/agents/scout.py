@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
@@ -77,20 +77,13 @@ class ScoutBatchOutput(BaseModel):
 
     candidates: list[CharityCandidate] = Field(
         default_factory=list,
-        description="3-5 candidate charities (AGT-03) — MUST emit at least 1",
+        description=(
+            "3-5 candidate charities (AGT-03); the empty-list case is handled "
+            "by a corrective retry in scout(), not a parse-time validator. "
+            "Structured-output parse runs the validator inside the OpenAI SDK, "
+            "so empty-handling must be explicit in scout(), not relied upon here."
+        ),
     )
-
-    @field_validator("candidates")
-    @classmethod
-    def _at_least_one(cls, v: list) -> list:
-        # AGT-03 contract: Scout must surface candidates. minItems can't live
-        # in the JSON schema (Anthropic rejects it), so enforced post-parse.
-        # Empty list triggers acomplete's regenerate-once retry.
-        if not v:
-            raise ValueError(
-                "Scout must surface at least 1 candidate (got 0)"
-            )
-        return v
 
 
 # ── Dedup helpers (AGT-04) ───────────────────────────────────────────────
@@ -247,13 +240,52 @@ async def scout(state: DispatchState) -> DispatchState:
     # Defensive shape extraction: stub-mode returns model_construct() (empty
     # candidates list); real mode returns a populated ScoutBatchOutput.
     # Tests also exercise both paths.
-    candidates_raw: list[Any]
-    if hasattr(batch_out, "candidates"):
-        candidates_raw = list(batch_out.candidates or [])
-    elif isinstance(batch_out, dict):
-        candidates_raw = list(batch_out.get("candidates") or [])
-    else:
-        candidates_raw = []
+    def _extract_candidates(out: Any) -> list[Any]:
+        """Extract raw candidates list from an acomplete return value."""
+        if hasattr(out, "candidates"):
+            return list(out.candidates or [])
+        if isinstance(out, dict):
+            return list(out.get("candidates") or [])
+        return []
+
+    candidates_raw: list[Any] = _extract_candidates(batch_out)
+
+    # Corrective retry: when the LLM returns zero candidates, retry ONCE with
+    # a strengthened instruction. This must live here (not in acomplete) because
+    # structured-output parse runs the validator inside the SDK — so an empty
+    # list would escape acomplete's error path entirely and surface as a
+    # ValidationError mid-parse. Making the check explicit here keeps the
+    # failure recoverable and surfaces a clear RuntimeError if unrecoverable.
+    if not candidates_raw:
+        log.warning(
+            "Scout (run %s): LLM returned zero candidates — retrying once with "
+            "strengthened instruction.",
+            run_id,
+        )
+        retry_messages = messages + [
+            {
+                "role": "user",
+                "content": (
+                    "Your previous response contained zero charity candidates. "
+                    "You MUST extract at least 3 distinct candidate charities from "
+                    "the Tavily search results already provided above. "
+                    "Do not add new searches — parse the existing results and return "
+                    "a populated candidates list now."
+                ),
+            }
+        ]
+        batch_out, usage = await acomplete(
+            agent_id="scout",
+            run_id=run_id,
+            messages=retry_messages,
+            response_format=ScoutBatchOutput,
+        )
+        candidates_raw = _extract_candidates(batch_out)
+        if not candidates_raw:
+            raise RuntimeError(
+                f"Scout: LLM returned zero charity candidates after one corrective "
+                f"retry (run {run_id}); Tavily surfaced {len(tavily_results)} results"
+            )
 
     # 4. Python-side dedup (defensive — model may ignore the system rule).
     surviving: list[dict] = []
