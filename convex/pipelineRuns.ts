@@ -53,6 +53,21 @@ export const updateStatus = mutation({
     const { runId, ...updates } = args
     await ctx.db.patch(run._id, updates)
 
+    // ── Mirror status into the dashboard runs row (schema.ts line 246:
+    // "mirrors pipelineRuns.status; updated alongside it"). Null-guard: skip
+    // silently if the runs row doesn't exist (legacy/test runIds) — the
+    // pipelineRuns patch above must always succeed regardless. ──────────────
+    const dashboardRun = await ctx.db
+      .query('runs')
+      .withIndex('by_runId', q => q.eq('runId', args.runId))
+      .first()
+    if (dashboardRun) {
+      await ctx.db.patch(dashboardRun._id, {
+        status: args.status,
+        ...(args.completedAt !== undefined ? { completedAt: args.completedAt } : {}),
+      })
+    }
+
     // ── Phase 27 NTF-01 seam (§27.5): non-blocking operational notification ──
     // Dispatch ONLY for the three notifiable statuses (never 'running'). Fired
     // via scheduler.runAfter(0, …) so a transport failure never wedges the
