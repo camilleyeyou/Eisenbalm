@@ -25,6 +25,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient
 
 from eisenbalm_pipeline.api import agents, control, health, review, runs, webhooks
@@ -140,6 +141,31 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, title="Eisenbalm Pipeline")
+
+# CORS for the dispatch-control dashboard (a browser app on a different Vercel
+# origin) calling /agents/{key}/test-run, /agents/{key}/score, /pipeline/run,
+# /runs/*, and /review with a Clerk `Authorization: Bearer` token.
+#
+# allow_credentials=True forbids a wildcard "*" origin — Starlette will NOT echo
+# "*" when credentials are allowed — so allow_origins MUST be an explicit list.
+# The dashboard sends an Authorization: Bearer Clerk token, hence
+# allow_headers=["*"]. Origins are read from DASHBOARD_ALLOWED_ORIGINS
+# (comma-separated), defaulting to http://localhost:3000 when unset/blank.
+_dashboard_origins = [
+    origin.strip()
+    for origin in os.environ.get("DASHBOARD_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if not _dashboard_origins:
+    _dashboard_origins = ["http://localhost:3000"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_dashboard_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(runs.router)
 app.include_router(webhooks.router)
 app.include_router(health.router)
