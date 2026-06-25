@@ -49,6 +49,7 @@ Copy `packages/pipeline/.env.example` to `packages/pipeline/.env` and fill in re
 | `EISENBALM_STUB_MODE` | `true` in Phase 4 (default if unset). Phase 5 flips the default. Controls whether agents use stub fixtures or real LLM calls. |
 | `PIPELINE_TRIGGER_SECRET` | Shared secret required as the `X-Pipeline-Trigger-Secret` header on `POST /run/weekly`, `/run/{runId}/resume`, and `/run/{runId}/publish`. Generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`. When unset locally, the check is skipped (with a logged warning) so local dev works without provisioning it. |
 | `PIPELINE_SELF_URL` | Base URL the `trigger-weekly` CLI subcommand POSTs to (its `/run/weekly`). Read **only** by the separate Railway weekly-cron service (V2-03), not the always-on web API. Defaults to `https://eisenbalm-pipeline-production.up.railway.app` when unset; point it at a staging URL to trigger a non-prod deploy. |
+| `DASHBOARD_ALLOWED_ORIGINS` | Comma-separated browser origins permitted to make cross-origin (CORS) calls from the dispatch-control dashboard (test-run, scoring, run-control, review). Defaults to `http://localhost:3000` when unset. In Railway, set to the dispatch-control Vercel domain(s). |
 
 ### Sharp edge: Supabase pooler mode
 

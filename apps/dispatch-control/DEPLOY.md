@@ -47,6 +47,15 @@ Create a NEW Vercel project (Add New Project → import this repo):
 | `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | `/` |
 | `NEXT_PUBLIC_PIPELINE_URL` | _(optional)_ Railway pipeline URL — only for the prompt test-run feature |
 
+> **Pipeline-side CORS (different service):** for the prompt test-run, scoring,
+> run-control, and review features to work from the browser, the **Railway
+> pipeline service** (not this dispatch-control Vercel project) must set
+> `DASHBOARD_ALLOWED_ORIGINS` to the dispatch-control Vercel domain
+> (comma-separated if more than one origin). This env var belongs to the
+> pipeline service — do **not** add it to the dispatch-control Vercel env vars in
+> the table above. It pairs with `NEXT_PUBLIC_PIPELINE_URL`: the dashboard URL
+> points at the pipeline, and the pipeline must allow the dashboard's origin back.
+
 Deploy. You get a URL like `eisenbalm-dispatch-control.vercel.app` — this is the
 link you send Andrew.
 
