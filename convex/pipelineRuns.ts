@@ -1,6 +1,7 @@
 import { query, mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
+import { requirePipelineSecret } from './lib/auth'
 
 export const byRunId = query({
   args: { runId: v.string() },
@@ -17,8 +18,12 @@ export const create = mutation({
     runId: v.string(),
     issueNumber: v.number(),
     startedAt: v.number(),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { pipelineSecret, ...args }) => {
+    requirePipelineSecret(pipelineSecret)
     return await ctx.db.insert('pipelineRuns', {
       ...args,
       status: 'running' as const,
@@ -43,8 +48,14 @@ export const updateStatus = mutation({
     awaitingHumanAt: v.optional(v.number()), // PIP-10: Unix ms when Editor gate 1 interrupted for Andrew review
     // ── Phase 26 addition (API_CONTRACTS §26.4) ──────────────────────────
     sanityIssueId: v.optional(v.string()), // Sanity weeklyIssue _id — written by publisher so publish endpoint can resolve Sanity issue from runId
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, rawArgs) => {
+    const { pipelineSecret, ...args } = rawArgs
+    requirePipelineSecret(pipelineSecret)
+
     const run = await ctx.db
       .query('pipelineRuns')
       .withIndex('by_runId', q => q.eq('runId', args.runId))

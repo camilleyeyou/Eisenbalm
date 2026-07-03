@@ -14,7 +14,7 @@
 import { query, mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
-import { requireOperator } from './lib/auth'
+import { requireOperator, requireOperatorOrPipeline } from './lib/auth'
 
 export const upsert = mutation({
   args: {
@@ -22,8 +22,15 @@ export const upsert = mutation({
     key: v.string(),
     value: v.string(), // JSON-encoded
     updatedBy: v.optional(v.string()),
+    // Phase 29 D-1: dual-lane guard — the dashboard (AutomationPanel,
+    // BudgetCapsPanel) calls this with a Clerk identity AND the pipeline's
+    // /pipeline/tick cron sweep calls it (no identity, pipelineSecret
+    // instead) to advance schedule_next_run_at. Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, key, value, updatedBy }) => {
+  handler: async (ctx, { workspace_id, key, value, updatedBy, pipelineSecret }) => {
+    await requireOperatorOrPipeline(ctx, pipelineSecret)
+
     const existing = await ctx.db
       .query('pipeline_config')
       .withIndex('by_workspace_key', q =>

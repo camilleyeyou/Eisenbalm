@@ -16,7 +16,7 @@
  */
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
-import { requireOperator } from './lib/auth'
+import { requireOperator, requireOperatorOrPipeline, requirePipelineSecret } from './lib/auth'
 
 // ── Local helper: bare domain normalization ─────────────────────────────────
 // Mirrors scout.py:96 `_domain_of()`: strip scheme, take host, lowercase,
@@ -56,8 +56,14 @@ export const upsertCandidate = mutation({
     name: v.string(),
     website: v.optional(v.string()),
     runId: v.string(),
+    // Phase 29 D-1: dual-lane guard — the Scout calls this via the pipeline
+    // (pipelineSecret) AND the dashboard's "Add Charity" dialog calls it
+    // directly with a Clerk identity. Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, name, website, runId }) => {
+  handler: async (ctx, { workspace_id, name, website, runId, pipelineSecret }) => {
+    await requireOperatorOrPipeline(ctx, pipelineSecret)
+
     const domain = bareDomain(website)
     const dedupKey = `${name.trim().toLowerCase()}|${domain}`
 
@@ -105,8 +111,13 @@ export const upsertFeatured = mutation({
     name: v.string(),
     website: v.optional(v.string()),
     sanityCharityId: v.optional(v.string()),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, name, website, sanityCharityId }) => {
+  handler: async (ctx, { workspace_id, name, website, sanityCharityId, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     const domain = bareDomain(website)
     const dedupKey = `${name.trim().toLowerCase()}|${domain}`
 
@@ -272,8 +283,13 @@ export const seedFromPublished = mutation({
         sanityCharityId: v.optional(v.string()),
       }),
     ),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, rows }) => {
+  handler: async (ctx, { workspace_id, rows, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     for (const row of rows) {
       const domain = bareDomain(row.website)
       const dedupKey = `${row.name.trim().toLowerCase()}|${domain}`

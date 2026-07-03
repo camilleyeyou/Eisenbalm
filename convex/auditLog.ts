@@ -21,6 +21,7 @@
  */
 import { internalMutation, mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requirePipelineSecret } from './lib/auth'
 
 // ── write (internal — called from other mutations) ───────────────────────────
 
@@ -56,7 +57,9 @@ export const write = internalMutation({
  * operator-attributed or cron-attributed audit row without going through an
  * internal mutation chain.
  *
- * Args are identical to `write`. Timestamp is injected server-side.
+ * Args are identical to `write`, plus a `pipelineSecret` guard arg (Phase 29
+ * D-1 — injected centrally by convex_client.py::convex_mutation; never
+ * persisted).
  */
 export const record = mutation({
   args: {
@@ -67,8 +70,10 @@ export const record = mutation({
     resourceId: v.optional(v.string()),
     before: v.optional(v.string()),
     after: v.optional(v.string()),
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { pipelineSecret, ...args }) => {
+    requirePipelineSecret(pipelineSecret)
     await ctx.db.insert('audit_log', { ...args, timestamp: Date.now() })
   },
 })

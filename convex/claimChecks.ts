@@ -15,7 +15,7 @@
  */
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
-import { requireOperator } from './lib/auth'
+import { requireOperator, requirePipelineSecret } from './lib/auth'
 
 // ── insertBatch ─────────────────────────────────────────────────────────────
 
@@ -38,8 +38,13 @@ export const insertBatch = mutation({
         context: v.string(),
       }),
     ),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, runId, claims }) => {
+  handler: async (ctx, { workspace_id, runId, claims, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     // Idempotent: delete any existing rows for this runId before re-inserting.
     const existing = await ctx.db
       .query('claim_checks')

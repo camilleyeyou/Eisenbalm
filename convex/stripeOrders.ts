@@ -17,6 +17,7 @@
 import { mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
+import { requireWebhookSecret } from './lib/auth'
 
 export const insert = mutation({
   args: {
@@ -26,6 +27,15 @@ export const insert = mutation({
     currency: v.string(),
     customerEmail: v.optional(v.string()),
     charitySlug: v.optional(v.string()),
+    // Phase 29 D-1: webhook-lane secret. Required (not optional) — this
+    // function has a single caller (apps/web/lib/stripe/handlers.ts) and no
+    // Clerk identity is ever available in a server-side Stripe webhook route.
+    // Checked against the Convex-side STRIPE_TO_CONVEX_SECRET env var with a
+    // constant-time compare; fails closed if unset/blank. Today an
+    // unauthenticated stripeOrders.insert is an open email-relay + fake-
+    // donation-ledger vector (schedules enqueueEmailFlow -> Resend to an
+    // attacker-chosen address).
+    webhookSecret: v.string(),
     // ── CMR-SHIP-01 / CMR-DONATE-01 additive args ────────────────────────────
     amountSubtotal: v.optional(v.number()),
     amountShipping: v.optional(v.number()),
@@ -42,6 +52,8 @@ export const insert = mutation({
     })),
   },
   handler: async (ctx, args) => {
+    requireWebhookSecret(args.webhookSecret)
+
     const orderId = await ctx.db.insert('stripeOrders', {
       sessionId: args.sessionId,
       eventId: args.eventId,

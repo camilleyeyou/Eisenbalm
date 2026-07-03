@@ -5,8 +5,11 @@
  * Tests the runs:listForWorkspace query contract:
  *   create → inserts a run row (server-side status + startedAt)
  *   listForWorkspace → returns all workspace runs newest-first
+ *
+ * Phase 29 D-1: runs.create is pipeline-lane secret-guarded — every call
+ * passes the matching pipelineSecret (PIPELINE_CONVEX_SECRET stubbed below).
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { convexTest, schema } from './setup'
 import { api } from '../../../convex/_generated/api'
 
@@ -14,7 +17,19 @@ import { api } from '../../../convex/_generated/api'
 // This glob must be a literal in the calling file (Vite static analysis requirement).
 const modules = import.meta.glob('../../../convex/**/*.*s')
 
+const TEST_PIPELINE_SECRET = 'test-pipeline-secret'
+
 describe('runs: listForWorkspace returns all runs newest-first', () => {
+  const prevSecret = process.env.PIPELINE_CONVEX_SECRET
+
+  beforeEach(() => {
+    process.env.PIPELINE_CONVEX_SECRET = TEST_PIPELINE_SECRET
+  })
+
+  afterEach(() => {
+    process.env.PIPELINE_CONVEX_SECRET = prevSecret
+  })
+
   it('returns both runs with newest first', async () => {
     const t = convexTest({ schema, modules })
 
@@ -25,6 +40,7 @@ describe('runs: listForWorkspace returns all runs newest-first', () => {
       workspace_id: WS_ID,
       runId: 'run-2024-01',
       triggerSource: 'cron',
+      pipelineSecret: TEST_PIPELINE_SECRET,
     })
 
     // Small delay so the second run gets a later startedAt
@@ -36,6 +52,7 @@ describe('runs: listForWorkspace returns all runs newest-first', () => {
       runId: 'run-2024-02',
       triggerSource: 'manual',
       triggeredBy: 'user_operator',
+      pipelineSecret: TEST_PIPELINE_SECRET,
     })
 
     const runs = await t.query(api.runs.listForWorkspace, {
@@ -65,12 +82,14 @@ describe('runs: listForWorkspace returns all runs newest-first', () => {
       workspace_id: 'workspace-a',
       runId: 'run-a-001',
       triggerSource: 'cron',
+      pipelineSecret: TEST_PIPELINE_SECRET,
     })
 
     await t.mutation(api.runs.create, {
       workspace_id: 'workspace-b',
       runId: 'run-b-001',
       triggerSource: 'cron',
+      pipelineSecret: TEST_PIPELINE_SECRET,
     })
 
     const runsA = await t.query(api.runs.listForWorkspace, {

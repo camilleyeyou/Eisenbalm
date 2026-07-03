@@ -17,6 +17,7 @@
  */
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { requirePipelineSecret } from './lib/auth'
 
 export const create = mutation({
   args: {
@@ -24,8 +25,13 @@ export const create = mutation({
     runId: v.string(),
     triggerSource: v.string(),       // "manual" | "cron" | "webhook"
     triggeredBy: v.optional(v.string()),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, runId, triggerSource, triggeredBy }) => {
+  handler: async (ctx, { workspace_id, runId, triggerSource, triggeredBy, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     // Idempotent guard: same runId as pipelineRuns.create (join key). If a runs
     // row already exists for this runId, no-op rather than insert a duplicate.
     const existing = await ctx.db
@@ -49,8 +55,13 @@ export const setConfigSnapshot = mutation({
   args: {
     runId: v.string(),
     configSnapshot: v.string(), // JSON
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { runId, configSnapshot }) => {
+  handler: async (ctx, { runId, configSnapshot, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     const run = await ctx.db
       .query('runs')
       .withIndex('by_runId', q => q.eq('runId', runId))
@@ -182,8 +193,18 @@ export const monthToDateCost = query({
  * raises RunCancelled instead of starting (cooperative-only, no task.cancel).
  */
 export const requestCancel = mutation({
-  args: { runId: v.string() },
-  handler: async (ctx, { runId }) => {
+  args: {
+    runId: v.string(),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted. requestCancel is
+    // triggered from the dashboard, but FastAPI (which already verifies the
+    // operator's Clerk JWT itself) calls Convex as the pipeline — no Convex
+    // identity is present at this call site (29-RESEARCH.md).
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     const run = await ctx.db
       .query('runs')
       .withIndex('by_runId', q => q.eq('runId', runId))
@@ -223,8 +244,13 @@ export const updateStatus = mutation({
     status: v.string(),
     completedAt: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { runId, status, completedAt }) => {
+  handler: async (ctx, { runId, status, completedAt, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     const run = await ctx.db
       .query('runs')
       .withIndex('by_runId', q => q.eq('runId', runId))
@@ -249,8 +275,13 @@ export const setScheduledPublish = mutation({
   args: {
     runId: v.string(),
     scheduledPublishAt: v.optional(v.number()), // Unix ms; undefined to clear
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { runId, scheduledPublishAt }) => {
+  handler: async (ctx, { runId, scheduledPublishAt, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
     const run = await ctx.db
       .query('runs')
       .withIndex('by_runId', q => q.eq('runId', runId))

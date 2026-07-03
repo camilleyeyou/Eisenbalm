@@ -20,6 +20,7 @@
  */
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requirePipelineSecret } from './lib/auth'
 
 // ── record ──────────────────────────────────────────────────────────────────
 
@@ -37,8 +38,16 @@ export const record = mutation({
     actorId: v.string(),
     action: v.string(), // Canonical values: see API_CONTRACTS §26.5
     note: v.optional(v.string()),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted. `record` is called
+    // only from api/review.py — FastAPI has already verified the operator's
+    // Clerk JWT itself before calling Convex as the pipeline, so `actorId`
+    // here is a verified-upstream attribution string, not a spoofable claim.
+    pipelineSecret: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    requirePipelineSecret(args.pipelineSecret)
+
     await ctx.db.insert('review_actions', {
       workspace_id: args.workspace_id,
       runId: args.runId,

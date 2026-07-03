@@ -1,5 +1,6 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { requirePipelineSecret } from './lib/auth'
 
 export const byRunId = query({
   args: { runId: v.string() },
@@ -32,8 +33,13 @@ export const insert = mutation({
     charityName: v.string(),
     vote: v.union(v.literal('for'), v.literal('against'), v.literal('abstain')),
     reasoning: v.string(),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { pipelineSecret, ...args }) => {
+    requirePipelineSecret(pipelineSecret)
+
     return await ctx.db.insert('agentVotes', {
       ...args,
       timestamp: Date.now(),
