@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Completed quick task 260625-7ya (mirror pipelineRuns.status into dashboard runs table)
-last_updated: "2026-06-25T09:09:27.275Z"
+status: Ready to execute
+stopped_at: Completed 29-01-PLAN.md
+last_updated: "2026-07-03T19:30:03.446Z"
 progress:
-  total_phases: 28
+  total_phases: 29
   completed_phases: 27
-  total_plans: 178
-  completed_plans: 176
+  total_plans: 183
+  completed_plans: 177
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 28 — prompt-console
+**Current focus:** Phase 29 — deployment-hardening-code-fixes
 
 ## Current Position
 
-Phase: 28
-Plan: Not started
+Phase: 29 (deployment-hardening-code-fixes) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -203,6 +203,7 @@ Plan: Not started
 | Phase 28 P01 | 8 | 3 tasks | 7 files |
 | Phase 28 P04 | 4 | 2 tasks | 4 files |
 | Phase 28 P02 | 7 | 3 tasks | 6 files |
+| Phase 29 P01 | 135 | 3 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -525,6 +526,7 @@ Recent decisions affecting current work:
 - [Phase 28]: api.d.ts acceptance grep adjusted — Convex codegen uses module-reference (typeof promptVersions), so query names are not literal in api.d.ts; typed-ness confirmed via clean codegen + strict build
 - [Phase 28]: Plan 04: exported shared pipelineBaseUrl from testRunClient (DRY); compare-against-active runs the active version on demand so the default Run stays 1x (D-07); voice score is advisory-only — no disabled state references a score (D-06)
 - [Phase 28]: Plan 02: variable description+sample maps added additively next to VARIABLE_REGISTRY (shape unchanged); in-app window.confirm unsaved guard (no beforeunload, D-11); agentKey-switch confirm fires as heads-up but reset proceeds
+- [Phase 29]: D-1 Convex auth lockdown: public mutations + shared-secret guard (NOT internalMutation — unreachable via HTTP /api/mutation); four lanes (dashboard Clerk identity, pipeline PIPELINE_CONVEX_SECRET, dual-lane either, Stripe STRIPE_TO_CONVEX_SECRET); qaCorrections.insert stays public (GAM-05); scoped pipelineSecret injection allowlist in convex_client.py
 
 ### Pending Todos
 
@@ -609,6 +611,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-25T09:09:27.262Z
-Stopped at: Completed quick task 260625-2vb (env-driven pipeline CORS)
+Last session: 2026-07-03T19:29:20.488Z
+Stopped at: Completed 29-01-PLAN.md
 Resume file: None
