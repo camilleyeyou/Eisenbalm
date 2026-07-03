@@ -125,14 +125,16 @@ D-9: BuyButton.tsx (line 28-29) uses `require('@/components/marketing/ShopQtyPro
   </read_first>
   <action>
     In `BuyButton.tsx`: add a `useState` error string; on checkout API failure set a dry, on-voice inline message rendered near the button (no toast/modal/banner) and re-enable the button (existing behavior). Voice: precise and flat, e.g. "Checkout is unavailable right now. Try again in a moment." (no exclamation, no winking). Replace the runtime `require('@/components/marketing/ShopQtyProvider')` (fragile under Turbopack) with a static top-level import and remove the `eslint-disable-next-line @typescript-eslint/no-require-imports` comment.
+    **Also create a behavioral test (fixes plan-checker advisory 2):** add `apps/web/__tests__/buy-button.test.tsx` (or co-located `BuyButton.test.tsx`) that renders `BuyButton`, mocks `fetch`/the checkout call to reject or return a non-ok response, triggers the click, and asserts the inline failure message text renders AND the button is re-enabled. Without this, the D-9 must_have ("a failed checkout shows a dry inline message") has no behavioral coverage — the build-green fallback only proves it compiles. Use the exact message string as a shared constant if it makes the assertion robust.
   </action>
   <verify>
-    <automated>pnpm --filter web test -- BuyButton buy-button 2>/dev/null || pnpm --filter web build</automated>
+    <automated>pnpm --filter web test -- buy-button BuyButton</automated>
   </verify>
   <acceptance_criteria>
     - `grep -q "useState" apps/web/components/marketing/BuyButton.tsx` and an inline error message string renders on failure
     - `grep -c "require(" apps/web/components/marketing/BuyButton.tsx` == 0 and `grep -c "no-require-imports" apps/web/components/marketing/BuyButton.tsx` == 0 (static import used)
     - Message contains no `!` and no toast/modal/banner API call (`grep -c "toast\|alert(" apps/web/components/marketing/BuyButton.tsx` == 0)
+    - A new test file exists asserting the failure message renders on a rejected checkout: `ls apps/web/__tests__/buy-button.test.tsx apps/web/components/marketing/BuyButton.test.tsx 2>/dev/null | head -1` is non-empty, and `pnpm --filter web test -- buy-button BuyButton` exits 0 with ≥1 test matched
     - `pnpm --filter web build` exits 0
   </acceptance_criteria>
   <done>Checkout failures surface a dry inline message; the fragile runtime require is a static import; web build is green.</done>

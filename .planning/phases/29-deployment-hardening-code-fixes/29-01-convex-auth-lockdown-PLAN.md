@@ -113,7 +113,7 @@ Both secret VALUES are set externally (out of scope). Ship code that fails close
     - convex/users.ts (upsertCurrentUser — reference identity guard)
     - convex/pipelineConfig.ts (setNotificationConfig already guarded; setAutoPublish + upsert here)
     - convex/promptVersions.ts, convex/agents.ts, convex/claimChecks.ts, convex/charities.ts
-    - convex/_generated/ai/guidelines.md (Convex API rules that override training data)
+    - convex/AGENTS.md and convex/CLAUDE.md (Convex API rules / project conventions that override training data)
   </read_first>
   <action>
     Create `convex/lib/auth.ts` exporting THREE helpers (plain functions, NOT registered as Convex functions):
