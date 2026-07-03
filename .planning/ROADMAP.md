@@ -470,6 +470,21 @@ Plans:
 - [x] 28-03-scoring-endpoint-contract-first-PLAN.md — Wave 1: API_CONTRACTS §3A.2 (contract-first) + standalone `score_output` scorer (active rubric, disk fallback) + `POST /agents/{key}/score` + pytest (PRC-09 backend)
 - [x] 28-04-side-by-side-compare-score-ui-PLAN.md — Wave 2 (after 03): scoreClient + active-version run helper + TestRunPanel draft-vs-active side-by-side compare + voice-score display + delta (PRC-08, PRC-09 UI)
 
+### Phase 29: Deployment hardening code fixes
+
+**Goal:** Close the code-track blockers found in the 2026-07-03 pre-production audit so the stack is safe to deploy. Security-critical (priority): (1) **Convex auth lockdown** — split the ~20 currently-public `mutation` functions into auth-guarded dashboard mutations (derive actor from `ctx.auth.getUserIdentity()` Clerk JWT, never from a spoofable arg) vs `internalMutation` for pipeline/webhook writes (`pipelineRuns`, `runs`, `deliberationEvents`, `agentVotes`, `pitchLog`, `qaCorrections`, charities candidate writes); give the Stripe webhook's `ConvexHttpClient` admin auth and make `stripeEvents.claim` + `stripeOrders.insert` internal. (2) **Pipeline auth fail-closed** — refuse to boot / hard-401 when `PIPELINE_TRIGGER_SECRET` or `CLERK_JWT_ISSUER_DOMAIN` is unset in a deployed env (`RAILWAY_ENVIRONMENT` present); switch the `runs.py` trigger-secret compare to `hmac.compare_digest`. (3) **Pipeline restart reconciliation** — startup lifespan sweep that marks Convex runs stuck in `'running'` with no live task as failed/cancelled so a mid-run restart can't deadlock the one-at-a-time gate forever.
+
+**Mechanical cleanups (same phase):** add `PyJWT` + `requests` to pipeline `pyproject.toml`; fix stale `SUPABASE_POSTGRES_URL` guidance in `packages/pipeline/.env.example` + `checkpointer.py`/`cli.py` error strings (now Railway Postgres); remove the public `/_debug/convex` route (+ its test, `robots.txt` entry, README note); remove the 5 dead Convex `useQuery` subscriptions in `DeliberationSlot.tsx`; add a visible checkout-failure message in `BuyButton.tsx`; add an ESLint config to `apps/web` so the lint gate works; fix the ~17 TS errors in `apps/web/__tests__`; add a favicon; document missing env vars (`PREVIEW_SECRET` + `NEXT_PUBLIC_WEB_PREVIEW_BASE` in dispatch-control `.env.example` + `DEPLOY.md`; `DESIGNAGENT_SUPPRESSED` + `LOG_LEVEL` in pipeline `.env.example`).
+
+**Out of scope (external actions the user owns):** Stripe live-mode cutover, Clerk production instance, Resend DNS/email env, regenerating the Convex deploy key, deleting demo Sanity docs, writing legal/shop copy, setting env vars on Vercel/Railway/Convex, creating the Railway cron service.
+
+**Requirements**: derived from pre-production audit (see memory: pre-deploy-audit-260703)
+**Depends on:** Phase 28
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 29 to break down)
+
 ---
 
 ## v2.0 Phase Details — Mission Control Dashboard
