@@ -10,26 +10,21 @@
  *   4. window.location.href = url (redirects to Stripe-hosted Checkout)
  *
  * Loading state: text changes to "Redirecting…" and button disables.
- * Error path: console.error (no toast/modal/banner per CLAUDE.md voice rules).
+ * Error path (Phase 29 D-9): a dry, on-voice inline message renders below the
+ * button and it re-enables so the reader can retry. No pop-up ornament
+ * (banner/modal/notification widget) per CLAUDE.md voice rules.
  *
- * quantity prop: if provided, uses that value; otherwise reads from ShopQtyProvider
- * context via useShopQty(). Falls back to 1 if used outside a provider.
+ * quantity prop: if provided, uses that value; otherwise reads from
+ * ShopQtyProvider context via useShopQty(). BuyButton is only ever rendered
+ * inside <ShopQtyProvider> (the /shop page wraps its whole interactive
+ * subtree), matching ShopStickyBar's static-import usage of the same hook.
  */
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { useShopQty } from '@/components/marketing/ShopQtyProvider'
 
-// Optional: context-aware quantity. We try to import the hook but fall back
-// gracefully when BuyButton is rendered outside ShopQtyProvider.
-let _useShopQty: (() => { quantity: number }) | null = null
-try {
-  // Dynamic require so this module still loads if the context file is absent.
-  // In practice ShopQtyProvider.tsx always exists, but this guards against
-  // server-side rendering contexts where the hook would throw.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  _useShopQty = require('@/components/marketing/ShopQtyProvider').useShopQty
-} catch {
-  _useShopQty = null
-}
+/** Dry, on-voice checkout-failure message. No exclamation, no pop-up ornament. */
+export const CHECKOUT_FAILURE_MESSAGE = 'Checkout is unavailable right now. Try again in a moment.'
 
 interface BuyButtonProps {
   /** Explicit quantity to pass to checkout. If omitted, reads from ShopQtyProvider context. */
@@ -42,22 +37,14 @@ interface BuyButtonProps {
 
 export function BuyButton({ quantity: quantityProp, label, className }: BuyButtonProps = {}) {
   const [loading, setLoading] = useState(false)
-
-  // Resolve quantity: prop > context > 1
-  let contextQty = 1
-  if (_useShopQty) {
-    try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      contextQty = _useShopQty().quantity
-    } catch {
-      contextQty = 1
-    }
-  }
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { quantity: contextQty } = useShopQty()
   const quantity = quantityProp ?? contextQty
 
   async function onClick() {
     if (loading) return
     setLoading(true)
+    setErrorMessage(null)
     try {
       const res = await fetch('/api/checkout/create-session', {
         method: 'POST',
@@ -71,24 +58,39 @@ export function BuyButton({ quantity: quantityProp, label, className }: BuyButto
       }
       throw new Error(body.error ?? 'Checkout failed')
     } catch (err) {
-      // No toast/modal/banner per voice rules. Surface to console and re-enable
-      // the button so the user can retry. A small inline status could be added
-      // later, but the brief locks against UI ornaments here.
+      // No pop-up ornament per voice rules — a dry inline message near the
+      // button, and re-enable so the reader can retry.
       // eslint-disable-next-line no-console
       console.error('[BuyButton] checkout failed:', err)
+      setErrorMessage(CHECKOUT_FAILURE_MESSAGE)
       setLoading(false)
     }
   }
 
   return (
-    <Button
-      type="button"
-      size="lg"
-      disabled={loading}
-      onClick={onClick}
-      className={className ?? 'mt-8'}
-    >
-      {loading ? 'Redirecting…' : (label ?? 'Buy the lip balm')}
-    </Button>
+    <div>
+      <Button
+        type="button"
+        size="lg"
+        disabled={loading}
+        onClick={onClick}
+        className={className ?? 'mt-8'}
+      >
+        {loading ? 'Redirecting…' : (label ?? 'Buy the lip balm')}
+      </Button>
+      {errorMessage && (
+        <p
+          role="alert"
+          style={{
+            fontFamily: 'var(--font-ui, inherit)',
+            fontSize: '13px',
+            color: 'var(--color-text-dim, #6b6b6b)',
+            marginTop: '10px',
+          }}
+        >
+          {errorMessage}
+        </p>
+      )}
+    </div>
   )
 }
