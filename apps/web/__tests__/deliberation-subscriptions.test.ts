@@ -1,16 +1,16 @@
 /**
- * DEL-01 / DEL-05 — DeliberationSlot Convex subscriptions source-scan.
+ * DEL-01 / DEL-05 — DeliberationSlot no-subscriptions source-scan.
  *
- * UNSKIP in Plan 09-02 when DeliberationSlot.tsx gets its Phase 9 Convex
- * implementation. The describe.skip keeps this suite green at scaffold time.
+ * Phase 29 (D-8) UPDATE: DeliberationSlot.tsx no longer opens any Convex
+ * useQuery subscriptions. It previously wired 5 `api.*.byRunId` queries
+ * per visitor on the highest-traffic page and discarded every result
+ * (`void run; void pitchLog; ...`) — the rendered deliberation has always
+ * come from Sanity props via IssueLayout.tsx. This file's contract is now
+ * the INVERSE of the original DEL-01: assert the subscriptions and their
+ * imports are gone, not that they're wired.
  *
- * Asserted behaviors (against DeliberationSlot.tsx source):
- *   DEL-01: All five Convex useQuery subscriptions are wired.
- *   DEL-01: runId null-safety — `"skip"` sentinel guards all queries.
- *   DEL-05: Empty-state copy rendered when no Convex data.
- *
- * readFileSync is INSIDE the describe.skip callback so collection never
- * throws against the current Phase 2 stub which lacks these patterns.
+ * DEL-05 (empty-state copy) is unaffected by the removal and is preserved
+ * here verbatim.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -19,40 +19,36 @@ import { describe, it, expect } from 'vitest'
 
 const PATH = resolve(__dirname, '../components/issue/DeliberationSlot.tsx')
 
-describe('DEL-01/DEL-05: DeliberationSlot Convex subscriptions', () => {
+describe('D-8: DeliberationSlot opens zero Convex subscriptions', () => {
   const source = readFileSync(PATH, 'utf-8')
 
   it('is a Client Component ("use client" directive present)', () => {
     expect(source).toContain("'use client'")
   })
 
-  it('uses the Convex useQuery subscription hook', () => {
-    expect(source).toContain('useQuery')
+  it('does not use the Convex useQuery subscription hook', () => {
+    expect(source).not.toContain('useQuery')
   })
 
-  it('applies the "skip" sentinel when runId is null (null-runId guard)', () => {
-    // Pattern: runId ? { runId } : 'skip'  (or double-quoted 'skip')
-    expect(source).toMatch(/runId\s*\?\s*\{\s*runId\s*\}\s*:\s*['"]skip['"]/)
+  it('does not import convex/react', () => {
+    expect(source).not.toContain("from 'convex/react'")
   })
 
-  it('references api.pitchLog.byRunId', () => {
-    expect(source).toContain('api.pitchLog.byRunId')
+  it('does not import the generated Convex api object', () => {
+    expect(source).not.toContain('@convex/_generated/api')
   })
 
-  it('references api.deliberationEvents.byRunId', () => {
-    expect(source).toContain('api.deliberationEvents.byRunId')
+  it('does not reference any api.*.byRunId subscription', () => {
+    expect(source).not.toContain('api.pitchLog.byRunId')
+    expect(source).not.toContain('api.deliberationEvents.byRunId')
+    expect(source).not.toContain('api.agentVotes.byRunId')
+    expect(source).not.toContain('api.qaCorrections.byRunId')
+    expect(source).not.toContain('api.pipelineRuns.byRunId')
   })
 
-  it('references api.agentVotes.byRunId', () => {
-    expect(source).toContain('api.agentVotes.byRunId')
-  })
-
-  it('references api.qaCorrections.byRunId', () => {
-    expect(source).toContain('api.qaCorrections.byRunId')
-  })
-
-  it('references api.pipelineRuns.byRunId', () => {
-    expect(source).toContain('api.pipelineRuns.byRunId')
+  it('renders the deliberation from Sanity-sourced props (conversation, candidates)', () => {
+    expect(source).toMatch(/conversation:\s*ConversationTurn\[\]\s*\|\s*null/)
+    expect(source).toContain('candidates: DelibCandidate[] | null')
   })
 
   it('contains empty-state copy for issues predating the deliberation record (DEL-05)', () => {

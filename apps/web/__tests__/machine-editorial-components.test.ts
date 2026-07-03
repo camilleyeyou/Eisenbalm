@@ -8,7 +8,12 @@
  *   - SectionNavigator.tsx RETIRED (superseded by SectionRail sticky scroll-spy nav).
  *   - DeliberationSlot.tsx REWRITTEN as Phase 19 dark-band centerpiece.
  *     The AGENT_LABELS map is now SPEAKER_NAMES in DelibChat.tsx (3-speaker map only).
- *     DEL-04 + 5-Convex-sub contracts are still enforced in DeliberationSlot.tsx.
+ *     DEL-04 model-name contract is still enforced in DeliberationSlot.tsx.
+ *
+ * Phase 29 UPDATE (D-8): the "5 Convex subs" contract was INVERTED.
+ *   DeliberationSlot.tsx no longer opens any `api.*.byRunId` subscriptions —
+ *   they were dead code (every result discarded); the deliberation renders
+ *   from Sanity props via IssueLayout.tsx. This file now asserts absence.
  *
  * Note on the model-name check: uses codeOnly() comment-stripping before
  * checking for model-name literals, because DeliberationSlot.tsx contains
@@ -45,9 +50,9 @@ describe('MED-04: SectionNavigator retired by Phase 19 (SectionRail replaces it)
   })
 })
 
-// ─── MED-05: DeliberationSlot Phase 19 dark-band contracts (DEL-04 + subs) ──
+// ─── MED-05: DeliberationSlot Phase 19 dark-band contracts (DEL-04) ─────────
 
-describe('MED-05: DeliberationSlot Phase 19 dark-band (DEL-04 + 5-Convex-subs)', () => {
+describe('MED-05: DeliberationSlot Phase 19 dark-band (DEL-04, no Convex subs)', () => {
   const delSrc = readFileSync(DEL_PATH, 'utf-8')
 
   it('Phase 19: speaker identity map (SPEAKER_NAMES) lives in DelibChat.tsx', () => {
@@ -61,7 +66,10 @@ describe('MED-05: DeliberationSlot Phase 19 dark-band (DEL-04 + 5-Convex-subs)',
     expect(chatSrc).toContain('The Editor')
   })
 
-  it('preserves all 5 Convex useQuery subscriptions', () => {
+  it('opens zero Convex useQuery subscriptions (Phase 29 D-8)', () => {
+    // The 5 api.*.byRunId subs were dead code — every result was discarded
+    // and the deliberation has always rendered from Sanity props via
+    // IssueLayout.tsx. Phase 29 removed them; this asserts they stay gone.
     const subs = [
       'api.pipelineRuns.byRunId',
       'api.pitchLog.byRunId',
@@ -70,8 +78,9 @@ describe('MED-05: DeliberationSlot Phase 19 dark-band (DEL-04 + 5-Convex-subs)',
       'api.qaCorrections.byRunId',
     ]
     for (const sub of subs) {
-      expect(delSrc).toContain(sub)
+      expect(delSrc).not.toContain(sub)
     }
+    expect(delSrc).not.toContain('useQuery')
   })
 
   it('exposes no model-name literals in code (comment-stripped)', () => {

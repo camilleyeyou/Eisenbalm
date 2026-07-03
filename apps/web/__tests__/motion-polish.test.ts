@@ -16,6 +16,11 @@
  *   - prefersReducedMotion → now in ConfidenceBar.tsx (useReducedMotion hook)
  *   - DEL-04 model-name check stays green
  *
+ * Phase 29 UPDATE (D-8): the "5 Convex subs" contract (DEL-01) was INVERTED —
+ *   DeliberationSlot.tsx no longer opens any api.*.byRunId subscriptions
+ *   (they were dead code; the deliberation renders from Sanity props via
+ *   IssueLayout.tsx). The final MOT-03 assertion below now checks absence.
+ *
  * PITFALL GUARD (Pitfall 4): Under reduced-motion, the confidence bar must show the
  * FINAL value immediately. This is now enforced in ConfidenceBar.tsx via useReducedMotion.
  *
@@ -134,13 +139,15 @@ describe('MOT-03: ConfidenceBar CSS transition + pitch-card-list CSS + reduced-m
     expect(pitchCardBlock).toContain('scroll-snap-type')
   })
 
-  it('DeliberationSlot.tsx preserves the 5 Convex subscriptions (DEL-01 contract)', () => {
-    // Phase 19 dark-band rewrite keeps the 5 subscriptions verbatim so Plan 05
-    // can wire live data without structural change. This guards the contract.
-    expect(delibSource).toContain('api.pitchLog.byRunId')
-    expect(delibSource).toContain('api.deliberationEvents.byRunId')
-    expect(delibSource).toContain('api.agentVotes.byRunId')
-    expect(delibSource).toContain('api.qaCorrections.byRunId')
-    expect(delibSource).toContain('api.pipelineRuns.byRunId')
+  it('DeliberationSlot.tsx opens zero Convex subscriptions (DEL-01 contract, inverted Phase 29)', () => {
+    // Phase 29 (D-8) removed the 5 dead subscriptions — every result was
+    // discarded and the deliberation has always rendered from Sanity props.
+    // This guards against the dead-subscription pattern regressing.
+    expect(delibSource).not.toContain('api.pitchLog.byRunId')
+    expect(delibSource).not.toContain('api.deliberationEvents.byRunId')
+    expect(delibSource).not.toContain('api.agentVotes.byRunId')
+    expect(delibSource).not.toContain('api.qaCorrections.byRunId')
+    expect(delibSource).not.toContain('api.pipelineRuns.byRunId')
+    expect(delibSource).not.toContain('useQuery')
   })
 })

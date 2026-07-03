@@ -4,12 +4,15 @@
  * DeliberationSlot — Phase 19 dark-band centerpiece rewrite.
  * UI-SPEC §10 Deliberation Centerpiece (dark band, scoreboard + chat + confidence).
  *
- * STAGE A: renders from props (conversation + candidates from MOCK_ISSUE).
- * STAGE B (Plan 05): wires Convex live data without structural change.
+ * Renders entirely from Sanity-sourced props (conversation + candidates,
+ * threaded through IssueLayout.tsx from the issue's selectionDeliberation
+ * field). Phase 29 (D-8) removed the 5 dead per-run Convex subscription
+ * reads (pipelineRuns / pitchLog / deliberationEvents / agentVotes /
+ * qaCorrections, each keyed by run ID) that were wired here — they opened
+ * 5 subscriptions per visitor on the highest-traffic page and every result
+ * was discarded (`void run; void pitchLog; ...`). The rendered deliberation
+ * has always come from Sanity via IssueLayout.tsx, never from these subs.
  *
- * DEL-01..05: All 5 Convex useQuery subscriptions PRESERVED verbatim.
- *   They are present now so Plan 05 wires live data with no structural change.
- *   Stage A renders from props; the subscriptions are unused but guarded correctly.
  * DEL-04: No model/provider names appear anywhere in the render path.
  *   The agent display map uses 'The Scout' / 'The Advocate' / 'The Editor' only.
  * DEL-05: Graceful empty state when runId is null and no candidates/conversation.
@@ -22,8 +25,6 @@
  */
 
 import { useState } from 'react'
-import { useQuery } from 'convex/react'
-import { api } from '@convex/_generated/api'
 
 import { DelibScoreboard } from './DelibScoreboard'
 import type { DelibCandidate } from './DelibScoreboard'
@@ -43,18 +44,6 @@ type Props = {
 }
 
 export function DeliberationSlot({ runId, conversation, candidates, confidence }: Props) {
-  // ─── DEL-01: All 5 Convex subscriptions preserved verbatim ───────────────────
-  // When runId is null, every query receives 'skip' — no subscription, returns undefined.
-  // Stage A renders from props. Stage B (Plan 05) uses these live values.
-  const run         = useQuery(api.pipelineRuns.byRunId,       runId ? { runId } : 'skip')
-  const pitchLog    = useQuery(api.pitchLog.byRunId,           runId ? { runId } : 'skip')
-  const events      = useQuery(api.deliberationEvents.byRunId, runId ? { runId } : 'skip')
-  const votes       = useQuery(api.agentVotes.byRunId,         runId ? { runId } : 'skip')
-  const corrections = useQuery(api.qaCorrections.byRunId,      runId ? { runId } : 'skip')
-
-  // Suppress unused-variable warnings for Stage A (Stage B wires these)
-  void run; void pitchLog; void events; void votes; void corrections
-
   // ─── DEL-05: Empty state ──────────────────────────────────────────────────────
   // Graceful when no runId AND no candidates/conversation
   const isEmpty =
