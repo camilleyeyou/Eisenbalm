@@ -29,6 +29,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient
 
 from eisenbalm_pipeline.api import agents, control, health, review, runs, webhooks
+from eisenbalm_pipeline.api.auth import assert_deployed_secrets
+from eisenbalm_pipeline.api.reconcile import reconcile_orphaned_runs
 from eisenbalm_pipeline.graph.builder import build_graph
 from eisenbalm_pipeline.graph.checkpointer import (
     assert_tables_exist,
@@ -53,6 +55,14 @@ async def lifespan(app: FastAPI):
     is None and app.state.pool is None — the app still boots so /healthz can
     report the degraded state and the test suite's module import succeeds.
     """
+    # Phase 29 D-2: boot-time fail-fast for a deployed-but-misconfigured
+    # process. MUST run BEFORE and OUTSIDE the try/except below — if this were
+    # inside that block, a genuinely misconfigured deployed process would have
+    # its fatal error caught and logged as "expected for local dev," then boot
+    # healthy anyway, defeating the whole point. No-ops in local dev (no
+    # RAILWAY_ENVIRONMENT_NAME).
+    assert_deployed_secrets()
+
     # Defaults for the degraded path — overwritten below on clean startup.
     pool = None
     checkpointer = None
@@ -87,6 +97,13 @@ async def lifespan(app: FastAPI):
         # get_client() — convex_client + sanity_client own the _CLIENT global.
         convex_client.set_client(convex_http)
         sanity_client.set_client(sanity_http)
+
+        # Phase 29 D-4: sweep any Convex run left stuck 'running' by a prior
+        # process's restart/redeploy — clean-boot path only (degraded boot has
+        # nothing new to reconcile against beyond what a prior clean boot
+        # already would have). Degrades to a logged warning + 0 on Convex
+        # failure; never blocks boot.
+        await reconcile_orphaned_runs(convex_http)
 
         log.info(
             "Lifespan ready: graph compiled, pools open, clients registered."
