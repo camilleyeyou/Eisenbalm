@@ -21,7 +21,6 @@
 | `/sitemap.xml` | `app/sitemap.ts` | Static pages + all published issues + all charities. ISR 60s. |
 | `/feed.xml` | `app/feed.xml/route.ts` | RSS 2.0. Item description is the charity mission statement (no full body — site is a destination). |
 | `/robots.txt` | `public/robots.txt` | Allows `/`. Disallows `/api/` and `/_next/`. |
-| `/_debug/convex` | `convex/*.ts` queries | **Phase 3 evidence only. Removed in Phase 9.** Hidden — not in nav, sitemap, or RSS. `Disallow: /_debug/` in robots.txt. Calls all 5 byRunId queries with synthetic runId `phase-3-smoke-test`. |
 
 ---
 
@@ -179,20 +178,9 @@ When `NEXT_PUBLIC_CONVEX_URL` is missing (e.g. Vercel preview deploys before Con
 
 Convex's generated `api` object lives at `convex/_generated/api.{ts,d.ts}` (committed to git per project decision D-08 — mirrors Phase 1's `sanity.types.ts` posture). The [`apps/web/tsconfig.json`](./tsconfig.json) `paths` block aliases `@convex/*` → `../../convex/*`, so consumers `import { api } from '@convex/_generated/api'`.
 
-### `/_debug/convex` (Phase 3 only — removed in Phase 9)
+### `/_debug/convex` (removed in Phase 29)
 
-[`apps/web/app/%5Fdebug/convex/page.tsx`](./app/%5Fdebug/convex/page.tsx) is Phase 3's CVX-05 evidence surface. It calls all five `byRunId` queries with a synthetic `runId: "phase-3-smoke-test"` and renders a five-row table. Visit it locally at http://localhost:3000/_debug/convex.
-
-> On-disk note: the folder is literally `%5Fdebug` (URL-encoded underscore) because Next.js 15's App Router treats any folder starting with a literal `_` as private and excludes it from routing. Using `%5F` in the folder name escapes the underscore so the served URL is the expected `/_debug/convex`. See Plan 03-06 deviation. The CONVEX_DEPLOY_KEY in `.env.local` is currently in `dev:` form (not `prod:`) per Plan 03-02 Deviation 1; the type does not change `apps/web`'s behavior.
-
-The file carries a `TODO(Phase 9):` cleanup comment. Phase 9 (Issue Page Completion) will:
-
-1. Delete `apps/web/app/%5Fdebug/convex/page.tsx`
-2. Delete `apps/web/app/%5Fdebug/` if no other debug routes were added
-3. Remove the `Disallow: /_debug/` line from `apps/web/public/robots.txt`
-4. Drop this section from `apps/web/README.md` and the matching section in `convex/README.md`
-
-Until then, the route exists as an empty-state checkpoint Andrew can hit to confirm the Convex pathway is alive without polluting the production site. It is excluded from `sitemap.xml` and `feed.xml` (those files only emit known editorial routes) and `Disallow:`-ed in `robots.txt`. The page also emits `<meta name="robots" content="noindex,nofollow">` for defense in depth.
+Phase 3 added `apps/web/app/%5Fdebug/convex/page.tsx` as a CVX-05 evidence surface: it called all five `byRunId` queries with a synthetic `runId: "phase-3-smoke-test"` and rendered a five-row table at `/_debug/convex`. Phase 29 (D-7) removed the route entirely — it was publicly routable (no auth, no nav/sitemap/RSS entry does not equal inaccessible) and served no purpose once real deliberation data ships from Sanity. The route file, its `robots.txt` `Disallow: /_debug/` entry, and this section are gone. Do not recreate a similarly-named debug route without an auth gate.
 
 ### Vercel env provisioning (manual, D-22)
 

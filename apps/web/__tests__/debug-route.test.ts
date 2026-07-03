@@ -1,46 +1,39 @@
 /**
- * P17-06 source-scan tripwire — Phase 17 Wave 0.
+ * P17-06 / D-7 source-scan tripwire — Phase 17 Wave 0, flipped in Phase 29.
  *
- * Asserts that apps/web/app/%5Fdebug/convex/page.tsx does NOT nest a <main>
- * element inside the root layout's <main id="main">. The route currently uses
- * <main> (line 50), violating the single-main-landmark rule. This test is
- * intentionally RED on the current pre-implementation codebase; it turns GREEN
- * when Wave 2 (Plan 17-05) applies the one-line <main> → <div> fix.
+ * Phase 29 (D-7) removed the publicly-routable `/_debug/convex` smoke-test
+ * page entirely (apps/web/app/%5Fdebug/convex/page.tsx no longer exists).
+ * This test now asserts ABSENCE of the route file instead of scanning its
+ * markup for a nested <main> — the original P17-06 concern (no nested <main>
+ * landmark) is moot once the route is gone.
  *
- * The %5Fdebug path is a Next.js 15 private-folder escape: the folder on disk
- * is literally named %5Fdebug (not _debug) so the route IS accessible at
- * /_debug/convex but is not treated as a Next.js private directory.
- *
- * Same pattern as archive-cardswap.test.ts (Phase 11): readFileSync, no DOM.
- *
- * If any assertion fails, DO NOT delete it or weaken it. Fix the source instead.
- * This file IS the codebase-level guard for Phase 17 P17-06.
+ * Do not reintroduce apps/web/app/%5Fdebug/ or apps/web/app/_debug/ — see
+ * .planning/phases/29-deployment-hardening-code-fixes/29-CONTEXT.md D-7.
  */
-import { readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 
-// ─── Path ─────────────────────────────────────────────────────────────────────
+// ─── Paths ─────────────────────────────────────────────────────────────────────
 
 // Note: literal %5F in the directory name (Next.js 15 private-folder escape).
-// See Phase 3 decision: the %5F prefix makes /_debug/convex accessible while
-// avoiding Next.js private-folder exclusion.
+// The route previously lived here; it must no longer exist on disk.
 const DEBUG_PATH = resolve(__dirname, '../app/%5Fdebug/convex/page.tsx')
+const DEBUG_DIR = resolve(__dirname, '../app/%5Fdebug')
+const LITERAL_DEBUG_DIR = resolve(__dirname, '../app/_debug')
 
-// ─── P17-06: _debug/convex page must not nest a <main> element ────────────────
+// ─── D-7: _debug/convex route removed ─────────────────────────────────────────
 
-describe('P17-06: _debug/convex page has no nested <main> landmark', () => {
-  const src = readFileSync(DEBUG_PATH, 'utf-8')
-
-  it('file exists and is the correct Convex smoke-test page', () => {
-    // Sanity guard: ensure we are reading the right file and not an empty stub
-    expect(src).toContain('Convex smoke test')
+describe('D-7: the public /_debug/convex route no longer exists', () => {
+  it('apps/web/app/%5Fdebug/convex/page.tsx does not exist', () => {
+    expect(existsSync(DEBUG_PATH)).toBe(false)
   })
 
-  it('page does not nest a <main> element (root layout owns the single <main>)', () => {
-    // The root layout at apps/web/app/layout.tsx owns <main id="main">.
-    // Route-level components (page.tsx, loading.tsx, error.tsx) must use
-    // <div> or semantic sectioning elements — never <main>.
-    expect(src).not.toContain('<main')
+  it('apps/web/app/%5Fdebug/ directory does not exist', () => {
+    expect(existsSync(DEBUG_DIR)).toBe(false)
+  })
+
+  it('apps/web/app/_debug/ (literal, non-escaped) directory does not exist', () => {
+    expect(existsSync(LITERAL_DEBUG_DIR)).toBe(false)
   })
 })

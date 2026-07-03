@@ -173,9 +173,7 @@ Open https://dashboard.convex.dev → your project:
 pnpm dev:web
 ```
 
-Browse to http://localhost:3000/_debug/convex — see a five-row table with counts of `0` (or `—` briefly while the subscription resolves). No errors in browser console.
-
-> **Heads up:** the on-disk folder for that page is `apps/web/app/%5Fdebug/convex/` (URL-encoded underscore) because Next.js 15's App Router treats a literal `_debug` folder as private and excludes it from routing. The escape sequence `%5F` becomes `_` in the served URL, so the path `/_debug/convex` works as expected (see Plan 03-06 deviation).
+Browse to an issue page (`/issue/[slug]`) and confirm the "Watch the Machines Decide" deliberation band renders without console errors. As of Phase 29 (D-7/D-8), this render path is Sanity props only — `DeliberationSlot.tsx` no longer opens Convex subscriptions, so there is no dedicated debug route to visit. Verify Convex writes directly via the dashboard steps above.
 
 ---
 
@@ -263,20 +261,9 @@ Cleanup: delete the test row via the Convex dashboard (Data → pipelineRuns →
 
 ---
 
-## /_debug/convex route (Phase 3 evidence, Phase 9 cleanup)
+## /_debug/convex route (removed in Phase 29)
 
-`apps/web/app/%5Fdebug/convex/page.tsx` (URL: `/_debug/convex`) is Phase 3's CVX-05 evidence surface. It calls all five `byRunId` queries with a synthetic `runId: "phase-3-smoke-test"` and renders a five-row table.
-
-**It will be REMOVED in Phase 9** when the real `<DeliberationSlot>` Convex subscriptions land on `/issue/[slug]`. The file carries a `TODO(Phase 9):` comment naming the cleanup steps. Phase 9's planner can grep for it.
-
-Phase 9 cleanup steps (locked contract, also referenced in the TODO comment in the page.tsx and in `apps/web/README.md`):
-
-1. Delete `apps/web/app/%5Fdebug/convex/page.tsx`
-2. Delete `apps/web/app/%5Fdebug/` if no other debug routes were added
-3. Remove the `Disallow: /_debug/` line from `apps/web/public/robots.txt`
-4. Drop the `/_debug/convex` mention from both `apps/web/README.md` and this file
-
-Until Phase 9: visit http://localhost:3000/_debug/convex (or `<prod-url>/_debug/convex`) to confirm the web → Convex pathway is alive. The route is excluded from `sitemap.xml`, `feed.xml`, and is `Disallow:` in `robots.txt`.
+Phase 3 added `apps/web/app/%5Fdebug/convex/page.tsx` (URL: `/_debug/convex`) as a CVX-05 evidence surface — it called all five `byRunId` queries with a synthetic `runId: "phase-3-smoke-test"` and rendered a five-row table. **Phase 29 (D-7) removed this route entirely**: the file, the `Disallow: /_debug/` robots.txt entry, and the mentions in `apps/web/README.md` and this file are gone. It was publicly routable with no auth gate, so it stayed a live liability past the point real deliberation data ships from Sanity. Do not recreate an unauthenticated debug route under this or a similar name.
 
 ---
 
@@ -316,14 +303,8 @@ The CLI defaults assume the nested layout. Hand-correct to `"functions": "./"` p
 **`convex deploy` fails with `Cannot find module './_generated/server'`.**
 Expected on the FIRST deploy after the function files land — the CLI generates `_generated/` as part of deploy. Retry; should succeed.
 
-**`/_debug/convex` shows "—" forever.**
-`NEXT_PUBLIC_CONVEX_URL` is not set in `apps/web/.env.local`, or it points at a different deployment than the one the function files are deployed to. Re-run step 4.
-
-**`/_debug/convex` shows "no provider" runtime error.**
-`apps/web/components/providers/ConvexClientProvider.tsx` did not mount, OR the page is being rendered as a Server Component (missing `'use client'` directive). Re-check Plans 03-05 and 03-06.
-
-**`/_debug/convex` URL returns 404.**
-The on-disk folder must be `apps/web/app/%5Fdebug/convex/` (URL-encoded underscore), NOT `_debug`. Next.js 15 treats a literal `_debug` folder as private and excludes it from routing. See Plan 03-06 deviation.
+**Convex data isn't showing up on an issue page.**
+`NEXT_PUBLIC_CONVEX_URL` is not set in `apps/web/.env.local`, or it points at a different deployment than the one the function files are deployed to. Re-run step 4. Note: the deliberation band on `/issue/[slug]` renders from Sanity props, not a live Convex subscription (Phase 29 D-8) — check Sanity content first if that section looks empty.
 
 **`401 Unauthorized` from `/api/mutation` curl.**
 The `CONVEX_DEPLOY_KEY` is from a different deployment or is malformed. Regenerate at dashboard → Settings → Deploy Keys.
@@ -335,4 +316,4 @@ A function file's `v.literal(...)` union does not match `schema.ts` exactly. `aw
 
 *Phase 3 owner: gsd-planner.*
 *Phase 4 (next): Pipeline Skeleton — will write to all five tables via HTTP API.*
-*Phase 9: removes `/_debug/convex` and wires real subscriptions into `<DeliberationSlot>`.*
+*Phase 29: removed `/_debug/convex` and the dead `<DeliberationSlot>` Convex subscriptions (D-7/D-8); deliberation renders from Sanity props.*
