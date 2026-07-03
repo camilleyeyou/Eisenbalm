@@ -12,6 +12,7 @@
  */
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { requireOperator } from './lib/auth'
 
 export const upsert = mutation({
   args: {
@@ -25,6 +26,9 @@ export const upsert = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required.
+    await requireOperator(ctx)
+
     const { workspace_id, agentKey } = args
 
     const existing = await ctx.db

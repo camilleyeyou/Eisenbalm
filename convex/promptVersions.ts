@@ -16,6 +16,7 @@
 import { query, mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
+import { requireOperator } from './lib/auth'
 
 export const upsertActive = mutation({
   args: {
@@ -26,6 +27,9 @@ export const upsertActive = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { workspace_id, agentKey, content, createdBy, note }) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required.
+    await requireOperator(ctx)
+
     const existing = await ctx.db
       .query('prompt_versions')
       .withIndex('by_workspace_agentKey', q =>
@@ -90,6 +94,11 @@ export const saveVersion = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { workspace_id, agentKey, content, createdBy, note }) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required. The
+    // audit row uses the VERIFIED actor from the JWT, not the caller-supplied
+    // `createdBy` (kept as free-text row metadata only).
+    const actor = await requireOperator(ctx)
+
     const rows = await ctx.db
       .query('prompt_versions')
       .withIndex('by_workspace_agentKey', q =>
@@ -113,7 +122,7 @@ export const saveVersion = mutation({
 
     await ctx.runMutation(internal.auditLog.write, {
       workspace_id,
-      actorId: createdBy ?? 'unknown',
+      actorId: actor,
       action: 'prompt_version.saved',
       resourceType: 'prompt_version',
       resourceId: `${agentKey}:${nextVersion}`,
@@ -140,7 +149,13 @@ export const activate = mutation({
     version: v.number(),
     actorId: v.string(),
   },
-  handler: async (ctx, { workspace_id, agentKey, version, actorId }) => {
+  handler: async (ctx, { workspace_id, agentKey, version, actorId: _actorId }) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required. The
+    // audit row uses the VERIFIED actor from the JWT; the caller-supplied
+    // `actorId` arg is intentionally ignored (never trust an incoming arg
+    // for identity/attribution) but stays in the signature for compatibility.
+    const actor = await requireOperator(ctx)
+
     // D-02: block activation while a run is in progress.
     const runningRun = await ctx.db
       .query('runs')
@@ -182,7 +197,7 @@ export const activate = mutation({
 
     await ctx.runMutation(internal.auditLog.write, {
       workspace_id,
-      actorId,
+      actorId: actor,
       action: 'prompt_version.activated',
       resourceType: 'prompt_version',
       resourceId: `${agentKey}:${version}`,

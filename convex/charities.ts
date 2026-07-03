@@ -16,6 +16,7 @@
  */
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requireOperator } from './lib/auth'
 
 // ── Local helper: bare domain normalization ─────────────────────────────────
 // Mirrors scout.py:96 `_domain_of()`: strip scheme, take host, lowercase,
@@ -159,6 +160,9 @@ export const setStatus = mutation({
     status: v.string(),
   },
   handler: async (ctx, { workspace_id, charityId, status }) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required.
+    await requireOperator(ctx)
+
     const validStatuses = ['candidate', 'featured', 'blocklisted']
     if (!validStatuses.includes(status)) {
       throw new Error(

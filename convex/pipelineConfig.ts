@@ -14,6 +14,7 @@
 import { query, mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
+import { requireOperator } from './lib/auth'
 
 export const upsert = mutation({
   args: {
@@ -88,7 +89,13 @@ export const setAutoPublish = mutation({
     enabled: v.boolean(),
     actorId: v.string(),
   },
-  handler: async (ctx, { workspace_id, enabled, actorId }) => {
+  handler: async (ctx, { workspace_id, enabled, actorId: _actorId }) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required. The
+    // caller-supplied `actorId` arg is intentionally ignored (never trust an
+    // incoming arg for identity/attribution) but stays in the signature for
+    // compatibility; the VERIFIED actor from the JWT is used below instead.
+    const actorId = await requireOperator(ctx)
+
     const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000
     const now = Date.now()
 

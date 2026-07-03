@@ -15,6 +15,7 @@
  */
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requireOperator } from './lib/auth'
 
 // ── insertBatch ─────────────────────────────────────────────────────────────
 
@@ -76,6 +77,9 @@ export const setStatus = mutation({
     status: v.string(), // "pending" | "checked" | "skipped"
   },
   handler: async (ctx, { runId, claimIndex, status }) => {
+    // Phase 29 D-1: dashboard-only mutation — Clerk identity required.
+    await requireOperator(ctx)
+
     const validStatuses = ['pending', 'checked', 'skipped']
     if (!validStatuses.includes(status)) {
       throw new Error(

@@ -59,12 +59,15 @@ describe('promptVersions.activate (PRM-04, D-02 in-progress guard)', () => {
       })
     })
 
-    const result = await t.mutation(api.promptVersions.activate, {
-      workspace_id: WS,
-      agentKey: AGENT,
-      version: 2,
-      actorId: 'user_operator',
-    })
+    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+      api.promptVersions.activate,
+      {
+        workspace_id: WS,
+        agentKey: AGENT,
+        version: 2,
+        actorId: 'user_operator',
+      },
+    )
 
     expect(result.blocked).toBe(true)
 
@@ -85,12 +88,15 @@ describe('promptVersions.activate (PRM-04, D-02 in-progress guard)', () => {
     const t = convexTest({ schema, modules })
     await seedTwoVersions(t)
 
-    await t.mutation(api.promptVersions.activate, {
-      workspace_id: WS,
-      agentKey: AGENT,
-      version: 2,
-      actorId: 'user_operator',
-    })
+    await t.withIdentity({ subject: 'user_operator' }).mutation(
+      api.promptVersions.activate,
+      {
+        workspace_id: WS,
+        agentKey: AGENT,
+        version: 2,
+        actorId: 'user_operator',
+      },
+    )
 
     const rows = await t.run(async (ctx) =>
       ctx.db

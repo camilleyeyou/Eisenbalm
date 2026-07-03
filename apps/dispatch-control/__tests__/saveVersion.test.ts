@@ -28,15 +28,17 @@ describe('promptVersions.saveVersion (PRM-03)', () => {
   it('creates v2 when v1 exists and never overwrites v1', async () => {
     const t = convexTest({ schema, modules })
 
+    const asOperator = t.withIdentity({ subject: 'user_operator' })
+
     // Seed v1 active via the existing Phase-22 seed mutation.
-    await t.mutation(api.promptVersions.upsertActive, {
+    await asOperator.mutation(api.promptVersions.upsertActive, {
       workspace_id: WS,
       agentKey: AGENT,
       content: 'V1 BODY',
       note: 'v1 seed',
     })
 
-    await t.mutation(api.promptVersions.saveVersion, {
+    await asOperator.mutation(api.promptVersions.saveVersion, {
       workspace_id: WS,
       agentKey: AGENT,
       content: 'V2 BODY',
@@ -66,11 +68,14 @@ describe('promptVersions.saveVersion (PRM-03)', () => {
   it('saveVersion starts at v1 when no prior version', async () => {
     const t = convexTest({ schema, modules })
 
-    await t.mutation(api.promptVersions.saveVersion, {
-      workspace_id: WS,
-      agentKey: 'advocate',
-      content: 'FIRST',
-    })
+    await t.withIdentity({ subject: 'user_operator' }).mutation(
+      api.promptVersions.saveVersion,
+      {
+        workspace_id: WS,
+        agentKey: 'advocate',
+        content: 'FIRST',
+      },
+    )
 
     const rows = await t.run(async (ctx) =>
       ctx.db
@@ -88,12 +93,15 @@ describe('promptVersions.saveVersion (PRM-03)', () => {
   it('saveVersion writes an audit_log row with action prompt_version.saved', async () => {
     const t = convexTest({ schema, modules })
 
-    await t.mutation(api.promptVersions.saveVersion, {
-      workspace_id: WS,
-      agentKey: AGENT,
-      content: 'BODY',
-      createdBy: 'user_operator',
-    })
+    await t.withIdentity({ subject: 'user_operator' }).mutation(
+      api.promptVersions.saveVersion,
+      {
+        workspace_id: WS,
+        agentKey: AGENT,
+        content: 'BODY',
+        createdBy: 'user_operator',
+      },
+    )
 
     const audit = await t.run(async (ctx) =>
       ctx.db
