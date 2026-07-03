@@ -31,6 +31,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 import eisenbalm_pipeline.lib.convex_client as _cc
+from eisenbalm_pipeline.api.auth import _deployed
 from eisenbalm_pipeline.api.runs import (
     RunWeeklyBody,
     _require_graph,
@@ -89,6 +90,11 @@ async def _require_clerk_jwt_control(
       - Token is verified via the full Clerk JWKS path in api/auth.py.
     """
     if not os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
+        if _deployed():
+            raise HTTPException(
+                status_code=500,
+                detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
+            )
         log.warning(
             "CLERK_JWT_ISSUER_DOMAIN unset — skipping Clerk JWT check "
             "(local dev). Set it in any deployed environment."

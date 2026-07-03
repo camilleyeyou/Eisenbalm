@@ -18,6 +18,7 @@ Phase 25: _start_run is the single shared trigger body used by both
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 import os
 import time
@@ -28,7 +29,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from langgraph.types import Command
 from pydantic import BaseModel
 
-from eisenbalm_pipeline.api.auth import require_clerk_jwt
+from eisenbalm_pipeline.api.auth import _deployed, require_clerk_jwt
 from eisenbalm_pipeline.lib.config_loader import load_run_config, snapshot_config
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
@@ -137,13 +138,20 @@ def _require_trigger_secret(request: Request) -> None:
     """
     expected = os.environ.get("PIPELINE_TRIGGER_SECRET")
     if not expected:
+        if _deployed():
+            raise HTTPException(
+                status_code=500,
+                detail="PIPELINE_TRIGGER_SECRET must be set in a deployed environment",
+            )
         log.warning(
             "PIPELINE_TRIGGER_SECRET unset — skipping trigger-secret check "
             "(local dev). Set it in any deployed environment."
         )
         return
     provided = request.headers.get("X-Pipeline-Trigger-Secret")
-    if not provided or provided != expected:
+    # D-3: constant-time compare (falsy-guard FIRST — compare_digest raises
+    # TypeError on None, so "not provided" must short-circuit before it).
+    if not provided or not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid X-Pipeline-Trigger-Secret",

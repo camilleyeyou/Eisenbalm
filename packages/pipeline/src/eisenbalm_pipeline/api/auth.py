@@ -37,6 +37,59 @@ log = logging.getLogger(__name__)
 security = HTTPBearer()
 
 
+# ── Phase 29 D-2: fail-closed in a deployed environment ────────────────────
+#
+# Three sites in this module + control.py/agents.py/runs.py follow the
+# identical "secret unset -> sentinel/skip" idiom, which is a deliberate local
+# dev convenience but is silently fail-OPEN in any deployed environment where
+# provisioning was missed. RAILWAY_ENVIRONMENT_NAME (NOT RAILWAY_ENVIRONMENT
+# — verified against Railway's current variables reference, 29-RESEARCH.md
+# "Environment detection") is auto-injected on every Railway service, so it is
+# the "we are deployed" signal — no manual provisioning needed, and no
+# existing test sets it, so gating behind its presence keeps the full pre-
+# existing test suite green while closing the real vulnerability.
+
+
+def _deployed() -> bool:
+    """True when running in a deployed environment (Railway auto-injects this).
+
+    Local dev (marker absent) keeps the existing convenience/fail-open
+    sentinel behavior byte-for-byte; any environment where Railway sets this
+    var must fail closed instead when a required auth secret is unset.
+    """
+    return bool(os.environ.get("RAILWAY_ENVIRONMENT_NAME"))
+
+
+def assert_deployed_secrets() -> None:
+    """Boot-time fail-fast: in a deployed env, required auth secrets MUST be set.
+
+    Called from api/main.py's lifespan at the VERY TOP, BEFORE and OUTSIDE the
+    blanket try/except that swallows boot failures into degraded mode — so a
+    genuinely misconfigured deployed process cannot have this raise caught and
+    logged as "expected for local dev" and then boot healthy anyway. The
+    per-request guards in this module, control.py, agents.py, and runs.py
+    remain the primary enforcement and independently fail closed on every
+    request; this boot-time check is defense-in-depth and must be effective,
+    not swallowed.
+
+    Raises:
+        RuntimeError: when _deployed() is True and PIPELINE_TRIGGER_SECRET or
+            CLERK_JWT_ISSUER_DOMAIN is unset/blank.
+    """
+    if not _deployed():
+        return
+    missing = [
+        name
+        for name in ("PIPELINE_TRIGGER_SECRET", "CLERK_JWT_ISSUER_DOMAIN")
+        if not os.environ.get(name)
+    ]
+    if missing:
+        raise RuntimeError(
+            "Deployed environment (RAILWAY_ENVIRONMENT_NAME set) is missing "
+            f"required secret(s): {', '.join(missing)}. Refusing to boot."
+        )
+
+
 @lru_cache(maxsize=1)
 def _get_clerk_jwks_url() -> str:
     """Derive the Clerk JWKS endpoint URL from CLERK_JWT_ISSUER_DOMAIN.
@@ -92,6 +145,11 @@ async def require_clerk_jwt(
                                      this automatically before this function runs)
     """
     if not os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
+        if _deployed():
+            raise HTTPException(
+                status_code=500,
+                detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
+            )
         log.warning(
             "CLERK_JWT_ISSUER_DOMAIN unset — skipping Clerk JWT check "
             "(local dev). Set it in any deployed environment."

@@ -37,7 +37,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from eisenbalm_pipeline.agents.qa import judge as judge_module
-from eisenbalm_pipeline.api.auth import require_clerk_jwt
+from eisenbalm_pipeline.api.auth import _deployed, require_clerk_jwt
 from eisenbalm_pipeline.lib import convex_client
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 
@@ -65,6 +65,11 @@ async def _require_operator(
     test_test_run.py: "no auth header is needed for these isolation tests").
     """
     if not os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
+        if _deployed():
+            raise HTTPException(
+                status_code=500,
+                detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
+            )
         # Local-dev / stub: same sentinel require_clerk_jwt returns.
         return {"sub": "local-dev-operator"}
     if credentials is None:
