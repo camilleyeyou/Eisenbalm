@@ -32,6 +32,8 @@ export default defineConfig({
       // Phase 24 prompt-versioning convex-test files
       ['__tests__/saveVersion.test.ts', 'edge-runtime'],
       ['__tests__/activate.test.ts', 'edge-runtime'],
+      // Phase 29 D-1 Convex auth lockdown convex-test file
+      ['__tests__/convexAuthLockdown.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],

@@ -35,6 +35,9 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
     eventId: event.id,
     eventType: event.type,
     livemode: event.livemode,
+    // Phase 29 D-1: webhook-lane secret — validated Convex-side against
+    // STRIPE_TO_CONVEX_SECRET (constant-time compare). Never NEXT_PUBLIC_*.
+    webhookSecret: process.env.STRIPE_TO_CONVEX_SECRET ?? '',
   })) as { firstTime: boolean }
 
   if (!claim.firstTime) {
@@ -97,6 +100,9 @@ async function maybeRecordOrder(
       eventId,
       amountTotal: session.amount_total ?? 0,
       currency: session.currency ?? 'usd',
+      // Phase 29 D-1: webhook-lane secret — validated Convex-side against
+      // STRIPE_TO_CONVEX_SECRET (constant-time compare). Never NEXT_PUBLIC_*.
+      webhookSecret: process.env.STRIPE_TO_CONVEX_SECRET ?? '',
       customerEmail: session.customer_details?.email ?? undefined,
       // charitySlug was locked at click time via session.metadata.
       charitySlug:
