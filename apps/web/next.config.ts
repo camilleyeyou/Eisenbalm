@@ -2,6 +2,14 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Phase 29 (D-10): ESLint runs as an advisory step (`pnpm --filter web lint`),
+  // NOT a build gate. `apps/web` accumulated ~29 phases of code before a lint
+  // config existed; enforcing lint inside `next build` would hard-fail the
+  // strict production build on pre-existing style. Keep the build green and
+  // run lint separately in CI/dev.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Phase 20: React Email packages must be treated as server externals.
   // @react-email/render uses Node.js streams internally; bundling it with
   // Next.js webpack/turbopack causes "X is not a function" errors at runtime.
