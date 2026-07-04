@@ -98,7 +98,7 @@ describe('CMR-06: Stripe webhook idempotency on event.id', () => {
     claimMutation.mockResolvedValue({ firstTime: true })
     const { POST } = await import('@/app/api/stripe/webhook/route')
     await POST(await buildSignedRequest('evt_idem_args'))
-    const args = claimMutation.mock.calls[0][0]
+    const args = claimMutation.mock.calls[0]![0]
     expect(args.eventId).toBe('evt_idem_args')
     expect(args.eventType).toBe('checkout.session.completed')
     expect(typeof args.livemode).toBe('boolean')

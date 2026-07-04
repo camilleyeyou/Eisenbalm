@@ -21,7 +21,6 @@
  */
 import { describe, it, expect } from 'vitest'
 
-// @ts-expect-error — Wave 2 (plan 27-03) creates apps/web/lib/notifications/dispatch.ts.
 import { decideDispatch } from '@/lib/notifications/dispatch'
 
 // Baseline config: both channels configured + all events enabled.
@@ -48,7 +47,7 @@ describe('NTF-01: dispatch idempotency', () => {
       ledger,
     })
     const email = decisions.find((d: { channel: string }) => d.channel === 'email')
-    expect(email.action).toBe('skip')
+    expect(email?.action).toBe('skip')
   })
 
   it('a fresh (runId, eventType, channel) with no ledger row dispatches (send)', () => {
@@ -59,7 +58,7 @@ describe('NTF-01: dispatch idempotency', () => {
       ledger: [],
     })
     const email = decisions.find((d: { channel: string }) => d.channel === 'email')
-    expect(email.action).toBe('send')
+    expect(email?.action).toBe('send')
   })
 })
 

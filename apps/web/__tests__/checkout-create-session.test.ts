@@ -67,7 +67,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
       }),
     )
     expect(sessionCreate).toHaveBeenCalledOnce()
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.mode).toBe('payment')
     expect(args.line_items).toEqual([
       { price: 'price_test_lipbalm_001', quantity: 1 },
@@ -82,7 +82,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: '{}',
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.shipping_address_collection).toBeDefined()
     expect(Array.isArray(args.shipping_address_collection.allowed_countries)).toBe(
       true,
@@ -100,7 +100,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: '{}',
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.success_url).toContain('/shop/thank-you')
     expect(args.success_url).toContain('{CHECKOUT_SESSION_ID}')
   })
@@ -113,7 +113,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: '{}',
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.cancel_url).toMatch(/\/shop$/)
   })
 
@@ -140,7 +140,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: '{}',
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.line_items[0].quantity).toBe(1)
   })
 
@@ -153,7 +153,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: JSON.stringify({ quantity: 5 }),
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.line_items[0].quantity).toBe(5)
   })
 
@@ -166,7 +166,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: JSON.stringify({ quantity: 0 }),
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.line_items[0].quantity).toBe(1)
   })
 
@@ -179,7 +179,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: JSON.stringify({ quantity: 99 }),
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.line_items[0].quantity).toBe(20)
   })
 
@@ -192,7 +192,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: JSON.stringify({ quantity: 'abc' }),
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.line_items[0].quantity).toBe(1)
   })
 
@@ -205,7 +205,7 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
         body: JSON.stringify({ other: 'field' }),
       }),
     )
-    const args = sessionCreate.mock.calls[0][0]
+    const args = sessionCreate.mock.calls[0]![0]
     expect(args.line_items[0].quantity).toBe(1)
   })
 })

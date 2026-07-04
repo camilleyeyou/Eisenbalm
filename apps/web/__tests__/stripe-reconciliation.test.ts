@@ -20,7 +20,6 @@
  */
 import { describe, it, expect } from 'vitest'
 
-// @ts-expect-error — Wave 2 (plan 27-02) creates apps/web/lib/finance/reconcile.ts.
 import { reconcileIssue, attributeOrderToWindow } from '@/lib/finance/reconcile'
 
 // ─── Fixtures (explicit cent values) ────────────────────────────────────────
@@ -54,7 +53,8 @@ describe('RCN-01: reconcileIssue gross/net/fee aggregation', () => {
 
   it('gross − fee === net for a clean order set (arithmetic identity)', () => {
     const r = reconcileIssue(ORDERS, FEES)
-    expect(r.grossCents - r.feeCents).toBe(r.netCents)
+    expect(r.feeCents).not.toBeNull()
+    expect(r.grossCents - r.feeCents!).toBe(r.netCents)
   })
 
   it('orderCount reflects the number of contributing orders', () => {

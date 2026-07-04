@@ -18,7 +18,6 @@
  */
 import { describe, it, expect } from 'vitest'
 
-// @ts-expect-error — Wave 2 (plan 27-02) creates apps/web/lib/finance/staleness.ts.
 import { isStale } from '@/lib/finance/staleness'
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
