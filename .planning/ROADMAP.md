@@ -482,12 +482,12 @@ Plans:
 
 **Requirements**: derived from pre-production audit (see memory: pre-deploy-audit-260703)
 **Depends on:** Phase 28
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 - [x] 29-01-convex-auth-lockdown-PLAN.md — Convex mutation authorization: shared guard helper, identity/secret/dual-lane guards, pipeline + Stripe caller updates, convex-test suite (D-1)
 - [x] 29-02-pipeline-auth-and-reconciliation-PLAN.md — Pipeline fail-closed auth, constant-time trigger-secret compare, restart reconciliation sweep, declared deps (D-2, D-3, D-4, D-5)
-- [ ] 29-03-web-route-subs-checkout-PLAN.md — Remove /_debug/convex route, delete 5 dead DeliberationSlot subs + 3 tripwires, visible checkout-failure message (D-7, D-8, D-9)
+- [x] 29-03-web-route-subs-checkout-PLAN.md — Remove /_debug/convex route, delete 5 dead DeliberationSlot subs + 3 tripwires, visible checkout-failure message (D-7, D-8, D-9)
 - [ ] 29-04-eslint-typecheck-favicon-PLAN.md — apps/web ESLint config, fix 17 test TS errors, add favicon (D-10, D-11, D-12)
 - [ ] 29-05-env-var-docs-PLAN.md — Railway Postgres env guidance + document missing dispatch-control/pipeline env vars (D-6, D-13)
 

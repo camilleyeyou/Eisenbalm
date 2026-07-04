@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 29-02-pipeline-auth-and-reconciliation-PLAN.md
-last_updated: "2026-07-03T19:49:44.552Z"
+stopped_at: Completed 29-03-web-route-subs-checkout-PLAN.md
+last_updated: "2026-07-03T23:35:03.211Z"
 progress:
   total_phases: 29
   completed_phases: 27
   total_plans: 183
-  completed_plans: 177
+  completed_plans: 179
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 29 (deployment-hardening-code-fixes) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -205,6 +205,7 @@ Plan: 3 of 5
 | Phase 28 P02 | 7 | 3 tasks | 6 files |
 | Phase 29 P01 | 135 | 3 tasks | 23 files |
 | Phase 29 P02 | 7 | 3 tasks | 9 files |
+| Phase 29 P03 | 75min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -529,6 +530,8 @@ Recent decisions affecting current work:
 - [Phase 28]: Plan 02: variable description+sample maps added additively next to VARIABLE_REGISTRY (shape unchanged); in-app window.confirm unsaved guard (no beforeunload, D-11); agentKey-switch confirm fires as heads-up but reset proceeds
 - [Phase 29]: D-1 Convex auth lockdown: public mutations + shared-secret guard (NOT internalMutation — unreachable via HTTP /api/mutation); four lanes (dashboard Clerk identity, pipeline PIPELINE_CONVEX_SECRET, dual-lane either, Stripe STRIPE_TO_CONVEX_SECRET); qaCorrections.insert stays public (GAM-05); scoped pipelineSecret injection allowlist in convex_client.py
 - [Phase 29]: D-3 correctness case + reconciliation degeneracy tests landed in test_fail_closed.py/test_reconciliation.py rather than test_runs.py (plan-permitted alternative).
+- [Phase 29]: BuyButton.tsx uses a static useShopQty import (no runtime require) since both render sites always sit inside ShopQtyProvider
+- [Phase 29]: Added jsdom and @testing-library/react as apps/web devDependencies to enable the D-9 behavioral checkout-failure test (mirrors apps/dispatch-control's setup)
 
 ### Pending Todos
 
@@ -613,6 +616,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-03T19:49:44.541Z
-Stopped at: Completed 29-02-pipeline-auth-and-reconciliation-PLAN.md
+Last session: 2026-07-03T23:35:03.195Z
+Stopped at: Completed 29-03-web-route-subs-checkout-PLAN.md
 Resume file: None
