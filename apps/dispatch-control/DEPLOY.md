@@ -45,7 +45,9 @@ Create a NEW Vercel project (Add New Project → import this repo):
 | `CLERK_SECRET_KEY` | Clerk `sk_test_...` — **server secret, dispatch-control only** |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | `/` |
-| `NEXT_PUBLIC_PIPELINE_URL` | _(optional)_ Railway pipeline URL — only for the prompt test-run feature |
+| `NEXT_PUBLIC_PIPELINE_URL` | **Required** — Railway pipeline URL. The test-run, scoring, run-control, and review clients throw at call time without it (not optional despite older docs) |
+| `PREVIEW_SECRET` | Server-only secret that signs review-gate preview tokens (`lib/previewToken.ts`). Without it, the review preview silently shows "not configured" |
+| `NEXT_PUBLIC_WEB_PREVIEW_BASE` | Base URL of the public `apps/web` site the review preview iframe points at. Paired with `PREVIEW_SECRET` |
 
 > **Pipeline-side CORS (different service):** for the prompt test-run, scoring,
 > run-control, and review features to work from the browser, the **Railway
