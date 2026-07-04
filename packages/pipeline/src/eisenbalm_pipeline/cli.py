@@ -1,8 +1,10 @@
 """CLI entrypoint for one-time operations.
 
 Subcommands:
-  setup-checkpointer            - Runs AsyncPostgresSaver.setup() against
-                                  Supabase. Idempotent. CONTEXT D-12 +
+  setup-checkpointer            - Runs AsyncPostgresSaver.setup() against the
+                                  Railway Postgres database (SUPABASE_POSTGRES_URL
+                                  is a legacy misnomer; the DB moved off Supabase
+                                  on 2026-06-12). Idempotent. CONTEXT D-12 +
                                   research Pitfall 3.
   setup-webhook-idempotency     - Creates the webhook_idempotency table for
                                   WHK-04 dedup. Idempotent (CREATE TABLE IF
@@ -60,14 +62,16 @@ def _require_postgres_url() -> str:
     except KeyError:
         print(
             "ERROR: SUPABASE_POSTGRES_URL is not set. "
-            "See packages/pipeline/.env.example for the session pooler format.",
+            "See packages/pipeline/.env.example for the Railway Postgres "
+            "connection string format (this var now points at Railway "
+            "Postgres, not Supabase).",
             file=sys.stderr,
         )
         sys.exit(2)
 
 
 async def setup_checkpointer() -> None:
-    """Run AsyncPostgresSaver.setup() against the configured Supabase Postgres.
+    """Run AsyncPostgresSaver.setup() against the configured Railway Postgres.
 
     Idempotent. Creates the 4 LangGraph checkpoint tables if they don't exist.
     """
@@ -101,8 +105,8 @@ async def setup_webhook_idempotency() -> None:
     Sanity retries cannot defeat (research Pattern 2 + Pitfall 6).
     """
     db_url = _require_postgres_url()
-    # psycopg autocommit so the DDL is not wrapped in a transaction the
-    # Supabase pooler may reject.
+    # psycopg autocommit so the DDL is not wrapped in a transaction a
+    # connection pooler may reject.
     async with await psycopg.AsyncConnection.connect(
         db_url, autocommit=True
     ) as conn:

@@ -25,21 +25,23 @@ log = logging.getLogger(__name__)
 
 
 def _conn_string() -> str:
-    """Read SUPABASE_POSTGRES_URL and emit a helpful pooler-mode hint if missing.
+    """Read SUPABASE_POSTGRES_URL (Railway Postgres connection string).
 
-    Use the Supabase **session pooler** (port 5432, host
-    aws-0-<region>.pooler.supabase.com) — it is IPv4-compatible (Railway egress
-    has no IPv6) and supports prepared statements unlike the transaction pooler
-    on 6543. See 04-RESEARCH.md Pitfall 1 + Pitfall 2.
+    NOTE: the var name is a legacy misnomer — this database moved from
+    Supabase to a Railway Postgres plugin on 2026-06-12. It must be a
+    connection string that supports prepared statements (AsyncPostgresSaver
+    uses them via psycopg) — NOT a transaction-mode pooler connection.
+    See packages/pipeline/.env.example for the current Railway-accurate
+    guidance; 04-RESEARCH.md Pitfall 1 + Pitfall 2 for the original rationale.
     """
     try:
         return os.environ["SUPABASE_POSTGRES_URL"]
     except KeyError as exc:
         raise RuntimeError(
             "SUPABASE_POSTGRES_URL is required. See packages/pipeline/.env.example. "
-            "Use the SESSION pooler (port 5432, aws-0-<region>.pooler.supabase.com), "
-            "NOT the transaction pooler (port 6543) or direct connection "
-            "(IPv6-only, won't work from Railway)."
+            "Use the Railway Postgres connection string (Railway project -> "
+            "Postgres plugin -> Connect tab), not a transaction-mode pooler "
+            "connection (breaks AsyncPostgresSaver's prepared statements)."
         ) from exc
 
 
@@ -82,8 +84,9 @@ async def assert_tables_exist(pool: AsyncConnectionPool) -> None:
             row = await cur.fetchone()
             if not row or row.get("to_regclass") is None:
                 raise RuntimeError(
-                    "AsyncPostgresSaver tables not found in Supabase. "
-                    "Run once: `python -m eisenbalm_pipeline.cli setup-checkpointer` "
+                    "AsyncPostgresSaver tables not found in the Railway Postgres "
+                    "database. Run once: "
+                    "`python -m eisenbalm_pipeline.cli setup-checkpointer` "
                     "(or rely on the Railway preDeployCommand in railway.toml)."
                 )
     log.info("AsyncPostgresSaver tables verified.")
