@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 29-03-web-route-subs-checkout-PLAN.md
-last_updated: "2026-07-03T23:35:03.211Z"
+stopped_at: Completed 29-04-eslint-typecheck-favicon-PLAN.md
+last_updated: "2026-07-04T06:42:20.222Z"
 progress:
   total_phases: 29
   completed_phases: 27
   total_plans: 183
-  completed_plans: 179
+  completed_plans: 180
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 29 (deployment-hardening-code-fixes) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -206,6 +206,7 @@ Plan: 4 of 5
 | Phase 29 P01 | 135 | 3 tasks | 23 files |
 | Phase 29 P02 | 7 | 3 tasks | 9 files |
 | Phase 29 P03 | 75min | 3 tasks | 12 files |
+| Phase 29 P04 | 40 | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -532,6 +533,7 @@ Recent decisions affecting current work:
 - [Phase 29]: D-3 correctness case + reconciliation degeneracy tests landed in test_fail_closed.py/test_reconciliation.py rather than test_runs.py (plan-permitted alternative).
 - [Phase 29]: BuyButton.tsx uses a static useShopQty import (no runtime require) since both render sites always sit inside ShopQtyProvider
 - [Phase 29]: Added jsdom and @testing-library/react as apps/web devDependencies to enable the D-9 behavioral checkout-failure test (mirrors apps/dispatch-control's setup)
+- [Phase 29]: D-10: eslint-config-next@15.5.x ships eslintrc format, so apps/web/eslint.config.mjs bridges it via FlatCompat; lint made advisory (ignoreDuringBuilds) so ~29 phases of pre-existing style don't block the strict build
 
 ### Pending Todos
 
@@ -616,6 +618,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-03T23:35:03.195Z
-Stopped at: Completed 29-03-web-route-subs-checkout-PLAN.md
+Last session: 2026-07-04T06:42:10.803Z
+Stopped at: Completed 29-04-eslint-typecheck-favicon-PLAN.md
 Resume file: None
