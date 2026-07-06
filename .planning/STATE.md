@@ -1,30 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Completed 29-05-env-var-docs-PLAN.md
-last_updated: "2026-07-04T06:58:37.442Z"
+milestone: v3.0
+milestone_name: Dispatch Control v2 — Editorial Operator Console
+status: Defining requirements
+stopped_at: Milestone started — requirements not yet defined
+last_updated: "2026-07-06T23:30:00.000Z"
 progress:
-  total_phases: 29
-  completed_phases: 28
-  total_plans: 183
-  completed_plans: 181
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-23)
+See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 29 — deployment-hardening-code-fixes
+**Current focus:** Milestone v3.0 — Dispatch Control v2 (Editorial Operator Console)
 
 ## Current Position
 
-Phase: 29
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-06 — Milestone v3.0 started
 
 ## Performance Metrics
 
