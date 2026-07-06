@@ -1,658 +1,260 @@
-# Mission Control Dashboard — Integration Pitfalls
+# Pitfalls Research
 
-**Domain:** Adding a no-code control plane to a live single-tenant LLM pipeline (v2.0 Mission Control)
-**Researched:** 2026-06-21
-**Scope:** Pitfalls specific to ADDING this control plane to THIS live system. Generic dashboard advice excluded.
-**Confidence:** HIGH for pitfalls grounded in the actual codebase mechanics (acomplete, load_prompt, LangGraph checkpointer, Convex pipelineRuns). MEDIUM for auth and multi-tenant patterns (ecosystem patterns, verified against official docs).
+**Domain:** Editorial operator console rebuild — native rich-text annotation UI, multi-agent LLM provenance, CMS-bypass migration, LLM eval gating, single-operator review UX, in-place dashboard redesign
+**Researched:** 2026-07-06
+**Confidence:** MEDIUM-HIGH (grounded in documented architecture patterns — strangler fig, span-anchoring in collaborative editors, LLM citation-hallucination literature, approval-fatigue research — cross-checked against this project's actual schemas and locked decisions in `.planning/PROJECT.md`. Portable Text `_key` mechanics confirmed against Sanity's own docs. No Context7 library docs were queried since this is an architectural/process research pass, not an API-surface one.)
 
-> **Prerequisite reading:** `docs/CURRENT_STATE.md` (Phase 0 reconciliation) and `docs/MISSION_CONTROL_BRIEF.md` (v2.0 spec). This document is tied to specific codebase paths and mechanics — do not read without those two documents in hand.
+> Supersedes the prior `PITFALLS.md` (2026-06-21, Mission Control v2.0 — config externalization race conditions). This file is scoped to the v3.0 Dispatch Control v2 milestone only. Retrieve the prior version from git history if v2.0 config-externalization pitfalls are needed for reference.
 
----
+## Critical Pitfalls
 
-## Category 1: Config Externalization — Race Conditions, Mid-Run Edits, DB Unavailability
-
-### Pitfall 1.1: Snapshot Exists But the Config Object Was Already Mutated Before Snapshot Was Taken
-
-**Severity: HIGH**
+### Pitfall 1: Span-anchoring drift — annotations point at the wrong text after any edit
 
 **What goes wrong:**
-The brief's snapshot rationale (§2) is sound: at the start of every run, snapshot the active config onto the run record, so mid-run edits cannot corrupt a running issue. But the snapshot is only safe if it is taken as the FIRST action in `_execute_run()` BEFORE any agent reads config. If any agent reads from the live config table before the snapshot is written — even one `load_prompt()` call that hits the DB — and Andrew edits that prompt between that read and the snapshot commit, the run is now executing with config that does not match its own snapshot. The snapshot record says "prompt v3" but the Calibrator ran with "prompt v4."
+QA findings and provenance highlights are anchored to spans of text (`quotedSpan` in the existing `qaCorrections` schema is a literal text-match, not a stable key). The moment Andrew edits a section — even inserting one word before a flagged sentence — every annotation anchored by character offset or substring match silently points at the wrong text, or fails to re-attach at all. Two more specific failure shapes for this system: (1) the round-trip through the FastAPI service (galley edit → pipeline API → Sanity write → galley reload) can re-serialize Portable Text with new `_key`s if the write path regenerates blocks instead of patching them, permanently orphaning every annotation keyed to the old `_key`s; (2) `verify_research`/QA operate on a flattened text view (`_body_to_text` bridges `str`/`list[dict]` shapes per Phase 18), so an annotation's offset is only valid against that specific flattening — pretty-printing, whitespace normalization, or heading/blockquote insertion by an editor shifts every downstream offset.
 
 **Why it happens:**
-Timing: `_execute_run()` launches a `create_task` and returns the `runId` immediately (`api/runs.py:235-239`). If config reads are interleaved with the snapshot write (e.g., Calibrator starts before the Publisher has confirmed the snapshot is committed to DB), the race exists. Async task startup delay (Railway cold container) makes the window real.
+Character-offset anchoring is the naive default (it's what `quotedSpan`-as-literal-text already does) because it needs no new data model. Teams underestimate how often "just an edit" reflows offsets, and Portable Text's own `_key`-per-block/span design exists precisely to solve this — but only if annotations are keyed to `_key`s (or a `_key` + local character range within that span), not absolute document offsets or raw substring search.
 
-**Specific codebase risk:** The current `_execute_run()` background task pattern returns immediately. The config snapshot must be the FIRST awaited operation in that task body, before the LangGraph graph is invoked at all.
-
-**Prevention:**
-1. Make config snapshot a synchronous pre-condition of the run, not part of the async task: write the snapshot BEFORE returning `{runId}` to the caller. The `/pipeline/run` endpoint should: (a) load active config, (b) write snapshot to run record in Convex, (c) only then create the background task and return `runId`. If the snapshot write fails, the endpoint returns 503 — no run starts.
-2. Pass the snapshot config object directly into the LangGraph invocation as part of `DispatchState` initial state — agents NEVER read from the live config table mid-run. All config reads during a run must come from `state["config_snapshot"]`, not from the DB.
-3. Add a snapshot-integrity assertion: at pipeline end (Publisher node), re-read the snapshot from Convex and assert it matches the config that was injected into `DispatchState`. If it doesn't, flag the run as `snapshot_mismatch` and notify — do not publish.
+**How to avoid:**
+- Anchor every annotation (QA finding, provenance highlight) to `{blockKey, spanKey, startOffset, endOffset}` relative to a single block/span, never to a whole-document character offset.
+- Treat `quotedSpan` as a *fallback fuzzy-match display value*, not the source of truth — the source of truth must be the key-based anchor. When keys don't resolve (block deleted/split), degrade to "orphaned — re-locate or dismiss" rather than silently mis-rendering on the wrong text.
+- The FastAPI write path for per-section edits MUST use a diff/patch strategy that preserves unaffected blocks' `_key`s (Sanity's `patch()` API, not whole-document `createOrReplace`). This is the single highest-leverage prevention: if `_key`s survive edits, most anchors survive too.
+- Recompute/re-validate annotation anchors immediately after every save (server-side), not lazily on next galley load — surface "N annotations couldn't be re-anchored" to Andrew instead of failing silently.
+- Since QA findings are generated once per pipeline run (not live per keystroke), version-stamp them: an annotation belongs to `runId` + `sectionVersion`. After an edit, either re-run QA on just that section (cheap, deterministic-rules-only pass) or explicitly mark existing findings for that section "stale — reflects text prior to your edit."
 
 **Warning signs:**
-- Run records in Convex where `config_snapshot.prompt_version != agent_run.prompt_version_used`
-- A/B differences in output between two runs triggered within 30 seconds of each other (one caught the edit, one didn't)
-- Andrew edits a prompt, triggers a run immediately, and the run uses the old prompt (opposite edge: snapshot was taken before the edit)
+- QA annotation highlights visually land on the wrong sentence, or on punctuation/whitespace, after any manual edit.
+- Provenance highlight (marigold/rust) coverage percentage changes after a no-op save (edit-then-immediately-undo).
+- `_key` values in Sanity documents change on every save (indicates whole-document rewrite instead of patch).
 
-**Phase to address:** Phase 1 (config externalization is the foundation — snapshot semantics must be correct before any agent reads DB-backed prompts)
+**Phase to address:**
+Native galley rendering + per-section editing round-trip (the phase that introduces the FastAPI edit-write path). This must be solved before Provenance pipeline and Voice Pass ship, since both depend on annotations surviving edits.
 
 ---
 
-### Pitfall 1.2: DB Unavailability Breaks the Pipeline When the File Loader Is Gone
-
-**Severity: HIGH**
+### Pitfall 2: Per-claim provenance binding breaks across the 7 parallel section-writer rewrite
 
 **What goes wrong:**
-Today, `load_prompt(name)` uses `importlib.resources.files("eisenbalm_pipeline").joinpath("prompts", name + ".md")` — it reads from the installed wheel. This NEVER fails due to network issues. After the loader swap to a DB-backed loader, every `load_prompt()` call becomes a network call to Convex (or Postgres). If Convex is degraded (their managed service has had multi-hour incidents), the entire pipeline fails to start. The 12 `.md` files in `packages/pipeline/src/eisenbalm_pipeline/prompts/` become dead code and are potentially removed — destroying the fallback.
+The Researcher will emit `{claim, sourceUrl, retrievedAt}` bindings, but those bindings only stay attached to specific *facts* — the 7 section writers (origin story, problem, founder bio, case study, game, bonus, +1) are separate LLM calls that paraphrase, recombine, and re-sequence the Researcher's material into prose. An LLM asked to write engaging copy will restate a sourced fact in different words, merge two claims into one sentence, or drop the claim's precise wording while keeping its substance — at which point naive provenance tracking (e.g., matching claim text against final prose via substring/fuzzy match) loses the binding, and the galley either shows nothing sourced (false "unsourced" — rust when it should be marigold) or, worse, binds the wrong source to a superficially similar but factually different sentence (false marigold — the dangerous direction, since it tells Andrew "verified" when it isn't). This is exactly the mechanism documented in the citation-hallucination literature: reference/claim provenance degrades specifically at the "generate new text conditioned on sourced input" step, and multi-agent pipelines compound this because each writer is a fresh model call with no visibility into the Researcher's structured bindings unless explicitly threaded through.
 
-**Specific codebase risk:** The existing call sites (`agents/scout.py:192`, `agents/calibrator.py:109`, `agents/editor.py:194`, `agents/advocate.py:67`, `agents/researcher.py:85`, `agents/bonus.py:130/144/159`, `agents/game.py:61`, `agents/design/__init__.py:99`) would all become DB-dependent. A single Convex hiccup cascades to all 9 agents.
+**Why it happens:**
+It's tempting to solve provenance as a downstream NLP-matching problem (extract claims from final prose, fuzzy-match against the Researcher's claim list) because it requires no change to the 7 writer prompts. This is the wrong direction of binding — provenance must be established at generation time (writer says which source it drew from), not reconstructed after the fact by matching text.
 
-**Prevention:**
-1. Do NOT delete the `.md` files during the migration. Keep them as the fallback source. The new loader should be: (1) try DB, (2) on any exception, fall back to `importlib.resources` file, (3) log the fallback as a WARNING (so Andrew sees it in Railway logs, knows the dashboard config was bypassed).
-2. Implement a warm cache: at pipeline start (before `_execute_run` even begins), bulk-load all active prompts from DB into an in-memory dict keyed by agent name. Individual agent `load_prompt()` calls hit the cache, not the DB. Cache is populated once per run with a 5-second timeout; on timeout, fall back to files.
-3. Write a health-check into `POST /run/weekly`: before starting a run, verify the config DB is reachable and returns valid prompts. If not, return `503 config_unavailable` rather than starting a run that will silently use stale file-based prompts.
-4. Track which source was used (`db` vs `file_fallback`) in the run's config snapshot. If `source: "file_fallback"` appears in the snapshot, surface it prominently in the dashboard run detail view.
+**How to avoid:**
+- Push claim IDs into the writer's context and require the writer's structured output to carry claim references forward, not just prose. Concretely: give each writer the Researcher's claims as a numbered/keyed list in its prompt, and require the writer's Pydantic output schema to include a parallel `sourcedSpans: list[{text, claimId}]` (or similar) alongside the prose — i.e., make citation a structured output field the model must populate, not something inferred later. This mirrors the existing pattern of `_enforce_structural_floor` validators (Phase 18) — provenance becomes a schema-enforced field, not a post-hoc pass.
+- Treat "no claimId reference" as the correct, honest default (unsourced/rust) rather than trying to backfill via similarity search — false negatives (unsourced when actually sourced) are recoverable by Andrew clicking through; false positives (marked sourced when the source doesn't actually support the sentence) are a factual-accuracy failure that undermines the entire "two sign-off" gate.
+- Validate at the code-gate layer (like `verify_research`/`validate_sections`) that every `claimId` a writer references actually exists in the Researcher's claim list and that the source URL is still resolvable — reject/regenerate-once on dangling references, the same pattern already used for structural validation.
+- Do NOT let the QA judge (Opus) invent or "verify" provenance bindings freely — its role should be flagging unsupported factual claims (existing regex `claim_checks`), not asserting sourcing that the writer itself never claimed.
+- Track a binding-survival metric per run (percentage of Researcher claims that arrive at final prose with a resolvable claimId) as a scoreboard number — if it degrades after a prompt change, that prompt change should fail eval gating (ties into Pitfall 4's regression gate).
 
 **Warning signs:**
-- Railway logs show `load_prompt: using file fallback for [agent]` during a run
-- Config snapshot has `source: "file_fallback"` while the dashboard shows a custom prompt version
-- Pipeline completes successfully but the prompt version in the snapshot doesn't match what Andrew set in the dashboard
+- Marigold (sourced) highlights that, when hovered, show a source URL clearly about a different fact than the highlighted sentence.
+- Binding-survival rate drops after any writer-prompt edit, silently, with no scoreboard alarm.
+- The founder/subject-name-only sourcing gap called out in PROJECT.md ("only founder/subject names have per-fact source URLs today") persists after this milestone ships — a sign the new provenance pipeline only threaded through the easy case and left prose claims unsourced.
 
-**Phase to address:** Phase 1 (the fallback strategy must be designed before the first DB-backed `load_prompt()` call is written)
+**Phase to address:**
+Provenance pipeline phase, but the schema contract (claimId-carrying writer outputs) must be locked *before* any of the 7 writers are touched — this is a contract-first change per this project's own CLAUDE.md discipline (`docs/API_CONTRACTS.md` amended before code). Sequence it before or alongside the galley phase that renders sourced/unsourced spans, since the galley UI is only as trustworthy as the binding underneath it.
 
 ---
 
-### Pitfall 1.3: Mid-Run Config Edit Corrupts Agent-to-Agent State That Carries Forward
-
-**Severity: MEDIUM**
+### Pitfall 3: Dual-write inconsistency during the Sanity-bypass migration
 
 **What goes wrong:**
-The snapshot mitigates "an agent reads the wrong prompt version." But it does NOT prevent a subtler problem: even if all agents read from the snapshot, if an operator changes the Calibrator's prompt mid-run (while agents after Calibrator are still running), the `style_brief` that Calibrator wrote to `DispatchState` was produced by the old prompt. The new prompt changes Calibrator's voice framing — but Calibrator already ran. The OriginStoryWriter receives a `style_brief` generated by the old Calibrator, while Andrew sees the new Calibrator prompt in the dashboard and thinks the run used it.
+The milestone's locked decision is "Sanity bypass, not removal" — the dashboard becomes the write path (`dashboard → pipeline API → Sanity`), but Sanity Studio remains a "read-only fallback." Two concrete ways this breaks: (1) Studio is Sanity's own UI — "read-only fallback" is a documentation intent, not an enforced technical constraint; if Andrew (or anyone) opens Studio and edits a field directly (which Studio always permits — Sanity has no built-in per-field lock), that write bypasses the pipeline API, `audit_log`, and every annotation/provenance state the dashboard thinks it owns, silently desyncing the two views of "truth." (2) The existing Sanity-status-flip publish path (`weeklyIssue.status` → `published` → webhook → PDF/deploy chain) is explicitly called out as still live and bypassing all gates — if it isn't hard-disabled (not just "deprecated in docs"), a flip in Studio (accidental or out of habit) publishes an issue that never passed the two-sign-off gate, defeating the entire point of this milestone.
 
-**Note:** The snapshot fixes this IF AND ONLY IF the entire config is frozen at run start (Pitfall 1.1 prevention). This pitfall is about dashboard UX misleading Andrew, not a technical corruption.
+**Why it happens:**
+"Reduce Sanity to a pass-through datastore" is a data-flow intent that's easy to state and easy to leave un-enforced, because CMS platforms like Sanity are designed to be directly editable and don't have a native "disable direct writes, allow only via service-account API" mode without deliberate configuration (role/permission restriction, or removing the schema from Studio's deployed config). Teams also tend to defer "actually lock down the old path" because the pipeline still needs Sanity write access for its own automated writes (draft creation, PDF URL, etc.) — so a blanket lockdown isn't just a flag flip, it requires distinguishing "pipeline service account" writes from "human via Studio" writes.
 
-**Prevention:**
-1. The dashboard must clearly show: "This run used config snapshot from [timestamp]" with a link to the exact prompt versions. Never show the current live prompt versions on a run detail page — only the snapshot.
-2. Add a "run in progress" lock indicator in the dashboard: while a run is active, the prompt editor for any agent in that run shows "Locked — edit will apply to next run." This prevents Andrew from thinking he changed something mid-run.
+**How to avoid:**
+- Enforce, don't just document: use Sanity's dataset roles/permissions (or a Studio-side custom document actions plugin that removes Publish/Save actions for `weeklyIssue`/relevant types) so a human logged into Studio physically cannot write to the fields the dashboard now owns. If full field-level lockdown isn't feasible this milestone, at minimum strip the "Publish" document action from Studio for `weeklyIssue` so the status-flip path has no UI trigger left — the webhook can stay wired (it's harmless if nothing calls it), but its trigger must be unreachable.
+- Add a server-side guard on the Sanity webhook handler itself: reject/no-op a `published` transition unless it was accompanied by evidence of the new gate (e.g., check `claimChecks:allSignedOff` + a new two-sign-off equivalent before running the publisher chain), so even if Studio's UI somehow still fires the webhook, the pipeline-side gate re-checks server-side rather than trusting the Sanity status field as sufficient authorization. (This project already does exactly this pattern for the existing publish gate — 409 unless `claimChecks:allSignedOff` — so extending that re-check to the two-sign-off state is consistent with existing practice, not a new pattern.)
+- Log every Sanity write with its origin (pipeline-service-account vs. any other identity) so a Studio-origin write to a "dashboard-owned" field is detectable in `audit_log` even if it can't be fully prevented on day one.
+- Do the lockdown in the SAME phase as "Full editing in dispatch-control" ships — not as a follow-up — because the moment dashboard editing exists, a still-open Studio editing path is an active two-writers-one-record hazard, not a theoretical one.
 
 **Warning signs:**
-- Operator reports "I updated the Calibrator prompt during a run but the output didn't change" — they are confused because the snapshot locked it. This is correct behavior but needs UI clarity.
-- Andrew edits a prompt during a run and expects the currently-running section writers to pick it up.
+- Sanity Studio still shows a "Publish" button on `weeklyIssue` documents after this milestone ships.
+- Any document field editable from both Studio and dispatch-control with no single source of truth for "last writer wins" resolution.
+- `audit_log` rows exist for pipeline-service-account writes but there's no way to tell if a document was *also* touched by a Studio-authenticated write in between.
 
-**Phase to address:** Phase 2 (prompt editing UI must communicate snapshot semantics clearly)
+**Phase to address:**
+Full editing in dispatch-control + Two-sign-off publish gate phases — these should ship together with the Studio-side lockdown as an explicit acceptance criterion, not deferred to the later "Sanity removal" milestone.
 
 ---
 
-### Pitfall 1.4: Voice Constraints in voice.py Are Not DB-Backed — Edited Prompts May Silently Diverge
-
-**Severity: MEDIUM**
+### Pitfall 4: Eval-gate rubber-stamping and regression-gate overfitting
 
 **What goes wrong:**
-`lib/voice.py` contains `VOICE_CONSTRAINTS` (the Jesse persona block + universal hard rules), which is injected into agent prompts via `str.replace("{VOICE_CONSTRAINTS}", VOICE_CONSTRAINTS)` at call time. This string is NOT in any of the 12 prompt `.md` files — it is hardcoded in `voice.py`. If the dashboard externalizes the 12 prompt files into DB but does NOT externalize `VOICE_CONSTRAINTS`, an operator editing an agent's prompt in the dashboard sees the prompt template with `{VOICE_CONSTRAINTS}` as a literal placeholder — they cannot see what it resolves to. They may inadvertently remove the `{VOICE_CONSTRAINTS}` substitution marker, thinking it is a mistake, and silently kill Jesse's voice across all agents.
+Two related failure modes for the Prompt Lab eval drawer / Eval Center: (1) **Rubber-stamping** — golden scenarios + a regression-gated prompt commit workflow only work as a real quality gate if someone actually reads the eval diff before approving a prompt change. With a single operator on a weekly deadline, the realistic failure mode is Andrew (or whoever edits prompts) glancing at a green scoreboard number and merging, without reading what the golden scenarios actually probe — the same dynamic documented in code-review rubber-stamping research, where repetitive approval-gates degrade judgment regardless of gate quality. (2) **Overfitting to the golden set** — once a fixed set of golden scenarios exists, prompt iteration naturally optimizes against exactly those scenarios (consciously or not), so the scoreboard trends up while real-world quality on the following week's actual (novel) charity/story is unaffected or worse — this is the same well-documented LLM-eval failure where static eval sets stop correlating with production quality once they become the optimization target.
 
-**Specific codebase risk:** `voice.py` also has a Phase 16 byte-equivalence sentinel (`_PHASE_14_VOICE_CONSTRAINTS_BASELINE`) that asserts the string is unchanged at module load time. Editing `voice.py` to add DB-backed loading would need to carefully not break this sentinel.
+**Why it happens:**
+Gates that are cheap to pass "on paper" (a single scoreboard number, a green check) invite passing them cheaply. And golden scenarios are, definitionally, historical/fixed — they can't cover the specific new charity, specific new facts, specific new voice edge case that next week's run will actually contain. Regression gates catch known regressions; they cannot catch unknown-unknowns in a domain (obscure-charity journalism in a fixed satirical voice) that is inherently novel every week.
 
-**Prevention:**
-1. Treat `VOICE_CONSTRAINTS` as a first-class prompt asset in the dashboard — not a hardcoded string in `voice.py`. Migrate it to the DB as a special `voice_constraints` agent record, separate from the 12 operational prompt files.
-2. In the prompt editor, render `{VOICE_CONSTRAINTS}` as a readonly "voice block" chip that expands to show the full content on hover. The operator can see what it resolves to but cannot accidentally delete it.
-3. Add a variable validation rule: when saving a prompt edit, if the original prompt contained `{VOICE_CONSTRAINTS}` and the new version does not, block the save with: "This prompt is missing the {VOICE_CONSTRAINTS} block. Voice constraints are required for Jesse's voice."
-4. Update the byte-equivalence sentinel in `voice.py` to read from DB (or remove it and replace with a test that asserts the DB record matches the canonical baseline).
+**How to avoid:**
+- Make the gate produce a diff a human can read in under a minute, not just a pass/fail number — show *what changed* in the model's behavior on 2-3 representative scenarios (before/after prose side-by-side), not just an aggregate score. Rubber-stamping is much harder when the artifact in front of you is "here's the actual before/after text" rather than "87 → 89."
+- Keep a small shadow set of scenarios *not visible to whoever edits prompts* (rotated in periodically, e.g. from the last few real runs' actual outputs) specifically to catch overfitting — if the visible golden-set score goes up but the shadow-set score doesn't move or drops, that's the actual signal to block the merge.
+- Cap how much weekly time is spent per prompt-change review, but require a specific, named checklist item (e.g., "did you read at least one full before/after section, not just the score?") rather than an unbounded free review — this converts an open-ended fatigue-inducing task into a bounded one, which is the documented antidote to approval fatigue.
+- Since this is a single-operator system, consider making prompt-commit gating advisory-with-friction (a confirmation step that shows the diff and requires an explicit reason string) rather than a hard CI-style block — a hard block that Andrew can't bypass under Thursday deadline pressure will get "just ship it" workarounds that erode the gate's authority long-term more than an honest advisory friction step would.
+- Periodically (not every commit) refresh the golden set itself with recent real runs' good *and* bad outputs, so the set doesn't calcify around whatever prompt style was current when it was built.
 
 **Warning signs:**
-- A prompt edit saves successfully but `{VOICE_CONSTRAINTS}` is absent from the stored version
-- Run output loses Jesse's dry register without any QA flags (QA is also using the same broken voice constraint)
-- Dashboard shows "voice_constraints variable: missing" in variable hint panel
+- Scoreboard trending up for several consecutive prompt commits while Andrew's own qualitative read of recent issues doesn't feel improved (or feels worse).
+- Prompt-commit review time trending toward zero (commits merged within seconds of the eval run completing).
+- Golden scenarios never updated since initial creation, despite dozens of prompt commits since.
 
-**Phase to address:** Phase 2 (prompt editing — variable awareness must cover the voice injection point)
+**Phase to address:**
+Prompt Lab eval drawer + Eval Center phase. The shadow-set mechanism and "readable diff, not just a number" requirement should be a hard acceptance criterion for that phase, not a stretch goal — without it, the phase risks shipping a gate that looks rigorous but isn't.
 
 ---
 
-## Category 2: Prompt Versioning — Migration Mapping, Activate/Rollback Races, Template Variable Safety
-
-### Pitfall 2.1: The File-to-DB Migration Loses the Source-of-Truth Mapping
-
-**Severity: HIGH**
+### Pitfall 5: Annotation alarm fatigue in the galley (QA + provenance + machine-tell)
 
 **What goes wrong:**
-The migration of 12 `.md` files to the DB creates "version 1" for each agent. If the migration script is run more than once (common for idempotency), or if it runs against a partially-migrated state (migration interrupted after 7 of 12 files), some agents end up with duplicate "version 1" entries in the DB. When the dashboard activates a version for an agent, it may activate a duplicate instead of the canonical baseline.
+The galley will simultaneously surface QA findings (severity/axis-tagged), provenance state (sourced/unsourced spans), and machine-tell/voice-violation flags (Voice Pass) — potentially dozens of inline annotations across 8 sections in a single issue. If every annotation renders with equal visual weight, or if the QA judge/voice detector is tuned to flag liberally "to be safe," Andrew will rationally start skimming past annotations rather than reading each one — the identical dynamic documented in security alert-fatigue and code-review rubber-stamping research: volume overwhelms judgment regardless of how good the underlying detector is. For a single-operator, Thursday-deadline system, this is especially dangerous because there's no second reviewer to catch what got skimmed past — an ignored "unsourced factual claim" annotation ships straight to publish.
 
-**More critically:** the `.md` files have a specific format — an editorial header BEFORE `<!-- PROMPT START -->` and the actual prompt template between `<!-- PROMPT START -->` and `<!-- PROMPT END -->` (`lib/prompts.py:26-46`). If the migration script does NOT apply the same `_extract()` function that `load_prompt()` applies, it migrates the raw file content (including editorial header) rather than the extracted prompt. Every agent then runs with its system prompt prefixed by the editorial header comments.
+**Why it happens:**
+Detector tuning naturally drifts toward over-flagging because false negatives (missed problems) feel worse to the team building the detector than false positives (annotations Andrew dismisses) — but the *cost* of false positives is not zero, it's deferred and compounding: each unnecessary flag makes the next real flag less likely to get read carefully. Two-layer detection (deterministic rules + Opus judge) makes this worse if both layers fire independently on the same text without deduplication — same sentence gets flagged twice for overlapping reasons.
 
-**Prevention:**
-1. The migration script MUST use `load_prompt(name)` (or its exact extraction logic) to extract the prompt content — not raw file reads. This ensures the same stripping of `<!-- PROMPT START -->`/`<!-- PROMPT END -->` markers that the live loader performs.
-2. Make the migration idempotent by keying on `(agent_name, content_hash)`: if a version with the same hash already exists for that agent, skip — do not create a duplicate. Use SHA-256 of the extracted content as the deduplication key.
-3. After migration, run a verification step: for each of the 12 agents, call `load_prompt(name)` (file-based) and compare the result against the DB-retrieved active version. They must be byte-identical. If not, abort and report which agents have diverged.
-4. Store the source file path and original file hash on every migrated version record. This makes it trivially easy to verify that "version 1" in the DB is the authentic original from the file.
+**How to avoid:**
+- Rank/collapse, don't just list: severity + axis should drive visual hierarchy so blockers-first is real, not just a label — critical/factual issues visually dominate; minor style nits are collapsed/muted by default and require a click to expand, rather than being inline at equal weight.
+- Deduplicate overlapping findings from the two QA layers (rules + judge) before rendering — one annotation per span-and-concern, not one per detector.
+- Track and show Andrew's own historical accept/reject rate per axis/severity over time (this project already has `qaCorrections.accepted` as a field) — if a specific axis has a near-100% dismissal rate over several issues, that's a signal to *retune the detector*, not a signal that Andrew is being careless. Treat persistently-dismissed annotation categories as a detector-quality bug, not an Andrew-behavior problem.
+- Cap the number of non-blocking annotations shown by default (e.g., show all blockers, but paginate/summarize style-only flags as "12 minor style notes — expand to review" rather than 12 separate inline call-outs).
+- For Voice Pass specifically: the "as-written vs. house-voice rewrite" popover pattern is good (it gives Andrew a decision, not just a complaint) — extend that same decision-forward pattern to QA findings, i.e. every annotation should offer "accept fix / dismiss / edit" inline, not just a passive highlight Andrew has to go find an action for elsewhere.
 
 **Warning signs:**
-- `prompt_versions` table has more than 12 rows with `version_number: 1` (migration ran multiple times)
-- Agent runs with editorial header text in the system prompt (visible in OpenRouter usage logs as unexpectedly long `tokens_in`)
-- Migration "succeeded" but a test run produces output that doesn't match the pre-migration baseline
+- Annotation count per issue trending upward release over release without a corresponding increase in real accuracy problems.
+- Andrew's average time-in-review-screen shrinking while annotation count grows (a sign of skimming, not reading).
+- A specific severity/axis with near-100% historical dismissal rate that hasn't been retuned.
 
-**Phase to address:** Phase 1 (migration is part of config externalization) — must be verified with the byte-comparison test BEFORE switching the live loader to DB-backed
+**Phase to address:**
+Review Desk (native galley) phase for the rendering/hierarchy work; Voice Pass phase for the two-layer dedup and rewrite-popover pattern. The accept/reject-rate feedback loop should be scoped into whichever phase ships `qaCorrections.accepted` reporting to the operator, ideally the same phase as Run Monitor v2's drift strip (both are "look at recent history to catch drift" features and can share plumbing).
 
 ---
 
-### Pitfall 2.2: Activate/Rollback Race Leaves Two Versions "Active" Simultaneously
-
-**Severity: HIGH**
+### Pitfall 6: Big-bang in-place redesign breaks the one working review flow mid-migration
 
 **What goes wrong:**
-The dashboard activates a new prompt version for Scout (version 3 → version 4). The activation write to Convex sets `scout.active_version_id = v4_id`. Simultaneously, a pipeline run that was triggered 2 seconds ago is in its Calibrator phase (the first agent) and will reach Scout in 8–12 minutes. At the moment of Scout's `load_prompt()` call:
+This is a single-operator, weekly-cadence, Thursday-deadline system — "no issue ships that week" is an explicit named risk in this project's own brief. A full visual + structural rebuild of dispatch-control (new design tokens, new nav, new galley, new editing surface, new publish gate) done as one big cutover risks exactly the failure mode strangler-fig/incremental-migration practice exists to prevent: if the new Review Desk has a bug in, say, the two-sign-off gate's server-side enforcement, and the old review path has been fully removed rather than kept as a fallback, there is no way to review and publish that week's issue at all. Given this team's own working pattern (see Phase 26/27 history: additive schema changes, contract-first amendments, phased waves with verification gates each time), a full big-bang UI cutover would be a departure from established practice, not a continuation of it.
 
-- If using live DB reads (no snapshot): Scout reads version 4 (correct — it's what Andrew wanted)
-- If using run-start snapshot (correct architecture): Scout reads version 3 (the snapshot was taken before the activation)
-- If the snapshot write and the activation write race: Scout could read version 4 in the snapshot but version 3 was what actually ran (if activation happened between snapshot write and Scout's execution)
+**Why it happens:**
+Visual redesigns feel like they should be "all at once" because a half-migrated UI (some screens old chrome, some new) looks unfinished and is uncomfortable to ship incrementally — but that discomfort is aesthetic, not functional, and the cost of getting it wrong (a broken review flow on a hard weekly deadline) is much higher than the cost of a visually inconsistent app for a few weeks.
 
-Additionally: rollback from v4 to v3 sets `active_version_id = v3_id`. If two operators are in the dashboard simultaneously (unlikely but possible), a rollback can collide with an activation.
-
-**Why it matters for this system:** Andrew IS the sole operator, so multi-operator collision is low risk. But the race between "activate" and "in-flight run" is real.
-
-**Prevention:**
-1. Activation is only safe to perform when no run is active. The dashboard should: check Convex `pipelineRuns` for any run with status `running`; if found, show "A run is in progress — activation will apply to the next run" and queue the activation for after the current run completes.
-2. Make activation and snapshot atomic: when starting a run, the FIRST DB write is "create run record + snapshot current active versions" as a single Convex transaction. No activation can modify active versions while this transaction is in flight (Convex document-level transactions prevent this if done correctly).
-3. In the dashboard, show "pending activation" separately from "active version" — an activation queued for "after current run" is visually distinct from an immediately-active change.
+**How to avoid:**
+- Sequence by *capability*, not by *screen* — ship the native galley behind the existing review flow first (parallel to, not replacing, whatever renders review today), let Andrew use it for real issues while the old preview iframe path still works as a fallback, and only retire the iframe path once the galley has proven itself across a few real weekly cycles. This project already has exactly this kind of "flip a var, old behavior returns" reversibility pattern for `DESIGNAGENT_SUPPRESSED` (Phase 12) — apply the same discipline here: every major new surface (native galley, per-section editing, two-sign-off gate) should have a fast, documented rollback to the prior working path for at least one full weekly cycle after it ships.
+- The two-sign-off publish gate replacing the Studio-flip path is the highest-risk single change in this milestone (per PROJECT.md's own framing — "Studio flip path currently BYPASSES all gates — must be retired"). Do not retire the old path until the new gate has been exercised on at least one real, complete weekly run end-to-end (not just tests) — keep the old path present-but-logged (or feature-flagged off but not deleted) through that first real cycle, so a rollback is a flag flip, not a re-implementation, if the new gate has a showstopper bug discovered live on a Thursday.
+- Design-token/chrome changes (new palette, masthead, nav) are lower-risk and can go first/fastest since they don't touch data-integrity-critical paths — sequence the purely visual work early and separately from the review-gate/editing-write-path work, so a visual regression and a functional regression are never entangled in the same rollback decision.
+- Keep the existing screens' underlying data contracts (Convex queries, existing `qaCorrections`/`agent_runs` shapes) stable while the chrome around them changes — this project's own Phase 11-18 history shows a strong existing discipline of "rebuild the component, keep the subscription/data-shape byte-compatible" (e.g., DeliberationSlot rebuilt twice while its 5 Convex subscriptions stayed byte-unchanged both times). Continue that pattern for the operator console rebuild rather than touching UI and data contracts simultaneously.
 
 **Warning signs:**
-- Dashboard shows "v4 is active" but the last run's snapshot shows "v3 was used" with no explanation shown to Andrew
-- Rollback fires during a run and the run log shows the agent used a different version than both the pre-rollback and post-rollback states
-- Two consecutive runs with identical config produce different outputs (race happened)
+- A phase plan that removes the old review/publish path in the same wave that introduces the new one, with no overlap window.
+- No documented rollback/flag for the two-sign-off gate specifically.
+- Visual (design-token) changes and functional (write-path, gate-logic) changes bundled into the same PR/wave, making a visual bug and a gate bug equally hard to isolate and roll back.
 
-**Phase to address:** Phase 2 (prompt versioning) — activation semantics must be explicitly designed; do not default to "write to DB and immediately active"
-
----
-
-### Pitfall 2.3: Non-Coders Mangle Template Variables and Break Runs
-
-**Severity: HIGH**
-
-**What goes wrong:**
-Agent prompts contain template variables like `{charity_name}`, `{voice_constraints}`, `{research_summary}`, `{VOICE_CONSTRAINTS}`. The current code substitutes these via `str.replace("{charity_name}", state.charity_name)` (Scout: `agents/scout.py:192`). If a non-coder editing Scout's prompt in the dashboard accidentally:
-- Removes a required variable: `{charity_name}` becomes `charity name` (no braces) → `str.replace` finds nothing → the literal `{charity_name}` is passed to the LLM as prompt text or the replacement silently fails
-- Renames a variable: changes `{voice_constraints}` to `{jesse_voice}` → the substitution never fires → `{voice_constraints}` is passed verbatim to the LLM as the system prompt text
-- Double-curly-braces it: `{{charity_name}}` → Python f-string rendering would strip one pair but raw `str.replace` would fail
-- Uses a variable name that doesn't exist in the substitution map → same silent failure
-
-Silent failures are worse than loud ones here: the pipeline will complete, QA will not flag it (QA doesn't know what variables were supposed to be substituted), and Andrew will publish an issue where the Scout saw `{charity_name}` literally instead of the real charity name.
-
-**Specific risk:** The `str.replace()` pattern used in the codebase does not raise on unknown variables. It silently does nothing, returning the template with the unresolved placeholder intact.
-
-**Prevention:**
-1. Replace all `str.replace("{var}", value)` substitution with a custom template formatter that raises `MissingVariableError` if the template contains `{...}` patterns that have no corresponding substitution value. This makes broken prompts loud (run fails at startup) rather than silent.
-2. In the dashboard prompt editor: parse the prompt text in real-time and highlight all `{variable}` patterns. Show a sidebar with: (a) "Known variables" — the ones this agent's code will substitute; (b) "Unknown variables" — any `{...}` patterns in the prompt that will NOT be substituted. Unknown variables are shown in red with a tooltip: "This variable will be passed verbatim to the LLM."
-3. When saving a prompt edit: validate that all `{...}` patterns in the new version are either known substitution variables OR have been explicitly flagged by the editor as "intentional literal." Warn (not block) on unknown variables — the operator may want `{example}` literally in an example block.
-4. Add a "test substitution" preview in the editor: show the prompt with variables substituted using mock values so the editor can see exactly what the LLM will receive.
-
-**Warning signs:**
-- A run's OpenRouter call has `tokens_in` dramatically higher or lower than baseline (un-substituted large block vs. missing section)
-- Pipeline completes but Scout's `pitchLog` entries show charity name as the literal string `{charity_name}`
-- QA agent produces no corrections for a run (the prompt was garbled, QA ran on the garbled output and also produced garbled QA)
-
-**Phase to address:** Phase 2 (prompt editing) — variable validation must be built before any non-coder touches a prompt
+**Phase to address:**
+This is a sequencing concern for the roadmap as a whole, not a single phase — but it should be made explicit as an ordering constraint: chrome/design-system phase first (low risk), native galley phase in parallel with (not replacing) the existing preview path, two-sign-off gate phase last and only retiring the Studio-flip path after a real-run soak period, ideally flagged as its own milestone-closing verification step ("N consecutive real weekly issues published via the new gate with zero fallback-to-Studio incidents").
 
 ---
 
-### Pitfall 2.4: Rollback to "Working Version" Is Not Actually the File Baseline
-
-**Severity: MEDIUM**
-
-**What goes wrong:**
-An operator makes prompt edits over 3 versions (v1 → v2 → v3) and discovers v3 is producing bad output. They "rollback to v1." But v1 in the DB was the result of the migration (Pitfall 2.1) — and if the migration had a subtle bug (e.g., did not correctly strip the `<!-- PROMPT END -->` marker, leaving a trailing newline), "v1" in the DB is not byte-identical to the file baseline. The rollback "fixes" the operator's changes but lands on a slightly corrupted baseline.
-
-**Prevention:**
-1. The original file-migrated version of each prompt should be permanently marked `origin: "file_migration"` and locked read-only. It should never be possible to overwrite or delete the origin version — it is the canonical baseline.
-2. The dashboard should offer a "Reset to file baseline" action separately from "Rollback." Reset to file baseline re-reads the `.md` file (which is still in the deployed wheel), applies `load_prompt()` extraction, and creates a new version from that content. This is always available as a recovery option.
-3. The migration verification test (from Pitfall 2.1) — byte-comparison between file `load_prompt()` and DB active version — should be run and its result stored alongside the migration record. If the test showed divergence, the origin version is flagged as "migration_suspect."
-
-**Warning signs:**
-- v1 in the DB has a trailing newline where the file doesn't (or vice versa) — visible in a diff of DB content vs `importlib.resources` load
-- "Reset to baseline" produces different output than "Rollback to v1"
-- Prompt diff between DB v1 and current `.md` file shows differences beyond whitespace
-
-**Phase to address:** Phase 2 (versioning semantics) — "rollback" and "reset to baseline" are distinct operations and both must work correctly
-
----
-
-## Category 3: Cost / Budget — Double-Counting, Hard-Stop Orphan State, Pricing Drift
-
-### Pitfall 3.1: Cost Double-Counting After the Dashboard Adds a Second Instrumentation Layer
-
-**Severity: HIGH**
-
-**What goes wrong:**
-Per-call OpenRouter cost capture already exists in `acomplete` (`openrouter_client.py:221-224`, `235-238`), which calls `record_cost(run_id, agent_id, ...)`. The `@agent_node` wrapper (referenced in the brief as a "LangGraph callback/handler") is the proposed injection point for the dashboard's instrumentation. If the dashboard adds a LangGraph callback handler that ALSO records cost from the same OpenRouter response (e.g., by reading `response_metadata["token_usage"]["cost"]` from the LangGraph event stream), every LLM call gets recorded twice: once by `acomplete` and once by the LangGraph callback.
-
-The published run cost in Convex `pipelineRuns.cost` would then be 2× actual spend. Budget caps would fire at half the real threshold. Monthly roll-ups would be wrong. The "100% of proceeds donated" brand promise rests partly on accurate financial transparency — double-counted spend figures erode that trust.
-
-**Specific codebase risk:** `cost.py:83-109` uses additive accumulation: `record_cost` appends to an in-memory dict. If called twice per LLM call, every agent's cost is doubled. The current cost path: `acomplete` → `_usage_from_message()` → `record_cost()`. A LangGraph callback that also calls `record_cost()` on `on_llm_end` would double every entry.
-
-**Prevention:**
-1. Audit the cost capture path BEFORE adding any dashboard instrumentation. Map every place that calls `record_cost()`. Add a test: for a single `acomplete()` call, assert that `record_cost` was called exactly once, and that `get_run_cost(run_id)` returns a total matching exactly one call's worth.
-2. Choose ONE source of truth for cost: either `acomplete`'s `_usage_from_message()` path (current) OR the LangGraph callback — not both. The dashboard can read the cost from Convex (which `acomplete` already populates) without needing to add a second instrumentation layer.
-3. If the LangGraph callback is needed for real-time cost accrual in the dashboard's live run view, use it ONLY for streaming partial cost to the UI — do NOT use it to call `record_cost()`. The final authoritative cost persist at pipeline end remains the `acomplete` path.
-4. Add a post-run sanity check: compare `sum(agent_runs.cost for agent_run in run)` against `pipelineRuns.cost`. If they diverge by more than 1%, flag the run as `cost_accounting_suspect`.
-
-**Warning signs:**
-- Monthly OpenRouter dashboard shows spend = $X but Convex roll-up shows $2X
-- Per-run costs in Convex are consistently 2× the per-run cost shown in the OpenRouter usage API
-- Budget cap fires mid-run at 50% of the configured threshold
-
-**Phase to address:** Phase 1 (read-only dashboard, cost roll-ups) — the instrumentation architecture must be decided BEFORE adding any new cost instrumentation. Phase 3 (budget caps) — the hard-stop mechanism depends on accurate cost numbers.
-
----
-
-### Pitfall 3.2: Budget Hard-Stop Mid-Run Leaves LangGraph Checkpoints Inconsistent
-
-**Severity: HIGH**
-
-**What goes wrong:**
-The dashboard adds a `per_run_budget_cap`. When a run exceeds the cap, the pipeline hard-stops via `POST /runs/{id}/cancel`. The cancel endpoint raises a `CancellationError` or sets a cancellation flag that agents check. But LangGraph's `AsyncPostgresSaver` checkpoint state is written at each node boundary — if the stop happens between two checkpoints, the checkpointer has recorded "Researcher completed successfully" but the actual run is cancelled. A subsequent retry (if Andrew triggers a re-run of the same `runId`) finds a partial checkpoint: LangGraph resumes from after Researcher with no record that the budget was exceeded, and the partial run picks up where it left off — potentially exceeding the budget again.
-
-**Specific codebase risk:** `graph/checkpointer.py:36` reads `SUPABASE_POSTGRES_URL` (which now points at Railway Postgres). The `AsyncPostgresSaver` writes to `checkpoints` and `checkpoint_blobs` tables. A mid-run cancel leaves these tables with a valid partial checkpoint, indistinguishable from a legitimate Editor Gate 1 pause.
-
-**Prevention:**
-1. Budget hard-stop must write a `cancelled` marker to the checkpoint state BEFORE aborting. The marker must include `reason: "budget_cap_exceeded"` and `final_cost`. Without this, the checkpointer state looks like a clean pause.
-2. The Convex `pipelineRuns` record must be updated to `status: "cancelled"` with `cancel_reason: "budget_exceeded"` synchronously (not fire-and-forget) before the LangGraph task is terminated. If Convex update fails, do not cancel — log the failure and alert instead.
-3. Re-run (re-triggering with the same `runId`) should check the Convex run status: if the previous run was `cancelled` due to budget, refuse to resume from checkpoint without operator confirmation. The dashboard must show "This run was cancelled for budget reasons — resume will use a new checkpoint" and require Andrew to click confirm.
-4. The cancel endpoint should also clean up the checkpoint blobs for cancelled runs — or at minimum mark them as stale in a metadata field.
-
-**Warning signs:**
-- A run shows `status: running` in Convex but no activity in Railway logs (cancelled but Convex not updated)
-- Andrew retriggers a cancelled run and it completes instantly — the checkpoint short-circuited the entire run
-- `pipelineRuns.cost` shows the final cost from the cancelled partial run, but subsequent runs for the same issue add on top of it (cost accumulation not reset)
-
-**Phase to address:** Phase 3 (run control — cancel endpoint must be designed with checkpoint consistency in mind); Phase 1 (cost capture must distinguish "in-progress" from "cancelled" cost entries)
-
----
-
-### Pitfall 3.3: model_pricing Table Drift Makes Cost Numbers Lie
-
-**Severity: MEDIUM**
-
-**What goes wrong:**
-The dashboard proposes a `model_pricing` table editable from the dashboard (brief §3B). The current system captures REAL USD cost from OpenRouter's response metadata (`token_usage.cost` at `openrouter_client.py:245`) — this is authoritative because OpenRouter tells us what we were charged. The `model_pricing` table is for PROJECTED spend (monthly estimates, per-run budget projections). If these two are conflated — i.e., if the dashboard starts recalculating historical costs using the `model_pricing` table values instead of the stored actual costs — historical cost data becomes wrong every time the pricing table is updated.
-
-Additionally: OpenRouter's model pricing changes without notice (model price drops are common). If the `model_pricing` table is not updated promptly, projected spend calculations are wrong, budget cap calculations are wrong, and "remaining budget" numbers in the dashboard are misleading.
-
-**Specific codebase risk:** The current authoritative cost path (`acomplete` → `cost.py` → Convex `pipelineRuns.cost`) uses REAL USD from OpenRouter. Do NOT replace or re-derive this with `model_pricing × tokens`. The `model_pricing` table is ONLY for projections.
-
-**Prevention:**
-1. Store and display two numbers separately, always: (a) ACTUAL cost — from `acomplete`'s OpenRouter response, immutable after the run (use this for history, auditing, and donation reconciliation); (b) PROJECTED cost — from `model_pricing × trailing average tokens` (use this for "next run will cost approximately $X").
-2. The `model_pricing` table must be clearly labeled in the dashboard as "Projection pricing" — not "Cost pricing." Changing a value in `model_pricing` updates projections only, not historical run costs.
-3. Add a staleness indicator to the `model_pricing` table: if any model's pricing entry is older than 30 days, show a yellow "stale — verify with OpenRouter" warning. OpenRouter pricing page URL should be linked.
-4. For the donation reconciliation feature (Phase 5), use ACTUAL costs from `pipelineRuns.cost`, never `model_pricing`-derived estimates.
-
-**Warning signs:**
-- Dashboard shows "Run cost: $4.20" but OpenRouter usage dashboard shows "$2.10" for the same period (model_pricing-derived vs actual)
-- A pricing table update causes historical run cost numbers to change retroactively
-- Budget cap fires or doesn't fire based on projected cost instead of actual cost
-
-**Phase to address:** Phase 1 (cost architecture — must distinguish actual vs projected before adding model_pricing table); Phase 5 (donation reconciliation must only use actual costs)
-
----
-
-## Category 4: Kill Switch / Scheduler — Cron Disable vs Flag, tick No-Op, Cancel-in-Flight
-
-### Pitfall 4.1: Disabling the Railway Cron Instead of Checking the schedule_enabled Flag
-
-**Severity: HIGH**
-
-**What goes wrong:**
-The brief's kill switch design is: `schedule_enabled` flag in DB → Railway cron calls `/pipeline/tick` → `tick` checks the flag and no-ops if false. The common mistake is operating personnel disabling the kill switch by going to Railway and stopping/deleting the cron service, rather than flipping `schedule_enabled` to false in the dashboard. This means: (a) the kill switch in the DB still shows `schedule_enabled: true` (the dashboard shows automation as "on" but it's actually off — misleading); (b) re-enabling requires Railway console access, not a dashboard click; (c) the change is not audit-logged.
-
-**Specific codebase risk:** The Railway cron is currently "documented but NOT yet provisioned" (CURRENT_STATE.md). When it IS provisioned, the provisioning PR will be the moment to lock in which method is canonical. If the Railway service is created in a way that can be paused from Railway console, that option will be used when panic-stopping is needed.
-
-**Prevention:**
-1. The Railway cron service should be configured to be hard to pause: set it up as a non-interruptible "deploy on push" service rather than a toggleable service. This removes the temptation to use Railway console as the kill switch.
-2. The `/pipeline/tick` endpoint's `schedule_enabled` check must be the FIRST operation, before any auth or startup cost. Even if the Railway cron fires, `tick` must no-op in under 100ms when the flag is false.
-3. The dashboard kill switch must be the ONLY documented kill switch method. The Railway console method must be explicitly called out as "breaks audit log, breaks dashboard state" in any runbook.
-4. Add a reconciliation check: if `schedule_enabled = true` in the DB but no runs have been triggered for 8+ days, surface an alert: "Scheduler may be broken — expected a run but none started." This catches the Railway-cron-disabled-but-flag-still-on scenario.
-
-**Warning signs:**
-- Dashboard shows `schedule_enabled: true` but no weekly runs are starting
-- Railway logs for the cron service show no activity for > 7 days
-- Andrew uses Railway console to stop a run instead of the dashboard cancel button
-
-**Phase to address:** Phase 3 (run control / kill switch implementation) — the cron provisioning and flag check must be done atomically in the same phase
-
----
-
-### Pitfall 4.2: /pipeline/tick Not Actually No-Oping When schedule_enabled Is False
-
-**Severity: HIGH**
-
-**What goes wrong:**
-`tick` is a new endpoint (does not exist today — it must be built). If the implementation of `tick` starts the pipeline and THEN checks the flag (instead of checking first), a race exists: the flag check happens 50ms into a run that has already started. Alternatively, if `tick` delegates to `POST /run/weekly` via an HTTP call internally, and `/run/weekly` does not check `schedule_enabled` (it checks `X-Pipeline-Trigger-Secret` instead), then flipping the kill switch has no effect on cron-triggered runs — only on direct API triggers.
-
-**Specific codebase risk:** `POST /run/weekly` at `api/runs.py:177-241` is the existing trigger endpoint. It only validates `X-Pipeline-Trigger-Secret`. If `tick` is simply a wrapper that posts to `/run/weekly`, the kill switch must be checked in `tick` BEFORE calling `/run/weekly`.
-
-**Prevention:**
-1. `tick` must be its own endpoint, NOT a wrapper around `/run/weekly`. It reads `schedule_enabled` from Convex, and only if `true` does it call the internal run trigger logic.
-2. The `schedule_enabled` read in `tick` must be a synchronous await BEFORE any work is started. The pattern must be: read flag → if false, return 200 with `{"status": "skipped", "reason": "schedule_disabled"}` immediately.
-3. Write an automated test for `tick`'s no-op behavior: mock `schedule_enabled = false`, call `/pipeline/tick`, assert (a) the pipeline was NOT triggered, (b) no LangGraph tasks were created, (c) response is 200 with `status: "skipped"`.
-4. `tick` should still require the `X-Pipeline-Trigger-Secret` header — the Railway cron service must set this header. Without it, any unauthorized caller could trigger `tick` even when the kill switch is off.
-
-**Warning signs:**
-- A run starts after the kill switch was set to `schedule_enabled: false`
-- `tick` logs show it completed successfully but the pipeline did not run — unclear if the flag was actually checked or if this was a coincidence
-- Test: set kill switch off, manually POST to `/pipeline/tick` with the trigger secret, observe if a run was created in Convex
-
-**Phase to address:** Phase 3 (run control — this is the core kill switch implementation)
-
----
-
-### Pitfall 4.3: Cancel-in-Flight Leaves LangGraph Checkpoints in an Ambiguous State
-
-**Severity: HIGH**
-
-**What goes wrong:**
-`POST /runs/{id}/cancel` must stop an in-flight LangGraph run. The LangGraph graph is invoked as `asyncio.create_task(_execute_run(...))`. Cancelling this task via `task.cancel()` raises `asyncio.CancelledError` inside the graph at the current await point — which could be anywhere (mid-agent, mid-tool-call, mid-Convex mutation, mid-Sanity write). The `AsyncPostgresSaver` may have written a checkpoint for the last completed node but NOT for the partially-completed current node. The Convex `pipelineRuns` record still shows `status: running`.
-
-This creates an inconsistency: the DB (Railway Postgres) shows the graph paused at a specific node; Convex shows `running`; the actual task is gone.
-
-**Specific codebase risk:** `api/runs.py:235-239` uses `asyncio.create_task(_execute_run(...))` with a strong reference pattern. The strong reference stores the task for cancellation. BUT: if the Railway instance restarts (common after a deploy), all in-flight tasks disappear without any cleanup. After restart, Convex still shows `running` for orphaned runs.
-
-**Prevention:**
-1. The cancel endpoint must: (a) cancel the asyncio task; (b) await a cleanup coroutine that updates Convex `pipelineRuns.status = "cancelled"`; (c) write a "cancelled" sentinel to the LangGraph checkpoint. All three steps must complete or the cancellation is incomplete. If step (b) or (c) fails, log the failure but do not claim the cancellation succeeded — return 500 with the partial state.
-2. Add a Railway startup check: on FastAPI startup, query Convex for any runs with `status: running`. If found, check if there is an active asyncio task for that `runId`. If not (instance restarted), update those runs to `status: interrupted` and write an alert to Convex.
-3. The cancel endpoint should be idempotent: calling cancel on an already-cancelled run should return 200 with `{"status": "already_cancelled"}`, not an error.
-4. The LangGraph checkpoint for a cancelled run must be explicitly marked as "cancelled, do not resume" — use a dedicated checkpoint thread ID suffix like `{thread_id}_cancelled` or a metadata field on the checkpoint.
-
-**Warning signs:**
-- Convex shows `status: running` for a run that has no recent activity in Railway logs
-- Railway redeploy causes all `status: running` runs to never complete and never transition to failed/cancelled
-- Cancel button in dashboard shows success but the run is still listed as running
-
-**Phase to address:** Phase 3 (run control — cancel must be designed for both graceful stop and crash recovery)
-
----
-
-## Category 5: Review Gate — auto_publish Risk, False Confidence, Unreviewed Issue Going Live
-
-### Pitfall 5.1: auto_publish Accidentally Enabled — Unreviewed AI Content About Real Charities Goes Live
-
-**Severity: CRITICAL**
-
-**What goes wrong:**
-The brief mandates `require_review = true` by default and `auto_publish` as explicit and off by default (§4, §8). If the dashboard's config editor presents `auto_publish` as a boolean toggle with no friction (a single click enables it), a non-coder operator accidentally enables it. The next pipeline run completes and the Publisher agent skips the `awaiting-review` state, calling `POST /issues/{id}/publish` directly. An unreviewed AI-generated issue about a real charity — with potentially hallucinated founder names, unverified case study subjects, or wrong asset figures — goes live on a site that is currently selling a real product and donating real money.
-
-**Specific brand risk:** The brief explicitly states "only Andrew can flip status to published" (out-of-scope section) and "Andrew is the manual guard." Auto-publish bypasses the single human control that the brand is built on. This is not an abstract risk — it is the catastrophic failure mode for this system.
-
-**Prevention:**
-1. `auto_publish` must NOT be a simple toggle in the dashboard. It must require: (a) an explicit "I understand this will publish without human review" confirmation modal with non-dismissible text; (b) a second confirmation 5 minutes later (rate-limited by a server-side flag that clears); (c) an audit log entry that records who enabled it and when; (d) an email notification to Andrew immediately when it is enabled, regardless of who enabled it.
-2. `auto_publish = true` should be visually alarming in the dashboard: red background on the pipeline config card, persistent banner on the run history page, orange border on every run card when it was used.
-3. The default state in the DB, on any new workspace creation, must be `auto_publish = false`. This must be enforced in the schema as a NOT NULL DEFAULT false — not a nullable field where null could be misinterpreted as "not configured."
-4. The Publisher agent MUST check `require_review` from the run's config snapshot (not the current live config) before proceeding to publish. Even if the live config has been flipped to `auto_publish = true` AFTER the run started, the run uses its snapshot value.
-
-**Warning signs:**
-- Dashboard shows `auto_publish: true` with no warning indicator
-- A run transitions directly from `running` to `published` without passing through `awaiting_review`
-- Andrew receives no notification of a published issue
-
-**Phase to address:** Phase 4 (review gate is the highest-priority Phase 4 feature per the brief). This is a pre-flight check, not a post-hoc fix.
-
----
-
-### Pitfall 5.2: Claims/Fact-Check Gate Gives False Confidence, Unverified Claims Pass
-
-**Severity: HIGH**
-
-**What goes wrong:**
-The brief proposes surfacing "every number/name/date as a checklist for human sign-off before publish (optionally web-search-backed)" (§4). The implementation risk: the claims extraction is itself an LLM call. If the extractor hallucinates that it found no problematic claims, or if it extracts claims correctly but the UI presents them in a way that makes "no flag needed" the path of least resistance (e.g., pre-checked checkboxes), Andrew clicks through without actually reading each claim.
-
-A second risk: a web-search-backed claim checker that returns "verified" based on a Google snippet that itself is wrong (LLMs reading stale or incorrect search results as authoritative). The fact-check gate provides a veneer of verification without actual verification.
-
-**Prevention:**
-1. The claims extractor must enumerate ALL named entities (people, organizations, numbers, dates) — not just ones it judges "risky." Andrew sees the full list, not a curated subset. Completeness is more valuable than precision here.
-2. Claims requiring sign-off must be UNCHECKED by default. Andrew must affirmatively check each one. Pre-checked checkboxes are not acceptable.
-3. For claims where a source URL is available (from the Researcher's `sourceUrl` field), show the URL inline as "Source: [link]." For claims with no source URL, show "No source — verify manually" in red. The presence of a source URL should NOT be conflated with "claim verified."
-4. The claims gate should explicitly NOT be called "fact-check" in the UI — it should be called "claims review" to avoid implying automated verification. The UI should say: "Review these claims before publishing. We found sources for some — verify the rest manually."
-
-**Warning signs:**
-- Andrew reports completing the claims review in < 2 minutes for a 10-section issue (not reading them)
-- A claim with no source URL was checked off without manual verification
-- The claims extractor returned 0 claims for an issue with 10 sections containing 50+ named entities
-
-**Phase to address:** Phase 4 (review gate) — claims UI design must default to skepticism, not trust
-
----
-
-### Pitfall 5.3: Issue Preview in Dashboard Renders Differently Than Live Site — Andrew Approves Based on Wrong Preview
-
-**Severity: MEDIUM**
-
-**What goes wrong:**
-The dashboard's issue preview (shown during `awaiting_review`) renders the issue content from Sanity in the dashboard's own component tree. The live site renders the same Sanity content through `apps/web`'s issue page (`issue/[slug]/page.tsx`) with the full Phase 19 layout, theme injection, game iframe sandbox, deliberation slot, etc. If the dashboard preview uses simplified rendering (e.g., just renders Portable Text blocks as plain HTML), Andrew's approval is based on an inaccurate representation of what will go live. He approves a clean preview and the live site has a broken game iframe or a contrast issue.
-
-**Prevention:**
-1. The dashboard issue preview should render the SAME components as the live site, not a simplified version. This means embedding a sandboxed `<iframe>` pointing at a preview route in `apps/web` (e.g., `/issue/[slug]?preview=true`), not reimplementing the layout in the dashboard.
-2. If a full `apps/web` preview is not feasible in Phase 4, the dashboard must clearly label the preview as "Simplified — verify on live preview before publishing" and provide a direct link to the Sanity Studio draft preview URL.
-3. The game section specifically must render in the dashboard preview with the SAME `sandbox="allow-scripts"` iframe — not as decoded HTML or a code block. Andrew must see the actual game functioning (or failing) before approving.
-
-**Warning signs:**
-- Andrew approves an issue that has a broken game iframe on the live site
-- The dashboard preview shows correctly-formatted text but the live site has a CSS variable that's a fallback (the preview didn't test theme injection)
-- A claim in the Portable Text renders differently in the dashboard preview vs. the live PortableTextRenderer
-
-**Phase to address:** Phase 4 (review gate) — preview fidelity is a requirement of the review gate's value proposition
-
----
-
-## Category 6: Auth on a Greenfield Admin App
-
-### Pitfall 6.1: Exposing the Control Plane Publicly Without Auth
-
-**Severity: CRITICAL**
-
-**What goes wrong:**
-The existing `apps/web` site is 100% public (CURRENT_STATE.md Q5). If the new `dispatch-control` Next.js app inherits the same zero-auth pattern (easy to do when copy-pasting project structure), every dashboard route — prompt editing, pipeline triggering, kill switch, cost data — is publicly accessible without login. Anyone who discovers the URL can trigger pipeline runs (at OpenRouter cost), edit agent prompts, toggle `auto_publish`, or read all cost and charity data.
-
-**Specific risk:** The FastAPI endpoints (`POST /pipeline/run`, `POST /runs/{id}/cancel`, `POST /agents/{key}/test-run`) are currently protected only by `X-Pipeline-Trigger-Secret`. If the dashboard calls these endpoints client-side (Next.js client component → fetch → Railway), the trigger secret is exposed in the browser's network tab.
-
-**Prevention:**
-1. Auth must be the FIRST feature built in `dispatch-control` — before any other dashboard functionality. A dashboard page that accidentally deploys without auth protection is worse than a blank page. Ship the auth layer, verify it, THEN add dashboard features behind it.
-2. All Railway FastAPI endpoints called by the dashboard must be called via Next.js server actions or API routes — NEVER directly from browser-side JavaScript. Server actions keep the trigger secret server-side.
-3. The `dispatch-control` Vercel deployment must have separate environment variables from `apps/web`. Sharing `.env.local` variables between the two apps is a mistake that could expose admin secrets on the public site.
-4. Add a smoke test to the `dispatch-control` CI: attempt to access a protected route without auth, assert redirect to login. This must pass before any deploy.
-
-**Warning signs:**
-- `dispatch-control` deploys to Vercel and the `/dashboard` route renders without a login redirect
-- Browser dev tools network tab shows `X-Pipeline-Trigger-Secret` header in a request from the dashboard
-- The Railway FastAPI logs show requests from `*.vercel.app` origins without auth headers
-
-**Phase to address:** Phase 1 (auth is the prerequisite for any dashboard functionality — it is not "Phase 6 productization," it is Phase 1 day one)
-
----
-
-### Pitfall 6.2: Leaking Pipeline Secrets Through the Dashboard API
-
-**Severity: HIGH**
-
-**What goes wrong:**
-The dashboard reads config from Convex: agent settings, model names, temperatures. If the config store also holds API keys (OpenRouter key, Sanity token, Stripe secret, Convex deploy key) and these are returned in dashboard API responses, every session that can read config can read all pipeline secrets. The dashboard might display the OpenRouter key in an "Agent settings" panel "for convenience."
-
-**Specific risk:** The brief mentions "per-workspace secrets handling" and "route API keys through a proper secrets store" (§4.7, §6). Until the secrets store is built, there is a temptation to store secrets alongside other config in Convex — where they would be readable by any authenticated dashboard user (and, without auth, by anyone).
-
-**Prevention:**
-1. Secrets (API keys, webhook secrets, Stripe keys) must NEVER be stored in Convex. Convex is observable and queryable. Use Railway environment variables for Railway-side secrets and Vercel environment variables for Next.js-side secrets. These are not accessible via API.
-2. The dashboard must NEVER display the value of any secret. It can display "OpenRouter API key: configured (last 4: xxxx)" — never the full key.
-3. Config stored in Convex must be explicitly partitioned into: "operator-visible config" (model choices, temperatures, `schedule_enabled`) and "infrastructure secrets" (API keys) — which live in environment variables only.
-4. When Phase 6 (productization) adds a secrets store, the migration must audit every Convex document for any field that looks like an API key (regex: `sk_|Bearer |OPENROUTER|SANITY_API`) and alert if found.
-
-**Warning signs:**
-- Convex dashboard (at convex.dev) shows a document with a field named `openrouterKey` or similar
-- Dashboard API response includes any string matching the pattern of an API key
-- `dispatch-control` env var `OPENROUTER_API_KEY` appears in a browser network response body
-
-**Phase to address:** Phase 1 (auth architecture must include secret partitioning from day one)
-
----
-
-### Pitfall 6.3: Auth on dispatch-control Doesn't Protect the FastAPI Backend
-
-**Severity: HIGH**
-
-**What goes wrong:**
-The `dispatch-control` Next.js app has auth (Clerk or Auth.js). A user must log in to see the dashboard. But the FastAPI endpoints on Railway (`POST /pipeline/run`, `POST /runs/{id}/cancel`, etc.) only check `X-Pipeline-Trigger-Secret`. If someone discovers the Railway URL and the trigger secret (e.g., from a commit, a Railway log snippet, or a support ticket), they can trigger pipeline runs, cancel runs, or run test agents directly against Railway — bypassing the dashboard auth entirely.
-
-**Prevention:**
-1. The `X-Pipeline-Trigger-Secret` must be treated like a password: never committed, rotated after any possible exposure, and not logged in Railway logs.
-2. For dashboard-to-Railway calls, the pattern must be: browser → Next.js server action (auth-checked) → Railway FastAPI (secret-checked). The secret is only in the Next.js server environment.
-3. Consider adding IP allowlisting at Railway: only accept requests from Vercel's IP range + localhost. This is Railway-level protection independent of the application-level secret check.
-4. Rate-limit the Railway trigger endpoints: max 5 calls per hour per source IP. Protects against brute-force trigger attempts even if the secret is unknown.
-
-**Warning signs:**
-- Railway logs show `/pipeline/run` calls from IP addresses that are not Vercel's
-- The trigger secret appears in a Railway build log or stdout log
-- A pipeline run starts that wasn't triggered from the dashboard
-
-**Phase to address:** Phase 1 (auth and secret management are the same concern — both must be designed together)
-
----
-
-## Category 7: Multi-Tenant Bones — workspace_id Retrofit Risk, Brand Leakage
-
-### Pitfall 7.1: Skipping workspace_id Now Means a Full Rewrite Later
-
-**Severity: HIGH**
-
-**What goes wrong:**
-The brief mandates threading `workspace_id` through everything "from the start" (§6). The failure mode: Phase 1 through Phase 5 are built without `workspace_id` because "it's just one workspace, it doesn't matter." Every Convex query, every DB row, every FastAPI endpoint, and every config table is built assuming exactly one workspace. In Phase 6, adding `workspace_id` requires adding the column to every table, adding the filter to every query, updating every FastAPI endpoint to scope to a workspace, and auditing every place where "all runs" is really "all runs for workspace X." This is not a small migration — it is a rewrite of every data layer.
-
-**Prevention:**
-1. Every Convex table that touches pipeline data MUST have a `workspaceId` field from the first create statement. For v1 (single tenant), every document uses the same hardcoded workspace ID (e.g., `"eisenbalm"`). The field is present but always the same value — zero query complexity cost, but the schema slot is reserved.
-2. Every FastAPI endpoint that returns or modifies data must accept a workspace scope, even if it always defaults to the single workspace. This means the endpoint signature handles workspace scoping from day one.
-3. The Convex schema migration from "no workspaceId" to "has workspaceId" is a destructive operation if data already exists. If the field is not added now, the migration requires backfilling all historical run records with a workspace ID — which could fail or produce inconsistencies for runs that completed before the migration.
-
-**Warning signs:**
-- A Phase 1 Convex mutation does not include `workspaceId` in its schema
-- FastAPI endpoint `/runs/{id}` looks up a run without any workspace filter (any user of any workspace could access any run's data)
-- Phase 6 planning discovers that adding `workspaceId` requires rewriting 40+ Convex queries
-
-**Phase to address:** Phase 1 (every table schema must include `workspaceId` before any data is written)
-
----
-
-### Pitfall 7.2: Eisenbalm-Specific Logic Leaking Into the Control Plane
-
-**Severity: MEDIUM**
-
-**What goes wrong:**
-The brief explicitly prohibits Eisenbalm-specific logic in the control plane (§6): "No hardcoded 'eisenbalm' strings or charity-specific logic in the control plane." The failure modes:
-
-- The charity registry feature is built with columns specific to Eisenbalm's charity focus criteria (`assetRange`, `focusArea`, `notableObscurity`) hardcoded as UI fields — instead of generic "charity metadata" that any workspace could configure.
-- The `schedule_enabled` kill switch is described as "controls whether Eisenbalm Dispatch runs Thursday" — the schedule is hardcoded to Thursday in the pipeline instead of being a configurable cadence.
-- The pipeline graph structure (Scout → Advocate → Editor deliberation → parallel section writers) is hardcoded in `graph/builder.py` and cannot be reconfigured from the dashboard — contradicting the "treat the agent graph as config" principle.
-- The "Jesse's voice" framing appears in the dashboard prompt editing UI as "Jesse's Voice Constraints" — instead of "Voice Constraints (narrator-configurable)."
-
-**Prevention:**
-1. Every UI label in the dashboard must be generic: not "Charity Registry" but "Subject Registry"; not "Jesse's Voice" but "Narrator Voice"; not "Thursday Schedule" but "Schedule Cadence."
-2. The pipeline graph configuration must be stored as data, not as `graph/builder.py` code, from Phase 1 onwards — even if there is no graph editor UI. The graph topology (which nodes run in what order) should be readable from the config store by the dashboard, not hard-coded.
-3. Do a "rename the brand" test in Phase 6: search the entire `dispatch-control` codebase for "eisenbalm", "Jesse", "charity", "lip balm", "Dispatch" — any occurrence in non-display text (i.e., not in demo data or UI copy that Andrew wrote) is a portability violation.
-
-**Warning signs:**
-- The dashboard codebase has `if workspace.type === "charity_dispatch"` conditional logic
-- A Convex table has a field named `charityId` instead of `subjectId` or `entityId`
-- The pipeline `builder.py` graph topology cannot be loaded from a DB config — it always runs the same 14-node structure
-
-**Phase to address:** Phase 1 (schema design) and Phase 6 (audit and rename) — Phase 1 must avoid locking in Eisenbalm-specific field names; Phase 6 must verify the audit passes
-
----
-
-### Pitfall 7.3: Single-Workspace Auth Assumptions Baked Into Session Model
-
-**Severity: MEDIUM**
-
-**What goes wrong:**
-The auth layer (Clerk or Auth.js) is built for a single user (Andrew) with a single workspace. Session tokens carry no `workspace_id` claim because there is only one workspace. When Phase 6 adds multi-tenancy, every server action and API route must be updated to: (a) extract `workspace_id` from the session token (which doesn't have it), (b) look up the user's workspace from the DB, and (c) scope every query to that workspace. If this lookup is not in the original auth session design, every data access point must be refactored.
-
-**Prevention:**
-1. Even for a single workspace, the session token / Clerk organization model must include `workspaceId` as a session claim from day one. For v1, it is always `"eisenbalm"` — but it is present in the session, and every server action reads it from the session rather than from a constant.
-2. Create a `getCurrentWorkspace()` server utility that reads `workspaceId` from the session and returns the workspace config. All server actions use this utility — never hardcode `"eisenbalm"` in server action code.
-3. Document the "adding a second workspace" procedure in the dashboard Phase 6 plan: what changes in the auth layer, what changes in the DB queries, what changes in the FastAPI endpoints.
-
-**Warning signs:**
-- Server actions have `const workspaceId = "eisenbalm"` hardcoded
-- Adding a second user to the dashboard immediately sees all of the first workspace's runs and data (no scoping)
-- Phase 6 planning discovers that `workspaceId` is not in any session token and must be added
-
-**Phase to address:** Phase 1 (auth design) — session token must include `workspaceId` from the first session
-
----
-
-## Phase-Specific Warning Matrix
-
-| Phase | Topic | Likely Pitfall | Mitigation |
-|-------|-------|---------------|------------|
-| Phase 1 | Config snapshot timing | 1.1 — snapshot taken after some agents read config | Snapshot must be FIRST awaited op in run execution, before LangGraph invoke |
-| Phase 1 | DB-backed loader | 1.2 — DB unavailable kills pipeline | Keep `.md` files, implement warm cache + file fallback |
-| Phase 1 | Cost instrumentation | 3.1 — double-counting from @agent_node + acomplete | Audit existing cost path; use ONE source of truth per LLM call |
-| Phase 1 | workspace_id | 7.1 — retrofit rewrite | Every Convex table must include `workspaceId` from first migration |
-| Phase 1 | Auth architecture | 6.1, 6.2, 6.3 — public control plane, leaked secrets | Auth FIRST; server actions only; secret partitioning from day one |
-| Phase 2 | File-to-DB migration | 2.1 — corrupted migration mapping | Use `load_prompt()` extraction logic; byte-comparison verification test |
-| Phase 2 | Activate/rollback race | 2.2 — two versions "active" simultaneously | Activation blocked while run is in progress; snapshot is atomic with run creation |
-| Phase 2 | Template variables | 2.3 — non-coders delete `{charity_name}` | Variable parser + real-time highlight + substitution preview in editor |
-| Phase 2 | Voice constraints | 1.4 — `{VOICE_CONSTRAINTS}` accidentally removed | Treat voice.py `VOICE_CONSTRAINTS` as a first-class prompt asset with a delete guard |
-| Phase 3 | Kill switch | 4.1 — disabling Railway cron vs. flag | Cron must be hard to pause from Railway; flag check is canonical |
-| Phase 3 | tick no-op | 4.2 — tick starts run before checking flag | Flag check is FIRST synchronous operation; test confirms no-op |
-| Phase 3 | Cancel consistency | 3.2, 4.3 — checkpoint orphan after cancel | Cancel writes "cancelled" to checkpoint + Convex atomically before task.cancel() |
-| Phase 3 | Budget hard-stop | 3.2 — orphaned state after budget cut | See cancel consistency above; budget stop uses same cancel path |
-| Phase 4 | auto_publish | 5.1 — unreviewed issue goes live | Friction + confirmation modal + audit log + email alert; visual alarm state |
-| Phase 4 | Claims gate | 5.2 — false confidence from automated check | Unchecked by default; label as "claims review" not "fact-check" |
-| Phase 4 | Issue preview | 5.3 — dashboard preview differs from live site | Embed apps/web preview iframe; same components as live |
-| Phase 5 | model_pricing drift | 3.3 — projections lie after pricing update | Actual cost (from OpenRouter) ≠ projected cost (from model_pricing); never recalculate historical with model_pricing |
-| Phase 6 | Brand leakage | 7.2 — Eisenbalm logic in control plane | "Rename the brand" test; generic field names from Phase 1 |
-| Phase 6 | Workspace session | 7.3 — workspaceId not in session token | getCurrentWorkspace() utility uses session claim, not constant |
-
----
-
-## Integration Gotchas Specific to Mission Control
+## Technical Debt Patterns
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|-----------------|------------------|
+| Anchor annotations to `quotedSpan` text-match only (no `_key`/offset model) | Ships galley faster, no schema change | Every edit silently mis-anchors annotations (Pitfall 1) | Never, once per-section editing ships — acceptable only for a read-only, no-edit galley preview |
+| Backfill provenance via post-hoc fuzzy text-matching instead of structured writer output | No writer-prompt/schema changes needed | Wrong-binding risk (false "sourced") undermines the entire sign-off gate (Pitfall 2) | Never for factual claims; acceptable only for low-stakes cosmetic highlighting, not for gating publish |
+| Leave Sanity Studio's Publish action live "because retiring it is extra work" | Studio stays a full fallback UI with zero config changes | Silent bypass of the new two-sign-off gate (Pitfall 3) | Never past the phase that ships the new gate |
+| Single aggregate eval score with no before/after diff view | Fast to build (one number, one gate) | Rubber-stamped prompt commits, undetected regressions (Pitfall 4) | Acceptable only as an early scaffold before Prompt Lab's real UI ships, never as the final UX |
+| Flag every possible QA/voice concern "to be safe" (liberal detector tuning) | Feels thorough, avoids missed issues in demos | Alarm fatigue, real flags get skimmed past (Pitfall 5) | Never in production; acceptable only during initial detector calibration against a held-out set, before it reaches the operator |
+| Remove the old review/publish path immediately once the new one exists | Cleaner codebase, one path to maintain | No fallback if new gate has a showstopper on a live Thursday (Pitfall 6) | Acceptable only after ≥1 full real weekly cycle has succeeded end-to-end on the new path |
+
+## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| `acomplete` + dashboard cost instrumentation | Adding LangGraph callback that also calls `record_cost()` | Dashboard reads cost FROM Convex (written by acomplete); callback streams to UI only, no record_cost() call |
-| `load_prompt()` loader swap | Migrating raw `.md` content including `<!-- PROMPT START -->` markers | Use the existing `_extract()` function from `lib/prompts.py` for migration; byte-compare against file baseline |
-| LangGraph checkpoint + cancel | Using `task.cancel()` then immediately returning 200 | Cancel must await cleanup coroutine: checkpoint marker write + Convex status update before returning |
-| Railway cron + kill switch | Stopping the Railway cron service to "pause automation" | Flip `schedule_enabled` in DB via dashboard; `/pipeline/tick` checks flag before doing anything |
-| Convex `pipelineRuns` + new `agent_runs` table | Using pipelineRuns.cost for both per-agent and per-run rollup | Separate tables: `agent_runs` for per-agent data, `pipelineRuns.cost` for run-total (sum of agent_runs) |
-| `dispatch-control` Next.js + Railway FastAPI | Browser-side fetch with trigger secret in Authorization header | All Railway calls via Next.js server actions; secret never reaches browser |
-| Prompt versioning + `str.replace()` substitution | Using `str.replace("{var}", value)` which silently no-ops on unknown vars | Custom template formatter that raises on unknown `{var}` patterns; variable validation in editor saves |
-| `SUPABASE_POSTGRES_URL` (LangGraph checkpointer) | Treating the var as pointing to Supabase (it now points to Railway Postgres) | Read from Railway Postgres directly; update `.env.example` to reflect Railway URL; rename var to `POSTGRES_URL` |
+|-------------|-----------------|-------------------|
+| Sanity Portable Text (galley round-trip) | Whole-document `createOrReplace` on save, regenerating all `_key`s | Patch-based writes (`patch().set()` on specific block/span paths) that preserve unaffected `_key`s |
+| Sanity webhook (status-flip publish) | Assuming "retired" means "no longer called from the UI" is sufficient | Add server-side re-validation in the webhook handler itself (re-check sign-off state), since the trigger surface (Studio) can't be perfectly locked day one |
+| Convex `qaCorrections` schema | Treating `quotedSpan` as authoritative for re-locating text after edits | Add/require a stable anchor (block/span key + local offset); keep `quotedSpan` as a human-readable label only |
+| FastAPI per-section edit endpoint | Editing endpoint accepts/returns plain prose strings, losing the `BodyBlock` discriminated-union structure (h2/h3/blockquote/paragraph) introduced in Phase 18 | Editing endpoint must round-trip the full `BodyBlock` shape, not collapse back to flat text — otherwise editing silently undoes the Phase 18 structural-variety work |
+| Researcher → 7 writers claim handoff | Passing claims as unstructured prose context ("here are some facts, cite them if relevant") | Pass claims as a structured, ID-keyed list the writer's output schema must reference explicitly (Pydantic field, not free text) |
+| Two-sign-off publish gate | Implementing sign-off as two client-side checkboxes with no server re-check | Server-enforced (like the existing `claimChecks:allSignedOff` 409 pattern) — both sign-off states must be re-verified in `POST /issues/{run_id}/publish`, not trusted from the client |
+| Prompt Lab eval scoreboard | Storing only the latest score per prompt version (mutable) | Append-only scoreboard (already the stated design) — mutable "latest score" invites silent overwrite of a regression before anyone notices |
 
----
+## Performance Traps
 
-## "Looks Done But Isn't" Checklist for Mission Control
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|-----------------|
+| Re-running full QA (rules + Opus judge) on every keystroke/autosave during per-section editing | Slow galley, rising per-edit LLM cost, Andrew waits on every save | Re-run deterministic rules on save (cheap, instant); re-run the Opus judge only on explicit "re-check" action or before publish, not on every autosave | Becomes a real cost/latency problem the first week Andrew does heavy live editing rather than one-shot review |
+| Eval Center golden-scenario runs re-executing the full 18-node pipeline per prompt commit | Slow feedback loop discourages actually reviewing diffs (feeds Pitfall 4) | Scope golden scenarios to the single agent/section being changed where possible (unit-level eval), reserve full-pipeline shadow runs for periodic (not per-commit) checks | Becomes noticeable once more than a couple of prompt commits happen per week under deadline pressure |
+| Forensic spine (agent_runs/agent_run_payloads) rendering full truncated I/O for every node on every page load | Run Monitor page slow, especially with 7-writer expansion | Lazy-load payload detail only on node click/expand, not eagerly for the whole spine | Noticeable once payload sizes grow (long-read sections with full research context) |
 
-- [ ] **Config snapshot:** A prompt edit during a running pipeline does NOT change the running run's output. Test: trigger a run, edit an agent's prompt 30 seconds in, wait for completion, confirm config snapshot shows pre-edit version.
-- [ ] **DB-unavailable fallback:** Kill the Convex connection during a run. Confirm the pipeline completes using file-based fallback prompts AND the run log records `source: "file_fallback"`.
-- [ ] **Cost double-counting:** Run a single `acomplete()` call in isolation. Confirm `record_cost()` was called exactly once. Run a full pipeline and compare total Convex cost against OpenRouter usage dashboard total for that API key on that day.
-- [ ] **Kill switch:** Set `schedule_enabled = false`. POST to `/pipeline/tick` with the trigger secret. Confirm no run was created in Convex `pipelineRuns`.
-- [ ] **auto_publish protection:** Enable `auto_publish = true`. Confirm the dashboard shows a visual alarm, an email was sent to Andrew, and the audit log recorded the change with actor and timestamp.
-- [ ] **Auth coverage:** Without logging in, attempt to access every `dispatch-control` route. Confirm all redirect to login. Confirm no Next.js server action can be called without a valid session (test by forging requests with no session cookie).
-- [ ] **workspace_id scoping:** Every Convex table created for the dashboard has a `workspaceId` field. Run `grep -r "defineTable" convex/` and confirm every table definition includes `workspaceId: v.string()`.
-- [ ] **Template variable guard:** In the prompt editor, remove `{charity_name}` from Scout's prompt and save. Confirm the save is blocked (or warned) and a triggered run fails loudly rather than passing `{charity_name}` verbatim to the LLM.
-- [ ] **Cancel consistency:** Trigger a run, immediately cancel it. Confirm Convex shows `status: "cancelled"`, LangGraph checkpoint has a `cancelled` marker, and no further agent nodes were executed after the cancel point.
-- [ ] **Railway cron vs. flag reconciliation:** With `schedule_enabled: true` in DB, confirm Railway cron triggers a run. Set `schedule_enabled: false`, wait for next tick, confirm no run is created — even though the Railway cron service is still running.
+## Security Mistakes
 
----
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Trusting client-submitted sign-off state ("Facts cleared" / "Sounds human") without server re-verification | An operator (or a bug, or a replay) could publish without real sign-off, defeating the entire milestone's purpose | Re-check both sign-off booleans server-side in the publish endpoint, exactly as the existing `claimChecks:allSignedOff` 409 pattern already does — extend, don't replace, that pattern |
+| Leaving the Sanity status-flip webhook reachable with no re-validation after "retiring" the UI trigger | Any direct API call to Sanity (misconfigured integration, leaked token, accidental Studio click) can still fully publish, bypassing every new gate | Webhook handler must independently re-verify gate state before running the publisher chain, not assume "nothing calls this anymore" |
+| Rendering per-claim source URLs or provenance popovers with unescaped content from LLM output | Stored-content injection risk in the galley (echoes this project's existing game-sandbox security discipline — same class of concern, new surface) | Source URLs and claim text must be rendered as plain text/validated URLs only, never `dangerouslySetInnerHTML`, consistent with the existing DEL-CONV-04 pattern already used for dialogue turns |
+| Span-anchor confusion used adversarially or accidentally to make an unsourced claim visually appear sourced (Pitfall 1 + 2 combined) | An operator could approve a factually wrong sentence believing it's verified, because the highlight visually overlaps a plausible-looking (but wrong) span | Fail loud, not quiet, on anchor-resolution failure — an annotation that can't confidently re-locate its span must show as "unresolved," never silently attach to the nearest similar text |
+
+## UX Pitfalls
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-------------------|
+| Equal visual weight for blocker vs. minor annotations | Andrew has to read everything to find what matters, encourages skimming (Pitfall 5) | Severity-driven visual hierarchy; blockers-first is a real design constraint, not just a filter option |
+| Two-sign-off gate presented as two adjacent checkboxes with no distinct review action behind each | Sign-off becomes a single mental "yep, sure" click — no real double-check | Each sign-off should require its own distinct confirming action (e.g., "Facts cleared" only enables after the claims checklist is fully reviewed; "Sounds human" only enables after Voice Pass has been opened) |
+| Provenance shown as binary sourced/unsourced with no confidence gradient | Andrew can't tell "solidly sourced" from "technically has a claimId but weak source" | Consider a lightweight confidence signal (e.g., source domain trust, retrieval recency) surfaced in the hover-for-source popover, not just presence/absence |
+| Eval scoreboard shown as a single trending number | Encourages "did the number go up" thinking over reading actual output changes (Pitfall 4) | Pair every scoreboard delta with a linked before/after sample, surfaced by default, not behind a click |
+
+## "Looks Done But Isn't" Checklist
+
+- [ ] **Span-anchored annotations:** Often "done" by rendering correctly against the exact text the pipeline generated — verify by editing a section (insert a word before a flagged span) and confirming the annotation still points at the right sentence, not just that it renders at all on first load.
+- [ ] **Per-claim provenance:** Often "done" when the Researcher's claims have source URLs — verify the binding survives by tracing one specific claim from Researcher output through a section writer into final prose and confirming the rendered claimId/source in the galley actually corresponds to that same fact, not just that *some* spans show marigold.
+- [ ] **Studio bypass retirement:** Often "done" when the dashboard has a working publish button — verify by attempting the old Studio status-flip path directly and confirming it either can't be triggered or is rejected server-side, not just that nobody uses it in the demo.
+- [ ] **Two-sign-off gate:** Often "done" when the UI shows two checkboxes gating a publish button — verify server-side enforcement by attempting a direct API call to `/publish` with sign-off state unset or forged, not just clicking through the UI.
+- [ ] **Eval regression gate:** Often "done" when a scoreboard number exists — verify it actually blocks a bad prompt commit by deliberately introducing a regression and confirming the gate refuses/flags it, not just that the score is displayed.
+- [ ] **Annotation dedup across QA's two layers:** Often "done" when both the rules engine and the Opus judge produce findings — verify the same sentence doesn't get two overlapping, differently-worded annotations for the same underlying issue.
+- [ ] **Rollback path for the new galley/editing/gate:** Often "done" when the new surface works — verify there is an actual, tested way to fall back to the prior review path for one more week if the new one has a live-Thursday showstopper.
+
+## Recovery Strategies
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|-----------------|------------------|
+| Span-anchoring drift discovered in production | MEDIUM | Add a "re-anchor" pass that re-runs the deterministic QA rules against current text and re-emits findings with fresh keys; mark all prior findings for that section as stale/superseded rather than trying to salvage old offsets |
+| Provenance binding found to be wrong/misleading after ship | HIGH | Treat as a factual-accuracy incident — audit recent published issues for the same failure pattern, add the specific case to the golden eval set as a regression scenario, and default to "unsourced" (rust) for any binding that can't be re-verified rather than leaving a possibly-wrong marigold highlight live |
+| Studio bypass discovered to have published an issue outside the gate | MEDIUM | This is an audit-log incident, not just a bug — the existing `audit_log`/"nothing silent" discipline should make the bypass visible; retroactively lock the Studio action immediately, and treat the incident as the forcing function to finish the lockdown work if it was deferred |
+| Eval gate found to have been rubber-stamped for several commits | LOW-MEDIUM | Re-run the current prompt versions against the shadow set (or a freshly sampled real-run set) to establish current actual quality, independent of the possibly-inflated golden-set trend; only then decide whether to roll back any specific prompt commit |
+| Annotation alarm fatigue causing a missed real issue | HIGH (reputational/factual, since it likely means a wrong claim shipped) | Post-incident, pull the per-axis historical dismissal-rate data (Pitfall 5's recommended tracking) to identify which category was over-flagged and retune that detector specifically, rather than broadly reducing all annotation volume |
+| Big-bang cutover breaks review flow on a live Thursday | HIGH if no fallback exists, LOW if one does | This is exactly why Pitfall 6's fallback-path requirement matters — if followed, recovery is "flip back to the prior path for this week's issue"; if not followed, recovery means a missed issue that week |
+
+## Pitfall-to-Phase Mapping
+
+| Pitfall | Prevention Phase (per PROJECT.md target features) | Verification |
+|---------|------|--------------|
+| Span-anchoring drift | Native galley + Full editing in dispatch-control | Edit a section, confirm annotations re-anchor correctly (or clearly show as unresolved); confirm `_key`s survive a save via patch-based writes |
+| Provenance binding loss through rewriting | Provenance pipeline (contract locked before touching the 7 writers) | Trace a single claim end-to-end from Researcher output to rendered galley span; measure binding-survival rate as a scoreboard metric |
+| Dual-write / Studio bypass inconsistency | Full editing in dispatch-control + Two-sign-off publish gate (shipped together) | Attempt the old Studio publish path directly post-ship and confirm server-side rejection, not just UI absence |
+| Eval-gate rubber-stamping / overfitting | Prompt Lab eval drawer + Eval Center | Deliberately introduce a regression in a test prompt commit and confirm the gate surfaces a readable diff and can block it; confirm a held-out shadow set exists and is checked |
+| Annotation alarm fatigue | Review Desk (galley) + Voice Pass | Track per-axis/severity dismissal rates over several real issues; confirm severity-driven visual hierarchy exists, not flat equal-weight annotations |
+| Big-bang redesign breaking a working flow | Cross-cutting roadmap sequencing (chrome first, galley parallel-not-replacing, gate last with soak period) | Confirm a documented, tested rollback exists for each major new surface through at least one full real weekly cycle before the old path is removed |
 
 ## Sources
 
-- `docs/CURRENT_STATE.md` — Phase 0 reconciliation; `acomplete` cost path at `openrouter_client.py:221-238`; `load_prompt()` at `lib/prompts.py:49-70`; LangGraph checkpoint at `graph/checkpointer.py:36`; scheduler status; frontend auth absence
-- `docs/MISSION_CONTROL_BRIEF.md` — §2 snapshot rationale; §3B cost spec; §4 additions (review gate, claims gate); §6 productization requirements; §8 resolved decisions
-- `packages/pipeline/src/eisenbalm_pipeline/lib/cost.py:83-109` — `record_cost()` additive accumulation pattern
-- `packages/pipeline/src/eisenbalm_pipeline/api/runs.py:177-241` — `POST /run/weekly` trigger; `asyncio.create_task` pattern
-- `packages/pipeline/src/eisenbalm_pipeline/lib/voice.py` — `VOICE_CONSTRAINTS` hardcoded string + Phase 16 byte-equivalence sentinel
-- `packages/pipeline/src/eisenbalm_pipeline/graph/builder.py:89-158` — LangGraph `StateGraph` assembly; 14 nodes; `compile(checkpointer=checkpointer)`
-- `convex/schema.ts` — `pipelineRuns` table with `cost: v.optional(v.string())`; `deliberationEvents` table; no `workspaceId` fields present today
-- [LangGraph — AsyncPostgresSaver checkpoint behavior](https://langchain-ai.github.io/langgraph/reference/checkpoints/)
-- [Convex — Document-level transactions and atomicity](https://docs.convex.dev/database/transactions)
-- [Railway — Cron jobs as separate services](https://docs.railway.app/guides/cron-jobs)
-- [Clerk — Organizations and workspace scoping in multi-tenant apps](https://clerk.com/docs/organizations/overview)
-- [Next.js — Server actions and secrets handling](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
-- [OpenRouter — Usage tracking and cost fields in response metadata](https://openrouter.ai/docs/api-reference/chat-completion)
+- [Portable Text specification and `_key` mechanics](https://www.sanity.io/docs/developer-guides/beginners-guide-to-portable-text) — confirms `_key`-based stable references are the intended anchoring mechanism, not offsets
+- [Portable Text GitHub spec](https://github.com/portabletext/portabletext)
+- [Source or It Didn't Happen: A Multi-Agent Framework for Citation Hallucination Detection (arXiv 2605.08583)](https://arxiv.org/html/2605.08583)
+- [Detecting and Correcting Reference Hallucinations in Commercial LLMs and Deep Research Agents (arXiv 2604.03173)](https://arxiv.org/html/2604.03173v1)
+- [Collective Hallucination in Multi-Agent LLMs (arXiv 2606.07941)](https://arxiv.org/pdf/2606.07941)
+- [Approval Fatigue — Encyclopedia of Agentic Coding Patterns](https://aipatternbook.com/approval-fatigue)
+- [Please don't rubber stamp code reviews — Chromium dev discussion](https://groups.google.com/a/chromium.org/g/chromium-dev/c/b0Lb_mXfp0Y)
+- [Monitoring and Alerting Best Practices to Reduce Alert Fatigue](https://oneuptime.com/blog/post/2026-02-20-monitoring-alerting-best-practices/view)
+- [Strangler Fig Pattern — AWS Prescriptive Guidance](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/strangler-fig.html)
+- [Strangler Fig Pattern — Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/patterns/strangler-fig)
+- [How to Implement the Strangler Fig Pattern](https://oneuptime.com/blog/post/2026-01-30-strangler-fig-pattern/view)
+- [Beyond Golden Datasets: Why Static Evals Miss Critical LLM Failures](https://galileo.ai/blog/beyond-golden-datasets-static-evals-failures)
+- [Kinde: CI/CD for Evals — Running Prompt & Agent Regression Tests in GitHub Actions](https://www.kinde.com/learn/ai-for-software-engineering/ai-devops/ci-cd-for-evals-running-prompt-and-agent-regression-tests-in-github-actions/)
+- [Automated Prompt Regression Testing with LLM-as-a-Judge and CI/CD — Traceloop](https://www.traceloop.com/blog/automated-prompt-regression-testing-with-llm-as-a-judge-and-ci-cd)
+- Project-internal source of truth: `.planning/PROJECT.md` (Current Milestone section, reconciliation facts, and Phase 11–27 shipped-feature history — used to ground every pitfall against this codebase's actual schemas, e.g. `qaCorrections {section, severity, axis, quotedSpan, reason, suggestedFix, accepted}`, the existing `claimChecks:allSignedOff` 409 pattern, and the `BodyBlock` discriminated union from Phase 18)
 
 ---
-
-*Mission Control Dashboard pitfalls for: The Eisenbalm Dispatch (v2.0 milestone)*
-*Researched: 2026-06-21*
-*Scope: Integration pitfalls specific to adding this control plane to this live system*
+*Pitfalls research for: Eisenbalm Dispatch Control v2 — Editorial Operator Console (v3.0 milestone)*
+*Researched: 2026-07-06*

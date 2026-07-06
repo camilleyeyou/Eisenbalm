@@ -1,5 +1,127 @@
 # Technology Stack
 
+**Project:** The Eisenbalm Dispatch — Dispatch Control v2: Editorial Operator Console (v3.0)
+**Researched:** 2026-07-06
+**Scope:** NEW additions only for this milestone (galley rendering with span annotations, per-section content editing, asset upload proxying, LLM pipeline eval harness, 1c design system). The v2.0 Mission Control stack below (Clerk, CodeMirror, Convex, etc.) is LOCKED and already shipped (Phases 21-29) — this section covers only what's new for v3.0. The full v2.0 research (2026-06-21) is preserved further down this file as historical/inherited context.
+
+---
+
+## v3.0 Foundational Context (Locked — Inherit, Do Not Re-Research)
+
+`apps/dispatch-control` already runs: Next.js `^15.3.9` (App Router), React `^19.2.6`, Tailwind `^4.3.0` (`@tailwindcss/postcss`, CSS-first `@theme`), Convex `^1.38.0`, `@clerk/nextjs ^7.5.7`, `@uiw/react-codemirror` + `@codemirror/{view,state}` (prompt editor), `@xyflow/react` + `@dagrejs/dagre` (Graph view), Vitest `^3.2.0`. **`@portabletext/react` is NOT yet a dependency of dispatch-control** — `apps/web` has it (`^6.2.0`) but the console does not; this is the one core rendering addition this milestone needs.
+
+`packages/pipeline` already runs: FastAPI `0.136.1`, LangGraph `1.1.10` + `langgraph-checkpoint-postgres 3.1.0`, httpx `0.28.1` (used for Sanity mutations, and its own docstring already anticipates the not-yet-implemented asset-upload endpoint), pytest `>=8.3` + pytest-asyncio + respx. `lib/portable_text.py` already exports a discriminated-union block builder (`compose_section_body`, `block_paragraph`, `block_h2`, `block_h3`, `block_blockquote`) producing exactly the Portable Text shapes the new per-section editor needs to round-trip.
+
+No maintained Python Sanity SDK exists — the codebase's own precedent (`lib/sanity_client.py` docstring: "raw httpx, no maintained Python SDK") should be extended for asset uploads, not broken.
+
+---
+
+## v3.0 Recommended Additions
+
+### Core Technologies
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `@portabletext/react` | `^6.2.0` (pin to match `apps/web`) | Render the Sanity draft body (Portable Text JSON) as the native galley in dispatch-control | Already the proven renderer in `apps/web` — identical block/mark shapes (same `BodyBlock` union from `lib/portable_text.py`). Adding it to dispatch-control at the same version is a zero-risk dependency add, not a new pattern, and exposes the `components.marks`/`components.block` override points needed for QA/provenance overlays |
+| `next/font/google` (built into Next 15, no separate package) | ships with `next@15.3.9` | Self-hosted, optimized Newsreader / Lora / Space Grotesk / IBM Plex Mono, zero CDN/CLS | Not an npm dependency — a Next.js API. Each font is imported with a `variable: '--font-*'` CSS custom property, consumed by Tailwind v4's `@theme` block. Space Grotesk and Newsreader are variable fonts (single file, all weights); Lora and IBM Plex Mono are static-weight (declare the exact `weight` array needed) |
+| Tailwind v4 `@theme` tokens | `^4.3.0` (already present) | 1c design tokens (ink `#17140e`, cobalt `#253ad4`, vermilion `#e8471d`, marigold `#f2b01e`, green `#148a52` + the 4 font families) as first-class Tailwind utilities | Tailwind v4 is CSS-first — tokens belong in `@theme { --color-ink: #17140e; --font-display: var(--font-newsreader); }` inside `globals.css`, no `tailwind.config.js` needed. Mirrors the CSS-variable theme pattern `apps/web` already uses (`lib/theme.ts`) |
+
+### Supporting Libraries — Editing & Uploads
+
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| *(none — plain React forms)* | — | Per-section structured/plain block editing (paragraph / h2 / h3 / blockquote rows) | Locked decision: v1 editing is "structured/plain editing that regenerates blocks," **not** inline WYSIWYG. A typed list of `{type, text}` rows (type dropdown + `<textarea>`, add/remove/reorder) maps 1:1 to the `BodyBlock` union already defined pipeline-side. No editor library needed |
+| `@dnd-kit/sortable` + `@dnd-kit/core` | `^10.0.0` | **Optional** drag-reorder of block rows | Add only if plain up/down-move buttons prove too clunky in practice. `@dnd-kit` is the current (2026) standard — accessible out of the box (keyboard + screen reader, WCAG 2.1 AA), unlike unmaintained `react-beautiful-dnd`. Not a v1 requirement |
+| *(none — native `<input type="file">` + `fetch`/`FormData`)* | — | Audio/image asset upload UI | Sufficient for single-file, occasional uploads (podcast MP3, hero image, storyboard). Do not add a dropzone/uploader widget library for this scope |
+
+### Supporting Libraries — Pipeline (Python)
+
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `httpx` (already a dependency, `0.28.1`) | pinned | Asset upload proxy: raw-binary `POST` to Sanity's `assets/images/{dataset}` / `assets/files/{dataset}` | Extend `lib/sanity_client.py` with `upload_asset(http, file_bytes, content_type, filename) -> asset_id`. Sanity's asset API takes a **raw binary body**, not multipart form-data — `Content-Type` set to the file MIME type, `?filename=...` as a query param. Single `httpx.post(url, content=file_bytes, headers={...})` call, no new dependency. The endpoint shape is already documented in the existing `sanity_client.py` docstring |
+| *(none new — FastAPI `UploadFile`)* | transitive `python-multipart` (already satisfied) | Receiving the upload from dispatch-control | Only the dashboard → pipeline leg needs multipart handling; the pipeline → Sanity leg uses the raw-binary approach above |
+
+### Supporting Libraries — Eval Harness
+
+| Approach | Version/Form | Purpose | Why This Fits |
+|----------|---------|---------|-------------|
+| pytest + pytest-asyncio (already dependencies) | `>=8.3` / `>=0.24` | Golden-scenario runner: fixed input state → agent call → assertions against expected shape/voice-rubric score | The pipeline already has 340+ pytest tests, `respx` for HTTP mocking, and the exact rubric/judge machinery this milestone wants to reuse (`agents/qa/judge.py score_output`, exposed at `POST /agents/{agent_key}/score`). Golden scenarios are parametrized pytest fixtures calling the same code path Prompt Lab's "test-run" button calls — no new test framework |
+| Additive Convex tables (e.g. `eval_scenarios`, `eval_runs`), no new package | — | Append-only scoreboard + drift detector, queryable from a new Eval Center screen | Convex is already the system-of-record for every other operator-facing scoreboard (`agent_runs`, `agent_run_payloads`, `review_actions`, `audit_log`). An eval run is structurally identical — write once via the existing httpx-mutation pattern from Python, subscribe live via `useQuery`. Strictly additive to Phase 24's `prompt_versions` + test-run/score substrate |
+| `promptfoo` (CLI, open-source core) | latest | **Optional, narrow**: local adversarial/red-team prompt fuzzing during prompt-authoring — NOT the scoreboard itself | Acquired by OpenAI (announced March 9, 2026); the team publicly committed to keeping the CLI open-source and model-agnostic. YAML-driven, runs locally/in CI. Useful as an optional developer aid, not a fit for the append-only-scoreboard-queryable-by-Andrew requirement, which needs to live in this app's own data model |
+
+### What NOT to Use (v3.0)
+
+| Avoid | Why | Use Instead |
+|-------|-----|--------------|
+| `@portabletext/editor` (successor to deprecated `@sanity/portable-text-editor`) | Full inline WYSIWYG editor with its own schema/toolbar/render-function setup — explicitly what the locked decision rules out for v1 | Plain typed-block list forms; revisit only if per-section editing friction demands true inline editing in a future milestone |
+| TipTap / ProseMirror + custom Portable Text serializer | No native Portable Text output — requires hand-rolling a bug-prone PT⇄ProseMirror-doc serializer for a v1 that's supposed to be structured/plain | Plain typed-block forms round-tripped through the pipeline's existing `compose_section_body` |
+| `@portabletext/block-tools` (`htmlToBlocks`/`blocksToText`) | Solves arbitrary-HTML/rich-paste conversion — a problem this milestone doesn't have. Introducing a second JS-side block-construction path invites drift from the Python one | Keep block construction server-side in Python; dashboard sends only `{type, text}[]`, never raw Portable Text JSON |
+| Full embedded Sanity Studio (`sanity` npm package) | Directly contradicts the "Sanity bypass, not removal" decision — Studio must become read-only fallback, not get re-embedded. Also reopens a direct dashboard→Sanity write path the write-boundary rule closes | Native galley (`@portabletext/react`) for reading + pipeline content-patch endpoint for writing |
+| `@sanity/client` (JS SDK) in `packages/pipeline`, or as a Next.js proxy for asset uploads | No maintained Python Sanity SDK exists (deliberate, documented choice); using the JS SDK from a Next.js route would create a second write path outside the pipeline's audit-logged mutation client | Raw `httpx` POST to the Sanity Assets HTTP API, from the pipeline, alongside existing `write_issue_draft`-style helpers |
+| LangSmith / Braintrust / other hosted LLM-eval SaaS | New paid vendor + auth to manage, and a scoreboard living outside Convex undermines "queryable from the dashboard." LangSmith's zero-config tracing pays off for LangChain `Runnable` chains; this pipeline's nodes are custom `@agent_node` functions calling `acomplete` directly, not LCEL chains | pytest golden scenarios + Convex `eval_scenarios`/`eval_runs` scoreboard |
+| A markdown parser/renderer (`react-markdown`, `marked`) for section text | Content is Portable Text at every layer already (schema, pipeline output, `apps/web` renderer) — markdown would be a third content format to convert between | Typed block rows map 1:1 to Portable Text block styles (`normal`/`h2`/`h3`/`blockquote`) |
+| A file-upload widget library (`react-dropzone`, `filepond`) | Overkill for "operator uploads one MP3 or image per section, occasionally" | Native `<input type="file">` + `fetch(url, { method: 'POST', body: formData })` |
+
+### Architecture Notes (load-bearing for the "why")
+
+**Span-level annotation overlays (QA findings + provenance) are NOT native Portable Text marks.** `qaCorrections.quotedSpan` and the new per-claim provenance bindings are plain-text substrings matched at render time, not `_type: 'span'` marks authored into the block JSON. `@portabletext/react`'s `components.marks` override only fires for marks already present in a block's `markDefs`/`marks` array. To get click-popovers on arbitrary substrings, the galley needs a **preprocessing pass** before handing blocks to `<PortableText>`: walk each block's `children` spans, find `quotedSpan`/claim-text matches, split the matched substring into additional synthetic child spans carrying a synthetic mark key (e.g. `qa-finding-{id}`, `provenance-sourced`/`provenance-unsourced`), then register those keys in `components.marks`. This is a well-understood technique (same approach used for search-term highlighting in Portable Text) but is custom code this project must write — budget for a small, tested `injectAnnotationMarks(blocks, findings, claims)` utility in `apps/dispatch-control`, not a new dependency.
+
+**Per-section editing writes go through a new pipeline endpoint, not a new Sanity write path.** The dashboard POSTs `{ sectionKey, blocks: {type, text}[] }` (or the structured-field equivalent for PDF key data points / game embed / theme) to a new FastAPI route (e.g. `POST /issues/{run_id}/sections/{section_key}`), which builds Portable Text via `compose_section_body`-equivalent logic and reuses the existing mutation helpers in `lib/sanity_client.py`, then logs to `audit_log`. This keeps the "nothing silent" write-boundary rule intact and never gives the Next.js app a Sanity token.
+
+### Installation (v3.0 additions)
+
+```bash
+# apps/dispatch-control — galley rendering
+pnpm --filter dispatch-control add @portabletext/react@^6.2.0
+
+# apps/dispatch-control — optional, only if plain reorder buttons prove insufficient
+pnpm --filter dispatch-control add @dnd-kit/core @dnd-kit/sortable
+
+# packages/pipeline — no new Python dependency required.
+# Extend lib/sanity_client.py with an upload_asset() helper using the existing httpx.AsyncClient.
+```
+
+No new dependency is required for: fonts (`next/font/google` ships with `next`), Tailwind design tokens (`@theme` in existing `globals.css`), per-section block editing (plain React forms), or the eval harness (pytest + Convex, both already present).
+
+### Alternatives Considered (v3.0)
+
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Plain typed-block forms for editing | `@portabletext/editor` (inline WYSIWYG) | If, after real weekly cycles, Andrew's friction with per-section forms is severe enough to justify the schema/toolbar/render-function investment — explicitly flagged as a possible v2 upgrade, not v1 |
+| Convex scoreboard + pytest golden scenarios | LangSmith | If the pipeline is ever rewritten on LangChain `Runnable`/LCEL chains (it currently is custom LangGraph nodes calling `acomplete` directly) |
+| Convex scoreboard + pytest golden scenarios | Braintrust | If eval scope grows to need dataset versioning, sandboxed custom Python scorers, or multi-team dashboards beyond a single operator (Andrew) |
+| Raw httpx binary POST for asset upload | `@sanity/client` via a thin Node proxy service | If the org later introduces a Node-side service layer between dashboard and Sanity for unrelated reasons — no such plan exists here |
+| `@dnd-kit` (if drag-reorder is added) | `react-beautiful-dnd` | Never for new code — unmaintained; `@dnd-kit` is the maintained, accessible replacement |
+
+### Version Compatibility (v3.0 additions)
+
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| `@portabletext/react@^6.2.0` | `react@^19.2.6` | Already proven in `apps/web` at this exact React version — no compatibility risk adding to dispatch-control |
+| `next@^15.3.9` `next/font/google` | `tailwindcss@^4.3.0` | Font `variable` CSS custom properties feed directly into Tailwind v4's `@theme` block; no font-family plugin needed (v4 is CSS-first) |
+| `@dnd-kit/core@^10.0.0` (if added) | `react@^19.2.6` | Current major supports React 18/19; verify exact installed version at add-time |
+| pytest golden scenarios | `langgraph==1.1.10`, `respx` (existing) | No version coupling — scenarios call agent functions/`acomplete` directly, same seam existing tests mock via `respx` |
+
+### Sources (v3.0)
+
+- [@portabletext/react — npm](https://www.npmjs.com/package/@portabletext/react) — confirmed current version 6.2.0, matches `apps/web`'s pin (HIGH confidence)
+- [Adding things to Portable Text — Sanity Docs](https://www.sanity.io/docs/developer-guides/ultimate-guide-for-customising-portable-text-from-schema-to-react-component) — confirmed `components.marks` override contract (HIGH confidence for the contract; MEDIUM for synthetic-mark-injection specifics, which is a standard technique not officially documented for this exact use case)
+- [Presenting Portable Text — Sanity Docs](https://www.sanity.io/docs/developer-guides/presenting-block-text)
+- [@portabletext/editor — npm](https://www.npmjs.com/package/@portabletext/editor) — confirmed successor to deprecated `@sanity/portable-text-editor`, confirmed custom schema/toolbar requirement (basis for "not for v1" call) (HIGH confidence)
+- [Sanity Assets API HTTP reference](https://www.sanity.io/docs/http-reference/assets) — verified via WebFetch: exact endpoint shapes `POST /assets/images/{dataset}` and `/assets/files/{dataset}`, raw-binary body, `Content-Type` + query-param contract — matches this repo's own `lib/sanity_client.py` docstring (HIGH confidence)
+- Existing repo code — `packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py`, `apps/dispatch-control/package.json`, `apps/web/package.json`, `convex/schema.ts` (HIGH confidence, ground truth)
+- [OpenAI to acquire Promptfoo](https://openai.com/index/openai-to-acquire-promptfoo/) and [Promptfoo is joining OpenAI](https://www.promptfoo.dev/blog/promptfoo-joining-openai/) — confirmed March 9, 2026 acquisition, confirmed open-source-core commitment (MEDIUM confidence — news reporting)
+- [LangSmith vs. Braintrust — Braintrust](https://www.braintrust.dev/articles/langsmith-vs-braintrust) and [Best Promptfoo alternatives in 2026 — Braintrust](https://www.braintrust.dev/articles/best-promptfoo-alternatives-2026) (MEDIUM confidence — vendor-authored comparison content, cross-checked across multiple independent search results for consistency)
+- [Google Fonts in Next.js 15 + Tailwind v4 — Build with Matija](https://www.buildwithmatija.com/blog/how-to-use-custom-google-fonts-in-next-js-15-and-tailwind-v4) and [Next.js Font Optimization docs](https://nextjs.org/docs/app/getting-started/fonts) (HIGH confidence — official docs + consistent community pattern)
+- [dnd-kit official docs](https://dndkit.com/react/hooks/use-sortable/) and [@dnd-kit/sortable — npm](https://www.npmjs.com/package/@dnd-kit/sortable) — current version 10.0.0 confirmed (HIGH confidence)
+
+---
+---
+
+# v2.0 Stack Research (Historical — Locked, Already Shipped)
+
+*The section below is the original v2.0 "Mission Control Dashboard" stack research (2026-06-21), preserved as inherited context. Every recommendation in it has already been implemented (Phases 21-29). Do not re-research; consult only for rationale/history.*
+
 **Project:** The Eisenbalm Dispatch — Mission Control Dashboard (v2.0)
 **Researched:** 2026-06-21
 **Scope:** NEW additions only for the `dispatch-control` Next.js app. The v1.0 stack (Next.js 15.3.x, React 19, Sanity v5, Convex ^1.38, FastAPI + LangGraph, OpenRouter, Stripe, Resend) is LOCKED and is not re-researched here. This document covers only what is NEW for the admin dashboard.

@@ -1,549 +1,210 @@
-# Feature Landscape
+# Feature Research
 
-**Domain:** Agent-pipeline control plane (operator dashboard over a 9-agent LangGraph editorial pipeline)
-**Researched:** 2026-06-21
-**Milestone:** v2.0 Mission Control Dashboard
+**Domain:** Editorial operator console for a single-human-reviewer, AI-generated weekly magazine (galley review, provenance, multi-sign-off publish gate, LLM eval scoreboard, forensic run monitor, "awaiting-you" inbox)
+**Researched:** 2026-07-06
+**Milestone:** v3.0 Dispatch Control v2 — Editorial Operator Console
+**Confidence:** MEDIUM-HIGH (patterns are well-established across four adjacent product categories — CMS editorial workflow, AI writing-assistant suggestion UX, citation/provenance UI, and LLM eval platforms — but no single comparable product combines all of them for a one-operator newsroom; synthesis is mine)
 
 ---
 
 ## Scope Reminder
 
-This file covers ONLY the ten new dashboard capabilities. The following are
-already shipped and must not be re-researched or re-scoped:
+This file covers ONLY the NEW v3.0 capabilities listed in PROJECT.md's Current Milestone section. The following are already shipped (Phases 1–27) and must not be re-researched or re-scoped:
 
-- Public magazine site (reader routes, issue page, archive, shop)
-- 9-agent LangGraph pipeline (all agents, orchestration, Sanity writes)
-- Sanity Studio editorial review workflow (Andrew's manual gate)
-- Stripe checkout + webhook + email flow
-- Per-call OpenRouter cost capture (real tokens+USD in `acomplete` → `cost.py`)
-- File-externalized agent prompts (12 `.md` files, `lib/prompts.py::load_prompt()`)
+- Runs dashboard with per-node forensics (`agent_runs`, `agent_run_payloads` — cost/latency/tokens/truncated I/O)
+- Prompt versioning + test-run + voice scoring (`prompt_versions`, `/{agent_key}/test-run`, `/score`)
+- Review gate: preview iframe + claims checklist + approve/schedule/reject (`/issues/{run_id}/publish|schedule|reject`, `claimChecks`)
+- Charity registry (candidate/featured/blocklisted, dedup, `timesFeatured`/`lastFeaturedAt`)
+- Budget caps, notifications (email/Slack), audit log (`audit_log`, `review_actions`)
+- LangGraph interrupt/resume at the candidate-selection gate (`editor_gate_1`, `/run/{id}/resume`)
+- 18-node pipeline itself (calibrator → scout → advocate → editor_gate_1 → chronicler → researcher → verify_research → 7 writers → validate_sections → qa → editor_final → publisher)
 
 ---
 
-## Feature Group 1 — DB-Backed Pipeline Config + Per-Run Snapshots
+## Feature Landscape
 
-### What It Is
+### Table Stakes (Users Expect These)
 
-Prompts, model choices, temperatures, and the schedule currently live in
-code (`.md` files + env vars). This feature moves them into a database that the
-dashboard writes and the pipeline reads at run start. At run start, the pipeline
-takes a complete snapshot of the active config onto the run record, so each
-run is reproducible and mid-run edits cannot corrupt a live issue.
-
-### Table Stakes
+Features Andrew (the one operator) will assume exist because every adjacent tool category already has them. Missing these makes the console feel like a toy compared to Grammarly/Contentful/LangSmith, which is the implicit bar the committed 1c design sets.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| DB-backed prompt loader | Without this nothing else works — the editing UI has no data layer | High | Loader swap in `lib/prompts.py`, not string extraction. 12 `.md` files must be migrated as seed data. Fallback strategy (file vs DB unavailable) must be decided before building. |
-| Per-run config snapshot | The single biggest reproducibility guarantee — "which prompt produced this issue?" | Medium | Snapshot is a JSON blob stored on the run record at run start. Already partially supported: Convex `pipelineRuns.cost` holds a JSON blob; snapshot is the same pattern applied to config. |
-| `model_pricing` table (editable) | Cost roll-ups (Group 3) require current per-token prices | Low | A simple table; admin edits it when OpenRouter prices change. |
-| `pipeline_config` global record (`schedule_enabled`, `auto_publish`, `require_review`) | These three flags control the entire automation posture | Low | One-row config document. `schedule_enabled` is the kill-switch (Group 4). |
-| `agents` table (per-agent metadata) | Foundation for every per-agent UI card | Low | Static-ish: 14 canonical agents. Stores `key`, `description`, `enabled`, defaults. |
+| Inline annotation with accept / edit / dismiss per finding | Every AI-suggestion surface (Grammarly, Google Docs Suggesting Mode, Label Studio review) offers exactly these three verbs on a per-item basis; anything less (e.g. only "acknowledge") reads as unfinished | MEDIUM | `qaCorrections` already carries `{severity, axis, quotedSpan, reason, suggestedFix, accepted}` but is annotation-only (`accepted: boolean`, no content mutation) per existing D-02. "Accept fix" that mutates content is genuinely NEW: needs a pipeline content-patch endpoint, not just flipping a Convex boolean. "Edit" (operator writes their own replacement) and "dismiss with reason" are cheaper additions |
+| Dismiss requires (or strongly nudges) a reason | Label Studio's enterprise review flow ties rejection to "the exact rule that applies... what was missing"; reason capture is what makes QA improvable over time (feeds prompt tuning later) | LOW | Add free-text `dismissReason` to the corrections row; don't hard-block on it — a rushed operator shouldn't be stopped by a mandatory field, but the field should exist |
+| Blockers-first triage (severity ordering; can't-miss items surfaced before minor ones) | Every review queue (Label Studio, LangSmith failing-eval lists, code review tools) sorts by severity/status first; a flat unordered list of findings is a known UX failure mode | LOW | `severity: info/warning/error` already exists — the "decision rail" is mostly grouping/sorting by it and gating: unresolved `error` findings block the publish CTA |
+| Hover-to-reveal source / provenance card | Now the dominant pattern across ChatGPT, Perplexity, Claude, Notion AI — a small marker (chip/underline) revealing title + snippet + link on hover, click-through for full source; users now expect this by default in any AI-generated-text UI | MEDIUM | Requires the NEW provenance pipeline (per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher) before the UI has anything to hover over — correctly scoped in PROJECT.md as its own workstream, not just a UI task |
+| Distinguishable "sourced" vs "unsourced" states | Once provenance is shown at all, an ungrounded claim with no visual distinction from a grounded one is a known trust-eroding gap (see research on source attribution in LLM deep-research agents) — users generalize "no citation shown = maybe made up" | LOW-MEDIUM | PROJECT.md already specifies this correctly (marigold=sourced/hover, rust=unsourced) — keep it a first-class two-state system, not a "sometimes shows a citation" afterthought |
+| Explicit publish gate state (can't publish until conditions met) | Contentful's Draft→Review→Approved→Published workflow, Label Studio's review-before-accept, and essentially every enterprise CMS enforce a hard gate rather than a soft warning | LOW (mechanically) / MEDIUM (enforcement) | Single-sign-off gate already exists (`claimChecks:allSignedOff` → 409 otherwise) — extending to two independent boolean sign-offs is additive. The hard part is closing the Studio bypass (retiring the direct status-flip publish path), since that's the real security boundary, not the UI checkbox |
+| Audit trail / who-signed-what-when | Contentful and most enterprise workflow tools sell "audit trails" as baseline, not a differentiator; `review_actions` + `audit_log` already exist in this codebase | LOW | Pure extension of existing tables — add sign-off events as a new `review_actions` row type |
+| Per-section editing without leaving the review surface | Editorial tools (Contentful, WordPress) let you edit inline from the review/preview screen, not force a context-switch to a separate CMS | MEDIUM-HIGH | Explicitly scoped as "per-section, not inline WYSIWYG" this milestone — correct scope discipline; still requires a new mutation surface for every section's structured fields + asset upload, which is real work even without WYSIWYG |
+| Cost/latency/status visibility per pipeline step | LangSmith and Braintrust both treat per-node latency/cost/token visibility as baseline observability, not a premium feature | LOW | Already built (`agent_runs` cost/duration/tokens) — Run Monitor v2 is mostly presentation work (dots/diamonds/sparklines) on existing data, EXCEPT the per-section "strength score," which is new |
+| Eval regression check before a prompt change goes live | Both LangSmith and Braintrust converged on this as non-negotiable — "is this prompt change actually better" via fixed golden datasets + scoring is the central loop of every serious prompt-ops tool in 2026 | MEDIUM-HIGH | `prompt_versions` + test-run/score endpoints already exist; NEW work is the golden-scenario dataset abstraction + append-only scoreboard + comparison view, not the underlying scoring call |
+| Unified "what needs me right now" queue | Linear's Inbox, Asana's My Tasks, GitHub notifications all provide this cross-surface aggregation; for a single-operator tool whose whole point is "don't make Andrew hunt across screens," this is closer to mandatory than nice-to-have | LOW-MEDIUM | Aggregates existing state (awaiting-review runs, unresolved blockers, stalled Gate 1 interrupts, failed runs) into one list — no new source-of-truth data, just a cross-table read + prioritization |
 
-### Differentiators
+### Differentiators (Competitive Advantage)
+
+Features that go beyond the "expected" bar and specifically serve the single-operator, voice-quality, weekly-cadence constraints of this product. Most comparable tools are built for teams; this console is built for exactly one person doing final-mile judgment on machine prose.
 
 | Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Snapshot diffing between runs | "Why did Issue 12 cost more than Issue 11?" — compare their config snapshots | Medium | Useful for post-mortems. Not needed at launch. |
-| Graph-as-data (store the LangGraph topology as config, not code) | Productization: arbitrary pipelines, not just "the Eisenbalm pipeline" | High | Brief §6 explicitly defers the graph EDITOR UI. Store topology as data now; edit UI is post-v2. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Graph editor UI | Brief §6: "no graph editor UI now — store graph as data." Building a drag-and-drop graph editor is a product unto itself. | Store the graph topology as JSON config; the dashboard reads and displays it but cannot edit edges. |
-| Inline-string extraction | Prompts are already `.md` files, not inline Python strings. Extraction work is zero. | Just swap the loader: `load_prompt(name)` reads from DB instead of file system. |
-| Live config mutation mid-run | A snapshot at run start exists precisely to prevent this. | Enforce: the pipeline reads config once at `POST /pipeline/run`, snapshots it, and ignores subsequent DB changes until next run. |
-
-### Dependencies on Existing Code
-
-- `lib/prompts.py::load_prompt()` — the single call site to swap. All 8 agent files call it.
-- `lib/voice.py::VOICE_CONSTRAINTS` — voice constraints are a separate surface (not in a `.md` file). Must decide: include in the DB config or keep in code. Recommendation: include, because it is what you would most want to edit.
-- `agents/qa/rubric.md` — also loaded via `importlib.resources`. Include in migration.
-- Convex `pipelineRuns` table — already has `cost` (JSON string). Add `configSnapshot` field (same pattern).
-- Railway Postgres — already hosts the LangGraph checkpointer. Prompt versions and config can live here or in a new Convex table. Decision needed; the brief implies Convex.
-
----
-
-## Feature Group 2 — Prompt Editing: Versioning, Diff, Rollback, Test-Run
-
-### What It Is
-
-A UI where the operator edits a prompt, sees which `{token}` variables are
-available, saves as a new version (never overwrites), diffs any two versions,
-rolls back or activates a prior version, and can fire a single-agent test-run
-against a sample input to see output + cost without running the full pipeline.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Prompt editor with `{variable}` highlighting | Operators need to know which tokens are substituted at runtime so they do not break calls | Medium | The current convention is `{VOICE_CONSTRAINTS}`, `{charity_name}`, etc. The editor must parse `{...}` tokens and warn on unknowns. |
-| Save-as-new-version (never overwrite) | Reproducibility requires an immutable version history | Low | `prompt_versions` table: `id`, `agent_key`, `content`, `author`, `created_at`, `note`, `active`. Activate = set `active=true` on one row. |
-| Diff between any two versions | Operators want to see exactly what changed before activating | Medium | Server-side line diff (Python `difflib` or a JS diff library). Display as side-by-side or inline unified diff in the UI. |
-| One-click rollback / activate | Errors in prompts must be recoverable in under 1 minute | Low | `PATCH /agents/{key}/prompt-versions/{id}/activate` flips the active flag. Audit log entry required (Group 9). |
-| Variable hint panel | Operators cannot memorize every agent's available tokens | Medium | Per-agent, document the available substitution tokens. Maintained as static config alongside the agent definition. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Single-agent test-run | "Does my edited prompt produce valid output before I activate it?" — the most valuable prompt-editing safety net | High | `POST /agents/{key}/test-run` with a sample or previous real run's input. Returns the agent's output + cost. Requires the pipeline to support running a single node in isolation against injected state. The LangGraph `StateGraph` compiled with a checkpointer supports partial invocation via `graph.invoke({...}, thread_id=...)` with a targeted start node — feasible but requires care around shared state. |
-| A/B version comparison on real run output | "Which version produced better output?" | Very High | Not at launch. Requires running the same run twice or a dedicated eval harness. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Rich-text / WYSIWYG prompt editor | Prompts are plain text with `{token}` markers. Markdown formatting is meaningful (`.md` convention). A rich-text editor will corrupt formatting. | Plain `<textarea>` with syntax highlight overlay for `{...}` tokens. Monospace font. |
-| Auto-activate on save | Defeats the purpose of versioning. An unreviewed prompt edit could corrupt the next issue. | Always require explicit "Activate this version" action. Current active version stays live until explicitly replaced. |
-| Prompt-level A/B testing automation | Requires a controlled eval harness that does not exist. | Manual test-run covers the use case for now. |
-
-### Dependencies on Existing Code
-
-- `lib/prompts.py::load_prompt()` — must be extended to accept an optional `version_id`; when absent, loads the active version from DB.
-- `lib/voice.py` — `VOICE_CONSTRAINTS` and `JESSE_PERSONA_BLOCK` should be versioned too; they are the most voice-critical text in the system.
-- FastAPI: new route `POST /agents/{key}/test-run`. Must be able to invoke a single LangGraph node against injected state. Non-trivial — requires an isolated subgraph or a mock-state harness.
-- 12 existing `.md` files become seed data for `prompt_versions` table on first deploy.
-
----
-
-## Feature Group 3 — Cost Observability Roll-Ups + Budget Caps + Projected Spend
-
-### What It Is
-
-Per-call cost is already captured (real OpenRouter tokens+USD via `acomplete`
-→ `cost.py`). This feature surfaces it: roll-ups per agent → per run → per
-issue → per week/month. Budget caps and alerts. Projected monthly spend from
-schedule + trailing average run cost.
-
-### Table Stakes (mostly surfacing, not instrumenting)
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Per-agent cost on run record | Already captured in `pipelineRuns.cost` (JSON string). | Low | Zero new instrumentation. Parse `pipelineRuns.cost` JSON and render per-agent bars. |
-| Per-run total cost | Already captured. | Low | Sum of `agents.*` in the cost JSON. |
-| Per-issue cost (= per-run cost for weekly pipeline) | Each issue maps to exactly one run. | Low | Join `runs` to `issues` by `issue_id`. For the Eisenbalm Dispatch, this is a 1:1 relationship. |
-| Weekly/monthly roll-up | "How much did we spend this month?" | Low | Aggregate `runs.total_cost` over date range. No new capture needed. |
-| `model_pricing` table (editable) | Current token prices for projections | Low | Separate from cost capture; used for projecting future spend. OpenRouter already returns actual USD cost — projections are the only reason to maintain this table locally. |
-| Budget cap enforcement (hard stop or soft alert) | Prevents runaway spend from a rogue prompt or model selection | Medium | `pipeline_config.monthly_cap` + `pipeline_config.per_run_cap`. The per-run soft warn already exists (`cost.py:244-261` fires at 70% of cap). Hard stop = `POST /runs/{id}/cancel` triggered automatically. |
-| Alert thresholds | "Warn me before I hit the cap" | Low | Configurable % of monthly/per-run cap. Email or Slack (Group 10). |
-| Projected monthly spend | "At this rate, what will this month cost?" | Medium | Trailing 4-run average x runs-remaining-this-month. Simple arithmetic; display-only. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Per-agent cost trend across runs | "Scout is getting more expensive — did the web search get slower?" | Medium | Time-series per agent. Useful for catching model price changes or prompt bloat. |
-| Cost breakdown by token type (input vs output) | Output tokens are usually more expensive; knowing the ratio informs prompt optimization | Low | `tokens_in` / `tokens_out` already captured in `cost.py`. Surface in UI. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Re-implementing cost capture | Already done in `acomplete` → `cost.py`. Rebuilding it would create two sources of truth. | Surface the existing `pipelineRuns.cost` JSON. The `record_cost()` accumulation is correct; the display layer is what is missing. |
-| Per-call cost logging to a separate table | Would duplicate what is already in `pipelineRuns.cost`. | Store cost at the run/agent level (already done). Per-call granularity is overkill for a weekly editorial pipeline. |
-| Live cost streaming mid-run | Convex subscriptions already update `pipelineRuns` at end of run. A live per-call stream would require a new Convex event per `acomplete` call — high noise, low value. | Show accumulated agent costs as agents complete. The soft-cap warn at 70% is the live signal that matters. |
-
-### Dependencies on Existing Code
-
-- `cost.py::record_cost()` + `end_run()` — already produce the right data shape.
-- `pipelineRuns.cost` (Convex) — JSON string field; parse it in the dashboard.
-- The 70% soft-cap warn (`cost.py:244-261`) — already fires a Convex event; hook alerts to this.
-- `model_pricing` — new table, seeded from current OpenRouter model prices.
-
----
-
-## Feature Group 4 — Run Control: Manual Trigger, Kill Switch, Cancel, Re-Roll
-
-### What It Is
-
-Operator-level control over when and whether the pipeline runs: trigger a run
-on demand, stop it cold (kill switch), cancel a specific in-flight run, and
-re-run a single agent within an existing issue. The scheduler (Railway cron →
-`/pipeline/tick`) checks the kill switch before every tick.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Manual trigger ("Run a new issue now") | The operator needs this for testing, catch-up issues, and pre-schedule validation | Low | `POST /pipeline/run` already exists as `POST /run/weekly` in `api/runs.py`. The dashboard button calls this endpoint. Auth-gated (dashboard session → X-Pipeline-Trigger-Secret header). |
-| Master kill switch (`schedule_enabled`) | A single flag to halt all automation. The scheduler checks this before every tick — if off, the tick is a no-op. | Low | `pipeline_config.schedule_enabled` boolean. Dashboard toggle. `POST /pipeline/tick` reads it. The Railway cron service still runs; only the tick handler is gated. |
-| `/pipeline/tick` endpoint | The Railway cron POSTs here; handler checks `schedule_enabled` | Low | New FastAPI route. Reads `schedule_enabled` from DB config. If true, calls the trigger logic. If false, returns 200 with `{"skipped": true}`. |
-| Cancel in-flight run | Broken or runaway runs must be stoppable without Railway console access | Medium | `POST /runs/{id}/cancel`. LangGraph supports interrupt/cancel via the checkpointer. Sets run status to `cancelled` in Convex. The pipeline must poll for a cancellation flag or be interrupted via the graph's async task. |
-| Schedule editor (day/time, timezone, pause/resume, next-run preview) | The operator needs to see and change when the weekly run fires without touching Railway CLI | Medium | Stored in `pipeline_config` (cron expression or structured day/time fields). Display "Next run: Thursday 14:00 UTC". The Railway cron itself is not reconfigurable via API — the schedule field controls only what `cli.py trigger-weekly` is expected to do; the Railway service must be reprovisioned if the cron expression changes. This is a known infrastructure constraint. |
-| Single-agent re-roll | "The OriginStory writer produced weak output — re-run just that agent against the existing run's state" | High | `POST /issues/{id}/agents/{key}/rerun`. Most complex run-control feature. Must: (1) load the existing run's LangGraph checkpoint, (2) set the specific node's state to pending, (3) invoke the graph from that node, (4) merge new output back. LangGraph with checkpointer supports this via `graph.invoke({}, config={"configurable": {"thread_id": run_id}})` with a targeted start node, but requires careful state management to avoid corrupting other sections. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Per-agent enable/disable toggle | "Skip the DesignAgent for a fast test run" | Medium | `agents.enabled` flag. Pipeline checks this at graph build time (similar to existing `DESIGNAGENT_SUPPRESSED` env flag, but DB-driven). |
-| Run history with trigger source (scheduled / manual / re-roll) and who triggered it | Audit trail for understanding automation behavior | Low | `runs.trigger_source` field + `runs.triggered_by` (user ID or "scheduler"). Already partially covered by audit log (Group 9). |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Killing the Railway cron service via the dashboard | Railway cron cannot be started/stopped via a simple webhook call — requires Railway CLI or console. | Kill switch is data-level: `schedule_enabled=false` makes the tick a no-op. The cron service keeps running (harmless). |
-| Auto-retry on cancel | Cancellation is a deliberate operator action. Auto-retry after cancel defeats the purpose. | Require explicit manual trigger to start a new run after cancellation. |
-| Run queuing / concurrency | The pipeline is single-issue-at-a-time by design. Queueing multiple runs would require significant orchestration and creates editorial confusion (which issue is "this week's"?). | Enforce at most one active run: `POST /pipeline/run` returns 409 if a run is already in state `running`. |
-
-### Dependencies on Existing Code
-
-- `api/runs.py::POST /run/weekly` — the existing trigger endpoint. Dashboard wraps this.
-- `graph/builder.py` — the compiled LangGraph. Re-roll requires invoking it with a specific start node.
-- `graph/checkpointer.py` — Railway Postgres checkpointer. Re-roll reads checkpoint state from here.
-- `DESIGNAGENT_SUPPRESSED` env flag — the DB-driven per-agent enable toggle should eventually replace this.
-- `cost.py` soft-cap warn — hard-stop cancel should be triggered by the budget cap logic here.
-
----
-
-## Feature Group 5 — Live Run Observability via Convex Subscriptions
-
-### What It Is
-
-A real-time dashboard view of a running pipeline: each agent lights up as
-queued → running → done / failed; live token and cost accrual; latency per
-agent; per-agent input/output capture; full run history with status, cost,
-and config snapshot.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Agent status progression (queued → running → done → failed) | Operators need to know which agent is running and how long it has been running | Medium | Convex `deliberationEvents` already streams agent events. A new `agent_runs` table (or richer event types in `deliberationEvents`) should carry `status`, `started_at`, `completed_at`, `tokens_in`, `tokens_out`, `usd`. Pipeline emits these via `convex_mutation` at agent start and end. |
-| Live token/cost accrual | "How much has this run cost so far?" | Medium | The current model accumulates per-agent cost in memory (`cost.py`) and persists at pipeline end. For live display, the pipeline must emit intermediate cost events to Convex as each agent completes. |
-| Agent latency | "Why did the Scout take 45 seconds?" | Low | `agent_runs.duration_ms` — captured by wrapping the agent call with `time.monotonic()`. |
-| Per-agent input/output capture | "What did the Advocate receive and what did it return?" | Medium | Input/output are LangGraph state slices. Capturing them requires serializing the relevant state fields before and after each node. Storage concern: verbose for multi-KB outputs. Consider storing only the output (input is derivable from prior outputs). |
-| Run history list (status, trigger source, duration, cost, config snapshot link) | Operators need to understand pattern over time | Low | Query `runs` table. Most data already exists in Convex `pipelineRuns`. |
-| Error + retry surfacing | "The Scout failed — why?" | Medium | Agents have a retry-once-then-fail path in `acomplete`. Errors should be emitted to Convex with the exception message (not the full traceback — security). |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Estimated time remaining | "Based on trailing averages, this run has ~8 minutes left" | Medium | Average agent latencies from prior runs, sum remaining agents. |
-| Side-by-side input/output diff vs prior run | "What changed in Scout's output between Issue 12 and 13?" | High | Not at launch. Requires storing full agent I/O, which has storage cost. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Per-call LLM streaming to the dashboard | A single `acomplete` call may make 3-5 token-streaming rounds. Piping raw token streams to Convex would flood it. | Surface per-agent completion events, not per-token events. |
-| Storing full LLM input/output for all runs | Storage grows unboundedly; section content can be over 2 KB per agent. | Store output only (not input); implement a retention policy (e.g., keep last 12 runs' I/O). |
-
-### Dependencies on Existing Code
-
-- Convex `deliberationEvents` table — already receives agent events. May need new event types or a dedicated `agent_runs` table for the structured start/complete/error pattern.
-- `acomplete()` in `openrouter_client.py` — already emits cost per call. Adding a Convex mutation call here (agent_start / agent_complete events) is the injection point.
-- `pipelineRuns` Convex table — already has `status`, `cost`, `durationMs`. Add `configSnapshotId` reference.
-
----
-
-## Feature Group 6 — Human Review Gate + Claims/Fact-Check Gate
-
-### What It Is
-
-When `require_review = true` (the default), a finished run lands in
-`awaiting_review` instead of auto-publishing. The dashboard presents a full
-preview of the generated issue, the deliberation trail, cost, and a list of
-flagged claims (numbers, names, dates). The operator chooses: approve &
-publish, approve & schedule for a future date, re-roll a specific section,
-or reject the entire run.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| `awaiting_review` landing state | Without this, the feature does not exist. | Low | Already partially implemented: pipeline publisher sets `pipelineRuns.status = "awaiting-review"` (Convex) after writing draft to Sanity. The brief makes this the explicit trigger for the review gate. |
-| Issue preview in the dashboard | Operator needs to read the generated content before approving | Medium | Render the Sanity draft (fetch by `weeklyIssue._id`, status='draft') inside the dashboard. The same GROQ queries used by the public site work here — just target the draft document. |
-| Approve & publish action | One-click path from review to live | Medium | `POST /issues/{id}/publish` triggers Publisher agent (or calls the existing Sanity publish + Vercel deploy hook path). The current flow is Andrew flips status in Sanity Studio; this replaces that with a dashboard action. |
-| Approve & schedule action | "Approve but publish Thursday at 9am" | Low | `POST /issues/{id}/schedule` with a `publish_at` timestamp. The Publisher agent (or a Convex scheduled function) fires at that time. |
-| Reject run | "This is not good enough — discard and re-run" | Low | Sets run status to `rejected`. Operator can trigger a new run. |
-| Re-roll individual section from review | "Approve everything except the FounderBio — re-run just that agent" | High | Same as single-agent re-roll (Group 4). Surface it from the review UI with one-click per section. |
-| `require_review` / `auto_publish` config flags | Operator can opt out of manual review for fully automated publish | Low | `pipeline_config.require_review` (default true) and `auto_publish` (default false). When both are set correctly, the pipeline auto-publishes on completion. |
-
-### Claims/Fact-Check Gate
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Claim extraction (numbers, dates, named entities, URLs) | Surface verifiable facts for human sign-off | Medium | Extract with a simple regex / NLP pass over the generated content (no LLM call needed for extraction; just highlight). The dashboard presents them as a checklist. |
-| Human sign-off checklist on extracted claims | Makes the "100% human-reviewed" promise auditable | Low | Checkboxes per claim; must be fully checked before approve & publish is enabled (or a soft warning if unchecked). |
-| Optional web-search verification of claims | "Is this charity's founding year correct?" | High | Requires a Tavily/Brave search call per claim. Very high cost and latency for potentially dozens of claims per issue. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Auto-approve based on QA agent score | The QA agent already runs in the pipeline and its score is a soft signal, not a publish gate. Auto-approving on QA score would defeat the purpose of the human review gate. | Use QA corrections as context in the review UI (show severity counts), not as a gate condition. |
-| Replacing Sanity Studio as the editorial tool | Andrew's Sanity Studio access is the fallback for any dashboard failure. The dashboard ADDS a publish path; it does not REMOVE the Sanity one. | Keep the Sanity publish path alive in parallel. The dashboard `POST /issues/{id}/publish` should call the same underlying mechanism. |
-| Web-search verification by default | High latency, API cost, and false negatives. Automated fact-checking of charity founding stories against the web is unreliable. | Make web-search verification an opt-in button per claim, not the default flow. |
-
-### Dependencies on Existing Code
-
-- `publisher/__init__.py` — the Publisher agent already handles PDF generation + Vercel deploy + Convex status update. `POST /issues/{id}/publish` should invoke this agent or call the same sequence.
-- Convex `pipelineRuns.status = "awaiting-review"` — already set. The dashboard subscribes to this status to show the review queue.
-- Sanity draft document (`weeklyIssue.status = 'draft'`) — the preview renders this via GROQ.
-- `qaCorrections` Convex table — already populated. Surface severity counts in the review UI.
-
----
-
-## Feature Group 7 — Charity Registry with Dedup
-
-### What It Is
-
-A registry of all charities the Scout has ever considered, with status
-(`candidate / featured / blocklisted`) and metadata to prevent featuring the
-same charity twice. The Scout checks this registry before proposing candidates.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Registry table (`name`, `slug`, `website`, `status`, `times_featured`, `last_featured_at`, `dedup_key`) | Without this, the Scout has no memory of prior charities | Medium | Convex `charities` table (or a new Convex table — `pitchLog` exists but is per-run, not a persistent registry). The `dedup_key` should be a normalized version of the charity name or website domain. |
-| Status transitions (`candidate → featured`, `candidate → blocklisted`, `featured → blocklisted`) | Operator needs to blocklist a charity (e.g., discovered fraud) | Low | Simple status update via dashboard UI. |
-| Scout integration — check registry before proposing | Prevents re-featuring or proposing blocklisted charities | Medium | The Scout agent must call the registry API (Convex query) during its web search loop. Currently the Scout writes to `pitchLog` but does not read from a persistent registry. |
-| Dashboard charity list view (searchable, filterable by status) | Operator needs to manage the registry | Low | Simple CRUD UI over the `charities` Convex table. |
-| Auto-promote featured charity from `candidate` on issue publish | When an issue goes live, the winning charity's registry entry should update to `featured` | Low | Triggered from the publish action (Group 6). |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Similarity dedup (fuzzy name match) | Catches "Quiet Foundation" vs "The Quiet Foundation" | Medium | Normalized string comparison or Levenshtein distance at insert time. Warn the Scout when a proposed charity is within N characters of an existing registry entry. |
-| Import existing charity data from Sanity | `charity` documents already exist in Sanity (the canonical content store). Backfill from there. | Low | Seed script: fetch all Sanity `charity` docs, insert into registry with `status = 'featured'` and `times_featured = 1`. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Duplicating charity content in the registry | Sanity is the canonical store for charity editorial content (name, slug, mission statement, etc.). The registry is operational metadata only (status, times_featured, dedup_key). | Registry holds operational fields only. Charity editorial content stays in Sanity. Link by charity slug. |
-| LLM-powered dedup | Too expensive and non-deterministic for a simple uniqueness check. | Normalized string comparison (lowercase, strip "The", strip punctuation) covers 95% of cases. Flag remainder for human review. |
-
-### Dependencies on Existing Code
-
-- Sanity `charity` documents — backfill source for existing charities.
-- Convex `pitchLog` table — per-run Scout candidates. The persistent registry is a different concern (cross-run memory) but should be seeded from `pitchLog` history.
-- `agents/scout.py` — must be modified to query the registry before proposing candidates.
-
----
-
-## Feature Group 8 — Donation Reconciliation Per Issue
-
-### What It Is
-
-Pull Stripe payment data for the window of each issue (from publish date to
-next issue's publish date) → gross revenue, Stripe fees, net-to-charity.
-Make the "100% of proceeds" promise auditable with a per-issue ledger.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Per-issue revenue window (gross, fees, net) | The core accountability feature — "we raised $X for Charity Y in Issue Z" | Medium | Use Stripe Read API (list `PaymentIntents` or `Charges` filtered by date range). Stripe fee is ~2.9% + $0.30 per transaction. Net = gross minus fees. |
-| Payout tracker (payout status, payout date, amount) | "Did we actually send the money?" | Medium | Manual entry initially (no Stripe payout API for charity disbursement — that is a separate bank transfer). Dashboard shows a payout record with status (pending/sent/confirmed) and operator-entered confirmation. |
-| Per-issue donation summary on the public site | "This issue raised $X for [Charity]" — a trust signal | Medium | Read from the reconciliation table; surface on the issue page and charity page. |
-| Historical reconciliation view | Cumulative totals across all issues | Low | Sum across all per-issue records. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Automated Stripe data pull on issue publish | Zero manual data entry for revenue figures | Medium | Webhook or scheduled job pulls Stripe data for the closed window when the next issue publishes. |
-| Exportable reconciliation CSV | Useful for accounting and charity reporting | Low | Standard CSV export of the reconciliation table. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Automated bank transfer to charity via Stripe Connect | Stripe Connect (charity as recipient) requires charity onboarding, KYC, significant legal/compliance work. Not appropriate for a v2 build. | Manual payout: operator does the bank transfer, records confirmation in the dashboard. |
-| Real-time revenue display on the public site | Exposes live Stripe data to the public; security and accuracy risks (disputes, refunds). | Show reconciled figures only after the issue window closes and figures are finalized. |
-
-### Dependencies on Existing Code
-
-- Stripe SDK — already present in `apps/web`. Reconciliation reads from Stripe via the server-side secret key.
-- Convex `stripeOrders` table — already records orders per issue. This is the source for item count; Stripe is the source for revenue figures.
-- Sanity `weeklyIssue.pipelineMetadata` — cost data lives here. Reconciliation data can live alongside it or in a new Convex/Postgres table.
-
----
-
-## Feature Group 9 — Audit Log
-
-### What It Is
-
-An immutable record of every operator action: who changed which prompt, who
-approved which issue, who flipped the kill switch, with before/after values
-for edits.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Audit log table (`actor`, `action`, `entity_type`, `entity_id`, `before`, `after`, `timestamp`) | Accountability for every consequential action | Low | Append-only. Never deleted. `before`/`after` as JSON strings for prompt edits. |
-| Logged actions: prompt version activate/rollback, kill switch toggle, issue approve/reject/schedule, charity status change, payout record edit | These are the consequential actions | Low | Each dashboard action calls `auditLog.insert` after the primary mutation. |
-| Dashboard audit log view (filterable by actor, action type, date range) | Operators need to investigate "who did what when" | Low | Simple query UI over the audit log table. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Audit log alerts ("someone deactivated the kill switch") | Notify Andrew when a sensitive action is taken | Low | Combine with notification system (Group 10). |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Logging pipeline internal agent calls to the audit log | Agent LLM calls are not operator actions. The audit log is for human decisions, not machine events. | Keep agent events in `deliberationEvents`; keep operator decisions in the audit log. |
-| Mutable audit log | Defeats the purpose. | Append-only. No update or delete endpoints for audit log rows. |
-
-### Dependencies on Existing Code
-
-- Convex — natural home for the audit log (real-time, schemaful). Or Postgres if stronger persistence guarantees matter more than real-time reactivity.
-- All Group 2 (prompt versioning) and Group 4 (run control) actions must call audit log insert as an atomic companion.
-- Dashboard auth (new, greenfield) — audit log entries require an authenticated actor ID.
-
----
-
-## Feature Group 10 — Notifications
-
-### What It Is
-
-Operator-directed alerts for key pipeline events: run complete, run failed,
-awaiting review, budget threshold crossed.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Run complete notification | "The Thursday issue is ready to review" — Andrew's primary workflow trigger | Low | Email (via Resend — already wired for the post-purchase email flow) or Slack webhook. |
-| Run failed notification | "Something went wrong — check the logs" | Low | Same channels. Include run ID and first error message. |
-| Awaiting review notification | Redundant with run complete (if `require_review=true`, complete → awaiting review), but should fire when the review queue has been waiting over N hours | Low | Reminder notification if Andrew has not reviewed within a configurable window. |
-| Budget threshold notification | "You have reached 80% of your monthly budget" | Low | Already partially wired: the 70% soft-cap warn in `cost.py:244-261` fires a fire-and-forget Convex event. Hook a notification to this event. |
-| Notification channel config in dashboard | Operator sets their Slack webhook URL / email address without touching env vars | Low | `pipeline_config.notification_email`, `notification_slack_webhook`. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Per-event notification opt-in/opt-out | Operator chooses which events generate notifications | Low | Boolean flags per event type in `pipeline_config`. |
-| Mobile push (PWA) | Dashboard-as-PWA with push notifications | High | Not at launch. Email + Slack covers the use case. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| SMS notifications | High cost, carrier complexity, regulatory overhead for a single-operator tool. | Email + Slack covers all meaningful notification needs. |
-| Notification digest (batch multiple events) | Andrew needs to act on each notification individually. Batching delays critical alerts (run failed). | Send immediately, one event per notification. |
-
-### Dependencies on Existing Code
-
-- Resend API key + `@eisenbalm/emails` package — already present for post-purchase emails. The same Resend client can send notification emails using a simple transactional template.
-- `cost.py:244-261` — the 70% cap warn already fires a Convex event. Add a notification trigger here.
-- Convex `pipelineRuns.status` — already updated at run complete/fail/awaiting-review. Convex scheduled functions or webhook triggers are the notification dispatch mechanism.
-
----
-
-## Feature Group 11 — Foundation: Auth + Workspace Scoping
-
-### What It Is
-
-The dashboard requires authenticated access (Andrew is the only user today).
-Auth must be built from zero — no existing auth layer. `workspace_id` must be
-threaded through all new tables from day one so the control plane can later
-be productized into multi-tenant SaaS.
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Dashboard auth (login, session, protected routes) | Without auth, anyone with the URL can trigger pipeline runs or rollback prompts | Medium | Greenfield. Clerk is the brief's TBD option. Auth.js is the alternative. Single user (Andrew) initially — simple email/password or magic link is sufficient. |
-| `workspace_id` on all new tables | Multi-tenant bones from day one per brief §6 and §8 decision | Low | All new DB tables (agents, prompt_versions, pipeline_config, runs, charities, model_pricing, review_actions, audit_log) carry `workspace_id`. Single workspace now — scoping is a field, not a schema change. |
-| `workspaces` + `users` tables | Foundation for multi-tenant; used from the first day even with one row each | Low | Single workspace: `{ id: "eisenbalm", name: "The Eisenbalm Dispatch" }`. Single user: Andrew. |
-| Per-workspace secrets store | Route API keys through a secrets table instead of scattered env vars | Medium | `workspace_secrets` table: `workspace_id`, `key_name`, `encrypted_value`. Dashboard lets operator set/rotate keys via UI. Pipeline reads from secrets table at run start. Encryption at rest required (AES-256 or provider-managed). |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Building multi-tenant UI now | Brief is explicit: single-tenant first. Building multi-user, multi-workspace UI is premature. | Thread `workspace_id` through data; the UI stays single-workspace for v2. |
-| Eisenbalm-specific logic in the control plane | Brief §6: "no hardcoded 'eisenbalm' strings or charity-specific logic in the control plane." | The control plane should treat "weekly editorial issue pipeline with charity" as a generic configuration, not hardcode any Eisenbalm specifics. |
-
-### Dependencies on Existing Code
-
-- `dispatch-control` Next.js app — new, greenfield. Auth is the first thing to build.
-- Railway FastAPI — must validate dashboard auth tokens for protected endpoints (manual trigger, re-roll, cancel). The existing `X-Pipeline-Trigger-Secret` header approach can be extended.
-- Convex — workspace-scoped queries require `workspace_id` filter on every table. `@eisenbalm/convex` package will need schema additions.
-
----
-
-## MVP Recommendation
-
-Build in this order (mirrors the brief's Phase 1-6, with one reordering):
-
-**Phase 1 — Foundation + Read-Only Dashboard**
-Prioritize: DB-backed config (loader swap + 12-file migration + snapshot), `dispatch-control` app shell, auth, read-only dashboard (pipeline graph, run history, live run view via Convex subscriptions, cost roll-ups from existing data).
-Defers: All write operations (prompt editing, run control, review gate).
-
-**Phase 2 — Prompt Editing + Versioning**
-Prioritize: Prompt editor with variable hints, version save/activate/rollback, diff view, audit log on prompt changes.
-Defers: Single-agent test-run (highest-complexity feature in this group).
-
-**Phase 3 — Run Control**
-Prioritize: Manual trigger UI, kill switch toggle, schedule editor, cancel in-flight.
-Defers: Single-agent re-roll (highest-complexity feature overall — requires LangGraph checkpoint manipulation).
-
-**Phase 4 — Review Gate + Charity Registry**
-Prioritize: `require_review` flow (awaiting_review queue, issue preview, approve/reject/schedule), claims checklist.
-Defers: Web-search claim verification (opt-in button only), re-roll from review (blocked on Phase 3 re-roll completion).
-
-**Phase 5 — Money + Notifications**
-Prioritize: Stripe reconciliation per issue, payout tracker, notifications (email + Slack).
-Defers: Public reconciliation display on issue page (needs design).
-
-**Phase 6 — Productization**
-Prioritize: Workspace scoping audit, per-workspace secrets store, de-Eisenbalm-ification audit.
-Defers: Graph editor UI (explicitly out of scope for v2).
-
-### Feature Complexity Summary
-
-| Feature Group | Complexity | Risk | Phase |
-|---------------|------------|------|-------|
-| DB config + snapshots | High (loader swap + migration) | High (pipeline breaks if DB unreachable) | 1 |
-| Auth + workspace scoping | Medium | Medium (greenfield, standard patterns) | 1 |
-| Read-only dashboard + cost roll-ups | Low (surfacing existing data) | Low | 1 |
-| Prompt versioning + editor | Medium | Low | 2 |
-| Single-agent test-run | High | Medium (LangGraph partial invocation) | 2 |
-| Manual trigger + kill switch | Low | Low | 3 |
-| Cancel in-flight | Medium | Medium (async task cancellation) | 3 |
-| Schedule editor | Medium | Low (data-level; Railway cron unchanged) | 3 |
-| Single-agent re-roll | High | High (checkpoint manipulation) | 3 |
-| Review gate (require_review flow) | Medium | Low | 4 |
-| Claims/fact-check gate | Medium | Low | 4 |
-| Charity registry + dedup | Medium | Low | 4 |
-| Stripe reconciliation | Medium | Low | 5 |
-| Notifications | Low | Low | 5 |
-| Productization / workspace audit | Low | Low | 6 |
-
-### Features That Are Mostly Already Done
-
-| Feature | Status | Remaining Work |
-|---------|--------|----------------|
-| Per-call cost capture | DONE (`acomplete` → `cost.py`) | Zero new instrumentation. Only display/roll-up work. |
-| `awaiting_review` status on pipeline completion | DONE (publisher sets it in Convex) | Wire the dashboard to subscribe to this status. |
-| File-externalized prompts | DONE (12 `.md` files) | Loader swap + versioning layer + 12-file DB migration. |
-| 70% budget soft-cap warn | DONE (`cost.py:244-261`) | Hook a notification to the existing Convex event. |
-| Agent event streaming to Convex | DONE (`deliberationEvents`) | New `agent_runs` event types for structured start/complete/error. |
-
----
+|---------|--------------------|------------|-------|
+| Native galley (not iframe) with span-level inline annotation | Nobody else in the CMS-review space renders the *actual reader page* with annotations mapped onto real DOM spans — Contentful/Sanity show a form, not the magazine page; this collapses "does it read well" and "is it factually/voice correct" into one pass instead of two (preview tab + separate QA tab) | HIGH | Correctly identified in PROJECT.md as needing "native, not iframe" because inline annotations require span control an iframe can't give across origins; this is the single highest-complexity item in the milestone — text-offset-to-DOM-span mapping is fiddly once the Phase 18 discriminated-union `BodyBlock` (h2/h3/blockquote) is involved |
+| Voice Pass as a dedicated screen (machine-tell detection + rewrite popovers) | Generic AI-content tools (Grammarly, Google Docs) do grammar/clarity; almost none specialize in "does this sound like a specific persona and not like an LLM" as a first-class reviewable, sign-off-gated concern — this is close to unique and directly serves the brief's "Voice drift = brand failure" constraint | MEDIUM-HIGH | Reuses the existing two-layer detector (`agents/qa/rules.py` + Opus judge) — the differentiator is surfacing findings as editable rewrite popovers rather than a flat list, plus giving Voice its own sign-off distinct from Facts |
+| Per-claim provenance surviving into rendered prose (not just a sources list) | Most AI tools show a "Sources" panel bolted onto the end of an answer (ChatGPT-style); few bind individual claims inline to individual sources through a full multi-agent content pipeline and preserve that binding all the way to a styled magazine page — closer to Perplexity/Semantic-Reader sophistication than typical CMS tooling | HIGH | The real differentiator IS the pipeline work (Researcher emitting bound claims) more than the UI; UI reuses the well-known hover-card pattern. Correctly flagged in PROJECT.md as "the biggest gap" — today only founder/subject names have per-fact source URLs |
+| Forensic Run Monitor with per-section strength scores + drift-vs-last-8 | LangSmith/Braintrust show trace/eval data for engineers; nobody shows a *single editorial operator* a run's "shape" (agents as dots, code gates as diamonds) with a rolling drift comparison against recent history — a narrative/trust-building layer on top of observability data most tools leave as raw tables | MEDIUM | Mostly presentation logic on already-collected `agent_runs`/`agent_run_payloads` data; "strength score" per section is new derived data (likely QA-judge-axis-derived) |
+| Two-sign-off publish gate as two INDEPENDENT concerns (facts vs voice) | Enterprise CMS approval chains gate on role/stage ("did legal review this"); this gates on two orthogonal quality axes owned by the same person — an unusual but sensible model for a solo operator who must context-switch between "is this true" and "does this sound right" | LOW-MEDIUM | Novel primarily in framing, not mechanism — same server-enforced boolean-AND gate pattern as any multi-approval workflow, just two axes instead of two people |
+| Eval Center: golden scenarios + append-only scoreboard + shadow run | Braintrust's CI regression-gate pattern (run eval suite on every prompt change, block if score drops) applied to a *creative-voice* domain rather than a factual-accuracy/RAG domain — most eval tooling targets tool-use/RAG correctness, not "does this still sound like Jesse" | HIGH | Genuinely close to state-of-the-art prompt-ops (Braintrust-style), scoped down to fit the existing `prompt_versions`/test-run substrate — shadow run (test a new prompt against real traffic without publishing) is the highest-value, highest-effort piece |
+| Registry coverage-memory (last 8 issues' cause/geo/signal) | Editorial calendars (WordPress, Contentful) track *what's scheduled*, not *what's been thematically over/under-represented*; closer to a diversity/balance dashboard than a calendar — directly serves the "obscure charity" mandate by making pattern-repetition visible to the one human who'd otherwise have to remember 8 weeks of issues from memory | LOW-MEDIUM | Pure read-side aggregation over existing `charities` registry fields (`timesFeatured`, `lastFeaturedAt`) plus whatever cause/geo tags already exist on charity records |
+| Awaiting-you inbox as persistent cross-screen chrome, not a page | Most "my work" queues (Linear Inbox, GitHub notifications) are a dedicated page you navigate to; persistent chrome across every screen is a smaller but real UX differentiator for a solo operator who should never "forget" something needs them while deep in an unrelated screen | LOW | Pure frontend composition over existing status flags (`awaiting-review`, `awaitingHumanAt`, interrupt state, failed runs) — no new backend data model |
+
+### Anti-Features (Commonly Requested, Often Problematic)
+
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|------------------|-------------|
+| Real-time collaborative editing (multiple cursors, presence indicators) | "Feels modern," every trendy editor (Notion, Google Docs, Figma) has it | There is exactly one operator (Andrew). Multiplayer sync (CRDT/OT, presence, conflict resolution) is pure accidental complexity with zero users who need it — and increases risk of the exact kind of bug (lost edits, race conditions) this milestone is trying to avoid by tightening the write boundary | Simple single-editor save (optimistic lock or last-write-wins); if a second reviewer is ever added, revisit then — don't build for a hypothetical team |
+| Configurable multi-role approval chains (reviewer → legal → editor-in-chief → publisher) | Enterprise CMS tools (Contentful) sell this as a flagship feature; feels like "growing up" the product | Over-engineering for a one-person newsroom; the two-sign-off gate already models the only two concerns that matter (facts, voice) — adding role/assignment machinery for roles that don't exist yet (PROJECT.md explicitly defers "assignable EIC seat" and Signal Editor) creates UI/data-model surface with no current user | Keep the two-sign-off gate hardcoded to the single operator; if a second reviewer role becomes real, add role-gating as its own future milestone, not speculative now |
+| Free-form AI chat / copilot sidebar bolted onto every screen | Trend-chasing ("every tool needs an assistant now"); looks impressive in a demo | Adds a whole new interaction surface (chat state, streaming, prompt-injection surface, cost) orthogonal to the actual job — Andrew's job is *judging* machine output, not chatting with more machine output; a chat box next to a "detect AI slop" tool is tonally and functionally confused | If Andrew wants to know "why did QA flag this," surface QA's existing `reason`/`quotedSpan`/`suggestedFix` fields directly — that's already the explanation, no chat needed |
+| Fully automatic "accept all" / bulk-resolve for QA findings | Feels like a time-saver, mirrors Grammarly's "accept all suggestions" | For a product whose core differentiator is "voice drift = brand failure," bulk-accepting machine suggestions about voice/facts without individual review defeats the entire purpose of the human-in-the-loop gate — it would let a bad week ship because triage got tedious | Keep per-finding accept/edit/dismiss; if triage volume becomes real friction, group by axis/section for faster scanning rather than blanket bulk-accept of substantive (error/warning) findings. Bulk-dismiss of `info`-severity noise is defensible; bulk-accept of `error` is not |
+| General-purpose WYSIWYG rich text editor with full formatting freedom | "Editors expect a real word processor," matches the Google Docs mental model | PROJECT.md explicitly locks structured/per-section editing over inline WYSIWYG this milestone for good reason: full WYSIWYG re-opens the "wall of undifferentiated prose" problem Phase 18's structural floor (h2/h3/blockquote counts) was built to prevent, and fights the Portable Text / discriminated-union `BodyBlock` model already in place | Per-section structured editing (prose fields mapped to known block types) as scoped; revisit full inline editing only if per-section friction is proven over real weekly cycles |
+| Public-facing or multi-tenant eval leaderboard / gamified scoring | Eval tooling (Braintrust, LangSmith) often ships shareable dashboards, leaderboards, team comparison views | There's one operator and one prompt author; a "leaderboard" implies competition or an audience that doesn't exist. Building shareable/public views adds auth surface and scope for a private internal tool | Keep the Eval Center scoreboard append-only and internal; it's a regression-detection log, not a leaderboard |
+| Granular per-word diff/track-changes UI (Word-style redlines) for every edit | Feels thorough, mirrors legal/Word workflows | High implementation cost (diff algorithm, diff rendering, accept/reject at token granularity) for content that gets regenerated in structured blocks, not hand-edited character by character — most edits here are "regenerate this section" or "replace this span with the suggested fix," not micro-copyedits | Span-level accept/edit/dismiss (already the QA annotation grain) is the right granularity; don't build character-level track-changes on top of it |
+| Full historical "replay every past run" video/timeline scrubber | Forensic Run Monitor could tempt into building a cinematic replay feature | High effort, low marginal value over a static handoff inspector + drift sparkline; a solo operator debugging one run doesn't need a movie, needs the inputs/outputs at each node and how this run compares to recent history | Handoff inspector (human-readable, JSON-behind-toggle) + run-vs-last-8 drift strip, as already scoped — resist scrubber/timeline-video temptation |
+
+## Feature Dependencies
+
+```
+Provenance pipeline (Researcher per-claim {claim, sourceUrl, retrievedAt})
+    └──requires──> Galley sourced/unsourced hover rendering
+                       └──enhances──> Blockers-first decision rail (unsourced claims can be a blocker class)
+
+Native galley (span-level rendering of Sanity draft)
+    └──requires──> Full editing in dispatch-control (per-section writes via pipeline API)
+    └──requires──> Inline annotation UI (accept/edit/dismiss anchored to spans)
+                       └──requires──> Content-patch endpoint (pipeline API mutates a specific section field)
+                                          └──requires──> Write-boundary contract (dashboard never touches Sanity directly — already locked in PROJECT.md)
+
+Two-sign-off publish gate
+    └──requires──> Existing single-sign-off publish endpoint (`POST /issues/{run_id}/publish`, already built)
+    └──requires──> Studio direct-publish path retirement (else gate is bypassable — THIS is the actual hard dependency, not the second checkbox)
+    └──enhances──> Voice Pass (Voice Pass sign-off is one of the two gate inputs)
+
+Voice Pass de-slop screen
+    └──requires──> Existing QA two-layer detector (rules.py + Opus judge) — already built
+    └──enhances──> Two-sign-off publish gate ("sounds human" sign-off)
+
+Run Monitor v2 (forensic spine, per-section strength scores, drift strip)
+    └──requires──> Existing agent_runs / agent_run_payloads instrumentation — already built
+    └──requires──> Per-section strength score (NEW derived metric, likely from QA judge axis scores)
+    └──enhances──> Awaiting-you inbox (stalled/failed runs surface there too)
+
+Prompt Lab eval drawer + Eval Center
+    └──requires──> Existing prompt_versions + test-run/score endpoints — already built
+    └──requires──> Golden scenario dataset abstraction (NEW)
+    └──requires──> Append-only scoreboard storage (NEW, likely new Convex table)
+    └──enhances──> Shadow run (shadow run needs the scoreboard to compare against)
+
+Awaiting-you inbox
+    └──requires──> Existing status fields across runs/review/registry (awaiting-review, awaitingHumanAt, interrupt state) — already built, pure aggregation
+
+Registry coverage-memory strip
+    └──requires──> Existing charities registry (timesFeatured, lastFeaturedAt, cause/geo tags) — already built, pure aggregation
+    └──enhances──> Signal Desk candidate slate (informs Gate 1 decision with historical balance context)
+
+Signal Desk (interrupt/adjudication mode)
+    └──requires──> Existing editor_gate_1 interrupt + /run/{id}/resume — already built
+    └──conflicts with──> Building a new Signal Editor agent or REAL/OBSCURE/SPECIFIC/TELLABLE gates (explicitly deferred — do not combine in same phase)
+```
+
+### Dependency Notes
+
+- **Native galley requires full editing + content-patch endpoint:** the galley's whole value proposition (inline accept-fix that actually changes content) is dead on arrival without a pipeline endpoint that can mutate a single section field server-side. Sequence these together — a galley that can only annotate but never apply a fix is a strictly worse version of the existing preview iframe + checklist it's meant to replace.
+- **Two-sign-off gate's real dependency is the Studio-bypass retirement, not the second checkbox:** adding a second boolean to the claim-check gate is trivial; the actual security-relevant work is closing the direct Sanity status-flip path in Studio so it can no longer publish without going through the gate. Roadmap this as the load-bearing task, not an afterthought.
+- **Provenance pipeline must land before (or in the same phase as) galley hover-card UI:** building the hover-card UI against the *existing* flat `sources[]`/free-text `verifiedFacts[]` shape would need to be thrown away once per-claim binding lands — sequence provenance data model first, or as a tightly coupled pair.
+- **Eval Center's golden-scenario + scoreboard abstractions are net-new data models**, even though they sit on top of existing test-run/score endpoints — budget real design time for "what is a golden scenario" (fixed input + expected voice/fact characteristics) before building the UI around it.
+- **Run Monitor v2's per-section strength score is new derived data**, not just new UI on old data — likely computed from QA judge axis scores or a dedicated lightweight scorer; don't scope it as "just a UI phase."
+- **Awaiting-you inbox and Registry coverage-memory are the cheapest items in the milestone** — both are read-side aggregations over data that already exists in Convex. Good candidates for an early phase to build momentum before the harder galley/provenance/eval work.
+- **Signal Desk conflicts with scope creep toward new pipeline agents:** the milestone explicitly defers the Signal Editor agent and new gates — resist folding "just one more gate" into this phase since it's out of scope and would require new pipeline nodes this milestone excludes.
+
+## MVP Definition
+
+Not a traditional "v1 product" MVP since this is a milestone within an established product — reframed as **minimum viable slice of this milestone** that could ship as an internal checkpoint if sequencing needs to break.
+
+### Launch With (v1 of this milestone)
+
+- [ ] Design system + chrome (tokens, masthead, workflow-ordered nav) — everything else is built inside this shell
+- [ ] Awaiting-you inbox (cheap, high-value, no new backend) — proves the cross-screen aggregation pattern early
+- [ ] Full editing in dispatch-control (per-section, structured fields, asset uploads) via pipeline API — the load-bearing write-boundary change everything else depends on
+- [ ] Native galley rendering (read-only pass first: real magazine rendering with QA annotations overlaid, before wiring "accept-fix" mutation) — de-risks the highest-complexity item by splitting render-fidelity from mutation-plumbing
+- [ ] Two-sign-off publish gate + Studio bypass retirement — closes the actual security gap; must not ship half-done
+
+### Add After Validation (v1.x of this milestone)
+
+- [ ] Provenance pipeline (per-claim source binding) + galley sourced/unsourced rendering — sequence once galley rendering is proven stable
+- [ ] Inline annotation accept-fix mutation (wired to the content-patch endpoint) — once galley read-path and editing endpoints both exist independently
+- [ ] Voice Pass de-slop screen — depends on nothing new technically, but benefits from the galley/editing UX patterns being settled first so it doesn't duplicate interaction paradigms
+- [ ] Run Monitor v2 forensic spine + drift strip — valuable but not gating anything else
+
+### Future Consideration (defer within or beyond this milestone)
+
+- [ ] Eval Center shadow run (run a new prompt against real traffic without publishing) — highest-effort Eval Center feature; golden scenarios + scoreboard alone deliver most of the regression-safety value
+- [ ] Registry coverage-memory strip — genuinely low-risk but also low-urgency; fine to land whenever convenient
+- [ ] Signal Desk interrupt/adjudication UI polish beyond functional minimum — backend already exists; UI can be basic first, refined later
+- [ ] Any multi-reviewer / role-based approval chain — explicitly anti-feature for now (see Anti-Features), revisit only if a second human reviewer is ever added to the product
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|----------------------|----------|
+| Awaiting-you inbox | HIGH | LOW | P1 |
+| Two-sign-off publish gate + Studio bypass retirement | HIGH | MEDIUM | P1 |
+| Full editing in dispatch-control (write boundary) | HIGH | MEDIUM-HIGH | P1 |
+| Native galley (read-only render pass) | HIGH | HIGH | P1 |
+| Inline annotation accept/edit/dismiss (QA findings, no mutation yet) | HIGH | MEDIUM | P1 |
+| Provenance pipeline (per-claim source binding) | HIGH | HIGH | P1 |
+| Galley sourced/unsourced hover rendering | HIGH | MEDIUM | P1 |
+| Accept-fix mutation (content-patch endpoint) | MEDIUM-HIGH | MEDIUM-HIGH | P2 |
+| Voice Pass de-slop screen | MEDIUM-HIGH | MEDIUM | P2 |
+| Run Monitor v2 (spine, handoff inspector, drift strip) | MEDIUM | MEDIUM | P2 |
+| Prompt Lab eval drawer + golden scenarios + scoreboard | MEDIUM | HIGH | P2 |
+| Registry coverage-memory strip | LOW-MEDIUM | LOW | P2 |
+| Signal Desk interrupt/adjudication UI | MEDIUM | LOW-MEDIUM | P2 |
+| Eval Center shadow run | MEDIUM | HIGH | P3 |
+
+**Priority key:**
+- P1: Must have — either load-bearing (write boundary, publish gate) or the milestone's headline differentiator (galley, provenance)
+- P2: Should have — real value, sequenced after P1 dependencies land
+- P3: Nice to have — highest effort relative to incremental value; fine to defer past this milestone if time-constrained
+
+## Competitor / Adjacent-Product Feature Analysis
+
+| Feature Area | CMS Editorial Workflow (Contentful/Sanity) | AI Suggestion UX (Grammarly/Google Docs) | LLM Eval Platforms (LangSmith/Braintrust) | Our Approach |
+|---------------|----------------------------------------------|--------------------------------------------|----------------------------------------------|--------------|
+| Review surface | Form-based document editor, preview is a separate tab | Sidebar suggestion cards + inline underlines on the real document | Trace/run viewer, separate from any "document" concept | Native galley = the real reader page IS the review surface, annotations mapped onto it directly |
+| Finding resolution | Comments/tasks, no structured accept/reject verbs | Accept / Dismiss, one-click, per suggestion | Pass/fail per eval case, not an editorial "finding" | Accept-fix / edit / dismiss-with-reason per QA finding, severity-gated |
+| Approval gating | Role-based multi-stage (Draft→Review→Approved→Published) | N/A (no publish concept) | CI-style: block merge/deploy if score < threshold | Two independent sign-offs (facts, voice) by the same single operator, server-enforced |
+| Source/citation display | N/A (not a citation-generating tool) | N/A | N/A (traces show tool calls, not prose citations) | Per-claim hover-card provenance, sourced/unsourced as first-class visual states (closer to Perplexity/Semantic Reader than any CMS) |
+| Regression safety on content-generation changes | N/A (no "prompt" concept) | N/A | Golden dataset + scoring + CI gate is the core loop | Prompt Lab golden scenarios + append-only scoreboard, adapted from Braintrust's model to a subjective-voice domain |
+| Cross-surface "what needs me" queue | Notifications/tasks list, often per-space not unified | N/A | Some dashboards have a "failing evals" view, not unified across concerns | Persistent Awaiting-you inbox chrome aggregating review/interrupt/failure/registry states |
 
 ## Sources
 
-- `docs/MISSION_CONTROL_BRIEF.md` — §1 (five asks), §3 (feature spec A-E), §4 (additions 1-7), §5 (data model), §7 (build phases)
-- `docs/CURRENT_STATE.md` — Q1 (prompts), Q2 (pipeline trigger), Q4 (cost capture), Q5 (auth)
-- `.planning/PROJECT.md` — validated requirements, out-of-scope constraints
-- `packages/pipeline/src/eisenbalm_pipeline/lib/prompts.py` — loader implementation (lines 49-70)
-- `packages/pipeline/src/eisenbalm_pipeline/lib/cost.py` — cost capture and soft-cap warn (lines 83-109, 244-261)
-- `packages/pipeline/src/eisenbalm_pipeline/lib/openrouter_client.py` — per-call cost in `_usage_from_message()` (lines 112-128)
-- `packages/pipeline/src/eisenbalm_pipeline/agents/publisher/__init__.py` — cost persistence (lines 59-77)
-- `convex/schema.ts` — existing Convex table schemas
+- [Braintrust vs LangSmith (2026): Scores vs Traces, Eval-First vs Trace-First](https://www.morphllm.com/comparisons/braintrust-vs-langsmith)
+- [Braintrust: LangSmith alternatives 2026](https://www.braintrust.dev/articles/langsmith-alternatives-2026)
+- [Braintrust: LangSmith vs. Braintrust](https://www.braintrust.dev/articles/langsmith-vs-braintrust)
+- [Label Studio Enterprise: Review annotation quality](https://docs.humansignal.com/guide/quality)
+- [Label Studio Community: How to accept or reject predictions as annotations](https://community.labelstud.io/t/how-to-accept-or-reject-predictions-as-annotations/422)
+- [Prodigy vs Label Studio: regulated industries comparison](https://www.ertas.ai/blog/prodigy-vs-label-studio-regulated-industries)
+- [Grammarly Editor user guide](https://support.grammarly.com/hc/en-us/articles/360003474732-Grammarly-Editor-user-guide)
+- [Suggest edits in Google Docs](https://support.google.com/docs/answer/6033474?hl=en&co=GENIE.Platform%3DDesktop)
+- [Contentful: Content approval workflow — Tasks and comments](https://www.contentful.com/blog/tasks-and-comments-supercharge-your-content-approval-workflow/)
+- [Sanity: What are Drafts & Publishing Workflow?](https://www.sanity.io/glossary/drafts--publishing-workflow)
+- [Sanity vs Contentful: Why teams are migrating in 2026](https://www.sanity.io/contentful-vs-sanity)
+- [AI citation and source UI design patterns for 2026 - AYDesign](https://www.aydesign.ai/blog/ai-citation-source-ui-patterns-2026)
+- [Perplexity AI UX Case Study — Citations](https://www.aiuxplayground.com/gallery/perplexity-citations/)
+- [Cited but Not Verified: Parsing and Evaluating Source Attribution in LLM Deep Research Agents (arXiv)](https://arxiv.org/html/2605.06635v1)
+- [Not All Transparency Is Equal: Source Presentation Effects (arXiv)](https://arxiv.org/pdf/2512.12207)
+- Internal: `.planning/PROJECT.md` (Current Milestone section — feature scope, locked decisions, reconciliation facts verified in code 2026-07-06)
+- Internal: `convex/schema.ts` (existing `qaCorrections`, `prompt_versions`, `charities`, `agent_runs`, `agent_run_payloads`, `audit_log`, `review_actions` table shapes — used to distinguish "already built" from "genuinely new" for each feature)
+
+---
+*Feature research for: Eisenbalm Dispatch Control v2 — Editorial Operator Console*
+*Researched: 2026-07-06*

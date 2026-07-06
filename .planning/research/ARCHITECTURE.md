@@ -1,918 +1,290 @@
-# Architecture Research
+# Architecture Research — Dispatch Control v2 Integration
 
-**Domain:** Multi-agent LangGraph pipeline with human-in-the-loop gates, three-datastore content/observability/state split, webhook-triggered finalization, monorepo across TypeScript and Python
-**Researched:** 2026-05-09 (v1) · updated 2026-06-21 (v2.0 Mission Control integration)
-**Confidence:** HIGH (LangGraph patterns verified against official docs; Sanity webhook patterns verified against Sanity official docs; monorepo patterns from Turborepo official docs)
+**Domain:** Editorial operator console (Next.js dashboard) integrating with an existing LangGraph pipeline + Sanity + Convex system
+**Researched:** 2026-07-06
+**Confidence:** HIGH (all findings verified against actual code in this repo, not training-data assumptions)
 
----
+## Grounding: what the code actually does today
 
-## v2.0 Mission Control Integration Architecture
+These facts drive every recommendation below. Verified by reading `convex/schema.ts`, `packages/pipeline/src/eisenbalm_pipeline/graph/state.py`, `lib/claims.py`, `lib/portable_text.py`, `lib/sanity_client.py`, `api/review.py`, `api/webhooks.py`, `api/control.py`, `api/agents.py`, `agents/researcher.py`, `agents/qa/judge.py`.
 
-> This section was added for milestone v2.0. It covers how the new `dispatch-control` dashboard integrates with the existing system without breaking any v1 contracts. The v1 architecture sections below remain authoritative for the existing pipeline; only additive changes are described here.
-
----
-
-### Integration Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     BROWSER / READER (public)                            │
-│  apps/web (Next.js / Vercel) ── Sanity GROQ reads (CDN) ──────────────┐ │
-│  React components ─────────── Convex useQuery subscriptions (live) ─┐ │ │
-└─────────────────────────────────────────────────────────────────────┼─┼─┘
-                                                                      │ │
-┌─────────────────────────────────────────────────────────────────────┼─┼─┐
-│              BROWSER / OPERATOR (private — Andrew only)              │ │ │
-│  apps/dispatch-control (Next.js / Vercel — auth-gated)               │ │ │
-│  ┌─────────────────────────────────────────────────────────────────┐ │ │ │
-│  │  Pipeline graph view · Run history · Live run view              │ │ │ │
-│  │  Prompt editor · Cost roll-ups · Kill switch · Review gate      │ │ │ │
-│  └──────────────────┬──────────────────────────────────────────────┘ │ │ │
-│                     │ Convex mutations (config writes)                │ │ │
-│                     │ Convex queries (run state, live events)         │ │ │
-│                     │ FastAPI REST (trigger, cancel, test-run) ───────┼─┼─┼──►
-└─────────────────────┼──────────────────────────────────────────────┼─┼─┘  │
-                      │                                               │ │    │
-┌─────────────────────┼───────────────────────────────────────────────┼─┼──-┼─┐
-│                     CONVEX (cloud — modest-magpie-797)               │ │   │ │
-│  ── EXISTING (v1, unchanged) ─────────────────────────────────────── │ │   │ │
-│  pipelineRuns · deliberationEvents · agentVotes                      │ │   │ │
-│  qaCorrections · pitchLog                         ◄──────────────────┘ │   │ │
-│  ── NEW (v2, additive) ──────────────────────────────────────────────── │   │ │
-│  agents · prompt_versions · pipeline_config (kill switch lives here)   │   │ │
-│  runs (mirrors pipelineRuns + adds config_snapshot)                    │   │ │
-│  agent_runs · charities (registry) · model_pricing                     │   │ │
-│  review_actions · audit_log · workspaces (single row) · users          │   │ │
-│  ◄────────────────────────────────────────────────────────────────── ──┘   │ │
-└─────────────────────────────────────────────────────────────────────────────┼─┘
-                                                                              │
-┌─────────────────────────────────────────────────────────────────────────────┼─┐
-│         FASTAPI + LANGGRAPH (Railway)                                        │ │
-│                                                                              │ │
-│  ── EXISTING (v1) ────────────────────────────────────────────────────────── │ │
-│  POST /run/weekly ──► LangGraph (checkpointed on Railway Postgres)           │ │
-│  POST /webhook/sanity-publish ◄── Sanity webhook (HMAC)                     │ │
-│                                                                              │ │
-│  ── NEW (v2) ─────────────────────────────────────────────────────────────── │ │
-│  POST /pipeline/run    ← dashboard "run now" button ◄────────────────────────┘ │
-│  POST /pipeline/tick   ← Railway cron (kill-switch-checked)                    │
-│  POST /runs/{id}/cancel                                                        │
-│  POST /agents/{key}/test-run                                                   │
-│  POST /issues/{id}/agents/{key}/rerun                                          │
-│  POST /issues/{id}/publish  ·  /schedule                                       │
-│                                                                                │
-│  lib/prompts.py::load_prompt()  ── MODIFIED: DB-backed + file fallback         │
-│  graph/builder.py  ── reads config_snapshot from Convex at RUN START           │
-│  LangGraph callback handler  ── new, emits agent_runs progress to Convex       │
-└────────────────────────────────────────────────────────────────────────────────┘
-                             │
-┌────────────────────────────┼───────────────────────────────────────────────────┐
-│         RAILWAY POSTGRES (LangGraph checkpointer — unchanged)                  │
-│  checkpoints · checkpoint_blobs · checkpoint_writes                            │
-│  (also: idempotency_keys for webhook dedup)                                    │
-└────────────────────────────────────────────────────────────────────────────────┘
-```
+1. **Sanity writes are whole-document `createOrReplace`, and Portable Text `_key`s are random on every write.** `write_issue_draft()` (`lib/sanity_client.py`) rebuilds the entire `weeklyIssue` document from `DispatchState` and calls `createOrReplace`. `lib/portable_text.py`'s `block_paragraph`/`block_h2`/`block_h3`/`block_blockquote` each mint a fresh `f'block-{uuid.uuid4().hex[:8]}'` key. `POST /runs/{run_id}/agents/{agent_key}/rerun` (`api/control.py:rerun_agent`) re-runs one section writer, then — per its own docstring — "re-writes the whole Sanity draft from merged state so sibling sections are byte-identical." **Any full-document rewrite regenerates every block's `_key`, in every section, even ones that weren't touched.** Only `upload_pdf_to_issue` uses a scoped Sanity `patch` (targeted `set`), not `createOrReplace`.
+2. **QA `quotedSpan` is already free-text, not an offset.** `JudgeFinding.quotedSpan` (`agents/qa/judge.py`) is an LLM-emitted exact substring of the offending text — a string-matching problem already, never a position.
+3. **`claim_checks` is the same shape.** `lib/claims.py` extracts `{claimIndex, text, claimType, context}` via three regexes over flattened Portable Text — text + a 60-char context window, no offsets.
+4. **Provenance today is nearly nonexistent.** `ResearchOutputModel` (`agents/researcher.py`) has only two paired fact→source fields (`founderName`/`founderNameSourceUrl`, `subjectName`/`subjectNameSourceUrl`); everything else is a flat `sources: list[str]` + free-text `verifiedFacts: list[str]` with zero binding to a claim. There is no mechanism today for a section writer to say "this sentence came from that URL."
+5. **The publish gate is enforced in exactly one place, and the Sanity path skips it entirely.** `POST /issues/{run_id}/publish` (`api/review.py`) checks status, `claimChecks:allSignedOff` (409 if not), and `sanityIssueId`, then calls `_flip_sanity_published`. The Sanity webhook handler (`api/webhooks.py:sanity_publish`) that this triggers — and that ANY direct Studio status-flip also triggers — only checks `payload.get("status") == "published"`. It has **no knowledge of sign-off state at all**, and explicitly tolerates `run_id` being `None` ("manually-authored drafts"). This is the exact bypass the milestone must retire.
+6. **A single-agent eval substrate already exists and is a good template.** `POST /agents/{key}/test-run` (`api/agents.py`) calls `acomplete()` directly — no graph, no `@agent_node` wrapper, no writes to `agent_runs`/`deliberationEvents`/`pipelineRuns` (an explicit "isolation contract"). `POST /agents/{key}/score` runs `judge.score_output()` against the live active rubric, advisory-only, also writeless. Both are patterns to extend, not replace.
+7. **Re-running part of the graph without re-running the whole thing already has a precedent.** `rerun_agent` forks the LangGraph/`AsyncPostgresSaver` checkpoint (`graph.aget_state`/`aupdate_state(as_node=...)`), imports the **bare, undecorated** node function directly (bypassing the `@agent_node` wrapper's real-table writes), and runs it in isolation. This is the shape the eval harness's "shadow run" should reuse.
+8. **Every additive Convex table in this codebase follows the same shape**: `workspace_id` scoping, an audit trail via `audit_log` (`actorId`, `before`/`after` JSON), and append-only or upsert-by-key semantics (`claim_checks`, `review_actions`, `payouts`, `notificationsLedger`). New tables for this milestone should match this house style exactly.
 
 ---
 
-## §2 Keystone — Config Externalization + Run Snapshot
+## 1. Span-anchoring strategy
 
-This is the foundational change everything else depends on. Get this right before anything else.
+**Recommendation: quotedSpan string-matching, resolved at render time against current content — not block-key+offset anchors, and not PT marks written into Sanity content.**
 
-### Where Config Lives: Convex
+### Why not block-key+offset anchors
 
-Config belongs in **Convex**, not Railway Postgres. Rationale:
-- The dashboard (Next.js) writes config via Convex mutations — no separate API layer needed between the dashboard and the config store.
-- The pipeline reads config via the existing `convex_client.py` HTTP API at run start — the same pattern already used for pipeline events.
-- Convex's real-time subscriptions let the dashboard see config changes immediately.
-- Railway Postgres is the LangGraph checkpointer — adding application data there mixes concerns and risks schema conflicts with LangGraph's `checkpoints`/`checkpoint_blobs` tables.
+Fact #1 above is disqualifying on its own: every full-document Sanity write (`write_issue_draft` at pipeline end, `rerun_agent`'s re-roll) regenerates every block's `_key` across the *entire* document, not just the section that changed. An anchor of the form `{blockKey: "block-a1b2c3d4", offset: 120}` persisted in Convex would silently point at nothing after the next re-roll of an unrelated section, or after any pipeline re-run. Making `_key`s deterministic/stable across `createOrReplace` writes would require rewriting `lib/sanity_client.py`'s entire compose path (deriving keys from content hashes or preserving keys from the prior doc read) — a much larger, riskier change than this milestone's stated scope, and one that fights the grain of "Sanity bypass, not removal, this milestone."
 
-The `pipeline_config` Convex table holds the single live config row (one row per workspace). The `prompt_versions` table holds all prompt versions with `active: boolean` to mark which is live. At run start, the pipeline reads the live prompt for each agent and writes the entire config (prompts + model choices + temperatures) as a snapshot onto the run record.
+### Why not PT marks/annotations written into the content itself
 
-### Config Snapshot Pattern
+Two reasons, both tied to the locked decisions:
+- **Sanity removal is the very next milestone.** Burying review metadata (QA findings, provenance) as `markDefs`/annotations inside the canonical content means that removal has to also migrate or strip that metadata out of every historical document. Keeping it in Convex means Sanity's removal is a pure adapter swap, which is explicitly the reason the write-boundary isolation exists ("this isolation is what makes the later Sanity removal a contained adapter swap" — PROJECT.md).
+- **Leak risk.** `PortableTextRenderer` on the public site renders whatever marks exist in the document. A custom `qaFinding`/`provenance` mark type would need to be added to every renderer's allow-list forever, and any miss becomes a reader-visible artifact. Keeping annotations entirely out of Sanity content removes this class of bug outright.
 
-```python
-# packages/pipeline/src/eisenbalm_pipeline/lib/config_loader.py  (NEW FILE)
+### The recommended approach
 
-async def load_run_config(workspace_id: str) -> RunConfig:
-    """
-    Called ONCE at run start. Reads active config from Convex.
-    Returns a RunConfig with all prompt texts, model choices, temperatures.
-    Falls back to file prompts if Convex is unreachable (fail-open on prompts,
-    fail-closed on pipeline_config kill switch / require_review).
-    """
-    try:
-        config_row = await convex_query("pipeline_config:getActive", {
-            "workspace_id": workspace_id
-        })
-        agents_config = await convex_query("agents:listForWorkspace", {
-            "workspace_id": workspace_id
-        })
-        # For each agent, fetch the active prompt version
-        prompts = {}
-        for agent in agents_config:
-            version = await convex_query("prompt_versions:getActive", {
-                "agent_key": agent["key"],
-                "workspace_id": workspace_id
-            })
-            if version:
-                prompts[agent["key"]] = version["content"]
-            else:
-                # File fallback: load_prompt() from importlib.resources
-                prompts[agent["key"]] = load_prompt(agent["key"])
+Reuse the shape QA and claims already use (facts #2, #3) rather than inventing a new one:
 
-        return RunConfig(
-            workspace_id=workspace_id,
-            prompts=prompts,
-            model_overrides={a["key"]: a["model"] for a in agents_config if a.get("model")},
-            temperatures={a["key"]: a["temperature"] for a in agents_config if a.get("temperature")},
-            require_review=config_row["require_review"],
-            auto_publish=config_row["auto_publish"],
-        )
-    except ConvexUnreachableError:
-        # Prompts: fall back to files (safe)
-        # Kill switch + require_review: MUST NOT fall back — fail the run instead
-        raise RuntimeError("Cannot load pipeline_config from Convex — aborting run")
+1. Findings/claims are stored in Convex as **`{runId, sectionName, quotedSpan (or claimText), ...metadata}`** — text, not position. This is exactly what `qaCorrections` and `claim_checks` already do; provenance should follow suit (see §2).
+2. A **shared span-resolver function** (one TS implementation for the dashboard galley, mirroring the same algorithm already implicit in `lib/claims.py`'s flattening logic) does, at render time:
+   - Flatten the current `weeklyIssue.<section>.body` Portable Text into plain text, tracking a `(blockIndex, charStart, charEnd)` map per block (same flattening approach as `_flatten_portable_text` in `lib/claims.py`, just done client-side against live content instead of pipeline-side against `DispatchState`).
+   - Exact `indexOf` the `quotedSpan` against that flattened text.
+   - On miss, retry with a normalized comparison (collapse whitespace, strip smart-quote variants) — LLM-emitted spans occasionally differ from source by a quote-character or trailing space.
+   - On a second miss, the finding is rendered as **unlocated**: still listed in the blockers rail / QA panel, but not highlighted inline. This is a feature, not a bug — it's the natural signal that "the underlying text has since been edited," which is exactly what happens once per-section editing ships.
+3. Store an **optional `blockIndexHint`** (ordinal position in the section's block array *at the time the finding/claim was generated*, not a `_key`) alongside `quotedSpan`. Ordinal position is far more stable than a `_key` across `createOrReplace` (block *order* rarely changes on an edit; block *identity strings* always do), and it lets the resolver narrow/disambiguate when the same short substring appears twice in a section. It is a hint, never authoritative — the resolver always re-verifies by string search against current content first.
+4. This same resolver is the mechanism for provenance highlighting (§2) and for Voice Pass's as-written/rewrite popovers — one utility, three consumers (QA annotations, provenance highlights, Voice Pass).
 
-
-async def snapshot_config(run_id: str, config: RunConfig) -> None:
-    """
-    Write the full RunConfig to Convex runs table as config_snapshot.
-    Called immediately after load_run_config(), before graph.ainvoke().
-    JSON-serializes the entire config so the run is reproducible.
-    """
-    await convex_mutation("runs:setConfigSnapshot", {
-        "run_id": run_id,
-        "config_snapshot": json.dumps(dataclasses.asdict(config)),
-    })
-```
-
-### Prompt Loader Swap
-
-The `load_prompt()` file loader in `lib/prompts.py` is called at eight agent call sites (see `CURRENT_STATE.md` Q1 table). The swap strategy is:
-
-1. `load_run_config()` runs once at pipeline start and caches all prompts in `RunConfig`.
-2. `RunConfig` is threaded through `DispatchState` as `config: Optional[RunConfig]` (new field, optional to preserve existing tests).
-3. Each agent call site changes from `load_prompt("scout").replace(...)` to `state["config"].prompts["scout"].replace(...)`.
-4. The standalone `load_prompt()` function stays in `lib/prompts.py` as the file fallback — referenced only by `config_loader.py::load_run_config()` when Convex is unreachable.
-
-**Files modified at call sites (8 total):**
-- `agents/scout.py:34, :192`
-- `agents/calibrator.py:28, :109`
-- `agents/editor.py:48, :194, :440`
-- `agents/advocate.py:36, :67`
-- `agents/researcher.py:30, :85`
-- `agents/bonus.py:39, :130, :144, :159`
-- `agents/game.py:21, :61`
-- `agents/design/__init__.py:45, :99`
-
-Also `agents/qa/rubric.md` — loaded via same mechanism; add `"qa-rubric"` as an agent key with its own prompt version row.
-
-**Migration of 12 prompt files:** Seed script reads each `.md` file via `load_prompt()`, creates an `agents` row and a `prompt_versions` row (version 1, `active: true`) in Convex. This runs once during Phase 1 setup. The `.md` files stay in the repo as the canonical fallback.
+**Consequence for content-patch endpoints:** because findings are re-resolved against current content rather than pinned to a persisted position, a content-patch that fixes one QA issue does not require updating other findings' anchors — they simply re-resolve (or fail to, correctly) against the new text on next render.
 
 ---
 
-## §5 Data Model — New vs Existing, Convex vs Postgres Placement
+## 2. Where provenance binding should live
 
-### Existing Convex Tables (DO NOT MODIFY SCHEMA OR FUNCTION SIGNATURES)
+**Recommendation: a new Convex table, not Sanity PT marks.** Given the milestone's explicit constraint that Sanity is bypassed-not-removed *this* milestone and removed *next* milestone, provenance must not depend on Sanity's content shape at all.
 
-| Table | Functions | What it holds |
-|-------|-----------|---------------|
-| `pipelineRuns` | `create`, `updateStatus`, `byRunId` | One row per run — `runId`, `issueNumber`, `startedAt`, `status`, `cost` (JSON string), `durationMs` |
-| `deliberationEvents` | `insert`, `byRunId`, `byRunIdAndType` | Real-time agent event stream — `scout-finding`, `advocate-argument`, etc. |
-| `agentVotes` | `insert`, `byRunId`, `byRunIdAndCharity` | Per-charity per-agent votes |
-| `qaCorrections` | `insert`, `byRunId` | QA correction records |
-| `pitchLog` | `insert`, `markSelected`, `byRunId` | Scout charity candidates (live feed) |
+### New table: `provenance_claims`
 
-**Contract invariant:** `deliberationEvents.eventType` union (`scout-finding` | `advocate-argument` | `editor-decision` | `section-draft` | `qa-correction` | `editor-final` | `publisher-deploy`) is consumed by the public site deliberation layer (Phase 9/13) and MUST NOT be extended. Add a new `agent_runs` table for dashboard-specific agent progress instead.
+Follows the house pattern (`claim_checks`, `review_actions`) exactly:
 
-### New Convex Tables (v2, additive)
+```
+provenance_claims: defineTable({
+  workspace_id: v.string(),
+  runId: v.string(),
+  sectionName: v.string(),
+  claimText: v.string(),        // the quotedSpan — resolved the same way as qaCorrections/claim_checks
+  blockIndexHint: v.optional(v.number()),
+  sourceUrl: v.optional(v.string()),   // present = "sourced"; absent = "unsourced"
+  retrievedAt: v.optional(v.string()), // ISO timestamp, from Researcher's search call
+  status: v.union(v.literal('sourced'), v.literal('unsourced')),
+})
+  .index('by_runId', ['runId'])
+  .index('by_runId_and_section', ['runId', 'sectionName'])
+```
 
-| Table | Key fields | Role | Why Convex (not Postgres) |
-|-------|-----------|------|--------------------------|
-| `workspaces` | `workspace_id`, `name` | Single-tenant anchor; workspace_id threads through every row | Dashboard writes it; pipeline reads it |
-| `users` | `workspace_id`, `email`, `role` | Andrew's user record (and future operators) | Dashboard auth layer writes/reads |
-| `agents` | `workspace_id`, `key` (e.g. "scout"), `display_name`, `model`, `temperature`, `max_tokens`, `enabled`, `description` | Per-agent config; dashboard edits | Dashboard reads/writes live |
-| `prompt_versions` | `workspace_id`, `agent_key`, `version_num`, `content`, `active`, `authored_by`, `note`, `created_at` | Prompt history + active flag | Dashboard writes; pipeline reads at run start |
-| `pipeline_config` | `workspace_id`, `schedule_enabled` (kill switch), `require_review`, `auto_publish`, `schedule_cron`, `schedule_tz`, `budget_monthly_cap`, `budget_run_cap` | Global pipeline settings | Dashboard writes; pipeline reads at run start AND on `/pipeline/tick` |
-| `runs` | `workspace_id`, `run_id`, `trigger_source`, `triggered_by`, `config_snapshot` (JSON), `status`, `started_at`, `completed_at`, `cost`, `duration_ms` | Dashboard-facing run record; superset of `pipelineRuns` | Mirrors + extends `pipelineRuns`; dashboard subscribes to this |
-| `agent_runs` | `workspace_id`, `run_id`, `agent_key`, `status` (queued/running/done/failed), `started_at`, `completed_at`, `tokens_in`, `tokens_out`, `cost_usd`, `input_snapshot` (JSON), `output_snapshot` (JSON), `error` | Per-agent execution record within a run | LangGraph callback handler writes this live |
-| `model_pricing` | `workspace_id`, `model_id`, `input_per_1m`, `output_per_1m`, `effective_from` | Model price table for cost roll-ups; editable from dashboard | Dashboard edits |
-| `charities` (registry) | `workspace_id`, `name`, `slug`, `status` (candidate/featured/blocklisted), `times_featured`, `last_featured_at`, `sanity_id`, `dedup_key` | Charity dedup + Scout blocklist | Pipeline reads at Scout time; dashboard manages |
-| `review_actions` | `workspace_id`, `run_id`, `action` (approve/schedule/reject/reroll), `actor`, `note`, `created_at` | Review audit trail | Dashboard writes on approval/rejection |
-| `audit_log` | `workspace_id`, `entity_type`, `entity_id`, `action`, `actor`, `before` (JSON), `after` (JSON), `created_at` | Every config change, approval, kill-switch flip | Dashboard writes on all mutations |
+### Pipeline-side change (the actual provenance gap)
 
-### What Stays in Railway Postgres
+The milestone context correctly identifies this as the biggest lift. Recommended shape, minimizing blast radius on the 7 parallel writers:
 
-Railway Postgres (`SUPABASE_POSTGRES_URL`, despite the name) holds ONLY LangGraph checkpointer tables:
-- `checkpoints`, `checkpoint_blobs`, `checkpoint_writes` — managed entirely by `AsyncPostgresSaver`, never written manually.
-- `idempotency_keys` — already used by webhook dedup (`lib/idempotency.py`). This is acceptable to keep here since it is already implemented and is a low-stakes operational table, not application data.
+1. **Extend `ResearchOutputModel`** (`agents/researcher.py`) with a generalized `claims: list[{claim: str, sourceUrl: str, retrievedAt: str}]` field, populated the same way `founderNameSourceUrl`/`subjectNameSourceUrl` already are today (Sonnet asked to cite a source per discrete fact it extracts from Tavily results) — this generalizes an existing pattern rather than inventing one.
+2. **Do not require the 7 section writers to emit structured citations.** Requiring every writer's Pydantic model to carry a `sourceRef` per paragraph would touch 7 prompt surfaces at once and directly risks voice drift — the exact failure mode Phase 16/18 went out of their way to avoid (`SECTION_GUIDANCE` additions kept out of `voice_constraints` specifically to protect `VOICE_CONSTRAINTS` byte-equivalence). Instead:
+3. **Add one deterministic post-writer matching pass**, structurally identical to `lib/claims.py`'s existing extraction: for each finished section, flatten its Portable Text and, for each `research.claims[]` entry, substring-match `claim` text (normalized) against the section's flattened text. A match writes one `provenance_claims` row `{sectionName, claimText: <matched span in the section>, sourceUrl, retrievedAt, status: 'sourced'}`. This reuses `_flatten_portable_text`-style logic pipeline-side (where `DispatchState` section bodies already exist before the Sanity write) and needs no change to the 7 writers' prompts or output schemas at all.
+4. Any extracted fact-like span from `claims.py`'s existing extraction (`claim_checks`) that has **no** matching `provenance_claims` row is implicitly `unsourced` — the galley can compute "sourced vs unsourced" as a diff between the two tables without a third state to maintain, or `provenance_claims` can additionally insert `status: 'unsourced'` rows for unmatched `claim_checks` entries at the same pipeline step, so the galley only ever reads one table.
 
-**Do not add application tables to Railway Postgres.** The Convex placement gives the dashboard real-time subscriptions without a separate API layer.
-
-### Runs Table: Augmenting vs Duplicating pipelineRuns
-
-The new `runs` table in Convex is a dashboard-facing superset of `pipelineRuns`. It adds `config_snapshot`, `trigger_source`, `triggered_by`, and richer status. The `pipelineRuns` table stays unchanged (the public site's deliberation layer queries it by `runId`).
-
-The pipeline writes to **both** at run start: `pipelineRuns:create` (existing, unchanged) and `runs:create` (new). Both use the same `run_id` as the join key. This creates one redundant write — acceptable since both are Convex mutations on the same connection.
-
-**If pipelineRuns.status changes, runs.status must match.** The `pipelineRuns:updateStatus` mutation must also update `runs:updateStatus` atomically. Best achieved by having `pipelineRuns:updateStatus` call `runs:updateStatus` internally (Convex function calling another Convex function), or by updating both at each call site.
+**Why this survives Sanity removal cleanly:** `provenance_claims` never references a Sanity document ID or a Portable Text key — only `runId` + `sectionName` + text. When content moves to Convex/wherever next milestone, the resolver's flatten-and-match step is unchanged; only the "read current section body" call swaps its source.
 
 ---
 
-## §3 LangGraph Callback Handler — Live Cost + Progress Emission
+## 3. Content-patch endpoint design
 
-### What Exists
+**Recommendation: per-section granularity, using scoped Sanity `patch` (not `createOrReplace`), with optimistic UI + background reconciliation refetch — not per-block patch, not pure-optimistic-only.**
 
-`lib/openrouter_client.py::acomplete()` already calls `record_cost(run_id, agent_id, ...)` at lines `:221-224` (structured output path) and `:235-238` (plain string path). `lib/cost.py::record_cost` accumulates in-memory per `(run_id, agent_id)`. The final `cost_payload` is only persisted to Convex at pipeline end (`publisher/__init__.py:59-77`).
+### Why per-section, not per-block
 
-**Gap:** There is no per-agent live progress emission. The dashboard cannot show "Scout is running" or per-agent token accrual mid-run; it only sees the batch cost at the end.
+- Matches the milestone's own locked decision: "Editing v1 is per-section (structured/plain editing that regenerates blocks), not inline WYSIWYG."
+- A per-section endpoint can internally regenerate that section's blocks via the existing `compose_section_body()` (`lib/portable_text.py`) — already the exact function the pipeline uses — so dispatch-control and the pipeline share one source of truth for "how do we turn writer-shaped blocks into Portable Text."
+- Per-block patch would require the dashboard to reconstruct valid Portable Text block objects (`_type`, `markDefs`, span structure) itself, duplicating pipeline logic in TypeScript for no real benefit at this milestone's stated editing fidelity ("per-section... not inline WYSIWYG").
 
-### Injection Point: Node-Level Wrappers on graph/builder.py
+### Why scoped `patch`, not `createOrReplace`
 
-The clean injection point is in `graph/builder.py` where nodes are added. Wrap each agent node function with a `@agent_node` decorator (or explicit pre/post calls) that:
+This is the load-bearing fix suggested by fact #1. `write_issue_draft`'s full-document `createOrReplace` regenerates **every** section's block `_key`s on every write, including sections nobody touched. If content-patch endpoints reused that function, editing Section A would silently reshuffle Section B's block identities — invisible to Andrew, but exactly the kind of churn that (a) makes debugging harder and (b) is unnecessary blast radius for a single-section edit. The fix is mechanical and already has a precedent in this codebase: `upload_pdf_to_issue` issues a scoped `{"patch": {"id": issue_id, "set": {...}}}` mutation touching only the field it needs. New endpoints should do the same:
 
-1. Before the node runs: `convex_mutation("agent_runs:updateStatus", {run_id, agent_key, status: "running", started_at})`
-2. After the node completes: `convex_mutation("agent_runs:updateStatus", {run_id, agent_key, status: "done", completed_at, tokens_in, tokens_out, cost_usd})`
-3. On exception: `convex_mutation("agent_runs:updateStatus", {run_id, agent_key, status: "failed", error})`
-
-```python
-# packages/pipeline/src/eisenbalm_pipeline/lib/agent_wrapper.py  (NEW FILE)
-
-def wrap_agent_node(agent_key: str, fn: AgentNodeFn) -> AgentNodeFn:
-    """
-    Wraps a LangGraph node function to emit agent_runs progress to Convex.
-    Costs are read from lib/cost.py::get_agent_cost(run_id, agent_key)
-    immediately after fn() returns (acomplete already accumulated them).
-    """
-    async def wrapped(state: DispatchState) -> dict:
-        run_id = state["run_id"]
-        await convex_mutation_safe("agent_runs:started", {
-            "run_id": run_id,
-            "agent_key": agent_key,
-            "started_at": int(time.time() * 1000),
-        })
-        try:
-            result = await fn(state)
-            agent_cost = get_agent_cost(run_id, agent_key)  # reads from cost.py in-memory
-            await convex_mutation_safe("agent_runs:completed", {
-                "run_id": run_id,
-                "agent_key": agent_key,
-                "completed_at": int(time.time() * 1000),
-                "tokens_in": agent_cost.tokens_in,
-                "tokens_out": agent_cost.tokens_out,
-                "cost_usd": agent_cost.usd,
-            })
-            return result
-        except Exception as e:
-            await convex_mutation_safe("agent_runs:failed", {
-                "run_id": run_id,
-                "agent_key": agent_key,
-                "error": str(e),
-            })
-            raise
-    return wrapped
+```
+PATCH /issues/{run_id}/sections/{section_name}
+  body: { headline?, body: BodyBlock[] }  # same shape section writers already emit
 ```
 
-In `graph/builder.py`, replace:
-```python
-builder.add_node("scout", scout_node)
-```
-with:
-```python
-builder.add_node("scout", wrap_agent_node("scout", scout_node))
-```
+- Server: resolve `sanityIssueId` from `pipelineRuns:byRunId` (existing lookup, used identically in `review.py`), compose the new section's Portable Text via `compose_section_body()`, then `patch.set({f"{sectionName}.headline": ..., f"{sectionName}.body": [...]})` — touching only that one field path. Every other section's document data, including block `_key`s, is untouched.
+- **"Accept fix" reuses the same endpoint**, computed from the QA finding's `suggestedFix`: resolve the finding's span (§1's resolver) against the CURRENT section body, splice in the corrected text for that one block, and `PATCH` just that section. Because the patch is scoped to one section, sibling sections' spans (QA or provenance) are unaffected by an accept-fix action elsewhere.
+- **Structured-field edits** (PDF key data points, game embed, theme, asset uploads) get their own routes in the same family — `PATCH /issues/{run_id}/theme`, `PATCH /issues/{run_id}/game`, etc. — each a scoped `patch.set` on its own field path, never touching prose sections. This keeps the full-document `createOrReplace` reserved for what it already does well: the pipeline's initial draft write and the existing `rerun_agent` re-roll (which legitimately needs to resync everything, since re-running a section writer can change `model_versions` and cost too).
+- **Audit logging**: every content-patch call writes an `audit_log` row with `before`/`after` JSON snapshots of just the patched field — this is free undo history and satisfies the locked "nothing silent" write-boundary rule with the existing table shape, no new mechanism needed.
 
-**Why not a LangGraph callback handler?** LangGraph's built-in callback system (BaseCallbackHandler) is designed for LangChain chains, not LangGraph nodes. Node-level wrappers are simpler, more explicit, and don't depend on LangGraph's internal callback dispatch. The wrapper pattern matches the existing `@agent_node` decorator convention already used in the codebase (`agents/chronicler.py`).
+### Optimistic UI vs refetch
 
-**Cost granularity:** `cost.py::get_agent_cost(run_id, agent_key)` returns the accumulated cost for that agent so far. After the node completes, this reflects all `acomplete()` calls made within that node. No change to `cost.py` — read the in-memory state after the node returns.
+Recommend **optimistic apply + background reconciliation refetch**, not pure fire-and-forget optimism and not blocking-refetch-only:
+
+- Andrew is single-threaded (no concurrent-editor conflict risk — a documented constraint), so the risk optimistic UI usually guards against (two people editing at once) doesn't apply here. Apply the edit to local component state immediately for a responsive feel.
+- Await the `PATCH` call in the background; on success, do a lightweight refetch of just that section (a GROQ read the dashboard already has patterns for) to reconcile canonical block `_key`s and confirm the write landed — cheap, and avoids the dashboard silently drifting from Sanity truth if the patch response and local optimistic state ever disagree (e.g., server-side normalization of the body).
+- On failure, roll back the optimistic state and surface the error — do not silently retry, per the existing "never silent" pattern used throughout `review.py`/`control.py` (they always raise/log rather than swallow).
 
 ---
 
-## §4 New FastAPI Endpoints
+## 4. Two-sign-off state machine placement
 
-### Endpoint Map
+**Recommendation: a new Convex `sign_offs` table (one row per run, two independent booleans), enforced in TWO places — the existing `POST /issues/{run_id}/publish` guard chain (`api/review.py`) AND, as the actual fix for the bypass, inside the Sanity webhook handler (`api/webhooks.py`) itself.**
 
-| Endpoint | Auth | What it does | LangGraph interaction |
-|----------|------|-------------|----------------------|
-| `POST /pipeline/run` | Dashboard secret | Starts a weekly run (dashboard-triggered) | Same as `/run/weekly` but writes `trigger_source: "manual"` to `runs` table |
-| `POST /pipeline/tick` | Railway cron secret | Checks `pipeline_config.schedule_enabled`; if true, triggers a run; if false, no-ops | Reads Convex `pipeline_config:getActive` first; only calls graph if enabled |
-| `POST /runs/{id}/cancel` | Dashboard secret | Cancels an in-flight run | Sets a `cancellation_requested` flag in Convex `runs`; the running graph checks this flag at each node boundary and raises `CancellationError` |
-| `POST /agents/{key}/test-run` | Dashboard secret | Runs a single agent against provided sample input | Calls the agent function directly (not via full graph); returns output + cost; no Sanity/Convex side effects |
-| `POST /issues/{id}/agents/{key}/rerun` | Dashboard secret | Re-rolls a single agent within an existing issue | Loads state from LangGraph checkpoint; runs that agent node only; patches Sanity draft with new output |
-| `POST /issues/{id}/publish` | Dashboard secret | Manually triggers the Publisher (bypasses Sanity webhook) | Calls `_run_publisher()` directly with issue_id from the URL |
-| `POST /issues/{id}/schedule` | Dashboard secret | Sets `publish_at` on the Convex `runs` record; a separate scheduler checks this | No LangGraph interaction; pure Convex write |
+### Why enforcement must live in two places
 
-### Cancel In-Flight: Cooperative Cancellation
+Fact #5 is the crux: the webhook handler that `_flip_sanity_published` fires — and that a raw Studio status-flip *also* fires, since it's the same Sanity `status==='published'` transition — currently has zero knowledge of sign-off state. Extending only `review.py`'s guard chain (the way `claimChecks:allSignedOff` already works) would leave the Studio path exactly as bypassable as it is today. The fix is not "add a nicer gate to the dashboard's own publish button" — it's "make the webhook, which is the true trigger for `_run_publisher`, refuse to fire without both sign-offs," because that's the one chokepoint both paths share.
 
-LangGraph does not support external cancellation of a running node. The correct pattern is **cooperative cancellation** via a shared flag:
+### Schema
 
-```python
-# In every node wrapper (agent_wrapper.py):
-async def wrapped(state: DispatchState) -> dict:
-    run_id = state["run_id"]
-    # Check cancellation flag before starting
-    if await is_cancelled(run_id):
-        raise CancellationError(f"Run {run_id} was cancelled")
-    # ... rest of node ...
+```
+sign_offs: defineTable({
+  workspace_id: v.string(),
+  runId: v.string(),
+  factsCleared: v.boolean(),
+  factsClearedBy: v.optional(v.string()),
+  factsClearedAt: v.optional(v.number()),
+  soundsHuman: v.boolean(),
+  soundsHumanBy: v.optional(v.string()),
+  soundsHumanAt: v.optional(v.number()),
+})
+  .index('by_runId', ['runId'])
 ```
 
-`is_cancelled(run_id)` queries Convex `runs:isCancelled` — a lightweight query that returns true if `status == "cancelled"`. `POST /runs/{id}/cancel` sets `runs.status = "cancelled"` in Convex. The next node boundary check sees it and raises. LangGraph propagates the exception, the run ends with `status: "failed"` (or a new `"cancelled"` status literal added to both `pipelineRuns` and `runs`).
+Two mutations (`signOffs:setFactsCleared`, `signOffs:setSoundsHuman`), each Clerk-JWT-guarded and audit-logged — mirrors `payouts:markPayoutSent`'s exact shape (guarded, rejects redundant flips, audit-logs before/after).
 
-**Limitation:** Cancellation takes effect at the next node boundary — it cannot interrupt a node that is mid-LLM-call. This is acceptable for the use case (killing a stuck run).
+### Relationship to the existing `claimChecks:allSignedOff` gate
 
-### Single-Agent Test-Run
+Keep both. "Facts cleared" is a **deliberate operator attestation**, not merely the automatic result of ticking every claim checkbox — the UI should gate the "Facts cleared" toggle so it's only *enabled* once `claimChecks:allSignedOff` is true (reusing that existing query as a precondition), but the actual boolean written to `sign_offs` is a distinct, explicit action Andrew takes, auditable as "I attest this." "Sounds human" is the same pattern gated on Voice Pass completion (no unresolved QA `error`-severity findings). This preserves all of the existing `claim_checks` machinery unchanged and layers the new named gate on top.
 
-```python
-# packages/pipeline/src/eisenbalm_pipeline/api/control.py  (NEW FILE)
+### Retiring the Studio bypass
 
-@router.post("/agents/{key}/test-run")
-async def agent_test_run(key: str, body: AgentTestRunRequest, _=Depends(require_dashboard_secret)):
-    """
-    Runs a single agent against sample input. No Sanity/Convex side effects.
-    Returns: {output: dict, cost: {tokens_in, tokens_out, usd}, latency_ms: int}
-    """
-    agent_fn = AGENT_REGISTRY[key]  # dict mapping key -> agent node function
-    config = await load_run_config(body.workspace_id)
+Two changes, in order of necessity:
 
-    # Build a minimal DispatchState from the provided sample_input
-    test_state = DispatchState(**body.sample_input, run_id="test-run", config=config)
+1. **Must-have, this milestone:** `api/webhooks.py:sanity_publish` gains a guard immediately after the existing `status != 'published'` check — look up `run_id` (already read from `payload.get("runId")`), and if present, query `signOffs:isFullySignedOff(runId)`; if not fully signed off, log a warning, write an `audit_log` row (`action: "publish.blocked_missing_signoff"`), and return `{"ok": True, "skipped": "not-signed-off"}` instead of scheduling `_run_publisher`. This closes the loophole regardless of *how* the status flip happened (dashboard, Studio, or a stray manual Sanity API call) and requires no change to Sanity permissions. Note the existing code path explicitly tolerates `run_id is None` ("manually-authored drafts") — that fallback should now REQUIRE sign-off to be satisfied for any run_id-bearing payload, and should treat a `None` run_id (no pipeline run to check) as a case that must be blocked or explicitly flagged for manual audit, since there's no way to verify sign-off state without a run to look it up on.
+2. **Recommended, can follow immediately after:** since the milestone already states "Studio becomes read-only fallback," configure Sanity's role/field permissions so the Studio-authenticated role cannot write `weeklyIssue.status`. This is a Sanity-project-config change, not a code change, and is the belt to the webhook guard's suspenders — but the webhook guard (1) is the one that actually matters, because it can't be defeated by a future permissions misconfiguration.
 
-    start = time.time()
-    result = await agent_fn(test_state)
-    latency_ms = int((time.time() - start) * 1000)
-
-    agent_cost = get_agent_cost("test-run", key)
-    clear_run_costs("test-run")  # clean up in-memory test cost
-
-    return {"output": result, "cost": dataclasses.asdict(agent_cost), "latency_ms": latency_ms}
-```
-
-**AGENT_REGISTRY:** A dict in `graph/builder.py` or a new `lib/registry.py` mapping agent key → unwrapped function. The test-run skips the `wrap_agent_node` wrapper (no Convex side effects), but does use the config-injected prompt.
-
-### Single-Agent Re-Roll
-
-Re-rolling an agent within an existing issue requires:
-1. Load the existing LangGraph checkpoint for `run_id` (from Railway Postgres via checkpointer).
-2. Extract the checkpoint state (which has all prior agent outputs).
-3. Run only the target agent node against the checkpoint state.
-4. Patch the Sanity draft with the new output (via `lib/sanity_client.py`).
-5. Write the new output to Convex `agent_runs` and emit a `section-draft` deliberation event.
-
-```python
-@router.post("/issues/{issue_id}/agents/{key}/rerun")
-async def agent_rerun(issue_id: str, key: str, body: AgentRerunRequest):
-    run_id = body.run_id  # from the issue's pipelineMetadata.runId
-    config = {"configurable": {"thread_id": run_id}}
-
-    # Load checkpoint state
-    state = await graph.aget_state(config)
-    current_state = state.values
-
-    # Run the agent
-    agent_fn = AGENT_REGISTRY[key]
-    new_output = await agent_fn(current_state)
-
-    # Patch Sanity draft (section-specific patch, not full rewrite)
-    await patch_issue_section(issue_id, key, new_output)
-
-    # Update checkpoint with new output
-    await graph.aupdate_state(config, new_output)
-
-    return {"ok": True, "output": new_output}
-```
+`review.py`'s `publish`/`schedule` endpoints also gain the same `signOffs:isFullySignedOff` check alongside the existing `claimChecks:allSignedOff` check (409 `reason: "not_fully_signed_off"`) — this is the dashboard-side UX gate (disabled Publish button, clear error) and should be added even though the webhook guard is the actual security boundary, because it's the path Andrew uses 99% of the time and should fail fast with a good message rather than relying on the webhook silently no-op'ing.
 
 ---
 
-## §5 Auth Boundary
+## 5. Eval harness architecture
 
-### dispatch-control Auth: Greenfield from Zero
+**Recommendation: extend the existing single-agent isolation pattern (`api/agents.py`) for agent-level evals, and reuse `rerun_agent`'s checkpoint-fork + bare-node-import pattern for full/partial-graph "shadow runs" — both writing to one new append-only Convex scoreboard table.**
 
-`docs/CURRENT_STATE.md Q5` confirms: no auth exists anywhere. The `dispatch-control` Next.js app is a clean greenfield for auth.
+### Two granularities, matching the two granularities the codebase already has
 
-**Recommended approach:** Clerk (hosted auth, minimal integration surface). Alternatives: Auth.js v5 (more setup, self-managed sessions), Supabase Auth (adds Supabase as a dependency for auth only — not clean). Clerk is the best fit because:
-- Single operator (Andrew) — no complex RBAC needed
-- Hosted magic-link or passkey flows work without a password database
-- Clerk middleware protects all routes with two lines of config
-- JWT can be verified in the FastAPI API endpoints for dashboard-to-pipeline calls
+1. **Single-agent golden scenarios** — nearly free to build. `POST /agents/{key}/test-run` already does an isolated `acomplete()` call with zero real-table writes; `POST /agents/{key}/score` already scores a single output against the live rubric. A golden scenario is just a named, versioned `variables` map (generalizing the existing `SAMPLE_FIXTURES` dict in `api/agents.py` into a file-based fixture registry, e.g. `packages/pipeline/eval/fixtures/{scenario_id}.json`) fed into the existing test-run → score chain, with the result persisted (see scoreboard below) instead of only returned to the caller.
+2. **Full/partial-graph "shadow runs"** — reuse `rerun_agent`'s exact recipe (`api/control.py`): a throwaway `thread_id = f"eval-{uuid4()}"` (never a real `run_id`, so it can never collide with or be picked up by real-run queries), a `DispatchState` seeded from a fixture (e.g., pre-populate `winning_charity`/`research`/`style_brief` to skip the expensive/nondeterministic upstream agents when the scenario only wants to exercise the 7 section writers or the QA judge's cross-section-consistency axis), and direct imports of the **bare, undecorated** node functions — exactly as `rerun_agent` already imports `from eisenbalm_pipeline.agents.origin_story import origin_story as _origin_story` — so the eval path never touches `agent_runs`/`deliberationEvents`/`pipelineRuns` (same isolation contract `test-run.py`'s docstring calls out explicitly).
 
-**Pattern:**
+### Mocking OpenRouter vs cheap-model live runs
+
+The codebase already has two relevant levers — reuse both rather than building a third mocking mechanism:
+
+- **`EISENBALM_STUB_MODE`** (existing, used in tests today): `acomplete` short-circuits to a fake client returning `model_construct()` defaults. Good for **structural/wiring** evals only — "does the graph still execute end-to-end and validate against Pydantic schemas" — never for voice/quality scoring, since outputs are fake.
+- **Per-agent model override**, already threaded through `RunConfig`/`AgentConfig` since Phase 22 (`lib/config_loader.py`, `DispatchState.config`). The eval harness's frequent/cheap runs should override `config.agents[key].model` to a fast/cheap model for cost containment (drift detection doesn't need production-fidelity output quality on every run); a separate, less-frequent "shadow run" mode uses the real production model config for periodic fidelity checks. This is the same mechanism operators already use to configure agents — no new plumbing.
+
+### Scoring and storage
+
+- Reuse `judge.score_output()` (already extracted standalone in Phase 28, `agents/qa/judge.py`) for the scoring step in both granularities — it already returns per-axis scores + rationale + cost, and it's already the function `POST /agents/{key}/score` calls.
+- New **append-only** Convex table, matching house style (`workspace_id`, no updates/deletes — query-time diffing instead of a separate "drift computed" state):
+
 ```
-dispatch-control Next.js → Clerk JWT in Authorization header → FastAPI /pipeline/* endpoints
+eval_runs: defineTable({
+  workspace_id: v.string(),
+  scenarioId: v.string(),
+  agentKey: v.string(),          // or "full-graph" for shadow runs
+  triggeredBy: v.string(),       // Clerk userId
+  runAt: v.number(),
+  model: v.string(),
+  costUsd: v.number(),
+  overall: v.number(),
+  axes: v.string(),              // JSON — per-axis {axis, score, pass, note}
+  rationale: v.string(),
+  promptVersion: v.optional(v.number()),  // ties to prompt_versions.version for drift-vs-prompt-edit correlation
+})
+  .index('by_workspace_scenario_agent', ['workspace_id', 'scenarioId', 'agentKey'])
+  .index('by_workspace_runAt', ['workspace_id', 'runAt'])
 ```
 
-FastAPI dashboard endpoints use a `Depends(require_clerk_jwt)` dependency that verifies the Clerk JWT against Clerk's JWKS endpoint. This replaces the `X-Pipeline-Trigger-Secret` header check for dashboard-originated calls. The Railway cron still uses `X-Pipeline-Trigger-Secret` (unchanged).
-
-**Convex auth:** Convex's built-in auth integrates with Clerk via `ConvexProviderWithClerk`. Dashboard mutations are Convex-auth-gated; public site queries (on `apps/web`) remain unauthenticated as today. The shared `convex/` directory stays at the monorepo root — both apps import from it, but the function-level auth is conditional (`ctx.auth` is present for dashboard calls, absent for public calls).
-
-**New environment variables for dispatch-control:**
-- `CLERK_PUBLISHABLE_KEY` (public)
-- `CLERK_SECRET_KEY` (server-only)
-- `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`
-- `PIPELINE_API_URL` (points to Railway FastAPI)
+- **Drift detector = a query, not a separate service**: fetch the last N rows for `(scenarioId, agentKey)` ordered by `runAt`, diff `overall`/axis scores between consecutive rows. No new computation pipeline needed — this is exactly the pattern `finance.ts`'s reconciliation and `charities.ts`'s dedup already use (derive from existing rows at query time, don't pre-compute and store a second derived state).
+- New endpoints: `POST /eval/scenarios/{scenario_id}/run` (dispatches to test-run+score or shadow-run+score depending on the fixture's declared kind, writes one `eval_runs` row, returns it) and a plain Convex query for the Eval Center's scoreboard/trend view (no new FastAPI route needed for reads — the dashboard already reads Convex directly for everything else).
 
 ---
 
-## New File Locations
+## 6. Suggested build order
 
-### Python Pipeline (packages/pipeline/src/eisenbalm_pipeline/)
-
-| File | New or Modified | Purpose |
-|------|-----------------|---------|
-| `lib/config_loader.py` | NEW | `load_run_config()` + `snapshot_config()` — DB-backed config at run start |
-| `lib/agent_wrapper.py` | NEW | `wrap_agent_node()` — Convex progress emission around each node |
-| `lib/registry.py` | NEW | `AGENT_REGISTRY` dict (agent key → unwrapped node function) |
-| `api/control.py` | NEW | Dashboard FastAPI endpoints: `/pipeline/run`, `/pipeline/tick`, `/runs/{id}/cancel`, `/agents/{key}/test-run`, rerun, publish, schedule |
-| `lib/prompts.py` | MODIFIED | `load_prompt()` stays; no longer called from agents — called only from `config_loader.py` as file fallback |
-| `graph/builder.py` | MODIFIED | Wraps each `builder.add_node()` call with `wrap_agent_node()`; reads `config` from state |
-| `graph/state.py` | MODIFIED | Adds `config: Optional[RunConfig]` field to `DispatchState` |
-| `api/runs.py` | MODIFIED | `/run/weekly` writes to new `runs` Convex table in addition to `pipelineRuns` |
-| `agents/*.py` (8 files) | MODIFIED | Call sites: `load_prompt(name)` → `state["config"].prompts[name]` |
-
-### Convex (convex/)
-
-| File | New or Modified | Purpose |
-|------|-----------------|---------|
-| `schema.ts` | MODIFIED | New tables: `workspaces`, `users`, `agents`, `prompt_versions`, `pipeline_config`, `runs`, `agent_runs`, `charities`, `model_pricing`, `review_actions`, `audit_log` |
-| `agents.ts` | NEW | CRUD for agent config rows |
-| `promptVersions.ts` | NEW | Versioned prompt CRUD + `getActive` |
-| `pipelineConfig.ts` | NEW | `getActive`, `update` (for kill switch, require_review, etc.) |
-| `runs.ts` | NEW | Dashboard-facing run table (mirrors + extends pipelineRuns) |
-| `agentRuns.ts` | NEW | Per-agent execution records (live progress) |
-| `charities.ts` | NEW | Charity registry CRUD (not the existing `pitchLog`) |
-| `modelPricing.ts` | NEW | Model price table CRUD |
-| `reviewActions.ts` | NEW | Review action log |
-| `auditLog.ts` | NEW | Audit trail mutations |
-| `workspaces.ts` | NEW | Workspace + users CRUD |
-| `pipelineRuns.ts` | MODIFIED | `updateStatus` also updates `runs` table (or call site change in pipeline) |
-
-### dispatch-control App (apps/dispatch-control/)
-
-New Next.js app. Internal structure mirrors `apps/web` conventions.
+Ordering follows real dependencies found in the code, not milestone-doc ordering. Three independent tracks exist (Review/Editing, Signal/Run Monitor, Eval), plus one piece of foundational plumbing everything else benefits from.
 
 ```
-apps/dispatch-control/
-├── app/
-│   ├── layout.tsx                    # ClerkProvider + ConvexProviderWithClerk
-│   ├── sign-in/[[...sign-in]]/page.tsx
-│   ├── (dashboard)/
-│   │   ├── page.tsx                  # Overview: run history, live run, cost
-│   │   ├── agents/
-│   │   │   ├── page.tsx              # Pipeline graph view + agent cards
-│   │   │   └── [key]/
-│   │   │       ├── page.tsx          # Per-agent edit: prompt, model, temp
-│   │   │       └── test-run/page.tsx # Single-agent test-run UI
-│   │   ├── runs/
-│   │   │   ├── page.tsx              # Run history
-│   │   │   └── [id]/page.tsx         # Live run view + per-agent progress
-│   │   ├── review/
-│   │   │   └── [id]/page.tsx         # Review gate: preview + approve/reject
-│   │   ├── charities/page.tsx        # Charity registry
-│   │   ├── settings/page.tsx         # Schedule, kill switch, budget caps
-│   │   └── cost/page.tsx             # Cost roll-ups, model pricing editor
-├── middleware.ts                     # Clerk auth: protect all /(dashboard)/* routes
-├── lib/
-│   ├── pipeline-api.ts              # Typed wrappers for FastAPI calls
-│   └── convex/
-│       └── queries.ts               # Dashboard-specific Convex query imports
-└── package.json                     # name: "@eisenbalm/dispatch-control"
+Track A (spine — Review Desk + editing + publish gate)   Track B (parallel)         Track C (parallel)
+──────────────────────────────────────────────────────   ────────────────────       ───────────────────
+1. Foundation: fix NEXT_PUBLIC_PIPELINE_URL,
+   design system + chrome, Awaiting-you inbox
+   (pure read-aggregation over existing tables)
+        │
+2. Content-patch endpoint family (scoped Sanity
+   `patch`, per-section + structured fields, audit-logged)
+        │
+3. Review Desk native galley + span-resolver util,          Run Monitor v2 +           Prompt Lab eval
+   rendering EXISTING qaCorrections via the resolver         Signal Desk (additive      drawer + Eval
+        │                                                    frontend over existing     Center (fixtures +
+4. "Accept fix" wiring (QA finding → content-patch,          agent_runs/pitchLog/       eval_runs table +
+   using the span-resolver's match)                          interrupt-resume — no      test-run/score
+        │                                                    schema deps on Track A)    reuse)
+5. Two-sign-off (`sign_offs` table) + webhook-guard
+   fix + gated Publish button in Review Desk
+        │
+6. Provenance pipeline (Researcher `claims[]` field +
+   post-writer matching pass + `provenance_claims`
+   table) + sourced/unsourced galley rendering via
+   the same span-resolver from step 3
+        │
+7. Voice Pass (reuses QA two-layer detector +
+   score_output; as-written/rewrite popovers are the
+   same span mechanics as step 4's accept-fix)
+        │
+8. Registry upgrades (coverage memory strip,
+   corrections log) — smallest, least dependent,
+   slots in anywhere
 ```
+
+**Rationale for the ordering within Track A:**
+- Content-patch (step 2) must exist before *anything* that mutates content — accept-fix (4), Voice Pass rewrites (7), and per-section editing itself all depend on it. Build it once, prove it with the simplest consumer (plain per-section editing), before layering span-aware consumers on top.
+- The galley + span-resolver (step 3) is a prerequisite for both accept-fix (4) and provenance rendering (6) — it's the one piece of shared infrastructure both consume, so it should exist before either.
+- Two-sign-off (step 5) is schema-independent of steps 2-4 but should land before or alongside the galley's "gated Publish" UI, since that's explicitly one Review Desk feature — sequencing it here avoids building the Publish button twice.
+- Provenance (step 6) is deliberately sequenced *after* the galley exists, not before — the milestone context flags it as the biggest lift, and building the rendering consumer first means the pipeline-side work (step 6) has an immediate, testable frontend target instead of shipping into a vacuum.
+- Voice Pass (7) is sequenced after accept-fix (4) specifically because they are mechanically the same feature (span match → popover → content-patch) — building accept-fix first de-risks Voice Pass.
+
+**Tracks B and C have no schema or endpoint dependency on Track A** and can be staffed in parallel from day one: Run Monitor v2/Signal Desk is purely additive frontend over tables that already exist (`agent_runs`, `agent_run_payloads`, `pitchLog`, the `editor_gate_1` interrupt/resume flow), and the eval harness reuses `api/agents.py`'s existing isolation pattern plus `rerun_agent`'s checkpoint-fork pattern without touching Sanity, `qaCorrections`, or `claim_checks` at all.
 
 ---
 
-## Build Order (Dependency-Honoring)
+## Integration Points Summary
 
-The §2 keystone (config externalization + snapshot) is the foundation. Everything else reads from it.
-
-| Step | What | Depends On | Key Artifacts |
-|------|------|-----------|---------------|
-| 1 | Convex schema extension (new tables) | Nothing — additive | New tables in `convex/schema.ts`; generated types |
-| 2 | `pipeline_config` + `agents` + `prompt_versions` Convex functions | Step 1 | `convex/pipelineConfig.ts`, `agents.ts`, `promptVersions.ts` |
-| 3 | Prompt migration seed: 12 `.md` files → Convex `prompt_versions` rows | Step 2 | Migration script; each agent has active v1 prompt in Convex |
-| 4 | `lib/config_loader.py` (DB-backed loader + file fallback) | Step 2, existing `lib/prompts.py` | `load_run_config()` function; `RunConfig` dataclass |
-| 5 | `graph/state.py` adds `config: Optional[RunConfig]` | Step 4 | `DispatchState` updated; `API_CONTRACTS.md §7` updated |
-| 6 | Agent call sites swapped (8 files) | Steps 4, 5 | Agents read `state["config"].prompts[key]` |
-| 7 | `lib/agent_wrapper.py` + `convex/agentRuns.ts` | Steps 1, existing `lib/cost.py` | Live per-agent progress in Convex |
-| 8 | `graph/builder.py` wraps nodes with `wrap_agent_node()` | Steps 6, 7 | All nodes emit progress; `runs` table written at run start |
-| 9 | `convex/runs.ts` + pipeline writes to `runs` table | Steps 1, 8 | Dashboard-facing run record with `config_snapshot` |
-| 10 | `apps/dispatch-control` scaffold + Clerk auth | Nothing pipeline | New Next.js app; Clerk wired; all routes protected |
-| 11 | Dashboard read-only views (graph, run history, live run, cost) | Steps 7, 9, 10 | Dashboard can observe but not yet control |
-| 12 | `api/control.py` — `/pipeline/run`, `/pipeline/tick`, `/runs/{id}/cancel` | Step 8 | Dashboard can trigger + kill |
-| 13 | Prompt editor UI (edit, save-as-version, diff, rollback) | Steps 2, 10 | Step 2 Convex functions consumed by dashboard UI |
-| 14 | Single-agent test-run (`/agents/{key}/test-run` + `lib/registry.py`) | Steps 6, 12 | Test-run endpoint + dashboard UI |
-| 15 | Review gate (`require_review` flow, `review_actions`, `audit_log`) | Steps 9, 10, 12 | Review queue in dashboard; approve/reject flow |
-| 16 | Charity registry + Scout dedup integration | Step 1 | `convex/charities.ts`; Scout reads registry at run time |
-| 17 | Budget caps + model pricing + cost roll-up dashboard | Steps 1, 9 | `model_pricing` table; dashboard cost views |
-| 18 | Single-agent re-roll (`/issues/{id}/agents/{key}/rerun`) | Steps 12, 14 | Depends on checkpoint access patterns being stable |
-| 19 | Notifications (run complete / failed / awaiting-review / budget) | Steps 9, 15 | Slack/email webhooks from Convex scheduled functions |
-| 20 | Productization prep (workspace audit, per-workspace secrets, graph-as-data) | All above | `workspace_id` already threaded; secrets store TBD |
-
-**Critical path:** Steps 1 → 2 → 4 → 5 → 6 → 8 → 9 must be done in order. Steps 10, 13, 14, 15 can parallelise with pipeline steps once Step 1 is done.
-
----
-
-## Integration Constraints (Do Not Break)
-
-| Existing Contract | What Must Not Change | Where Defined |
-|---|---|---|
-| `pipelineRuns.status` literals | `running` / `awaiting-review` / `complete` / `failed` — public site reads this | `convex/schema.ts`, `API_CONTRACTS.md §4.1` |
-| `deliberationEvents.eventType` literals | 7 values; public site deliberation layer renders them | `convex/schema.ts`, `API_CONTRACTS.md §4.3` |
-| `pipelineRuns:create` mutation args | `{runId, issueNumber, startedAt}` — pipeline calls this at run start | `API_CONTRACTS.md §3.1` |
-| `pipelineRuns:updateStatus` mutation args | `{runId, status, completedAt?, errorMessage?, durationMs?, cost?}` | `API_CONTRACTS.md §3.2` |
-| `POST /run/weekly` endpoint | Still exists; Railway cron calls it today; dashboard uses new `/pipeline/run` | `api/runs.py:177-241` |
-| `POST /webhook/sanity-publish` endpoint | Unchanged; Sanity webhook still fires here | `api/webhooks.py` |
-| `load_prompt()` function signature | Stays in `lib/prompts.py`; agents no longer call it directly but it is the fallback | `lib/prompts.py:49-70` |
-| `DispatchState` existing fields | All existing TypedDict fields stay; only `config: Optional[RunConfig]` is added | `API_CONTRACTS.md §7` |
-| `lib/cost.py::record_cost()` | Called by `openrouter_client.py`; must remain callable; `get_agent_cost()` added as a reader | `lib/cost.py:83-109` |
-| `convex/_generated/api.ts` | Do not change existing function paths used by `apps/web` | `apps/web/` imports |
-| `SUPABASE_POSTGRES_URL` env var name | Misnomer but stable; rename is a separate future task; do not rename mid-v2 | `graph/checkpointer.py:36` |
-
----
-
-## Anti-Patterns for v2
-
-### Anti-Pattern 1: Putting Config in Railway Postgres
-
-**What might seem right:** Railway Postgres already exists for checkpointing; add a `pipeline_config` table there.
-
-**Why it's wrong:** The dashboard (Next.js) has no direct Postgres access. Adding a REST API layer between dashboard and Postgres to read/write config adds a full extra service hop with auth concerns, when Convex already provides exactly this (HTTP mutations + real-time subscriptions). Mixing application config tables with LangGraph checkpoint tables risks schema naming conflicts and complicates backup/restore.
-
-**Do this instead:** All application config (agents, prompt_versions, pipeline_config) lives in Convex. Railway Postgres holds only LangGraph checkpoint tables.
-
-### Anti-Pattern 2: Reading Convex Config Inside Agent Nodes
-
-**What might seem right:** Each agent calls Convex to fetch its own prompt at execution time, for maximum freshness.
-
-**Why it's wrong:** A 7-way parallel superstep with 7 concurrent Convex fetches creates 7 network round-trips mid-graph. If Convex is momentarily unreachable mid-run, the run fails at a random section writer. Mid-run config changes corrupt the run (different agents run with different prompt versions for the same issue).
-
-**Do this instead:** `load_run_config()` runs ONCE at run start, before `graph.ainvoke()`. The full config is snapshotted and threaded through `DispatchState.config`. Agents read from state, not from Convex. This guarantees every agent in a run uses the same config version.
-
-### Anti-Pattern 3: Extending deliberationEvents for Dashboard Progress
-
-**What might seem right:** Add new `eventType` values (`agent-started`, `agent-completed`) to `deliberationEvents` for dashboard live progress.
-
-**Why it's wrong:** `deliberationEvents.eventType` is an explicit closed union defined in `convex/schema.ts` and `API_CONTRACTS.md §4.3`. The public site deliberation layer renders these event types. Adding dashboard-only event types leaks internal execution state into the public deliberation view and breaks the schema's type safety.
-
-**Do this instead:** Dashboard live progress lives in the new `agent_runs` table. Separate Convex function, separate subscription, separate table. The public site never touches `agent_runs`.
-
-### Anti-Pattern 4: Overwriting Prompts in Place
-
-**What might seem right:** When Andrew saves a prompt edit, update the existing `prompt_versions` row in place.
-
-**Why it's wrong:** Breaks reproducibility. If a run is in-flight (or was completed last week), the config_snapshot references version N. Overwriting version N makes it impossible to replay or understand what produced a past issue.
-
-**Do this instead:** Every save creates a new `prompt_versions` row with an incremented `version_num`. "Activate" sets `active: true` on the new row and `active: false` on the previous one. The old row is never deleted — it is the audit trail.
-
-### Anti-Pattern 5: Single Convex Table for Both pipelineRuns and runs
-
-**What might seem right:** Extend `pipelineRuns` with `config_snapshot`, `trigger_source`, `triggered_by` instead of creating a new `runs` table.
-
-**Why it's wrong:** `pipelineRuns` function signatures are defined in `API_CONTRACTS.md §4.1` and called by name from `apps/web` (the public deliberation layer). Changing the schema or adding mutation args risks breaking the public site. The dashboard's needs (config_snapshot, richer status, trigger provenance) are additive and not needed by the public site.
-
-**Do this instead:** `runs` is a new Convex table that the dashboard owns. `pipelineRuns` is the existing table the public site owns. Both are written to at run start (same `run_id` as the join key). `pipelineRuns:updateStatus` continues to work exactly as before.
-
----
-
-## System Overview (v1 — unchanged)
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     BROWSER / READER                                │
-│  Next.js (Vercel) ─── Sanity GROQ reads (CDN) ──────────────────┐  │
-│  React components ─── Convex useQuery subscriptions (live) ──┐  │  │
-└──────────────────────────────────────────────────────────────┼──┼──┘
-                                                               │  │
-┌──────────────────────────────────────────────────────────────┼──┼──┐
-│                     SANITY CMS (cloud)                        │  │  │
-│  weeklyIssue (draft/published) ──────────────────────────────┘  │  │
-│  charity ─ agentProfile                                          │  │
-│  On status→published: fires webhook ──────────────────────────┐ │  │
-└───────────────────────────────────────────────────────────────┼─┼──┘
-                                                                │ │
-┌───────────────────────────────────────────────────────────────┼─┼──┐
-│                     CONVEX (cloud)                             │ │  │
-│  pipelineRuns ─ deliberationEvents ─ agentVotes ──────────────┘ │  │
-│  qaCorrections ─ pitchLog                          ◄────────────┘  │
-│  Written by: pipeline (HTTP API) / Read by: frontend (useQuery)     │
-└───────────────────────────────────────────────────────────────────┘
-                             ▲ HTTP mutations
-┌────────────────────────────┼────────────────────────────────────────┐
-│         FASTAPI + LANGGRAPH (Railway)                               │
-│                            │                                        │
-│  POST /run ──► LangGraph graph (compiled with AsyncPostgresSaver)   │
-│                            │                                        │
-│  Phase 1 — Sequential:     │                                        │
-│  Calibrator → Scout → Advocate → Editor[interrupt?] ───────────┐   │
-│                            │                                    │   │
-│  Phase 2 — Parallel (Send API fan-out):                         │   │
-│  Researcher → [OriginStory │ Problem │ FounderBio │ CaseStudy   │   │
-│               │ Game │ Bonus │ Design] → QA → EditorFinal       │   │
-│                            │                                    │   │
-│  Sanity write (draft) ─────┘                                    │   │
-│  Convex pipelineRuns: awaiting-review                           │   │
-│                                                                 │   │
-│  POST /webhook/sanity-publish ◄─── Sanity webhook (HMAC) ──────┘   │
-│           │                                                         │
-│           └──► Publisher (background) → PDF → Sanity → Vercel      │
-└─────────────────────────────────────────────────────────────────────┘
-                             │
-┌────────────────────────────┼────────────────────────────────────────┐
-│         RAILWAY POSTGRES (LangGraph checkpointer)                   │
-│  AsyncPostgresSaver checkpoint tables (LangGraph built-in schema)   │
-│  Stores: thread checkpoints, channel blobs, pending sends           │
-│  Purpose: pause/resume after interrupt, crash recovery              │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Architectural Seam 1 — LangGraph State, Checkpointing, and Interrupts
-
-### State Schema Pattern
-
-The `DispatchState` TypedDict (defined in `packages/pipeline/types.py`, documented in `docs/API_CONTRACTS.md §7`) is the single state object threaded through the entire graph. Every agent node reads from it and returns a dict of updates — LangGraph merges writes back into the shared state automatically.
-
-**Key design rule:** Fields for Phase 2 outputs (`origin_story`, `problem_statement`, etc.) are all `Optional`. The state schema must declare a reducer for any field that multiple parallel nodes can write. For the seven section writers, each writes to a *distinct* key, so no reducer is needed — the default overwrite behaviour is correct. Do not use `Annotated[list, operator.add]` unless you genuinely need accumulation.
-
-```python
-# packages/pipeline/graph.py — canonical structure
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-
-builder = StateGraph(DispatchState)
-
-# Phase 1 — sequential
-builder.add_node("calibrator", calibrator_node)
-builder.add_node("scout", scout_node)
-builder.add_node("advocate", advocate_node)
-builder.add_node("editor_gate1", editor_gate1_node)
-
-# Phase 2 — parallel fan-out via conditional edges
-builder.add_node("researcher", researcher_node)
-builder.add_node("origin_story", origin_story_node)
-# ... other section writer nodes ...
-builder.add_node("qa", qa_node)
-builder.add_node("editor_final", editor_final_node)
-builder.add_node("sanity_write", sanity_write_node)
-
-# Sequential edges for phase 1
-builder.add_edge("calibrator", "scout")
-builder.add_edge("scout", "advocate")
-builder.add_edge("advocate", "editor_gate1")
-
-# Fan-out from researcher (runs after editor_gate1 completes)
-# All 7 section writers start simultaneously
-builder.add_edge("editor_gate1", "researcher")
-builder.add_conditional_edges(
-    "researcher",
-    lambda state: ["origin_story", "problem_statement",
-                   "founder_bio", "case_study", "game", "bonus", "design"],
-    ["origin_story", "problem_statement",
-     "founder_bio", "case_study", "game", "bonus", "design"],
-)
-# Fan-in — all writers must finish before QA
-for writer in ["origin_story", "problem_statement",
-                "founder_bio", "case_study", "game", "bonus", "design"]:
-    builder.add_edge(writer, "qa")
-
-builder.add_edge("qa", "editor_final")
-builder.add_edge("editor_final", "sanity_write")
-builder.add_edge("sanity_write", END)
-
-# Compile with Postgres checkpointer
-async with AsyncPostgresSaver.from_conn_string(SUPABASE_URL) as checkpointer:
-    await checkpointer.setup()   # run once (CI/CD migration, not every startup)
-    graph = builder.compile(checkpointer=checkpointer)
-```
-
-**Fan-out execution rule:** When multiple edges leave a single node pointing to different destination nodes, LangGraph groups those destinations into a *superstep* and executes them concurrently. If **any** node in a superstep raises an exception, the entire superstep fails atomically — no partial state is saved. This means the seven section writers must each have internal retry logic or safe fallback returns.
-
-### Human-in-the-Loop: Editor Gate 1 Interrupt
-
-The `interrupt()` function (LangGraph ≥ 0.2) is the correct pattern. It is not a breakpoint — it pauses mid-node execution, serialises the payload into the checkpoint, and marks the thread as `interrupted`. The node re-executes from the beginning on resume, so all logic before the `interrupt()` call must be idempotent.
-
-```python
-# packages/pipeline/agents/editor_gate1.py
-from langgraph.types import interrupt, Command
-
-async def editor_gate1_node(state: DispatchState) -> dict:
-    # Deterministic: pick the winner from candidate array
-    result = await llm_call(editor_prompt(state["candidates"]))
-
-    if result["confidence"] < CONFIDENCE_THRESHOLD:
-        # Pause — surfaces to Andrew via Convex pipelineRuns status
-        await convex_mutation("pipelineRuns:updateStatus", {
-            "runId": state["run_id"],
-            "status": "awaiting-editor-decision",
-        })
-        # interrupt() serialises `result` into the checkpoint
-        # Execution halts here; thread is marked interrupted
-        human_input = interrupt({
-            "reason": "no_clear_winner",
-            "candidates": state["candidates"],
-            "partial_analysis": result,
-        })
-        # Resumes here when Command(resume=...) is invoked
-        # human_input contains whatever Andrew sent
-        chosen_id = human_input["chosen_id"]
-    else:
-        chosen_id = result["winner_id"]
-
-    winning_charity = next(
-        c for c in state["candidates"] if c["name"] == chosen_id
-    )
-    return {
-        "winning_charity": winning_charity,
-        "editor_decision": result["rationale"],
-        "runner_up_notes": result["runner_up_notes"],
-        "deliberation_transcript": result["transcript"],
-    }
-```
-
-**Resume from interrupt:** The FastAPI app exposes a `POST /run/{run_id}/resume` endpoint. Andrew (or a Convex-triggered webhook) calls it with the chosen charity. The endpoint invokes the graph with `Command(resume={"chosen_id": "..."})` on the same `thread_id`:
-
-```python
-# packages/pipeline/api/main.py
-@app.post("/run/{run_id}/resume")
-async def resume_run(run_id: str, body: ResumeBody):
-    config = {"configurable": {"thread_id": run_id}}
-    await graph.ainvoke(Command(resume=body.dict()), config=config)
-    return {"ok": True}
-```
-
-### Checkpointer: Railway Postgres Backend
-
-`AsyncPostgresSaver` from `langgraph-checkpoint-postgres` connects directly via the `SUPABASE_POSTGRES_URL` env var (which points at Railway Postgres despite the name — see `CURRENT_STATE.md Q3`).
-
-`checkpointer.setup()` creates three tables: `checkpoints` (state snapshots keyed by `thread_id` + monotonically increasing `checkpoint_id`), `checkpoint_blobs` (overflow for large payloads), and `checkpoint_writes` (pending writes within a superstep). Call `setup()` exactly once during Railway deploy, not on every app startup.
-
-**Thread ID convention:** Use `run_id` (UUID generated at pipeline start) as the `thread_id`. This means every weekly run has a unique, stable checkpoint namespace that can be resumed, forked, or inspected for debugging.
-
-### Common Failure Modes — LangGraph Seam
-
-| Failure | Mechanism | Prevention |
-|---|---|---|
-| Section writer raises exception | Entire parallel superstep rolls back — no partial writes | Add `try/except` inside each writer node; return a sentinel value on failure rather than raising |
-| Interrupt node re-executes on resume | Logic before `interrupt()` runs twice | All pre-interrupt logic must be idempotent (safe to re-run) |
-| `checkpointer.setup()` called on every startup | Migration runs repeatedly, fails on concurrent starts | Run only in CI/CD deploy step, not in `on_startup` |
-| State key collision in parallel writers | Two nodes overwrite the same key | Each section writer writes only its own key; verify state schema before wiring |
-| `thread_id` reuse across runs | Checkpoint from last week's run interferes | Always generate a fresh UUID `run_id` per weekly pipeline trigger |
-
----
-
-## Architectural Seam 2 — Three-Datastore Boundaries
-
-### Ownership Rules (Explicit)
-
-| Data Entity | Source of Truth | Transient Mirror | Ownership Rule |
+| New/Modified Component | Type | Depends On | Notes |
 |---|---|---|---|
-| `charity` document | **Sanity** | Convex `pitchLog` (name/location only); Convex `charities` registry (status/dedup) | Sanity is canonical content; Convex `charities` is the operational registry (dedup, blocklist) |
-| `weeklyIssue` document | **Sanity** | Convex `pipelineRuns` (status only); Convex `runs` (status + config_snapshot) | Sanity owns content; Convex owns execution state |
-| `agentProfile` document | **Sanity** | None — cached in React state | Seeded once, read-only. No pipeline writes. |
-| Agent config (prompt, model, temp) | **Convex `agents` + `prompt_versions`** | None | Dashboard writes; pipeline reads at run start only |
-| Pipeline run events | **Convex** | None | `deliberationEvents`, `agentVotes`, `qaCorrections`, `pitchLog`, `agent_runs` live only in Convex |
-| LangGraph graph checkpoint | **Railway Postgres** | None | LangGraph internal state for pause/resume. Not queryable by the frontend or dashboard |
-
-### What Lives Where — Decision Rules
-
-**Write to Sanity when:** The data is content that Andrew will read, edit, or publish. Sanity is the record of what shipped.
-
-**Write to Convex when:** The data is a pipeline event the frontend needs in real-time, OR dashboard config that the pipeline reads at run start, OR audit/review records the dashboard writes.
-
-**Write to Railway Postgres (via checkpointer) when:** LangGraph needs to persist state for fault recovery or interrupt/resume. This is fully managed by the checkpointer — do not write to Railway Postgres manually.
-
-### Common Failure Modes — Datastore Seam
-
-| Failure | Mechanism | Prevention |
-|---|---|---|
-| Convex `pipelineRuns` missing for an issue | Convex write failed or not called | Always write `pipelineRuns:create` before graph starts |
-| `runId` on Sanity issue doesn't match Convex | Sanity write used a different `run_id` | `run_id` set once at pipeline start, passed through all of `DispatchState`, never regenerated |
-| `runs` table has stale config_snapshot | `snapshot_config()` not called before `graph.ainvoke()` | Step ordering in `api/runs.py`: load_config → snapshot → ainvoke |
-| `agent_runs` progress missing from dashboard | `wrap_agent_node` not applied to a node | Verify all `builder.add_node()` calls use `wrap_agent_node()` |
-| Charity registry in Convex contradicts Sanity | Scout wrote to Sanity but not Convex `charities` | Scout must write to both; dedup key is the Sanity `charity-{slug}` id |
-
----
-
-## Architectural Seam 3 — Webhook Reliability (Sanity → Publisher)
-
-(Unchanged from v1 — see existing content below.)
-
-### Sanity Webhook Behaviour
-
-Sanity delivers webhooks with at-least-once semantics. It retries **twice** after the initial attempt, with a 30-second interval between retries. It expects a response within 30 seconds or it considers the delivery failed and will retry. Key headers:
-
-| Header | Value | Use |
-|---|---|---|
-| `sanity-webhook-signature` | `t={ts_ms},v1={base64url}` | HMAC-SHA256 signature (see `lib/sanity_webhook.py` for canonical algorithm) |
-| `sanity-transaction-time` | ISO 8601 datetime | Monitoring convenience; age check uses `t=` from signature |
-| `idempotency-key` | Stable UUID per delivery attempt group | Deduplication key across retries |
-
-The canonical Python implementation is in `packages/pipeline/src/eisenbalm_pipeline/lib/sanity_webhook.py` (Phase 6). See `API_CONTRACTS.md §5.3` for the full algorithm.
-
----
-
-## Architectural Seam 4 — Monorepo Type Sharing (with dispatch-control addition)
-
-### Repository Structure (v2)
-
-```
-eisenbalm/
-├── apps/
-│   ├── web/                         # Next.js — public reader site
-│   │   └── (unchanged from v1)
-│   ├── studio/                      # Sanity Studio
-│   │   └── (unchanged from v1)
-│   └── dispatch-control/            # NEW — dashboard (auth-gated)
-│       ├── app/
-│       │   ├── layout.tsx           # ClerkProvider + ConvexProviderWithClerk
-│       │   ├── sign-in/
-│       │   └── (dashboard)/         # All protected routes
-│       ├── middleware.ts             # Clerk auth protection
-│       ├── lib/
-│       │   └── pipeline-api.ts      # FastAPI call wrappers with Clerk JWT
-│       └── package.json             # name: "@eisenbalm/dispatch-control"
-├── packages/
-│   ├── pipeline/                    # FastAPI + LangGraph (Python)
-│   │   ├── src/eisenbalm_pipeline/
-│   │   │   ├── lib/
-│   │   │   │   ├── config_loader.py # NEW
-│   │   │   │   ├── agent_wrapper.py # NEW
-│   │   │   │   ├── registry.py      # NEW
-│   │   │   │   └── (existing files unchanged)
-│   │   │   └── api/
-│   │   │       ├── control.py       # NEW — dashboard endpoints
-│   │   │       └── (existing files unchanged)
-│   └── shared/                      # TypeScript shared types
-│       └── src/
-│           ├── control-types.ts     # NEW — dashboard-facing types
-│           └── (existing files unchanged)
-├── convex/                          # Convex schema + functions
-│   ├── schema.ts                    # MODIFIED — new tables added
-│   ├── (existing .ts files unchanged)
-│   ├── agents.ts                    # NEW
-│   ├── promptVersions.ts            # NEW
-│   ├── pipelineConfig.ts            # NEW
-│   ├── runs.ts                      # NEW
-│   ├── agentRuns.ts                 # NEW
-│   ├── charities.ts                 # NEW (registry, not pitchLog)
-│   ├── modelPricing.ts              # NEW
-│   ├── reviewActions.ts             # NEW
-│   ├── auditLog.ts                  # NEW
-│   └── workspaces.ts                # NEW
-├── schemas/                         # Sanity schemas (unchanged)
-├── turbo.json
-├── package.json
-└── pnpm-workspace.yaml
-```
-
-### workspace_id Threading
-
-Every new Convex table includes a `workspace_id` field. For single-tenant v2, this is always the same value (seeded once). The threading is done now so the extraction to multi-tenant later requires only data migration + auth routing changes, not schema changes.
-
-`workspace_id` flows: Dashboard (reads from Clerk JWT claim or hardcoded env) → Convex mutations (as field on every write) → Pipeline (reads from `pipeline_config` row via `workspace_id`).
-
----
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---|---|---|
-| Sanity CMS | Python: `sanity` SDK for writes; TypeScript: `@sanity/client` for reads | Unchanged from v1 |
-| Convex | Pipeline: HTTP API (`httpx`); Public site: `convex/react` hooks; Dashboard: `convex/react` + Clerk auth | Dashboard mutations are Convex-auth-gated; public queries remain open |
-| Railway Postgres | LangGraph `AsyncPostgresSaver` only | Unchanged; do not add application tables |
-| OpenRouter | `lib/openrouter_client.py` — unchanged | `acomplete()` still calls `record_cost()` |
-| Clerk | `apps/dispatch-control/middleware.ts` + `ConvexProviderWithClerk` + JWT verification in FastAPI `/pipeline/*` | New for v2 |
-| Vercel | `POST VERCEL_DEPLOY_HOOK_URL` from Publisher — unchanged | |
-| Stripe | `apps/web/app/api/` — unchanged for checkout/webhook | Dashboard reads Stripe for reconciliation (read-only Stripe API) |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|---|---|---|
-| `dispatch-control` ↔ Convex | `convex/react` mutations + queries (Clerk-authed) | Dashboard is the primary writer of config tables |
-| `dispatch-control` ↔ FastAPI | HTTP REST with Clerk JWT in `Authorization: Bearer` | Trigger, cancel, test-run, rerun, publish |
-| Pipeline ↔ Convex (config read) | `httpx` GET `convex_query()` at run start only | One-time read; result cached in `RunConfig` for the run |
-| Pipeline ↔ Convex (progress write) | `httpx` POST `convex_mutation()` from `agent_wrapper.py` | Non-blocking; log errors, continue |
-| `apps/web` ↔ Convex | `convex/react` `useQuery` (unauthenticated) | Unchanged; public deliberation layer |
-| `apps/web` ↔ Sanity | `@sanity/client` GROQ (CDN read) | Unchanged |
-
----
+| `sign_offs` Convex table | New | — | Mirrors `payouts` shape exactly |
+| `provenance_claims` Convex table | New | Researcher `claims[]` field | Text-keyed, not Sanity-keyed — survives Sanity removal |
+| `eval_runs` Convex table | New | — | Append-only; drift = query, not a stored derived state |
+| Span-resolver utility (TS) | New | Current section body (live read) | Shared by QA rendering, provenance rendering, Voice Pass |
+| `PATCH /issues/{run_id}/sections/{name}` | New (FastAPI) | `compose_section_body()` (existing) | Scoped Sanity `patch`, not `createOrReplace` |
+| `PATCH /issues/{run_id}/{theme,game,...}` | New (FastAPI) | Same pattern as above | One route per structured field region |
+| `ResearchOutputModel.claims[]` | Modified | — | Generalizes existing `founderNameSourceUrl` pattern |
+| Post-writer provenance matching pass | New (pipeline) | `lib/claims.py`-style flattening | Runs before the Sanity write, alongside existing `extract_claims` |
+| `api/webhooks.py:sanity_publish` | Modified | `sign_offs` table | The actual bypass fix — must check sign-off state, not just `status` |
+| `api/review.py:publish/schedule` | Modified | `sign_offs` table | UX-layer gate; webhook guard is the real boundary |
+| `POST /eval/scenarios/{id}/run` | New (FastAPI) | `api/agents.py` test-run/score, `rerun_agent`'s bare-node pattern | Two granularities, one endpoint |
+| Awaiting-you inbox | New (frontend) | Existing `runs`/`pipelineRuns`/`review_actions` | Pure read-aggregation, no backend changes |
 
 ## Sources
 
-- [LangGraph Human-in-the-Loop — interrupt() pattern](https://www.langchain.com/blog/making-it-easier-to-build-human-in-the-loop-agents-with-interrupt)
-- [Architecting Human-in-the-Loop Agents in LangGraph](https://medium.com/data-science-collective/architecting-human-in-the-loop-agents-interrupts-persistence-and-state-management-in-langgraph-fa36c9663d6f)
-- [LangGraph Persistence Guide 2026](https://fast.io/resources/langgraph-persistence/)
-- [LangGraph AsyncPostgresSaver — PyPI](https://pypi.org/project/langgraph-checkpoint-postgres/)
-- [LangGraph Parallel Execution — Best Practices](https://forum.langchain.com/t/best-practices-for-parallel-nodes-fanouts/1900)
-- [Sanity Webhook Best Practices](https://www.sanity.io/docs/content-lake/webhook-best-practices)
-- [Turborepo TypeScript Guide](https://turbo.build/repo/docs/handbook/linting/typescript)
-- [FastAPI + LangGraph Production Pattern](https://ranjankumar.in/building-production-ready-ai-agent-services-fastapi-langgraph-template-deep-dive)
-- [docs/CURRENT_STATE.md](../CURRENT_STATE.md) — Phase 0 reconciliation (ground truth for integration points)
-- [docs/MISSION_CONTROL_BRIEF.md](../MISSION_CONTROL_BRIEF.md) — v2.0 spec
+- `.planning/PROJECT.md` — milestone scope, locked decisions, reconciliation facts (read in full)
+- `convex/schema.ts` — all 24 tables, house patterns for additive tables
+- `packages/pipeline/src/eisenbalm_pipeline/graph/state.py` — `DispatchState`, `ResearchOutput`, `QACorrection` shapes
+- `packages/pipeline/src/eisenbalm_pipeline/lib/claims.py` — claim extraction algorithm (the template for span/provenance matching)
+- `packages/pipeline/src/eisenbalm_pipeline/lib/portable_text.py` — block builders, `_key` generation, `compose_section_body`
+- `packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py` — `write_issue_draft` (full `createOrReplace`), `upload_pdf_to_issue` (scoped `patch` precedent)
+- `packages/pipeline/src/eisenbalm_pipeline/api/review.py` — publish/schedule/reject endpoints, existing `claimChecks:allSignedOff` gate
+- `packages/pipeline/src/eisenbalm_pipeline/api/webhooks.py` — the Sanity webhook handler that is the actual bypass
+- `packages/pipeline/src/eisenbalm_pipeline/api/control.py` — `rerun_agent` (checkpoint-fork + bare-node-import pattern for evals)
+- `packages/pipeline/src/eisenbalm_pipeline/api/agents.py` — `test-run`/`score` isolation pattern for eval harness
+- `packages/pipeline/src/eisenbalm_pipeline/agents/researcher.py` — `ResearchOutputModel`, current provenance gap
+- `packages/pipeline/src/eisenbalm_pipeline/agents/qa/judge.py` — `JudgeFinding.quotedSpan` shape
 
 ---
-*Architecture research for: The Eisenbalm Dispatch — v1 9-agent LangGraph pipeline + v2.0 Mission Control integration*
-*Researched: 2026-05-09 (v1) · updated 2026-06-21 (v2.0 integration)*
+*Architecture research for: Dispatch Control v2 — Editorial Operator Console (v3.0 milestone integration)*
+*Researched: 2026-07-06*
