@@ -17,10 +17,12 @@
  * wires its dropdown. `AwaitingYouTrigger` is exported standalone so 30-06
  * can attach open/close state without re-authoring the button markup.
  */
+import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { UserButton } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
+import AwaitingYouInbox from './AwaitingYouInbox'
 
 const STATUS_LABELS: Record<string, string> = {
   running: 'Running',
@@ -59,6 +61,7 @@ export function AwaitingYouTrigger({ onClick }: { onClick?: () => void }) {
 }
 
 export default function Masthead() {
+  const [inboxOpen, setInboxOpen] = useState(false)
   const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
   const pipelineRun = useQuery(
     api.pipelineRuns.byRunId,
@@ -119,8 +122,22 @@ export default function Masthead() {
         </span>
       )}
 
-      {/* AwaitingYouInbox mounts here in 30-06 */}
-      <AwaitingYouTrigger />
+      {/* Awaiting-you trigger + dropdown — `relative` anchors the inbox's
+          `absolute top-[52px]` positioning under this chip. A full-screen
+          transparent backdrop below the dropdown (but above page content)
+          closes it on outside click. */}
+      <div className="relative">
+        <AwaitingYouTrigger onClick={() => setInboxOpen(v => !v)} />
+        {inboxOpen && (
+          <button
+            type="button"
+            aria-label="Close awaiting-you inbox"
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={() => setInboxOpen(false)}
+          />
+        )}
+        <AwaitingYouInbox open={inboxOpen} onClose={() => setInboxOpen(false)} />
+      </div>
 
       <UserButton
         appearance={{

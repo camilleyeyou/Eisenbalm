@@ -1,10 +1,12 @@
 /**
  * Plan 30-04 (CHR-02) — Masthead component tests.
- *
- * Mirrors the `convex/react` useQuery mocking precedent from
- * `runControl.test.tsx`. useQuery is called in a fixed order inside
- * Masthead: latest -> pipelineRuns.byRunId -> monthToDateCost -> pipelineConfig.getAll.
- * Each test chains `mockReturnValueOnce` in that exact order.
+ * Updated in Plan 30-06 (CHR-04): Masthead now mounts `AwaitingYouInbox`
+ * inside a `relative` wrapper around the trigger, which issues 4 additional
+ * `useQuery` calls (`runs.listForWorkspace`, `runs.latest`,
+ * `qaCorrections.byRunId`, `claimChecks.allSignedOff`). The mock dispatches
+ * by query reference + args (mirrors AwaitingYouInbox.test.tsx) instead of a
+ * positional `mockReturnValueOnce` sequence, so it stays correct regardless
+ * of how many queries any mounted child issues or in what order.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
@@ -18,12 +20,19 @@ vi.mock('@convex/_generated/api', () => ({
     runs: {
       latest: 'runs:latest',
       monthToDateCost: 'runs:monthToDateCost',
+      listForWorkspace: 'runs:listForWorkspace',
     },
     pipelineRuns: {
       byRunId: 'pipelineRuns:byRunId',
     },
     pipelineConfig: {
       getAll: 'pipelineConfig:getAll',
+    },
+    qaCorrections: {
+      byRunId: 'qaCorrections:byRunId',
+    },
+    claimChecks: {
+      allSignedOff: 'claimChecks:allSignedOff',
     },
   },
 }))
@@ -35,12 +44,39 @@ vi.mock('@clerk/nextjs', () => ({
 import { useQuery } from 'convex/react'
 import Masthead, { AwaitingYouTrigger } from '../components/Masthead'
 
-function mockSequence(values: unknown[]) {
+interface MastheadMocks {
+  latest?: unknown
+  pipelineRun?: unknown
+  mtd?: unknown
+  configRows?: unknown[]
+  runsList?: unknown[]
+  qaFindings?: unknown[]
+  claimStatus?: unknown
+}
+
+function mockMasthead(mocks: MastheadMocks) {
   const mocked = useQuery as ReturnType<typeof vi.fn>
   mocked.mockReset()
-  for (const value of values) {
-    mocked.mockReturnValueOnce(value)
-  }
+  mocked.mockImplementation((queryRef: string, args: unknown) => {
+    switch (queryRef) {
+      case 'runs:latest':
+        return mocks.latest ?? null
+      case 'pipelineRuns:byRunId':
+        return mocks.pipelineRun ?? null
+      case 'runs:monthToDateCost':
+        return mocks.mtd ?? { mtdUsd: 0, completedCount: 0, trailingCosts: [] }
+      case 'pipelineConfig:getAll':
+        return mocks.configRows ?? []
+      case 'runs:listForWorkspace':
+        return mocks.runsList ?? []
+      case 'qaCorrections:byRunId':
+        return args === 'skip' ? undefined : (mocks.qaFindings ?? [])
+      case 'claimChecks:allSignedOff':
+        return args === 'skip' ? undefined : mocks.claimStatus
+      default:
+        return undefined
+    }
+  })
 }
 
 afterEach(() => {
@@ -49,12 +85,10 @@ afterEach(() => {
 
 describe('Masthead', () => {
   it('renders a marigold "Awaiting review" pipeline-state chip', () => {
-    mockSequence([
-      { status: 'awaiting-review', runId: 'run-1', startedAt: 1 },
-      { issueNumber: 42 },
-      { mtdUsd: 0, completedCount: 0, trailingCosts: [] },
-      [],
-    ])
+    mockMasthead({
+      latest: { status: 'awaiting-review', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+    })
 
     render(<Masthead />)
     const chip = screen.getByText('Awaiting review')
@@ -63,62 +97,58 @@ describe('Masthead', () => {
   })
 
   it('renders "$12.40 / $200" for mtdUsd=12.4 and monthly_cap_usd=200', () => {
-    mockSequence([
-      { status: 'running', runId: 'run-1', startedAt: 1 },
-      { issueNumber: 42 },
-      { mtdUsd: 12.4, completedCount: 3, trailingCosts: [] },
-      [{ key: 'monthly_cap_usd', value: '200' }],
-    ])
+    mockMasthead({
+      latest: { status: 'running', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+      mtd: { mtdUsd: 12.4, completedCount: 3, trailingCosts: [] },
+      configRows: [{ key: 'monthly_cap_usd', value: '200' }],
+    })
 
     const { container } = render(<Masthead />)
     expect(container.textContent).toContain('$12.40 / $200')
   })
 
   it('renders an "Auto-publish OFF" lock chip when auto_publish is false', () => {
-    mockSequence([
-      { status: 'running', runId: 'run-1', startedAt: 1 },
-      { issueNumber: 42 },
-      { mtdUsd: 0, completedCount: 0, trailingCosts: [] },
-      [{ key: 'auto_publish', value: 'false' }],
-    ])
+    mockMasthead({
+      latest: { status: 'running', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+      configRows: [{ key: 'auto_publish', value: 'false' }],
+    })
 
     render(<Masthead />)
     expect(screen.getByText(/Auto-publish OFF/)).toBeDefined()
   })
 
   it('renders an "Auto-publish ON" lock chip when auto_publish is true', () => {
-    mockSequence([
-      { status: 'running', runId: 'run-1', startedAt: 1 },
-      { issueNumber: 42 },
-      { mtdUsd: 0, completedCount: 0, trailingCosts: [] },
-      [{ key: 'auto_publish', value: 'true' }],
-    ])
+    mockMasthead({
+      latest: { status: 'running', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+      configRows: [{ key: 'auto_publish', value: 'true' }],
+    })
 
     render(<Masthead />)
     expect(screen.getByText(/Auto-publish ON/)).toBeDefined()
   })
 
   it('renders "Issue 42" when pipelineRuns.byRunId resolves an issueNumber', () => {
-    mockSequence([
-      { status: 'running', runId: 'run-1', startedAt: 1 },
-      { issueNumber: 42 },
-      { mtdUsd: 0, completedCount: 0, trailingCosts: [] },
-      [],
-    ])
+    mockMasthead({
+      latest: { status: 'running', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+    })
 
     render(<Masthead />)
     expect(screen.getByText('Issue 42')).toBeDefined()
   })
 
   it('renders a graceful "Issue —" dash when there is no resolvable issue number', () => {
-    mockSequence([null, null, { mtdUsd: 0, completedCount: 0, trailingCosts: [] }, []])
+    mockMasthead({})
 
     render(<Masthead />)
     expect(screen.getByText('Issue —')).toBeDefined()
   })
 
   it('renders the wordmark "DISPATCH" + vermilion "/" + "CONTROL"', () => {
-    mockSequence([null, null, { mtdUsd: 0, completedCount: 0, trailingCosts: [] }, []])
+    mockMasthead({})
 
     const { container } = render(<Masthead />)
     expect(container.textContent).toContain('DISPATCH')
@@ -128,7 +158,7 @@ describe('Masthead', () => {
   })
 
   it('renders the Awaiting-you trigger and the sign-out UserButton', () => {
-    mockSequence([null, null, { mtdUsd: 0, completedCount: 0, trailingCosts: [] }, []])
+    mockMasthead({})
 
     render(<Masthead />)
     expect(screen.getByRole('button', { name: /awaiting you/i })).toBeDefined()
