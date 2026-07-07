@@ -46,8 +46,8 @@ function formatWindowDate(ms: number): string {
 
 function SkeletonTable() {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-6">
-      <div className="h-32 w-full rounded bg-neutral-100 animate-pulse" />
+    <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-6">
+      <div className="h-32 w-full rounded-none bg-[color:var(--color-card-alt)] animate-pulse" />
     </div>
   )
 }
@@ -69,8 +69,8 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
   // No issues published yet.
   if (issues.length === 0 && revenue.unattributed.orderCount === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
-        <p className="text-sm text-neutral-500">
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-8 text-center">
+        <p className="text-sm text-[color:var(--color-faint)]">
           No published issues found. Reconciliation appears here once the first
           issue is published and orders are placed.
         </p>
@@ -84,70 +84,70 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
   const hasUnattributed = revenue.unattributed.orderCount > 0
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+    <div className="overflow-x-auto rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <tr className="border-b border-[color:var(--color-ink)]/15 bg-[color:var(--color-card-alt)] text-left">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Issue #
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Charity
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Sales window
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Orders
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Gross
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Stripe fees
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Net to charity
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Payout status
             </th>
-            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-[color:var(--color-faint)]">
               Action
             </th>
           </tr>
         </thead>
         <tbody>
           {revenue.issues.map(row => (
-            <tr key={row.issueNumber} className="border-t border-neutral-100">
-              <td className="px-4 py-3 text-sm text-neutral-800">
+            <tr key={row.issueNumber} className="border-t border-[color:var(--color-ink)]/10">
+              <td className="px-4 py-3 text-sm text-[color:var(--color-ink)]">
                 {row.issueNumber}
               </td>
-              <td className="px-4 py-3 text-sm text-neutral-800">
+              <td className="px-4 py-3 text-sm text-[color:var(--color-ink)]">
                 {row.charityName}
               </td>
               <td className="px-4 py-3">
                 {row.windowEnd === null ? (
-                  <span className="text-xs text-neutral-400">
+                  <span className="text-xs text-[color:var(--color-faint)]">
                     {formatWindowDate(row.windowStart)} — ongoing
                   </span>
                 ) : (
-                  <span className="text-sm text-neutral-700">
+                  <span className="text-sm text-[color:var(--color-ink-soft)]">
                     {formatWindowDate(row.windowStart)} —{' '}
                     {formatWindowDate(row.windowEnd)}
                   </span>
                 )}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {row.orderCount}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {formatCents(row.grossCents)}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {row.feeCents === null ? '—' : formatCents(row.feeCents)}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {formatCents(row.netCents)}
               </td>
               <PayoutRow payout={payoutByIssue.get(row.issueNumber) ?? null} />
@@ -155,34 +155,34 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
           ))}
 
           {hasUnattributed && (
-            <tr className="border-t border-neutral-100 bg-neutral-50">
+            <tr className="border-t border-[color:var(--color-ink)]/10 bg-[color:var(--color-card-alt)]">
               <td className="px-4 py-3" colSpan={3}>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-neutral-800">
+                  <span className="text-sm font-medium text-[color:var(--color-ink)]">
                     Unattributed orders
                   </span>
-                  <span className="text-xs text-neutral-400">
+                  <span className="text-xs text-[color:var(--color-faint)]">
                     Orders outside any issue window (pre-launch or between
                     issues).
                   </span>
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {revenue.unattributed.orderCount}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {formatCents(revenue.unattributed.grossCents)}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {revenue.unattributed.feeCents === null
                   ? '—'
                   : formatCents(revenue.unattributed.feeCents)}
               </td>
-              <td className="px-4 py-3 text-sm tabular-nums text-neutral-900">
+              <td className="px-4 py-3 text-sm tabular-nums text-[color:var(--color-ink)]">
                 {formatCents(revenue.unattributed.netCents)}
               </td>
               <td className="px-4 py-3">
-                <span className="text-xs text-neutral-400">—</span>
+                <span className="text-xs text-[color:var(--color-faint)]">—</span>
               </td>
               <td className="px-4 py-3" />
             </tr>

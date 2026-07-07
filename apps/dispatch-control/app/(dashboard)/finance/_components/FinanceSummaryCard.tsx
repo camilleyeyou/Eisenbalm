@@ -63,8 +63,8 @@ function StatCell({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs text-neutral-500">{label}</span>
-      <span className="text-xl font-semibold tabular-nums text-neutral-900">
+      <span className="text-xs text-[color:var(--color-faint)]">{label}</span>
+      <span className="text-xl font-semibold tabular-nums text-[color:var(--color-ink)]">
         {value}
       </span>
     </div>
@@ -94,13 +94,13 @@ export default function FinanceSummaryCard({
   // Skeleton state — section loads independently (no full-page spinner).
   if (row === undefined) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-6">
-        <div className="mb-4 h-4 w-24 rounded bg-neutral-100 animate-pulse" />
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-6">
+        <div className="mb-4 h-4 w-24 rounded-none bg-[color:var(--color-card-alt)] animate-pulse" />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {[0, 1, 2].map(i => (
             <div key={i} className="flex flex-col gap-2">
-              <div className="h-3 w-20 rounded bg-neutral-100 animate-pulse" />
-              <div className="h-6 w-28 rounded bg-neutral-100 animate-pulse" />
+              <div className="h-3 w-20 rounded-none bg-[color:var(--color-card-alt)] animate-pulse" />
+              <div className="h-6 w-28 rounded-none bg-[color:var(--color-card-alt)] animate-pulse" />
             </div>
           ))}
         </div>
@@ -109,11 +109,11 @@ export default function FinanceSummaryCard({
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-6">
-      <h2 className="mb-4 text-sm font-semibold text-neutral-800">This Issue</h2>
+    <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-6">
+      <h2 className="mb-4 text-sm font-semibold text-[color:var(--color-ink)]">This Issue</h2>
 
       {row === null ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-[color:var(--color-faint)]">
           No orders recorded for this issue window yet. Orders appear here as
           they are processed through Stripe.
         </p>

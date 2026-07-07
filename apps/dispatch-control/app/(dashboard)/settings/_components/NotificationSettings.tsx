@@ -48,13 +48,13 @@ const EVENT_FIELDS: { key: keyof EventFlags; label: string }[] = [
 ]
 
 const INPUT_CLASS =
-  'w-full min-h-[44px] rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1'
+  'w-full min-h-[44px] rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] px-3 py-2 text-sm text-[color:var(--color-ink)] placeholder:text-[color:var(--color-faint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1'
 
 const SAVE_BUTTON_CLASS =
-  'w-full min-h-[44px] min-w-[44px] rounded-md bg-neutral-900 text-white text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 disabled:opacity-50'
+  'w-full min-h-[44px] min-w-[44px] rounded-none bg-[color:var(--color-ink)] text-[color:var(--color-masthead-text)] text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-50'
 
 const CHECKBOX_CLASS =
-  'h-4 w-4 rounded border-neutral-300 text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1'
+  'h-4 w-4 rounded-none border-[color:var(--color-ink)]/15 text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1'
 
 export default function NotificationSettings({
   workspace_id,
@@ -119,7 +119,7 @@ export default function NotificationSettings({
 
   if (configRows === undefined) {
     return (
-      <div className="text-sm text-neutral-500 py-4">
+      <div className="text-sm text-[color:var(--color-faint)] py-4">
         Loading notification settings…
       </div>
     )
@@ -166,27 +166,27 @@ export default function NotificationSettings({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-neutral-900">Notifications</h2>
+      <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Notifications</h2>
 
       {unconfigured && (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-[color:var(--color-faint)]">
           No notification channels configured. Add a Slack webhook or email
           address to receive run alerts.
         </p>
       )}
 
       {/* ── Slack channel ─────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-4 space-y-3">
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Switch
             id="notify-slack-toggle"
             checked={slackEnabled}
             onCheckedChange={setSlackEnabled}
-            className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
           />
           <label
             htmlFor="notify-slack-toggle"
-            className="text-sm font-medium text-neutral-900 cursor-pointer"
+            className="text-sm font-medium text-[color:var(--color-ink)] cursor-pointer"
           >
             Slack
           </label>
@@ -196,7 +196,7 @@ export default function NotificationSettings({
           <div className="space-y-1">
             <label
               htmlFor="notify-slack-webhook"
-              className="text-xs text-neutral-500"
+              className="text-xs text-[color:var(--color-faint)]"
             >
               Webhook URL
             </label>
@@ -211,13 +211,13 @@ export default function NotificationSettings({
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-xs text-neutral-500">
+            <legend className="text-xs text-[color:var(--color-faint)]">
               Notify on these events
             </legend>
             {EVENT_FIELDS.map(({ key, label }) => (
               <label
                 key={key}
-                className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer"
+                className="flex items-center gap-2 text-sm text-[color:var(--color-ink-soft)] cursor-pointer"
               >
                 <input
                   type="checkbox"
@@ -247,17 +247,17 @@ export default function NotificationSettings({
       </div>
 
       {/* ── Email channel ─────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-4 space-y-3">
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Switch
             id="notify-email-toggle"
             checked={emailEnabled}
             onCheckedChange={setEmailEnabled}
-            className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
           />
           <label
             htmlFor="notify-email-toggle"
-            className="text-sm font-medium text-neutral-900 cursor-pointer"
+            className="text-sm font-medium text-[color:var(--color-ink)] cursor-pointer"
           >
             Email
           </label>
@@ -267,7 +267,7 @@ export default function NotificationSettings({
           <div className="space-y-1">
             <label
               htmlFor="notify-email-address"
-              className="text-xs text-neutral-500"
+              className="text-xs text-[color:var(--color-faint)]"
             >
               Recipient email
             </label>
@@ -282,13 +282,13 @@ export default function NotificationSettings({
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-xs text-neutral-500">
+            <legend className="text-xs text-[color:var(--color-faint)]">
               Notify on these events
             </legend>
             {EVENT_FIELDS.map(({ key, label }) => (
               <label
                 key={key}
-                className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer"
+                className="flex items-center gap-2 text-sm text-[color:var(--color-ink-soft)] cursor-pointer"
               >
                 <input
                   type="checkbox"

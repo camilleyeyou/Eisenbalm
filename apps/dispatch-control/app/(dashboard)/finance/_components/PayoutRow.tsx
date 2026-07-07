@@ -3,9 +3,10 @@
  * Phase 27 — RCN-02: PayoutRow — payout status badge + inline mark-sent action.
  *
  * Renders the two table cells for a single issue's payout: the status badge
- * (Pending yellow / Sent green) and the action cell. For a `pending` payout the
- * operator clicks "Mark sent" which replaces the button INLINE in the same row
- * (no modal) with an audit-log confirm prompt + [Mark as sent] / [Keep pending].
+ * (Pending marigold / Sent green) and the action cell. For a `pending` payout
+ * the operator clicks "Mark sent" which replaces the button INLINE in the same
+ * row (no modal) with an audit-log confirm prompt + [Mark as sent] / [Keep
+ * pending].
  *
  * Confirm calls payouts:markPayoutSent (Clerk-JWT-guarded; auth is supplied by
  * ConvexProviderWithClerk so useMutation is automatically authenticated). On
@@ -41,7 +42,7 @@ function formatSentDate(ms: number): string {
 }
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1'
 
 export default function PayoutRow({ payout }: PayoutRowProps) {
   const markPayoutSent = useMutation(api.payouts.markPayoutSent)
@@ -55,7 +56,7 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
     return (
       <>
         <td className="px-4 py-3">
-          <span className="text-xs text-neutral-400">—</span>
+          <span className="text-xs text-[color:var(--color-faint)]">—</span>
         </td>
         <td className="px-4 py-3" />
       </>
@@ -66,13 +67,13 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
     return (
       <>
         <td className="px-4 py-3">
-          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+          <span className="inline-flex items-center rounded-full bg-[color:var(--color-green)]/15 px-2.5 py-0.5 text-xs font-medium text-[color:var(--color-green)]">
             Sent
           </span>
         </td>
         <td className="px-4 py-3">
           {payout.sentAt && (
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-[color:var(--color-faint)]">
               Sent {formatSentDate(payout.sentAt)}
             </span>
           )}
@@ -101,14 +102,14 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
   return (
     <>
       <td className="px-4 py-3">
-        <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+        <span className="inline-flex items-center rounded-full bg-[color:var(--color-marigold)]/20 px-2.5 py-0.5 text-xs font-medium text-[color:var(--color-marigold-text)]">
           Pending
         </span>
       </td>
       <td className="px-4 py-3">
         {confirming ? (
-          <div className="space-y-2 rounded border border-neutral-200 bg-neutral-50 p-3 text-sm">
-            <p className="text-neutral-700">
+          <div className="space-y-2 rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card-alt)] p-3 text-sm">
+            <p className="text-[color:var(--color-ink-soft)]">
               Confirm this payout was sent. This action is audit-logged and
               cannot be undone automatically.
             </p>
@@ -118,10 +119,10 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
               onChange={e => setReference(e.target.value)}
               placeholder="Payout reference / memo"
               aria-label="Payout reference"
-              className={`min-h-[44px] w-full rounded border border-neutral-300 px-3 text-sm text-neutral-900 ${FOCUS_RING}`}
+              className={`min-h-[44px] w-full rounded-none border border-[color:var(--color-ink)]/15 px-3 text-sm text-[color:var(--color-ink)] ${FOCUS_RING}`}
             />
             {error && (
-              <p role="alert" className="text-xs text-red-700">
+              <p role="alert" className="text-xs text-[color:var(--color-vermilion)]">
                 {error}
               </p>
             )}
@@ -131,7 +132,7 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
                 onClick={handleConfirm}
                 disabled={submitting}
                 aria-busy={submitting}
-                className={`min-h-[44px] min-w-[44px] rounded bg-neutral-900 px-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50 ${FOCUS_RING}`}
+                className={`min-h-[44px] min-w-[44px] rounded-none bg-[color:var(--color-ink)] px-3 text-sm font-medium text-[color:var(--color-masthead-text)] hover:bg-[color:var(--color-ink)]/90 disabled:opacity-50 ${FOCUS_RING}`}
               >
                 {submitting ? 'Marking…' : 'Mark as sent'}
               </button>
@@ -142,7 +143,7 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
                   setError(null)
                 }}
                 disabled={submitting}
-                className={`min-h-[44px] min-w-[44px] rounded border border-neutral-300 px-3 text-sm text-neutral-700 hover:bg-white disabled:opacity-50 ${FOCUS_RING}`}
+                className={`min-h-[44px] min-w-[44px] rounded-none border border-[color:var(--color-ink)]/15 px-3 text-sm text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card)] disabled:opacity-50 ${FOCUS_RING}`}
               >
                 Keep pending
               </button>
@@ -152,7 +153,7 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className={`min-h-[44px] min-w-[44px] rounded bg-neutral-900 px-3 text-sm font-medium text-white hover:bg-neutral-800 ${FOCUS_RING}`}
+            className={`min-h-[44px] min-w-[44px] rounded-none bg-[color:var(--color-ink)] px-3 text-sm font-medium text-[color:var(--color-masthead-text)] hover:bg-[color:var(--color-ink)]/90 ${FOCUS_RING}`}
           >
             Mark sent
           </button>

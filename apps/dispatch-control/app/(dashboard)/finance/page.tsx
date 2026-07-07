@@ -25,7 +25,7 @@ export default async function FinancePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-neutral-900">Finance</h1>
+      <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Finance</h1>
       <FinanceSummaryCard workspace_id={workspace_id} />
       <IssueRevenueTable workspace_id={workspace_id} />
       <ModelPricingCard workspace_id={workspace_id} />
