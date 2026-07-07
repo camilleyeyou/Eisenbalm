@@ -667,7 +667,15 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. Left nav lists Review Desk, Signal Desk, Run Monitor, Voice Pass/Prompt Lab, Eval Center, Registry in that order, plus a "How to use" screen documenting the weekly loop, color legend, and house rules.
   4. The Awaiting-you inbox in the masthead lists every awaiting-review run, Gate 1 interrupt, unresolved blocker, and failed run; clicking any item routes to its owning screen.
   5. The deployed dashboard's test-run panel successfully calls the pipeline API in production (`NEXT_PUBLIC_PIPELINE_URL` configured and verified live, not just in local dev).
-**Plans**: TBD
+**Plans**: 8 plans (4 waves)
+- [ ] 30-01-design-bundle-tokens-fonts-PLAN.md — Commit design handoff bundle (D-12) + 1c @theme tokens + 4 next/font loaders (CHR-01)
+- [ ] 30-02-route-skeleton-redirects-PLAN.md — Final route set: placeholders + run-monitor tabs + prompt-lab rename + redirects + home→/review-desk (D-02/03/04/05)
+- [ ] 30-03-screen-token-swap-PLAN.md — Literal neutral-*→1c token swap across Config/Finance/Settings (CHR-01, Pitfall 1)
+- [ ] 30-04-masthead-PLAN.md — Persistent 52px ink masthead: issue#/state/spend-vs-cap/lock chips from live Convex (CHR-02)
+- [ ] 30-05-grouped-nav-sidebar-PLAN.md — 3-group workflow-ordered nav + pinned How-to-use, 1c sidebar, nav.test rewrite (CHR-03)
+- [ ] 30-06-awaiting-you-inbox-PLAN.md — Pure-derivation Awaiting-you dropdown, blockers-first, routes to working screens (CHR-04)
+- [ ] 30-07-how-to-use-screen-PLAN.md — How-to-use content: weekly loop + color legend + house rules (CHR-03, D-13)
+- [ ] 30-08-pipeline-url-prod-fix-PLAN.md — CHR-05 human checkpoint: Vercel NEXT_PUBLIC_PIPELINE_URL + Railway CORS verified live
 **UI hint**: yes
 
 ### Phase 31: Content-Patch Endpoints + Full Editing
