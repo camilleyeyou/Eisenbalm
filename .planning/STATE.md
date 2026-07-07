@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Phase Details — Mission Control Dashboard
-status: In progress
-stopped_at: Phase 31 context gathered
-last_updated: "2026-07-07T09:35:46.934Z"
+milestone: v3.0
+milestone_name: Dispatch Control v2 — Editorial Operator Console
+status: Ready to execute
+stopped_at: Completed 31-01-contracts-and-shared-foundation-PLAN.md
+last_updated: "2026-07-07T10:31:29.989Z"
 progress:
   total_phases: 39
   completed_phases: 29
-  total_plans: 191
-  completed_plans: 189
+  total_plans: 196
+  completed_plans: 190
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 30 — Foundation — Design System, Chrome & Awaiting-You Inbox
+**Current focus:** Phase 31 — Content-Patch Endpoints + Full Editing
 
 ## Current Position
 
-Phase: 30
-Plan: Not started
+Phase: 31 (Content-Patch Endpoints + Full Editing) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -216,6 +216,7 @@ Plan: Not started
 | Phase 30 P05 | 4min | 2 tasks | 3 files |
 | Phase 30-foundation-design-system-chrome-awaiting-you-inbox P06 | 20min | 2 tasks | 4 files |
 | Phase 30 P08 | 5min | 2 tasks | 1 files |
+| Phase 31 P01 | 12min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -553,6 +554,7 @@ Recent decisions affecting current work:
 - [Phase 30]: Removed duplicate Clerk UserButton from AppSidebar footer — sign-out now lives solely in the Masthead (Plan 30-04)
 - [Phase 30-07]: House-rule dark bands reuse --color-masthead-text/-muted (already used by Masthead.tsx) rather than a new token
 - [Phase 30]: CHR-05 closed: NEXT_PUBLIC_PIPELINE_URL (Vercel) and DASHBOARD_ALLOWED_ORIGINS (Railway) set in production, verified live 2026-07-07 via a successful Prompt Lab test-run against the advocate agent fixture (real cost + voice-score output, no CORS/unset-URL error).
+- [Phase 31]: Theme validator canonicalizes on the 9-font apps/web/lib/theme.ts whitelist (render-time gate), not the drifted 17-entry agents/design/font_whitelist.py list; structural-floor warn-only counter kept fully separate from the existing raise-based agent Pydantic validators
 
 ### Pending Todos
 
@@ -637,6 +639,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T09:35:46.920Z
-Stopped at: Phase 31 context gathered
-Resume file: .planning/phases/31-content-patch-endpoints-full-editing/31-CONTEXT.md
+Last session: 2026-07-07T10:31:29.977Z
+Stopped at: Completed 31-01-contracts-and-shared-foundation-PLAN.md
+Resume file: None

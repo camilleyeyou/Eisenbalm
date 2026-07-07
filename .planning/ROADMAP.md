@@ -32,6 +32,8 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v2.0 complete. v3.0: Dispatch Control v2 — Editorial Operator Console (Phases 30–39)**
 
+- 🚧 **v3.0 Dispatch Control v2 — Editorial Operator Console** — Phases 30-39 (in progress)
+
 - [x] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix (completed 2026-07-07)
 - [ ] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path
 - [ ] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe
@@ -428,7 +430,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
-| 31. Content-Patch Endpoints + Full Editing | 0/5 | Not started | - |
+| 31. Content-Patch Endpoints + Full Editing | 1/5 | In Progress|  |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
@@ -688,7 +690,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. Operator can upload a podcast audio file, Suno audio, or storyboard image through the console and see it attached to the draft as a Sanity asset.
   4. A source scan of `apps/dispatch-control` finds zero direct Sanity client writes — every content mutation path calls the pipeline API, never Sanity directly.
 **Plans**: 5 plans
-- [ ] 31-01-contracts-and-shared-foundation-PLAN.md — API_CONTRACTS §31 endpoint family (contract-first) + pt_to_blocks reverse mapper + operator theme validator (9-font canonical) + warn-only structural-floor helper + _emit_audit before/after + Wave-0 pytest scaffold
+- [x] 31-01-contracts-and-shared-foundation-PLAN.md — API_CONTRACTS §31 endpoint family (contract-first) + pt_to_blocks reverse mapper + operator theme validator (9-font canonical) + warn-only structural-floor helper + _emit_audit before/after + Wave-0 pytest scaffold
 - [ ] 31-02-sanity-client-patch-helpers-PLAN.md — patch_issue_field (scoped dotted-path + ifRevisionID→409) + get_issue_draft (PT→rows + lossy) + upload_asset (files/images) with httpx.MockTransport tests
 - [ ] 31-03-content-patch-endpoint-router-PLAN.md — api/content.py Clerk-guarded PATCH/POST/GET family (EDT-01/02/03), D-08 validation split, before/after audit, raw-binary upload, main.py mount
 - [ ] 31-04-frontend-foundation-client-and-route-shell-PLAN.md — contentPatchClient + EDT-05 no-direct-Sanity-write source-scan + Review Desk route shell (auto-focus run + chip list + reused preview iframe)
