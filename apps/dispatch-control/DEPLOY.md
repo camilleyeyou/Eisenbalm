@@ -84,6 +84,29 @@ pnpm --filter dispatch-control build      # dashboard build (must pass)
   (dispatch-control currently has pre-existing `tsc`-only errors in Phase 24/25
   test files — they do not block the Vercel build.)
 
+## CHR-05: verified live (2026-07-07)
+
+Both sides of the two-sided pipeline-URL fix are confirmed set in production and
+working end-to-end:
+
+- `NEXT_PUBLIC_PIPELINE_URL` (Vercel, `dispatch-control` project) — set to the
+  live Railway pipeline base URL. See the Vercel project's Settings →
+  Environment Variables for the exact value.
+- `DASHBOARD_ALLOWED_ORIGINS` (Railway, pipeline service) — set to the
+  dispatch-control production origin. See the Railway pipeline service's
+  Variables tab for the exact value.
+
+Andrew verified live on 2026-07-07 via the deployed Prompt Lab test-run panel
+(`/prompt-lab/{agentKey}`): a test-run against the advocate agent's canned
+fixture returned real output with cost metering ($0.0008,
+`anthropic/claude-4.5-haiku-20251001`, 146 tokens in / 122 out, 3.8s duration)
+and a full voice-score panel (6.5/10 overall, all 6 axes present: gravity,
+sentiment, irony-signaling, precision, cross-section-consistency,
+structural-variety). No CORS error and no "NEXT_PUBLIC_PIPELINE_URL is not
+set" error occurred — confirming both env vars are live and correctly paired.
+
+CHR-05 is closed.
+
 ## Notes for Andrew
 
 - **Stripe is in test mode** — `/finance` numbers reflect test orders, not real
