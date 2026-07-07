@@ -136,7 +136,7 @@ function buildWorkingState(draft: DraftResponse): WorkingState {
   const bonus: BonusFields = {
     headline: rawBonus.headline ?? '',
     body: coerceBlocks(rawBonus.body),
-    lossy: false,
+    lossy: Boolean(rawBonus.bodyLossy),
     lyrics: rawBonus.lyrics ?? '',
     sunoPrompt: rawBonus.sunoPrompt ?? '',
     sunoAudioUrl: rawBonus.sunoAudioUrl,
@@ -151,11 +151,21 @@ function buildWorkingState(draft: DraftResponse): WorkingState {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawPodcast = (draft.podcast ?? {}) as Record<string, any>
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawPdf = ((draft.sections?.problemStatement as any)?.pdfContent ?? {}) as Record<string, any>
+  const pdf: PdfFields = {
+    problemStatement: rawPdf.problemStatement ?? '',
+    keyDataPoints:
+      Array.isArray(rawPdf.keyDataPoints) && rawPdf.keyDataPoints.length === 3
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rawPdf.keyDataPoints.map((r: any) => ({ stat: r?.stat ?? '', source: r?.source ?? '' }))
+        : blankKeyDataPoints(),
+    interventionMechanism: rawPdf.interventionMechanism ?? '',
+  }
+
   return {
     longReads,
-    // Not yet returned by GET /issues/{run_id}/draft (upstream gap — see
-    // 31-05-SUMMARY.md); starts blank and is still fully save-able.
-    pdf: { problemStatement: '', keyDataPoints: blankKeyDataPoints(), interventionMechanism: '' },
+    pdf,
     bonus,
     bonusType: draft.bonusType,
     game,
@@ -287,22 +297,30 @@ export default function SectionEditorPanel({
         await step(rev => patchHeadline(runId, section, { ifRevisionID: rev, headline: lr.headline }, token))
         await step(rev => patchSection(runId, section, { ifRevisionID: rev, blocks: lr.blocks }, token))
         if (section === 'problemStatement') {
-          await step(rev =>
-            patchPdfDataPoints(
-              runId,
-              {
-                ifRevisionID: rev,
-                problemStatement: working.pdf.problemStatement,
-                keyDataPoints: working.pdf.keyDataPoints,
-                interventionMechanism: working.pdf.interventionMechanism,
-              },
-              token,
-            ),
-          )
+          const pdfDirty = JSON.stringify(working.pdf) !== JSON.stringify(loaded.pdf)
+          if (pdfDirty) {
+            await step(rev =>
+              patchPdfDataPoints(
+                runId,
+                {
+                  ifRevisionID: rev,
+                  problemStatement: working.pdf.problemStatement,
+                  keyDataPoints: working.pdf.keyDataPoints,
+                  interventionMechanism: working.pdf.interventionMechanism,
+                },
+                token,
+              ),
+            )
+          }
         }
       } else if (section === 'bonus') {
-        const payload: BonusPatchPayload = { ifRevisionID: revId, headline: working.bonus.headline }
-        if (working.bonusType === 'specAd') payload.body = working.bonus.body
+        const bonusBodyDirty = JSON.stringify(working.bonus.body) !== JSON.stringify(loaded.bonus.body)
+        const payload: BonusPatchPayload = {
+          ifRevisionID: revId,
+          variant: working.bonusType,
+          headline: working.bonus.headline,
+        }
+        if (working.bonusType === 'specAd' && bonusBodyDirty) payload.blocks = working.bonus.body
         if (working.bonusType === 'jingle') {
           payload.lyrics = working.bonus.lyrics
           payload.sunoPrompt = working.bonus.sunoPrompt

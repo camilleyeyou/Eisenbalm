@@ -46,6 +46,8 @@ import SectionEditorPanel from '../app/(dashboard)/review-desk/[runId]/_componen
 import {
   patchHeadline,
   patchSection,
+  patchPdfDataPoints,
+  patchBonus,
   ContentPatchError,
   type ContentBlock,
   type DraftResponse,
@@ -168,6 +170,33 @@ function makeDraft(): DraftResponse {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeDraftWithPdf(pdfContent?: Record<string, any>): DraftResponse {
+  const draft = makeDraft()
+  draft.sections = {
+    ...draft.sections,
+    problemStatement: {
+      headline: 'Problem headline',
+      blocks: [{ type: 'paragraph', text: 'Problem body' }],
+      lossy: false,
+      ...(pdfContent ? { pdfContent } : {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+  }
+  return draft
+}
+
+function makeSpecAdBonusDraft(): DraftResponse {
+  const draft = makeDraft()
+  draft.bonusType = 'specAd'
+  draft.bonus = {
+    headline: 'Bonus headline',
+    body: [{ type: 'paragraph', text: 'Bonus body' }],
+    bodyLossy: false,
+  }
+  return draft
+}
+
 describe('SectionEditorPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -225,5 +254,140 @@ describe('SectionEditorPanel', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /reload and reapply/i })).toBeDefined()
     })
+  })
+})
+
+// ── Plan 31-06 gap-closure tests ─────────────────────────────────────────────
+
+describe('SectionEditorPanel — pdf prefill + dirty-gated saves', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('prefills working.pdf from draft.sections.problemStatement.pdfContent; missing pdfContent yields 3 blank rows', () => {
+    const pdfContent = {
+      problemStatement: 'Real PDF prose.',
+      keyDataPoints: [
+        { stat: '42%', source: 'GAO 2024' },
+        { stat: '9,000', source: 'internal audit' },
+        { stat: '$3.2M', source: 'IRS 990' },
+      ],
+      interventionMechanism: 'Direct cash transfer.',
+    }
+
+    render(
+      <SectionEditorPanel
+        runId="run-1"
+        selectedSection="problemStatement"
+        draft={makeDraftWithPdf(pdfContent)}
+      />,
+    )
+
+    expect(screen.getByDisplayValue('Real PDF prose.')).toBeDefined()
+    expect(screen.getByDisplayValue('Direct cash transfer.')).toBeDefined()
+    expect(screen.getByLabelText('Key data point 1 stat')).toHaveProperty('value', '42%')
+    expect(screen.getByLabelText('Key data point 1 source')).toHaveProperty('value', 'GAO 2024')
+
+    cleanup()
+
+    // No pdfContent on the draft -> 3 blank stat/source rows, not a crash.
+    render(
+      <SectionEditorPanel runId="run-1" selectedSection="problemStatement" draft={makeDraftWithPdf()} />,
+    )
+    expect(screen.getByLabelText('Key data point 1 stat')).toHaveProperty('value', '')
+    expect(screen.getByLabelText('Key data point 2 stat')).toHaveProperty('value', '')
+    expect(screen.getByLabelText('Key data point 3 stat')).toHaveProperty('value', '')
+  })
+
+  it('a prose-only problemStatement save does NOT call patchPdfDataPoints', async () => {
+    ;(patchHeadline as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-2' })
+    ;(patchSection as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-3' })
+
+    render(
+      <SectionEditorPanel runId="run-1" selectedSection="problemStatement" draft={makeDraftWithPdf()} />,
+    )
+
+    const headlineInput = screen.getByDisplayValue('Problem headline')
+    fireEvent.change(headlineInput, { target: { value: 'New problem headline' } })
+
+    const saveButton = screen.getByRole('button', { name: /^save$/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(patchHeadline).toHaveBeenCalled()
+      expect(patchSection).toHaveBeenCalled()
+    })
+
+    expect(patchPdfDataPoints).not.toHaveBeenCalled()
+  })
+
+  it('a problemStatement save with an edited pdf sub-state DOES call patchPdfDataPoints with the edited values', async () => {
+    ;(patchHeadline as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-2' })
+    ;(patchSection as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-3' })
+    ;(patchPdfDataPoints as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-4' })
+
+    render(
+      <SectionEditorPanel runId="run-1" selectedSection="problemStatement" draft={makeDraftWithPdf()} />,
+    )
+
+    const pdfProblemStatementInput = screen.getByLabelText(/problem statement \(pdf\)/i)
+    fireEvent.change(pdfProblemStatementInput, { target: { value: 'Edited PDF prose.' } })
+
+    const saveButton = screen.getByRole('button', { name: /^save$/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(patchPdfDataPoints).toHaveBeenCalled()
+    })
+
+    const call = (patchPdfDataPoints as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(call[1]).toMatchObject({ problemStatement: 'Edited PDF prose.' })
+  })
+})
+
+describe('SectionEditorPanel — specAd bonus payload contract', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('a headline-only specAd bonus save sends variant + headline and NO blocks/body key', async () => {
+    ;(patchBonus as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-2' })
+
+    render(<SectionEditorPanel runId="run-1" selectedSection="bonus" draft={makeSpecAdBonusDraft()} />)
+
+    const headlineInput = screen.getByDisplayValue('Bonus headline')
+    fireEvent.change(headlineInput, { target: { value: 'New bonus headline' } })
+
+    const saveButton = screen.getByRole('button', { name: /^save$/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(patchBonus).toHaveBeenCalled()
+    })
+
+    const payload = (patchBonus as ReturnType<typeof vi.fn>).mock.calls[0][1]
+    expect(payload).toMatchObject({ variant: 'specAd', headline: 'New bonus headline' })
+    expect('blocks' in payload).toBe(false)
+    expect('body' in payload).toBe(false)
+  })
+
+  it('a specAd bonus save with an edited block body includes blocks in the payload', async () => {
+    ;(patchBonus as ReturnType<typeof vi.fn>).mockResolvedValue({ revisionId: 'rev-2' })
+
+    render(<SectionEditorPanel runId="run-1" selectedSection="bonus" draft={makeSpecAdBonusDraft()} />)
+
+    fireEvent.click(screen.getByLabelText(/add block after 1/i))
+
+    const saveButton = screen.getByRole('button', { name: /^save$/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(patchBonus).toHaveBeenCalled()
+    })
+
+    const payload = (patchBonus as ReturnType<typeof vi.fn>).mock.calls[0][1]
+    expect(payload.variant).toBe('specAd')
+    expect(Array.isArray(payload.blocks)).toBe(true)
+    expect(payload.blocks.length).toBe(2)
   })
 })
