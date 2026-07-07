@@ -97,10 +97,16 @@ export interface GamePatchPayload {
   embedCode: string
 }
 
+export interface KeyDataPoint {
+  stat: string
+  source: string
+}
+
 export interface PdfDataPointsPatchPayload {
   ifRevisionID: string
   problemStatement?: string
-  keyDataPoints?: string[]
+  /** Exactly 3 entries — Sanity schema `Rule.length(3)`, no add/remove in the editor. */
+  keyDataPoints?: KeyDataPoint[]
   interventionMechanism?: string
 }
 
@@ -158,8 +164,13 @@ export interface DraftResponse {
   bonusType: 'specAd' | 'bigBudget' | 'jingle'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   podcast: Record<string, any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deliberation: Record<string, any>
+  /**
+   * The deliberation turn list. NOTE: the live pipeline's `get_issue_draft()`
+   * returns this top-level key as `conversation` (not nested under a
+   * `deliberation` object) — matches the Plan 31-05 interface contract; kept
+   * here (not `deliberation`) to stay byte-accurate with the actual response.
+   */
+  conversation: DeliberationTurn[]
 }
 
 // ── Internal fetch helper (JSON body) ───────────────────────────────────────
