@@ -109,6 +109,43 @@ def _extract_sections(state: DispatchState) -> dict[str, str]:
     }
 
 
+# Maps QA snake_case section name -> DispatchState field holding the raw
+# Portable Text block list (block ordinal is 1:1 with the draft-read
+# `blocks` rows, because pt_to_blocks maps each block -> one row).
+_SECTION_STATE_FIELD = {
+    "origin_story": "origin_story",
+    "problem": "problem_statement",
+    "founder_bio": "founder_bio",
+    "case_study": "case_study",
+    "bonus": "bonus",
+}
+
+
+def _block_index_hint(state: DispatchState, section: str, quoted: str | None) -> int | None:
+    """Return the ordinal of the ONLY block whose text contains `quoted`,
+    else None (0 or 2+ matches -> no hint; game/None -> no hint). Mirrors
+    the client resolver's unique-substring rule (D-12: never guess)."""
+    if not quoted:
+        return None
+    field = _SECTION_STATE_FIELD.get(section)
+    if field is None:
+        return None
+    body = (state.get(field) or {}).get("body")
+    if not isinstance(body, list):
+        return None
+    matches = []
+    for i, block in enumerate(body):
+        if not isinstance(block, dict):
+            continue
+        text = " ".join(
+            (c.get("text", "") for c in (block.get("children") or [])
+             if isinstance(c, dict))
+        )
+        if quoted in text:
+            matches.append(i)
+    return matches[0] if len(matches) == 1 else None
+
+
 def _finding_to_qa_correction(f: QAFinding) -> dict:
     """Convert a QAFinding NamedTuple to the QACorrection dict shape
     written into ``state['qa_corrections']`` (graph/state.QACorrection).
@@ -183,20 +220,21 @@ async def qa(state: DispatchState) -> DispatchState:
     #   - 'accepted: False' boolean (D-02 annotation-only); Andrew flips in Phase 9
     #   - 'axis' carries the 6-literal union including 'hard-rule' for Layer-1
     for f in all_findings:
-        await convex_mutation_safe(
-            "qaCorrections:insert",
-            {
-                "runId": run_id,
-                "agentId": "qa",
-                "sectionName": f.section,
-                "severity": f.severity,
-                "axis": f.axis,
-                "quotedSpan": f.quotedSpan,
-                "reason": f.reason,
-                "suggestedFix": f.suggestedFix,
-                "accepted": False,
-            },
-        )
+        hint = _block_index_hint(state, f.section, f.quotedSpan)
+        payload = {
+            "runId": run_id,
+            "agentId": "qa",
+            "sectionName": f.section,
+            "severity": f.severity,
+            "axis": f.axis,
+            "quotedSpan": f.quotedSpan,
+            "reason": f.reason,
+            "suggestedFix": f.suggestedFix,
+            "accepted": False,
+        }
+        if hint is not None:
+            payload["blockIndexHint"] = hint
+        await convex_mutation_safe("qaCorrections:insert", payload)
 
     # AGT-17: record resolved model under the llm_config key.
     model_versions = dict(state.get("model_versions") or {})
