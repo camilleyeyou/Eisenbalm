@@ -6,8 +6,9 @@
  *
  * Kill switch:
  *   - role="switch" aria-checked={scheduleEnabled}
- *   - ON: bg-neutral-900 text-white
- *   - OFF: bg-red-500 text-white (the ONLY red background in non-destructive context)
+ *   - ON: bg-[color:var(--color-ink)] text-[color:var(--color-masthead-text)]
+ *   - OFF: bg-[color:var(--color-vermilion)] text-[color:var(--color-masthead-text)]
+ *     (the ONLY vermilion background in a non-destructive context)
  *   - Always-visible badge beside the toggle: "Automation ON" or "Automation OFF"
  *
  * Schedule editor (visible only when scheduleEnabled === true):
@@ -124,20 +125,20 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
 
   if (configRows === undefined) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-neutral-900">Automation</h2>
-        <p className="mt-2 text-sm text-neutral-500">Loading…</p>
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-5">
+        <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Automation</h2>
+        <p className="mt-2 text-sm text-[color:var(--color-faint)]">Loading…</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-5 space-y-5">
-      <h2 className="text-base font-semibold text-neutral-900">Automation</h2>
+    <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-5 space-y-5">
+      <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Automation</h2>
 
       {/* Kill switch row */}
       <div className="flex items-center gap-4">
-        <span className="text-sm text-neutral-700">Scheduled runs</span>
+        <span className="text-sm text-[color:var(--color-ink-soft)]">Scheduled runs</span>
 
         <button
           type="button"
@@ -146,10 +147,10 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
           aria-label={`Toggle scheduled runs ${scheduleEnabled ? 'off' : 'on'}`}
           onClick={handleToggle}
           disabled={toggleLoading}
-          className={`min-h-[44px] min-w-[80px] rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 ${
+          className={`min-h-[44px] min-w-[80px] rounded-none px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1 ${
             scheduleEnabled
-              ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-              : 'bg-red-500 text-white hover:bg-red-600'
+              ? 'bg-[color:var(--color-ink)] text-[color:var(--color-masthead-text)] hover:bg-[color:var(--color-ink)]/90'
+              : 'bg-[color:var(--color-vermilion)] text-[color:var(--color-masthead-text)] hover:bg-[color:var(--color-vermilion)]/90'
           }`}
         >
           {toggleLoading ? (
@@ -164,11 +165,11 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
 
         {/* Always-visible status badge */}
         {scheduleEnabled ? (
-          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-600">
+          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]">
             Automation ON
           </span>
         ) : (
-          <span className="inline-flex items-center rounded-full border border-red-200 px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700">
+          <span className="inline-flex items-center rounded-full border border-[color:var(--color-vermilion)]/30 px-2.5 py-0.5 text-xs font-medium bg-[color:var(--color-vermilion)]/10 text-[color:var(--color-vermilion)]">
             Automation OFF
           </span>
         )}
@@ -176,15 +177,15 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
 
       {/* Schedule editor — visible only when automation is enabled */}
       {scheduleEnabled && (
-        <div className="space-y-4 border-t border-neutral-100 pt-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide">Schedule</p>
+        <div className="space-y-4 border-t border-[color:var(--color-ink)]/10 pt-4">
+          <p className="text-xs text-[color:var(--color-faint)] uppercase tracking-wide">Schedule</p>
 
           <div className="flex flex-wrap items-end gap-4">
             {/* Day of week */}
             <div className="space-y-1">
               <label
                 htmlFor="schedule-day"
-                className="text-sm text-neutral-700"
+                className="text-sm text-[color:var(--color-ink-soft)]"
               >
                 Day
               </label>
@@ -192,7 +193,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
                 id="schedule-day"
                 value={day}
                 onChange={e => setDay(Number(e.target.value))}
-                className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                className="rounded-none border border-[color:var(--color-ink)]/15 px-2 py-1 text-sm text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
               >
                 {DAY_OPTIONS.map(d => (
                   <option key={d.value} value={d.value}>
@@ -206,7 +207,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
             <div className="space-y-1">
               <label
                 htmlFor="schedule-hour"
-                className="text-sm text-neutral-700"
+                className="text-sm text-[color:var(--color-ink-soft)]"
               >
                 Hour (UTC)
               </label>
@@ -214,7 +215,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
                 id="schedule-hour"
                 value={hour}
                 onChange={e => setHour(Number(e.target.value))}
-                className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                className="rounded-none border border-[color:var(--color-ink)]/15 px-2 py-1 text-sm text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
               >
                 {HOURS.map(h => (
                   <option key={h} value={h}>
@@ -228,7 +229,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
             <div className="space-y-1">
               <label
                 htmlFor="schedule-minute"
-                className="text-sm text-neutral-700"
+                className="text-sm text-[color:var(--color-ink-soft)]"
               >
                 Minute
               </label>
@@ -236,7 +237,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
                 id="schedule-minute"
                 value={minute}
                 onChange={e => setMinute(Number(e.target.value))}
-                className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                className="rounded-none border border-[color:var(--color-ink)]/15 px-2 py-1 text-sm text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
               >
                 {MINUTES.map(m => (
                   <option key={m} value={m}>
@@ -259,7 +260,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
             onClick={handleSaveSchedule}
             disabled={saveLoading}
             aria-busy={saveLoading}
-            className="min-h-[44px] rounded-md border border-neutral-300 bg-white px-4 text-sm text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="min-h-[44px] rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] px-4 text-sm text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
           >
             {saveLoading ? (
               <span className="flex items-center gap-1.5">
@@ -275,7 +276,7 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
           </button>
 
           {saveError && (
-            <p className="text-xs text-red-600">{saveError}</p>
+            <p className="text-xs text-[color:var(--color-vermilion)]">{saveError}</p>
           )}
         </div>
       )}

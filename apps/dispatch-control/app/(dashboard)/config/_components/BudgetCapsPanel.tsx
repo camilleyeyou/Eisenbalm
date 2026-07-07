@@ -12,8 +12,8 @@
  *   - "Month-to-date: $X.XX of $Y.YY cap" with a progress bar
  *   - "No completed runs yet — projection unavailable." when no history
  *
- * Progress bar track: bg-neutral-200 h-1.5 rounded-full
- * Fill: bg-amber-400 when MTD/cap >= threshold, else bg-neutral-400
+ * Progress bar track: 1c ink-on-15%-opacity track
+ * Fill: marigold when MTD/cap >= threshold, else ink-soft
  */
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from 'convex/react'
@@ -94,23 +94,23 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
 
   if (configRows === undefined) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-neutral-900">Budget Caps</h2>
-        <p className="mt-2 text-sm text-neutral-500">Loading…</p>
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-5">
+        <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Budget Caps</h2>
+        <p className="mt-2 text-sm text-[color:var(--color-faint)]">Loading…</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-5 space-y-5">
-      <h2 className="text-base font-semibold text-neutral-900">Budget Caps</h2>
+    <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-5 space-y-5">
+      <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Budget Caps</h2>
 
       <div className="space-y-4">
         {/* Per-run cap */}
         <div className="space-y-1">
           <label
             htmlFor="per-run-cap"
-            className="text-sm text-neutral-700"
+            className="text-sm text-[color:var(--color-ink-soft)]"
           >
             Per-run cap (USD)
           </label>
@@ -122,7 +122,7 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
             value={perRunCap}
             onChange={e => setPerRunCap(e.target.value)}
             placeholder="e.g. 10.00"
-            className="block w-full max-w-xs rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="block w-full max-w-xs rounded-none border border-[color:var(--color-ink)]/15 px-3 py-1.5 text-sm text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
           />
         </div>
 
@@ -130,7 +130,7 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
         <div className="space-y-1">
           <label
             htmlFor="monthly-cap"
-            className="text-sm text-neutral-700"
+            className="text-sm text-[color:var(--color-ink-soft)]"
           >
             Monthly cap (USD)
           </label>
@@ -142,7 +142,7 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
             value={monthlyCap}
             onChange={e => setMonthlyCap(e.target.value)}
             placeholder="e.g. 200.00"
-            className="block w-full max-w-xs rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="block w-full max-w-xs rounded-none border border-[color:var(--color-ink)]/15 px-3 py-1.5 text-sm text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
           />
         </div>
 
@@ -150,7 +150,7 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
         <div className="space-y-1">
           <label
             htmlFor="alert-threshold"
-            className="text-sm text-neutral-700"
+            className="text-sm text-[color:var(--color-ink-soft)]"
           >
             Alert threshold (%)
           </label>
@@ -161,9 +161,9 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
             max={100}
             value={alertThreshold}
             onChange={e => setAlertThreshold(e.target.value)}
-            className="block w-full max-w-xs rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="block w-full max-w-xs rounded-none border border-[color:var(--color-ink)]/15 px-3 py-1.5 text-sm text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
           />
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-[color:var(--color-faint)]">
             Alert fires when month-to-date spend reaches this % of monthly cap
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
           onClick={handleSaveCaps}
           disabled={saveLoading}
           aria-busy={saveLoading}
-          className="min-h-[44px] rounded-md border border-neutral-300 bg-white px-4 text-sm text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+          className="min-h-[44px] rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] px-4 text-sm text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
         >
           {saveLoading ? (
             <span className="flex items-center gap-1.5">
@@ -190,31 +190,31 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
         </button>
 
         {saveError && (
-          <p className="text-xs text-red-600">{saveError}</p>
+          <p className="text-xs text-[color:var(--color-vermilion)]">{saveError}</p>
         )}
       </div>
 
       {/* Read-only projection */}
-      <div className="border-t border-neutral-100 pt-4 space-y-3">
+      <div className="border-t border-[color:var(--color-ink)]/10 pt-4 space-y-3">
         {projectedCost !== null ? (
-          <p className="text-sm text-neutral-700">
+          <p className="text-sm text-[color:var(--color-ink-soft)]">
             Projected next run cost: ${projectedCost.toFixed(4)}
           </p>
         ) : (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-[color:var(--color-faint)]">
             No completed runs yet — projection unavailable.
           </p>
         )}
 
         {monthlyCapNum > 0 && (
           <div className="space-y-1">
-            <p className="text-sm text-neutral-700">
+            <p className="text-sm text-[color:var(--color-ink-soft)]">
               Month-to-date: ${mtdUsd.toFixed(2)} of ${monthlyCapNum.toFixed(2)} cap
             </p>
-            <div className="h-1.5 w-full rounded-full bg-neutral-200">
+            <div className="h-1.5 w-full rounded-full bg-[color:var(--color-ink)]/10">
               <div
                 className={`h-1.5 rounded-full transition-all ${
-                  overThreshold ? 'bg-amber-400' : 'bg-neutral-400'
+                  overThreshold ? 'bg-[color:var(--color-marigold)]' : 'bg-[color:var(--color-ink-soft)]'
                 }`}
                 style={{ width: `${fillPct}%` }}
                 role="progressbar"

@@ -8,14 +8,14 @@
  *
  * ENABLING: opens a non-dismissible confirmation modal (no X, no outside-click
  * close — the operator must explicitly confirm or cancel). The modal background
- * is NOT blurred (bg-black/40) so the alarming red banner context is partially
- * visible. CTA is destructive-red.
+ * is NOT blurred (ink at 40% opacity) so the alarming banner context is
+ * partially visible. CTA is destructive-vermilion.
  *
  * RATE-LIMIT: if the mutation throws "rate_limited", shows the UI-SPEC error
  * copy: "Auto-publish was recently changed. Wait 24 hours before re-enabling."
  *
- * The toggle button always renders in a red destructive style per UI-SPEC
- * Screen 4 (never neutral — the auto_publish state is always alarming).
+ * The toggle button always renders in a vermilion destructive style per
+ * UI-SPEC Screen 4 (never neutral — the auto_publish state is always alarming).
  *
  * API_CONTRACTS §26.6 — setAutoPublish({workspace_id, enabled, actorId}).
  */
@@ -40,7 +40,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
 
   if (configRows === undefined) {
     return (
-      <div className="text-sm text-neutral-500">Loading…</div>
+      <div className="text-sm text-[color:var(--color-faint)]">Loading…</div>
     )
   }
 
@@ -95,13 +95,13 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
         <div className="flex items-center gap-4">
           {/* Toggle label + description */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-neutral-800">Auto-publish</p>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-sm font-medium text-[color:var(--color-ink)]">Auto-publish</p>
+            <p className="text-xs text-[color:var(--color-faint)] mt-0.5">
               When enabled, finished runs publish automatically without review. Off by default.
             </p>
           </div>
 
-          {/* Toggle button — always red-destructive per UI-SPEC Screen 4 */}
+          {/* Toggle button — always vermilion-destructive per UI-SPEC Screen 4 */}
           {autoPublishEnabled ? (
             <button
               type="button"
@@ -109,7 +109,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
               disabled={loading}
               aria-busy={loading}
               aria-label="Disable auto-publish"
-              className="min-h-[44px] min-w-[80px] rounded-md bg-red-600 px-4 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+              className="min-h-[44px] min-w-[80px] rounded-none bg-[color:var(--color-vermilion)] px-4 text-sm font-medium text-[color:var(--color-masthead-text)] hover:bg-[color:var(--color-vermilion)]/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-1.5">
@@ -129,7 +129,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
               }}
               disabled={loading}
               aria-label="Enable auto-publish"
-              className="min-h-[44px] min-w-[80px] rounded-md border border-red-300 bg-white px-4 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+              className="min-h-[44px] min-w-[80px] rounded-none border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] px-4 text-sm font-medium text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-1.5">
@@ -144,7 +144,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
         </div>
 
         {error && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-[color:var(--color-vermilion)]">
             {error}
           </p>
         )}
@@ -153,8 +153,8 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
       {/* Non-dismissible enable confirmation modal */}
       {showEnableModal && (
         <div
-          // bg-black/40 overlay — NOT blurred, so the red banner behind is partially visible
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          // ink/40 overlay — NOT blurred, so the red banner behind is partially visible
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--color-ink)]/40"
           // Non-dismissible: onInteractOutside intentionally has no handler
           // The operator must explicitly choose Enable or Cancel
           role="presentation"
@@ -167,15 +167,15 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
             role="dialog"
             aria-modal="true"
             aria-labelledby="enable-autopublish-heading"
-            className="w-full max-w-md mx-4 rounded-lg border border-neutral-200 bg-white p-6 shadow-xl space-y-4"
+            className="w-full max-w-md mx-4 rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-6 shadow-xl space-y-4"
           >
             <h2
               id="enable-autopublish-heading"
-              className="text-base font-semibold text-neutral-900"
+              className="text-base font-semibold text-[color:var(--color-ink)]"
             >
               Enable auto-publish?
             </h2>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-[color:var(--color-ink-soft)]">
               Auto-publish bypasses the review gate. Runs will publish immediately when
               complete. This is audit-logged. You cannot re-enable within 24 hours of a
               disable.
@@ -187,7 +187,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
                 onClick={handleEnableConfirm}
                 disabled={loading}
                 aria-busy={loading}
-                className="min-h-[44px] rounded-md bg-red-600 px-4 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                className="min-h-[44px] rounded-none bg-[color:var(--color-vermilion)] px-4 text-sm font-medium text-[color:var(--color-masthead-text)] hover:bg-[color:var(--color-vermilion)]/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
               >
                 {loading ? (
                   <span className="flex items-center gap-1.5">
@@ -206,7 +206,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
                   setError(null)
                 }}
                 disabled={loading}
-                className="min-h-[44px] rounded-md border border-neutral-300 px-4 text-sm text-neutral-700 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                className="min-h-[44px] rounded-none border border-[color:var(--color-ink)]/15 px-4 text-sm text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1"
               >
                 Cancel
               </button>

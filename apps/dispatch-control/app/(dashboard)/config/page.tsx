@@ -22,16 +22,16 @@ export default async function ConfigPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-neutral-900">Config</h1>
+      <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Config</h1>
 
       {/* Panel 1 — Automation */}
       <AutomationPanel workspace_id={workspace_id} />
 
       {/* Panel 1b — Advanced subsection (auto_publish). Below AutomationPanel per UI-SPEC Screen 4.
           The border-t separator visually connects it to the automation section. */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-5">
-        <div className="border-t border-neutral-200 mt-4 pt-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide mb-4">Advanced</p>
+      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-5">
+        <div className="border-t border-[color:var(--color-ink)]/15 mt-4 pt-4">
+          <p className="text-xs text-[color:var(--color-faint)] uppercase tracking-wide mb-4">Advanced</p>
           <AutoPublishToggle workspace_id={workspace_id} />
         </div>
       </div>
@@ -40,9 +40,9 @@ export default async function ConfigPage() {
       <BudgetCapsPanel workspace_id={workspace_id} />
 
       {/* Panel 3 — Danger Zone */}
-      <div className="rounded-lg border border-red-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-red-700">Danger Zone</h2>
-        <p className="mt-2 text-sm text-neutral-600">
+      <div className="rounded-none border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] p-5">
+        <h2 className="text-base font-semibold text-[color:var(--color-vermilion)]">Danger Zone</h2>
+        <p className="mt-2 text-sm text-[color:var(--color-ink-soft)]">
           To force-cancel a running run, go to Runs and click Cancel on the active run.
         </p>
       </div>

@@ -21,7 +21,7 @@ interface NextRunDisplayProps {
 export default function NextRunDisplay({ nextRunAt }: NextRunDisplayProps) {
   if (!nextRunAt || nextRunAt === 0) {
     return (
-      <p className="text-sm text-neutral-500">Not scheduled yet.</p>
+      <p className="text-sm text-[color:var(--color-faint)]">Not scheduled yet.</p>
     )
   }
 
@@ -54,7 +54,7 @@ export default function NextRunDisplay({ nextRunAt }: NextRunDisplayProps) {
   const utcStr = utcFormatter.format(date)
 
   return (
-    <p className="text-sm text-neutral-700">
+    <p className="text-sm text-[color:var(--color-ink-soft)]">
       Next run: {localStr} ({utcStr} UTC)
     </p>
   )
