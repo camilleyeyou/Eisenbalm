@@ -707,7 +707,14 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   2. Existing QA findings render as inline severity-colored span annotations, resolved via `quotedSpan` text-match plus a `blockIndexHint` against live content; findings that fail to resolve are visibly marked "unresolved" — never silently dropped or mis-rendered.
   3. Section-status chips show per-section finding counts and jump to that section on click.
   4. The prior preview-iframe route still renders and is reachable, so Andrew has a working fallback for at least one full weekly cycle.
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 32-01-test-scaffold-and-dep-PLAN.md — Wave 0: install @portabletext/react + author 8 RED test files (resolver, sectionIdMap, syntheticPortableText, googleFontLoader, galleyGameValidator, UnresolvedFindingCard, Galley, SectionChipList)
+- [ ] 32-02-blockindexhint-and-asset-urls-PLAN.md — Wave 1: contract-first §31.7 + _DRAFT_GROQ asset-URL dereference (podcast audio + storyboards) + Convex qaCorrections.blockIndexHint + QA agent ordinal emission (GLY-01, GLY-02)
+- [ ] 32-03-span-resolver-core-PLAN.md — Wave 1: pure sectionIdMap.ts + spanResolver.ts (per-block quotedSpan match, hint disambiguation, narrow normalization, ambiguous→unresolved) (GLY-02)
+- [ ] 32-04-render-helpers-PLAN.md — Wave 1: syntheticPortableText.ts (markDef injection) + googleFontLoader.ts (whitelist-validated) + galleyGameValidator.ts (parity duplicate) (GLY-01)
+- [ ] 32-05-annotation-primitives-PLAN.md — Wave 2: AnnotationMark.tsx (severity underline + read-only popover) + UnresolvedFindingCard.tsx + galley CSS (GLY-02)
+- [ ] 32-06-galley-assembly-PLAN.md — Wave 3: GalleryGameSlot + GallerySection + Galley (all 8 sections, live findings, resolver, theme fonts) (GLY-01)
+- [ ] 32-07-chip-counts-and-page-wiring-PLAN.md — Wave 4: SectionChipList count badges + jump-nav + page.tsx galley-default view + edit affordance + iframe fallback (GLY-05, GLY-01)
 **UI hint**: yes
 
 ### Phase 33: Accept-Fix Wiring + Decision Rail
