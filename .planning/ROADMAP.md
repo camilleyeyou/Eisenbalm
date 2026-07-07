@@ -427,7 +427,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
-| 30. Foundation — Design System, Chrome & Inbox | 1/8 | In Progress|  |
+| 30. Foundation — Design System, Chrome & Inbox | 2/8 | In Progress|  |
 | 31. Content-Patch Endpoints + Full Editing | 0/? | Not started | - |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
@@ -671,7 +671,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 30-01-design-bundle-tokens-fonts-PLAN.md — Commit design handoff bundle (D-12) + 1c @theme tokens + 4 next/font loaders (CHR-01)
 - [ ] 30-02-route-skeleton-redirects-PLAN.md — Final route set: placeholders + run-monitor tabs + prompt-lab rename + redirects + home→/review-desk (D-02/03/04/05)
 - [ ] 30-03-screen-token-swap-PLAN.md — Literal neutral-*→1c token swap across Config/Finance/Settings (CHR-01, Pitfall 1)
-- [ ] 30-04-masthead-PLAN.md — Persistent 52px ink masthead: issue#/state/spend-vs-cap/lock chips from live Convex (CHR-02)
+- [x] 30-04-masthead-PLAN.md — Persistent 52px ink masthead: issue#/state/spend-vs-cap/lock chips from live Convex (CHR-02)
 - [ ] 30-05-grouped-nav-sidebar-PLAN.md — 3-group workflow-ordered nav + pinned How-to-use, 1c sidebar, nav.test rewrite (CHR-03)
 - [ ] 30-06-awaiting-you-inbox-PLAN.md — Pure-derivation Awaiting-you dropdown, blockers-first, routes to working screens (CHR-04)
 - [ ] 30-07-how-to-use-screen-PLAN.md — How-to-use content: weekly loop + color legend + house rules (CHR-03, D-13)

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 30-01-design-bundle-tokens-fonts-PLAN.md
-last_updated: "2026-07-07T01:07:44.717Z"
+stopped_at: Completed 30-04-masthead-PLAN.md
+last_updated: "2026-07-07T01:18:08.698Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 30 (Foundation — Design System, Chrome & Awaiting-You Inbox) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 
 ## Performance Metrics
 
@@ -209,6 +209,7 @@ Plan: 2 of 8
 | Phase 29 P04 | 40 | 3 tasks | 9 files |
 | Phase 29 P05 | 10min | 2 tasks | 5 files |
 | Phase 30 P01 | 3min | 3 tasks | 9 files |
+| Phase 30 P04 | 20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -539,6 +540,8 @@ Recent decisions affecting current work:
 - [Phase 29]: D-10: eslint-config-next@15.5.x ships eslintrc format, so apps/web/eslint.config.mjs bridges it via FlatCompat; lint made advisory (ignoreDuringBuilds) so ~29 phases of pre-existing style don't block the strict build
 - [Phase 29]: D-6/D-13 docs-only fix: kept SUPABASE_POSTGRES_URL var name unchanged, fixed Railway-accurate guidance in .env.example + error strings; documented DESIGNAGENT_SUPPRESSED, LOG_LEVEL, PREVIEW_SECRET, NEXT_PUBLIC_WEB_PREVIEW_BASE; corrected NEXT_PUBLIC_PIPELINE_URL optional mislabel
 - [Phase 30]: Design bundle committed in-repo (docs/design/dispatch-control-v2/); 1c token @theme block + 4 next/font/google fonts wired into globals.css/layout.tsx; Phase 24 .cm-prompt-editor rules preserved byte-unchanged
+- [Phase 30]: Masthead cross-references pipelineRuns.byRunId off runs.latest.runId (via Convex 'skip' sentinel) to resolve issueNumber, since the newer runs table doesn't carry it
+- [Phase 30]: Masthead spend/lock chips read pipeline_config keys monthly_cap_usd/auto_publish (same canonical keys BudgetCapsPanel.tsx uses), not the pipeline-side env var
 
 ### Pending Todos
 
@@ -623,6 +626,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T01:07:44.706Z
-Stopped at: Completed 30-01-design-bundle-tokens-fonts-PLAN.md
+Last session: 2026-07-07T01:18:08.685Z
+Stopped at: Completed 30-04-masthead-PLAN.md
 Resume file: None
