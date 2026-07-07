@@ -268,9 +268,84 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Audit Log (AUD)
 - [x] **AUD-01**: Every config/prompt change, review decision, and kill-switch flip is recorded in an audit log with actor, timestamp, and before/after values.
 
+## Milestone v3.0 Requirements — Dispatch Control v2 (Editorial Operator Console)
+
+**Scope:** Rebuild dispatch-control into the complete editorial surface per the committed 1c design (`Dispatch Control.dc.html`); Sanity bypassed (all editing/publishing via the console through the pipeline API), removal deferred to a follow-up milestone. Grounded in the design bundle (design brief v2, audit R1–R6, DECISIONS.md) and `.planning/research/SUMMARY.md`. Locked decisions: native galley (no iframe) · per-section editing (no WYSIWYG) · dashboard → pipeline API → Sanity for every write · Signal Desk on existing backend only · two-sign-off publish with webhook-level bypass closure.
+
+### Design System & Chrome (CHR)
+- [ ] **CHR-01**: Operator sees the 1c design system on every console screen — tokens (ink `#17140e`, cobalt `#253ad4`, vermilion `#e8471d`, marigold `#f2b01e`, green `#148a52`), Newsreader/Lora/Space Grotesk/IBM Plex Mono via next/font, hard-edged anti-SaaS surfaces.
+- [ ] **CHR-02**: Persistent masthead on every screen shows current issue number, pipeline state chip, month-to-date spend vs cap, and the auto-publish lock chip.
+- [ ] **CHR-03**: Left nav is workflow-ordered (Review Desk · Signal Desk · Run Monitor · Voice Pass / Prompt Lab · Eval Center · Registry) with a "How to use" screen (weekly loop, color legend, house rules).
+- [ ] **CHR-04**: Operator sees an Awaiting-you inbox in the masthead aggregating everything blocked on a human (awaiting-review runs, Gate 1 interrupts, unresolved blockers, failed runs); each item routes to the owning screen.
+- [ ] **CHR-05**: The deployed dashboard reaches the pipeline API (`NEXT_PUBLIC_PIPELINE_URL` configured; existing test-run panel functional in production).
+
+### Galley & Review Desk (GLY)
+- [ ] **GLY-01**: Operator reads the issue as the reader will see it — a native render of the Sanity draft (all sections including the sandboxed game) inside the Review Desk, replacing the preview iframe.
+- [ ] **GLY-02**: QA findings render as inline severity-colored span annotations, resolved by quotedSpan text-match with a block-index hint; anchors that no longer resolve are surfaced as orphaned, never silently dropped.
+- [ ] **GLY-03**: Clicking an annotation opens a popover showing axis, severity, reason, and suggested fix, with Accept fix / Edit inline / Dismiss actions.
+- [ ] **GLY-04**: The decision rail is blockers-first: unresolved error-severity findings gate Publish; rail shows the editor memo, hook card, and a verification summary with affirmative states ("checked Nm ago" — never blank).
+- [ ] **GLY-05**: Section-status chips show per-section finding counts and act as jump navigation.
+
+### Editing & Write Boundary (EDT)
+- [ ] **EDT-01**: Operator can edit any section's prose per-section from the console (structured block-list editing, not inline WYSIWYG); saves write to the Sanity draft via a pipeline content-patch endpoint using scoped patches.
+- [ ] **EDT-02**: Operator can edit structured fields from the console: section headlines, PDF key data points, game embed code, theme values.
+- [ ] **EDT-03**: Operator can upload assets (podcast audio, Suno audio, storyboard images) through the console → pipeline → Sanity assets.
+- [ ] **EDT-04**: Accept-fix applies the suggested text to the draft via content-patch and logs it; Dismiss requires a one-line reason; every content mutation lands in the audit log ("nothing silent").
+- [ ] **EDT-05**: All content writes flow dashboard → pipeline API → Sanity; the dashboard has no direct Sanity write path (source-scan enforceable).
+- [ ] **EDT-06**: After any content patch, annotation anchors are re-resolved; annotations invalidated by the edit surface as orphaned for operator review.
+
+### Two-Sign-off Publish Gate (PUB)
+- [ ] **PUB-01**: Publishing requires two independent server-enforced sign-offs — "Facts cleared" and "Sounds human" — the publish endpoint refuses (409) unless both are recorded.
+- [ ] **PUB-02**: The Sanity publish webhook handler verifies sign-off state before running the publisher — a direct Studio status-flip can no longer bypass the gate.
+- [ ] **PUB-03**: Sanity Studio is retired as the editing/publish surface (publish path locked down, documented as read-only fallback) after a soak period of real weekly cycles on the console.
+- [ ] **PUB-04**: Every sign-off, publish, and override is audit-logged with actor and timestamp.
+
+### Voice Pass (VOX)
+- [ ] **VOX-01**: Operator has a dedicated Voice Pass screen — machine-tells and voice violations lit inline over clean prose, with a per-screen tell count.
+- [ ] **VOX-02**: Clicking a tell opens an as-written vs suggested-house-voice comparison with Accept rewrite / Write my own / Keep (not a tell) actions; accept mutates via content-patch.
+- [ ] **VOX-03**: Voice Pass carries its own "Sounds human" sign-off, distinct from factual clearance (feeds PUB-01).
+- [ ] **VOX-04**: Detection is two-layer — deterministic rules render instantly, the LLM judge runs on demand — reusing the existing QA rules + Opus judge.
+
+### Provenance (PRV)
+- [ ] **PRV-01**: The Researcher emits per-claim `{claim, sourceUrl, retrievedAt}` bindings (generalizing the existing founder/subject paired-field pattern).
+- [ ] **PRV-02**: Section writers carry claim references forward via their structured output schemas so bindings survive into final prose (established at generation time, never post-hoc matched).
+- [ ] **PRV-03**: The galley renders sourced claims (marigold highlight, hover → source URL + retrieval date) and unsourced claims (rust tint) as first-class visual states.
+- [ ] **PRV-04**: The decision rail shows a source index — unsourced claims grouped on top with jump links, sourced claims listed with their sources; the claims checklist upgrades to source-bound claims.
+
+### Run Monitor v2 (MON)
+- [ ] **MON-01**: Runs render as a vertical forensic spine — LLM agents as dots, code gates (verify_research, validate_sections) as marigold diamonds — with per-node cost, latency, model chip, and retry count.
+- [ ] **MON-02**: Clicking a node shows the handoff (upstream → node → downstream) and human-readable output, with raw JSON behind a toggle.
+- [ ] **MON-03**: The 7-writers node expands to per-section rows with a QA-derived strength score (0–100 colored bar) and flag counts; each section individually re-runnable.
+- [ ] **MON-04**: A drift strip compares this run's cost and duration against the trailing 8 runs.
+
+### Signal Desk (SIG)
+- [ ] **SIG-01**: Operator sees the candidate slate from existing data (pitchLog scout summaries, Advocate scores with expandable arguments, primaryConcern always visible, never truncated).
+- [ ] **SIG-02**: The Gate 1 decision panel shows the winner, confidence meter, and editor reasoning in full.
+- [ ] **SIG-03**: When the pipeline interrupts at Gate 1, the screen enters side-by-side adjudication; the operator's pick plus a logged reason resumes the run via the existing resume endpoint.
+
+### Prompt Lab Evals & Eval Center (EVL)
+- [ ] **EVL-01**: Golden scenarios exist as fixtures runnable against single agents through the existing test-run/score endpoints.
+- [ ] **EVL-02**: The Prompt Lab eval drawer auto-selects scenarios affected by the edited asset, runs them, and shows a scoreboard with deltas vs the active version.
+- [ ] **EVL-03**: Prompt commit is gated on target-metric-up with no regressions, with an override-with-reason escape hatch (logged) so the gate cannot deadlock.
+- [ ] **EVL-04**: The Eval Center shows scenario cards (description, what-it-catches, last result) and an append-only scoreboard time-series in new Convex tables — the editorial drift detector.
+- [ ] **EVL-05**: Operator can run a shadow run — the discovery scenario against current real news, previewing what a paid run would produce, without publishing or affecting run state.
+
+### Registry Memory (MEM)
+- [ ] **MEM-01**: A coverage-memory strip visualizes the last 8 issues' cause/geo/signal chips so thematic repetition is visible at a glance.
+- [ ] **MEM-02**: Operator can append corrections to a charity's record (append-only corrections log) surfaced in the Registry.
+- [ ] **MEM-03**: The Researcher re-reads a charity's corrections log on any future mention of that charity.
+
 ## Future Requirements (deferred beyond v2.0)
 
-Tracked but not in the v2.0 roadmap.
+Tracked but not in the current roadmap.
+
+### Deferred from v3.0 (Dispatch Control v2)
+
+- **V3-DEF-01**: Sanity removal — content store → Convex, assets → blob storage, `apps/web` data-layer swap, Studio deletion. Own follow-up milestone after real weekly cycles prove the console; the EDT-05 write boundary makes this a contained adapter swap.
+- **V3-DEF-02**: Signal Editor agent + candidate gates (REAL/OBSCURE/SPECIFIC/TELLABLE), hookClaim, EIN/verification records — the full Signal Desk backend from the design brief.
+- **V3-DEF-03**: Inline WYSIWYG galley editing — upgrade from per-section editing only if Andrew's weekly friction demands it.
+- **V3-DEF-04**: Assignable Editor-in-Chief seat + read/comment collaborator roles (DECISIONS.md #7).
+- **V3-DEF-05**: Suno + NotebookLM API automation (manual upload flows ship in v3.0 EDT-03).
 
 ### Productization (deferred from v2.0 — the §6 SaaS-extraction groundwork)
 - **V2-PROD-01**: Workspace-scoping audit + multi-workspace switching (activate Clerk Organizations)
@@ -316,6 +391,13 @@ Explicitly excluded. Documented to prevent scope creep.
 | User comments on issues | Adds moderation surface area + spam risk. Brand voice depends on editorial control. |
 | Real-time chat / community features | Out of brand. The site is a magazine, not a community. |
 | Mobile native app | Web-first; mobile-responsive is sufficient. |
+| Real-time collaborative editing (multi-cursor, presence) — v3.0 | Exactly one operator. CRDT/multiplayer machinery is accidental complexity that increases lost-edit risk while the write boundary is being tightened. |
+| Configurable multi-role approval chains — v3.0 | One-person newsroom; the two-sign-off gate models the only two concerns that exist (facts, voice). Role machinery has no current user. |
+| AI chat / copilot sidebar in the console — v3.0 | Andrew's job is judging machine output, not chatting with more of it; QA's reason/quotedSpan/suggestedFix fields already explain findings. |
+| Bulk accept-all for QA findings — v3.0 | "Voice drift = brand failure" — bulk-accepting substantive findings defeats the human gate. (Bulk-dismiss of info-severity noise is allowed.) |
+| Inline WYSIWYG rich-text editor — v3.0 | Locked: per-section structured editing. WYSIWYG fights the BodyBlock model and re-opens the wall-of-prose problem Phase 18's structural floor prevents. |
+| Per-word track-changes / redline UI — v3.0 | Span-level accept/edit/dismiss is the right grain; content is regenerated in blocks, not micro-copyedited. |
+| Run-replay video/timeline scrubber — v3.0 | Handoff inspector + drift strip deliver the forensic value; a cinematic replay is high effort, low marginal value for one operator. |
 
 ## Traceability
 
