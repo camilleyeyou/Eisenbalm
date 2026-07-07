@@ -56,7 +56,7 @@ function mockQuery(returnValue: unknown) {
 
 // ── STATUS_CLASSES export ─────────────────────────────────────────────────────
 
-import { STATUS_CLASSES } from '../app/(dashboard)/runs/_components/RunsTable'
+import { STATUS_CLASSES } from '../app/(dashboard)/run-monitor/runs/_components/RunsTable'
 
 describe('STATUS_CLASSES', () => {
   it('contains a cancelled entry with neutral palette (RUN-04)', () => {
@@ -74,7 +74,7 @@ describe('STATUS_CLASSES', () => {
 
 // ── RunControlBar ─────────────────────────────────────────────────────────────
 
-import RunControlBar from '../app/(dashboard)/runs/_components/RunControlBar'
+import RunControlBar from '../app/(dashboard)/run-monitor/runs/_components/RunControlBar'
 
 describe('RunControlBar', () => {
   beforeEach(() => {
@@ -127,7 +127,7 @@ describe('RunControlBar', () => {
 
 // ── BudgetAlertBanner ─────────────────────────────────────────────────────────
 
-import BudgetAlertBanner from '../app/(dashboard)/runs/_components/BudgetAlertBanner'
+import BudgetAlertBanner from '../app/(dashboard)/run-monitor/runs/_components/BudgetAlertBanner'
 
 describe('BudgetAlertBanner', () => {
   beforeEach(() => {
@@ -191,7 +191,7 @@ describe('BudgetAlertBanner', () => {
 
 // ── CancelRunButton ───────────────────────────────────────────────────────────
 
-import CancelRunButton from '../app/(dashboard)/runs/_components/CancelRunButton'
+import CancelRunButton from '../app/(dashboard)/run-monitor/runs/_components/CancelRunButton'
 
 describe('CancelRunButton', () => {
   beforeEach(() => {
@@ -241,7 +241,7 @@ describe('CancelRunButton', () => {
 
 // ── RerollButton ──────────────────────────────────────────────────────────────
 
-import RerollButton from '../app/(dashboard)/runs/_components/RerollButton'
+import RerollButton from '../app/(dashboard)/run-monitor/runs/_components/RerollButton'
 
 describe('RerollButton', () => {
   beforeEach(() => {

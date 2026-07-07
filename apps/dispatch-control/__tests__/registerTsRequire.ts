@@ -5,7 +5,7 @@
  * load the new prompts components via a guarded runtime require() WITHOUT a
  * file extension, e.g.
  *
- *   require('../app/(dashboard)/prompts/_components/VariableRegistry')
+ *   require('../app/(dashboard)/prompt-lab/_components/VariableRegistry')
  *
  * vitest's CJS executor resolves runtime require() through Node's
  * `createRequire(...).resolve(id)`, whose extension search list is

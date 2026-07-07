@@ -6,7 +6,7 @@
  * unknown/mangled-variable save-warning.
  *
  * RED until Plan 07 lands
- * app/(dashboard)/prompts/_components/VariableRegistry.{ts,tsx} exporting:
+ * app/(dashboard)/prompt-lab/_components/VariableRegistry.{ts,tsx} exporting:
  *   - VARIABLE_REGISTRY: Record<string, string[]>  (agentKey → allowed {tokens})
  *   - findUnknownVariables(text, allowed): string[]  (tokens in text NOT in allowed)
  *
@@ -23,7 +23,7 @@ let findUnknownVariables:
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('../app/(dashboard)/prompts/_components/VariableRegistry')
+  const mod = require('../app/(dashboard)/prompt-lab/_components/VariableRegistry')
   VARIABLE_REGISTRY = mod.VARIABLE_REGISTRY
   findUnknownVariables = mod.findUnknownVariables
 } catch {

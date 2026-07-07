@@ -15,7 +15,7 @@ let buildMarkerExport: ((content: string) => string) | undefined
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('../app/(dashboard)/prompts/_components/PromptMarkerExport')
+  const mod = require('../app/(dashboard)/prompt-lab/_components/PromptMarkerExport')
   buildMarkerExport = mod.buildMarkerExport
 } catch {
   buildMarkerExport = undefined

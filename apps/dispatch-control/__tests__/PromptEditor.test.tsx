@@ -10,7 +10,7 @@
  * component mounts without throwing.
  *
  * RED until Plan 07 lands
- * app/(dashboard)/prompts/_components/PromptEditor. The import is guarded so the
+ * app/(dashboard)/prompt-lab/_components/PromptEditor. The import is guarded so the
  * file import-executes; the render runs only when the module exists.
  */
 import { describe, it, expect } from 'vitest'
@@ -25,7 +25,7 @@ let PromptEditor: React.ComponentType<{
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  PromptEditor = require('../app/(dashboard)/prompts/_components/PromptEditor').PromptEditor
+  PromptEditor = require('../app/(dashboard)/prompt-lab/_components/PromptEditor').PromptEditor
 } catch {
   PromptEditor = undefined
 }

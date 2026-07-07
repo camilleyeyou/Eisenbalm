@@ -19,7 +19,7 @@ let findUnusedVariables:
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('../app/(dashboard)/prompts/_components/VariableRegistry')
+  const mod = require('../app/(dashboard)/prompt-lab/_components/VariableRegistry')
   VARIABLE_REGISTRY = mod.VARIABLE_REGISTRY
   VARIABLE_DESCRIPTIONS = mod.VARIABLE_DESCRIPTIONS
   VARIABLE_SAMPLES = mod.VARIABLE_SAMPLES

@@ -132,3 +132,18 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 All created files verified present; both dedicated task commits (d4ec353, ea319aa) verified in git log; Task 2 content verified present in HEAD (attributed to concurrent commits 029673f/d9bebe7 per the documented deviation) and confirmed via full `pnpm --filter dispatch-control build` passing with the complete expected route list.
+
+## Post-wave fix (fix/30-02 follow-up)
+
+**Gap found:** This plan's route moves (`prompts/` → `prompt-lab/`, `graph/` and `runs/` → nested under `run-monitor/`) repointed app/component links but left 11 files under `apps/dispatch-control/__tests__/` importing from the old `(dashboard)/prompts/`, `(dashboard)/graph/`, and `(dashboard)/runs/` paths, breaking 25 tests.
+
+**Fix:** Mechanical path-string replacement in the affected test files (import/require paths only, no logic changes):
+- `(dashboard)/prompts/` → `(dashboard)/prompt-lab/`
+- `(dashboard)/graph/` → `(dashboard)/run-monitor/graph/`
+- `(dashboard)/runs/` → `(dashboard)/run-monitor/runs/`
+
+Files touched: `promptDescriptions.test.ts`, `assembledPreview.test.ts`, `DiffViewer.test.tsx`, `runControl.test.tsx`, `VariableRegistry.test.ts`, `PromptEditor.test.tsx`, `pipelineTopology.test.ts`, `AgentNode.test.tsx`, `variableMaps.test.ts`, `registerTsRequire.ts`, `markerExport.test.ts`.
+
+`nav.test.ts` was intentionally left untouched — it is being rewritten by Plan 30-05 (grouped-nav-sidebar) and its one remaining failure ("every nav href maps to a real page file") is that plan's responsibility.
+
+**Verification:** `pnpm --filter dispatch-control test -- --run` → 214 passed, 1 failed (nav.test.ts, expected), 2 todo, out of 217 total across 28 test files. `pnpm --filter dispatch-control build` → exits 0 with the full expected route list (`/prompt-lab`, `/prompt-lab/[agentKey]`, `/run-monitor/graph`, `/run-monitor/runs`, `/run-monitor/runs/[runId]`, `/run-monitor/runs/[runId]/review`, etc.).

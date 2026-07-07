@@ -18,7 +18,7 @@ vi.mock('@xyflow/react', () => ({
   Position: { Top: 'top', Bottom: 'bottom' },
 }))
 
-import { AgentNode, type AgentNodeData } from '../app/(dashboard)/graph/_components/AgentNode'
+import { AgentNode, type AgentNodeData } from '../app/(dashboard)/run-monitor/graph/_components/AgentNode'
 
 // Helper: build the NodeProps shape AgentNode expects
 function makeProps(data: AgentNodeData) {

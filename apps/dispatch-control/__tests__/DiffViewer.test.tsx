@@ -10,7 +10,7 @@
  *   - render two distinct [data-side] columns (left + right)
  *
  * RED until Plan 08 lands
- * app/(dashboard)/prompts/_components/DiffViewer. The import is guarded so the
+ * app/(dashboard)/prompt-lab/_components/DiffViewer. The import is guarded so the
  * file import-executes; the render test runs only when the module exists, and
  * fails (RED) until then.
  */
@@ -25,7 +25,7 @@ let DiffViewer: React.ComponentType<{
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  DiffViewer = require('../app/(dashboard)/prompts/_components/DiffViewer').DiffViewer
+  DiffViewer = require('../app/(dashboard)/prompt-lab/_components/DiffViewer').DiffViewer
 } catch {
   DiffViewer = undefined
 }

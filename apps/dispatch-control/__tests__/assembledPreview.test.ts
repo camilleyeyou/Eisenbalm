@@ -16,10 +16,10 @@ let VARIABLE_SAMPLES: Record<string, string> | undefined
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('../app/(dashboard)/prompts/_components/AssembledPreview')
+  const mod = require('../app/(dashboard)/prompt-lab/_components/AssembledPreview')
   assembleWithSamples = mod.assembleWithSamples
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const reg = require('../app/(dashboard)/prompts/_components/VariableRegistry')
+  const reg = require('../app/(dashboard)/prompt-lab/_components/VariableRegistry')
   VARIABLE_SAMPLES = reg.VARIABLE_SAMPLES
 } catch {
   assembleWithSamples = undefined
