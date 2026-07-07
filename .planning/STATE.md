@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 30-02-route-skeleton-redirects-PLAN.md
-last_updated: "2026-07-07T01:22:06.541Z"
+stopped_at: Completed 30-07-how-to-use-screen-PLAN.md
+last_updated: "2026-07-07T01:35:44.770Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 30 (Foundation — Design System, Chrome & Awaiting-You Inbox) — EXECUTING
-Plan: 5 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -212,6 +212,8 @@ Plan: 5 of 8
 | Phase 30 P04 | 20min | 2 tasks | 3 files |
 | Phase 30 P03 | 10min | 2 tasks | 14 files |
 | Phase 30 P02 | 10min | 3 tasks | 16 files |
+| Phase 30 P07 | ~15min | 1 tasks | 2 files |
+| Phase 30 P05 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -546,6 +548,8 @@ Recent decisions affecting current work:
 - [Phase 30]: Masthead spend/lock chips read pipeline_config keys monthly_cap_usd/auto_publish (same canonical keys BudgetCapsPanel.tsx uses), not the pipeline-side env var
 - [Phase 30]: 30-03: Extended the token-swap beyond neutral/white/black to red/green/yellow/amber status colors (vermilion/green/marigold tokens) across Config/Finance/Settings per the interfaces-block color-semantics mapping; rounded-md/lg -> rounded-none, rounded-full left untouched on badges/progress bars.
 - [Phase 30]: Route skeleton (30-02): tab shell for run-monitor built as layout.tsx (not page.tsx) so Runs/Graph tabs render on both sub-routes; lib/nav.ts left for Plan 30-05 to rewire since old /graph,/runs,/prompts links now permanently redirect via next.config.ts
+- [Phase 30]: Removed duplicate Clerk UserButton from AppSidebar footer — sign-out now lives solely in the Masthead (Plan 30-04)
+- [Phase 30-07]: House-rule dark bands reuse --color-masthead-text/-muted (already used by Masthead.tsx) rather than a new token
 
 ### Pending Todos
 
@@ -630,6 +634,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T01:22:06.529Z
-Stopped at: Completed 30-02-route-skeleton-redirects-PLAN.md
+Last session: 2026-07-07T01:35:35.547Z
+Stopped at: Completed 30-07-how-to-use-screen-PLAN.md
 Resume file: None
