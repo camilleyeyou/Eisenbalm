@@ -1,8 +1,8 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
+milestone: v3.0
+milestone_name: Dispatch Control v2 (Editorial Operator Console)
+status: In progress
 stopped_at: Completed 30-08-pipeline-url-prod-fix-PLAN.md
 last_updated: "2026-07-07T09:11:55.774Z"
 progress:
