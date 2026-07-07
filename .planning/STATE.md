@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to plan
-stopped_at: Completed 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md
-last_updated: "2026-07-07T17:57:51.291Z"
+stopped_at: Phase 32 context gathered
+last_updated: "2026-07-07T20:19:08.464Z"
 progress:
   total_phases: 39
   completed_phases: 30
@@ -653,6 +653,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T17:48:09.872Z
-Stopped at: Completed 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md
-Resume file: None
+Last session: 2026-07-07T20:19:08.450Z
+Stopped at: Phase 32 context gathered
+Resume file: .planning/phases/32-native-galley-read-only-span-resolver/32-CONTEXT.md
