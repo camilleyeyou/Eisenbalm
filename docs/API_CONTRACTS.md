@@ -2702,6 +2702,27 @@ sibling-section state before `write_issue_draft`) is deferred to a later phase.
 
 ---
 
+## Phase 32 — Native Galley Read-Only Span Resolver
+
+### §32.1 — `qaCorrections.blockIndexHint` (GLY-02, D-11)
+
+Convex `qaCorrections` (schema + `insert` mutation, §4.5) gains an additive optional
+field: `blockIndexHint: v.optional(v.number())`. QA agent runs compute it post-hoc in
+`agents/qa/__init__.py::qa()` as the ordinal (0-based) of the ONE block within the
+section's raw Portable Text body whose joined text contains the finding's `quotedSpan`
+as a substring. When zero or more-than-one block matches, no hint is recorded (the key
+is simply omitted from the mutation payload) — QA never guesses.
+
+`blockIndexHint` is a **disambiguating hint only, never authoritative**: the galley's
+client-side span resolver (Phase 32 frontend work) always falls back to a full
+unique-substring search across all blocks in the section when the hint is absent,
+stale (points past the block list), or the block at that index doesn't actually
+contain `quotedSpan`. Legacy findings recorded before Phase 32 have no `blockIndexHint`
+and remain fully valid — the resolver treats a missing hint identically to a
+stale one.
+
+---
+
 *All Phase 31 changes are additive. No `drafts.` prefix is introduced anywhere in this
 codebase — every content-patch endpoint operates on the plain `issue-{n}` document ID.*
 

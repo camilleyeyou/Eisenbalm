@@ -37,6 +37,7 @@ export const insert = mutation({
     )),
     quotedSpan: v.optional(v.string()),
     suggestedFix: v.optional(v.string()),
+    blockIndexHint: v.optional(v.number()),   // Phase 32 D-11: resolver hint, never authoritative
     // Phase 29 D-1: NOT an auth guard. `insert` is an INTENTIONAL public
     // exception (GAM-05) — apps/web/components/issue/GameSlot.tsx (a
     // 'use client' component on every issue page, no Clerk installed) calls

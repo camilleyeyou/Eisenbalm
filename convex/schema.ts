@@ -92,6 +92,7 @@ export default defineSchema({
     )),
     quotedSpan: v.optional(v.string()),       // exact offending text
     suggestedFix: v.optional(v.string()),     // concrete alternative
+    blockIndexHint: v.optional(v.number()),   // Phase 32 D-11: QA-recorded block ordinal within the section body; a resolver hint, never authoritative
     timestamp: v.number(),
   })
     .index('by_runId', ['runId'])

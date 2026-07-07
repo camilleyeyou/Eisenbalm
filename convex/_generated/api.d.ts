@@ -23,6 +23,7 @@ import type * as emailSends from "../emailSends.js";
 import type * as emailSubscribers from "../emailSubscribers.js";
 import type * as finance from "../finance.js";
 import type * as financeActions from "../financeActions.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as notificationActions from "../notificationActions.js";
 import type * as notifications from "../notifications.js";
 import type * as payouts from "../payouts.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   emailSubscribers: typeof emailSubscribers;
   finance: typeof finance;
   financeActions: typeof financeActions;
+  "lib/auth": typeof lib_auth;
   notificationActions: typeof notificationActions;
   notifications: typeof notifications;
   payouts: typeof payouts;
