@@ -24,7 +24,11 @@ from fastapi import HTTPException
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.api.control import _emit_audit
-from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
+from eisenbalm_pipeline.lib.sanity_client import (
+    get_issue_draft,
+    patch_issue_field,
+    upload_asset,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -173,10 +177,87 @@ async def test_structural_floor_warns_not_blocks():
     with warnings — it never 4xxs."""
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_upload_asset_patches_reference():
-    """POST /issues/{run_id}/assets/{slot} uploads to Sanity assets, then
-    patches a {_type, asset:{_ref}} reference onto the slot field."""
+def _make_asset_handler(captured: dict, *, asset_id: str = "image-abc"):
+    """Mock handler that answers assets/images POST, mutate POST, and
+    query POST for upload_asset()'s three-call sequence."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if "/assets/" in path:
+            captured.setdefault("asset_calls", []).append(path)
+            return httpx.Response(
+                200,
+                json={
+                    "document": {
+                        "_id": asset_id,
+                        "url": f"https://cdn.sanity.io/images/proj/production/{asset_id}.png",
+                    }
+                },
+            )
+        if path.endswith("/data/mutate/production"):
+            captured["mutate_body"] = json.loads(request.content.decode())
+            return httpx.Response(200, json={"transactionId": "tx-1", "results": []})
+        if path.endswith("/data/query/production"):
+            return httpx.Response(200, json={"result": {"_rev": "rev-2"}})
+        return httpx.Response(404)
+
+    return handler
+
+
+async def test_upload_asset_patches_reference(monkeypatch: pytest.MonkeyPatch):
+    """upload_asset() POSTs bytes to /assets/images/{dataset} for
+    asset_kind="image", then patch_issue_field writes
+    {_type:'image', asset:{_type:'reference',_ref:<assetId>}} onto the slot
+    field; returns {assetUrl, assetId, revisionId}. asset_kind="file" hits
+    /assets/files/{dataset}."""
+    _set_sanity_env(monkeypatch)
+    captured: dict[str, Any] = {}
+
+    async with _mock_http(_make_asset_handler(captured)) as http:
+        result = await upload_asset(
+            http,
+            issue_id="issue-42",
+            field_path="game.storyboard",
+            file_bytes=b"fake-png-bytes",
+            filename="storyboard.png",
+            content_type="image/png",
+            asset_kind="image",
+            if_revision_id="rev-1",
+        )
+
+    assert captured["asset_calls"][0].endswith("/assets/images/production")
+    assert result == {
+        "assetUrl": "https://cdn.sanity.io/images/proj/production/image-abc.png",
+        "assetId": "image-abc",
+        "revisionId": "rev-2",
+    }
+    patch = captured["mutate_body"]["mutations"][0]["patch"]
+    assert patch["id"] == "issue-42"
+    assert patch["ifRevisionID"] == "rev-1"
+    assert patch["set"]["game.storyboard"] == {
+        "_type": "image",
+        "asset": {"_type": "reference", "_ref": "image-abc"},
+    }
+
+    # asset_kind="file" targets /assets/files/{dataset} with _type='file'
+    captured2: dict[str, Any] = {}
+    async with _mock_http(
+        _make_asset_handler(captured2, asset_id="file-xyz")
+    ) as http:
+        result2 = await upload_asset(
+            http,
+            issue_id="issue-42",
+            field_path="bonus.storyboard0",
+            file_bytes=b"fake-audio-bytes",
+            filename="jingle.mp3",
+            content_type="audio/mpeg",
+            asset_kind="file",
+            if_revision_id="rev-1",
+        )
+    assert captured2["asset_calls"][0].endswith("/assets/files/production")
+    assert result2["assetId"] == "file-xyz"
+    patch2 = captured2["mutate_body"]["mutations"][0]["patch"]
+    assert patch2["set"]["bonus.storyboard0"]["_type"] == "file"
 
 
 @pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
@@ -185,10 +266,46 @@ async def test_audit_row_truncated_snapshot():
     "...[truncated]" suffix before being written to auditLog:record."""
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_asset_overwrite_audit_swap():
-    """Overwriting an existing asset slot leaves the prior Sanity asset
-    document in place (no delete) — D-12."""
+async def test_asset_overwrite_audit_swap(monkeypatch: pytest.MonkeyPatch):
+    """A second upload_asset() over the same slot returns a new assetId
+    without error — overwrite semantics (old asset left in Sanity). The
+    audit-log swap ROW is asserted at the endpoint layer in Plan 31-03; here
+    we just assert the helper succeeds twice."""
+    _set_sanity_env(monkeypatch)
+
+    captured1: dict[str, Any] = {}
+    async with _mock_http(
+        _make_asset_handler(captured1, asset_id="image-first")
+    ) as http:
+        first = await upload_asset(
+            http,
+            issue_id="issue-42",
+            field_path="game.storyboard",
+            file_bytes=b"first-bytes",
+            filename="storyboard.png",
+            content_type="image/png",
+            asset_kind="image",
+            if_revision_id="rev-1",
+        )
+
+    captured2: dict[str, Any] = {}
+    async with _mock_http(
+        _make_asset_handler(captured2, asset_id="image-second")
+    ) as http:
+        second = await upload_asset(
+            http,
+            issue_id="issue-42",
+            field_path="game.storyboard",
+            file_bytes=b"second-bytes",
+            filename="storyboard.png",
+            content_type="image/png",
+            asset_kind="image",
+            if_revision_id="rev-2",
+        )
+
+    assert first["assetId"] == "image-first"
+    assert second["assetId"] == "image-second"
+    assert first["assetId"] != second["assetId"]
 
 
 @pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")

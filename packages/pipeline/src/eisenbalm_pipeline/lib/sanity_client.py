@@ -608,3 +608,44 @@ async def get_issue_draft(http: AsyncClient, issue_id: str) -> dict:
         "bonusType": doc.get("bonusType"),
         "conversation": doc.get("conversation") or [],
     }
+
+
+async def upload_asset(
+    http: AsyncClient,
+    *,
+    issue_id: str,
+    field_path: str,
+    file_bytes: bytes,
+    filename: str,
+    content_type: str,
+    asset_kind: str,  # "file" (audio) | "image" (storyboard)
+    if_revision_id: str,
+) -> dict:
+    """Upload raw binary to Sanity's assets API, then scoped-patch a
+    reference onto ``field_path``. Returns
+    ``{assetUrl, assetId, revisionId}``. See §31.6. Overwriting an existing
+    slot leaves the prior Sanity asset document in place (no delete) — D-12;
+    the audit-log swap record is handled at the endpoint layer (Plan 31-03).
+    """
+    endpoint = "files" if asset_kind == "file" else "images"
+    r = await http.post(
+        f"/{API_VERSION}/assets/{endpoint}/{_dataset()}",
+        params={"filename": filename},
+        content=file_bytes,
+        headers={
+            "Authorization": f"Bearer {os.environ['SANITY_API_TOKEN']}",
+            "Content-Type": content_type,
+        },
+    )
+    r.raise_for_status()
+    doc = r.json()["document"]
+    asset_id, asset_url = doc["_id"], doc["url"]
+    ref_type = "file" if asset_kind == "file" else "image"
+    new_rev = await patch_issue_field(
+        http,
+        issue_id=issue_id,
+        field_path=field_path,
+        value={"_type": ref_type, "asset": {"_type": "reference", "_ref": asset_id}},
+        if_revision_id=if_revision_id,
+    )
+    return {"assetUrl": asset_url, "assetId": asset_id, "revisionId": new_rev}
