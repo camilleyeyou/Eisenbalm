@@ -276,7 +276,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **CHR-01**: Operator sees the 1c design system on every console screen — tokens (ink `#17140e`, cobalt `#253ad4`, vermilion `#e8471d`, marigold `#f2b01e`, green `#148a52`), Newsreader/Lora/Space Grotesk/IBM Plex Mono via next/font, hard-edged anti-SaaS surfaces.
 - [x] **CHR-02**: Persistent masthead on every screen shows current issue number, pipeline state chip, month-to-date spend vs cap, and the auto-publish lock chip.
 - [x] **CHR-03**: Left nav is workflow-ordered (Review Desk · Signal Desk · Run Monitor · Voice Pass / Prompt Lab · Eval Center · Registry) with a "How to use" screen (weekly loop, color legend, house rules).
-- [ ] **CHR-04**: Operator sees an Awaiting-you inbox in the masthead aggregating everything blocked on a human (awaiting-review runs, Gate 1 interrupts, unresolved blockers, failed runs); each item routes to the owning screen.
+- [x] **CHR-04**: Operator sees an Awaiting-you inbox in the masthead aggregating everything blocked on a human (awaiting-review runs, Gate 1 interrupts, unresolved blockers, failed runs); each item routes to the owning screen.
 - [ ] **CHR-05**: The deployed dashboard reaches the pipeline API (`NEXT_PUBLIC_PIPELINE_URL` configured; existing test-run panel functional in production).
 
 ### Galley & Review Desk (GLY)

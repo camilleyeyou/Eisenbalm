@@ -427,7 +427,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
-| 30. Foundation — Design System, Chrome & Inbox | 6/8 | In Progress|  |
+| 30. Foundation — Design System, Chrome & Inbox | 7/8 | In Progress|  |
 | 31. Content-Patch Endpoints + Full Editing | 0/? | Not started | - |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
@@ -673,7 +673,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 30-03-screen-token-swap-PLAN.md — Literal neutral-*→1c token swap across Config/Finance/Settings (CHR-01, Pitfall 1)
 - [x] 30-04-masthead-PLAN.md — Persistent 52px ink masthead: issue#/state/spend-vs-cap/lock chips from live Convex (CHR-02)
 - [x] 30-05-grouped-nav-sidebar-PLAN.md — 3-group workflow-ordered nav + pinned How-to-use, 1c sidebar, nav.test rewrite (CHR-03)
-- [ ] 30-06-awaiting-you-inbox-PLAN.md — Pure-derivation Awaiting-you dropdown, blockers-first, routes to working screens (CHR-04)
+- [x] 30-06-awaiting-you-inbox-PLAN.md — Pure-derivation Awaiting-you dropdown, blockers-first, routes to working screens (CHR-04)
 - [x] 30-07-how-to-use-screen-PLAN.md — How-to-use content: weekly loop + color legend + house rules (CHR-03, D-13)
 - [ ] 30-08-pipeline-url-prod-fix-PLAN.md — CHR-05 human checkpoint: Vercel NEXT_PUBLIC_PIPELINE_URL + Railway CORS verified live
 **UI hint**: yes
