@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 31-03-content-patch-endpoint-router-PLAN.md
-last_updated: "2026-07-07T11:07:05.606Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 31-05-editor-components-and-wiring-PLAN.md
+last_updated: "2026-07-07T11:14:20.740Z"
 progress:
   total_phases: 39
-  completed_phases: 29
+  completed_phases: 30
   total_plans: 196
-  completed_plans: 193
+  completed_plans: 194
 ---
 
 # Project State
@@ -220,6 +220,7 @@ Plan: 5 of 5
 | Phase 31 P04 | 25min | 3 tasks | 6 files |
 | Phase 31 P02 | 17min | 3 tasks | 2 files |
 | Phase 31 P03 | 25min | 3 tasks | 3 files |
+| Phase 31 P05 | 37min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -562,6 +563,8 @@ Recent decisions affecting current work:
 - [Phase 31]: 31-02: patch_issue_field() is the scoped-write primitive every future content-patch endpoint composes over (ifRevisionID top-level guard -> structured 409); get_issue_draft() reverses Portable Text back to editor rows via pt_to_blocks with a lossy flag; upload_asset() generalizes upload_pdf_to_issue to any file/image slot without touching the PDF path
 - [Phase 31]: 31-02: a git-index race with a concurrent parallel-executor commit swept Task 1's staged changes into a Plan 31-04 commit (f6c5bf1) rather than a 31-02-labeled one; content verified present/correct via git show, no functional impact
 - [Phase 31]: content.py's audit action names taken verbatim from API_CONTRACTS.md §31.8 (not the plan's shorthand); a new _patch_fields() multi-field-in-one-mutation primitive was added for the variant-shaped /bonus route so sibling bonus fields (sunoAudioUrl, storyboards) are never clobbered
+- [Phase 31]: Section Save chains patchHeadline->patchSection->(patchPdfDataPoints) threading the returned revisionId across calls, since the document revision changes with every single-field patch
+- [Phase 31]: Awaiting-you inbox re-point scoped to only the Awaiting-review item (routes to /review-desk/[runId]); QA-blocker and claim-sign-off items keep their existing review-page route
 
 ### Pending Todos
 
@@ -646,6 +649,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T11:07:05.594Z
-Stopped at: Completed 31-03-content-patch-endpoint-router-PLAN.md
+Last session: 2026-07-07T11:14:20.729Z
+Stopped at: Completed 31-05-editor-components-and-wiring-PLAN.md
 Resume file: None
