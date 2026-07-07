@@ -36,7 +36,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 - [x] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix (completed 2026-07-07)
 - [x] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path (completed 2026-07-07)
-- [ ] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe
+- [x] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe (completed 2026-07-07)
 - [ ] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail
 - [ ] **Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement** - Server-enforced "Facts cleared" + "Sounds human" sign-offs, webhook-level re-validation closing the Studio status-flip bypass, Studio retired to read-only fallback
 - [ ] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist
@@ -431,7 +431,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
-| 32. Native Galley (read-only) + Span-Resolver | 6/7 | In Progress|  |
+| 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete   | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
@@ -714,7 +714,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 32-04-render-helpers-PLAN.md — Wave 1: syntheticPortableText.ts (markDef injection) + googleFontLoader.ts (whitelist-validated) + galleyGameValidator.ts (parity duplicate) (GLY-01)
 - [x] 32-05-annotation-primitives-PLAN.md — Wave 2: AnnotationMark.tsx (severity underline + read-only popover) + UnresolvedFindingCard.tsx + galley CSS (GLY-02)
 - [x] 32-06-galley-assembly-PLAN.md — Wave 3: GalleryGameSlot + GallerySection + Galley (all 8 sections, live findings, resolver, theme fonts) (GLY-01)
-- [ ] 32-07-chip-counts-and-page-wiring-PLAN.md — Wave 4: SectionChipList count badges + jump-nav + page.tsx galley-default view + edit affordance + iframe fallback (GLY-05, GLY-01)
+- [x] 32-07-chip-counts-and-page-wiring-PLAN.md — Wave 4: SectionChipList count badges + jump-nav + page.tsx galley-default view + edit affordance + iframe fallback (GLY-05, GLY-01)
 **UI hint**: yes
 
 ### Phase 33: Accept-Fix Wiring + Decision Rail

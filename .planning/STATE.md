@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 32-06-galley-assembly-PLAN.md
-last_updated: "2026-07-07T22:16:14.887Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 32-07-chip-counts-and-page-wiring-PLAN.md
+last_updated: "2026-07-07T22:26:54.809Z"
 progress:
   total_phases: 39
-  completed_phases: 30
+  completed_phases: 31
   total_plans: 204
-  completed_plans: 201
+  completed_plans: 202
 ---
 
 # Project State
@@ -228,6 +228,7 @@ Plan: 7 of 7
 | Phase 32 P04 | 6min | 3 tasks | 3 files |
 | Phase 32 P05 | 12min | 3 tasks | 3 files |
 | Phase 32-native-galley-read-only-span-resolver P06 | 27min | 3 tasks | 3 files |
+| Phase 32 P07 | 9min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -582,6 +583,8 @@ Recent decisions affecting current work:
 - [Phase 32]: 32-04: duplicated security modules (googleFontLoader.ts, galleyGameValidator.ts) avoid the literal substring 'apps/web' in source/comments to satisfy each module's own decoupling acceptance grep
 - [Phase 32]: AnnotationMarkDef declared locally in AnnotationMark.tsx (exported) rather than imported from syntheticPortableText.ts, per plan instruction; Plan 32-06 reconciles the two independently-declared shapes at composition
 - [Phase 32-native-galley-read-only-span-resolver]: Galley.tsx assembled: renders all 8 D-05 reader sections natively from draft-read data, resolves live open QA findings per-section via resolveSectionFindings + qaSectionToGalleyId, sandboxes the game in an iframe, and applies theme fonts/accent - Galley.test.tsx green (5/5), GLY-01 satisfied
+- [Phase 32]: Chip counts for sections without draft blocks (game/podcast/theme/deliberation, non-specAd bonus) tally by severity only with unresolved=0 -- no anchor concept there
+- [Phase 32]: Edit affordance is a header-level 'Edit {label}' button, not an inline per-section control inside Galley.tsx (out of this plan's files_modified scope)
 
 ### Pending Todos
 
@@ -666,6 +669,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T22:16:14.875Z
-Stopped at: Completed 32-06-galley-assembly-PLAN.md
+Last session: 2026-07-07T22:26:54.798Z
+Stopped at: Completed 32-07-chip-counts-and-page-wiring-PLAN.md
 Resume file: None

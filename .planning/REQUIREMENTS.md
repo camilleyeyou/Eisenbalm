@@ -284,7 +284,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **GLY-02**: QA findings render as inline severity-colored span annotations, resolved by quotedSpan text-match with a block-index hint; anchors that no longer resolve are surfaced as orphaned, never silently dropped.
 - [ ] **GLY-03**: Clicking an annotation opens a popover showing axis, severity, reason, and suggested fix, with Accept fix / Edit inline / Dismiss actions.
 - [ ] **GLY-04**: The decision rail is blockers-first: unresolved error-severity findings gate Publish; rail shows the editor memo, hook card, and a verification summary with affirmative states ("checked Nm ago" — never blank).
-- [ ] **GLY-05**: Section-status chips show per-section finding counts and act as jump navigation.
+- [x] **GLY-05**: Section-status chips show per-section finding counts and act as jump navigation.
 
 ### Editing & Write Boundary (EDT)
 - [x] **EDT-01**: Operator can edit any section's prose per-section from the console (structured block-list editing, not inline WYSIWYG); saves write to the Sanity draft via a pipeline content-patch endpoint using scoped patches.
