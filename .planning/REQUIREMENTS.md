@@ -656,10 +656,10 @@ Added 2026-07-06 during v3.0 roadmap creation. All 43 v3.0 requirements mapped t
 | CHR-03 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
 | CHR-04 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
 | CHR-05 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
-| EDT-01 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
-| EDT-02 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
-| EDT-03 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
-| EDT-05 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
+| EDT-01 | Phase 31: Content-Patch Endpoints + Full Editing | Complete |
+| EDT-02 | Phase 31: Content-Patch Endpoints + Full Editing | Complete |
+| EDT-03 | Phase 31: Content-Patch Endpoints + Full Editing | Complete |
+| EDT-05 | Phase 31: Content-Patch Endpoints + Full Editing | Complete |
 | GLY-01 | Phase 32: Native Galley (read-only) + Span-Resolver | Planned |
 | GLY-02 | Phase 32: Native Galley (read-only) + Span-Resolver | Planned |
 | GLY-05 | Phase 32: Native Galley (read-only) + Span-Resolver | Planned |
