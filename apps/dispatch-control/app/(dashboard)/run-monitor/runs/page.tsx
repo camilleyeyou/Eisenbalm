@@ -5,7 +5,7 @@
  *   1. BudgetAlertBanner — amber warning when MTD spend crosses alert threshold
  *   2. RunControlBar     — page heading + Trigger Run button (two-step inline confirm)
  *   3. CostRollup        — weekly/monthly aggregate spend (collapsible)
- *   4. RunsTable         — full run history, newest-first, each row links to /runs/{runId}
+ *   4. RunsTable         — full run history, newest-first, each row links to /run-monitor/runs/{runId}
  *
  * force-dynamic: Convex useQuery subscriptions require a live ConvexProvider
  * context — static prerendering (no Convex URL in CI) would throw without this.

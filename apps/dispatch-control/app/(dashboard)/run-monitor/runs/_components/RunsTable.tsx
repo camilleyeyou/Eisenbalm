@@ -111,7 +111,7 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   <Link
-                    href={`/runs/${run.runId}`}
+                    href={`/run-monitor/runs/${run.runId}`}
                     className="text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium"
                   >
                     View →

@@ -7,7 +7,7 @@
  * registry already enumerates every editable surface — system-prompt agents,
  * `*_user` templates, section-guidance keys, `rubric`, and `voice_constraints`.
  */
-import { PIPELINE_NODES } from '../../graph/_components/pipelineTopology'
+import { PIPELINE_NODES } from '../../run-monitor/graph/_components/pipelineTopology'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
 
 /**

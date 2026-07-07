@@ -72,7 +72,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
           Run <code className="font-mono text-neutral-700">{runId}</code> not found.
         </p>
         <Link
-          href="/runs"
+          href="/run-monitor/runs"
           className="mt-4 inline-block text-sm text-blue-600 hover:underline"
         >
           ← Back to Runs
@@ -95,7 +95,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
     <div className="space-y-6">
       {/* Back link */}
       <Link
-        href="/runs"
+        href="/run-monitor/runs"
         className="inline-block text-sm text-blue-600 hover:text-blue-800 hover:underline"
       >
         ← Back to all runs

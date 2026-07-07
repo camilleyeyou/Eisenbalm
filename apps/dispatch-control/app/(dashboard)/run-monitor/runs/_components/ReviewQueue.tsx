@@ -92,7 +92,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
 
               {/* Right: Review link */}
               <Link
-                href={`/runs/${encodeURIComponent(run.runId)}/review`}
+                href={`/run-monitor/runs/${encodeURIComponent(run.runId)}/review`}
                 className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 transition-colors"
               >
                 Review →

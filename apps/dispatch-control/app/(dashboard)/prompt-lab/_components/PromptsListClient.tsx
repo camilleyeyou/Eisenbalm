@@ -184,7 +184,7 @@ export default function PromptsListClient({
                 return (
                   <li key={key}>
                     <Link
-                      href={`/prompts/${encodeURIComponent(key)}`}
+                      href={`/prompt-lab/${encodeURIComponent(key)}`}
                       className="flex min-h-[44px] flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white px-4 py-3 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
                     >
                       <div className="space-y-0.5">
