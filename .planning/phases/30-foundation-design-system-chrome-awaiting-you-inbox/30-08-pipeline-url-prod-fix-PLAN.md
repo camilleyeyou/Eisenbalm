@@ -69,7 +69,7 @@ Output: Vercel + Railway env vars set (human); a verified live test-run; a dated
     4. Confirm in the browser devtools console: NO CORS error and NO "NEXT_PUBLIC_PIPELINE_URL is not set" thrown error; the test-run returns output + cost.
   </how-to-verify>
   <verify>
-    <automated>MISSING — production verification is human-only (Vercel env + Railway CORS are prod-only, not automatable per RESEARCH Environment Availability)</automated>
+    <automated>N/A — manual-only, no automated equivalent (see Manual-Only Verifications). Production verification is human-only: Vercel env + Railway CORS are prod-only, not automatable per RESEARCH Environment Availability.</automated>
   </verify>
   <acceptance_criteria>
     - Andrew confirms the deployed test-run panel returns output with no CORS error and no unset-URL error

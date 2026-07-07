@@ -68,7 +68,7 @@ Output: `Masthead.tsx` wired to existing Convex queries; a rewritten `(dashboard
     - convex/pipelineConfig.ts (getAll — key/value rows)
     - convex/pipelineRuns.ts (byRunId — issueNumber source)
     - apps/dispatch-control/components/AppSidebar.tsx (existing UserButton usage to reuse)
-    - apps/dispatch-control/__tests__/costRollup.test.ts (component-test + convex-mock precedent)
+    - apps/dispatch-control/__tests__/runControl.test.tsx (component-test + convex/react useQuery mocking precedent)
   </read_first>
   <files>apps/dispatch-control/components/Masthead.tsx, apps/dispatch-control/__tests__/Masthead.test.tsx</files>
   <behavior>
@@ -88,7 +88,7 @@ Output: `Masthead.tsx` wired to existing Convex queries; a rewritten `(dashboard
     - Auto-publish lock chip: `Auto-publish OFF` (or ON) — OFF in `--color-green`-tinted text, ON in `--color-vermilion` (the friction/danger state).
     - Awaiting-you trigger: a `<button>` styled per spec (Space Grotesk 600 10.5px uppercase `tracking-[.04em]`, `bg-[color:var(--color-vermilion)] text-[color:var(--color-masthead-text)] px-[12px] py-[5px] rounded-[2px] cursor-pointer`), pushed to the right (`ml-auto`). For THIS plan it is a static trigger — Plan 30-06 wires the dropdown. Leave a clear insertion point (e.g. render `{/* AwaitingYouInbox mounts here in 30-06 */}` and export the trigger so 30-06 can attach state).
     - Sign-out: mount the Clerk `<UserButton />` (import from `@clerk/nextjs`) at the far right after the Awaiting-you trigger.
-    Author `__tests__/Masthead.test.tsx` per the behavior block, mocking `convex/react`'s `useQuery` (mirror the costRollup.test.ts mock pattern) and Clerk's UserButton.
+    Author `__tests__/Masthead.test.tsx` per the behavior block, mocking `convex/react`'s `useQuery` (mirror the runControl.test.tsx mock pattern) and Clerk's UserButton.
   </action>
   <verify>
     <automated>pnpm --filter dispatch-control test -- --run Masthead</automated>

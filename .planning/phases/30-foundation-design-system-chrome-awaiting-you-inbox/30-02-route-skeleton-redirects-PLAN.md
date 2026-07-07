@@ -118,7 +118,7 @@ Output: 4 placeholder pages + a how-to-use stub + a run-monitor tab shell + prom
     - `git mv "app/(dashboard)/runs" "app/(dashboard)/run-monitor/runs"`
     - `git mv "app/(dashboard)/prompts" "app/(dashboard)/prompt-lab"`
     Create `app/(dashboard)/run-monitor/page.tsx` as a 1c tab shell (Client Component using `usePathname()`): two tab links — "Runs" → `/run-monitor/runs`, "Graph" → `/run-monitor/graph` — styled with the active tab in cobalt underline (`border-b-2 border-[color:var(--color-cobalt)]`); the shell `redirect('/run-monitor/runs')` on the bare `/run-monitor` path is acceptable (Runs is the default view, D-05). Tab mechanics are Claude's discretion — keep it minimal.
-    Update every internal self-referential link that moved: any href/redirect string `'/runs'`, `/runs/${...}`, `/runs/{runId}/review`, `'/graph'`, `'/prompts'`, `/prompts/${agentKey}` inside the moved trees AND anywhere in `apps/dispatch-control/app` / `apps/dispatch-control/components` that points at them — repoint to the `/run-monitor/runs`, `/run-monitor/graph`, `/prompt-lab` prefixes. Grep the whole app first: `grep -rn "'/runs\|/runs/\|'/graph'\|'/prompts\|/prompts/" apps/dispatch-control/app apps/dispatch-control/components`.
+    Update every internal self-referential link that moved: any href/redirect string in BOTH quote styles (`'/runs'` and `href="/runs"`) and with/without a trailing slash — `'/runs'`, `/runs/${...}`, `/runs/{runId}/review`, `'/graph'`, `'/prompts'`, `/prompts/${agentKey}` — inside the moved trees AND anywhere in `apps/dispatch-control/app` / `apps/dispatch-control/components` that points at them — repoint to the `/run-monitor/runs`, `/run-monitor/graph`, `/prompt-lab` prefixes. In particular, `runs/_components/RunDetail.tsx` has bare double-quoted `href="/runs"` back-links (lines ~75 and ~98) that MUST be repointed to `href="/run-monitor/runs"`. Grep the whole app first, covering both quote styles: `grep -rn "['\"]/runs\|['\"]/graph\|['\"]/prompts" apps/dispatch-control/app apps/dispatch-control/components`.
   </action>
   <verify>
     <automated>pnpm --filter dispatch-control build</automated>
@@ -127,7 +127,7 @@ Output: 4 placeholder pages + a how-to-use stub + a run-monitor tab shell + prom
     - `app/(dashboard)/run-monitor/page.tsx`, `app/(dashboard)/run-monitor/runs/page.tsx`, `app/(dashboard)/run-monitor/graph/page.tsx` all exist
     - `app/(dashboard)/prompt-lab/page.tsx` and `app/(dashboard)/prompt-lab/[agentKey]/` exist
     - old dirs `app/(dashboard)/graph`, `app/(dashboard)/runs`, `app/(dashboard)/prompts` no longer exist
-    - `grep -rn "\"/runs/\|'/runs'\|'/graph'\|'/prompts" apps/dispatch-control/app apps/dispatch-control/components` returns no stale internal links to the old prefixes (all repointed)
+    - `grep -rn "href=\"/runs\|href=\"/graph\|href=\"/prompts\|'/runs'\|'/runs/\|'/graph'\|'/prompts'\|'/prompts/\|\"/runs/\|\"/graph/\|\"/prompts/" apps/dispatch-control/app apps/dispatch-control/components` returns no stale internal links to the old prefixes — covers both quote styles (single and double) and with/without trailing slash, including RunDetail.tsx's `href="/runs"` back-links (all repointed)
     - `pnpm --filter dispatch-control build` exits 0
   </acceptance_criteria>
   <done>Runs + Graph live under /run-monitor as tabs; prompts renamed to prompt-lab; all internal links repointed; build green.</done>
