@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 31-04-frontend-foundation-client-and-route-shell-PLAN.md
-last_updated: "2026-07-07T10:46:05.637Z"
+stopped_at: Completed 31-02-sanity-client-patch-helpers-PLAN.md
+last_updated: "2026-07-07T10:50:26.078Z"
 progress:
   total_phases: 39
   completed_phases: 29
   total_plans: 196
-  completed_plans: 191
+  completed_plans: 192
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 31 (Content-Patch Endpoints + Full Editing) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -218,6 +218,7 @@ Plan: 3 of 5
 | Phase 30 P08 | 5min | 2 tasks | 1 files |
 | Phase 31 P01 | 12min | 3 tasks | 6 files |
 | Phase 31 P04 | 25min | 3 tasks | 6 files |
+| Phase 31 P02 | 17min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -557,6 +558,8 @@ Recent decisions affecting current work:
 - [Phase 30]: CHR-05 closed: NEXT_PUBLIC_PIPELINE_URL (Vercel) and DASHBOARD_ALLOWED_ORIGINS (Railway) set in production, verified live 2026-07-07 via a successful Prompt Lab test-run against the advocate agent fixture (real cost + voice-score output, no CORS/unset-URL error).
 - [Phase 31]: Theme validator canonicalizes on the 9-font apps/web/lib/theme.ts whitelist (render-time gate), not the drifted 17-entry agents/design/font_whitelist.py list; structural-floor warn-only counter kept fully separate from the existing raise-based agent Pydantic validators
 - [Phase 31]: Built review-desk/[runId]/page.tsx as a Client Component (not the server-delegates-to-client-view split) because getDraft/SectionChipList/PreviewIframe must coexist with live useAuth().getToken() state; added a small preview-url Route Handler to keep PREVIEW_SECRET/node:crypto server-only
+- [Phase 31]: 31-02: patch_issue_field() is the scoped-write primitive every future content-patch endpoint composes over (ifRevisionID top-level guard -> structured 409); get_issue_draft() reverses Portable Text back to editor rows via pt_to_blocks with a lossy flag; upload_asset() generalizes upload_pdf_to_issue to any file/image slot without touching the PDF path
+- [Phase 31]: 31-02: a git-index race with a concurrent parallel-executor commit swept Task 1's staged changes into a Plan 31-04 commit (f6c5bf1) rather than a 31-02-labeled one; content verified present/correct via git show, no functional impact
 
 ### Pending Todos
 
@@ -641,6 +644,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T10:46:05.625Z
-Stopped at: Completed 31-04-frontend-foundation-client-and-route-shell-PLAN.md
+Last session: 2026-07-07T10:50:26.066Z
+Stopped at: Completed 31-02-sanity-client-patch-helpers-PLAN.md
 Resume file: None
