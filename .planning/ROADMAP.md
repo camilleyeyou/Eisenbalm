@@ -428,7 +428,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
-| 31. Content-Patch Endpoints + Full Editing | 0/? | Not started | - |
+| 31. Content-Patch Endpoints + Full Editing | 0/5 | Not started | - |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
@@ -687,7 +687,12 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   2. Operator can edit structured fields (section headlines, PDF key data points, game embed code, theme values) from the console and see them reflected in the Sanity draft.
   3. Operator can upload a podcast audio file, Suno audio, or storyboard image through the console and see it attached to the draft as a Sanity asset.
   4. A source scan of `apps/dispatch-control` finds zero direct Sanity client writes — every content mutation path calls the pipeline API, never Sanity directly.
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 31-01-contracts-and-shared-foundation-PLAN.md — API_CONTRACTS §31 endpoint family (contract-first) + pt_to_blocks reverse mapper + operator theme validator (9-font canonical) + warn-only structural-floor helper + _emit_audit before/after + Wave-0 pytest scaffold
+- [ ] 31-02-sanity-client-patch-helpers-PLAN.md — patch_issue_field (scoped dotted-path + ifRevisionID→409) + get_issue_draft (PT→rows + lossy) + upload_asset (files/images) with httpx.MockTransport tests
+- [ ] 31-03-content-patch-endpoint-router-PLAN.md — api/content.py Clerk-guarded PATCH/POST/GET family (EDT-01/02/03), D-08 validation split, before/after audit, raw-binary upload, main.py mount
+- [ ] 31-04-frontend-foundation-client-and-route-shell-PLAN.md — contentPatchClient + EDT-05 no-direct-Sanity-write source-scan + Review Desk route shell (auto-focus run + chip list + reused preview iframe)
+- [ ] 31-05-editor-components-and-wiring-PLAN.md — BlockEditor/TurnListEditor/StructuredFieldEditor/AssetUploadSlot + SectionEditorPanel save/dirty/unsaved-nav/409 harness + inbox re-point + strict build gate
 **UI hint**: yes
 
 ### Phase 32: Native Galley (read-only) + Span-Resolver
