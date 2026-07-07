@@ -138,11 +138,17 @@ async def _emit_audit(
     action: str,
     resource_type: str | None = None,
     resource_id: str | None = None,
+    before: str | None = None,
+    after: str | None = None,
 ) -> None:
     """Write one audit_log row via the public auditLog:record Convex mutation.
 
     Non-blocking: if the write fails, logs a warning but does NOT raise
     (audit failure must never block a run trigger).
+
+    Phase 31 (D-09): `before` / `after` are optional truncated snapshot
+    strings (content-patch endpoints pass these; every pre-existing caller
+    omits them, so this extension is purely additive/back-compatible).
     """
     args: dict = {
         "workspace_id": WORKSPACE_ID,
@@ -153,6 +159,10 @@ async def _emit_audit(
         args["resourceType"] = resource_type
     if resource_id is not None:
         args["resourceId"] = resource_id
+    if before is not None:
+        args["before"] = before
+    if after is not None:
+        args["after"] = after
     try:
         await _cc.convex_mutation(http, "auditLog:record", args)
     except Exception:  # noqa: BLE001
