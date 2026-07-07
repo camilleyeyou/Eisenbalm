@@ -147,7 +147,7 @@ Callers pass `value` already-serialized: section-body callers pass `compose_sect
 Add to sanity_client.py:
 ```python
 _DRAFT_GROQ = (
-    '*[_id == $id][0]{ _rev, theme, game, bonus, podcast, '
+    '*[_id == $id][0]{ _rev, theme, game, bonus, bonusType, podcast, '
     'originStory, problemStatement, founderBio, caseStudy, '
     '"conversation": selectionDeliberation.conversation }'
 )
@@ -173,6 +173,7 @@ async def get_issue_draft(http: AsyncClient, issue_id: str) -> dict:
         "game": doc.get("game") or {},
         "bonus": doc.get("bonus") or {},
         "podcast": doc.get("podcast") or {},
+        "bonusType": doc.get("bonusType"),
         "conversation": doc.get("conversation") or [],
     }
 ```
@@ -183,7 +184,7 @@ If no `_groq(http, query, params)` single low-level helper already exists, add a
   </verify>
   <acceptance_criteria>
     - `grep -q "def get_issue_draft" packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py`
-    - Response dict keys include `revisionId`, `sections`, `theme`, `game`, `bonus`, `podcast`, `conversation`
+    - Response dict keys include `revisionId`, `sections`, `theme`, `game`, `bonus`, `bonusType`, `podcast`, `conversation` (`bonusType` is the TOP-LEVEL weeklyIssue field the bonus editor switches on — D-05)
     - Each `sections[name]` dict has keys `headline`, `blocks`, `lossy`
     - test_draft_read_lossy_flag passes (un-skipped) and asserts lossy=True propagates from a markDefs-bearing block
   </acceptance_criteria>

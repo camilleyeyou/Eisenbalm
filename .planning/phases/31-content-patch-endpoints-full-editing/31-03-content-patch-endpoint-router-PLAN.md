@@ -94,6 +94,7 @@ from eisenbalm_pipeline.api.control import _emit_audit, _require_clerk_jwt_contr
     - Test test_theme_patch_validation: PATCH theme with primaryColor="red" or fontDisplay="Spectral" returns 4xx {reason:"validation_failed", fields:[...]}; a valid theme (hex + whitelisted font) returns 200
     - Test test_structural_floor_warns_not_blocks: PATCH a long-read section body with 0 h2 + 0 blockquote returns 200 with a non-empty warnings list (NOT a 4xx)
     - Test test_audit_row_truncated_snapshot: a section save calls _emit_audit with before/after strings truncated to <=2000 chars + "...[truncated]"
+    - Test test_bonus_patch_variant_shaped: PATCH /bonus with variant='jingle' against an issue whose bonusType=='specAd' returns 409 {reason:'wrong_bonus_variant'}; variant matching bonusType patches the right fields (specAd -> bonus.body via compose_section_body; jingle -> bonus.lyrics + bonus.sunoPrompt)
   </behavior>
   <action>
 Create `packages/pipeline/src/eisenbalm_pipeline/api/content.py` with `router = APIRouter()` and a shared helper `async def _resolve_sanity_id(request, run_id) -> tuple` returning `(convex_http, sanity_http, sanity_id, actor)` cloning review.py's lookup: 404 if run missing, 409 `{reason:"no_sanity_issue"}` if `sanityIssueId` unset. Then these endpoints (each `Depends(_require_clerk_jwt_control)`, each writing a before/after audit row via `_emit_audit`):
@@ -112,21 +113,27 @@ Create `packages/pipeline/src/eisenbalm_pipeline/api/content.py` with `router = 
 
 `PATCH /issues/{run_id}/podcast-transcript` (EDT-01) — `{ifRevisionID, transcript}` -> patch `podcast.deliberationTranscript`; audit `content.transcript_patched`.
 
+`PATCH /issues/{run_id}/bonus` (EDT-01/02, variant-shaped per §31.2/D-05) — Pydantic body `{ifRevisionID, variant: Literal['specAd','bigBudget','jingle'], ...}`; validate `variant` matches the issue's stored top-level `bonusType` (else 409 `{reason:"wrong_bonus_variant", message}`); then branch:
+  - `specAd` -> `{blocks: [{type,text}]}` — run `structural_floor_warnings(blocks)` (WARN-only, same as long-reads) and patch `bonus.body` with `compose_section_body(blocks)`
+  - `bigBudget` -> `{headline, body, storyboards: [{caption?, ...structured fields}]}` — patch the structured storyboard text fields (image slots go through the assets endpoint, not this route)
+  - `jingle` -> `{headline, body, lyrics, sunoPrompt}` — patch `bonus.lyrics` + `bonus.sunoPrompt` (+ headline/body strings)
+  Audit `content.bonus_patched` with before/after snapshots; return `{revisionId, warnings}` (warnings only for specAd).
+
 Factor the resolve+audit boilerplate so each endpoint stays ~15-25 lines. Reuse `_truncate` from lib/agent_wrapper.py (inline the 2000-char helper only if an import cycle appears).
   </action>
   <verify>
-    <automated>cd packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py::test_theme_patch_validation tests/test_content_patch_endpoints.py::test_structural_floor_warns_not_blocks tests/test_content_patch_endpoints.py::test_audit_row_truncated_snapshot -q 2>&1 | tail -6</automated>
+    <automated>cd packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py::test_theme_patch_validation tests/test_content_patch_endpoints.py::test_structural_floor_warns_not_blocks tests/test_content_patch_endpoints.py::test_audit_row_truncated_snapshot tests/test_content_patch_endpoints.py::test_bonus_patch_variant_shaped -q 2>&1 | tail -6</automated>
   </verify>
   <acceptance_criteria>
     - `packages/pipeline/src/eisenbalm_pipeline/api/content.py` exists with `router = APIRouter()`
-    - `grep -c "@router.patch" packages/pipeline/src/eisenbalm_pipeline/api/content.py` returns >= 7
+    - `grep -c "@router.patch" packages/pipeline/src/eisenbalm_pipeline/api/content.py` returns >= 8 (incl. the `/bonus` route: `grep -q 'issues/{run_id}/bonus' packages/pipeline/src/eisenbalm_pipeline/api/content.py`)
     - `grep -q "validate_theme_fields" packages/pipeline/src/eisenbalm_pipeline/api/content.py` and `grep -q "structural_floor_warnings" packages/pipeline/src/eisenbalm_pipeline/api/content.py`
     - theme endpoint returns HTTP 422 with `detail["reason"]=="validation_failed"` for invalid hex/font; section endpoint returns 200 + `warnings` for a floor miss (never 4xx)
     - `grep -q "content.section_patched" packages/pipeline/src/eisenbalm_pipeline/api/content.py` and every mutating endpoint calls `_emit_audit` with `before=` and `after=`
     - `grep -q "drafts\." packages/pipeline/src/eisenbalm_pipeline/api/content.py` returns NO hits
-    - the three named tests pass (un-skipped)
+    - the four named tests pass (un-skipped), incl. test_bonus_patch_variant_shaped (wrong-variant 409 + correct field patch per variant)
   </acceptance_criteria>
-  <done>content.py exposes 7 Clerk-guarded PATCH endpoints resolving run_id->sanityIssueId, HARD-validating theme/game, WARN-only on structural floor, and auditing before/after; the three scaffold tests are green.</done>
+  <done>content.py exposes 8 Clerk-guarded PATCH endpoints (incl. variant-shaped /bonus) resolving run_id->sanityIssueId, HARD-validating theme/game, WARN-only on structural floor, and auditing before/after; the four scaffold tests are green.</done>
 </task>
 
 <task type="auto" tdd="true">
@@ -137,11 +144,11 @@ Factor the resolve+audit boilerplate so each endpoint stays ~15-25 lines. Reuse 
     - packages/pipeline/src/eisenbalm_pipeline/lib/sanity_client.py (upload_asset, get_issue_draft from Plan 02)
     - docs/API_CONTRACTS.md §31.6/§31.7 (raw-binary upload + draft-read shapes)
     - .planning/phases/31-content-patch-endpoints-full-editing/31-RESEARCH.md (Pitfall 3 — python-multipart absent; use request.body())
-    - packages/pipeline/tests/test_content_patch_endpoints.py (remaining scaffolds; test_asset_overwrite_audit_swap)
+    - packages/pipeline/tests/test_content_patch_endpoints.py (remaining scaffolds; NOTE: helper-level test_asset_overwrite_audit_swap was already un-skipped by Plan 31-02 — this task ADDS a NEW endpoint-layer test test_asset_overwrite_audit_swap_records_audit)
   </read_first>
   <behavior>
     - Test: POST asset with raw bytes body + X-Filename/Content-Type headers resolves the slot field path and returns {assetUrl, assetId, revisionId}; NO python-multipart import path is exercised
-    - Test test_asset_overwrite_audit_swap: uploading over a slot that already had an asset emits an audit row with action "content.asset_uploaded" carrying before(old assetId)/after(new assetId)
+    - Test test_asset_overwrite_audit_swap_records_audit (NEW — endpoint layer; distinct from Plan 31-02's helper-level test_asset_overwrite_audit_swap): uploading over a slot that already had an asset emits an audit row with action "content.asset_uploaded" carrying before(old assetId)/after(new assetId)
     - Test: GET /issues/{run_id}/draft returns the get_issue_draft dict (revisionId + sections + lossy)
   </behavior>
   <action>
@@ -149,13 +156,13 @@ Add to `api/content.py`:
 
 `POST /issues/{run_id}/assets/{slot}` (EDT-03) — read `raw = await request.body()` (NEVER FastAPI `UploadFile`/`File(...)` — `python-multipart` is not installed, RESEARCH Pitfall 3); read `filename = request.headers.get("X-Filename")`, `content_type = request.headers.get("Content-Type")`, `if_revision_id = request.headers.get("X-If-Revision-Id")`. Map `slot -> (field_path, asset_kind)`:
   - `podcast-audio` -> `("podcast.audioFile", "file")`
-  - `suno-audio` -> `("bonus.sunoAudioUrl", "file")`  (per Field Inventory; confirm the field name against apps/studio/schemas/weeklyIssue.ts at implement time — if the schema field is a `file` type use that path, else the closest audio slot)
-  - `storyboard-{i}` -> `(f"bonus.storyboards[{i}]", "image")`  (index parsed from the slot suffix)
+  - `suno-audio` -> **URL-STRING EXCEPTION (§31.6)**: `bonus.sunoAudioUrl` is `type: 'url'` (plain string) in weeklyIssue.ts ~L289, rendered by apps/web BonusSection as `<audio src={bonus.sunoAudioUrl}>`. Upload the bytes to `/assets/files/{dataset}` (raw httpx POST, same as upload_asset's first step) then `patch_issue_field(field_path="bonus.sunoAudioUrl", value=<CDN url string>, ...)` — NEVER a `{_type:'file', asset:{_ref}}` object. Implement as a small branch beside `upload_asset` (or an `as_url=True` mode on it); response still `{assetUrl, assetId, revisionId}`.
+  - `storyboard-{i}` -> `(f"bonus.storyboards[{i}]", "image")`  (index parsed from the slot suffix). **VERIFY (RESEARCH Open Question 3):** positional array addressing (`storyboards[0]`) is NOT doc-confirmed — before relying on it, add a unit test round-tripping a storyboard-slot patch against the mocked mutate endpoint asserting the exact `set` path emitted, AND during the manual live-save check (Manual-Only Verifications) confirm one storyboard patch lands on the real dataset. If positional indexing fails live, switch to `_key`-predicate addressing (`storyboards[_key=="<key>"]`) — read the `_key`s from get_issue_draft first and pass them through the slot mapping.
 Reject unknown slot with 400. Read the prior asset ref (for the `before` snapshot / overwrite detection) via `get_issue_draft` or a targeted read; call `upload_asset(...)`; `_emit_audit(action="content.asset_uploaded", before=_truncate(old_asset_id or ""), after=_truncate(new_asset_id), resource_type="issue", resource_id=sanity_id)`; return the upload_asset result. D-12 overwrite confirmation is enforced in the UI (Plan 05) — the endpoint always records the swap.
 
 `GET /issues/{run_id}/draft` — resolve sanity_id, `return await get_issue_draft(sanity_http, sanity_id)`. No audit (read-only).
 
-Un-skip and implement the remaining scaffold tests using `httpx.MockTransport` for the Sanity side and `monkeypatch` on `_cc.convex_query`/`_cc.convex_mutation` for Convex (mirror test_review_endpoints.py). Capture `_emit_audit` args to assert the before/after swap.
+Un-skip and implement the remaining scaffold tests using `httpx.MockTransport` for the Sanity side and `monkeypatch` on `_cc.convex_query`/`_cc.convex_mutation` for Convex (mirror test_review_endpoints.py). ADD a new endpoint-layer test `test_asset_overwrite_audit_swap_records_audit` capturing `_emit_audit` args to assert the before/after asset-id swap (Plan 31-02's `test_asset_overwrite_audit_swap` is already un-skipped at the helper layer — do not touch it). Also add `test_suno_audio_sets_url_string` asserting the suno-audio slot patches a plain string URL (not an asset-reference dict) onto `bonus.sunoAudioUrl`, and a storyboard-slot test asserting the exact `set` path (Open Question 3 verification).
   </action>
   <verify>
     <automated>cd packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py -q 2>&1 | tail -6</automated>
@@ -164,7 +171,7 @@ Un-skip and implement the remaining scaffold tests using `httpx.MockTransport` f
     - `grep -q "@router.post" packages/pipeline/src/eisenbalm_pipeline/api/content.py` (assets route present) and `grep -q "@router.get" packages/pipeline/src/eisenbalm_pipeline/api/content.py` (draft route present)
     - `grep -q "await request.body()" packages/pipeline/src/eisenbalm_pipeline/api/content.py` and `grep -q "UploadFile\|File(" packages/pipeline/src/eisenbalm_pipeline/api/content.py` returns NO hits (no multipart)
     - the assets endpoint maps `podcast-audio`, `suno-audio`, `storyboard-{i}` to field paths and passes the correct `asset_kind`
-    - test_asset_overwrite_audit_swap asserts `_emit_audit` called with `action=="content.asset_uploaded"` and distinct before/after asset ids
+    - test_asset_overwrite_audit_swap_records_audit (endpoint layer) asserts `_emit_audit` called with `action=="content.asset_uploaded"` and distinct before/after asset ids; test_suno_audio_sets_url_string asserts a plain URL string (no `_ref`) is set on `bonus.sunoAudioUrl`; a storyboard-slot test asserts the emitted `set` path
     - ALL tests in `tests/test_content_patch_endpoints.py` pass (0 skipped remaining, 0 failures)
   </acceptance_criteria>
   <done>Asset upload accepts raw-binary bodies (no python-multipart), maps slots to Sanity field paths, records overwrite swaps in audit, and the draft-read GET returns the editor payload; every scaffold test is now real and green.</done>
@@ -205,7 +212,7 @@ In `api/main.py`:
 </verification>
 
 <success_criteria>
-- 7 PATCH + 1 POST(upload) + 1 GET(draft) content routes exist, Clerk-guarded, resolving run_id->sanityIssueId
+- 8 PATCH (incl. variant-shaped /bonus) + 1 POST(upload) + 1 GET(draft) content routes exist, Clerk-guarded, resolving run_id->sanityIssueId
 - D-08 validation split enforced (theme/game hard-block; structural floor warn-only)
 - Every mutation audits before/after; asset overwrite records a swap; no drafts. prefix; no python-multipart
 - Router mounted; full suite green

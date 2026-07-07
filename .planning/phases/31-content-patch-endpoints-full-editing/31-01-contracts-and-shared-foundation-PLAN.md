@@ -121,9 +121,9 @@ GET   /issues/{run_id}/draft                      # read path for the editor
 
 **§31.5 — Validation split (D-08).** HARD-block (return 4xx `{reason:"validation_failed", message, fields:[...]}`): theme hex (`^#[0-9a-fA-F]{6}$`) + font membership in the canonical 9-font whitelist (list them; note it MIRRORS apps/web/lib/theme.ts FONT_WHITELIST, the render-time gate); game embed byte-length ≤ 50000. WARN-only (return 200 with `warnings: [str]`): the editorial structural floor (≥2 sub-headers + ≥1 blockquote) on the 5 long-reads.
 
-**§31.6 — Asset upload.** Raw binary POST body (NOT multipart; `python-multipart` is not installed). Inbound headers: `X-Filename`, `Content-Type` (asset MIME). Flow: POST bytes to Sanity `/assets/{files|images}/{dataset}` → get `{document:{_id,url}}` → scoped patch the reference `{_type:'file'|'image', asset:{_type:'reference', _ref:assetId}}` onto the slot field. Response: `{ assetUrl, assetId, revisionId }` (assetUrl = Sanity CDN url for D-13 inline preview). D-12: overwrite leaves the old asset in Sanity and records the swap in audit.
+**§31.6 — Asset upload.** Raw binary POST body (NOT multipart; `python-multipart` is not installed). Inbound headers: `X-Filename`, `Content-Type` (asset MIME). Flow: POST bytes to Sanity `/assets/{files|images}/{dataset}` → get `{document:{_id,url}}` → scoped patch the reference `{_type:'file'|'image', asset:{_type:'reference', _ref:assetId}}` onto the slot field. Response: `{ assetUrl, assetId, revisionId }` (assetUrl = Sanity CDN url for D-13 inline preview). D-12: overwrite leaves the old asset in Sanity and records the swap in audit. **EXCEPTION — `suno-audio` slot:** `bonus.sunoAudioUrl` is a `type: 'url'` (plain string) field in weeklyIssue.ts (~L289) and the live site renders `<audio src={bonus.sunoAudioUrl}>` — for this slot ONLY, the endpoint uploads the asset then `set`s the returned CDN **URL string** into `bonus.sunoAudioUrl` (NOT a `{_type:'file', asset:{_ref}}` reference object). No schema change; podcast-audio and storyboard slots use asset references as normal.
 
-**§31.7 — Draft-read GET response.** `{ revisionId, sections: {<name>: {headline, blocks:[{type,text}], lossy: boolean}}, theme, game, bonus, podcast, deliberation }`. `lossy: true` when a stored PT block had `markDefs.length>0` or `children.length>1` (marks flattened by pt_to_blocks).
+**§31.7 — Draft-read GET response.** `{ revisionId, sections: {<name>: {headline, blocks:[{type,text}], lossy: boolean}}, theme, game, bonus, bonusType, podcast, deliberation }`. `bonusType` (`specAd` | `bigBudget` | `jingle`) is the TOP-LEVEL weeklyIssue field (sibling of `bonus`, weeklyIssue.ts ~L103) — the editor switches its bonus-editor variant on it (D-05). `lossy: true` when a stored PT block had `markDefs.length>0` or `children.length>1` (marks flattened by pt_to_blocks).
 
 **§31.8 — Audit shape (D-09).** Every content mutation writes one `auditLog:record` row via `_emit_audit` with `action` = `content.section_patched` / `content.theme_patched` / `content.asset_uploaded` etc., plus truncated `before`/`after` (2000-char cap, `...[truncated]` suffix).
 
@@ -266,7 +266,7 @@ This is additive — all existing callers (review.py, control.py) keep working u
 
 **(B)** Create `packages/pipeline/tests/test_content_patch_endpoints.py` as the Wave-0 scaffold. Include:
 - one PASSING test asserting the `_emit_audit` before/after extension: monkeypatch `_cc.convex_mutation` to capture args, call `_emit_audit(None, actor_id="a", action="content.section_patched", before="B", after="A")`, assert captured args include `before=="B"` and `after=="A"`; and a second call without before/after asserts neither key present.
-- SKIPPED placeholders (via `@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")`) named exactly: `test_patch_section_scoped`, `test_patch_revision_mismatch`, `test_theme_patch_validation`, `test_structural_floor_warns_not_blocks`, `test_upload_asset_patches_reference`, `test_audit_row_truncated_snapshot`, `test_asset_overwrite_audit_swap`, `test_draft_read_lossy_flag`.
+- SKIPPED placeholders (via `@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")`) named exactly: `test_patch_section_scoped`, `test_patch_revision_mismatch`, `test_theme_patch_validation`, `test_structural_floor_warns_not_blocks`, `test_upload_asset_patches_reference`, `test_audit_row_truncated_snapshot`, `test_asset_overwrite_audit_swap`, `test_asset_overwrite_audit_swap_records_audit`, `test_bonus_patch_variant_shaped`, `test_draft_read_lossy_flag`.
   </action>
   <verify>
     <automated>cd packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py -q 2>&1 | tail -5</automated>
@@ -274,11 +274,11 @@ This is additive — all existing callers (review.py, control.py) keep working u
   <acceptance_criteria>
     - `grep -q "before=None, after=None" packages/pipeline/src/eisenbalm_pipeline/api/control.py`
     - `grep -q 'args\["before"\] = before' packages/pipeline/src/eisenbalm_pipeline/api/control.py`
-    - `pytest tests/test_content_patch_endpoints.py -q` reports the `_emit_audit` test(s) passing and 8 skipped placeholders, 0 failures
-    - `grep -c "@pytest.mark.skip" packages/pipeline/tests/test_content_patch_endpoints.py` returns ≥ 8
+    - `pytest tests/test_content_patch_endpoints.py -q` reports the `_emit_audit` test(s) passing and 10 skipped placeholders, 0 failures
+    - `grep -c "@pytest.mark.skip" packages/pipeline/tests/test_content_patch_endpoints.py` returns ≥ 10
     - `cd packages/pipeline && uv run pytest -x -q` (full suite) reports 0 failures (no regression from the _emit_audit change)
   </acceptance_criteria>
-  <done>_emit_audit forwards before/after; the content-patch test scaffold exists with a green audit test + 8 named skipped placeholders; full pipeline suite stays green.</done>
+  <done>_emit_audit forwards before/after; the content-patch test scaffold exists with a green audit test + 10 named skipped placeholders; full pipeline suite stays green.</done>
 </task>
 
 </tasks>

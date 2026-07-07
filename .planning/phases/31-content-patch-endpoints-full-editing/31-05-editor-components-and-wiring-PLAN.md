@@ -67,7 +67,7 @@ Output: 5 editor components + dispatcher panel + [runId] page wiring + inbox re-
 patchSection(runId, section, {ifRevisionID, blocks}, token) -> {revisionId, warnings}
 patchHeadline / patchTheme / patchGame / patchPdfDataPoints / patchBonus /
 patchDeliberationConversation / patchPodcastTranscript(...)
-getDraft(runId, token) -> { revisionId, sections:{<name>:{headline,blocks,lossy}}, theme, game, bonus, podcast, conversation }
+getDraft(runId, token) -> { revisionId, sections:{<name>:{headline,blocks,lossy}}, theme, game, bonus, bonusType, podcast, conversation }
 uploadAsset(runId, slot, file: Blob, {filename, contentType, ifRevisionID}, token) -> {assetUrl, assetId, revisionId}
 class ContentPatchError extends Error { status; reason }   // reason: 'revision_mismatch' | 'validation_failed' | ...
 
@@ -126,7 +126,7 @@ Create three presentational client components (state lifted to `SectionEditorPan
 - Theme: 4 hex `<input>`s (with a color swatch preview), `fontDisplay`/`fontBody` as `<select>` dropdowns constrained to the 9-font whitelist (D-08 — dropdowns prevent invalid submissions client-side; the server still HARD-validates), `visualDirection` textarea. Show inline field errors when the server returns `validation_failed` with `fields[]`.
 - Game: `headline`, `description` inputs + `embedCode` textarea with a live byte-count and a red state when > 50000 bytes (mirrors the server cap).
 - PDF data points: `problemStatement` textarea, exactly 3 fixed `{stat,source}` rows (NO add/remove — schema `Rule.length(3)`), `interventionMechanism` textarea.
-- Bonus (D-05): switch on stored variant — specAd -> render `BlockEditor`; bigBudget -> per-storyboard structured fields + an `AssetUploadSlot` image slot per storyboard; jingle -> lyrics textarea + `sunoPrompt` textarea + a suno-audio `AssetUploadSlot`.
+- Bonus (D-05): switch on the draft's top-level `bonusType` field (returned by getDraft, §31.7) — specAd -> render `BlockEditor`; bigBudget -> per-storyboard structured fields + an `AssetUploadSlot slot={`storyboard-${i}`} kind="image"` per storyboard; jingle -> lyrics textarea + `sunoPrompt` textarea + an `AssetUploadSlot slot="suno-audio" kind="audio"` (this slot saves a plain CDN URL into `bonus.sunoAudioUrl` server-side — §31.6 exception; the preview still plays from the returned assetUrl).
 
 **`AssetUploadSlot.tsx`** (D-11/12/13) — props `{ runId, slot, currentAssetUrl?, kind: 'audio'|'image', ifRevisionID, onUploaded }`:
 - File `<input type="file">` (accept audio/* or image/*).
@@ -159,7 +159,7 @@ Create three presentational client components (state lifted to `SectionEditorPan
     - .planning/phases/31-content-patch-endpoints-full-editing/31-CONTEXT.md (D-07 explicit save + dirty + unsaved warning; D-10 revision guard reload)
   </read_first>
   <action>
-**(A)** Create `SectionEditorPanel.tsx` — given `selectedSection` + the loaded draft, dispatch to the right editor (BlockEditor for the 4 long-reads, StructuredFieldEditor for theme/game/headline/PDF, TurnListEditor for deliberation, textareas for transcript/lyrics, AssetUploadSlot for asset fields). Own the save harness (D-07/D-10):
+**(A)** Create `SectionEditorPanel.tsx` — given `selectedSection` + the loaded draft, dispatch to the right editor (BlockEditor for the 4 long-reads, StructuredFieldEditor for theme/game/headline/PDF, TurnListEditor for deliberation, textareas for transcript/lyrics, AssetUploadSlot for asset fields). The PODCAST section editor renders BOTH the transcript textarea AND `<AssetUploadSlot slot="podcast-audio" kind="audio" ...>` (D-11 — upload control inline in the owning section's editor, with the D-13 `<audio>` preview after upload). Own the save harness (D-07/D-10):
 - Local working copy + `dirty` boolean per section (compare to loaded value).
 - An explicit **Save** button (disabled when not dirty); on click call the matching `contentPatchClient` fn with `ifRevisionID = currentRevisionId`.
 - On success: update `currentRevisionId` from the response, clear dirty, surface any returned `warnings` (structural floor) as a non-blocking notice.
@@ -182,6 +182,7 @@ Create three presentational client components (state lifted to `SectionEditorPan
     - `revision_mismatch` handling triggers a reload path (`grep -q "revision_mismatch" ...SectionEditorPanel.tsx`)
     - an unsaved-changes guard exists (`grep -qi "beforeunload\|unsaved" ...SectionEditorPanel.tsx`)
     - the Awaiting-you inbox awaiting-review target is `/review-desk/` (`grep -rq "/review-desk/" apps/dispatch-control/lib/nav.ts apps/dispatch-control/components 2>/dev/null` or the located inbox file)
+    - the podcast editor instantiates the audio upload slot: `grep -rq 'slot="podcast-audio"' "apps/dispatch-control/app/(dashboard)/review-desk"` returns >= 1 match
     - the dirty-state + 409 editor tests pass
     - `pnpm --filter dispatch-control build` exits 0 AND `pnpm --filter dispatch-control test -- --run` passes (incl. the EDT-05 tripwire from Plan 04)
   </acceptance_criteria>
