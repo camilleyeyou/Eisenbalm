@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 30-06-awaiting-you-inbox-PLAN.md
-last_updated: "2026-07-07T01:36:24.580Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 30-08-pipeline-url-prod-fix-PLAN.md
+last_updated: "2026-07-07T09:01:49.869Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -215,6 +215,7 @@ Plan: 8 of 8
 | Phase 30 P07 | ~15min | 1 tasks | 2 files |
 | Phase 30 P05 | 4min | 2 tasks | 3 files |
 | Phase 30-foundation-design-system-chrome-awaiting-you-inbox P06 | 20min | 2 tasks | 4 files |
+| Phase 30 P08 | 5min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -551,6 +552,7 @@ Recent decisions affecting current work:
 - [Phase 30]: Route skeleton (30-02): tab shell for run-monitor built as layout.tsx (not page.tsx) so Runs/Graph tabs render on both sub-routes; lib/nav.ts left for Plan 30-05 to rewire since old /graph,/runs,/prompts links now permanently redirect via next.config.ts
 - [Phase 30]: Removed duplicate Clerk UserButton from AppSidebar footer — sign-out now lives solely in the Masthead (Plan 30-04)
 - [Phase 30-07]: House-rule dark bands reuse --color-masthead-text/-muted (already used by Masthead.tsx) rather than a new token
+- [Phase 30]: CHR-05 closed: NEXT_PUBLIC_PIPELINE_URL (Vercel) and DASHBOARD_ALLOWED_ORIGINS (Railway) set in production, verified live 2026-07-07 via a successful Prompt Lab test-run against the advocate agent fixture (real cost + voice-score output, no CORS/unset-URL error).
 
 ### Pending Todos
 
@@ -635,6 +637,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T01:36:24.570Z
-Stopped at: Completed 30-06-awaiting-you-inbox-PLAN.md
+Last session: 2026-07-07T09:01:49.856Z
+Stopped at: Completed 30-08-pipeline-url-prod-fix-PLAN.md
 Resume file: None

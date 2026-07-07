@@ -277,7 +277,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **CHR-02**: Persistent masthead on every screen shows current issue number, pipeline state chip, month-to-date spend vs cap, and the auto-publish lock chip.
 - [x] **CHR-03**: Left nav is workflow-ordered (Review Desk · Signal Desk · Run Monitor · Voice Pass / Prompt Lab · Eval Center · Registry) with a "How to use" screen (weekly loop, color legend, house rules).
 - [x] **CHR-04**: Operator sees an Awaiting-you inbox in the masthead aggregating everything blocked on a human (awaiting-review runs, Gate 1 interrupts, unresolved blockers, failed runs); each item routes to the owning screen.
-- [ ] **CHR-05**: The deployed dashboard reaches the pipeline API (`NEXT_PUBLIC_PIPELINE_URL` configured; existing test-run panel functional in production).
+- [x] **CHR-05**: The deployed dashboard reaches the pipeline API (`NEXT_PUBLIC_PIPELINE_URL` configured; existing test-run panel functional in production).
 
 ### Galley & Review Desk (GLY)
 - [ ] **GLY-01**: Operator reads the issue as the reader will see it — a native render of the Sanity draft (all sections including the sandboxed game) inside the Review Desk, replacing the preview iframe.

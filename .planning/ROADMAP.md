@@ -32,7 +32,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v2.0 complete. v3.0: Dispatch Control v2 — Editorial Operator Console (Phases 30–39)**
 
-- [ ] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix
+- [x] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix (completed 2026-07-07)
 - [ ] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path
 - [ ] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe
 - [ ] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail
@@ -427,7 +427,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
-| 30. Foundation — Design System, Chrome & Inbox | 7/8 | In Progress|  |
+| 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete   | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 0/? | Not started | - |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
@@ -675,7 +675,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 30-05-grouped-nav-sidebar-PLAN.md — 3-group workflow-ordered nav + pinned How-to-use, 1c sidebar, nav.test rewrite (CHR-03)
 - [x] 30-06-awaiting-you-inbox-PLAN.md — Pure-derivation Awaiting-you dropdown, blockers-first, routes to working screens (CHR-04)
 - [x] 30-07-how-to-use-screen-PLAN.md — How-to-use content: weekly loop + color legend + house rules (CHR-03, D-13)
-- [ ] 30-08-pipeline-url-prod-fix-PLAN.md — CHR-05 human checkpoint: Vercel NEXT_PUBLIC_PIPELINE_URL + Railway CORS verified live
+- [x] 30-08-pipeline-url-prod-fix-PLAN.md — CHR-05 human checkpoint: Vercel NEXT_PUBLIC_PIPELINE_URL + Railway CORS verified live
 **UI hint**: yes
 
 ### Phase 31: Content-Patch Endpoints + Full Editing
