@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Dispatch Control v2 (Editorial Operator Console)
+milestone: v2.0
+milestone_name: Phase Details — Mission Control Dashboard
 status: In progress
-stopped_at: Completed 30-08-pipeline-url-prod-fix-PLAN.md
-last_updated: "2026-07-07T09:11:55.774Z"
+stopped_at: Phase 31 context gathered
+last_updated: "2026-07-07T09:35:46.934Z"
 progress:
-  total_phases: 29
-  completed_phases: 28
-  total_plans: 183
-  completed_plans: 181
+  total_phases: 39
+  completed_phases: 29
+  total_plans: 191
+  completed_plans: 189
 ---
 
 # Project State
@@ -637,6 +637,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T09:01:49.856Z
-Stopped at: Completed 30-08-pipeline-url-prod-fix-PLAN.md
-Resume file: None
+Last session: 2026-07-07T09:35:46.920Z
+Stopped at: Phase 31 context gathered
+Resume file: .planning/phases/31-content-patch-endpoints-full-editing/31-CONTEXT.md
