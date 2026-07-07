@@ -1,17 +1,221 @@
 /**
- * How to use — minimal stub (Phase 30 D-02). Only needs to exist so the nav
- * coverage gate (Plan 30-05's nav.test.ts) passes. Full content (weekly loop,
- * color legend, house rules) lands in Plan 30-07.
+ * How to use — full content (CHR-03, Phase 30-07).
+ *
+ * Verbatim copy of the weekly loop / color legend / house rules extracted
+ * from docs/design/dispatch-control-v2/Dispatch Control.dc.html (`disp_howto`,
+ * lines 565-618 at extraction time). Server Component — no client
+ * interactivity needed for a static reference screen.
+ *
+ * ONLY 1c token classes are used (no literal Tailwind gray-scale/white/black).
  */
+
+const WEEKLY_LOOP = [
+  {
+    n: 1,
+    title: 'Steer discovery',
+    screen: 'Signal Desk',
+    body: (
+      <>
+        Read the three signals, pin or kill any, and adjudicate the Gate 1
+        winner. If two candidates tie or a brand-risk shows up, the screen
+        enters <b>interrupt mode</b> — pick, and your reason is logged to the
+        transcript and remembered next week.
+      </>
+    ),
+  },
+  {
+    n: 2,
+    title: 'Watch the run',
+    screen: 'Run Monitor',
+    body: (
+      <>
+        Agents are <b>dots</b>, the three deterministic checks are{' '}
+        <b className="text-[color:var(--color-marigold-text)]">◆ gold diamonds</b>.
+        Click any node to read exactly what it handed downstream
+        (human-readable first, JSON behind a toggle). Don&apos;t like a step?{' '}
+        <b>Re-run from this node</b> with new steering — everything after it
+        re-flows.
+      </>
+    ),
+  },
+  {
+    n: 3,
+    title: 'Clear the facts',
+    screen: 'Review Desk',
+    body: (
+      <>
+        Read the issue as the reader will. Every error in the rail must be
+        resolved — <b>Accept fix</b>, edit inline, or dismiss with a one-line
+        reason.{' '}
+        <b className="text-[color:var(--color-marigold-text)]">Marigold</b>{' '}
+        underlines are sourced claims (hover for the source); a{' '}
+        <b className="text-[color:var(--color-vermilion)]">rust</b> tint means
+        unsourced. Publish stays locked until the blocking list is empty.
+      </>
+    ),
+  },
+  {
+    n: 4,
+    title: 'De-slop it',
+    screen: 'Voice Pass',
+    body: (
+      <>
+        The one thing only you can do. Machine-tells are lit inline; accept a
+        rewrite, write your own, or keep it. When it reads like a person
+        wrote it, hit <b>Sounds human</b> — a sign-off <b>separate</b> from
+        the facts. Publish needs both greens.
+      </>
+    ),
+  },
+  {
+    n: 5,
+    title: 'Improve the machine',
+    screen: 'Prompt Lab + Eval Center',
+    body: (
+      <>
+        Between issues, edit a prompt, <b>run evals</b> on just the affected
+        scenarios, and commit only if the scoreboard improves with no
+        regressions (or override with a logged reason). Run a{' '}
+        <b>shadow</b> against real news before ever paying for a live run.
+      </>
+    ),
+  },
+]
+
+const COLOR_LEGEND = [
+  {
+    hex: '#148a52',
+    token: 'var(--color-green)',
+    meaning: 'Verified / cleared — a check ran and passed',
+  },
+  {
+    hex: '#e8471d',
+    token: 'var(--color-vermilion)',
+    meaning: 'Error / blocking / unsourced — needs you',
+  },
+  {
+    hex: '#f2b01e',
+    token: 'var(--color-marigold)',
+    meaning: 'Warning / sourced-claim / code gate',
+  },
+  {
+    hex: '#253ad4',
+    token: 'var(--color-cobalt)',
+    meaning: 'Interactive / links / the current selection',
+  },
+]
+
+const HOUSE_RULES = [
+  {
+    headline: 'Silence is never "verified."',
+    body: 'A check that ran says so, with a timestamp. Blank means unchecked, and unchecked is a state you can see.',
+  },
+  {
+    headline: 'Nothing silent.',
+    body: 'Every dismiss, overrule, and kill needs a one-line reason, logged where the next agent — or the next you — will read it.',
+  },
+  {
+    headline: 'JSON is never the default.',
+    body: 'Every artifact has a human-readable face. The raw data is one toggle away when you want it.',
+  },
+  {
+    headline: 'The irreversible ones ask twice.',
+    body: 'Publish, blocklist, and turning auto-publish on take a typed confirmation. Everything else is one click and an undo.',
+  },
+]
+
 export default function HowToUsePage() {
   return (
-    <div className="max-w-xl space-y-2 p-6">
-      <h1 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--color-ink)]">
-        How to use
-      </h1>
-      <p className="text-sm text-[color:var(--color-ink-soft)]">
-        Weekly loop, color legend, and house rules — content lands in Plan 30-07.
-      </p>
+    <div className="max-w-4xl">
+      <div className="mb-6 flex items-baseline gap-3 border-b border-[color:var(--color-faint)] pb-4">
+        <h1 className="font-[family-name:var(--font-display)] text-[27px] leading-none text-[color:var(--color-ink)]">
+          How to use
+        </h1>
+        <span className="font-[family-name:var(--font-ui)] text-[11.5px] text-[color:var(--color-ink-soft)]">
+          One editor, a full masthead. Here&apos;s the loop and the rules.
+        </span>
+      </div>
+
+      {/* ─── The weekly loop ─────────────────────────────────────────── */}
+      <section className="mb-9">
+        <h2 className="mb-1.5 font-[family-name:var(--font-display)] text-[30px] leading-[1.05] text-[color:var(--color-ink)]">
+          The weekly loop
+        </h2>
+        <p className="mb-5 max-w-[64ch] font-[family-name:var(--font-body)] text-[15.5px] leading-relaxed text-[color:var(--color-ink-soft)]">
+          The pipeline does the legwork; you make the calls. Five moments, in
+          order. Anything waiting on you always shows up in the{' '}
+          <b className="text-[color:var(--color-vermilion)]">Awaiting you</b>{' '}
+          chip, top-right, from any screen.
+        </p>
+
+        <div className="grid gap-0">
+          {WEEKLY_LOOP.map((step) => (
+            <div
+              key={step.n}
+              className="flex gap-4 border-t border-[color:var(--color-faint)] py-4 last:border-b"
+            >
+              <div className="min-w-[44px] font-[family-name:var(--font-display)] text-[34px] leading-none text-[color:var(--color-cobalt)]">
+                {step.n}
+              </div>
+              <div>
+                <div className="mb-1 font-[family-name:var(--font-display)] text-xl text-[color:var(--color-ink)]">
+                  {step.title} ·{' '}
+                  <span className="text-[15px] text-[color:var(--color-ink-soft)]">
+                    {step.screen}
+                  </span>
+                </div>
+                <p className="max-w-[70ch] font-[family-name:var(--font-body)] text-[14.5px] leading-[1.55] text-[color:var(--color-ink-soft)]">
+                  {step.body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── What the colors mean ────────────────────────────────────── */}
+      <section className="mb-9">
+        <h2 className="mb-3.5 font-[family-name:var(--font-display)] text-[26px] leading-[1.05] text-[color:var(--color-ink)]">
+          What the colors mean
+        </h2>
+        <div className="grid max-w-[660px] grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {COLOR_LEGEND.map((entry) => (
+            <div
+              key={entry.hex}
+              className="flex items-center gap-2.5 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3.5 py-2.5"
+            >
+              <span
+                className="block h-4 w-4 flex-none"
+                style={{ background: entry.token }}
+                aria-hidden="true"
+              />
+              <span className="font-[family-name:var(--font-body)] text-[13.5px] text-[color:var(--color-ink)]">
+                {entry.meaning}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Four house rules ────────────────────────────────────────── */}
+      <section className="mb-9">
+        <h2 className="mb-3.5 font-[family-name:var(--font-display)] text-[26px] leading-[1.05] text-[color:var(--color-ink)]">
+          Four house rules
+        </h2>
+        <div className="grid max-w-[720px] gap-2">
+          {HOUSE_RULES.map((rule) => (
+            <div
+              key={rule.headline}
+              className="bg-[color:var(--color-ink)] px-4 py-3 font-[family-name:var(--font-body)] text-sm leading-relaxed text-[color:var(--color-masthead-muted)]"
+            >
+              <b className="font-[family-name:var(--font-display)] text-base text-[color:var(--color-masthead-text)]">
+                {rule.headline}
+              </b>{' '}
+              {rule.body}
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
