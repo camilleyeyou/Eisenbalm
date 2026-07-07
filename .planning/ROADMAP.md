@@ -172,7 +172,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   1. An iframe rendering GameWriter output on any issue page uses exactly `sandbox="allow-scripts"` (never `allow-same-origin`); a codebase-level ESLint rule or test fails if `allow-same-origin` appears anywhere in the game rendering component
   2. The automated validator rejects embedCode containing any of: `window.parent`, `top.`, `parent.`, `fetch(`, `XMLHttpRequest`, `document.cookie`, `document.domain`, external `<script src=...>`, external `<link href=...>`; a CSP `<meta>` tag restricting external resources is injected into every srcdoc
   3. A game produced by GameWriter renders correctly at 360px viewport width without horizontal scroll or broken layout; when the validator rejects a game, the issue page shows "Game unavailable" and a `qaCorrections` entry is written to Convex with the rejection reason
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 - [x] 07-01-test-infrastructure-PLAN.md — Wave 0: install Vitest + vite-tsconfig-paths, add test:unit script, seed empty test stubs (no GAM-* — prerequisite infra for Plans 02/03/04)
 - [x] 07-02-validator-and-csp-PLAN.md — Wave 1: apps/web/lib/game-validator.ts (BANNED_PATTERNS, GAME_CSP_POLICY, validateEmbedCode, injectGameHead) + full unit tests (GAM-02, GAM-04, GAM-06 substrate)
 - [x] 07-03-gameslot-wiring-PLAN.md — Wave 2: convert GameSlot.tsx to Client Component, conditional iframe/fallback render, useRef-guarded Convex qaCorrections write, thread issue.runId from page.tsx (GAM-01, GAM-05, GAM-06)
@@ -264,7 +264,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. `SectionNavigator` is rebuilt to the chosen board variant (high fidelity) using only FONT_WHITELIST fonts; reduced-motion-safe; ≥44px targets; single `<main>`
   5. `DeliberationSlot` is rebuilt to the chosen board variant with the confidence meter + pitch log; DEL-04 (no model names) and the 5 live Convex subscriptions intact; reduced-motion-safe
   6. No new npm dependencies; FONT_WHITELIST unchanged; `game-sandbox.test.ts` + theme security tests stay green; `pnpm --filter web build` passes; pipeline tests stay green
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 - [x] 12-01-wave0-test-stubs-PLAN.md — Wave 0: 4 web source-scan tripwires (anchor ids, reduced-motion, AGENT_LABELS, no-model-names) + theme suppression-contract assertion + 3 pipeline test cases (validate suppressed, suppressed graph, envelope phrase)
 - [x] 12-02-pipeline-suppression-and-prompt-PLAN.md — Pipeline: builder.py SECTION_WRITERS + validate.py REQUIRED_FIELDS gated on DESIGNAGENT_SUPPRESSED (atomic lockstep) + DesignAgent Machine Editorial prompt envelope (MED-02 pipeline, MED-03)
 - [x] 12-03-web-theme-suppression-PLAN.md — Web: layout.tsx server-side flag → empty themeCss + ThemeApplier suppressed prop early-return; globals.css :root house palette wins (MED-01, MED-02 web)
@@ -360,7 +360,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
   4. `/about/page.tsx` no longer displays the "This page is being written" placeholder; Jesse-voice copy in place (Andrew action — gated on Andrew providing text)
   5. `apps/web/app/_debug/convex/page.tsx` no longer nests `<main>` inside the layout's `<main id="main">` (low priority — internal route only)
   6. No new npm dependency, no CDN; existing Phase 14 light-theme + Phase 12 typography lock + Phase 8 commerce surface all untouched; web vitest baseline 234/234 preserved
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 - [x] 17-01-wave0-test-stubs-PLAN.md — Wave 1: author the 5 source-scan test files (bonus-section-image, archive-pagination, loading-skeletons, about-page, debug-route) encoding P17-01/03/04/05/06 + dep-count guard (RED until Wave 2)
 - [x] 17-02-bonus-section-next-image-PLAN.md — Wave 2: convert BonusSection storyboard grid to next/image fill in the aspect-video container; remove raw <img> + eslint-disable (P17-01, P17-02)
 - [x] 17-03-archive-pagination-PLAN.md — Wave 2: client-side load-more in ArchiveList (PAGE_SIZE=10, visibleCount, useEffect reset, hasMore ≥44px button); GROQ + CardSwap unchanged (P17-03)
@@ -456,7 +456,7 @@ _(empty — see Phase 17 in active milestone for UI/UX audit follow-ups, promote
   5. Stage A (static shell with mock data) is reviewable and user-approved BEFORE any live data wiring begins; Stage B wires Sanity GROQ + Convex subscriptions per API_CONTRACTS.md without changing the approved structure/motion
   6. Zero-regression matrix: `pnpm --filter web test:unit` ≥ prior baseline passing; `pnpm --filter web typecheck` + `build` clean; theme/security tests unmodified and green
   7. Accessibility preserved: single landmark structure, skip-link intact, scroll-spy rail keyboard-navigable, sticky rail hidden on mobile per prototype, focus-visible ring honored
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 **UI hint**: yes (entire phase is the user-perceived issue-page reading experience)
 
 Plans:
@@ -530,7 +530,7 @@ Plans:
   3. FastAPI dashboard-control endpoints reject requests without a valid Clerk JWT; the Railway cron path retains its existing `X-Pipeline-Trigger-Secret` and is unaffected
   4. The audit log and run records attribute the signed-in operator's identity to every triggered action from day one
   5. Every new Convex table (`workspaces`, `users`, `agents`, `prompt_versions`, `pipeline_config`, `runs`, `agent_runs`, `charities`, `model_pricing`, `review_actions`, `audit_log`) carries a `workspace_id` field; querying by `workspace_id = "eisenbalm"` returns the seeded workspace record
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 Plans:
 - [x] 21-01-PLAN.md — Scaffold dispatch-control app + Phase 21 test harness (Wave 0)
 - [x] 21-02-PLAN.md — 11 Convex tables (workspace_id) + auth.config + seed + JIT user upsert
@@ -548,7 +548,7 @@ Plans:
   2. The config snapshot is written to Convex and confirmed before `graph.ainvoke()` is called; editing a prompt mid-run does not change the in-flight run's behavior (the config was captured at start)
   3. All 12 agent prompt `.md` files appear in Convex `prompt_versions` as version-1 active rows; running the byte-comparison verification script shows zero diff between the seeded rows and the original files
   4. If Convex is unreachable at run start, the pipeline falls back to the on-disk `.md` files and logs a warning — it does not crash or silently ignore the degradation
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 - [x] 22-01-PLAN.md — Wave 0: API_CONTRACTS §7 amendment (DispatchState.config) + failing test scaffolds (config_loader, byte-parity, snapshot-ordering) + wheel-safe prompt-data test
 - [x] 22-02-PLAN.md — Convex schema flesh-out (agents top_p/max_tokens/description) + agents/promptVersions/pipelineConfig/runs functions (idempotent upserts + read queries + setConfigSnapshot)
 - [x] 22-03-PLAN.md — lib/config_loader.py (RunConfig + AGENT_KEY_TO_PROMPT_FILE + load_run_config two-tier fallback + snapshot_config) + DispatchState.config field
@@ -608,7 +608,7 @@ Plans:
   3. Operator clicks "Cancel" on a live run; the run ends in `cancelled` status within the span of one agent node completing; every subsequent agent node that checks the cancel flag before starting no-ops cleanly
   4. Operator uses the re-roll UI to regenerate a single agent/section within an existing run; the LangGraph checkpoint is read, the target node is re-executed, and the issue draft is updated in Sanity — the other sections are unchanged
   5. When a run's projected cost would exceed the configured monthly cap, the system refuses to start the run and shows a warning; when accumulated cost crosses the alert threshold, the operator receives a notification (Slack and/or email)
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 - [x] 25-01-PLAN.md — Wave 1 foundation: amend docs/API_CONTRACTS.md (contract-first) for /pipeline/run·/pipeline/tick·/runs/{id}/cancel·re-roll + cancel-flag + new pipeline_config keys; additive runs.cancelRequested schema field; RunCancelled exception; idempotent config seed; 5 RED Wave 0 pytest scaffolds + conftest Convex stub fixture
 - [x] 25-02-PLAN.md — Wave 2 trigger + scheduler (RUN-01/02/03): refactor run_weekly into _start_run; api/control.py /pipeline/run (operator-attributed) + /pipeline/tick (kill-switch-first, due-gated, cursor-advancing); lib/scheduler.py cadence engine; auditLog public record mutation; repoint cli trigger_weekly -> /pipeline/tick
 - [x] 25-03-PLAN.md — Wave 3 cancel + re-roll (RUN-04/05): cooperative cancel-flag poll in wrap_agent_node + RunCancelled landing in _execute_run; convex runs requestCancel/isCancelRequested/updateStatus; /runs/{id}/cancel + /runs/{id}/agents/{key}/rerun (section-only, D-04-guarded, isolated checkpoint fork)
@@ -689,12 +689,13 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   2. Operator can edit structured fields (section headlines, PDF key data points, game embed code, theme values) from the console and see them reflected in the Sanity draft.
   3. Operator can upload a podcast audio file, Suno audio, or storyboard image through the console and see it attached to the draft as a Sanity asset.
   4. A source scan of `apps/dispatch-control` finds zero direct Sanity client writes — every content mutation path calls the pipeline API, never Sanity directly.
-**Plans**: 5 plans
+**Plans**: 6 plans (5 + 1 gap closure)
 - [x] 31-01-contracts-and-shared-foundation-PLAN.md — API_CONTRACTS §31 endpoint family (contract-first) + pt_to_blocks reverse mapper + operator theme validator (9-font canonical) + warn-only structural-floor helper + _emit_audit before/after + Wave-0 pytest scaffold
 - [x] 31-02-sanity-client-patch-helpers-PLAN.md — patch_issue_field (scoped dotted-path + ifRevisionID→409) + get_issue_draft (PT→rows + lossy) + upload_asset (files/images) with httpx.MockTransport tests
 - [x] 31-03-content-patch-endpoint-router-PLAN.md — api/content.py Clerk-guarded PATCH/POST/GET family (EDT-01/02/03), D-08 validation split, before/after audit, raw-binary upload, main.py mount
 - [x] 31-04-frontend-foundation-client-and-route-shell-PLAN.md — contentPatchClient + EDT-05 no-direct-Sanity-write source-scan + Review Desk route shell (auto-focus run + chip list + reused preview iframe)
 - [x] 31-05-editor-components-and-wiring-PLAN.md — BlockEditor/TurnListEditor/StructuredFieldEditor/AssetUploadSlot + SectionEditorPanel save/dirty/unsaved-nav/409 harness + inbox re-point + strict build gate
+- [ ] 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md — GAP CLOSURE: get_issue_draft returns pdfContent + decomposed bonus.body/bodyLossy; dirty-gated pdf/bonus-body save steps; omit-able patch_bonus fields; bonus payload variant/blocks contract fix
 **UI hint**: yes
 
 ### Phase 32: Native Galley (read-only) + Span-Resolver
