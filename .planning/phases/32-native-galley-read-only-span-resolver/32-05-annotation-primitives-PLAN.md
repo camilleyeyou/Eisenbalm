@@ -82,6 +82,7 @@ D-07 severity treatment:
     - `.galley-popover{ position:absolute; z-index:40; max-width:340px; background:var(--color-card); border:1px solid var(--color-ink); box-shadow:5px 5px 0 var(--color-cobalt); padding:14px; font-family:var(--font-ui); font-size:12.5px; color:var(--color-ink); }` plus `.galley-popover__severity`, `.galley-popover__axis`, `.galley-popover__reason`, `.galley-popover__fix` label helpers (small uppercase tracked labels using marigold-text / cobalt tokens).
     - `.galley-unresolved{ border:1px dashed var(--color-vermilion); background:rgba(232,71,29,.06); padding:14px; margin-top:18px; }` with `.galley-unresolved__label{ text-transform:uppercase; letter-spacing:.08em; font-size:10px; color:var(--color-vermilion); }` and `.galley-unresolved__quote{ font-style:italic; color:var(--color-ink-soft); }`
     - Type scale (D-04): `.galley-headline{ font-family:var(--font-display); font-size:clamp(30px,4vw,52px); line-height:.98; }` · `.galley-deck{ font-family:var(--font-display); font-style:italic; font-size:22px; color:var(--color-ink-soft); }` · `.galley-body{ font-family:var(--font-body); font-size:16.5px; line-height:1.7; }` · `.galley-h2{ font-family:var(--font-display); font-size:28px; }` · `.galley-pullquote{ font-family:var(--font-display); font-style:italic; font-size:22px; border-left:3px solid var(--galley-accent, var(--color-cobalt)); padding-left:16px; }`
+    - Paper background (D-04, explicit not implicit): `.galley-root{ background: var(--background); }` — the galley sits on the console's paper background as a deliberate rule, so a future white-card wrapper around the galley can never silently change the reading surface.
     Do NOT modify the existing `:root` block — append only.
   </action>
   <verify>
@@ -90,6 +91,7 @@ D-07 severity treatment:
   <acceptance_criteria>
     - globals.css contains `.galley-anno[data-severity="error"]` (vermilion), `[data-severity="warning"]` (marigold), `[data-severity="info"]` (cobalt dotted)
     - globals.css contains `.galley-popover`, `.galley-unresolved`, `.galley-headline`, `.galley-deck`, `.galley-body`
+    - globals.css contains `.galley-root` with `background: var(--background)` (D-04 paper background, explicit)
     - The existing `:root{...}` token block is unchanged (only appended content)
   </acceptance_criteria>
   <done>Severity-tiered annotation styling, popover, unresolved card, and the D-04 type scale exist as galley CSS classes.</done>
