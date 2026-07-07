@@ -16,13 +16,15 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
+from fastapi.testclient import TestClient
 
 import eisenbalm_pipeline.lib.convex_client as _cc
+from eisenbalm_pipeline.api.content import router as content_router
 from eisenbalm_pipeline.api.control import _emit_audit
 from eisenbalm_pipeline.lib.sanity_client import (
     get_issue_draft,
@@ -31,6 +33,19 @@ from eisenbalm_pipeline.lib.sanity_client import (
 )
 
 pytestmark = pytest.mark.anyio
+
+# ── Endpoint-layer TestClient (mirrors test_review_endpoints.py) ───────────
+
+_content_app = FastAPI()
+_content_app.include_router(content_router)
+_content_app.state.convex_http = MagicMock()
+_content_app.state.sanity_http = MagicMock()
+_content_app.state.graph = None
+_content_app.state.background_tasks = set()
+
+_content_client = TestClient(_content_app, raise_server_exceptions=True)
+
+_C = "eisenbalm_pipeline.api.content"
 
 
 # ── _emit_audit before/after extension (D-09) — REAL, PASSING ─────────────
@@ -165,16 +180,118 @@ async def test_patch_revision_mismatch(monkeypatch: pytest.MonkeyPatch):
     assert exc_info.value.detail["reason"] == "revision_mismatch"
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_theme_patch_validation():
+def _valid_theme_body(**overrides) -> dict:
+    body = {
+        "ifRevisionID": "rev-1",
+        "primaryColor": "#111111",
+        "accentColor": "#222222",
+        "backgroundColor": "#333333",
+        "textColor": "#444444",
+        "fontDisplay": "Lora",
+        "fontBody": "Inter",
+        "visualDirection": "warm and quiet",
+    }
+    body.update(overrides)
+    return body
+
+
+def _empty_draft(**overrides) -> dict:
+    draft = {
+        "revisionId": "rev-1",
+        "sections": {},
+        "theme": {},
+        "game": {},
+        "bonus": {},
+        "podcast": {},
+        "bonusType": None,
+        "conversation": [],
+    }
+    draft.update(overrides)
+    return draft
+
+
+async def test_theme_patch_validation(monkeypatch: pytest.MonkeyPatch):
     """PATCH /issues/{run_id}/theme HARD-blocks invalid hex / non-whitelisted
-    fonts with 4xx {reason: "validation_failed", fields: [...]}."""
+    fonts with 4xx {reason: "validation_failed", fields: [...]}; a valid
+    theme (hex + whitelisted font) returns 200."""
+    # Invalid hex — no network calls should even be needed to reject this.
+    bad_hex = _content_client.patch(
+        "/issues/run-abc/theme", json=_valid_theme_body(primaryColor="red")
+    )
+    assert bad_hex.status_code == 422
+    detail = bad_hex.json()["detail"]
+    assert detail["reason"] == "validation_failed"
+    assert "primaryColor" in detail["fields"]
+
+    # Non-whitelisted font.
+    bad_font = _content_client.patch(
+        "/issues/run-abc/theme", json=_valid_theme_body(fontDisplay="Spectral")
+    )
+    assert bad_font.status_code == 422
+    assert bad_font.json()["detail"]["fields"] == ["fontDisplay"]
+
+    # Valid theme -> 200, patches + audits.
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft()
+
+    async def mock_patch_issue_field(http, *, issue_id, field_path, value, if_revision_id):
+        assert field_path == "theme"
+        return "rev-2"
+
+    audit_calls: list[dict] = []
+
+    async def mock_emit_audit(http, **kwargs):
+        audit_calls.append(kwargs)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    ok = _content_client.patch("/issues/run-abc/theme", json=_valid_theme_body())
+    assert ok.status_code == 200, ok.text
+    assert ok.json() == {"revisionId": "rev-2"}
+    assert audit_calls[0]["action"] == "content.theme_patched"
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_structural_floor_warns_not_blocks():
-    """A section-body patch below the structural floor still saves (200)
-    with warnings — it never 4xxs."""
+async def test_structural_floor_warns_not_blocks(monkeypatch: pytest.MonkeyPatch):
+    """A long-read section-body patch with 0 h2/blockquote returns 200 with
+    a non-empty warnings list — it never 4xxs (D-08)."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft(
+            sections={"originStory": {"headline": "Old", "blocks": [], "lossy": False}}
+        )
+
+    async def mock_patch_issue_field(http, *, issue_id, field_path, value, if_revision_id):
+        assert field_path == "originStory.body"
+        return "rev-2"
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    response = _content_client.patch(
+        "/issues/run-abc/sections/originStory",
+        json={
+            "ifRevisionID": "rev-1",
+            "blocks": [{"type": "paragraph", "text": "Just prose, no headers or quotes."}],
+        },
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["revisionId"] == "rev-2"
+    assert len(data["warnings"]) == 2  # 0/2 sub-headers + 0/1 blockquote
 
 
 def _make_asset_handler(captured: dict, *, asset_id: str = "image-abc"):
@@ -260,10 +377,43 @@ async def test_upload_asset_patches_reference(monkeypatch: pytest.MonkeyPatch):
     assert patch2["set"]["bonus.storyboard0"]["_type"] == "file"
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_audit_row_truncated_snapshot():
+async def test_audit_row_truncated_snapshot(monkeypatch: pytest.MonkeyPatch):
     """A before/after snapshot longer than 2000 chars is truncated with the
     "...[truncated]" suffix before being written to auditLog:record."""
+    long_before = "B" * 3000
+    long_after = "A" * 3000
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft(
+            sections={"originStory": {"headline": long_before, "blocks": [], "lossy": False}}
+        )
+
+    async def mock_patch_issue_field(http, *, issue_id, field_path, value, if_revision_id):
+        return "rev-2"
+
+    captured: dict = {}
+
+    async def mock_emit_audit(http, **kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    response = _content_client.patch(
+        "/issues/run-abc/headlines/originStory",
+        json={"ifRevisionID": "rev-1", "headline": long_after},
+    )
+    assert response.status_code == 200, response.text
+    assert captured["action"] == "content.headline_patched"
+    assert captured["before"].endswith("...[truncated]")
+    assert captured["after"].endswith("...[truncated]")
+    assert len(captured["before"]) == 2000 + len("...[truncated]")
+    assert len(captured["after"]) == 2000 + len("...[truncated]")
 
 
 async def test_asset_overwrite_audit_swap(monkeypatch: pytest.MonkeyPatch):
@@ -314,10 +464,84 @@ async def test_asset_overwrite_audit_swap_records_audit():
     auditLog:record row."""
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_bonus_patch_variant_shaped():
+async def test_bonus_patch_variant_shaped(monkeypatch: pytest.MonkeyPatch):
     """PATCH /issues/{run_id}/bonus accepts a payload shaped by bonusType —
-    specAd→body, bigBudget→storyboards, jingle→lyrics+sunoPrompt."""
+    variant mismatch -> 409 {reason:'wrong_bonus_variant'}; specAd -> bonus.body
+    via compose_section_body; jingle -> bonus.lyrics + bonus.sunoPrompt."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft_specad(http, issue_id):
+        return _empty_draft(bonusType="specAd", bonus={"headline": "H"})
+
+    captured_fields: dict = {}
+
+    async def mock_patch_fields(http, *, issue_id, fields, if_revision_id):
+        captured_fields.clear()
+        captured_fields.update(fields)
+        return "rev-2"
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_specad)
+    monkeypatch.setattr(f"{_C}._patch_fields", mock_patch_fields)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    # Wrong variant against a specAd-typed issue -> 409.
+    wrong = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={
+            "ifRevisionID": "rev-1",
+            "variant": "jingle",
+            "headline": "H",
+            "body": "B",
+            "lyrics": "L",
+            "sunoPrompt": "S",
+        },
+    )
+    assert wrong.status_code == 409
+    assert wrong.json()["detail"]["reason"] == "wrong_bonus_variant"
+
+    # Correct (specAd) variant -> patches bonus.body via compose_section_body.
+    ok = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={
+            "ifRevisionID": "rev-1",
+            "variant": "specAd",
+            "blocks": [
+                {"type": "h2", "text": "Header"},
+                {"type": "blockquote", "text": "Quote"},
+            ],
+        },
+    )
+    assert ok.status_code == 200, ok.text
+    assert "bonus.body" in captured_fields
+    assert captured_fields["bonus.body"][0]["style"] == "h2"
+    assert "bonus.lyrics" not in captured_fields
+
+    # jingle against a jingle-typed issue -> lyrics + sunoPrompt patched.
+    async def mock_get_issue_draft_jingle(http, issue_id):
+        return _empty_draft(bonusType="jingle", bonus={})
+
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_jingle)
+
+    jingle_ok = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={
+            "ifRevisionID": "rev-1",
+            "variant": "jingle",
+            "headline": "H",
+            "body": "B",
+            "lyrics": "La la la",
+            "sunoPrompt": "Upbeat",
+        },
+    )
+    assert jingle_ok.status_code == 200, jingle_ok.text
+    assert captured_fields["bonus.lyrics"] == "La la la"
+    assert captured_fields["bonus.sunoPrompt"] == "Upbeat"
 
 
 def _pt_block(style: str, text: str, *, mark_defs=None, extra_children=None) -> dict:
