@@ -30,6 +30,19 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 26: Review Gate + Charity Registry** - `awaiting_review` queue, rendered preview, approve/schedule/reject/re-roll, friction-gated `auto_publish`, factual-claims checklist, charity registry with Scout dedup (completed 2026-06-23)
 - [x] **Phase 27: Money + Notifications** - Stripe reconciliation (actual recorded cost, not estimates), payout tracking, Slack + email notifications, `model_pricing` staleness indicator (completed 2026-06-24)
 
+**v2.0 complete. v3.0: Dispatch Control v2 — Editorial Operator Console (Phases 30–39)**
+
+- [ ] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix
+- [ ] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path
+- [ ] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe
+- [ ] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail
+- [ ] **Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement** - Server-enforced "Facts cleared" + "Sounds human" sign-offs, webhook-level re-validation closing the Studio status-flip bypass, Studio retired to read-only fallback
+- [ ] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist
+- [ ] **Phase 36: Voice Pass De-Slop Screen** - Dedicated machine-tell screen reusing the existing QA two-layer detector (rules + Opus judge), as-written vs. house-voice rewrite popovers, its own "Sounds human" sign-off
+- [ ] **Phase 37: Run Monitor v2 + Signal Desk** - Forensic run spine (agents as dots, code gates as diamonds), handoff inspector, 7-writer per-section strength scores, run-vs-last-8 drift strip, Gate 1 candidate slate + interrupt/adjudication mode
+- [ ] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run
+- [ ] **Phase 39: Registry Coverage-Memory Strip** - Last-8-issues cause/geo/signal coverage strip, append-only charity corrections log re-read by the Researcher
+
 ## Phase Details
 
 ### Phase 1: Sanity Foundation
@@ -414,6 +427,16 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 25. Run Control | 5/5 | Complete    | 2026-06-23 |
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
+| 30. Foundation — Design System, Chrome & Inbox | 0/? | Not started | - |
+| 31. Content-Patch Endpoints + Full Editing | 0/? | Not started | - |
+| 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
+| 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
+| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
+| 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
+| 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
+| 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
+| 38. Prompt Lab Evals + Eval Center | 0/? | Not started | - |
+| 39. Registry Coverage-Memory Strip | 0/? | Not started | - |
 
 ## Backlog
 
@@ -626,3 +649,133 @@ Plans:
 - [x] 27-03-notifications-backend-PLAN.md — Slack provider + dispatch helper + notificationsLedger + sendNotification + trigger seams (NTF-01/02)
 - [x] 27-04-finance-ui-PLAN.md — /finance view: summary card + issue revenue table + inline payout mark-sent + projection pricing
 - [x] 27-05-notification-settings-ui-PLAN.md — Settings Notifications subsection + setNotificationConfig mutation
+
+
+---
+
+## v3.0 Phase Details — Dispatch Control v2 (Editorial Operator Console)
+
+Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven build order and PROJECT.md's Current Milestone locked decisions + reconciliation facts. 43 v3.0 requirements mapped across 10 phases (30-39); Phases 37-38 are parallel tracks with no schema/endpoint dependency on the Review Desk track (30-36).
+
+### Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox
+**Goal**: Every console screen presents the 1c design system, the operator always sees pipeline/spend/lock status from the masthead, navigation is workflow-ordered, and a single inbox aggregates everything blocked on a human — with the deployed dashboard actually reaching the pipeline API.
+**Depends on**: Phase 21 (existing `dispatch-control` app shell being extended)
+**Requirements**: CHR-01, CHR-02, CHR-03, CHR-04, CHR-05
+**Success Criteria** (what must be TRUE):
+  1. Every screen in dispatch-control renders using the 1c token set (ink `#17140e`, cobalt `#253ad4`, vermilion `#e8471d`, marigold `#f2b01e`, green `#148a52`) and the four fonts (Newsreader/Lora/Space Grotesk/IBM Plex Mono) loaded via `next/font` — no leftover default styling remains.
+  2. The masthead, present on every route, shows current issue number, pipeline state chip, month-to-date spend vs. cap, and the auto-publish lock chip, all reading live data.
+  3. Left nav lists Review Desk, Signal Desk, Run Monitor, Voice Pass/Prompt Lab, Eval Center, Registry in that order, plus a "How to use" screen documenting the weekly loop, color legend, and house rules.
+  4. The Awaiting-you inbox in the masthead lists every awaiting-review run, Gate 1 interrupt, unresolved blocker, and failed run; clicking any item routes to its owning screen.
+  5. The deployed dashboard's test-run panel successfully calls the pipeline API in production (`NEXT_PUBLIC_PIPELINE_URL` configured and verified live, not just in local dev).
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 31: Content-Patch Endpoints + Full Editing
+**Goal**: Every content mutation from the console flows through a scoped pipeline-API patch to Sanity — never a direct Sanity write — so per-section editing, structured-field editing, and asset uploads all work without disturbing other sections' block identities.
+**Depends on**: Phase 30 (console shell to host the editing UI); backend endpoint work has no schema dependency on Phase 30 and may start in parallel
+**Requirements**: EDT-01, EDT-02, EDT-03, EDT-05
+**Success Criteria** (what must be TRUE):
+  1. Operator can edit any section's prose as a structured block list in the console and save; the change lands in the Sanity draft via a scoped `patch` endpoint, and every other section's content/block identities are untouched.
+  2. Operator can edit structured fields (section headlines, PDF key data points, game embed code, theme values) from the console and see them reflected in the Sanity draft.
+  3. Operator can upload a podcast audio file, Suno audio, or storyboard image through the console and see it attached to the draft as a Sanity asset.
+  4. A source scan of `apps/dispatch-control` finds zero direct Sanity client writes — every content mutation path calls the pipeline API, never Sanity directly.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 32: Native Galley (read-only) + Span-Resolver
+**Goal**: Operator can read the issue as the reader will see it, natively rendered with existing QA findings highlighted inline, without losing the working preview iframe as a fallback during the transition.
+**Depends on**: Phase 30 (console shell)
+**Requirements**: GLY-01, GLY-02, GLY-05
+**Success Criteria** (what must be TRUE):
+  1. The Review Desk renders the Sanity draft (all sections, including the sandboxed game) as a native `@portabletext/react` tree, not an iframe.
+  2. Existing QA findings render as inline severity-colored span annotations, resolved via `quotedSpan` text-match plus a `blockIndexHint` against live content; findings that fail to resolve are visibly marked "unresolved" — never silently dropped or mis-rendered.
+  3. Section-status chips show per-section finding counts and jump to that section on click.
+  4. The prior preview-iframe route still renders and is reachable, so Andrew has a working fallback for at least one full weekly cycle.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 33: Accept-Fix Wiring + Decision Rail
+**Goal**: Operator can act on any QA finding directly from the galley — accept the fix, edit inline, or dismiss with a reason — with every action mutating the real draft and logged, and the decision rail makes unresolved blockers impossible to miss.
+**Depends on**: Phase 31 (content-patch endpoints), Phase 32 (galley + span-resolver)
+**Requirements**: GLY-03, GLY-04, EDT-04, EDT-06
+**Success Criteria** (what must be TRUE):
+  1. Clicking an annotation opens a popover showing axis, severity, reason, and suggested fix, with Accept fix / Edit inline / Dismiss actions.
+  2. Accepting a fix applies the suggested text to the draft via the Phase 31 content-patch endpoint and logs the action to the audit log; dismissing requires a one-line reason, also logged — nothing is silent.
+  3. After any content patch, annotation anchors are re-resolved against the updated content; annotations invalidated by the edit are surfaced as orphaned for operator review, not dropped.
+  4. The decision rail shows unresolved error-severity findings first and blocks Publish until they're resolved; it also shows the editor memo, hook card, and a verification summary with an affirmative timestamp state ("checked Nm ago" — never blank).
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement
+**Goal**: An issue cannot be published without two independent, server-enforced sign-offs, and the Sanity Studio status-flip can no longer bypass that gate.
+**Depends on**: Phase 26 (existing publish/claims-signoff gate being extended); schema-independent of Phases 31-33 but sequenced alongside the galley's gated Publish UI so it isn't built twice
+**Requirements**: PUB-01, PUB-02, PUB-03, PUB-04
+**Success Criteria** (what must be TRUE):
+  1. The publish endpoint returns 409 unless both "Facts cleared" and "Sounds human" sign-offs are recorded for that run.
+  2. The Sanity publish webhook handler itself re-checks sign-off state before running the publisher — flipping status directly in Studio no longer triggers a publish.
+  3. Sanity Studio's publish action for `weeklyIssue` is disabled/removed after a soak period of real weekly cycles on the console, with Studio documented as a read-only fallback.
+  4. Every sign-off, publish attempt, and any override is recorded in the audit log with actor and timestamp.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering
+**Goal**: Every claim the Researcher extracts carries a source and survives into the final prose the writers produce, and the galley shows Andrew at a glance which claims are sourced and which aren't.
+**Depends on**: Phase 32 (galley + span-resolver — the frontend target for this pipeline work)
+**Requirements**: PRV-01, PRV-02, PRV-03, PRV-04
+**Success Criteria** (what must be TRUE):
+  1. The Researcher emits per-claim `{claim, sourceUrl, retrievedAt}` bindings, generalizing the existing founder/subject paired-field source-URL pattern to all claim types.
+  2. Each of the 7 section writers references claim IDs in its structured output (established at generation time, not free prose), so bindings survive rewriting rather than being reconstructed by post-hoc fuzzy matching.
+  3. The galley renders sourced claims with a marigold highlight (hover reveals source URL + retrieval date) and unsourced claims with a rust tint, as first-class visual states.
+  4. The decision rail's source index groups unsourced claims on top with jump links and lists sourced claims with their sources; the claims sign-off checklist is upgraded to source-bound claims instead of free-text.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 36: Voice Pass De-Slop Screen
+**Goal**: Operator has a dedicated screen for catching machine-tell prose and can rewrite it to house voice before it counts as "sounds human."
+**Depends on**: Phase 33 (accept-fix pattern — Voice Pass is mechanically the same span-match → popover → content-patch shape), Phase 34 (feeds the publish gate)
+**Requirements**: VOX-01, VOX-02, VOX-03, VOX-04
+**Success Criteria** (what must be TRUE):
+  1. The Voice Pass screen lights machine-tells and voice violations inline over otherwise clean prose, with a per-screen tell count.
+  2. Clicking a tell opens an as-written vs. suggested-house-voice comparison with Accept rewrite / Write my own / Keep (not a tell) actions; accepting mutates the draft via content-patch.
+  3. Voice Pass carries its own "Sounds human" sign-off, distinct from factual clearance, and that sign-off feeds the Phase 34 publish gate.
+  4. Detection is two-layer — deterministic rules render instantly, the Opus judge runs on demand — reusing the existing `agents/qa/rules.py` + judge rather than a new detector.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 37: Run Monitor v2 + Signal Desk
+**Goal**: Operator can see exactly what happened in a run as a forensic timeline and can adjudicate charity selection at Gate 1 without leaving the dashboard.
+**Depends on**: Phase 30 (console shell); no schema/endpoint dependency on Phases 31-36 — parallel track, over existing `agent_runs`/`agent_run_payloads`/`pitchLog`/`editor_gate_1` interrupt-resume
+**Requirements**: MON-01, MON-02, MON-03, MON-04, SIG-01, SIG-02, SIG-03
+**Success Criteria** (what must be TRUE):
+  1. A run renders as a vertical forensic spine — LLM agents as dots, code gates (`verify_research`, `validate_sections`) as marigold diamonds — each showing per-node cost, latency, model chip, and retry count.
+  2. Clicking a node shows the upstream→node→downstream handoff in human-readable form first, with raw JSON behind a toggle.
+  3. The 7-writers node expands into per-section rows with a QA-derived strength score (0-100 colored bar) and flag counts, each section individually re-runnable.
+  4. A drift strip compares the current run's cost and duration against the trailing 8 runs.
+  5. Operator sees the Gate 1 candidate slate (pitchLog scout summaries, Advocate scores with expandable arguments, `primaryConcern` always visible, never truncated) and the winner/confidence/reasoning panel in full.
+  6. When the pipeline interrupts at Gate 1, the screen enters side-by-side adjudication; the operator's pick plus a logged reason resumes the run via the existing `POST /run/{run_id}/resume` endpoint.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 38: Prompt Lab Evals + Eval Center
+**Goal**: Operator can validate a prompt edit against real scenarios before committing it, and can watch editorial quality over time instead of trusting a single green number.
+**Depends on**: Phase 30 (console shell); no schema/endpoint dependency on Phases 31-37 — parallel track, over the existing `api/agents.py` test-run/score isolation pattern and `api/control.py` checkpoint-fork pattern
+**Requirements**: EVL-01, EVL-02, EVL-03, EVL-04, EVL-05
+**Success Criteria** (what must be TRUE):
+  1. Golden scenario fixtures run against a single agent through the existing test-run/score endpoints.
+  2. Editing a prompt in the Prompt Lab eval drawer auto-selects the scenarios it affects, runs them, and shows a scoreboard of deltas vs. the active version.
+  3. Committing a prompt is gated on target-metric-up-with-no-regressions, with a logged override-with-reason escape hatch so the gate cannot deadlock.
+  4. The Eval Center shows scenario cards (description, what-it-catches, last result) plus an append-only scoreboard time-series in new Convex tables — the editorial drift detector.
+  5. Operator can run a shadow run — the discovery scenario against current real news — and see what a paid run would produce, without publishing or affecting run state.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 39: Registry Coverage-Memory Strip
+**Goal**: Operator can see thematic repetition across recent issues at a glance and keep a durable record of corrections to a charity that the Researcher actually reuses.
+**Depends on**: Phase 30 (console shell); read-side aggregation over the existing charity registry — can land any time
+**Requirements**: MEM-01, MEM-02, MEM-03
+**Success Criteria** (what must be TRUE):
+  1. A coverage-memory strip visualizes the last 8 issues' cause/geo/signal chips so thematic repetition is visible at a glance.
+  2. Operator can append a correction to a charity's record, stored as an append-only corrections log surfaced in the Registry.
+  3. The Researcher re-reads a charity's corrections log on any future mention of that charity, verifiable in pipeline output/logs for a repeat-charity run.
+**Plans**: TBD
+**UI hint**: yes

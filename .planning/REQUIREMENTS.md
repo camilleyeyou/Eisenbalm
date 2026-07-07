@@ -645,6 +645,62 @@ Derived 2026-06-24 in `/gsd:plan-phase 28` from the four capability areas and lo
 - Mapped to phase: 10
 - Unmapped: 0 ✓
 
+## v3.0 Traceability
+
+Added 2026-07-06 during v3.0 roadmap creation. All 43 v3.0 requirements mapped to Phases 30-39 (continuing numbering from Phase 29). Phases 37-38 are parallel tracks with no schema/endpoint dependency on the Review Desk track (30-36).
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CHR-01 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
+| CHR-02 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
+| CHR-03 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
+| CHR-04 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
+| CHR-05 | Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox | Planned |
+| EDT-01 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
+| EDT-02 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
+| EDT-03 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
+| EDT-05 | Phase 31: Content-Patch Endpoints + Full Editing | Planned |
+| GLY-01 | Phase 32: Native Galley (read-only) + Span-Resolver | Planned |
+| GLY-02 | Phase 32: Native Galley (read-only) + Span-Resolver | Planned |
+| GLY-05 | Phase 32: Native Galley (read-only) + Span-Resolver | Planned |
+| GLY-03 | Phase 33: Accept-Fix Wiring + Decision Rail | Planned |
+| GLY-04 | Phase 33: Accept-Fix Wiring + Decision Rail | Planned |
+| EDT-04 | Phase 33: Accept-Fix Wiring + Decision Rail | Planned |
+| EDT-06 | Phase 33: Accept-Fix Wiring + Decision Rail | Planned |
+| PUB-01 | Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement | Planned |
+| PUB-02 | Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement | Planned |
+| PUB-03 | Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement | Planned |
+| PUB-04 | Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement | Planned |
+| PRV-01 | Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering | Planned |
+| PRV-02 | Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering | Planned |
+| PRV-03 | Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering | Planned |
+| PRV-04 | Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering | Planned |
+| VOX-01 | Phase 36: Voice Pass De-Slop Screen | Planned |
+| VOX-02 | Phase 36: Voice Pass De-Slop Screen | Planned |
+| VOX-03 | Phase 36: Voice Pass De-Slop Screen | Planned |
+| VOX-04 | Phase 36: Voice Pass De-Slop Screen | Planned |
+| MON-01 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| MON-02 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| MON-03 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| MON-04 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| SIG-01 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| SIG-02 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| SIG-03 | Phase 37: Run Monitor v2 + Signal Desk | Planned |
+| EVL-01 | Phase 38: Prompt Lab Evals + Eval Center | Planned |
+| EVL-02 | Phase 38: Prompt Lab Evals + Eval Center | Planned |
+| EVL-03 | Phase 38: Prompt Lab Evals + Eval Center | Planned |
+| EVL-04 | Phase 38: Prompt Lab Evals + Eval Center | Planned |
+| EVL-05 | Phase 38: Prompt Lab Evals + Eval Center | Planned |
+| MEM-01 | Phase 39: Registry Coverage-Memory Strip | Planned |
+| MEM-02 | Phase 39: Registry Coverage-Memory Strip | Planned |
+| MEM-03 | Phase 39: Registry Coverage-Memory Strip | Planned |
+
+**Coverage (v3.0):**
+- v3.0 requirements: 43 total (CHR:5, GLY:5, EDT:6, PUB:4, VOX:4, PRV:4, MON:4, SIG:3, EVL:5, MEM:3)
+- Mapped to phases: 43
+- Unmapped: 0 ✓
+- V3-DEF-01..05 deferred to a follow-up milestone (not in Phases 30-39) ✓
+
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-06-24 — added PRC-01..10 (Prompt Console → Phase 28)*
+*Last updated: 2026-07-06 — added v3.0 Traceability (CHR/GLY/EDT/PUB/VOX/PRV/MON/SIG/EVL/MEM → Phases 30-39)*
