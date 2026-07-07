@@ -281,7 +281,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Galley & Review Desk (GLY)
 - [ ] **GLY-01**: Operator reads the issue as the reader will see it — a native render of the Sanity draft (all sections including the sandboxed game) inside the Review Desk, replacing the preview iframe.
-- [ ] **GLY-02**: QA findings render as inline severity-colored span annotations, resolved by quotedSpan text-match with a block-index hint; anchors that no longer resolve are surfaced as orphaned, never silently dropped.
+- [x] **GLY-02**: QA findings render as inline severity-colored span annotations, resolved by quotedSpan text-match with a block-index hint; anchors that no longer resolve are surfaced as orphaned, never silently dropped.
 - [ ] **GLY-03**: Clicking an annotation opens a popover showing axis, severity, reason, and suggested fix, with Accept fix / Edit inline / Dismiss actions.
 - [ ] **GLY-04**: The decision rail is blockers-first: unresolved error-severity findings gate Publish; rail shows the editor memo, hook card, and a verification summary with affirmative states ("checked Nm ago" — never blank).
 - [ ] **GLY-05**: Section-status chips show per-section finding counts and act as jump navigation.

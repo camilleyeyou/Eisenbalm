@@ -431,7 +431,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
-| 32. Native Galley (read-only) + Span-Resolver | 1/7 | In Progress|  |
+| 32. Native Galley (read-only) + Span-Resolver | 2/7 | In Progress|  |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
@@ -710,7 +710,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 **Plans**: 7 plans
 - [x] 32-01-test-scaffold-and-dep-PLAN.md — Wave 0: install @portabletext/react + author 8 RED test files (resolver, sectionIdMap, syntheticPortableText, googleFontLoader, galleyGameValidator, UnresolvedFindingCard, Galley, SectionChipList)
 - [ ] 32-02-blockindexhint-and-asset-urls-PLAN.md — Wave 1: contract-first §31.7 + _DRAFT_GROQ asset-URL dereference (podcast audio + storyboards) + Convex qaCorrections.blockIndexHint + QA agent ordinal emission (GLY-01, GLY-02)
-- [ ] 32-03-span-resolver-core-PLAN.md — Wave 1: pure sectionIdMap.ts + spanResolver.ts (per-block quotedSpan match, hint disambiguation, narrow normalization, ambiguous→unresolved) (GLY-02)
+- [x] 32-03-span-resolver-core-PLAN.md — Wave 1: pure sectionIdMap.ts + spanResolver.ts (per-block quotedSpan match, hint disambiguation, narrow normalization, ambiguous→unresolved) (GLY-02)
 - [ ] 32-04-render-helpers-PLAN.md — Wave 1: syntheticPortableText.ts (markDef injection) + googleFontLoader.ts (whitelist-validated) + galleyGameValidator.ts (parity duplicate) (GLY-01)
 - [ ] 32-05-annotation-primitives-PLAN.md — Wave 2: AnnotationMark.tsx (severity underline + read-only popover) + UnresolvedFindingCard.tsx + galley CSS (GLY-02)
 - [ ] 32-06-galley-assembly-PLAN.md — Wave 3: GalleryGameSlot + GallerySection + Galley (all 8 sections, live findings, resolver, theme fonts) (GLY-01)
