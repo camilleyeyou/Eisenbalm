@@ -7,7 +7,10 @@ Source: docs/API_CONTRACTS.md §2.4 (verbatim).
 """
 from __future__ import annotations
 
+import logging
 import uuid
+
+log = logging.getLogger(__name__)
 
 
 def text_to_portable_text(text: str) -> list[dict]:
@@ -166,3 +169,39 @@ def compose_section_body(blocks: list) -> list[dict]:
             # 'paragraph', None, or any unknown value falls back to paragraph
             result.append(block_paragraph(text))
     return result
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Phase 31 — pt_to_blocks(): reverse mapper (Portable Text -> block rows)
+#
+# Source: docs/API_CONTRACTS.md §31.7. The inverse of compose_section_body,
+# needed by the content-patch draft-read GET (EDT-01) so the operator editor
+# can round-trip existing Sanity content back into the {type, text}[] shape
+# the PATCH endpoints accept.
+# ────────────────────────────────────────────────────────────────────────
+
+
+def pt_to_blocks(pt_blocks: list[dict]) -> tuple[list[dict], bool]:
+    """Inverse of compose_section_body. Returns ({type,text}[] rows, lossy).
+
+    lossy=True if ANY block had markDefs (len>0) or multiple children spans —
+    those marks/spans are flattened by the naive text-join (v1 limitation:
+    the block model was never inline-WYSIWYG). See API_CONTRACTS §31.7.
+    """
+    style_to_type = {"h2": "h2", "h3": "h3", "blockquote": "blockquote"}
+    rows: list[dict] = []
+    lossy = False
+    for b in pt_blocks or []:
+        children = b.get("children") or []
+        if (b.get("markDefs") or []) or len(children) > 1:
+            lossy = True
+        block_type = style_to_type.get(b.get("style"), "paragraph")
+        text = "".join(c.get("text", "") for c in children)
+        rows.append({"type": block_type, "text": text})
+    if lossy:
+        log.warning(
+            "pt_to_blocks: lossy conversion — a stored block had markDefs "
+            "or multiple children spans that were flattened by the "
+            "naive text-join. See API_CONTRACTS.md §31.7."
+        )
+    return rows, lossy
