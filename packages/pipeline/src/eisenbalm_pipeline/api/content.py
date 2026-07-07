@@ -13,7 +13,7 @@ exactly one truncated before/after audit row per mutation (D-09).
 
 Asset uploads (EDT-03) use raw binary request bodies — `python-multipart`
 is not an installed dependency (RESEARCH Pitfall 3), so FastAPI's
-`UploadFile`/`File(...)` are never used here.
+multipart form-parsing helpers are never used here.
 """
 from __future__ import annotations
 
@@ -710,9 +710,10 @@ async def upload_content_asset(
     claims: dict = Depends(_require_clerk_jwt_control),
 ) -> dict:
     """EDT-03 — raw-binary asset upload (podcast-audio | suno-audio |
-    storyboard-{i}). NEVER FastAPI UploadFile/File() — python-multipart is
-    not an installed dependency (RESEARCH Pitfall 3); the body is read via
-    `await request.body()` and metadata comes from custom headers."""
+    storyboard-{i}). NEVER FastAPI's multipart form-parsing helpers —
+    python-multipart is not an installed dependency (RESEARCH Pitfall 3);
+    the body is read via `await request.body()` and metadata comes from
+    custom headers."""
     field_path, asset_kind = _resolve_asset_slot(slot)
 
     raw = await request.body()

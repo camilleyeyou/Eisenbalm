@@ -458,10 +458,199 @@ async def test_asset_overwrite_audit_swap(monkeypatch: pytest.MonkeyPatch):
     assert first["assetId"] != second["assetId"]
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_asset_overwrite_audit_swap_records_audit():
-    """An asset-slot overwrite records the before/after asset IDs in the
-    auditLog:record row."""
+async def test_asset_overwrite_audit_swap_records_audit(monkeypatch: pytest.MonkeyPatch):
+    """An asset-slot overwrite (endpoint layer) emits an audit row with
+    action="content.asset_uploaded" carrying before(old assetId)/after(new
+    assetId). Distinct from the helper-level test_asset_overwrite_audit_swap
+    above (Plan 31-02, un-skipped there)."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft(
+            bonusType="bigBudget",
+            bonus={"storyboards": [{"_key": "sb-0", "asset": {"_ref": "image-old"}}]},
+        )
+
+    async def mock_upload_asset(
+        http, *, issue_id, field_path, file_bytes, filename, content_type, asset_kind, if_revision_id
+    ):
+        assert field_path == "bonus.storyboards[0]"
+        assert asset_kind == "image"
+        return {
+            "assetUrl": "https://cdn.sanity.io/images/proj/production/image-new.png",
+            "assetId": "image-new",
+            "revisionId": "rev-2",
+        }
+
+    captured: dict = {}
+
+    async def mock_emit_audit(http, **kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.upload_asset", mock_upload_asset)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    response = _content_client.post(
+        "/issues/run-abc/assets/storyboard-0",
+        headers={
+            "X-Filename": "sb.png",
+            "Content-Type": "image/png",
+            "X-If-Revision-Id": "rev-1",
+        },
+        content=b"raw-bytes",
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["assetId"] == "image-new"
+    assert captured["action"] == "content.asset_uploaded"
+    assert captured["before"] == "image-old"
+    assert captured["after"] == "image-new"
+
+
+async def test_suno_audio_sets_url_string(monkeypatch: pytest.MonkeyPatch):
+    """The suno-audio slot patches a plain string URL (not an asset-reference
+    dict) onto bonus.sunoAudioUrl (§31.6 exception)."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft(bonusType="jingle", bonus={"sunoAudioUrl": ""})
+
+    patched: dict = {}
+
+    async def mock_patch_issue_field(http, *, issue_id, field_path, value, if_revision_id):
+        patched["field_path"] = field_path
+        patched["value"] = value
+        return "rev-2"
+
+    class _FakeUploadResponse:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {
+                "document": {
+                    "_id": "file-abc",
+                    "url": "https://cdn.sanity.io/files/proj/production/file-abc.mp3",
+                }
+            }
+
+    async def mock_post(url, **kwargs):
+        assert url.endswith("/assets/files/production")
+        return _FakeUploadResponse()
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    monkeypatch.setenv("SANITY_API_TOKEN", "test-token")
+    monkeypatch.setenv("NEXT_PUBLIC_SANITY_DATASET", "production")
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+    monkeypatch.setattr(_content_app.state.sanity_http, "post", AsyncMock(side_effect=mock_post))
+
+    response = _content_client.post(
+        "/issues/run-abc/assets/suno-audio",
+        headers={
+            "X-Filename": "audio.mp3",
+            "Content-Type": "audio/mpeg",
+            "X-If-Revision-Id": "rev-1",
+        },
+        content=b"raw-audio-bytes",
+    )
+    assert response.status_code == 200, response.text
+    assert patched["field_path"] == "bonus.sunoAudioUrl"
+    assert patched["value"] == "https://cdn.sanity.io/files/proj/production/file-abc.mp3"
+    assert isinstance(patched["value"], str)
+    assert response.json()["assetUrl"] == patched["value"]
+
+
+async def test_storyboard_slot_field_path(monkeypatch: pytest.MonkeyPatch):
+    """A storyboard-{i} slot resolves to positional field path
+    bonus.storyboards[{i}] passed through to upload_asset() (RESEARCH Open
+    Question 3 — verifies the exact set path the endpoint emits)."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft(bonusType="bigBudget", bonus={"storyboards": []})
+
+    captured: dict = {}
+
+    async def mock_upload_asset(
+        http, *, issue_id, field_path, file_bytes, filename, content_type, asset_kind, if_revision_id
+    ):
+        captured["field_path"] = field_path
+        captured["asset_kind"] = asset_kind
+        return {
+            "assetUrl": "https://cdn.sanity.io/images/proj/production/sb.png",
+            "assetId": "image-sb",
+            "revisionId": "rev-2",
+        }
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.upload_asset", mock_upload_asset)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    response = _content_client.post(
+        "/issues/run-abc/assets/storyboard-2",
+        headers={
+            "X-Filename": "sb.png",
+            "Content-Type": "image/png",
+            "X-If-Revision-Id": "rev-1",
+        },
+        content=b"bytes",
+    )
+    assert response.status_code == 200, response.text
+    assert captured["field_path"] == "bonus.storyboards[2]"
+    assert captured["asset_kind"] == "image"
+
+
+async def test_upload_asset_unknown_slot_400(monkeypatch: pytest.MonkeyPatch):
+    """An unrecognized slot name is rejected with 400 before any network
+    calls are attempted."""
+    response = _content_client.post(
+        "/issues/run-abc/assets/not-a-real-slot",
+        headers={"X-Filename": "x.png", "Content-Type": "image/png"},
+        content=b"bytes",
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"]["reason"] == "invalid_slot"
+
+
+async def test_get_draft_endpoint_returns_get_issue_draft_result(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """GET /issues/{run_id}/draft returns get_issue_draft()'s dict verbatim
+    (revisionId + sections + lossy) with no audit row written."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    expected = _empty_draft(revisionId="rev-9")
+
+    async def mock_get_issue_draft(http, issue_id):
+        assert issue_id == "issue-42"
+        return expected
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+
+    response = _content_client.get("/issues/run-abc/draft")
+    assert response.status_code == 200, response.text
+    assert response.json() == expected
 
 
 async def test_bonus_patch_variant_shaped(monkeypatch: pytest.MonkeyPatch):
