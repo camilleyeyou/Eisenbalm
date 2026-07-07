@@ -78,3 +78,135 @@ body {
   color: #991b1b;
   text-decoration: underline wavy;
 }
+
+/* ── Phase 32: Native Galley ── */
+
+/**
+ * D-07 severity-tiered inline annotation underline. `.galley-anno` is the
+ * base treatment applied to every rendered `marks.annotation` component;
+ * `data-severity` selects the tier. Error gets a light vermilion tint in
+ * addition to the underline (the design's "shown treatment"); warning and
+ * info are underline-only so error visually dominates a scan.
+ */
+.galley-anno {
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+.galley-anno[data-severity="error"] {
+  background: rgba(232, 71, 29, 0.13);
+  border-bottom: 2px solid var(--color-vermilion);
+}
+.galley-anno[data-severity="warning"] {
+  border-bottom: 2px solid var(--color-marigold);
+}
+.galley-anno[data-severity="info"] {
+  border-bottom: 1px dotted var(--color-cobalt);
+}
+.galley-anno:focus-visible {
+  outline: 2px solid var(--color-ink);
+}
+
+/**
+ * D-10 read-only popover — axis · severity · reason · suggested fix, no
+ * action buttons this phase (Phase 33 extends the same component).
+ */
+.galley-popover {
+  position: absolute;
+  z-index: 40;
+  max-width: 340px;
+  background: var(--color-card);
+  border: 1px solid var(--color-ink);
+  box-shadow: 5px 5px 0 var(--color-cobalt);
+  padding: 14px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--color-ink);
+}
+.galley-popover__severity {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-marigold-text);
+}
+.galley-popover__axis {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  color: var(--color-cobalt);
+  margin-top: 6px;
+}
+.galley-popover__reason {
+  margin-top: 6px;
+  line-height: 1.45;
+}
+.galley-popover__fix {
+  margin-top: 8px;
+  color: var(--color-ink-soft);
+  font-style: italic;
+}
+
+/**
+ * D-09 section-end unresolved card — a finding whose anchor failed is never
+ * silently dropped (GLY-02); it surfaces here with its full reason and
+ * original quoted text.
+ */
+.galley-unresolved {
+  border: 1px dashed var(--color-vermilion);
+  background: rgba(232, 71, 29, 0.06);
+  padding: 14px;
+  margin-top: 18px;
+}
+.galley-unresolved__label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  color: var(--color-vermilion);
+}
+.galley-unresolved__quote {
+  font-style: italic;
+  color: var(--color-ink-soft);
+}
+
+/**
+ * D-04 galley type scale (Newsreader 52px headline, italic 22px deck,
+ * 16.5px/1.7 body) — theme fonts + accent color only (D-04); the scale
+ * itself is fixed, not per-issue.
+ */
+.galley-headline {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 0.98;
+}
+.galley-deck {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--color-ink-soft);
+}
+.galley-body {
+  font-family: var(--font-body);
+  font-size: 16.5px;
+  line-height: 1.7;
+}
+.galley-h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+}
+.galley-pullquote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  border-left: 3px solid var(--galley-accent, var(--color-cobalt));
+  padding-left: 16px;
+}
+
+/**
+ * D-04 paper background, explicit not implicit: the galley sits on the
+ * console's paper background as a deliberate rule, so a future white-card
+ * wrapper around the galley can never silently change the reading surface.
+ */
+.galley-root {
+  background: var(--background);
+}
