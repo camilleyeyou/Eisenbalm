@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#e9e5dc;font-family:system-ui,sans-serif;}
+  .dv-turn{padding:44px 48px 40px;}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px;}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1712;color:#fff;border-radius:4px;text-decoration:none;}
+  .dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#2a251d;}
+  .dv-sub{font:400 12.5px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5);margin:0 0 26px;max-width:80ch;}
+  .dv-opts{display:flex;flex-wrap:nowrap;gap:40px;align-items:flex-start;}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:11px;scroll-margin-top:16px;}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.09);color:#1a1712;border-radius:5px;text-decoration:none;}
+  .dv-olabel{display:flex;align-items:baseline;gap:9px;font:400 12px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.6);}
+  .dv-olabel b{font-weight:600;color:#2a251d;}
+  .dv-opt:target .dv-oid{background:#c2502a;color:#fff;}
+  .dv-card{box-shadow:0 24px 60px -34px rgba(20,16,10,.55);}
+  .dv-next{margin:30px 0 0;font:12.5px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55);}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Review Desk — three hi-fi directions</span></div>
+  <p class="dv-sub">The 5-minute publish review, same content and structure across all three so the choice is purely visual language. Each folds in the audit's fixes: affirmative verification ("checked 2m ago"), an <b>Awaiting you</b> queue in the header, a blockers-first decision rail, and an aggregate unsourced-claims count. Sample issue: <em>Project Cool Breeze</em> · heat-dome week.</p>
+
+  <div class="dv-opts">
+
+    <!-- ============ 1A · WARM PRINT / NEWSROOM ============ -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><b>Warm print / newsroom</b> — Cormorant + Lora, paper &amp; ink, gold/rust. Feels like the publication.</div>
+      <div class="dv-card" style="width:1080px;background:#f6f0e4;border:1px solid rgba(28,26,23,.16);font-family:'Lora',Georgia,serif;color:#1c1a17;overflow:hidden;">
+        <!-- header -->
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 22px;background:#efe7d6;border-bottom:1px solid rgba(28,26,23,.16);">
+          <span style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:19px;letter-spacing:.01em;">Dispatch Control</span>
+          <span style="width:1px;height:18px;background:rgba(28,26,23,.2);"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5b544a;">Issue No. 7</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#8a6d1a;background:rgba(205,164,52,.18);border:1px solid rgba(205,164,52,.5);padding:2px 8px;border-radius:2px;">Awaiting review</span>
+          <span style="flex:1;"></span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#c2502a;border:1px solid rgba(194,80,42,.4);border-radius:2px;padding:3px 9px;">● Awaiting you · 2</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5b544a;">$12.40 / $200</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;color:#5b544a;border:1px dashed rgba(28,26,23,.35);border-radius:2px;padding:3px 9px;">🔒 Auto-publish OFF</span>
+        </div>
+
+        <div style="display:flex;">
+          <!-- GALLEY -->
+          <div style="flex:1;padding:26px 34px 30px;border-right:1px solid rgba(28,26,23,.14);min-width:0;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px;font-family:'IBM Plex Mono',monospace;font-size:10px;">
+              <span style="border:1px solid rgba(90,122,80,.5);color:#4a6b45;padding:2px 7px;border-radius:2px;">origin ✓</span>
+              <span style="border:1px solid rgba(205,164,52,.6);color:#8a6d1a;padding:2px 7px;border-radius:2px;">problem · 2⚠</span>
+              <span style="border:1px solid rgba(194,80,42,.6);color:#c2502a;padding:2px 7px;border-radius:2px;">founder · 1✕</span>
+              <span style="border:1px solid rgba(90,122,80,.5);color:#4a6b45;padding:2px 7px;border-radius:2px;">case ✓</span>
+              <span style="border:1px solid rgba(90,122,80,.5);color:#4a6b45;padding:2px 7px;border-radius:2px;">game ✓</span>
+              <span style="border:1px solid rgba(205,164,52,.6);color:#8a6d1a;padding:2px 7px;border-radius:2px;">bonus · 1⚠</span>
+              <span style="color:#a89f8d;padding:2px 4px;">← jump to section</span>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c2502a;margin:0 0 10px;">The Eisenbalm Dispatch · Heat-Relief</div>
+            <h1 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:48px;line-height:1.02;letter-spacing:-.01em;margin:0 0 12px;">The Coldest Company<br>in Charleston</h1>
+            <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:21px;line-height:1.34;color:#5b544a;margin:0 0 22px;max-width:44ch;">For twenty-six summers, a two-person outfit in the Lowcountry has treated heat as a line item worth eliminating.</p>
+
+            <p style="font-size:16.5px;line-height:1.66;margin:0 0 14px;max-width:56ch;">Project Cool Breeze operates on a premise most utilities decline to underwrite: that a summer afternoon can be fatal, and that the remedy runs about <span style="background:linear-gradient(transparent 62%,rgba(205,164,52,.34) 62%);cursor:help;" title="Source: SC Utilities Commission filing, 2024 · retrieved Jul 2">$180 a unit</span>. Since 1999 it has installed <span style="background:linear-gradient(transparent 62%,rgba(205,164,52,.34) 62%);cursor:help;" title="Source: org annual report p.4 · retrieved Jul 2">1,240 window units</span> across <span style="background:linear-gradient(transparent 62%,rgba(205,164,52,.34) 62%);cursor:help;" title="Source: org site /coverage · retrieved Jul 2">three counties</span>, a figure it reports without ceremony.</p>
+
+            <p style="font-size:16.5px;line-height:1.66;margin:0 0 14px;max-width:56ch;">Its founder, <span style="border-bottom:2px solid #c2502a;background:rgba(194,80,42,.08);cursor:pointer;" title="Click: QA finding">a tireless force of nature</span>, began with a single box fan and a handwritten list of names. By the group's own accounting, demand now <span style="background:rgba(194,80,42,.12);border-bottom:1px dotted #c2502a;cursor:help;" title="Unsourced claim — Researcher supplied no citation">outpaces supply four to one</span>.</p>
+
+            <!-- QA popover -->
+            <div style="border:1px solid rgba(194,80,42,.4);background:#fbf1ec;border-radius:3px;padding:12px 14px;margin:6px 0 20px;max-width:56ch;">
+              <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#c2502a;margin:0 0 6px;"><span style="background:#c2502a;color:#fff;padding:1px 6px;border-radius:2px;">ERROR</span> axis: sentiment · founder_bio</div>
+              <p style="font-size:14px;line-height:1.5;margin:0 0 4px;color:#3a352d;">"tireless force of nature" — inflated, unverifiable characterization. House voice keeps the officeholder out of frame and lets facts carry weight.</p>
+              <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;line-height:1.4;margin:6px 0 10px;color:#1c1a17;">Suggested: "a former county clerk"</p>
+              <div style="display:flex;gap:7px;">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:#1c1a17;color:#f6f0e4;padding:5px 12px;border-radius:2px;cursor:pointer;">Accept fix</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid rgba(28,26,23,.4);padding:5px 12px;border-radius:2px;cursor:pointer;">Edit inline</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid rgba(28,26,23,.25);color:#8a8072;padding:5px 12px;border-radius:2px;cursor:pointer;">Dismiss + reason</span>
+              </div>
+            </div>
+
+            <div style="border:1px dashed rgba(28,26,23,.3);background:#efe7d6;border-radius:3px;padding:30px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8072;">▶  THE GAME · playable inline in sandbox</div>
+          </div>
+
+          <!-- RAIL -->
+          <div style="width:322px;flex:none;padding:22px 22px 26px;background:#fbf7ee;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8a8072;margin:0 0 4px;">Decision</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:25px;line-height:1.05;margin:0 0 3px;">1 blocker to clear</div>
+            <div style="font-size:13px;color:#5b544a;margin:0 0 18px;">2 warnings · 1 unsourced claim · est. 4 min</div>
+
+            <div style="border:1px solid rgba(194,80,42,.4);border-left:3px solid #c2502a;background:#fbf1ec;border-radius:3px;padding:11px 13px;margin:0 0 12px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#c2502a;margin:0 0 6px;">Blocking · must resolve</div>
+              <label style="display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;"><span style="width:13px;height:13px;border:1.5px solid #c2502a;border-radius:2px;flex:none;margin-top:2px;"></span><span><b>founder_bio</b> · sentiment<br><span style="color:#5b544a;">"tireless force of nature"</span></span></label>
+            </div>
+
+            <div style="border:1px solid rgba(28,26,23,.14);border-radius:3px;padding:11px 13px;margin:0 0 12px;background:#fff;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a8072;margin:0 0 5px;">Editor's memo</div>
+              <p style="font-size:13.5px;line-height:1.5;margin:0;color:#3a352d;">Clean issue but for the founder line — accept the fix and it clears. Hook is dated and verified. Thesis holds: heat as an eliminable line item. <span style="color:#8a8072;">Read full ▾</span></p>
+            </div>
+
+            <div style="border:1px solid rgba(205,164,52,.5);border-radius:3px;padding:11px 13px;margin:0 0 12px;background:#fdfaf0;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a6d1a;margin:0 0 5px;">The hook</div>
+              <p style="font-size:13.5px;line-height:1.45;margin:0 0 6px;">Heat dome — DC's hottest July 4 since <span title="Source: NWS record · retrieved Jul 2" style="cursor:help;background:linear-gradient(transparent 62%,rgba(205,164,52,.34) 62%);">1919</span>.</p>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4a6b45;border:1px solid rgba(90,122,80,.5);padding:1px 6px;border-radius:2px;">hook verified ✓</span>
+            </div>
+
+            <div style="border:1px solid rgba(28,26,23,.14);border-radius:3px;padding:11px 13px;margin:0 0 16px;background:#fff;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a8072;margin:0 0 7px;display:flex;justify-content:space-between;"><span>Verification</span><span style="color:#4a6b45;">checked 2m ago</span></div>
+              <div style="display:grid;gap:5px;font-size:12.5px;color:#3a352d;">
+                <div style="display:flex;justify-content:space-between;"><span>charity domain</span><span style="color:#4a6b45;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>EIN 83-2940767</span><span style="color:#4a6b45;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>founder name sourced</span><span style="color:#4a6b45;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(28,26,23,.18);padding-top:5px;"><span>claims sourced</span><span style="color:#c2502a;">10 / 11 · 1 open</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.02em;color:#b7ad99;background:#efe7d6;border:1px solid rgba(28,26,23,.14);border-radius:2px;padding:11px;cursor:not-allowed;">Publish — resolve 1 blocker</div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid rgba(28,26,23,.4);border-radius:2px;padding:8px;cursor:pointer;">Hold</div>
+                <div style="flex:1;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid rgba(28,26,23,.4);border-radius:2px;padding:8px;cursor:pointer;">Re-run ▾</div>
+                <div style="flex:1;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid rgba(28,26,23,.4);border-radius:2px;padding:8px;cursor:pointer;">Transcript</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1B · RESTRAINED EDITORIAL TOOL ============ -->
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><b>Restrained editorial tool</b> — Spectral + Plex Sans, cool neutral, near-mono chrome, tight grid.</div>
+      <div class="dv-card" style="width:1080px;background:#f4f4f2;border:1px solid rgba(20,24,30,.14);font-family:'IBM Plex Sans',system-ui,sans-serif;color:#21242a;overflow:hidden;">
+        <!-- header -->
+        <div style="display:flex;align-items:center;gap:14px;padding:11px 20px;background:#fff;border-bottom:1px solid rgba(20,24,30,.12);">
+          <span style="font-weight:600;font-size:13.5px;letter-spacing:-.01em;">Dispatch Control</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#727880;">/ issue 7</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:#8a6a2f;background:#f6efe0;border:1px solid #e6d6b4;padding:2px 7px;border-radius:3px;">awaiting review</span>
+          <span style="flex:1;"></span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#b0503a;background:#faf0ec;border:1px solid #e8c6b8;border-radius:3px;padding:3px 9px;">● Awaiting you · 2</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#727880;">$12.40 / $200</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.03em;color:#727880;border:1px solid rgba(20,24,30,.18);border-radius:3px;padding:3px 8px;">Auto-publish OFF</span>
+        </div>
+
+        <div style="display:flex;">
+          <!-- slim rail-nav -->
+          <div style="width:46px;flex:none;background:#ececeb;border-right:1px solid rgba(20,24,30,.1);display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b9199;">
+            <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#21242a;color:#fff;border-radius:5px;">1</span>
+            <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">2</span>
+            <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">3</span>
+            <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">4</span>
+            <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">5</span>
+            <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">6</span>
+          </div>
+
+          <!-- GALLEY -->
+          <div style="flex:1;padding:22px 30px 28px;border-right:1px solid rgba(20,24,30,.1);background:#fbfbfa;min-width:0;">
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin:0 0 20px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;">
+              <span style="background:#eef2ee;color:#4c6b52;padding:3px 7px;border-radius:3px;">origin ✓</span>
+              <span style="background:#f6efe0;color:#8a6a2f;padding:3px 7px;border-radius:3px;">problem 2</span>
+              <span style="background:#faf0ec;color:#b0503a;padding:3px 7px;border-radius:3px;">founder 1</span>
+              <span style="background:#eef2ee;color:#4c6b52;padding:3px 7px;border-radius:3px;">case ✓</span>
+              <span style="background:#eef2ee;color:#4c6b52;padding:3px 7px;border-radius:3px;">game ✓</span>
+              <span style="background:#f6efe0;color:#8a6a2f;padding:3px 7px;border-radius:3px;">bonus 1</span>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#9aa0a8;margin:0 0 12px;">Heat-Relief · Issue 7</div>
+            <h1 style="font-family:'Spectral',serif;font-weight:600;font-size:38px;line-height:1.08;letter-spacing:-.015em;margin:0 0 11px;color:#181b20;">The Coldest Company in Charleston</h1>
+            <p style="font-family:'Spectral',serif;font-size:18px;line-height:1.4;color:#5c626b;margin:0 0 22px;max-width:46ch;font-weight:400;">For twenty-six summers, a two-person outfit in the Lowcountry has treated heat as a line item worth eliminating.</p>
+
+            <p style="font-family:'Spectral',serif;font-size:16px;line-height:1.62;margin:0 0 13px;max-width:58ch;color:#2b2f36;">Project Cool Breeze operates on a premise most utilities decline to underwrite: that a summer afternoon can be fatal, and that the remedy runs about <span style="border-bottom:1.5px solid #a9b0b8;cursor:help;" title="Source: SC Utilities Commission filing, 2024 · retrieved Jul 2">$180 a unit</span>. Since 1999 it has installed <span style="border-bottom:1.5px solid #a9b0b8;cursor:help;" title="Source: org annual report p.4 · retrieved Jul 2">1,240 window units</span> across <span style="border-bottom:1.5px solid #a9b0b8;cursor:help;" title="Source: org site /coverage · retrieved Jul 2">three counties</span>, a figure it reports without ceremony.</p>
+
+            <p style="font-family:'Spectral',serif;font-size:16px;line-height:1.62;margin:0 0 14px;max-width:58ch;color:#2b2f36;">Its founder, <span style="border-bottom:2px solid #b0503a;background:rgba(176,80,58,.09);cursor:pointer;" title="Click: QA finding">a tireless force of nature</span>, began with a single box fan and a handwritten list of names. By the group's own accounting, demand now <span style="background:rgba(176,80,58,.1);border-bottom:1px dotted #b0503a;cursor:help;" title="Unsourced — no citation supplied">outpaces supply four to one</span>.</p>
+
+            <!-- QA popover -->
+            <div style="border:1px solid rgba(20,24,30,.14);border-top:2px solid #b0503a;background:#fff;border-radius:4px;padding:13px 15px;margin:4px 0 20px;max-width:58ch;box-shadow:0 6px 18px -12px rgba(20,24,30,.35);">
+              <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:#b0503a;margin:0 0 7px;"><span style="background:#b0503a;color:#fff;padding:2px 6px;border-radius:3px;">error</span> sentiment · founder_bio</div>
+              <p style="font-size:13px;line-height:1.5;margin:0 0 8px;color:#3a3f47;">Inflated, unverifiable characterization. House voice keeps the officeholder out of frame and lets facts carry the weight.</p>
+              <p style="font-family:'Spectral',serif;font-size:15px;line-height:1.4;margin:0 0 11px;color:#181b20;background:#eef2ee;border-radius:3px;padding:7px 10px;">→ "a former county clerk"</p>
+              <div style="display:flex;gap:7px;">
+                <span style="font-size:11.5px;font-weight:500;background:#21242a;color:#fff;padding:6px 13px;border-radius:4px;cursor:pointer;">Accept fix</span>
+                <span style="font-size:11.5px;border:1px solid rgba(20,24,30,.28);padding:6px 13px;border-radius:4px;cursor:pointer;">Edit inline</span>
+                <span style="font-size:11.5px;color:#8b9199;border:1px solid rgba(20,24,30,.16);padding:6px 13px;border-radius:4px;cursor:pointer;">Dismiss</span>
+              </div>
+            </div>
+
+            <div style="border:1px dashed rgba(20,24,30,.22);background:#f1f1ef;border-radius:4px;padding:28px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#9aa0a8;">▶  THE GAME · playable inline in sandbox</div>
+          </div>
+
+          <!-- RAIL -->
+          <div style="width:312px;flex:none;padding:20px 20px 24px;background:#f4f4f2;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#9aa0a8;margin:0 0 4px;">Decision</div>
+            <div style="font-family:'Spectral',serif;font-weight:600;font-size:22px;line-height:1.1;margin:0 0 2px;color:#181b20;">1 blocker to clear</div>
+            <div style="font-size:12px;color:#727880;margin:0 0 16px;">2 warnings · 1 unsourced · est. 4 min</div>
+
+            <div style="background:#fff;border:1px solid rgba(20,24,30,.12);border-left:3px solid #b0503a;border-radius:4px;padding:10px 12px;margin:0 0 10px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#b0503a;margin:0 0 6px;">Blocking · must resolve</div>
+              <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;"><span style="width:13px;height:13px;border:1.5px solid #b0503a;border-radius:3px;flex:none;margin-top:2px;"></span><span><b>founder_bio</b> · sentiment<br><span style="color:#727880;">"tireless force of nature"</span></span></label>
+            </div>
+
+            <div style="background:#fff;border:1px solid rgba(20,24,30,.12);border-radius:4px;padding:10px 12px;margin:0 0 10px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a8;margin:0 0 5px;">Editor's memo</div>
+              <p style="font-family:'Spectral',serif;font-size:13.5px;line-height:1.5;margin:0;color:#3a3f47;">Clean but for the founder line — accept the fix and it clears. Hook dated and verified. Thesis holds. <span style="color:#9aa0a8;font-family:'IBM Plex Sans';">Read full ▾</span></p>
+            </div>
+
+            <div style="background:#fff;border:1px solid rgba(20,24,30,.12);border-radius:4px;padding:10px 12px;margin:0 0 10px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a8;margin:0 0 5px;">The hook</div>
+              <p style="font-family:'Spectral',serif;font-size:13.5px;line-height:1.45;margin:0 0 6px;color:#2b2f36;">Heat dome — DC's hottest July 4 since <span style="border-bottom:1.5px solid #a9b0b8;cursor:help;" title="Source: NWS record · retrieved Jul 2">1919</span>.</p>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4c6b52;background:#eef2ee;padding:2px 7px;border-radius:3px;">hook verified ✓</span>
+            </div>
+
+            <div style="background:#fff;border:1px solid rgba(20,24,30,.12);border-radius:4px;padding:10px 12px;margin:0 0 16px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a8;margin:0 0 7px;display:flex;justify-content:space-between;"><span>Verification</span><span style="color:#4c6b52;">checked 2m ago</span></div>
+              <div style="display:grid;gap:6px;font-size:12px;color:#3a3f47;">
+                <div style="display:flex;justify-content:space-between;"><span>charity domain</span><span style="color:#4c6b52;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>EIN 83-2940767</span><span style="color:#4c6b52;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>founder name sourced</span><span style="color:#4c6b52;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(20,24,30,.1);padding-top:6px;"><span>claims sourced</span><span style="color:#b0503a;">10 / 11 · 1 open</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="text-align:center;font-size:13px;font-weight:500;color:#a9adb3;background:#e9e9e7;border:1px solid rgba(20,24,30,.1);border-radius:5px;padding:11px;cursor:not-allowed;">Publish — resolve 1 blocker</div>
+              <div style="display:flex;gap:7px;">
+                <div style="flex:1;text-align:center;font-size:11.5px;background:#fff;border:1px solid rgba(20,24,30,.18);border-radius:5px;padding:8px;cursor:pointer;">Hold</div>
+                <div style="flex:1;text-align:center;font-size:11.5px;background:#fff;border:1px solid rgba(20,24,30,.18);border-radius:5px;padding:8px;cursor:pointer;">Re-run ▾</div>
+                <div style="flex:1;text-align:center;font-size:11.5px;background:#fff;border:1px solid rgba(20,24,30,.18);border-radius:5px;padding:8px;cursor:pointer;">Transcript</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1C · BOLD ANTI-SAAS MAGAZINE ============ -->
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><b>Bold anti-SaaS magazine</b> — Newsreader display, black masthead, oversized furniture, rust. Tool disguised as a magazine.</div>
+      <div class="dv-card" style="width:1080px;background:#f3ead9;border:1px solid #17140f;font-family:'Lora',Georgia,serif;color:#17140f;overflow:hidden;">
+        <!-- masthead -->
+        <div style="display:flex;align-items:center;gap:16px;padding:13px 24px;background:#17140f;color:#f3ead9;">
+          <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;">Dispatch<span style="color:#e0783f;">/</span>Control</span>
+          <span style="flex:1;"></span>
+          <span style="font-family:'Space Grotesk',monospace;font-size:10.5px;letter-spacing:.05em;color:#c9bfa8;">ISSUE 07</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;background:#cda434;color:#17140f;padding:3px 9px;border-radius:2px;font-weight:600;">Awaiting review</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#f3ead9;background:#c2502a;padding:4px 10px;border-radius:2px;font-weight:600;">● Awaiting you · 2</span>
+          <span style="font-family:'Space Grotesk',monospace;font-size:10px;color:#c9bfa8;">$12.40/$200</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#c9bfa8;border:1px solid rgba(243,234,217,.3);border-radius:2px;padding:3px 8px;">🔒 Auto OFF</span>
+        </div>
+
+        <div style="display:flex;">
+          <!-- GALLEY -->
+          <div style="flex:1;padding:0;border-right:2px solid #17140f;min-width:0;">
+            <!-- section chip strip -->
+            <div style="display:flex;gap:0;border-bottom:2px solid #17140f;font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;">
+              <span style="flex:1;text-align:center;padding:7px 4px;border-right:1px solid rgba(23,20,15,.2);color:#5c7150;">origin ✓</span>
+              <span style="flex:1;text-align:center;padding:7px 4px;border-right:1px solid rgba(23,20,15,.2);color:#8a6d1a;">problem 2</span>
+              <span style="flex:1;text-align:center;padding:7px 4px;border-right:1px solid rgba(23,20,15,.2);background:#c2502a;color:#f3ead9;font-weight:600;">founder 1✕</span>
+              <span style="flex:1;text-align:center;padding:7px 4px;border-right:1px solid rgba(23,20,15,.2);color:#5c7150;">case ✓</span>
+              <span style="flex:1;text-align:center;padding:7px 4px;border-right:1px solid rgba(23,20,15,.2);color:#5c7150;">game ✓</span>
+              <span style="flex:1;text-align:center;padding:7px 4px;color:#8a6d1a;">bonus 1</span>
+            </div>
+
+            <div style="padding:26px 34px 30px;">
+              <div style="display:flex;align-items:center;gap:10px;margin:0 0 8px;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#c2502a;font-weight:600;">Heat-Relief</span>
+                <span style="flex:1;height:2px;background:#17140f;"></span>
+                <span style="font-family:'Newsreader',serif;font-size:44px;line-height:.8;color:#cda434;font-weight:500;">7</span>
+              </div>
+              <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:54px;line-height:.98;letter-spacing:-.02em;margin:0 0 14px;">The Coldest<br>Company in<br>Charleston</h1>
+              <p style="font-family:'Newsreader',serif;font-style:italic;font-size:22px;line-height:1.32;color:#4a4335;margin:0 0 22px;max-width:40ch;font-weight:400;">For twenty-six summers, a two-person outfit in the Lowcountry has treated heat as a line item worth eliminating.</p>
+
+              <p style="font-size:16.5px;line-height:1.68;margin:0 0 14px;max-width:54ch;"><span style="float:left;font-family:'Newsreader',serif;font-size:62px;line-height:.72;font-weight:500;margin:6px 10px 0 0;color:#c2502a;">P</span>roject Cool Breeze operates on a premise most utilities decline to underwrite: that a summer afternoon can be fatal, and that the remedy runs about <span style="background:linear-gradient(transparent 60%,rgba(205,164,52,.4) 60%);cursor:help;" title="Source: SC Utilities Commission filing, 2024 · retrieved Jul 2">$180 a unit</span>. Since 1999 it has installed <span style="background:linear-gradient(transparent 60%,rgba(205,164,52,.4) 60%);cursor:help;" title="Source: org annual report p.4 · retrieved Jul 2">1,240 window units</span> across <span style="background:linear-gradient(transparent 60%,rgba(205,164,52,.4) 60%);cursor:help;" title="Source: org site · retrieved Jul 2">three counties</span>.</p>
+
+              <p style="font-size:16.5px;line-height:1.68;margin:0 0 16px;max-width:54ch;">Its founder, <span style="border-bottom:3px solid #c2502a;background:rgba(194,80,42,.1);cursor:pointer;font-weight:500;" title="Click: QA finding">a tireless force of nature</span>, began with a single box fan and a handwritten list of names. By the group's own accounting, demand now <span style="background:rgba(194,80,42,.14);border-bottom:1px dotted #c2502a;cursor:help;" title="Unsourced — no citation supplied">outpaces supply four to one</span>.</p>
+
+              <!-- QA popover -->
+              <div style="border:2px solid #17140f;background:#fbf1e6;padding:14px 16px;margin:6px 0 22px;max-width:54ch;box-shadow:5px 5px 0 #c2502a;">
+                <div style="display:flex;align-items:center;gap:9px;font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px;font-weight:600;"><span style="background:#c2502a;color:#f3ead9;padding:2px 8px;">Error</span><span style="color:#5c534180;">sentiment · founder_bio</span></div>
+                <p style="font-size:14px;line-height:1.5;margin:0 0 8px;color:#3a3428;">Inflated, unverifiable. House voice keeps the officeholder out of frame and lets facts carry the weight.</p>
+                <p style="font-family:'Newsreader',serif;font-style:italic;font-size:17px;line-height:1.4;margin:0 0 12px;">→ "a former county clerk"</p>
+                <div style="display:flex;gap:8px;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;background:#17140f;color:#f3ead9;padding:7px 14px;cursor:pointer;">Accept fix</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;border:2px solid #17140f;padding:5px 12px;cursor:pointer;">Edit inline</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#8a8072;border:1px solid rgba(23,20,15,.3);padding:6px 12px;cursor:pointer;">Dismiss</span>
+                </div>
+              </div>
+
+              <div style="border:2px dashed #17140f;background:#ede2cd;padding:30px;text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8a8072;font-weight:500;">▶  The Game — playable inline</div>
+            </div>
+          </div>
+
+          <!-- RAIL -->
+          <div style="width:316px;flex:none;padding:22px 22px 26px;background:#e8dcc4;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a8072;margin:0 0 3px;font-weight:600;">Decision</div>
+            <div style="font-family:'Newsreader',serif;font-weight:500;font-size:28px;line-height:1;margin:0 0 3px;">1 blocker<br>to clear</div>
+            <div style="font-size:12.5px;color:#5c5341;margin:12px 0 18px;font-family:'Space Grotesk',sans-serif;">2 warnings · 1 unsourced · ~4 min</div>
+
+            <div style="background:#fbf1e6;border:2px solid #c2502a;padding:11px 13px;margin:0 0 12px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#c2502a;margin:0 0 6px;font-weight:600;">Blocking · must resolve</div>
+              <label style="display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;"><span style="width:14px;height:14px;border:2px solid #c2502a;flex:none;margin-top:2px;"></span><span><b>founder_bio</b> · sentiment<br><span style="color:#5c5341;">"tireless force of nature"</span></span></label>
+            </div>
+
+            <div style="border-top:2px solid #17140f;padding:11px 1px 12px;margin:0 0 4px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8a8072;margin:0 0 5px;font-weight:600;">Editor's memo</div>
+              <p style="font-size:14px;line-height:1.5;margin:0;color:#3a3428;">Clean but for the founder line — accept the fix and it clears. Hook dated and verified. Thesis holds. <span style="color:#8a8072;font-family:'Space Grotesk',sans-serif;font-size:11px;">Read full ▾</span></p>
+            </div>
+
+            <div style="border-top:1px solid rgba(23,20,15,.25);padding:11px 1px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8a8072;margin:0 0 5px;font-weight:600;">The hook</div>
+              <p style="font-size:14px;line-height:1.45;margin:0 0 6px;">Heat dome — DC's hottest July 4 since <span style="background:linear-gradient(transparent 60%,rgba(205,164,52,.4) 60%);cursor:help;" title="Source: NWS record · retrieved Jul 2">1919</span>.</p>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:#5c7150;font-weight:600;">✓ hook verified</span>
+            </div>
+
+            <div style="border-top:1px solid rgba(23,20,15,.25);padding:11px 1px 14px;margin:0 0 16px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8a8072;margin:0 0 7px;font-weight:600;display:flex;justify-content:space-between;"><span>Verification</span><span style="color:#5c7150;">checked 2m ago</span></div>
+              <div style="display:grid;gap:6px;font-size:12.5px;color:#3a3428;font-family:'Space Grotesk',sans-serif;">
+                <div style="display:flex;justify-content:space-between;"><span>charity domain</span><span style="color:#5c7150;font-weight:600;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>EIN 83-2940767</span><span style="color:#5c7150;font-weight:600;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>founder sourced</span><span style="color:#5c7150;font-weight:600;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(23,20,15,.3);padding-top:6px;"><span>claims sourced</span><span style="color:#c2502a;font-weight:600;">10/11 · 1 open</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:#a99a7a;background:#ded1b6;border:2px solid #cdbfa0;padding:11px;cursor:not-allowed;">PUBLISH — 1 BLOCKER</div>
+              <div style="display:flex;gap:7px;font-family:'Space Grotesk',sans-serif;">
+                <div style="flex:1;text-align:center;font-size:11px;font-weight:600;border:2px solid #17140f;padding:7px;cursor:pointer;">Hold</div>
+                <div style="flex:1;text-align:center;font-size:11px;font-weight:600;border:2px solid #17140f;padding:7px;cursor:pointer;">Re-run ▾</div>
+                <div style="flex:1;text-align:center;font-size:11px;font-weight:600;border:2px solid #17140f;padding:7px;cursor:pointer;">Transcript</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: "build out the rest of the screens in <a class="dv-oid" href="#1a">1a</a>" · "blend <a class="dv-oid" href="#1b">1b</a>'s calm with <a class="dv-oid" href="#1c">1c</a>'s masthead" · "add the Voice Pass screen from the audit" · "show the interrupt / adjudication state"</p>
+</section>
+</x-dc>
+</body>
+</html>

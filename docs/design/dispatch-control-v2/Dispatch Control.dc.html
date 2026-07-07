@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#17140e;font-family:'Lora',Georgia,serif;-webkit-font-smoothing:antialiased;}
+  a{color:#253ad4;}
+  a:hover{color:#1b2ba6;}
+  ::selection{background:#f2b01e;color:#17140e;}
+  .dcscroll::-webkit-scrollbar{width:10px;height:10px;}
+  .dcscroll::-webkit-scrollbar-thumb{background:rgba(20,20,26,.22);border-radius:0;}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#e9eaec;color:#17140e;display:flex;flex-direction:column;">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <div style="display:flex;align-items:center;gap:16px;padding:0 22px;height:52px;background:#17140e;color:#f4f2ec;position:relative;z-index:40;flex:none;">
+    <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:.03em;">DISPATCH<span style="color:#e8471d;">/</span>CONTROL</span>
+    <span style="width:1px;height:20px;background:rgba(244,242,236,.22);"></span>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:.06em;color:#c9c3b5;">ISSUE 07</span>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:#f2b01e;color:#17140e;padding:3px 9px;border-radius:2px;">Awaiting review</span>
+    <span style="flex:1;"></span>
+    <span onClick="{{ inboxToggle }}" style="display:inline-flex;align-items:center;gap:7px;font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#f4f2ec;background:#e8471d;padding:5px 12px;border-radius:2px;cursor:pointer;">● Awaiting you · 2</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c9c3b5;">$12.40 / $200</span>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#c9c3b5;border:1px solid rgba(244,242,236,.3);border-radius:2px;padding:4px 9px;cursor:pointer;">🔒 Auto-publish OFF</span>
+
+    <!-- Awaiting-you inbox dropdown -->
+    <div style="display:{{ inboxDisp }};position:absolute;top:52px;right:120px;width:360px;background:#fff;border:1px solid rgba(20,20,26,.16);border-top:3px solid #e8471d;box-shadow:0 24px 50px -20px rgba(20,16,10,.5);z-index:50;">
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(20,20,26,.1);font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#55514a;display:flex;justify-content:space-between;"><span>Awaiting you</span><span style="color:#e8471d;">2 items</span></div>
+      <div onClick="{{ go_review }}" style="padding:13px 16px;border-bottom:1px solid rgba(20,20,26,.08);cursor:pointer;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#e8471d;font-weight:600;margin:0 0 3px;">Blocking · Review Desk</div>
+        <div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.2;">Issue #7 — 1 error to resolve before publish</div>
+        <div style="font-size:12.5px;color:#55514a;margin-top:2px;">founder_bio · sentiment flag</div>
+      </div>
+      <div onClick="{{ go_signal }}" style="padding:13px 16px;cursor:pointer;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#9a6f04;font-weight:600;margin:0 0 3px;">Confirm · Signal Desk</div>
+        <div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.2;">Brand-risk signal needs a keep / kill call</div>
+        <div style="font-size:12.5px;color:#55514a;margin-top:2px;">"SCOTUS ends TPS" — flagged by Signal Editor</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== BODY ===================== -->
+  <div style="display:flex;flex:1;min-height:0;">
+
+    <!-- NAV -->
+    <div style="width:210px;flex:none;background:#e3e5e8;border-right:1px solid rgba(20,20,26,.13);display:flex;flex-direction:column;padding:14px 0;">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;padding:4px 16px 8px;">Workflow</div>
+      <div onClick="{{ go_review }}" style="{{ nav_review_style }}"><span>1</span>Review Desk</div>
+      <div onClick="{{ go_signal }}" style="{{ nav_signal_style }}"><span>2</span>Signal Desk</div>
+      <div onClick="{{ go_run }}" style="{{ nav_run_style }}"><span>3</span>Run Monitor</div>
+      <div onClick="{{ go_voice }}" style="{{ nav_voice_style }}"><span>4</span>Voice Pass</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;padding:16px 16px 8px;">Craft &amp; memory</div>
+      <div onClick="{{ go_prompt }}" style="{{ nav_prompt_style }}"><span>5</span>Prompt Lab</div>
+      <div onClick="{{ go_eval }}" style="{{ nav_eval_style }}"><span>6</span>Eval Center</div>
+      <div onClick="{{ go_registry }}" style="{{ nav_registry_style }}"><span>7</span>Registry</div>
+      <span style="flex:1;"></span>
+      <div onClick="{{ go_howto }}" style="{{ nav_howto_style }}"><span>?</span>How to use</div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="dcscroll" style="flex:1;min-width:0;overflow:auto;background:#e9eaec;">
+
+      <!-- ================ REVIEW DESK ================ -->
+      <div style="display:{{ disp_review }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);">
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Review Desk</h1>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">The 5-minute publish review · est. 4 min left</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;">
+          <!-- galley -->
+          <div style="flex:1;min-width:0;padding:24px 34px 60px;">
+            <div style="display:flex;gap:0;border:1px solid rgba(20,20,26,.16);margin:0 0 26px;font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;background:#fff;max-width:680px;">
+              <span style="flex:1;text-align:center;padding:8px 4px;border-right:1px solid rgba(20,20,26,.12);color:#148a52;">Origin ✓</span>
+              <span style="flex:1;text-align:center;padding:8px 4px;border-right:1px solid rgba(20,20,26,.12);color:#9a6f04;">Problem 2</span>
+              <span style="flex:1;text-align:center;padding:8px 4px;border-right:1px solid rgba(20,20,26,.12);background:#e8471d;color:#fff;font-weight:600;">Founder 1✕</span>
+              <span style="flex:1;text-align:center;padding:8px 4px;border-right:1px solid rgba(20,20,26,.12);color:#148a52;">Case ✓</span>
+              <span style="flex:1;text-align:center;padding:8px 4px;border-right:1px solid rgba(20,20,26,.12);color:#148a52;">Game ✓</span>
+              <span style="flex:1;text-align:center;padding:8px 4px;color:#9a6f04;">Bonus 1</span>
+            </div>
+
+            <div style="max-width:640px;">
+              <div style="display:flex;align-items:center;gap:10px;margin:0 0 10px;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#e8471d;font-weight:600;">Heat-Relief</span>
+                <span style="flex:1;height:2px;background:#17140e;"></span>
+                <span style="font-family:'Newsreader',serif;font-size:40px;line-height:.8;color:#253ad4;font-weight:500;">7</span>
+              </div>
+              <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:52px;line-height:.98;letter-spacing:-.02em;margin:0 0 14px;">The Coldest Company in Charleston</h2>
+              <p style="font-family:'Newsreader',serif;font-style:italic;font-size:22px;line-height:1.32;color:#4a4335;margin:0 0 24px;max-width:40ch;">For twenty-six summers, a two-person outfit in the Lowcountry has treated heat as a line item worth eliminating.</p>
+
+              <p style="font-size:16.5px;line-height:1.7;margin:0 0 15px;"><span style="float:left;font-family:'Newsreader',serif;font-size:60px;line-height:.72;font-weight:500;margin:6px 10px 0 0;color:#e8471d;">P</span>roject Cool Breeze operates on a premise most utilities decline to underwrite: that a summer afternoon can be fatal, and that the remedy runs about <span style="background:linear-gradient(transparent 60%,rgba(242,176,30,.5) 60%);cursor:help;" title="Source: SC Utilities Commission filing, 2024 · retrieved Jul 2">$180 a unit</span>. Since 1999 it has installed <span style="background:linear-gradient(transparent 60%,rgba(242,176,30,.5) 60%);cursor:help;" title="Source: org annual report p.4 · retrieved Jul 2">1,240 window units</span> across <span style="background:linear-gradient(transparent 60%,rgba(242,176,30,.5) 60%);cursor:help;" title="Source: org site /coverage · retrieved Jul 2">three counties</span>.</p>
+
+              <p style="font-size:16.5px;line-height:1.7;margin:0 0 16px;">Its founder, <span onClick="{{ noop }}" style="border-bottom:3px solid #e8471d;background:rgba(232,71,29,.1);cursor:pointer;font-weight:500;" title="Click: QA finding">a tireless force of nature</span>, began with a single box fan and a handwritten list of names. By the group's own accounting, demand now <span style="background:rgba(232,71,29,.13);border-bottom:1px dotted #e8471d;cursor:help;" title="Unsourced claim — Researcher supplied no citation">outpaces supply four to one</span>.</p>
+
+              <div style="border:2px solid #17140e;background:#fff;padding:14px 16px;margin:6px 0 24px;box-shadow:5px 5px 0 #e8471d;">
+                <div style="display:flex;align-items:center;gap:9px;font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px;font-weight:600;"><span style="background:#e8471d;color:#fff;padding:2px 8px;">Error</span><span style="color:#8b8778;">sentiment · founder_bio</span></div>
+                <p style="font-size:14px;line-height:1.5;margin:0 0 8px;color:#3a352d;">"tireless force of nature" — inflated, unverifiable characterization. House voice keeps the officeholder out of frame and lets facts carry the weight.</p>
+                <p style="font-family:'Newsreader',serif;font-style:italic;font-size:17px;line-height:1.4;margin:0 0 12px;">→ "a former county clerk"</p>
+                <div style="display:flex;gap:8px;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;background:#17140e;color:#f4f2ec;padding:7px 14px;cursor:pointer;">Accept fix</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;border:2px solid #17140e;padding:5px 12px;cursor:pointer;">Edit inline</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#8b8778;border:1px solid rgba(20,20,26,.3);padding:6px 12px;cursor:pointer;">Dismiss + reason</span>
+                </div>
+              </div>
+
+              <div style="border:2px dashed #17140e;background:#fbfaf6;padding:34px;text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8b8778;font-weight:500;">▶  The Game — playable inline in sandbox</div>
+            </div>
+          </div>
+
+          <!-- decision rail -->
+          <div style="width:336px;flex:none;padding:24px 22px 60px;background:#f1f0ea;border-left:1px solid rgba(20,20,26,.13);align-self:stretch;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 3px;font-weight:600;">Decision</div>
+            <div style="font-family:'Newsreader',serif;font-weight:500;font-size:28px;line-height:1;margin:0 0 3px;">1 blocker to clear</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:#55514a;margin:0 0 18px;">2 warnings · 1 unsourced · ~4 min</div>
+
+            <div style="background:#fff;border:2px solid #e8471d;padding:11px 13px;margin:0 0 12px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#e8471d;margin:0 0 6px;font-weight:600;">Blocking · must resolve</div>
+              <label style="display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;"><span style="width:14px;height:14px;border:2px solid #e8471d;flex:none;margin-top:2px;"></span><span><b>founder_bio</b> · sentiment<br><span style="color:#55514a;">"tireless force of nature"</span></span></label>
+            </div>
+
+            <div style="border-top:2px solid #17140e;padding:12px 1px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 5px;font-weight:600;">Editor's memo</div>
+              <p style="font-size:14px;line-height:1.5;margin:0;color:#3a352d;">Clean issue but for the founder line — accept the fix and it clears. Hook is dated and verified. Thesis holds: heat as an eliminable line item. <span style="color:#253ad4;font-family:'Space Grotesk',sans-serif;font-size:11px;cursor:pointer;">Read full ▾</span></p>
+            </div>
+
+            <div style="border-top:1px solid rgba(20,20,26,.2);padding:12px 1px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 5px;font-weight:600;">The hook</div>
+              <p style="font-size:14px;line-height:1.45;margin:0 0 6px;">Heat dome — DC's hottest July 4 since <span style="background:linear-gradient(transparent 60%,rgba(242,176,30,.5) 60%);cursor:help;" title="Source: NWS record · retrieved Jul 2">1919</span>.</p>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:#148a52;font-weight:600;">✓ Hook verified</span>
+            </div>
+
+            <div style="border-top:1px solid rgba(20,20,26,.2);padding:12px 1px 14px;margin:0 0 16px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;"><span>Verification</span><span style="color:#148a52;">checked 2m ago</span></div>
+              <div style="display:grid;gap:6px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:#3a352d;">
+                <div style="display:flex;justify-content:space-between;"><span>charity domain</span><span style="color:#148a52;font-weight:600;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>EIN 83-2940767</span><span style="color:#148a52;font-weight:600;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>founder name sourced</span><span style="color:#148a52;font-weight:600;">✓</span></div>
+                <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(20,20,26,.25);padding-top:6px;"><span>claims sourced</span><span style="color:#e8471d;font-weight:600;">10 / 11 · 1 open</span></div>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid rgba(20,20,26,.2);padding:12px 1px 14px;margin:0 0 16px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;"><span>Source index · 11 claims</span><span style="color:#253ad4;cursor:pointer;">collapse ▾</span></div>
+              <div style="background:#fff;border:1px solid rgba(20,20,26,.15);font-family:'Space Grotesk',sans-serif;font-size:11.5px;">
+                <div style="display:flex;gap:8px;padding:8px 11px;background:#fdeae4;border-left:3px solid #e8471d;cursor:pointer;">
+                  <span style="color:#e8471d;font-weight:600;flex:none;">unsourced</span>
+                  <span style="flex:1;color:#3a352d;">"demand outpaces supply four to one" → jump</span>
+                </div>
+                <div style="display:flex;gap:8px;padding:7px 11px;border-top:1px solid rgba(20,20,26,.07);"><span style="color:#148a52;flex:none;">✓</span><span style="flex:1;color:#55514a;">$180 a unit · <span style="color:#253ad4;">SC Utilities filing</span></span></div>
+                <div style="display:flex;gap:8px;padding:7px 11px;border-top:1px solid rgba(20,20,26,.07);"><span style="color:#148a52;flex:none;">✓</span><span style="flex:1;color:#55514a;">1,240 units · <span style="color:#253ad4;">annual report p.4</span></span></div>
+                <div style="display:flex;gap:8px;padding:7px 11px;border-top:1px solid rgba(20,20,26,.07);"><span style="color:#148a52;flex:none;">✓</span><span style="flex:1;color:#55514a;">three counties · <span style="color:#253ad4;">org /coverage</span></span></div>
+                <div style="padding:6px 11px;border-top:1px solid rgba(20,20,26,.07);color:#8b8778;font-size:10.5px;">+ 7 more sourced claims ▾</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:#a7a291;background:#e0ded5;border:2px solid #d4d1c6;padding:12px;cursor:not-allowed;">PUBLISH — RESOLVE 1 BLOCKER</div>
+              <div style="display:flex;gap:7px;font-family:'Space Grotesk',sans-serif;">
+                <div style="flex:1;text-align:center;font-size:11px;font-weight:600;border:2px solid #17140e;padding:8px;cursor:pointer;">Hold</div>
+                <div onClick="{{ go_run }}" style="flex:1;text-align:center;font-size:11px;font-weight:600;border:2px solid #17140e;padding:8px;cursor:pointer;">Re-run ▾</div>
+                <div style="flex:1;text-align:center;font-size:11px;font-weight:600;border:2px solid #17140e;padding:8px;cursor:pointer;">Transcript</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ SIGNAL DESK ================ -->
+      <div style="display:{{ disp_signal }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Signal Desk</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">Where discovery becomes an editorial decision</span>
+          <span style="flex:1;"></span>
+          <span onClick="{{ showInterrupt }}" style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#e8471d;border:1px solid #e8471d;padding:5px 11px;cursor:pointer;">▷ Simulate interrupt</span>
+        </div>
+
+        <div style="padding:24px 30px 60px;">
+          <!-- signals -->
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">This week's signals · Signal Editor</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0 0 34px;">
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-top:3px solid #253ad4;padding:16px 18px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;"><span style="font-family:'Newsreader',serif;font-size:22px;">Heat dome</span><span style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:#eef0fb;color:#253ad4;padding:2px 7px;font-weight:600;">Weather</span></div>
+              <p style="font-size:14px;line-height:1.5;margin:0 0 10px;color:#3a352d;">150M under alerts. <span style="color:#55514a;">Peg: Jul 2 · <a href="#" style="text-decoration:underline;">NWS advisory</a></span></p>
+              <p style="font-family:'Newsreader',serif;font-style:italic;font-size:15.5px;line-height:1.35;margin:0 0 12px;">Angle: the infrastructure of simply staying alive.</p>
+              <div style="display:flex;gap:7px;font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;"><span style="border:2px solid #17140e;padding:4px 10px;cursor:pointer;">Pin</span><span style="border:1px solid rgba(20,20,26,.3);color:#55514a;padding:5px 10px;cursor:pointer;">Kill + reason</span></div>
+            </div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-top:3px solid #e8471d;padding:16px 18px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;"><span style="font-family:'Newsreader',serif;font-size:22px;">SCOTUS ends TPS</span><span style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:#fdeae4;color:#e8471d;padding:2px 7px;font-weight:600;">Brand risk</span></div>
+              <p style="font-size:14px;line-height:1.5;margin:0 0 10px;color:#3a352d;">330K affected. <span style="color:#55514a;">Peg: Jul 1 · <a href="#" style="text-decoration:underline;">ruling</a></span></p>
+              <p style="font-family:'Space Grotesk',sans-serif;font-size:11px;line-height:1.45;margin:0 0 12px;color:#e8471d;background:#fdeae4;padding:7px 9px;">⚠ Politically radioactive — Signal Editor flagged for a human keep / kill call.</p>
+              <div style="display:flex;gap:7px;font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;"><span style="border:2px solid #17140e;padding:4px 10px;cursor:pointer;">Pin</span><span style="border:1px solid rgba(20,20,26,.3);color:#55514a;padding:5px 10px;cursor:pointer;">Kill + reason</span></div>
+            </div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-top:3px solid #f2b01e;padding:16px 18px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;"><span style="font-family:'Newsreader',serif;font-size:22px;">Kahlo birthday</span><span style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:#fcf1d8;color:#9a6f04;padding:2px 7px;font-weight:600;">Culture</span></div>
+              <p style="font-size:14px;line-height:1.5;margin:0 0 10px;color:#3a352d;">Jul 6 + touring show. <span style="color:#55514a;">Peg: <a href="#" style="text-decoration:underline;">exhibition</a></span></p>
+              <p style="font-family:'Newsreader',serif;font-style:italic;font-size:15.5px;line-height:1.35;margin:0 0 12px;">Angle: art made from the sickbed.</p>
+              <div style="display:flex;gap:7px;font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;"><span style="border:2px solid #17140e;padding:4px 10px;cursor:pointer;">Pin</span><span style="border:1px solid rgba(20,20,26,.3);color:#55514a;padding:5px 10px;cursor:pointer;">Kill + reason</span></div>
+            </div>
+          </div>
+
+          <!-- candidate slate -->
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">Candidate slate · grouped by signal</div>
+          <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:4px solid #253ad4;padding:18px 20px;margin:0 0 12px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;">
+              <div style="font-family:'Newsreader',serif;font-size:24px;">Project Cool Breeze</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;">Advocate <span style="background:#17140e;color:#fff;padding:2px 9px;">9<span style="opacity:.6;font-weight:400;">/10</span></span></div>
+            </div>
+            <p style="font-family:'Newsreader',serif;font-style:italic;font-size:16px;color:#4a4335;margin:4px 0 12px;">Hook: treating summer as a lethal, solvable problem since 1999.</p>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.04em;">
+              <span style="background:#e7f4ee;color:#148a52;padding:3px 9px;">REAL ✓</span>
+              <span style="background:#e7f4ee;color:#148a52;padding:3px 9px;">OBSCURE ✓</span>
+              <span style="background:#e7f4ee;color:#148a52;padding:3px 9px;">SPECIFIC ✓</span>
+              <span style="background:#e7f4ee;color:#148a52;padding:3px 9px;">TELLABLE ✓</span>
+              <span style="width:1px;background:rgba(20,20,26,.15);margin:0 4px;"></span>
+              <span style="border:1px solid rgba(20,20,26,.2);color:#55514a;padding:3px 9px;">domain ✓</span>
+              <span style="border:1px solid rgba(20,20,26,.2);color:#55514a;padding:3px 9px;">EIN ✓</span>
+              <span style="border:1px solid rgba(20,20,26,.2);color:#55514a;padding:3px 9px;">press: local only</span>
+            </div>
+            <div style="background:#fdeae4;border-left:3px solid #e8471d;padding:9px 12px;font-size:13px;line-height:1.45;color:#3a352d;"><b style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#e8471d;">Primary concern · always shown&nbsp;&nbsp;</b>Founder is a sitting state legislator — keep the org, not the officeholder, in frame.</div>
+          </div>
+          <div style="background:#f6f6f2;border:1px solid rgba(20,20,26,.13);padding:13px 18px;margin:0 0 30px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:#55514a;font-size:13.5px;">
+            <span style="font-family:'Newsreader',serif;font-size:19px;color:#17140e;">The Creative Center</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:10px;">Kahlo signal · gates ✓✓✓✓</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;background:#fcf1d8;color:#9a6f04;padding:2px 8px;">⚠ parent-org flag</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;">Advocate 7 · concern: program of a large institution</span>
+          </div>
+
+          <!-- decision · normal -->
+          <div style="display:{{ intNormalDisp }};">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">Gate 1 decision · Editor</div>
+            <div style="background:#17140e;color:#f4f2ec;padding:20px 24px;display:flex;gap:26px;align-items:center;flex-wrap:wrap;">
+              <div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#c9c3b5;margin:0 0 4px;">Winner</div>
+                <div style="font-family:'Newsreader',serif;font-size:30px;line-height:1;">Project Cool Breeze</div>
+              </div>
+              <div style="min-width:150px;">
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#c9c3b5;margin:0 0 6px;">Confidence 0.85</div>
+                <div style="height:8px;background:rgba(244,242,236,.2);"><div style="width:85%;height:100%;background:#f2b01e;"></div></div>
+              </div>
+              <p style="flex:1;min-width:220px;font-family:'Newsreader',serif;font-style:italic;font-size:16px;line-height:1.4;margin:0;color:#e8e3d7;">"Cool Breeze wins on tellability: a fan, a list, and twenty-six summers is a story. The Creative Center is worthier on paper but institutionally dull."</p>
+            </div>
+          </div>
+
+          <!-- decision · adjudication (interrupt) -->
+          <div style="display:{{ intAdjudDisp }};">
+            <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#e8471d;font-weight:600;background:#fdeae4;padding:4px 10px;">● Interrupt · requires your input</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#55514a;">Gate 1 tied — the Editor won't publish a coin-flip. Pick one; your reason is logged to the deliberation transcript.</span>
+              <span style="flex:1;"></span>
+              <span onClick="{{ hideInterrupt }}" style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#55514a;border:1px solid rgba(20,20,26,.3);padding:4px 9px;cursor:pointer;">Exit demo</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div style="background:#fff;border:2px solid #253ad4;padding:18px 20px;">
+                <div style="font-family:'Newsreader',serif;font-size:23px;margin:0 0 4px;">Project Cool Breeze</div>
+                <p style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#55514a;margin:0 0 10px;">Advocate 9 · heat-dome signal</p>
+                <p style="font-size:13.5px;line-height:1.5;margin:0 0 14px;color:#3a352d;">Higher tellability, cleaner provenance, local-only press keeps it obscure. Founder-in-politics is the only snag.</p>
+                <div style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;background:#253ad4;color:#fff;padding:9px;cursor:pointer;">Choose this + log reason</div>
+              </div>
+              <div style="background:#fff;border:2px solid rgba(20,20,26,.2);padding:18px 20px;">
+                <div style="font-family:'Newsreader',serif;font-size:23px;margin:0 0 4px;">The Creative Center</div>
+                <p style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#55514a;margin:0 0 10px;">Advocate 7 · Kahlo signal</p>
+                <p style="font-size:13.5px;line-height:1.5;margin:0 0 14px;color:#3a352d;">Stronger cause fit for the culture peg, but a program of a large institution — reads less obscure, harder to tell.</p>
+                <div style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;border:2px solid #17140e;padding:7px;cursor:pointer;">Choose this + log reason</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ RUN MONITOR ================ -->
+      <div style="display:{{ disp_run }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Run Monitor</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">The pipeline, drawn so the checks-and-balances are legible · click any node to read the handoff</span>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;">
+          <!-- pipeline spine -->
+          <div style="flex:1;min-width:0;padding:26px 30px 60px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 16px;font-weight:600;display:flex;gap:18px;">
+              <span>Run #7 · total $0.30 · 1m 52s</span>
+              <span style="color:#148a52;">◆ 3 code gates passed</span>
+              <span style="color:#9a6f04;">paused at Editor Final</span>
+            </div>
+            <div style="border-left:2px solid #17140e;margin-left:9px;padding-left:0;max-width:560px;">
+              <sc-for list="{{ spine }}" as="n" hint-placeholder-count="12">
+                <div style="display:flex;align-items:center;margin:0 0 2px;position:relative;">
+                  <span style="width:19px;flex:none;display:flex;justify-content:center;margin-left:-10px;">
+                    <sc-if value="{{ n.isGate }}" hint-placeholder-val="{{ true }}"><span style="width:11px;height:11px;background:#f2b01e;border:2px solid #17140e;transform:rotate(45deg);display:block;"></span></sc-if>
+                    <sc-if value="{{ n.isAgent }}" hint-placeholder-val="{{ true }}"><span style="width:10px;height:10px;background:#17140e;border-radius:50%;display:block;"></span></sc-if>
+                  </span>
+                  <div onClick="{{ n.onClick }}" style="{{ n.rowStyle }};flex:1;margin-left:8px;">
+                    <span style="{{ n.nameStyle }};flex:1;">{{ n.name }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#55514a;">{{ n.meta }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- inspector -->
+          <div style="width:372px;flex:none;padding:26px 24px 60px;background:#f1f0ea;border-left:1px solid rgba(20,20,26,.13);align-self:stretch;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#8b8778;margin:0 0 4px;font-weight:600;">Node inspector</div>
+            <div style="font-family:'Newsreader',serif;font-size:26px;line-height:1.05;margin:0 0 2px;">{{ selName }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#55514a;margin:0 0 4px;">{{ selKind }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#253ad4;margin:0 0 18px;">{{ selMeta }}</div>
+
+            <!-- handoff -->
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;">Handoff</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(20,20,26,.15);padding:10px 12px;margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-size:12px;">
+              <span style="color:#55514a;">{{ selFrom }}</span>
+              <span style="flex:1;text-align:center;color:#e8471d;font-weight:600;">→</span>
+              <span style="font-weight:600;">{{ selName }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(20,20,26,.15);padding:10px 12px;margin:0 0 18px;font-family:'Space Grotesk',sans-serif;font-size:12px;">
+              <span style="font-weight:600;">{{ selName }}</span>
+              <span style="flex:1;text-align:center;color:#e8471d;font-weight:600;">→</span>
+              <span style="color:#55514a;">{{ selTo }}</span>
+            </div>
+
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;"><span>Output · human-readable</span><span style="color:#253ad4;cursor:pointer;">raw JSON ⌄</span></div>
+            <p style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #253ad4;padding:12px 14px;font-size:14px;line-height:1.5;margin:0 0 16px;color:#3a352d;">{{ selIO }}</p>
+
+            <!-- expanded: 7 section writers w/ strength -->
+            <sc-if value="{{ selIsWriters }}" hint-placeholder-val="{{ true }}">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;"><span>7 sections · strength</span><span style="color:#8b8778;">QA-scored</span></div>
+              <div style="background:#fff;border:1px solid rgba(20,20,26,.15);margin:0 0 16px;">
+                <sc-for list="{{ writerSections }}" as="w" hint-placeholder-count="7">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(20,20,26,.07);cursor:pointer;">
+                    <span style="font-family:'Newsreader',serif;font-size:15px;flex:none;width:78px;">{{ w.name }}</span>
+                    <span style="flex:1;height:7px;background:#eceae2;position:relative;"><span style="{{ w.barStyle }}"></span></span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;width:30px;text-align:right;color:#55514a;">{{ w.score }}</span>
+                    <span style="{{ w.flagStyle }}">{{ w.flag }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div style="display:flex;gap:8px;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;margin:0 0 22px;">
+              <span style="flex:1;text-align:center;background:#17140e;color:#f4f2ec;padding:9px;cursor:pointer;">Re-run from this node ▾</span>
+              <span style="text-align:center;border:2px solid #17140e;padding:7px 12px;cursor:pointer;">Transcript</span>
+            </div>
+
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;">This run vs last 8 · operational drift</div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#55514a;">
+              <div style="display:flex;align-items:flex-end;gap:4px;height:34px;margin:0 0 5px;">
+                <span style="flex:1;background:#c9c3b5;height:40%;"></span><span style="flex:1;background:#c9c3b5;height:55%;"></span><span style="flex:1;background:#c9c3b5;height:50%;"></span><span style="flex:1;background:#c9c3b5;height:62%;"></span><span style="flex:1;background:#c9c3b5;height:48%;"></span><span style="flex:1;background:#c9c3b5;height:52%;"></span><span style="flex:1;background:#c9c3b5;height:58%;"></span><span style="flex:1;background:#253ad4;height:54%;"></span>
+              </div>
+              cost — flat vs trailing runs
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ VOICE PASS ================ -->
+      <div style="display:{{ disp_voice }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Voice Pass</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">The de-slop line-edit — make it not read like a machine. Facts already cleared; this is about the ear.</span>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;">
+          <div style="flex:1;min-width:0;padding:26px 34px 60px;">
+            <div style="max-width:640px;">
+              <div style="display:flex;gap:10px;align-items:center;margin:0 0 18px;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#e8471d;font-weight:600;">4 machine-tells</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#55514a;">tap a highlight to rewrite · <span style="color:#148a52;font-weight:600;">register: corporate-dry ✓</span></span>
+              </div>
+
+              <p style="font-size:17px;line-height:1.75;margin:0 0 16px;">In an era defined by <span style="background:rgba(232,71,29,.14);border-bottom:2px dotted #e8471d;cursor:pointer;" title="Cliché opener — machine-tell">rising temperatures and shrinking budgets</span>, Project Cool Breeze <span style="background:rgba(232,71,29,.14);border-bottom:2px dotted #e8471d;cursor:pointer;" title="Inflated register — voice violation">stands as a testament to</span> what a small organization can achieve. It's <span style="background:rgba(232,71,29,.14);border-bottom:2px dotted #e8471d;cursor:pointer;" title="Filler hedge — machine-tell">worth noting that</span> the group has, quite <span style="background:rgba(232,71,29,.14);border-bottom:2px dotted #e8471d;cursor:pointer;" title="Empty intensifier">remarkably</span>, kept going for twenty-six years.</p>
+
+              <!-- rewrite popover -->
+              <div style="border:2px solid #17140e;background:#fff;padding:14px 16px;margin:0 0 22px;box-shadow:5px 5px 0 #253ad4;max-width:560px;">
+                <div style="display:flex;align-items:center;gap:9px;font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px;font-weight:600;"><span style="background:#e8471d;color:#fff;padding:2px 8px;">Machine-tell</span><span style="color:#8b8778;">cliché opener · scored by the voice eval</span></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div>
+                    <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8b8778;margin:0 0 4px;">As written</div>
+                    <p style="font-family:'Newsreader',serif;font-size:16px;line-height:1.35;margin:0;color:#8b8778;text-decoration:line-through;">In an era defined by rising temperatures and shrinking budgets…</p>
+                  </div>
+                  <div>
+                    <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#148a52;margin:0 0 4px;">Suggested · house voice</div>
+                    <p style="font-family:'Newsreader',serif;font-size:16px;line-height:1.35;margin:0;">Charleston set a heat record on July 4. Cool Breeze had already shipped 1,240 units.</p>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;margin:14px 0 0;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;background:#17140e;color:#f4f2ec;padding:7px 14px;cursor:pointer;">Accept rewrite <span style="opacity:.6;">↵</span></span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;border:2px solid #17140e;padding:5px 12px;cursor:pointer;">Write my own</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#8b8778;border:1px solid rgba(20,20,26,.3);padding:6px 12px;cursor:pointer;">Keep · not a tell</span>
+                </div>
+              </div>
+
+              <p style="font-size:17px;line-height:1.75;margin:0 0 26px;color:#3a352d;">Once the tells are cleared the paragraph should read like the rest of the issue — flat, exact, faintly corporate, and unmistakably written by someone who has read a P&amp;L. That register is the whole product.</p>
+            </div>
+          </div>
+
+          <!-- voice rail -->
+          <div style="width:336px;flex:none;padding:26px 22px 60px;background:#f1f0ea;border-left:1px solid rgba(20,20,26,.13);align-self:stretch;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 10px;font-weight:600;">Machine-tells · 4</div>
+            <div style="display:grid;gap:6px;margin:0 0 22px;">
+              <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #e8471d;padding:8px 11px;font-size:13px;cursor:pointer;">"In an era defined by…" <span style="color:#8b8778;">— cliché opener</span></div>
+              <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #e8471d;padding:8px 11px;font-size:13px;cursor:pointer;">"stands as a testament to" <span style="color:#8b8778;">— inflation</span></div>
+              <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #e8471d;padding:8px 11px;font-size:13px;cursor:pointer;">"it's worth noting that" <span style="color:#8b8778;">— hedge</span></div>
+              <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #e8471d;padding:8px 11px;font-size:13px;cursor:pointer;">"remarkably" <span style="color:#8b8778;">— empty intensifier</span></div>
+            </div>
+
+            <div style="border-top:2px solid #17140e;padding:12px 1px;margin:0 0 6px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 5px;font-weight:600;">The voice law · reference only</div>
+              <p style="font-family:'Newsreader',serif;font-style:italic;font-size:15.5px;line-height:1.45;margin:0;color:#3a352d;">"Dry Fortune-500 register. No inflation, no wonder. Let the facts carry the weight." <span style="font-family:'Space Grotesk',sans-serif;font-style:normal;font-size:10.5px;color:#253ad4;cursor:pointer;">open voice_constraints ↗</span></p>
+            </div>
+
+            <div style="border-top:1px solid rgba(20,20,26,.2);padding:14px 1px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8778;margin:0 0 10px;font-weight:600;">Sign-off · separate from facts</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 6px;color:#148a52;"><span style="width:16px;height:16px;background:#148a52;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;">✓</span> Facts cleared — Review Desk</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 14px;color:#9a6f04;"><span style="width:16px;height:16px;border:2px solid #9a6f04;display:block;"></span> Sounds human — <b>this pass</b></div>
+              <div style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.02em;background:#17140e;color:#f4f2ec;padding:12px;cursor:pointer;">Mark "Sounds human" ✓</div>
+              <p style="font-size:11.5px;line-height:1.45;color:#55514a;margin:10px 0 0;">Publish stays disabled until <b>both</b> sign-offs are green. Verified facts and a human ear are different promises.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ PROMPT LAB ================ -->
+      <div style="display:{{ disp_prompt }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Prompt Lab</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">Edit → eval → commit. Improve a prompt without gambling a paid run.</span>
+        </div>
+
+        <div style="display:flex;align-items:stretch;">
+          <!-- asset rail -->
+          <div style="width:230px;flex:none;padding:22px 16px 60px;border-right:1px solid rgba(20,20,26,.13);">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;">Agent prompts</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;display:grid;gap:2px;margin:0 0 16px;">
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;background:#17140e;color:#f4f2ec;">scout <span style="color:#7fdca9;">✓ v2</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#3a352d;">advocate <span style="color:#148a52;">✓ v3</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#3a352d;">researcher <span style="color:#8b8778;">— never eval</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#3a352d;">qa <span style="color:#148a52;">✓ v5</span></div>
+            </div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;">Section guidance</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;display:grid;gap:2px;margin:0 0 16px;">
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#3a352d;">origin_story <span style="color:#e8471d;">⚠ never seeded</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#3a352d;">founder_bio <span style="color:#148a52;">✓</span></div>
+            </div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8b8778;margin:0 0 8px;font-weight:600;">Shared</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;display:grid;gap:2px;">
+              <div style="display:flex;justify-content:space-between;padding:5px 8px;color:#3a352d;">voice_constraints <span style="color:#253ad4;">single-source</span></div>
+            </div>
+          </div>
+
+          <!-- editor -->
+          <div style="flex:1;min-width:0;padding:22px 24px 60px;">
+            <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
+              <span style="font-family:'Newsreader',serif;font-size:20px;">scout</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#55514a;">editing draft · from v2</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;border:1px solid rgba(20,20,26,.3);padding:4px 10px;cursor:pointer;">Diff vs v2</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;border:1px solid rgba(20,20,26,.3);padding:4px 10px;cursor:pointer;">Version timeline</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;border:1px solid rgba(20,20,26,.3);padding:4px 10px;cursor:pointer;">Rollback</span>
+            </div>
+            <div style="background:#17140e;color:#e8e3d7;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.7;padding:18px 20px;min-height:220px;">
+              You are the <b style="color:#fff;">Scout</b>. Surface obscure, real charities tied to this week's signal.<br><br>
+              Reject anything already in <span style="background:rgba(127,220,169,.16);color:#7fdca9;padding:1px 6px;border:1px solid rgba(127,220,169,.4);">{featured_keys}</span> or on the <span style="background:rgba(127,220,169,.16);color:#7fdca9;padding:1px 6px;border:1px solid rgba(127,220,169,.4);">{blocklist}</span>.<br><br>
+              Anchor every candidate to <span style="background:rgba(232,71,29,.2);color:#ff9a7a;padding:1px 6px;border:1px solid rgba(232,71,29,.6);">{current_beat}</span> <span style="color:#ff9a7a;">← code does not supply this variable</span><br><br>
+              Return 6 candidates, each with a one-line mechanism and a hookClaim.
+            </div>
+            <div style="background:#eef0fb;border-left:3px solid #253ad4;padding:10px 13px;margin:12px 0 0;font-size:13px;line-height:1.45;color:#22307a;"><b style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;">Single-source guardrail&nbsp;&nbsp;</b>This draft restates a line of <code style="font-family:'IBM Plex Mono',monospace;">voice_constraints</code>. Reference it, don't restate it — the voice law lives in one file.</div>
+          </div>
+
+          <!-- eval drawer -->
+          <div style="width:320px;flex:none;padding:22px 20px 60px;background:#f1f0ea;border-left:1px solid rgba(20,20,26,.13);">
+            <div style="display:flex;align-items:center;gap:8px;margin:0 0 12px;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8b8778;font-weight:600;">Eval drawer</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:600;background:#253ad4;color:#fff;padding:5px 11px;cursor:pointer;">Run evals ▸</span>
+            </div>
+            <p style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#55514a;margin:0 0 12px;">Auto-selected scenarios affected by this asset: <b>2 · 3 · 4</b></p>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);font-family:'Space Grotesk',sans-serif;font-size:12px;">
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(20,20,26,.12);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#8b8778;font-weight:600;"><span>Dimension</span><span>v2</span><span>draft</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(20,20,26,.07);"><span>gate integrity</span><span style="color:#e8471d;">fail</span><span style="color:#148a52;">pass ↑</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(20,20,26,.07);"><span>fact traceability</span><span>3/5</span><span style="color:#148a52;">5/5 ↑</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(20,20,26,.07);"><span>machine-tells</span><span>4</span><span style="color:#148a52;">1 ↓</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 12px;"><span>est. review mins</span><span>12</span><span style="color:#148a52;">6 ↓</span></div>
+            </div>
+            <div style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;background:#148a52;color:#fff;padding:11px;margin:12px 0 8px;cursor:pointer;">Commit new version ✓</div>
+            <p style="font-size:11.5px;line-height:1.45;color:#55514a;margin:0 0 8px;">Enabled: target metric up, no regressions. A regression opens a warning interstitial quoting the failing dimension.</p>
+            <p style="font-size:11.5px;line-height:1.45;color:#55514a;margin:0;padding-top:8px;border-top:1px dashed rgba(20,20,26,.2);"><span style="color:#253ad4;font-family:'Space Grotesk',sans-serif;font-weight:600;cursor:pointer;">Override + reason ↗</span> — commit anyway with a logged justification when a trivial regression blocks a real gain.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ EVAL CENTER ================ -->
+      <div style="display:{{ disp_eval }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Eval Center</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">Eight golden scenarios + the editorial drift detector</span>
+        </div>
+        <div style="padding:24px 30px 60px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">Golden scenarios</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 20px;">
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">1 · Normal week</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">The happy path — signal to publish.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#148a52;">✓ pass</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">2 · Dry well</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">No good candidates — must hold, not lower the bar.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#148a52;">✓ pass</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">3 · Famous bait</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">A well-known charity that fails OBSCURE.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#148a52;">✓ pass</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">4 · Ghost charity</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">Dead domain / bad EIN — code gate must kill it.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#148a52;">✓ pass</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #f2b01e;padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">5 · Radioactive week</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">Only brand-risk signals — should route to a human.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#9a6f04;">⚠ review</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">6 · Repeat pressure</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">Cause rhymes with a recent issue — Calibrator must catch it.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#8b8778;">— not run</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">7 · Voice gauntlet</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">Tempting slop the writer must resist.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#148a52;">✓ 9/10</span></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:13px 14px;"><div style="font-family:'Newsreader',serif;font-size:17px;line-height:1.15;margin:0 0 4px;">8 · Hallucination trap</div><p style="font-size:11.5px;color:#55514a;margin:0 0 8px;line-height:1.4;">Plausible unsourced stats — must stay unsourced-flagged.</p><span style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:#148a52;">✓ 3/3</span></div>
+          </div>
+
+          <div style="background:#17140e;color:#f4f2ec;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 26px;">
+            <div style="flex:1;min-width:240px;"><div style="font-family:'Newsreader',serif;font-size:20px;margin:0 0 2px;">Shadow run</div><p style="font-size:12.5px;line-height:1.45;margin:0;color:#c9c3b5;">Runs scenario 1 against this week's <b>real</b> news and estimates what the paid run would produce — before you spend a cent. Schedulable every Monday.</p></div>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;font-weight:600;background:#f2b01e;color:#17140e;padding:9px 16px;cursor:pointer;">Run shadow ▸</span>
+          </div>
+
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">Scoreboard history · append-only drift detector</div>
+          <div style="background:#fff;border:1px solid rgba(20,20,26,.15);font-family:'Space Grotesk',sans-serif;font-size:12.5px;">
+            <div style="display:grid;grid-template-columns:90px 1.3fr repeat(5,1fr);gap:8px;padding:9px 16px;border-bottom:1px solid rgba(20,20,26,.14);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:#8b8778;font-weight:600;"><span>Date</span><span>Trigger</span><span>Gates</span><span>Fact n/5</span><span>Voice viol.</span><span>Mach-tells</span><span>Rev. min</span></div>
+            <div style="display:grid;grid-template-columns:90px 1.3fr repeat(5,1fr);gap:8px;padding:10px 16px;border-bottom:1px solid rgba(20,20,26,.07);"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">Jul 2</span><span>scout v2 → draft</span><span style="color:#148a52;font-weight:600;">pass</span><span>5/5</span><span>0</span><span>1</span><span>6</span></div>
+            <div style="display:grid;grid-template-columns:90px 1.3fr repeat(5,1fr);gap:8px;padding:10px 16px;border-bottom:1px solid rgba(20,20,26,.07);color:#55514a;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">Jun 25</span><span>baseline</span><span style="color:#e8471d;font-weight:600;">fail</span><span>3/5</span><span>2</span><span>4</span><span>12</span></div>
+            <div style="display:grid;grid-template-columns:90px 1.3fr repeat(5,1fr);gap:8px;padding:10px 16px;color:#55514a;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">Jun 18</span><span>advocate v3</span><span style="color:#148a52;font-weight:600;">pass</span><span>5/5</span><span>1</span><span>2</span><span>8</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ REGISTRY ================ -->
+      <div style="display:{{ disp_registry }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">Registry</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">Institutional memory — what the Calibrator reads so adjacent weeks don't rhyme</span>
+        </div>
+        <div style="padding:24px 30px 60px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">Coverage memory · last 8 issues</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 28px;">
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:9px 13px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8b8778;">#5</div><div style="font-family:'Newsreader',serif;font-size:15px;">Literacy</div><div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;color:#55514a;">US-NM · none</div></div>
+            <div style="background:#fff;border:1px solid rgba(20,20,26,.15);padding:9px 13px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8b8778;">#6</div><div style="font-family:'Newsreader',serif;font-size:15px;">Medical debt</div><div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;color:#55514a;">US-OH · none</div></div>
+            <div style="background:#17140e;color:#f4f2ec;padding:9px 13px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#c9c3b5;">#7</div><div style="font-family:'Newsreader',serif;font-size:15px;">Heat relief</div><div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;color:#c9c3b5;">US-SC · heat dome</div></div>
+            <div style="background:#f6f6f2;border:1px dashed rgba(20,20,26,.3);padding:9px 13px;color:#8b8778;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;">#8</div><div style="font-family:'Newsreader',serif;font-size:15px;">— open</div><div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;">avoid US-SE · avoid weather</div></div>
+          </div>
+
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8b8778;margin:0 0 12px;font-weight:600;">Charities</div>
+          <div style="background:#fff;border:1px solid rgba(20,20,26,.15);font-family:'Space Grotesk',sans-serif;font-size:12.5px;margin:0 0 20px;">
+            <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr .8fr 1.1fr 1fr;gap:8px;padding:9px 16px;border-bottom:1px solid rgba(20,20,26,.14);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:#8b8778;font-weight:600;"><span>Name</span><span>Status</span><span>Cause</span><span>Geo</span><span>Verification</span><span>Corrections</span></div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr .8fr 1.1fr 1fr;gap:8px;padding:11px 16px;border-bottom:1px solid rgba(20,20,26,.07);align-items:center;"><span style="font-family:'Newsreader',serif;font-size:16px;">Project Cool Breeze</span><span style="color:#148a52;font-weight:600;">Featured #7</span><span>heat relief</span><span>US-SC</span><span style="color:#148a52;">✓ EIN · domain</span><span>0</span></div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr .8fr 1.1fr 1fr;gap:8px;padding:11px 16px;border-bottom:1px solid rgba(20,20,26,.07);align-items:center;color:#55514a;"><span style="font-family:'Newsreader',serif;font-size:16px;color:#17140e;">Undue Medical Debt</span><span>Featured #6</span><span>medical debt</span><span>US</span><span style="color:#9a6f04;">⚠ renamed 2024</span><span>1</span></div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr .8fr 1.1fr 1fr;gap:8px;padding:11px 16px;align-items:center;color:#55514a;"><span style="font-family:'Newsreader',serif;font-size:16px;color:#17140e;">Guinea Pig Bridge</span><span style="color:#e8471d;">Blocklisted</span><span>—</span><span>—</span><span style="color:#e8471d;">✕ domain dead</span><span>—</span></div>
+          </div>
+
+          <div style="background:#fff;border:1px solid rgba(20,20,26,.15);border-left:3px solid #f2b01e;padding:12px 16px;font-size:13px;line-height:1.5;color:#3a352d;"><b style="font-family:'Space Grotesk',sans-serif;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#9a6f04;">Corrections log · append-only&nbsp;&nbsp;</b>"Undue Medical Debt" was "RIP Medical Debt" until 2024 — logged, and the Researcher re-reads it on any future mention. Blocklisting requires typed confirmation.</div>
+        </div>
+      </div>
+
+      <!-- ================ HOW TO USE ================ -->
+      <div style="display:{{ disp_howto }};">
+        <div style="padding:20px 26px 12px;background:#fff;border-bottom:1px solid rgba(20,20,26,.12);display:flex;align-items:baseline;gap:12px;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:500;font-size:27px;line-height:1;margin:0;">How to use</h1>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;color:#55514a;">One editor, a full masthead. Here's the loop and the rules.</span>
+        </div>
+        <div style="padding:30px 34px 70px;max-width:900px;">
+
+          <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:30px;line-height:1.05;margin:0 0 6px;">The weekly loop</h2>
+          <p style="font-size:15.5px;line-height:1.6;color:#3a352d;margin:0 0 22px;max-width:64ch;">The pipeline does the legwork; you make the calls. Five moments, in order. Anything waiting on you always shows up in the <b style="color:#e8471d;">Awaiting you</b> chip, top-right, from any screen.</p>
+
+          <div style="display:grid;gap:0;margin:0 0 34px;">
+            <div style="display:flex;gap:18px;padding:16px 0;border-top:1px solid rgba(20,20,26,.13);">
+              <div style="font-family:'Newsreader',serif;font-size:34px;line-height:1;color:#253ad4;min-width:44px;">1</div>
+              <div><div style="font-family:'Newsreader',serif;font-size:20px;margin:0 0 3px;">Steer discovery · <span style="color:#55514a;font-size:15px;">Signal Desk</span></div><p style="font-size:14.5px;line-height:1.55;margin:0;color:#3a352d;max-width:70ch;">Read the three signals, pin or kill any, and adjudicate the Gate 1 winner. If two candidates tie or a brand-risk shows up, the screen enters <b>interrupt mode</b> — pick, and your reason is logged to the transcript and remembered next week.</p></div>
+            </div>
+            <div style="display:flex;gap:18px;padding:16px 0;border-top:1px solid rgba(20,20,26,.13);">
+              <div style="font-family:'Newsreader',serif;font-size:34px;line-height:1;color:#253ad4;min-width:44px;">2</div>
+              <div><div style="font-family:'Newsreader',serif;font-size:20px;margin:0 0 3px;">Watch the run · <span style="color:#55514a;font-size:15px;">Run Monitor</span></div><p style="font-size:14.5px;line-height:1.55;margin:0;color:#3a352d;max-width:70ch;">Agents are <b>dots</b>, the three deterministic checks are <b style="color:#9a6f04;">◆ gold diamonds</b>. Click any node to read exactly what it handed downstream (human-readable first, JSON behind a toggle). Don't like a step? <b>Re-run from this node</b> with new steering — everything after it re-flows.</p></div>
+            </div>
+            <div style="display:flex;gap:18px;padding:16px 0;border-top:1px solid rgba(20,20,26,.13);">
+              <div style="font-family:'Newsreader',serif;font-size:34px;line-height:1;color:#253ad4;min-width:44px;">3</div>
+              <div><div style="font-family:'Newsreader',serif;font-size:20px;margin:0 0 3px;">Clear the facts · <span style="color:#55514a;font-size:15px;">Review Desk</span></div><p style="font-size:14.5px;line-height:1.55;margin:0;color:#3a352d;max-width:70ch;">Read the issue as the reader will. Every error in the rail must be resolved — <b>Accept fix</b>, edit inline, or dismiss with a one-line reason. <b style="color:#f2b01e;">Marigold</b> underlines are sourced claims (hover for the source); a <b style="color:#e8471d;">rust</b> tint means unsourced. Publish stays locked until the blocking list is empty.</p></div>
+            </div>
+            <div style="display:flex;gap:18px;padding:16px 0;border-top:1px solid rgba(20,20,26,.13);">
+              <div style="font-family:'Newsreader',serif;font-size:34px;line-height:1;color:#253ad4;min-width:44px;">4</div>
+              <div><div style="font-family:'Newsreader',serif;font-size:20px;margin:0 0 3px;">De-slop it · <span style="color:#55514a;font-size:15px;">Voice Pass</span></div><p style="font-size:14.5px;line-height:1.55;margin:0;color:#3a352d;max-width:70ch;">The one thing only you can do. Machine-tells are lit inline; accept a rewrite, write your own, or keep it. When it reads like a person wrote it, hit <b>Sounds human</b> — a sign-off <b>separate</b> from the facts. Publish needs both greens.</p></div>
+            </div>
+            <div style="display:flex;gap:18px;padding:16px 0;border-top:1px solid rgba(20,20,26,.13);border-bottom:1px solid rgba(20,20,26,.13);">
+              <div style="font-family:'Newsreader',serif;font-size:34px;line-height:1;color:#253ad4;min-width:44px;">5</div>
+              <div><div style="font-family:'Newsreader',serif;font-size:20px;margin:0 0 3px;">Improve the machine · <span style="color:#55514a;font-size:15px;">Prompt Lab + Eval Center</span></div><p style="font-size:14.5px;line-height:1.55;margin:0;color:#3a352d;max-width:70ch;">Between issues, edit a prompt, <b>run evals</b> on just the affected scenarios, and commit only if the scoreboard improves with no regressions (or override with a logged reason). Run a <b>shadow</b> against real news before ever paying for a live run.</p></div>
+            </div>
+          </div>
+
+          <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:26px;line-height:1.05;margin:0 0 14px;">What the colors mean</h2>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 34px;max-width:660px;">
+            <div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(20,20,26,.13);padding:10px 13px;"><span style="width:16px;height:16px;background:#148a52;flex:none;"></span><span style="font-size:13.5px;">Verified / cleared — a check <b>ran</b> and passed</span></div>
+            <div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(20,20,26,.13);padding:10px 13px;"><span style="width:16px;height:16px;background:#e8471d;flex:none;"></span><span style="font-size:13.5px;">Error / blocking / unsourced — needs you</span></div>
+            <div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(20,20,26,.13);padding:10px 13px;"><span style="width:16px;height:16px;background:#f2b01e;flex:none;"></span><span style="font-size:13.5px;">Warning / sourced-claim / code gate</span></div>
+            <div style="display:flex;gap:10px;align-items:center;background:#fff;border:1px solid rgba(20,20,26,.13);padding:10px 13px;"><span style="width:16px;height:16px;background:#253ad4;flex:none;"></span><span style="font-size:13.5px;">Interactive / links / the current selection</span></div>
+          </div>
+
+          <h2 style="font-family:'Newsreader',serif;font-weight:500;font-size:26px;line-height:1.05;margin:0 0 14px;">Four house rules</h2>
+          <div style="display:grid;gap:8px;max-width:720px;">
+            <div style="background:#17140e;color:#e8e3d7;padding:12px 16px;font-size:14px;line-height:1.5;"><b style="color:#fff;font-family:'Newsreader',serif;font-size:16px;">Silence is never "verified."</b> A check that ran says so, with a timestamp. Blank means unchecked, and unchecked is a state you can see.</div>
+            <div style="background:#17140e;color:#e8e3d7;padding:12px 16px;font-size:14px;line-height:1.5;"><b style="color:#fff;font-family:'Newsreader',serif;font-size:16px;">Nothing silent.</b> Every dismiss, overrule, and kill needs a one-line reason, logged where the next agent — or the next you — will read it.</div>
+            <div style="background:#17140e;color:#e8e3d7;padding:12px 16px;font-size:14px;line-height:1.5;"><b style="color:#fff;font-family:'Newsreader',serif;font-size:16px;">JSON is never the default.</b> Every artifact has a human-readable face. The raw data is one toggle away when you want it.</div>
+            <div style="background:#17140e;color:#e8e3d7;padding:12px 16px;font-size:14px;line-height:1.5;"><b style="color:#fff;font-family:'Newsreader',serif;font-size:16px;">The irreversible ones ask twice.</b> Publish, blocklist, and turning auto-publish on take a typed confirmation. Everything else is one click and an undo.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:820}}">
+class Component extends DCLogic {
+  state = { screen: 'review', inbox: false, node: 'research', interrupt: false };
+
+  nav(k){ return () => this.setState({ screen: k, inbox: false }); }
+
+  renderVals(){
+    const S = this.state.screen;
+    const items = ['review','signal','run','voice','prompt','eval','registry','howto'];
+    const labels = {review:'Review Desk',signal:'Signal Desk',run:'Run Monitor',voice:'Voice Pass',prompt:'Prompt Lab',eval:'Eval Center',registry:'Registry',howto:'How to use'};
+    const v = {};
+    items.forEach(k => {
+      const on = S === k;
+      v['go_'+k] = this.nav(k);
+      v['disp_'+k] = on ? 'block' : 'none';
+      v['nav_'+k+'_style'] =
+        "display:flex;align-items:center;gap:11px;padding:8px 16px;margin:1px 0;cursor:pointer;"+
+        "font-family:'Space Grotesk',sans-serif;font-size:12.5px;letter-spacing:.01em;"+
+        "font-weight:"+(on?'600':'500')+";"+
+        "border-left:3px solid "+(on?'#e8471d':'transparent')+";"+
+        "background:"+(on?'#17140e':'transparent')+";"+
+        "color:"+(on?'#f4f2ec':'#4a453b')+";";
+      // number badge inside span inherits; add pseudo via inline not possible, keep simple
+    });
+    // node inspector data
+    const nodes = {
+      signal:   ['Signal Editor','LLM · haiku-4.5','$0.02 · 4.1s · 0 retries','—','Scout','3 signals with dated pegs + sources'],
+      scout:    ['Scout','LLM · haiku-4.5','$0.01 · 6.8s · 0 retries','Signal Editor','Verify Candidates','6 candidate charities, each tied to a signal'],
+      vcand:    ['Verify Candidates','CODE GATE · deterministic','$0 · 1.2s · killed 1','Scout','Advocate','5 survivors — 1 dropped for a dead domain'],
+      advocate: ['Advocate','LLM · sonnet-4.5','$0.03 · 9.2s · 0 retries','Verify Candidates','Editor · Gate 1','Scored 1–10 with a 150–250w argument each'],
+      gate1:    ['Editor · Gate 1','LLM · sonnet-4.5','$0.02 · 5.0s · 0 retries','Advocate','Researcher','Winner: Project Cool Breeze · confidence 0.85'],
+      research: ['Researcher','LLM · sonnet-4.5','$0.04 · 22.5s · 1 retry','Editor · Gate 1','Verify Research','Dossier: 11 claims, each with a source + date'],
+      vres:     ['Verify Research','CODE GATE · deterministic','$0 · 2.4s · 11/11 ok','Researcher','7 Writers','Every claim carries retrievable provenance'],
+      writers:  ['7 Writers (parallel)','LLM · haiku-4.5 ×7','$0.09 · 18.1s · 0 retries','Verify Research','Validate Sections','origin · problem · founder · case · game · bonus · note'],
+      vsec:     ['Validate Sections','CODE GATE · deterministic','$0 · 0.9s · schema ok','7 Writers','QA','All 7 sections well-formed and in-length'],
+      qa:       ['QA','LLM · sonnet-4.5','$0.03 · 11.4s · 0 retries','Validate Sections','Editor Final','1 error, 2 warnings, 1 unsourced flagged inline'],
+      final:    ['Editor Final','LLM · sonnet-4.5','$0.02 · awaiting review','QA','Publisher','Editor memo + blocking list → paused for human'],
+      publisher:['Publisher','CODE · deploy','idle · gated','Editor Final','— live issue','Holds until Publish is pressed on the Review Desk'],
+    };
+    const n = nodes[this.state.node] || nodes.research;
+    v.selName = n[0]; v.selKind = n[1]; v.selMeta = n[2]; v.selFrom = n[3]; v.selTo = n[4]; v.selIO = n[5];
+    v.selIsWriters = this.state.node === 'writers';
+    const secs = [
+      ['Origin',82,'clean','ok'],['Problem',74,'2 warn','warn'],['Founder',48,'1 error','err'],
+      ['Case',88,'clean','ok'],['Game',79,'clean','ok'],['Bonus',66,'1 warn','warn'],['Note',85,'clean','ok']
+    ];
+    const flagColor = {ok:'#148a52',warn:'#9a6f04',err:'#e8471d'};
+    const barColor = (s)=> s>=80?'#148a52': s>=65?'#f2b01e':'#e8471d';
+    v.writerSections = secs.map(([name,score,flag,kind]) => ({
+      name, score, flag,
+      barStyle: "position:absolute;left:0;top:0;height:100%;width:"+score+"%;background:"+barColor(score)+";",
+      flagStyle: "font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:600;letter-spacing:.03em;width:52px;text-align:right;color:"+flagColor[kind]+";"
+    }));
+    items.forEach(()=>{});
+    // node click handlers + selected style, as a list for sc-for
+    const spine = [
+      ['signal','Signal Editor','$0.02',false],
+      ['scout','Scout','$0.01',false],
+      ['vcand','Verify Candidates','killed 1',true],
+      ['advocate','Advocate','$0.03',false],
+      ['gate1','Editor · Gate 1','picked winner',false],
+      ['research','Researcher','$0.04',false],
+      ['vres','Verify Research','11/11 ok',true],
+      ['writers','7 Writers · click to expand','$0.09',false],
+      ['vsec','Validate Sections','schema ok',true],
+      ['qa','QA','1✕ 2⚠',false],
+      ['final','Editor Final','awaiting review',false],
+      ['publisher','Publisher','gated',false],
+    ];
+    v.spine = spine.map(([id,name,meta,gate]) => {
+      const on = this.state.node === id;
+      return {
+        id, name, meta, isGate: gate, isAgent: !gate,
+        onClick: () => this.setState({ node: id }),
+        rowStyle: "display:flex;align-items:center;gap:12px;padding:9px 12px;cursor:pointer;border:2px solid "+(on?'#253ad4':'transparent')+";background:"+(on?'#fff':'transparent')+";",
+        nameStyle: "font-family:'Newsreader',serif;font-size:18px;line-height:1.1;color:"+(gate?'#55514a':'#17140e')+";font-style:"+(gate?'italic':'normal')+";",
+      };
+    });
+    v.inboxDisp = this.state.inbox ? 'block' : 'none';
+    v.inboxToggle = () => this.setState(s => ({ inbox: !s.inbox }));
+    v.noop = () => {};
+    v.showInterrupt = () => this.setState({ interrupt: true });
+    v.hideInterrupt = () => this.setState({ interrupt: false });
+    v.intNormalDisp = this.state.interrupt ? 'none' : 'block';
+    v.intAdjudDisp = this.state.interrupt ? 'block' : 'none';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

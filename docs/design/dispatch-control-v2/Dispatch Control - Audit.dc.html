@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#e7dfce;}
+  a{color:#c2502a;}
+  a:hover{color:#9d3d1f;}
+</style>
+</helmet>
+<div style="font-family:'Lora',Georgia,serif;color:#1c1a17;-webkit-font-smoothing:antialiased;padding:44px 20px 90px;">
+  <div style="max-width:760px;margin:0 auto;background:#faf7ef;border:1px solid rgba(28,26,23,.12);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 18px 50px -28px rgba(28,26,23,.4);padding:64px 72px 76px;">
+
+    <div style="display:flex;align-items:baseline;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8072;">
+      <span style="color:#c2502a;font-weight:500;">Design Audit</span>
+      <span style="flex:1;height:1px;background:rgba(28,26,23,.14);"></span>
+      <span>Dispatch Control · v1 → v2</span>
+    </div>
+    <h1 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:46px;line-height:1.02;letter-spacing:-.01em;margin:22px 0 0;">Making one editor<br>operate like a masthead</h1>
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:22px;line-height:1.35;color:#5b544a;margin:16px 0 0;max-width:52ch;">A deep read of the operator console — where v1 leaves the editor stranded, and where the v2 plan is right, risky, or incomplete.</p>
+
+    <div style="height:1px;background:rgba(28,26,23,.14);margin:34px 0 0;"></div>
+
+    <!-- THE FRAME -->
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#c2502a;margin:34px 0 10px;">The two questions everything answers to</p>
+    <p style="font-size:16.5px;line-height:1.62;margin:0 0 14px;">The product's promise is not "a dashboard for a pipeline." It is: <em>turn one person into a whole editorial team, and make sure the result never reads like a machine wrote it.</em> Every surface should be judged against two questions.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0 6px;">
+      <div style="border:1px solid rgba(28,26,23,.16);background:#fdfbf5;padding:16px 18px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1;color:#cda434;">01</div>
+        <p style="font-size:15px;line-height:1.5;margin:8px 0 0;">Can one person <strong>confidently ship in minutes</strong> — knowing what's blocking, sourced, and decided?</p>
+      </div>
+      <div style="border:1px solid rgba(28,26,23,.16);background:#fdfbf5;padding:16px 18px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1;color:#c2502a;">02</div>
+        <p style="font-size:15px;line-height:1.5;margin:8px 0 0;">Does the tool <strong>actively help kill AI-slop</strong> — or only detect it, and leave the editor to notice?</p>
+      </div>
+    </div>
+    <p style="font-size:16.5px;line-height:1.62;margin:14px 0 0;">v1 answers neither. The v2 brief answers the first well and the second only halfway. That gap is the through-line of this audit.</p>
+
+    <!-- 01 v1 GAPS -->
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#c2502a;margin:44px 0 4px;">01 — Where v1 strands the editor</p>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 14px;">A builder's tool wearing an editor's job.</h2>
+    <p style="font-size:16.5px;line-height:1.62;margin:0 0 8px;">v1 is CRUD over prompts and runs plus a <code style="font-family:'IBM Plex Mono',monospace;font-size:13px;background:rgba(205,164,52,.16);padding:1px 5px;">/graph</code> DAG. Each of these is the plumbing showing through the floor — the editor manages the machine instead of the magazine.</p>
+
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">01</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">No galley</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Review happens against JSON artifacts and run logs. There is nowhere to read the piece as the reader will — which guarantees slop ships, because slop is a reading experience, not a field value.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">02</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">Provenance is invisible</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Nothing shows which claims the Researcher sourced and which it invented. Trust is all-or-nothing: believe the whole issue, or re-check it by hand.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">03</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">Publish isn't gated by editorial state</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">The DAG can complete with open errors and still be publishable. Nothing structurally stands between a flagged issue and the reader.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">04</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">Prompt edits are unsafe</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Improving a prompt means editing text and gambling on a paid, live run to see if it helped. No preview, no eval, no scoreboard — so prompts calcify.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">05</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">The graph shows topology, not meaning</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">/graph proves the pipeline ran. It cannot show what each agent decided or why. The editor sees a machine's shape, never its judgment.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">06</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">No intervention affordances</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">No approve / reject, no send-back-a-step, no "this is waiting for you." Intervention is possible only by editing the underlying data — the very JSON-first failure the product exists to avoid.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(28,26,23,.1);border-bottom:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#c2502a;min-width:30px;">07</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 5px;">No memory in view</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Repetition across weeks, corrections, and coverage are invisible, so the system can't visibly learn — and the editor can't tell if this week rhymes with last.</p></div>
+    </div>
+
+    <!-- 02 v2 RIGHT -->
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a6d1a;margin:46px 0 4px;">02 — Where the v2 plan is right</p>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 14px;">It turns every one of those gaps into a surface.</h2>
+    <p style="font-size:16.5px;line-height:1.62;margin:0 0 8px;">Credit where due — the brief's core moves are the correct ones, and they map almost one-to-one onto the failures above:</p>
+    <ul style="font-size:16px;line-height:1.6;margin:12px 0 0;padding-left:0;list-style:none;">
+      <li style="padding:9px 0 9px 26px;border-top:1px solid rgba(28,26,23,.1);position:relative;"><span style="position:absolute;left:0;color:#cda434;">✓</span><strong>Galley-first review</strong> — the issue is finally the object of the UI, read as the reader will see it. Slop is a reading experience; you can only catch it by reading.</li>
+      <li style="padding:9px 0 9px 26px;border-top:1px solid rgba(28,26,23,.1);position:relative;"><span style="position:absolute;left:0;color:#cda434;">✓</span><strong>Provenance as a component</strong> — one "sourced claim" affordance everywhere, with unsourced as a visible state. Trust stops being all-or-nothing.</li>
+      <li style="padding:9px 0 9px 26px;border-top:1px solid rgba(28,26,23,.1);position:relative;"><span style="position:absolute;left:0;color:#cda434;">✓</span><strong>Gated publish + blocking list</strong> — you can't ship over an open error. The decision is a checklist, not a vibe.</li>
+      <li style="padding:9px 0 9px 26px;border-top:1px solid rgba(28,26,23,.1);position:relative;"><span style="position:absolute;left:0;color:#cda434;">✓</span><strong>Prompt Lab with eval scoreboard</strong> — edit → eval → commit/rollback without gambling a paid run. The single biggest lever on quality.</li>
+      <li style="padding:9px 0 9px 26px;border-top:1px solid rgba(28,26,23,.1);border-bottom:1px solid rgba(28,26,23,.1);position:relative;"><span style="position:absolute;left:0;color:#cda434;">✓</span><strong>Coverage memory + append-only corrections</strong> — the system learns in front of you instead of repeating itself.</li>
+    </ul>
+
+    <!-- 03 RISKS -->
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#c2502a;margin:46px 0 4px;">03 — Where the v2 plan is risky or incomplete</p>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 4px;">Six places the plan will bite.</h2>
+    <p style="font-size:16.5px;line-height:1.62;margin:12px 0 20px;">None cosmetic. Each is a spot where the current framing quietly works against one of the two questions above.</p>
+
+    <div style="border:1px solid rgba(28,26,23,.16);border-left:3px solid #c2502a;background:#fdfbf5;padding:18px 20px;margin:0 0 14px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;color:#c2502a;background:rgba(194,80,42,.1);padding:2px 7px;">R1</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;line-height:1.12;">"Silence means verified" is a trust bug, not a feature</span>
+      </div>
+      <p style="font-size:15px;line-height:1.58;margin:8px 0 0;color:#3a352d;">The brief wants absence-of-flags to read as "verified." But absence is ambiguous: a check that passed and a check that never ran both produce silence. Under weekly load the editor learns to trust the quiet — and the one week a verifier crashes, an unchecked issue ships looking spotless.</p>
+      <p style="font-size:14.5px;line-height:1.55;margin:10px 0 0;color:#5b544a;border-top:1px dashed rgba(28,26,23,.2);padding-top:9px;"><strong style="color:#8a6d1a;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">Fix&nbsp;&nbsp;</strong>Verification must be asserted, not implied. "11/11 claims sourced · checked 2m ago," never blank. Any check that didn't run is a first-class amber state. Draw the positive checkmark harder than the error.</p>
+    </div>
+    <div style="border:1px solid rgba(28,26,23,.16);border-left:3px solid #c2502a;background:#fdfbf5;padding:18px 20px;margin:0 0 14px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;color:#c2502a;background:rgba(194,80,42,.1);padding:2px 7px;">R2</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;line-height:1.12;">De-slopping is the product, but it's modeled as one QA axis</span>
+      </div>
+      <p style="font-size:15px;line-height:1.58;margin:8px 0 0;color:#3a352d;">The single thing the human uniquely does — make it not sound like AI — is buried as a "machine-tells" count beside gate-integrity and fact-trace. That's backwards. Detection is not the craft act of rewriting.</p>
+      <p style="font-size:14.5px;line-height:1.55;margin:10px 0 0;color:#5b544a;border-top:1px dashed rgba(28,26,23,.2);padding-top:9px;"><strong style="color:#8a6d1a;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">Fix&nbsp;&nbsp;</strong>Elevate it to its own step — a Voice Pass mode: read the piece clean, machine-tells and voice violations lit inline, one-keystroke rewrites, and a "sounds human" sign-off separate from "facts check out." Arguably the most important screen in the tool.</p>
+    </div>
+    <div style="border:1px solid rgba(28,26,23,.16);border-left:3px solid #c2502a;background:#fdfbf5;padding:18px 20px;margin:0 0 14px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;color:#c2502a;background:rgba(194,80,42,.1);padding:2px 7px;">R3</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;line-height:1.12;">The 5-minute review fights its own cognitive load</span>
+      </div>
+      <p style="font-size:15px;line-height:1.58;margin:8px 0 0;color:#3a352d;">Galley + five rail modules + inline popovers + provenance highlights is a lot to land in five minutes. With no triage, the editor reads everything and it takes twenty.</p>
+      <p style="font-size:14.5px;line-height:1.55;margin:10px 0 0;color:#5b544a;border-top:1px dashed rgba(28,26,23,.2);padding-top:9px;"><strong style="color:#8a6d1a;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">Fix&nbsp;&nbsp;</strong>Blockers-first. The default view is the decision, collapsed. The galley is where you go to resolve a specific flag — not the first wall you scan. Progressive disclosure, not everything-at-once.</p>
+    </div>
+    <div style="border:1px solid rgba(28,26,23,.16);border-left:3px solid #c2502a;background:#fdfbf5;padding:18px 20px;margin:0 0 14px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;color:#c2502a;background:rgba(194,80,42,.1);padding:2px 7px;">R4</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;line-height:1.12;">Unsourced-everywhere invites alarm fatigue</span>
+      </div>
+      <p style="font-size:15px;line-height:1.58;margin:8px 0 0;color:#3a352d;">If provenance highlighting lights a dozen pale-rust spans, the signal dies and the editor tunes it out — the opposite of the intent.</p>
+      <p style="font-size:14.5px;line-height:1.55;margin:10px 0 0;color:#5b544a;border-top:1px dashed rgba(28,26,23,.2);padding-top:9px;"><strong style="color:#8a6d1a;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">Fix&nbsp;&nbsp;</strong>Aggregate first ("3 unsourced claims → jump") and tier by stakes. A load-bearing statistic with no source is an error; an unsourced color detail is info. Not every claim carries equal risk.</p>
+    </div>
+    <div style="border:1px solid rgba(28,26,23,.16);border-left:3px solid #c2502a;background:#fdfbf5;padding:18px 20px;margin:0 0 14px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;color:#c2502a;background:rgba(194,80,42,.1);padding:2px 7px;">R5</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;line-height:1.12;">Commit-gating can deadlock; approval gates invite rubber-stamping</span>
+      </div>
+      <p style="font-size:15px;line-height:1.58;margin:8px 0 0;color:#3a352d;">"No regressions or you can't commit" sounds safe, but every real edit regresses something trivial — so the gate becomes a wall or noise. Symmetrically, an approve button hit every week rots into a reflex.</p>
+      <p style="font-size:14.5px;line-height:1.55;margin:10px 0 0;color:#5b544a;border-top:1px dashed rgba(28,26,23,.2);padding-top:9px;"><strong style="color:#8a6d1a;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">Fix&nbsp;&nbsp;</strong>Allow human override-with-reason (logged), and spend attention where it matters — brand-risk, low-confidence, and overruled decisions get typed confirmation; the safe 90% is one click. The tool should decide what's worth your eyes.</p>
+    </div>
+    <div style="border:1px solid rgba(28,26,23,.16);border-left:3px solid #c2502a;background:#fdfbf5;padding:18px 20px;margin:0 0 14px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;color:#c2502a;background:rgba(194,80,42,.1);padding:2px 7px;">R6</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;line-height:1.12;">Async intervention has no home</span>
+      </div>
+      <p style="font-size:15px;line-height:1.58;margin:8px 0 0;color:#3a352d;">Agents pausing for human input is right — but Andrew isn't watching the run live. When he's in the Prompt Lab, where does "the pipeline is waiting for you" appear?</p>
+      <p style="font-size:14.5px;line-height:1.55;margin:10px 0 0;color:#5b544a;border-top:1px dashed rgba(28,26,23,.2);padding-top:9px;"><strong style="color:#8a6d1a;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">Fix&nbsp;&nbsp;</strong>A cross-cutting "Awaiting you" inbox in the header — the one place that answers "what needs me right now" across every issue and stage. Without it, interrupts are visible only if you happen to be on the right screen.</p>
+    </div>
+
+    <!-- 04 ADDS -->
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a6d1a;margin:46px 0 4px;">04 — What I'd add</p>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 16px;">Five moves that close the gap.</h2>
+    <div style="display:flex;gap:16px;padding:13px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#cda434;min-width:26px;">1</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 4px;">An "Awaiting you" inbox</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">One header-level queue of everything blocked on a human, across issues and stages. Closes R6 and makes the whole async model legible.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:13px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#cda434;min-width:26px;">2</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 4px;">A dedicated Voice Pass step</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">The de-slop line-edit as a first-class mode with its own sign-off, distinct from factual clearance. Closes R2 — the product's actual promise.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:13px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#cda434;min-width:26px;">3</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 4px;">Affirmative verification state everywhere</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Every factual surface reads sourced ✓ or unsourced — never blank. "Checked" is drawn louder than "error." Closes R1.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:13px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#cda434;min-width:26px;">4</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 4px;">A confidence-driven attention model</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">The tool decides what to make you look at: high-risk and low-confidence items demand engagement; routine items collapse to one click. Closes R3 and R5.</p></div>
+    </div>
+    <div style="display:flex;gap:16px;padding:13px 0;border-top:1px solid rgba(28,26,23,.1);border-bottom:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:#cda434;min-width:26px;">5</div>
+      <div><div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;line-height:1.15;margin:2px 0 4px;">One provenance component, tiered</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">A single sourced-claim affordance reused in galley, cards, and dossiers, with severity tiers and an aggregate count. Closes R4 and keeps the system coherent.</p></div>
+    </div>
+
+    <!-- 05 OPEN -->
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#c2502a;margin:46px 0 12px;">05 — Open questions for you</p>
+    <div style="padding:12px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:20px;line-height:1.2;color:#c2502a;margin:0 0 3px;">Live or forensic?</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Is Andrew ever watching a run in real time, or always reviewing after it finishes? Decides whether Run Monitor is a live console or a forensic record.</p>
+    </div>
+    <div style="padding:12px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:20px;line-height:1.2;color:#c2502a;margin:0 0 3px;">Collaborator reach</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Can the read-mostly collaborator triage the inbox and clear non-blocking flags, or strictly read-only? Changes whether one person is truly alone.</p>
+    </div>
+    <div style="padding:12px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:20px;line-height:1.2;color:#c2502a;margin:0 0 3px;">Seven writers, or one role?</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Does the editor's view need all seven section writers as distinct nodes, or is that a builder's concern that should collapse in the review UI?</p>
+    </div>
+    <div style="padding:12px 0;border-top:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:20px;line-height:1.2;color:#c2502a;margin:0 0 3px;">Is 5 minutes the goal or the ceiling?</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">A target and a hard constraint imply different amounts of forced triage and progressive disclosure.</p>
+    </div>
+    <div style="padding:12px 0;border-top:1px solid rgba(28,26,23,.1);border-bottom:1px solid rgba(28,26,23,.1);">
+      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:20px;line-height:1.2;color:#c2502a;margin:0 0 3px;">Does "sounds human" get its own sign-off?</div>
+      <p style="font-size:15px;line-height:1.55;margin:0;color:#3a352d;">Separating "publishable" from "doesn't read like AI" is the crux of R2 — worth deciding before the Review Desk hardens.</p>
+    </div>
+
+    <div style="height:1px;background:rgba(28,26,23,.14);margin:44px 0 22px;"></div>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;color:#8a8072;line-height:1.6;margin:0;">Next: three hi-fi directions for the Review Desk — the 5-minute review, where these principles become pixels. See <em>Dispatch Control — Review Desk Directions</em>.</p>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

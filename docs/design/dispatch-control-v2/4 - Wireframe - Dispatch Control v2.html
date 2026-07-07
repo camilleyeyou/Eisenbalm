@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Dispatch Control v2</title>
+<style>
+  :root{--ink:#333;--line:#bbb;--soft:#e8e8e4;--paper:#fafaf8;--err:#b55;--warn:#b90;--ok:#7a7;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Helvetica,Arial,sans-serif;}
+  body{background:#ddd;color:var(--ink);font-size:12px;line-height:1.35;}
+  .frame{max-width:1180px;margin:24px auto;background:var(--paper);border:2px solid #999;}
+  .note{max-width:1180px;margin:8px auto 2px;font-size:11px;color:#666;font-style:italic;}
+  /* header strip */
+  .hdr{display:flex;gap:10px;align-items:center;border-bottom:2px solid #999;padding:8px 12px;background:#f1f1ec;}
+  .hdr b{font-size:13px;}
+  .chip{border:1px solid var(--line);border-radius:10px;padding:2px 8px;font-size:10px;background:#fff;}
+  .chip.err{border-color:var(--err);color:var(--err);}
+  .chip.ok{border-color:var(--ok);color:#464;}
+  .chip.lock{border-style:dashed;}
+  .spacer{flex:1;}
+  /* layout */
+  .app{display:flex;min-height:520px;}
+  .nav{width:150px;border-right:2px solid #999;background:#f1f1ec;padding:10px 0;}
+  .nav div{padding:7px 12px;border-left:3px solid transparent;cursor:pointer;}
+  .nav div.on{border-left-color:#333;background:#fff;font-weight:bold;}
+  .main{flex:1;padding:12px;overflow:hidden;}
+  .screen{display:none;}
+  .screen.on{display:block;}
+  h1{font-size:15px;margin-bottom:8px;}
+  h2{font-size:12px;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.05em;color:#555;}
+  .box{border:1.5px solid var(--line);background:#fff;padding:8px;margin-bottom:8px;}
+  .row{display:flex;gap:8px;}
+  .col{flex:1;}
+  .muted{color:#888;font-size:10px;}
+  .btn{display:inline-block;border:1.5px solid #333;padding:4px 10px;background:#fff;font-size:11px;margin:2px 2px 0 0;cursor:pointer;}
+  .btn.primary{background:#333;color:#fff;}
+  .btn.disabled{border-color:#bbb;color:#bbb;background:#f7f7f5;}
+  .tag{display:inline-block;border:1px solid var(--line);padding:1px 6px;font-size:9px;border-radius:8px;margin-right:3px;background:#fff;}
+  .tag.err{border-color:var(--err);color:var(--err);}
+  .tag.warn{border-color:var(--warn);color:var(--warn);}
+  .tag.ok{border-color:var(--ok);color:#464;}
+  .u-err{border-bottom:2px solid var(--err);}
+  .u-warn{border-bottom:2px solid var(--warn);}
+  .u-src{background:#f6ecec;}
+  .callout{border:1px dashed #999;background:#fdfdf9;padding:6px;font-size:10px;color:#666;margin-bottom:8px;}
+  table{width:100%;border-collapse:collapse;font-size:10px;}
+  th,td{border:1px solid var(--soft);padding:3px 5px;text-align:left;}
+  th{background:#f1f1ec;}
+  .diamond{display:inline-block;transform:rotate(45deg);width:9px;height:9px;border:1.5px solid #777;background:#eee;margin:0 4px;}
+  .node{border:1.5px solid var(--line);background:#fff;padding:4px 8px;display:inline-block;margin:2px 0;}
+  .pipe{border-left:1.5px solid #999;margin-left:70px;padding-left:14px;}
+  .pipe .step{margin:6px 0;position:relative;}
+  .spark{color:#999;letter-spacing:-1px;}
+  .galley p{font-family:Georgia,serif;font-size:11px;margin:4px 0;color:#444;}
+  .galley h3{font-family:Georgia,serif;font-size:13px;margin-top:8px;}
+</style>
+</head>
+<body>
+<p class="note">Low-fi wireframe — 6 screens, click the left nav. Companion functionality spec: "4 — Design Brief — Dispatch Control v2.md". Grayscale = structure only; visual language (paper/ink/gold/rust, Cormorant/Lora) specified in the brief.</p>
+<div class="frame">
+  <div class="hdr">
+    <b>Dispatch Control</b>
+    <span class="chip">Issue #7</span>
+    <span class="chip ok">Pipeline: awaiting review</span>
+    <span class="spacer"></span>
+    <span class="chip">Spend $12.40 / $200 cap</span>
+    <span class="chip lock">🔒 Auto-publish OFF</span>
+  </div>
+  <div class="app">
+    <div class="nav" id="nav">
+      <div class="on" data-s="s1">1 · Review Desk</div>
+      <div data-s="s2">2 · Signal Desk</div>
+      <div data-s="s3">3 · Run Monitor</div>
+      <div data-s="s4">4 · Prompt Lab</div>
+      <div data-s="s5">5 · Eval Center</div>
+      <div data-s="s6">6 · Registry</div>
+    </div>
+    <div class="main">
+
+      <!-- SCREEN 1 -->
+      <div class="screen on" id="s1">
+        <h1>Review Desk — the 5-minute publish review</h1>
+        <div class="row">
+          <div class="col" style="flex:2.2">
+            <h2>The Galley (rendered as reader sees it)</h2>
+            <div class="box galley">
+              <div><span class="tag ok">origin ✓</span><span class="tag warn">problem 2⚠</span><span class="tag err">founder 1✕</span><span class="tag ok">case ✓</span><span class="tag ok">game ✓</span><span class="tag warn">bonus 1⚠</span> <span class="muted">← section chips = jump nav</span></div>
+              <h3>The Coldest Company in Charleston</h3>
+              <p>Project Cool Breeze has distributed <span class="u-src" title="hover: source URL + retrieved date">100 air-conditioning units</span> since June. Its founder, <span class="u-err" title="click: QA popover">a man of tireless passion</span>, began with one fan in <span class="u-src">1999</span>…</p>
+              <p class="muted">▸ every sourced claim: hover → URL + date. Unsourced claim = pale-rust background, always visible.</p>
+              <div class="callout">QA popover (on click of underlined span): axis: sentiment · severity: error · quotedSpan · reason · suggestedFix → [Accept fix] [Edit inline] [Dismiss + reason]</div>
+              <div class="box" style="border-style:dashed;text-align:center;padding:18px;">▶ GAME — playable inline in sandbox iframe</div>
+            </div>
+          </div>
+          <div class="col">
+            <h2>Decision rail (sticky)</h2>
+            <div class="box"><b>Blocking items (1)</b><br><span class="tag err">founder_bio · sentiment</span> "tireless passion"<br><span class="muted">resolve all to enable Publish</span></div>
+            <div class="box"><b>Editor's memo</b><p class="muted">100–300 words: blockers, judgment calls, thesis verdict.</p></div>
+            <div class="box"><b>Hook card</b><br>Heat dome · DC hottest July 4 since 1919 <span class="tag ok">hookVerified</span></div>
+            <div class="box"><b>Verification</b><br>domain ✓ · EIN 83-2940767 ✓ · founder: sourced ✓ · stats 11/11 sourced</div>
+            <div class="box">
+              <span class="btn disabled">Publish</span><span class="btn">Hold</span><br>
+              <span class="btn">Re-run section ▾</span><span class="btn">Transcript</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 2 -->
+      <div class="screen" id="s2">
+        <h1>Signal Desk — discovery as an editorial decision</h1>
+        <h2>This week's signals (Signal Editor)</h2>
+        <div class="row">
+          <div class="box col"><b>Heat dome</b> <span class="tag">weather</span><br><span class="muted">150M under alerts · peg: Jul 2 (src)</span><br>angle: infrastructure of staying alive<br><span class="btn">Pin</span><span class="btn">Kill + reason</span></div>
+          <div class="box col"><b>SCOTUS ends TPS</b> <span class="tag">policy</span> <span class="tag err">brand risk</span><br><span class="muted">330K affected · peg: Jul 1 (src)</span><br><span class="btn">Pin</span><span class="btn">Kill + reason</span></div>
+          <div class="box col"><b>Kahlo birthday</b> <span class="tag">culture</span><br><span class="muted">Jul 6 + exhibition (src)</span><br>angle: art from the sickbed<br><span class="btn">Pin</span><span class="btn">Kill + reason</span></div>
+        </div>
+        <h2>Candidate slate (grouped by signal)</h2>
+        <div class="box">
+          <b>Project Cool Breeze</b> — AC units to seniors, Charleston · <i>hookClaim: treating summer as lethal since 1999</i><br>
+          <span class="tag ok">REAL</span><span class="tag ok">OBSCURE</span><span class="tag ok">SPECIFIC</span><span class="tag ok">TELLABLE</span>
+          <span class="tag">domain ✓</span><span class="tag">EIN ✓</span><span class="tag">press: local only</span>
+          &nbsp;<b>Advocate: 9</b> <span class="muted">(expand argument ▾)</span><br>
+          <span class="muted">primaryConcern (always visible): founder is a sitting state legislator — keep the org, not the officeholder, in frame.</span>
+        </div>
+        <div class="box" style="border-color:#ccc;color:#777">The Creative Center — Kahlo signal · gates ✓✓✓✓ · <span class="tag warn">parent-org flag</span> · Advocate: 7 · concern: program of large institution</div>
+        <h2>Gate 1 decision</h2>
+        <div class="box"><b>Winner: Project Cool Breeze</b> · confidence ▓▓▓▓▓▓▓▓░░ 0.85 · <span class="muted">editorReasoning (thesis) shown in full; overrule = distinct callout</span></div>
+        <div class="callout">Interrupt state (requiresHumanInput): screen switches to side-by-side adjudication of top two; Andrew picks; rationale logged to deliberation transcript.</div>
+      </div>
+
+      <!-- SCREEN 3 -->
+      <div class="screen" id="s3">
+        <h1>Run Monitor — checks visible as structure</h1>
+        <div class="row">
+          <div class="col" style="flex:1.4">
+            <div class="pipe">
+              <div class="step"><span class="node">Signal Editor $0.02</span></div>
+              <div class="step"><span class="node">Scout $0.01</span></div>
+              <div class="step"><span class="diamond"></span><b>Verify Candidates</b> <span class="muted">code gate · $0 · killed 1 (dead domain)</span></div>
+              <div class="step"><span class="node">Advocate</span> → <span class="node">Editor Gate 1</span></div>
+              <div class="step"><span class="node">Researcher $0.04</span></div>
+              <div class="step"><span class="diamond"></span><b>Verify Research</b> <span class="muted">code gate</span></div>
+              <div class="step"><span class="node">7 writers (parallel)</span></div>
+              <div class="step"><span class="diamond"></span><b>Validate Sections</b> → <span class="node">QA</span> → <span class="node">Editor Final</span> → <span class="node">Publisher</span></div>
+            </div>
+          </div>
+          <div class="col">
+            <h2>Node inspector (click any node)</h2>
+            <div class="box">model: haiku-4-5 · 18.5s · retries 0<br><b>Output (human-readable)</b> <span class="muted">[raw JSON ⌄ toggle]</span><br><span class="btn">Re-run from this node</span></div>
+            <h2>Run vs last 8</h2>
+            <div class="box"><span class="spark">▁▂▂▃▂▂▇▂</span> cost · <span class="spark">▂▂▃▂▂▂▂▂</span> duration <span class="muted">← operational drift</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 4 -->
+      <div class="screen" id="s4">
+        <h1>Prompt Lab — edit → eval → commit</h1>
+        <div class="row">
+          <div class="col" style="flex:.8">
+            <h2>Assets</h2>
+            <div class="box">
+              <b>Agent prompts</b><br>
+              scout <span class="tag ok">eval ✓</span><br>
+              advocate <span class="tag">v3</span> <span class="tag ok">eval ✓</span><br>
+              researcher <span class="tag" style="color:#888">never evaluated</span><br>
+              <b style="display:block;margin-top:4px">Section guidance</b>
+              origin_story <span class="tag err">never seeded</span><br>
+              <b style="display:block;margin-top:4px">Shared</b>
+              voice_constraints <span class="tag">single source</span>
+            </div>
+          </div>
+          <div class="col" style="flex:1.5">
+            <h2>Editor — scout v2 draft</h2>
+            <div class="box" style="font-family:monospace;font-size:10px;min-height:110px">You are the Scout… reject anything in <span class="tag ok">{featured_keys}</span> … this week's beat: <span class="tag err">{current_beat}</span><br><span class="muted">⚠ rust pill = variable the pipeline code does not supply</span></div>
+            <div class="callout">Guardrail: pasted text duplicates a line of voice_constraints → "reference it, don't restate it."</div>
+            <span class="btn">Diff vs v1</span><span class="btn">Version timeline</span><span class="btn">Rollback</span>
+          </div>
+          <div class="col">
+            <h2>Eval drawer</h2>
+            <div class="box">
+              affected scenarios: 2, 3, 4 <span class="btn">Run evals</span>
+              <table><tr><th>dim</th><th>v1</th><th>draft</th></tr>
+              <tr><td>gate integrity</td><td>fail</td><td>pass ↑</td></tr>
+              <tr><td>fact trace</td><td>3/5</td><td>5/5 ↑</td></tr>
+              <tr><td>review mins</td><td>12</td><td>6 ↑</td></tr></table>
+              <span class="btn primary">Commit v2</span> <span class="muted">enabled: target ↑, no regressions</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 5 -->
+      <div class="screen" id="s5">
+        <h1>Eval Center — the drift detector</h1>
+        <h2>Golden scenarios</h2>
+        <div class="row">
+          <div class="box col">1 Normal week <span class="tag ok">pass</span></div>
+          <div class="box col">2 Dry well <span class="tag ok">pass</span></div>
+          <div class="box col">3 Famous bait <span class="tag ok">pass</span></div>
+          <div class="box col">4 Ghost charity <span class="tag ok">pass</span></div>
+        </div>
+        <div class="row">
+          <div class="box col">5 Radioactive week <span class="tag warn">review</span></div>
+          <div class="box col">6 Repeat pressure <span class="tag" style="color:#888">not run</span></div>
+          <div class="box col">7 Voice gauntlet <span class="tag ok">9/10</span></div>
+          <div class="box col">8 Hallucination trap <span class="tag ok">3/3</span></div>
+        </div>
+        <div class="box"><b>Shadow run</b> — scenario 1 vs this week's real news, before spending on the paid run <span class="btn">Run shadow</span> <span class="muted">schedulable: every Monday</span></div>
+        <h2>Scoreboard history (append-only)</h2>
+        <table>
+          <tr><th>date</th><th>trigger</th><th>gates</th><th>fact n/5</th><th>voice viol.</th><th>machine-tells</th><th>recall</th><th>rev. mins</th></tr>
+          <tr><td>Jul 2</td><td>scout v2</td><td>pass</td><td>5/5</td><td>0</td><td>1</td><td>—</td><td>6</td></tr>
+          <tr><td>Jul 2</td><td>baseline</td><td>fail</td><td>3/5</td><td>2</td><td>4</td><td>—</td><td>12</td></tr>
+        </table>
+      </div>
+
+      <!-- SCREEN 6 -->
+      <div class="screen" id="s6">
+        <h1>Registry — institutional memory</h1>
+        <h2>Coverage memory (what Calibrator reads — adjacent weeks must not rhyme)</h2>
+        <div class="box"><span class="tag">#6 medical-debt · US-OH · none</span><span class="tag">#7 heat-relief · US-SC · heat dome</span><span class="tag muted">#8 …</span></div>
+        <h2>Charities</h2>
+        <table>
+          <tr><th>name</th><th>status</th><th>cause</th><th>geo</th><th>signal</th><th>verification</th><th>corrections</th></tr>
+          <tr><td>Project Cool Breeze</td><td>Featured #7</td><td>heat relief</td><td>US-SC</td><td>heat dome</td><td>✓ EIN · ✓ domain</td><td>0</td></tr>
+          <tr><td>RIP Medical Debt</td><td>Featured #6</td><td>medical debt</td><td>US</td><td>—</td><td><span class="tag warn">renamed 2024</span></td><td>1 <span class="muted">(stale name — logged, Researcher re-reads on future mention)</span></td></tr>
+          <tr><td>Guinea Pig Bridge</td><td>Blocklisted</td><td>—</td><td>—</td><td>—</td><td><span class="tag err">domain dead</span></td><td>—</td></tr>
+        </table>
+        <div class="callout">Corrections log is append-only. Blocklist action requires typed confirmation.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('nav').addEventListener('click',e=>{
+    const s=e.target.dataset.s; if(!s)return;
+    document.querySelectorAll('.nav div').forEach(n=>n.classList.toggle('on',n.dataset.s===s));
+    document.querySelectorAll('.screen').forEach(sc=>sc.classList.toggle('on',sc.id===s));
+  });
+</script>
+</body>
+</html>
