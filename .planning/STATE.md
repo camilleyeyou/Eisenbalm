@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase complete — ready for verification
-stopped_at: Completed 31-05-editor-components-and-wiring-PLAN.md
+status: Phase 31 verification found gaps — gap closure needed
+stopped_at: Phase 31 gaps_found (31-VERIFICATION.md) — run /gsd:plan-phase 31 --gaps
 last_updated: "2026-07-07T11:14:20.740Z"
 progress:
   total_phases: 39

@@ -287,8 +287,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **GLY-05**: Section-status chips show per-section finding counts and act as jump navigation.
 
 ### Editing & Write Boundary (EDT)
-- [x] **EDT-01**: Operator can edit any section's prose per-section from the console (structured block-list editing, not inline WYSIWYG); saves write to the Sanity draft via a pipeline content-patch endpoint using scoped patches.
-- [x] **EDT-02**: Operator can edit structured fields from the console: section headlines, PDF key data points, game embed code, theme values.
+- [ ] **EDT-01**: Operator can edit any section's prose per-section from the console (structured block-list editing, not inline WYSIWYG); saves write to the Sanity draft via a pipeline content-patch endpoint using scoped patches.
+- [ ] **EDT-02**: Operator can edit structured fields from the console: section headlines, PDF key data points, game embed code, theme values.
 - [x] **EDT-03**: Operator can upload assets (podcast audio, Suno audio, storyboard images) through the console → pipeline → Sanity assets.
 - [ ] **EDT-04**: Accept-fix applies the suggested text to the draft via content-patch and logs it; Dismiss requires a one-line reason; every content mutation lands in the audit log ("nothing silent").
 - [x] **EDT-05**: All content writes flow dashboard → pipeline API → Sanity; the dashboard has no direct Sanity write path (source-scan enforceable).
