@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to plan
-stopped_at: Phase 32 context gathered
-last_updated: "2026-07-07T20:19:08.464Z"
+status: Ready to execute
+stopped_at: Completed 32-01-test-scaffold-and-dep-PLAN.md
+last_updated: "2026-07-07T21:18:35.056Z"
 progress:
   total_phases: 39
   completed_phases: 30
-  total_plans: 197
-  completed_plans: 195
+  total_plans: 204
+  completed_plans: 196
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 31 — Content-Patch Endpoints + Full Editing
+**Current focus:** Phase 32 — native-galley-read-only-span-resolver
 
 ## Current Position
 
-Phase: 32
-Plan: Not started
+Phase: 32 (native-galley-read-only-span-resolver) — EXECUTING
+Plan: 2 of 7
 
 ## Performance Metrics
 
@@ -222,6 +222,7 @@ Plan: Not started
 | Phase 31 P03 | 25min | 3 tasks | 3 files |
 | Phase 31 P05 | 37min | 3 tasks | 10 files |
 | Phase 31 P06 | 24min | 2 tasks | 6 files |
+| Phase 32 P01 | 15min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -569,6 +570,7 @@ Recent decisions affecting current work:
 - [Phase 31]: Amended API_CONTRACTS.md §31.7/§31.3 before code (contract-first): extended draft-read shape (pdfContent, decomposed bonus.body+bodyLossy) and omit-able /bonus payload with required variant
 - [Phase 31]: patch_bonus() returns the current revision unchanged (no Sanity mutate call) when the caller's payload yields an empty fields dict
 - [Phase 31]: Frontend dirty-gating scoped to the two proven clobber vectors (pdf sub-state, specAd body sub-state) only; other chained save steps left unconditional since they patch only their own field
+- [Phase 32]: spanResolver.resolveSectionFindings takes sectionId as an explicit 3rd param (not a per-finding field); accepted-finding exclusion (D-08) is enforced as a resolver-level invariant, not only caller pre-filtering; GLY-01/02/05 requirement checkboxes intentionally NOT flipped complete after this Wave-0 test-scaffold-only plan (reserved for Plan 32-07)
 
 ### Pending Todos
 
@@ -653,6 +655,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T20:19:08.450Z
-Stopped at: Phase 32 context gathered
-Resume file: .planning/phases/32-native-galley-read-only-span-resolver/32-CONTEXT.md
+Last session: 2026-07-07T21:18:35.045Z
+Stopped at: Completed 32-01-test-scaffold-and-dep-PLAN.md
+Resume file: None

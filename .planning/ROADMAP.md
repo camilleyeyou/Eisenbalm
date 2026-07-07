@@ -431,7 +431,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
-| 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
+| 32. Native Galley (read-only) + Span-Resolver | 1/7 | In Progress|  |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
@@ -708,7 +708,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. Section-status chips show per-section finding counts and jump to that section on click.
   4. The prior preview-iframe route still renders and is reachable, so Andrew has a working fallback for at least one full weekly cycle.
 **Plans**: 7 plans
-- [ ] 32-01-test-scaffold-and-dep-PLAN.md — Wave 0: install @portabletext/react + author 8 RED test files (resolver, sectionIdMap, syntheticPortableText, googleFontLoader, galleyGameValidator, UnresolvedFindingCard, Galley, SectionChipList)
+- [x] 32-01-test-scaffold-and-dep-PLAN.md — Wave 0: install @portabletext/react + author 8 RED test files (resolver, sectionIdMap, syntheticPortableText, googleFontLoader, galleyGameValidator, UnresolvedFindingCard, Galley, SectionChipList)
 - [ ] 32-02-blockindexhint-and-asset-urls-PLAN.md — Wave 1: contract-first §31.7 + _DRAFT_GROQ asset-URL dereference (podcast audio + storyboards) + Convex qaCorrections.blockIndexHint + QA agent ordinal emission (GLY-01, GLY-02)
 - [ ] 32-03-span-resolver-core-PLAN.md — Wave 1: pure sectionIdMap.ts + spanResolver.ts (per-block quotedSpan match, hint disambiguation, narrow normalization, ambiguous→unresolved) (GLY-02)
 - [ ] 32-04-render-helpers-PLAN.md — Wave 1: syntheticPortableText.ts (markDef injection) + googleFontLoader.ts (whitelist-validated) + galleyGameValidator.ts (parity duplicate) (GLY-01)
