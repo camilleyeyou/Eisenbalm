@@ -598,12 +598,20 @@ async def get_issue_draft(http: AsyncClient, issue_id: str) -> dict:
             "blocks": rows,
             "lossy": lossy,
         }
+        if name == "problemStatement":
+            sections[name]["pdfContent"] = sec.get("pdfContent") or {}
+
+    raw_bonus = dict(doc.get("bonus") or {})
+    bonus_rows, bonus_lossy = pt_to_blocks(raw_bonus.get("body") or [])
+    raw_bonus["body"] = bonus_rows
+    raw_bonus["bodyLossy"] = bonus_lossy
+
     return {
         "revisionId": doc.get("_rev"),
         "sections": sections,
         "theme": doc.get("theme") or {},
         "game": doc.get("game") or {},
-        "bonus": doc.get("bonus") or {},
+        "bonus": raw_bonus,
         "podcast": doc.get("podcast") or {},
         "bonusType": doc.get("bonusType"),
         "conversation": doc.get("conversation") or [],

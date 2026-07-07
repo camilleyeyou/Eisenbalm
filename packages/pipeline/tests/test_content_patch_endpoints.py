@@ -807,3 +807,156 @@ async def test_draft_read_lossy_flag(monkeypatch: pytest.MonkeyPatch):
     # Sections with no stored body still shape correctly.
     assert result["sections"]["founderBio"]["blocks"] == []
     assert result["sections"]["founderBio"]["lossy"] is False
+
+
+# ── Plan 31-06 gap-closure tests ────────────────────────────────────────────
+
+
+async def test_draft_read_includes_pdf_content(monkeypatch: pytest.MonkeyPatch):
+    """get_issue_draft() surfaces problemStatement.pdfContent verbatim on
+    sections.problemStatement so the PDF-data-points editor can prefill real
+    content on load (31-VERIFICATION.md gap 1)."""
+    _set_sanity_env(monkeypatch)
+
+    pdf_content = {
+        "problemStatement": "The crisis, stated plainly.",
+        "keyDataPoints": [
+            {"stat": "42%", "source": "GAO 2024"},
+            {"stat": "9,000", "source": "internal audit"},
+            {"stat": "$3.2M", "source": "IRS 990"},
+        ],
+        "interventionMechanism": "Direct cash transfer.",
+    }
+    doc = {
+        "_rev": "rev-9",
+        "theme": {},
+        "game": {},
+        "bonus": {},
+        "bonusType": "specAd",
+        "podcast": {},
+        "originStory": {"headline": "Origin", "body": []},
+        "problemStatement": {
+            "headline": "Problem",
+            "body": [],
+            "pdfContent": pdf_content,
+        },
+        "founderBio": {"headline": "Founder", "body": []},
+        "caseStudy": {"headline": "Case", "body": []},
+        "conversation": [],
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/data/query/production"):
+            return httpx.Response(200, json={"result": doc})
+        return httpx.Response(404)
+
+    async with _mock_http(handler) as http:
+        result = await get_issue_draft(http, "issue-42")
+
+    problem = result["sections"]["problemStatement"]
+    assert problem["pdfContent"] == pdf_content
+    assert len(problem["pdfContent"]["keyDataPoints"]) == 3
+
+    # A long-read section other than problemStatement never gets a pdfContent
+    # key at all.
+    assert "pdfContent" not in result["sections"]["originStory"]
+
+
+async def test_draft_read_decomposes_bonus_body(monkeypatch: pytest.MonkeyPatch):
+    """get_issue_draft() runs bonus.body through pt_to_blocks() (mirroring the
+    4 long-reads) and surfaces a sibling bonus.bodyLossy flag (31-VERIFICATION.md
+    gap 2)."""
+    _set_sanity_env(monkeypatch)
+
+    bonus_body = [
+        _pt_block("h2", "Spec Ad Header"),
+        _pt_block("normal", "Body copy."),
+    ]
+    doc = {
+        "_rev": "rev-9",
+        "theme": {},
+        "game": {},
+        "bonus": {"headline": "Bonus H", "body": bonus_body, "sunoAudioUrl": "https://x"},
+        "bonusType": "specAd",
+        "podcast": {},
+        "originStory": {"headline": "Origin", "body": []},
+        "problemStatement": {"headline": "Problem", "body": []},
+        "founderBio": {"headline": "Founder", "body": []},
+        "caseStudy": {"headline": "Case", "body": []},
+        "conversation": [],
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/data/query/production"):
+            return httpx.Response(200, json={"result": doc})
+        return httpx.Response(404)
+
+    async with _mock_http(handler) as http:
+        result = await get_issue_draft(http, "issue-42")
+
+    bonus = result["bonus"]
+    assert bonus["headline"] == "Bonus H"
+    assert bonus["sunoAudioUrl"] == "https://x"
+    assert [b["type"] for b in bonus["body"]] == ["h2", "paragraph"]
+    assert bonus["body"][0]["text"] == "Spec Ad Header"
+    assert bonus["bodyLossy"] is False
+
+    # A markDefs-bearing bonus block sets bodyLossy True.
+    doc["bonus"]["body"] = [
+        _pt_block("normal", "Linked.", mark_defs=[{"_key": "m1", "_type": "link"}])
+    ]
+
+    async with _mock_http(handler) as http:
+        result2 = await get_issue_draft(http, "issue-42")
+
+    assert result2["bonus"]["bodyLossy"] is True
+
+
+async def test_bonus_headline_only_save_omits_body(monkeypatch: pytest.MonkeyPatch):
+    """PATCH /bonus with {variant, headline} and NO blocks/body key emits a
+    Sanity set containing ONLY bonus.headline — patch_bonus never clobbers a
+    field the caller omitted (31-VERIFICATION.md gap 2)."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft_specad(http, issue_id):
+        return _empty_draft(bonusType="specAd", bonus={"headline": "Old", "body": []})
+
+    captured_fields: dict = {}
+
+    async def mock_patch_fields(http, *, issue_id, fields, if_revision_id):
+        captured_fields.clear()
+        captured_fields.update(fields)
+        return "rev-2"
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_specad)
+    monkeypatch.setattr(f"{_C}._patch_fields", mock_patch_fields)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    resp = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={"ifRevisionID": "rev-1", "variant": "specAd", "headline": "New Headline"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert captured_fields == {"bonus.headline": "New Headline"}
+    assert "bonus.body" not in captured_fields
+
+    # Same non-clobber contract for jingle: lyrics-only save never wipes
+    # bonus.body.
+    async def mock_get_issue_draft_jingle(http, issue_id):
+        return _empty_draft(bonusType="jingle", bonus={"lyrics": "Old lyrics", "body": []})
+
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_jingle)
+
+    resp2 = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={"ifRevisionID": "rev-1", "variant": "jingle", "lyrics": "New lyrics"},
+    )
+    assert resp2.status_code == 200, resp2.text
+    assert captured_fields == {"bonus.lyrics": "New lyrics"}
+    assert "bonus.body" not in captured_fields

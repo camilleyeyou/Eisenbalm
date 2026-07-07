@@ -2534,6 +2534,25 @@ Section-body payload (prose sections):
 { "ifRevisionID": "string", "blocks": [{ "type": "paragraph|h2|h3|blockquote", "text": "string" }] }
 ```
 
+Bonus payload (variant-shaped, `PATCH /issues/{run_id}/bonus`):
+```json
+{
+  "ifRevisionID": "string",
+  "variant": "specAd|bigBudget|jingle",
+  "blocks": [{ "type": "paragraph|h2|h3|blockquote", "text": "string" }],
+  "headline": "string",
+  "body": "string",
+  "lyrics": "string",
+  "sunoPrompt": "string"
+}
+```
+`variant` is REQUIRED — every caller must send it (it discriminates the write and guards
+against a mismatched stored `bonusType`). `blocks` (specAd rows), `headline`, `body`
+(bigBudget/jingle prose string), `lyrics`, and `sunoPrompt` are ALL optional: the endpoint
+patches ONLY the fields present in the request body — an omitted field is left untouched
+in Sanity. A `specAd` caller sends rows under `blocks`, never under `body` (`body` on the
+server is the bigBudget/jingle prose string, a different field).
+
 Theme payload:
 ```json
 {
@@ -2603,11 +2622,28 @@ references as normal (not this string exception).
 {
   "revisionId": "string",
   "sections": {
-    "<sectionName>": { "headline": "string", "blocks": [{ "type": "...", "text": "..." }], "lossy": false }
+    "<sectionName>": {
+      "headline": "string",
+      "blocks": [{ "type": "...", "text": "..." }],
+      "lossy": false,
+      "pdfContent": {
+        "problemStatement": "string",
+        "keyDataPoints": [{ "stat": "string", "source": "string" }],
+        "interventionMechanism": "string"
+      }
+    }
   },
   "theme": { "...": "..." },
   "game": { "...": "..." },
-  "bonus": { "...": "..." },
+  "bonus": {
+    "headline": "string",
+    "body": [{ "type": "...", "text": "..." }],
+    "bodyLossy": false,
+    "lyrics": "string",
+    "sunoPrompt": "string",
+    "sunoAudioUrl": "string",
+    "storyboards": [{ "...": "..." }]
+  },
   "bonusType": "specAd|bigBudget|jingle",
   "podcast": { "...": "..." },
   "deliberation": { "...": "..." }
@@ -2620,6 +2656,20 @@ bonus-editor variant on this field (D-05). `lossy: true` is set on a section whe
 stored Portable Text block had `markDefs.length > 0` OR `children.length > 1` — those
 inline marks/spans are flattened by the naive text-join in `pt_to_blocks()` (§31 lib
 addition; see `pt_to_blocks` docstring).
+
+`pdfContent` is present ONLY on `sections.problemStatement` (verbatim
+`problemStatement.pdfContent` from Sanity — `{problemStatement, keyDataPoints[3x
+{stat,source}], interventionMechanism}` — no reshaping, so the PDF-data-points editor can
+prefill real values on load instead of starting blank).
+
+`bonus.body` is DECOMPOSED into `{type,text}[]` rows via `pt_to_blocks()` (mirroring the
+4 canonical long-reads), with a sibling `bonus.bodyLossy: boolean` flag using the same
+lossy-detection rule as section `lossy`. All other `bonus` fields (`headline`, `lyrics`,
+`sunoPrompt`, `sunoAudioUrl`, `storyboards`) are returned verbatim.
+
+The frontend MUST send `variant` on every `/bonus` PATCH (§31.3 below) — it is the
+required discriminator the endpoint uses to route the write and to 409-guard against a
+mismatched stored `bonusType`.
 
 ### §31.8 — Audit shape (D-09)
 

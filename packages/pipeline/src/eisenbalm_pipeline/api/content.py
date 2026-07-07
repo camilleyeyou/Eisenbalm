@@ -514,15 +514,23 @@ async def patch_bonus(
         fields["bonus.headline"] = body.headline
 
     if body.variant == "specAd":
-        blocks = [b.model_dump() for b in (body.blocks or [])]
-        warnings = structural_floor_warnings(blocks)
-        fields["bonus.body"] = compose_section_body(blocks)
+        if body.blocks is not None:
+            blocks = [b.model_dump() for b in body.blocks]
+            warnings = structural_floor_warnings(blocks)
+            fields["bonus.body"] = compose_section_body(blocks)
     elif body.variant == "bigBudget":
-        fields["bonus.body"] = text_to_portable_text(body.body or "")
+        if body.body is not None:
+            fields["bonus.body"] = text_to_portable_text(body.body)
     elif body.variant == "jingle":
-        fields["bonus.body"] = text_to_portable_text(body.body or "")
-        fields["bonus.lyrics"] = body.lyrics or ""
-        fields["bonus.sunoPrompt"] = body.sunoPrompt or ""
+        if body.body is not None:
+            fields["bonus.body"] = text_to_portable_text(body.body)
+        if body.lyrics is not None:
+            fields["bonus.lyrics"] = body.lyrics
+        if body.sunoPrompt is not None:
+            fields["bonus.sunoPrompt"] = body.sunoPrompt
+
+    if not fields:
+        return {"revisionId": body.ifRevisionID, "warnings": []}
 
     new_rev = await _patch_fields(
         sanity_http,
