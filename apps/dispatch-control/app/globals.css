@@ -2,30 +2,66 @@
 @plugin "tailwindcss-animate";
 
 /**
- * Dispatch Control — neutral base palette.
- * shadcn CSS variable shim keeps shadcn primitives working out of the box.
+ * Dispatch Control v2 — 1c design system (CHR-01, Phase 30-01).
+ * Source: docs/design/dispatch-control-v2/Dispatch Control.dc.html (binding spec).
+ * Tailwind v4 CSS-first token block — fonts wired via next/font/google CSS
+ * variables set on <body> in app/layout.tsx.
+ */
+@theme {
+  --font-display: var(--font-newsreader), serif;
+  --font-body: var(--font-lora), Georgia, serif;
+  --font-ui: var(--font-space-grotesk), sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+
+  --color-ink: #17140e;
+  --color-ink-soft: #55514a;
+  --color-faint: #8b8778;
+  --color-paper: #e9eaec;
+  --color-nav: #e3e5e8;
+  --color-rail: #f1f0ea;
+  --color-card: #ffffff;
+  --color-card-alt: #fbfaf6;
+  --color-cobalt: #253ad4;
+  --color-cobalt-dark: #1b2ba6;
+  --color-vermilion: #e8471d;
+  --color-marigold: #f2b01e;
+  --color-marigold-text: #9a6f04;
+  --color-green: #148a52;
+  --color-masthead-text: #f4f2ec;
+  --color-masthead-muted: #c9c3b5;
+}
+
+/**
+ * shadcn CSS variable shim — remapped to 1c token equivalents so the one
+ * shadcn primitive currently using variable-based Tailwind classes
+ * (components/ui/switch.tsx) reads 1c. --radius: 0 is the hard-edged,
+ * anti-SaaS surface treatment the spec requires (was 0.5rem).
  */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  --background: #e9eaec;
+  --foreground: #17140e;
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
+  --card-foreground: #17140e;
   --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --primary: #171717;
-  --primary-foreground: #fafafa;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #171717;
-  --radius: 0.5rem;
+  --popover-foreground: #17140e;
+  --primary: #17140e;
+  --primary-foreground: #f4f2ec;
+  --secondary: #f1f0ea;
+  --secondary-foreground: #17140e;
+  --muted: #f1f0ea;
+  --muted-foreground: #55514a;
+  --accent: #f1f0ea;
+  --accent-foreground: #17140e;
+  --destructive: #e8471d;
+  --destructive-foreground: #f4f2ec;
+  --border: rgba(20, 20, 26, 0.13);
+  --input: rgba(20, 20, 26, 0.13);
+  --ring: #253ad4;
+  --radius: 0;
+}
+
+body {
+  font-family: var(--font-ui);
 }
 
 /**
