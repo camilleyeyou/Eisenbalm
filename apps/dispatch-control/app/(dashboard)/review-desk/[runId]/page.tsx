@@ -21,6 +21,7 @@
 import { use, useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import SectionChipList, { EDITABLE_SECTIONS } from './_components/SectionChipList'
+import SectionEditorPanel from './_components/SectionEditorPanel'
 import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 
@@ -41,6 +42,23 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
   const [selectedSection, setSelectedSection] = useState<string>(
     EDITABLE_SECTIONS[0]?.id ?? 'originStory',
   )
+
+  // D-07 dirty-state map, bubbled up from SectionEditorPanel so the
+  // section-chip list can paint the unsaved dot and in-app nav can guard
+  // against silently discarding unsaved edits when switching sections.
+  const [dirty, setDirty] = useState<Record<string, boolean>>({})
+
+  function handleSelectSection(id: string) {
+    if (
+      dirty[selectedSection] &&
+      !window.confirm(
+        'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
+      )
+    ) {
+      return
+    }
+    setSelectedSection(id)
+  }
 
   const [showPreview, setShowPreview] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -124,11 +142,12 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
             <SectionChipList
               sections={EDITABLE_SECTIONS}
               selected={selectedSection}
-              onSelect={setSelectedSection}
+              onSelect={handleSelectSection}
+              dirty={dirty}
             />
           </div>
 
-          {/* RIGHT — editor slot (Plan 05 fills in) + toggleable preview */}
+          {/* RIGHT — editor slot + toggleable preview */}
           <div className="flex flex-1 flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
@@ -144,11 +163,20 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
             </div>
 
             {!showPreview ? (
-              <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
-                <p className="text-sm text-[color:var(--color-ink-soft)]">
-                  Select a section to edit. Section editors land in Plan 31-05.
-                </p>
-              </div>
+              draft ? (
+                <SectionEditorPanel
+                  runId={runId}
+                  selectedSection={selectedSection}
+                  draft={draft}
+                  onDirtyChange={setDirty}
+                />
+              ) : (
+                <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
+                  <p className="text-sm text-[color:var(--color-ink-soft)]">
+                    Loading draft…
+                  </p>
+                </div>
+              )
             ) : previewUrl ? (
               <div className="min-h-[500px] flex-1">
                 <PreviewIframe previewUrl={previewUrl} />

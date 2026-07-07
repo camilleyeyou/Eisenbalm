@@ -84,7 +84,7 @@ describe('AwaitingYouInbox', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('lists an Awaiting review item linking to /run-monitor/runs/r1/review', () => {
+  it('lists an Awaiting review item linking to /review-desk/r1 (Phase 31 re-point)', () => {
     mockQueries({
       runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
@@ -95,7 +95,7 @@ describe('AwaitingYouInbox', () => {
 
     const link = screen.getByText(/awaiting review/i).closest('a')
     expect(link).not.toBeNull()
-    expect(link?.getAttribute('href')).toBe('/run-monitor/runs/r1/review')
+    expect(link?.getAttribute('href')).toBe('/review-desk/r1')
   })
 
   it('lists an error-blocker item ordered above the awaiting-review item', () => {

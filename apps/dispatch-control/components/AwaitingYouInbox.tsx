@@ -66,6 +66,13 @@ export default function AwaitingYouInbox({ open, onClose }: AwaitingYouInboxProp
 
   const reviewHref = (runId: string) => `/run-monitor/runs/${encodeURIComponent(runId)}/review`
 
+  // Phase 31 (CHR-04/D-11): awaiting-review run items — the "take action
+  // today" target — now route to the full editing surface at
+  // /review-desk/[runId] instead of the read-only Phase 26 review page.
+  // Only THIS category's route changes; QA-blocker and claim-sign-off items
+  // (above) still route to the review page where those findings live.
+  const editHref = (runId: string) => `/review-desk/${encodeURIComponent(runId)}`
+
   const items: InboxItem[] = []
 
   // 1. Unresolved error-severity QA findings — highest-priority blocker.
@@ -89,11 +96,12 @@ export default function AwaitingYouInbox({ open, onClose }: AwaitingYouInboxProp
   }
 
   // 3. Awaiting-review runs (includes Gate-1 interrupts — see file header).
+  // Phase 31: routes to /review-desk/[runId], the full editing surface.
   for (const run of awaitingReview) {
     items.push({
       key: `review-${run.runId}`,
       label: `Awaiting review — Run ${run.runId}`,
-      href: reviewHref(run.runId),
+      href: editHref(run.runId),
       dotColor: 'var(--color-cobalt)',
     })
   }
