@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 32-04-render-helpers-PLAN.md
-last_updated: "2026-07-07T21:30:49.790Z"
+stopped_at: Completed 32-05-annotation-primitives-PLAN.md
+last_updated: "2026-07-07T21:38:27.877Z"
 progress:
   total_phases: 39
   completed_phases: 30
   total_plans: 204
-  completed_plans: 199
+  completed_plans: 200
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 32 (native-galley-read-only-span-resolver) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 
 ## Performance Metrics
 
@@ -226,6 +226,7 @@ Plan: 5 of 7
 | Phase 32 P03 | 12min | 2 tasks | 2 files |
 | Phase 32 P02 | 7min | 3 tasks | 6 files |
 | Phase 32 P04 | 6min | 3 tasks | 3 files |
+| Phase 32 P05 | 12min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -578,6 +579,7 @@ Recent decisions affecting current work:
 - [Phase 32]: Locked post-hoc blockIndexHint computation in qa() (no rules.py/judge.py changes); hint only recorded on unique block match
 - [Phase 32]: 32-04: ResolvedAnnotation type declared locally in syntheticPortableText.ts instead of importing from parallel Plan 32-03's spanResolver.ts, avoiding a cross-plan file-existence dependency in the same wave
 - [Phase 32]: 32-04: duplicated security modules (googleFontLoader.ts, galleyGameValidator.ts) avoid the literal substring 'apps/web' in source/comments to satisfy each module's own decoupling acceptance grep
+- [Phase 32]: AnnotationMarkDef declared locally in AnnotationMark.tsx (exported) rather than imported from syntheticPortableText.ts, per plan instruction; Plan 32-06 reconciles the two independently-declared shapes at composition
 
 ### Pending Todos
 
@@ -662,6 +664,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T21:30:49.778Z
-Stopped at: Completed 32-04-render-helpers-PLAN.md
+Last session: 2026-07-07T21:38:27.866Z
+Stopped at: Completed 32-05-annotation-primitives-PLAN.md
 Resume file: None
