@@ -574,7 +574,9 @@ async def patch_issue_field(
 
 
 _DRAFT_GROQ = (
-    '*[_id == $id][0]{ _rev, theme, game, bonus, bonusType, podcast, '
+    '*[_id == $id][0]{ _rev, theme, game, bonusType, '
+    '"bonus": bonus{ ..., storyboards[]{ ..., asset->{ url } } }, '
+    '"podcast": podcast{ ..., "audioUrl": audioFile.asset->url }, '
     'originStory, problemStatement, founderBio, caseStudy, '
     '"conversation": selectionDeliberation.conversation }'
 )

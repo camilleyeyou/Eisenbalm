@@ -2642,13 +2642,20 @@ references as normal (not this string exception).
     "lyrics": "string",
     "sunoPrompt": "string",
     "sunoAudioUrl": "string",
-    "storyboards": [{ "...": "..." }]
+    "storyboards": [{ "asset": { "url": "string" }, "...": "..." }]
   },
   "bonusType": "specAd|bigBudget|jingle",
-  "podcast": { "...": "..." },
+  "podcast": { "audioUrl": "string", "...": "..." },
   "deliberation": { "...": "..." }
 }
 ```
+
+Phase 32 (GLY-01, D-05): `podcast.audioUrl` is a dereferenced `audioFile.asset->url`
+projection, present ALONGSIDE the existing raw `podcast` fields (additive — Phase 31
+consumers ignore the new key). `bonus.storyboards[]` entries carry a dereferenced
+`asset->{ url }` (bigBudget bonus only). These asset-URL projections mirror
+`apps/web/lib/sanity/queries.ts` and let the galley render an `<audio>` player /
+storyboard `<img src>` directly from draft-read without a second fetch.
 
 `bonusType` (one of `specAd` | `bigBudget` | `jingle`) is the TOP-LEVEL `weeklyIssue`
 field (a sibling of `bonus`, `weeklyIssue.ts` ~L103) — the editor UI switches its
