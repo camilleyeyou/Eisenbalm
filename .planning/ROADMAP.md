@@ -430,7 +430,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
-| 31. Content-Patch Endpoints + Full Editing | 5/5 | Gaps found | - |
+| 31. Content-Patch Endpoints + Full Editing | 6/6 | Gap closure executed — awaiting re-verification | - |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
@@ -695,7 +695,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 31-03-content-patch-endpoint-router-PLAN.md — api/content.py Clerk-guarded PATCH/POST/GET family (EDT-01/02/03), D-08 validation split, before/after audit, raw-binary upload, main.py mount
 - [x] 31-04-frontend-foundation-client-and-route-shell-PLAN.md — contentPatchClient + EDT-05 no-direct-Sanity-write source-scan + Review Desk route shell (auto-focus run + chip list + reused preview iframe)
 - [x] 31-05-editor-components-and-wiring-PLAN.md — BlockEditor/TurnListEditor/StructuredFieldEditor/AssetUploadSlot + SectionEditorPanel save/dirty/unsaved-nav/409 harness + inbox re-point + strict build gate
-- [ ] 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md — GAP CLOSURE: get_issue_draft returns pdfContent + decomposed bonus.body/bodyLossy; dirty-gated pdf/bonus-body save steps; omit-able patch_bonus fields; bonus payload variant/blocks contract fix
+- [x] 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md — GAP CLOSURE: get_issue_draft returns pdfContent + decomposed bonus.body/bodyLossy; dirty-gated pdf/bonus-body save steps; omit-able patch_bonus fields; bonus payload variant/blocks contract fix
 **UI hint**: yes
 
 ### Phase 32: Native Galley (read-only) + Span-Resolver

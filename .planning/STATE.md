@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase 31 verification found gaps — gap closure needed
-stopped_at: Phase 31 gaps_found (31-VERIFICATION.md) — run /gsd:plan-phase 31 --gaps
-last_updated: "2026-07-07T11:14:20.740Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md
+last_updated: "2026-07-07T17:48:09.883Z"
 progress:
   total_phases: 39
   completed_phases: 30
-  total_plans: 196
-  completed_plans: 194
+  total_plans: 197
+  completed_plans: 195
 ---
 
 # Project State
@@ -221,6 +221,7 @@ Plan: 5 of 5
 | Phase 31 P02 | 17min | 3 tasks | 2 files |
 | Phase 31 P03 | 25min | 3 tasks | 3 files |
 | Phase 31 P05 | 37min | 3 tasks | 10 files |
+| Phase 31 P06 | 24min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -565,6 +566,9 @@ Recent decisions affecting current work:
 - [Phase 31]: content.py's audit action names taken verbatim from API_CONTRACTS.md §31.8 (not the plan's shorthand); a new _patch_fields() multi-field-in-one-mutation primitive was added for the variant-shaped /bonus route so sibling bonus fields (sunoAudioUrl, storyboards) are never clobbered
 - [Phase 31]: Section Save chains patchHeadline->patchSection->(patchPdfDataPoints) threading the returned revisionId across calls, since the document revision changes with every single-field patch
 - [Phase 31]: Awaiting-you inbox re-point scoped to only the Awaiting-review item (routes to /review-desk/[runId]); QA-blocker and claim-sign-off items keep their existing review-page route
+- [Phase 31]: Amended API_CONTRACTS.md §31.7/§31.3 before code (contract-first): extended draft-read shape (pdfContent, decomposed bonus.body+bodyLossy) and omit-able /bonus payload with required variant
+- [Phase 31]: patch_bonus() returns the current revision unchanged (no Sanity mutate call) when the caller's payload yields an empty fields dict
+- [Phase 31]: Frontend dirty-gating scoped to the two proven clobber vectors (pdf sub-state, specAd body sub-state) only; other chained save steps left unconditional since they patch only their own field
 
 ### Pending Todos
 
@@ -649,6 +653,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T11:14:20.729Z
-Stopped at: Completed 31-05-editor-components-and-wiring-PLAN.md
+Last session: 2026-07-07T17:48:09.872Z
+Stopped at: Completed 31-06-draft-read-completeness-and-dirty-gated-saves-PLAN.md
 Resume file: None
