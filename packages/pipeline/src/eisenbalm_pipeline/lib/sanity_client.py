@@ -14,6 +14,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from fastapi import HTTPException
 from httpx import AsyncClient
 from slugify import slugify
 
@@ -476,3 +477,96 @@ async def set_charity_first_featured(
         headers=_auth_headers(),
     )
     r.raise_for_status()
+
+
+# ── Phase 31 (Plan 31-02) — content-patch endpoint primitives ─────────────
+# Scoped dotted-path patch + revision guard, draft-read, and generalized
+# asset upload. Every patch here targets the plain issue-{n} document id —
+# this codebase never uses Sanity's drafts/publish system. See
+# docs/API_CONTRACTS.md §31.
+
+
+async def _groq(
+    http: AsyncClient, query: str, params: Optional[dict] = None
+) -> list[dict]:
+    """Internal: run a GROQ query with an explicit ``http`` client.
+
+    Unlike the module-level ``groq_query`` (which manages its own client and
+    falls back to a one-shot client when the shared one isn't registered),
+    this helper always uses the caller-supplied ``http`` client — required so
+    unit tests can inject an ``httpx.MockTransport``. POSTs to
+    ``data/query/{dataset}`` (Sanity's query API accepts POST-with-body
+    queries, not just GET). Returns the ``result`` payload normalized to a
+    list (Sanity returns a single object, not a list, for ``[0]``-indexed
+    projections).
+    """
+    payload: dict[str, Any] = {"query": query}
+    if params:
+        payload["params"] = params
+    r = await http.post(
+        f"/{API_VERSION}/data/query/{_dataset()}",
+        json=payload,
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+    result = r.json().get("result")
+    if result is None:
+        return []
+    return result if isinstance(result, list) else [result]
+
+
+async def _fetch_issue_rev(http: AsyncClient, issue_id: str) -> str:
+    """Read the current ``_rev`` for ``issue_id`` via a plain GROQ query.
+
+    Called after a successful patch mutation to return the new revision id.
+    RESEARCH flags ``returnDocuments`` as unverified on v2024-01-01 — this
+    separate read is the safe path; do NOT rely on parsing ``_rev`` out of
+    the mutate response.
+    """
+    rows = await _groq(http, "*[_id == $id][0]{_rev}", {"id": issue_id})
+    doc = rows[0] if rows else {}
+    return doc.get("_rev", "")
+
+
+async def patch_issue_field(
+    http: AsyncClient,
+    *,
+    issue_id: str,
+    field_path: str,
+    value: Any,
+    if_revision_id: str,
+) -> str:
+    """Scoped dotted-path patch of ONE field. Targets the plain issue-{n} id
+    (never a Sanity drafts-namespace id). Returns the new revision id
+    (_rev). Raises structured 409 on ifRevisionID mismatch. See
+    API_CONTRACTS §31.3/§31.4."""
+    payload = {
+        "mutations": [
+            {
+                "patch": {
+                    "id": issue_id,  # plain id — no drafts-namespace prefix
+                    "ifRevisionID": if_revision_id,  # TOP-LEVEL key
+                    "set": {field_path: value},
+                }
+            }
+        ],
+        "returnIds": True,
+    }
+    r = await http.post(
+        f"/{API_VERSION}/data/mutate/{_dataset()}",
+        json=payload,
+        headers=_auth_headers(),
+    )
+    if r.status_code == 409:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": "revision_mismatch",
+                "message": (
+                    "This section changed since you loaded it. Reload and "
+                    "reapply your edit."
+                ),
+            },
+        )
+    r.raise_for_status()
+    return await _fetch_issue_rev(http, issue_id)
