@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 32-05-annotation-primitives-PLAN.md
-last_updated: "2026-07-07T21:38:27.877Z"
+stopped_at: Completed 32-06-galley-assembly-PLAN.md
+last_updated: "2026-07-07T22:16:14.887Z"
 progress:
   total_phases: 39
   completed_phases: 30
   total_plans: 204
-  completed_plans: 200
+  completed_plans: 201
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 32 (native-galley-read-only-span-resolver) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 
 ## Performance Metrics
 
@@ -227,6 +227,7 @@ Plan: 6 of 7
 | Phase 32 P02 | 7min | 3 tasks | 6 files |
 | Phase 32 P04 | 6min | 3 tasks | 3 files |
 | Phase 32 P05 | 12min | 3 tasks | 3 files |
+| Phase 32-native-galley-read-only-span-resolver P06 | 27min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -580,6 +581,7 @@ Recent decisions affecting current work:
 - [Phase 32]: 32-04: ResolvedAnnotation type declared locally in syntheticPortableText.ts instead of importing from parallel Plan 32-03's spanResolver.ts, avoiding a cross-plan file-existence dependency in the same wave
 - [Phase 32]: 32-04: duplicated security modules (googleFontLoader.ts, galleyGameValidator.ts) avoid the literal substring 'apps/web' in source/comments to satisfy each module's own decoupling acceptance grep
 - [Phase 32]: AnnotationMarkDef declared locally in AnnotationMark.tsx (exported) rather than imported from syntheticPortableText.ts, per plan instruction; Plan 32-06 reconciles the two independently-declared shapes at composition
+- [Phase 32-native-galley-read-only-span-resolver]: Galley.tsx assembled: renders all 8 D-05 reader sections natively from draft-read data, resolves live open QA findings per-section via resolveSectionFindings + qaSectionToGalleyId, sandboxes the game in an iframe, and applies theme fonts/accent - Galley.test.tsx green (5/5), GLY-01 satisfied
 
 ### Pending Todos
 
@@ -664,6 +666,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T21:38:27.866Z
-Stopped at: Completed 32-05-annotation-primitives-PLAN.md
+Last session: 2026-07-07T22:16:14.875Z
+Stopped at: Completed 32-06-galley-assembly-PLAN.md
 Resume file: None

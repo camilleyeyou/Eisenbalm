@@ -431,7 +431,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
-| 32. Native Galley (read-only) + Span-Resolver | 5/7 | In Progress|  |
+| 32. Native Galley (read-only) + Span-Resolver | 6/7 | In Progress|  |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
@@ -713,7 +713,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 32-03-span-resolver-core-PLAN.md — Wave 1: pure sectionIdMap.ts + spanResolver.ts (per-block quotedSpan match, hint disambiguation, narrow normalization, ambiguous→unresolved) (GLY-02)
 - [x] 32-04-render-helpers-PLAN.md — Wave 1: syntheticPortableText.ts (markDef injection) + googleFontLoader.ts (whitelist-validated) + galleyGameValidator.ts (parity duplicate) (GLY-01)
 - [x] 32-05-annotation-primitives-PLAN.md — Wave 2: AnnotationMark.tsx (severity underline + read-only popover) + UnresolvedFindingCard.tsx + galley CSS (GLY-02)
-- [ ] 32-06-galley-assembly-PLAN.md — Wave 3: GalleryGameSlot + GallerySection + Galley (all 8 sections, live findings, resolver, theme fonts) (GLY-01)
+- [x] 32-06-galley-assembly-PLAN.md — Wave 3: GalleryGameSlot + GallerySection + Galley (all 8 sections, live findings, resolver, theme fonts) (GLY-01)
 - [ ] 32-07-chip-counts-and-page-wiring-PLAN.md — Wave 4: SectionChipList count badges + jump-nav + page.tsx galley-default view + edit affordance + iframe fallback (GLY-05, GLY-01)
 **UI hint**: yes
 
