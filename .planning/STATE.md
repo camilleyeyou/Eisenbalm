@@ -2,12 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: planning
-stopped_at: Phase 30 context gathered
-last_updated: "2026-07-07T00:24:39.337Z"
-last_activity: 2026-07-06 — v3.0 ROADMAP.md created (Phases 30-39, 43 requirements mapped, 0 unmapped)
+status: Ready to execute
+stopped_at: Completed 30-01-design-bundle-tokens-fonts-PLAN.md
+last_updated: "2026-07-07T01:07:44.717Z"
 progress:
-  total_phases: 39
+  total_phases: 29
   completed_phases: 28
   total_plans: 183
   completed_plans: 181
@@ -20,14 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Milestone v3.0 — Dispatch Control v2 (Editorial Operator Console)
+**Current focus:** Phase 30 — Foundation — Design System, Chrome & Awaiting-You Inbox
 
 ## Current Position
 
-Phase: Phase 30 — Foundation: Design System, Chrome & Awaiting-You Inbox (not started)
-Plan: —
-Status: Roadmap created; ready to plan Phase 30
-Last activity: 2026-07-06 — v3.0 ROADMAP.md created (Phases 30-39, 43 requirements mapped, 0 unmapped)
+Phase: 30 (Foundation — Design System, Chrome & Awaiting-You Inbox) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -211,6 +208,7 @@ Last activity: 2026-07-06 — v3.0 ROADMAP.md created (Phases 30-39, 43 requirem
 | Phase 29 P03 | 75min | 3 tasks | 12 files |
 | Phase 29 P04 | 40 | 3 tasks | 9 files |
 | Phase 29 P05 | 10min | 2 tasks | 5 files |
+| Phase 30 P01 | 3min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -540,6 +538,7 @@ Recent decisions affecting current work:
 - [Phase 29]: Added jsdom and @testing-library/react as apps/web devDependencies to enable the D-9 behavioral checkout-failure test (mirrors apps/dispatch-control's setup)
 - [Phase 29]: D-10: eslint-config-next@15.5.x ships eslintrc format, so apps/web/eslint.config.mjs bridges it via FlatCompat; lint made advisory (ignoreDuringBuilds) so ~29 phases of pre-existing style don't block the strict build
 - [Phase 29]: D-6/D-13 docs-only fix: kept SUPABASE_POSTGRES_URL var name unchanged, fixed Railway-accurate guidance in .env.example + error strings; documented DESIGNAGENT_SUPPRESSED, LOG_LEVEL, PREVIEW_SECRET, NEXT_PUBLIC_WEB_PREVIEW_BASE; corrected NEXT_PUBLIC_PIPELINE_URL optional mislabel
+- [Phase 30]: Design bundle committed in-repo (docs/design/dispatch-control-v2/); 1c token @theme block + 4 next/font/google fonts wired into globals.css/layout.tsx; Phase 24 .cm-prompt-editor rules preserved byte-unchanged
 
 ### Pending Todos
 
@@ -624,6 +623,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T00:24:39.323Z
-Stopped at: Phase 30 context gathered
-Resume file: .planning/phases/30-foundation-design-system-chrome-awaiting-you-inbox/30-CONTEXT.md
+Last session: 2026-07-07T01:07:44.706Z
+Stopped at: Completed 30-01-design-bundle-tokens-fonts-PLAN.md
+Resume file: None
