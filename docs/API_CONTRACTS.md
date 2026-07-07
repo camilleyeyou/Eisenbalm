@@ -2486,6 +2486,170 @@ union — unchanged.*
 
 ---
 
+## Phase 31 — Content-Patch Endpoints + Full Editing
+
+Content-patch endpoint family (EDT-01/EDT-02/EDT-03/EDT-05) that lets the operator edit
+a run's Sanity content directly from dispatch-control — per-section prose, structured
+fields (headlines, theme, game, PDF data points, bonus variants, deliberation
+conversation, podcast transcript), and binary asset uploads (podcast audio, Suno audio,
+storyboards) — with an optimistic-concurrency revision guard on every write. This
+contract is written BEFORE any endpoint or UI code exists (CLAUDE.md contract-first
+hard rule).
+
+### §31.1 — Target document identity (load-bearing correction)
+
+Every endpoint resolves `run_id → sanityIssueId` via `pipelineRuns:byRunId` (identical
+resolution to `api/review.py`), and every Sanity patch targets the PLAIN Sanity `_id`
+`issue-{n}`. **This app does NOT use Sanity's drafts/publish system — there is no
+`drafts.` prefix anywhere in this codebase.** Endpoints must never target
+`drafts.issue-{n}`. There is exactly one live document per issue; edits mutate it
+directly, guarded by `ifRevisionID` (§31.4).
+
+### §31.2 — Endpoint family
+
+All routes are Clerk-JWT-guarded via `_require_clerk_jwt_control` (the same dev-mode-safe
+dependency used by `api/control.py` / `api/review.py`), mounted in a new
+`packages/pipeline/src/eisenbalm_pipeline/api/content.py`:
+
+```
+PATCH /issues/{run_id}/sections/{section_name}   # EDT-01 prose body — section_name in: originStory, problemStatement, founderBio, caseStudy
+PATCH /issues/{run_id}/headlines/{section_name}  # EDT-02 headline string
+PATCH /issues/{run_id}/theme                     # EDT-02 theme (hex+font HARD-validated)
+PATCH /issues/{run_id}/game                      # EDT-02 game.headline/description/embedCode (embed size cap)
+PATCH /issues/{run_id}/pdf-data-points            # EDT-02 problemStatement.pdfContent.{problemStatement,keyDataPoints[3],interventionMechanism}
+PATCH /issues/{run_id}/bonus                     # EDT-01/02 variant-shaped: specAd→body / bigBudget→storyboards / jingle→lyrics+sunoPrompt
+PATCH /issues/{run_id}/deliberation-conversation # EDT-01 selectionDeliberation.conversation[] turn list ({speaker,text})
+PATCH /issues/{run_id}/podcast-transcript        # EDT-01 podcast.deliberationTranscript textarea
+POST  /issues/{run_id}/assets/{slot}             # EDT-03 raw-binary upload; slot in: podcast-audio, suno-audio, storyboard-{i}
+GET   /issues/{run_id}/draft                     # read path for the editor
+```
+
+### §31.3 — Request body shape
+
+Every PATCH body includes `ifRevisionID: string` (required) plus a payload specific to
+the route.
+
+Section-body payload (prose sections):
+```json
+{ "ifRevisionID": "string", "blocks": [{ "type": "paragraph|h2|h3|blockquote", "text": "string" }] }
+```
+
+Theme payload:
+```json
+{
+  "ifRevisionID": "string",
+  "primaryColor": "#RRGGBB", "accentColor": "#RRGGBB",
+  "backgroundColor": "#RRGGBB", "textColor": "#RRGGBB",
+  "fontDisplay": "string", "fontBody": "string",
+  "visualDirection": "string"
+}
+```
+
+### §31.4 — Revision guard
+
+`ifRevisionID` is a TOP-LEVEL key of the Sanity patch object (a sibling of `id` / `set`
+in the patch mutation, NOT nested under `options`). A revision mismatch causes Sanity to
+return HTTP 409; the endpoint re-raises as a FastAPI
+`HTTPException(409, detail={"reason": "revision_mismatch", "message": "This section
+changed since you loaded it. Reload and reapply your edit."})`.
+
+### §31.5 — Validation split (D-08)
+
+**HARD-block** (return 4xx `{"reason": "validation_failed", "message": "...", "fields": [...]}`):
+- Theme hex fields must match `^#[0-9a-fA-F]{6}$`.
+- Theme font fields must be members of the canonical 9-font whitelist — this list
+  MIRRORS `apps/web/lib/theme.ts` `FONT_WHITELIST` (the render-time gate, since that is
+  what actually breaks if violated): `Playfair Display`, `Lora`, `Inter`,
+  `Cormorant Garamond`, `Merriweather`, `DM Serif Display`, `Fraunces`, `Newsreader`,
+  `IBM Plex Mono`.
+- Game embed code must be `<= 50000` bytes (50KB) UTF-8 encoded.
+
+**WARN-only** (return 200 with `"warnings": ["..."]`, never blocks the save): the
+editorial structural floor (>=2 sub-headers `h2`/`h3` + >=1 `blockquote`) on the 5
+long-read sections (origin story, problem statement, founder bio, case study, spec-ad
+bonus). This is a WARN-only counter for operator edits — distinct from the raise-based
+Pydantic `_enforce_structural_floor` validator used at agent-generation time.
+
+### §31.6 — Asset upload
+
+`POST /issues/{run_id}/assets/{slot}` accepts a **raw binary body** (NOT multipart —
+`python-multipart` is not an installed dependency). Inbound headers: `X-Filename`,
+`Content-Type` (the asset MIME type).
+
+Flow:
+1. POST the raw bytes to the Sanity assets endpoint (`/assets/files/{dataset}` or
+   `/assets/images/{dataset}` depending on asset kind) → receive
+   `{"document": {"_id": ..., "url": ...}}`.
+2. Scoped `patch()` the reference onto the slot field:
+   `{"_type": "file"|"image", "asset": {"_type": "reference", "_ref": assetId}}`.
+3. Response: `{"assetUrl": str, "assetId": str, "revisionId": str}` — `assetUrl` is the
+   Sanity CDN URL, used for inline preview (D-13).
+
+D-12: overwriting a slot leaves the prior asset document in Sanity (no delete) and
+records the swap in the audit row (before/after asset IDs).
+
+**EXCEPTION — `suno-audio` slot:** `bonus.sunoAudioUrl` is declared `type: 'url'` (a
+plain string field) in `weeklyIssue.ts` (~L289), and the live site renders
+`<audio src={bonus.sunoAudioUrl}>`. For this slot ONLY, the endpoint uploads the asset
+via the same Sanity assets flow, then `set`s the returned CDN **URL string** directly
+into `bonus.sunoAudioUrl` — NOT a `{_type: 'file', asset: {_ref}}` reference object. No
+schema change is required. The `podcast-audio` and `storyboard-{i}` slots use asset
+references as normal (not this string exception).
+
+### §31.7 — Draft-read GET response
+
+`GET /issues/{run_id}/draft` returns:
+```json
+{
+  "revisionId": "string",
+  "sections": {
+    "<sectionName>": { "headline": "string", "blocks": [{ "type": "...", "text": "..." }], "lossy": false }
+  },
+  "theme": { "...": "..." },
+  "game": { "...": "..." },
+  "bonus": { "...": "..." },
+  "bonusType": "specAd|bigBudget|jingle",
+  "podcast": { "...": "..." },
+  "deliberation": { "...": "..." }
+}
+```
+
+`bonusType` (one of `specAd` | `bigBudget` | `jingle`) is the TOP-LEVEL `weeklyIssue`
+field (a sibling of `bonus`, `weeklyIssue.ts` ~L103) — the editor UI switches its
+bonus-editor variant on this field (D-05). `lossy: true` is set on a section when a
+stored Portable Text block had `markDefs.length > 0` OR `children.length > 1` — those
+inline marks/spans are flattened by the naive text-join in `pt_to_blocks()` (§31 lib
+addition; see `pt_to_blocks` docstring).
+
+### §31.8 — Audit shape (D-09)
+
+Every content mutation writes exactly one `auditLog:record` row via `_emit_audit`, with
+`action` values such as `content.section_patched`, `content.headline_patched`,
+`content.theme_patched`, `content.game_patched`, `content.pdf_data_points_patched`,
+`content.bonus_patched`, `content.deliberation_conversation_patched`,
+`content.podcast_transcript_patched`, `content.asset_uploaded`. `_emit_audit` is
+extended (additively) with optional `before` / `after` kwargs, each forwarded into the
+Convex mutation args dict only when non-`None`, and each truncated to a 2000-char cap
+with an `"...[truncated]"` suffix (mirrors the existing `lib/agent_wrapper.py::_truncate`
+pattern).
+
+### §31.9 — Known interaction risk (rerun-clobber ordering rule)
+
+`rerun_agent` (RUN-05, `api/control.py`) rebuilds state from the LangGraph checkpoint and
+calls the full `write_issue_draft` (`createOrReplace`), which will OVERWRITE any operator
+content-patch edits to sibling sections with checkpoint content. v1 position: this is a
+documented ordering rule, not a code guard — **"re-roll a section BEFORE making console
+edits, never after."** The editor surfaces a static advisory to this effect (Plan 05).
+A full re-read-current-Sanity guard (merging live Sanity content into the rerun's
+sibling-section state before `write_issue_draft`) is deferred to a later phase.
+
+---
+
+*All Phase 31 changes are additive. No `drafts.` prefix is introduced anywhere in this
+codebase — every content-patch endpoint operates on the plain `issue-{n}` document ID.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
