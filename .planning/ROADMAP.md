@@ -430,7 +430,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 26. Review Gate + Charity Registry | 6/6 | Complete    | 2026-06-23 |
 | 27. Money + Notifications | 6/6 | Complete    | 2026-06-24 |
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
-| 31. Content-Patch Endpoints + Full Editing | 3/5 | In Progress|  |
+| 31. Content-Patch Endpoints + Full Editing | 4/5 | In Progress|  |
 | 32. Native Galley (read-only) + Span-Resolver | 0/? | Not started | - |
 | 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
@@ -692,7 +692,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 **Plans**: 5 plans
 - [x] 31-01-contracts-and-shared-foundation-PLAN.md — API_CONTRACTS §31 endpoint family (contract-first) + pt_to_blocks reverse mapper + operator theme validator (9-font canonical) + warn-only structural-floor helper + _emit_audit before/after + Wave-0 pytest scaffold
 - [x] 31-02-sanity-client-patch-helpers-PLAN.md — patch_issue_field (scoped dotted-path + ifRevisionID→409) + get_issue_draft (PT→rows + lossy) + upload_asset (files/images) with httpx.MockTransport tests
-- [ ] 31-03-content-patch-endpoint-router-PLAN.md — api/content.py Clerk-guarded PATCH/POST/GET family (EDT-01/02/03), D-08 validation split, before/after audit, raw-binary upload, main.py mount
+- [x] 31-03-content-patch-endpoint-router-PLAN.md — api/content.py Clerk-guarded PATCH/POST/GET family (EDT-01/02/03), D-08 validation split, before/after audit, raw-binary upload, main.py mount
 - [x] 31-04-frontend-foundation-client-and-route-shell-PLAN.md — contentPatchClient + EDT-05 no-direct-Sanity-write source-scan + Review Desk route shell (auto-focus run + chip list + reused preview iframe)
 - [ ] 31-05-editor-components-and-wiring-PLAN.md — BlockEditor/TurnListEditor/StructuredFieldEditor/AssetUploadSlot + SectionEditorPanel save/dirty/unsaved-nav/409 harness + inbox re-point + strict build gate
 **UI hint**: yes
