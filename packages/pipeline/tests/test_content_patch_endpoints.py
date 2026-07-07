@@ -24,7 +24,7 @@ from fastapi import HTTPException
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.api.control import _emit_audit
-from eisenbalm_pipeline.lib.sanity_client import patch_issue_field
+from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
 
 pytestmark = pytest.mark.anyio
 
@@ -203,7 +203,77 @@ async def test_bonus_patch_variant_shaped():
     specAd→body, bigBudget→storyboards, jingle→lyrics+sunoPrompt."""
 
 
-@pytest.mark.skip(reason="Wave 2/3 — Plan 31-02/03")
-async def test_draft_read_lossy_flag():
-    """GET /issues/{run_id}/draft sets sections.<name>.lossy=true when a
-    stored block had markDefs or multiple children spans."""
+def _pt_block(style: str, text: str, *, mark_defs=None, extra_children=None) -> dict:
+    children = [
+        {"_type": "span", "_key": "span-0", "text": text, "marks": []}
+    ]
+    if extra_children:
+        children.extend(extra_children)
+    return {
+        "_type": "block",
+        "_key": f"block-{style}",
+        "style": style,
+        "markDefs": mark_defs or [],
+        "children": children,
+    }
+
+
+async def test_draft_read_lossy_flag(monkeypatch: pytest.MonkeyPatch):
+    """get_issue_draft returns a dict with revisionId and
+    sections[<name>] = {headline, blocks, lossy}; a section whose stored PT
+    block had markDefs sets that section's lossy=True; row types round-trip
+    (h2/blockquote/paragraph)."""
+    _set_sanity_env(monkeypatch)
+
+    origin_body = [
+        _pt_block("h2", "A Sub-Header"),
+        _pt_block("normal", "Plain paragraph."),
+        _pt_block("blockquote", "A pull quote."),
+    ]
+    # problemStatement's stored block has a markDef (a link) -> lossy=True
+    problem_body = [
+        _pt_block("normal", "Linked text.", mark_defs=[{"_key": "m1", "_type": "link"}]),
+    ]
+
+    doc = {
+        "_rev": "rev-9",
+        "theme": {"primaryColor": "#111111"},
+        "game": {"headline": "Play"},
+        "bonus": {"headline": "Bonus"},
+        "bonusType": "specAd",
+        "podcast": {"deliberationTranscript": "..."},
+        "originStory": {"headline": "Origin", "body": origin_body},
+        "problemStatement": {"headline": "Problem", "body": problem_body},
+        "founderBio": {"headline": "Founder", "body": []},
+        "caseStudy": {"headline": "Case", "body": []},
+        "conversation": [{"speaker": "scout", "text": "hi"}],
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.endswith("/data/query/production"):
+            return httpx.Response(200, json={"result": doc})
+        return httpx.Response(404)
+
+    async with _mock_http(handler) as http:
+        result = await get_issue_draft(http, "issue-42")
+
+    assert result["revisionId"] == "rev-9"
+    assert result["bonusType"] == "specAd"
+    assert result["theme"] == {"primaryColor": "#111111"}
+    assert result["conversation"] == [{"speaker": "scout", "text": "hi"}]
+
+    origin = result["sections"]["originStory"]
+    assert origin["headline"] == "Origin"
+    assert origin["lossy"] is False
+    assert [b["type"] for b in origin["blocks"]] == ["h2", "paragraph", "blockquote"]
+    assert origin["blocks"][0]["text"] == "A Sub-Header"
+    assert origin["blocks"][2]["text"] == "A pull quote."
+
+    problem = result["sections"]["problemStatement"]
+    assert problem["lossy"] is True
+    assert problem["blocks"][0]["type"] == "paragraph"
+
+    # Sections with no stored body still shape correctly.
+    assert result["sections"]["founderBio"]["blocks"] == []
+    assert result["sections"]["founderBio"]["lossy"] is False

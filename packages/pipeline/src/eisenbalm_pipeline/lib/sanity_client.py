@@ -20,6 +20,7 @@ from slugify import slugify
 
 from eisenbalm_pipeline.lib.portable_text import (
     compose_section_body,
+    pt_to_blocks,
     text_to_portable_text,
 )
 
@@ -570,3 +571,40 @@ async def patch_issue_field(
         )
     r.raise_for_status()
     return await _fetch_issue_rev(http, issue_id)
+
+
+_DRAFT_GROQ = (
+    '*[_id == $id][0]{ _rev, theme, game, bonus, bonusType, podcast, '
+    'originStory, problemStatement, founderBio, caseStudy, '
+    '"conversation": selectionDeliberation.conversation }'
+)
+_LONG_READS = ("originStory", "problemStatement", "founderBio", "caseStudy")
+
+
+async def get_issue_draft(http: AsyncClient, issue_id: str) -> dict:
+    """Read the current draft for the editor. Converts each long-read's PT
+    body back to {type,text}[] rows via pt_to_blocks and surfaces per-section
+    lossy. See API_CONTRACTS §31.7."""
+    result = await _groq(http, _DRAFT_GROQ, {"id": issue_id})
+    doc = result[0] if result else None
+    if doc is None:
+        raise HTTPException(status_code=404, detail=f"Issue not found: {issue_id}")
+    sections: dict[str, dict] = {}
+    for name in _LONG_READS:
+        sec = doc.get(name) or {}
+        rows, lossy = pt_to_blocks(sec.get("body") or [])
+        sections[name] = {
+            "headline": sec.get("headline", ""),
+            "blocks": rows,
+            "lossy": lossy,
+        }
+    return {
+        "revisionId": doc.get("_rev"),
+        "sections": sections,
+        "theme": doc.get("theme") or {},
+        "game": doc.get("game") or {},
+        "bonus": doc.get("bonus") or {},
+        "podcast": doc.get("podcast") or {},
+        "bonusType": doc.get("bonusType"),
+        "conversation": doc.get("conversation") or [],
+    }
