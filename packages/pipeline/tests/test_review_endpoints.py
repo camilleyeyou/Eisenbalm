@@ -233,3 +233,131 @@ def test_reject_records_action(monkeypatch):
     ]
     assert review_action_calls, "reviewActions:record should have been called"
     assert review_action_calls[0]["action"] == "rejected"
+
+
+# ── Phase 33 (§33.4, D-14, D-11b) — open-error-findings gate ──────────────
+
+
+def _error_finding(**overrides) -> dict:
+    base = {
+        "_id": "fnd-1",
+        "runId": "run-abc",
+        "sectionName": "problem",
+        "severity": "error",
+        "reason": "vague date",
+        "quotedSpan": "opened its doors",
+        "accepted": False,
+    }
+    base.update(overrides)
+    return base
+
+
+def test_publish_409_on_open_error_findings(monkeypatch):
+    """
+    POST /issues/{run_id}/publish → 409 {reason:"open_error_findings", count:n}
+    when unresolved error-severity findings exist. The check is anchor-blind
+    (D-11b): an ORPHANED error finding (no quotedSpan — its anchor would fail)
+    still blocks until explicitly accepted or dismissed.
+    """
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run()
+        if path == "claimChecks:allSignedOff":
+            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        if path == "qaCorrections:byRunId":
+            return [
+                _error_finding(_id="fnd-1"),
+                # Orphaned: no quotedSpan at all — must STILL block.
+                _error_finding(_id="fnd-2", quotedSpan=None),
+                # Open warning — must NOT count toward the gate.
+                _error_finding(_id="fnd-3", severity="warning"),
+            ]
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
+    )
+
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 409, (
+        f"Expected 409 (open error findings), got {response.status_code}: {response.text}"
+    )
+    detail = response.json()["detail"]
+    assert detail["reason"] == "open_error_findings"
+    assert detail["count"] == 2
+
+
+def test_publish_passes_gate_when_errors_resolved_or_only_warnings_open(monkeypatch):
+    """
+    Resolved/dismissed error findings and open warning/info findings do NOT
+    block publish — the gate counts only severity=='error' with no resolution.
+    """
+    sanity_flip_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run("issue-42")
+        if path == "claimChecks:allSignedOff":
+            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        if path == "qaCorrections:byRunId":
+            return [
+                _error_finding(_id="fnd-1", resolution="accepted"),
+                _error_finding(_id="fnd-2", resolution="dismissed"),
+                _error_finding(_id="fnd-3", severity="warning"),
+                _error_finding(_id="fnd-4", severity="info"),
+            ]
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        return None
+
+    async def mock_flip(http, sanity_issue_id: str):
+        sanity_flip_calls.append(sanity_issue_id)
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip
+    )
+
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
+    assert sanity_flip_calls == ["issue-42"]
+
+
+def test_schedule_409_on_open_error_findings(monkeypatch):
+    """
+    POST /issues/{run_id}/schedule gets the IDENTICAL gate (Pitfall 8):
+    scheduling must not bypass the open-error-findings block.
+    """
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run()
+        if path == "claimChecks:allSignedOff":
+            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        if path == "qaCorrections:byRunId":
+            return [_error_finding(_id="fnd-1")]
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
+    )
+
+    response = _client.post(
+        "/issues/run-abc/schedule",
+        json={"scheduledAt": _future_ts()},
+    )
+    assert response.status_code == 409, (
+        f"Expected 409 (open error findings), got {response.status_code}: {response.text}"
+    )
+    detail = response.json()["detail"]
+    assert detail["reason"] == "open_error_findings"
+    assert detail["count"] == 1
