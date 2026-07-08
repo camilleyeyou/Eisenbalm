@@ -432,7 +432,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
-| 33. Accept-Fix Wiring + Decision Rail | 3/5 | In Progress|  |
+| 33. Accept-Fix Wiring + Decision Rail | 4/5 | In Progress|  |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
@@ -730,7 +730,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 33-01-contract-amendment-PLAN.md — Amend docs/API_CONTRACTS.md §33 (findings endpoints, resolution fields, publish gate, checkedAt) BEFORE any code
 - [x] 33-02-convex-resolution-state-PLAN.md — Additive qaCorrections resolution fields + secret-guarded setResolution + byId + pitchLog:selectedByRunId + claim_checks.checkedAt + codegen + convex-test
 - [x] 33-03-pipeline-findings-endpoints-PLAN.md — Python span-resolver port + api/findings.py accept/dismiss/reopen + open-error-findings 409 on publish_issue & schedule_issue
-- [ ] 33-04-popover-actions-reresolution-PLAN.md — findingsClient + shared isOpenFinding + popover Accept/Edit/Dismiss + unresolved-card actions + reloadDraft/edit-inline plumbing
+- [x] 33-04-popover-actions-reresolution-PLAN.md — findingsClient + shared isOpenFinding + popover Accept/Edit/Dismiss + unresolved-card actions + reloadDraft/edit-inline plumbing
 - [ ] 33-05-decision-rail-PLAN.md — Blockers-first DecisionRail (memo/hook/verification/actions) mounted as the 336px right column
 **UI hint**: yes
 
