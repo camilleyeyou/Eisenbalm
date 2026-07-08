@@ -422,4 +422,22 @@ export default defineSchema({
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId', ['runId']),
+
+  // ── sign_offs: two-sign-off publish gate (Phase 34 PUB-01) ──────────────────
+  // One active row per (runId, kind). "Active" = revokedAt absent. Both kinds
+  // active (unrevoked) is the publish/schedule gate (§34.4) and the webhook
+  // re-check (§34.5). Content mutations revoke both (§34.6). Re-signing PATCHES
+  // the same row and clears the revocation (§34.2).
+  sign_offs: defineTable({
+    workspace_id: v.string(),
+    runId: v.string(),
+    kind: v.union(v.literal('facts-cleared'), v.literal('sounds-human')),
+    actorId: v.string(),          // verified-upstream Clerk sub from the FastAPI endpoint
+    signedAt: v.number(),         // Unix ms
+    revokedAt: v.optional(v.number()),      // present = revoked; absent = active
+    revokedReason: v.optional(v.string()),
+  })
+    .index('by_runId', ['runId'])
+    .index('by_runId_and_kind', ['runId', 'kind'])
+    .index('by_workspace', ['workspace_id']),
 })
