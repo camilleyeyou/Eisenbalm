@@ -72,3 +72,20 @@ async def _flip_sanity_published(http: AsyncClient, sanity_issue_id: str) -> Non
         "_flip_sanity_published: %s status=published (webhook will invoke _run_publisher)",
         sanity_issue_id,
     )
+
+
+async def _revert_sanity_status(
+    http: AsyncClient, sanity_issue_id: str, *, status: str = "in-review"
+) -> None:
+    """Inverse of _flip_sanity_published (§34.7, D-07) — reverts a Studio-flip
+    bypass attempt. 'in-review' is the valid non-published weeklyIssue.status
+    value (apps/studio/schemas/weeklyIssue.ts). On error the exception
+    propagates to the caller (the webhook logs + still returns 200)."""
+    dataset = _dataset()
+    r = await http.post(
+        f"/{_API_VERSION}/data/mutate/{dataset}",
+        json={"mutations": [{"patch": {"id": sanity_issue_id, "set": {"status": status}}}]},
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+    log.info("_revert_sanity_status: %s status=%s (publish bypass blocked)", sanity_issue_id, status)
