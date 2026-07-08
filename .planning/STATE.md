@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 34-03-signoff-endpoints-publish-gate-PLAN.md
-last_updated: "2026-07-08T15:00:02.385Z"
+stopped_at: Completed 34-05-auto-revoke-on-mutation-PLAN.md
+last_updated: "2026-07-08T15:09:42.764Z"
 progress:
   total_phases: 39
   completed_phases: 32
   total_plans: 215
-  completed_plans: 210
+  completed_plans: 212
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 34 (two-sign-off-publish-gate-studio-bypass-retirement) — EXECUTING
-Plan: 4 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -236,6 +236,8 @@ Plan: 4 of 6
 | Phase 34 P01 | 3min | 1 tasks | 1 files |
 | Phase 34 P02 | 8min | 3 tasks | 3 files |
 | Phase 34 P03 | 15min | 3 tasks | 6 files |
+| Phase 34 P06 | 12min | 2 tasks | 5 files |
+| Phase 34 P05 | 12min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -604,6 +606,9 @@ Recent decisions affecting current work:
 - [Phase 34]: Webhook blocks publish when run_id is None (no pipelineMetadata.runId at all), not just when sign-offs are missing
 - [Phase 34]: D-07 bypass alert reuses frozen deliberationEvents eventType='cost-warning' with inner payload discriminator, following the auto-publish-enabled precedent
 - [Phase 34]: Two-sign-off publish gate: claims-signoff + open-error-findings checks relocated from publish/schedule into the facts-cleared sign-off endpoint (api/signoffs.py); publish/schedule now gate only on signOffs:activeByRunId (409 missing_signoffs)
+- [Phase 34]: Sign-off buttons render only when the kind is not yet active; once active the row switches to an affirmative 'signed Nm ago' green line — never a blank/neutral state
+- [Phase 34]: Facts-cleared sign button is client-disabled while any error-severity blocker is open (courtesy only — server 409s authoritatively)
+- [Phase 34]: Auto-revoke sign-offs on reopen/dismiss (not just accept) — closes the gate-integrity hole from relocating facts-cleared check to sign-off time
 
 ### Pending Todos
 
@@ -688,6 +693,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T15:00:02.373Z
-Stopped at: Completed 34-03-signoff-endpoints-publish-gate-PLAN.md
+Last session: 2026-07-08T15:09:42.751Z
+Stopped at: Completed 34-05-auto-revoke-on-mutation-PLAN.md
 Resume file: None
