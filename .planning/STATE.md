@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 34-02-convex-sign-offs-table-PLAN.md
-last_updated: "2026-07-08T14:54:47.613Z"
+stopped_at: Completed 34-03-signoff-endpoints-publish-gate-PLAN.md
+last_updated: "2026-07-08T15:00:02.385Z"
 progress:
   total_phases: 39
   completed_phases: 32
   total_plans: 215
-  completed_plans: 209
+  completed_plans: 210
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 34 (two-sign-off-publish-gate-studio-bypass-retirement) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -235,6 +235,7 @@ Plan: 3 of 6
 | Phase 33-accept-fix-wiring-decision-rail P05 | 15min | 3 tasks | 5 files |
 | Phase 34 P01 | 3min | 1 tasks | 1 files |
 | Phase 34 P02 | 8min | 3 tasks | 3 files |
+| Phase 34 P03 | 15min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -602,6 +603,7 @@ Recent decisions affecting current work:
 - [Phase 34]: sign_offs table PATCHes the same (runId,kind) row on revoke/re-sign rather than append-only rows — audit_log carries the immutable history
 - [Phase 34]: Webhook blocks publish when run_id is None (no pipelineMetadata.runId at all), not just when sign-offs are missing
 - [Phase 34]: D-07 bypass alert reuses frozen deliberationEvents eventType='cost-warning' with inner payload discriminator, following the auto-publish-enabled precedent
+- [Phase 34]: Two-sign-off publish gate: claims-signoff + open-error-findings checks relocated from publish/schedule into the facts-cleared sign-off endpoint (api/signoffs.py); publish/schedule now gate only on signOffs:activeByRunId (409 missing_signoffs)
 
 ### Pending Todos
 
@@ -686,6 +688,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T14:54:47.600Z
-Stopped at: Completed 34-02-convex-sign-offs-table-PLAN.md
+Last session: 2026-07-08T15:00:02.373Z
+Stopped at: Completed 34-03-signoff-endpoints-publish-gate-PLAN.md
 Resume file: None
