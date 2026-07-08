@@ -743,13 +743,14 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   2. The Sanity publish webhook handler itself re-checks sign-off state before running the publisher — flipping status directly in Studio no longer triggers a publish.
   3. Sanity Studio's publish action for `weeklyIssue` is disabled/removed after a soak period of real weekly cycles on the console, with Studio documented as a read-only fallback.
   4. Every sign-off, publish attempt, and any override is recorded in the audit log with actor and timestamp.
-**Plans**: 6 plans
+**Plans**: 7 plans (1 gap closure)
 - [x] 34-01-contract-amendment-PLAN.md — §34 API_CONTRACTS: sign_offs table, sign-off endpoint, gate restructure, webhook revert, Studio action (contract-first)
 - [x] 34-02-convex-sign-offs-table-PLAN.md — Convex sign_offs table + signOffs.ts (record/revokeAll/activeByRunId/listByRunId)
 - [x] 34-03-signoff-endpoints-publish-gate-PLAN.md — api/signoffs.py sign-off endpoint (relocated facts prereqs) + publish/schedule missing_signoffs gate + guarded paths
 - [x] 34-04-webhook-revalidation-revert-PLAN.md — webhook D-07 re-check + _revert_sanity_status + bypass audit/alert (PUB-02)
 - [x] 34-05-auto-revoke-on-mutation-PLAN.md — D-08 auto-revoke both sign-offs across 9 content patches + 3 findings routes + rerun_agent
 - [x] 34-06-rail-signoffs-studio-retirement-PLAN.md — DecisionRail sign-off controls + signOffClient + flag-gated Studio publish-action removal + read-only-fallback docs
+- [ ] 34-07-decisionrail-signoff-test-coverage-PLAN.md — gap closure: repair DecisionRail.test.tsx signOffs mock (restores 16 tests) + add sign-off UI coverage (VERIFICATION.md)
 **UI hint**: yes
 
 ### Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering
