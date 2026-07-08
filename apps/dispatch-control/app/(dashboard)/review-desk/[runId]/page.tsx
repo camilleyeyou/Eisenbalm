@@ -133,6 +133,11 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
   // is the Phase 31 preview toggle, kept as the soak-cycle fallback (D-02).
   const [viewMode, setViewMode] = useState<ViewMode>('galley')
 
+  // Phase 35 (PRV-03, D-10): the provenance wash layer is ON by default;
+  // the toolbar toggle below lets the operator switch it off for clean
+  // reading.
+  const [showProvenance, setShowProvenance] = useState(true)
+
   // D-07 dirty-state map, bubbled up from SectionEditorPanel so the
   // section-chip list can paint the unsaved dot and in-app nav can guard
   // against silently discarding unsaved edits when switching sections.
@@ -376,6 +381,15 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
                 >
                   {viewMode === 'iframe' ? 'Hide preview' : 'Show preview'}
                 </button>
+                {/* Phase 35 (PRV-03, D-10): default-ON provenance wash toggle. */}
+                <button
+                  type="button"
+                  onClick={() => setShowProvenance((prev) => !prev)}
+                  aria-pressed={showProvenance}
+                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+                >
+                  {showProvenance ? 'Provenance on' : 'Provenance off'}
+                </button>
               </div>
             </div>
 
@@ -387,6 +401,7 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
                   revisionId={draft.revisionId}
                   reloadDraft={reloadDraft}
                   onEditSection={handleEditSection}
+                  showProvenance={showProvenance}
                 />
               ) : (
                 <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">

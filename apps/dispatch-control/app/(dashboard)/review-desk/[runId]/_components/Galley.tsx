@@ -12,7 +12,19 @@
  *
  * READ-ONLY: no Convex mutation, no Sanity write anywhere in this file — the
  * galley is a render surface only. Editing lives in the Plan 31
- * StructuredFieldEditor / BlockEditor surfaces.
+ * StructuredFieldEditor / BlockEditor surfaces. (ClaimMark, rendered inside
+ * GallerySection, DOES call claimChecks:setStatus directly — that is a
+ * deliberate Convex-only exception, EDT-05 exempt per Pitfall 9 — but this
+ * file itself never mutates anything.)
+ *
+ * Phase 35 (PRV-03, Plan 35-05): subscribes to `claim_checks` and resolves
+ * each row into a per-section `ResolvedClaim[]` using the SAME
+ * `resolveSectionFindings` the QA annotations already use (never a new
+ * fuzzy matcher) — the publisher writes `sectionName` directly in the
+ * galley section-id vocabulary (originStory/problemStatement/founderBio/
+ * caseStudy/bonus), so no `qaSectionToGalleyId` bridge is needed here. A
+ * `showProvenance` prop (default ON, D-10) controls whether the resolved
+ * claims are passed through to `GallerySection` at all.
  */
 import { useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
@@ -27,6 +39,7 @@ import {
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { ensureThemeFont, applyThemeAccent } from '@/lib/galley/googleFontLoader'
+import type { ResolvedClaim } from '@/lib/galley/syntheticPortableText'
 import GallerySection from './GallerySection'
 import GalleryGameSlot from './GalleryGameSlot'
 
@@ -45,6 +58,18 @@ interface QaCorrectionRow {
   resolution?: 'accepted' | 'dismissed'
 }
 
+/** Minimal shape needed from a live `claim_checks` row (Phase 35 PRV-03). */
+interface ClaimCheckRow {
+  claimIndex: number
+  text: string
+  status: string
+  claimId?: string
+  sourceUrl?: string
+  retrievedAt?: number
+  sectionName?: string
+  blockIndexHint?: number
+}
+
 interface GalleyProps {
   runId: string
   draft: DraftResponse
@@ -54,6 +79,8 @@ interface GalleyProps {
   reloadDraft: () => Promise<void> | void
   /** D-08 edit-inline deep-link into the section editor. */
   onEditSection: (sectionId: string, findingId?: string) => void
+  /** Phase 35 (PRV-03, D-10) — provenance wash layer, default ON. */
+  showProvenance?: boolean
 }
 
 // D-05 reader order for the four long-read sections.
@@ -70,6 +97,7 @@ export default function Galley({
   revisionId,
   reloadDraft,
   onEditSection,
+  showProvenance = true,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -101,6 +129,22 @@ export default function Galley({
     findingsByGalleyId.set(galleyId, list)
   }
 
+  // Phase 35 (PRV-03) — live claim_checks rows, undefined while loading.
+  // The publisher writes `sectionName` directly in the galley id vocabulary
+  // (originStory/problemStatement/founderBio/caseStudy/bonus) — no mapping
+  // bridge needed, unlike qaCorrections above. A row missing sectionName
+  // (legacy/unresolvable) is simply never grouped into any section — it
+  // renders no wash anywhere, never a crash.
+  const claimRows =
+    (useQuery(api.claimChecks.listByRunId, { runId }) as ClaimCheckRow[] | undefined) ?? []
+  const claimsBySection = new Map<string, ClaimCheckRow[]>()
+  for (const row of claimRows) {
+    if (!row.sectionName) continue
+    const list = claimsBySection.get(row.sectionName) ?? []
+    list.push(row)
+    claimsBySection.set(row.sectionName, list)
+  }
+
   // D-04 theme fonts + accent — validated inside the helpers; a bad value is
   // a no-op.
   useEffect(() => {
@@ -118,10 +162,46 @@ export default function Galley({
     return resolveSectionFindings(rows, findingsByGalleyId.get(sectionId) ?? [], sectionId)
   }
 
+  // Phase 35 (PRV-03) — reuses the SAME resolver as resolveFor above (never
+  // a new fuzzy matcher): claim_checks rows are mapped into the QaFinding
+  // shape (quotedSpan=row.text, blockIndexHint=row.blockIndexHint), resolved
+  // per-block, then re-hydrated with each claim's provenance fields.
+  function resolveClaimsFor(
+    sectionId: string,
+    rows: Array<{ type: string; text: string }>,
+  ): ResolvedClaim[] {
+    if (!showProvenance) return []
+    const rowsForSection = claimsBySection.get(sectionId) ?? []
+    if (rowsForSection.length === 0) return []
+    const claimFindings: QaFinding[] = rowsForSection.map((row) => ({
+      _id: String(row.claimIndex),
+      severity: 'info',
+      reason: '',
+      quotedSpan: row.text,
+      blockIndexHint: row.blockIndexHint,
+    }))
+    const { resolved } = resolveSectionFindings(rows, claimFindings, sectionId)
+    return resolved.map((r) => {
+      const row = rowsForSection.find((cr) => String(cr.claimIndex) === r.findingId)
+      return {
+        claimIndex: row ? row.claimIndex : Number(r.findingId),
+        sectionId,
+        blockIndex: r.blockIndex,
+        start: r.start,
+        end: r.end,
+        provenance: row?.claimId ? 'sourced' : 'unsourced',
+        sourceUrl: row?.sourceUrl,
+        retrievedAt: row?.retrievedAt,
+        status: row?.status ?? 'pending',
+      }
+    })
+  }
+
   const bonusRows: Array<{ type: string; text: string }> = Array.isArray(draft.bonus?.body)
     ? draft.bonus.body
     : []
   const bonusResolution = draft.bonusType === 'specAd' ? resolveFor('bonus', bonusRows) : null
+  const bonusClaimResolved = draft.bonusType === 'specAd' ? resolveClaimsFor('bonus', bonusRows) : []
 
   return (
     <div ref={containerRef} className="galley-root">
@@ -129,6 +209,7 @@ export default function Galley({
         const section = draft.sections[id]
         const rows = section?.blocks ?? []
         const { resolved, unresolved } = resolveFor(id, rows)
+        const claimResolved = resolveClaimsFor(id, rows)
         return (
           <GallerySection
             key={id}
@@ -137,6 +218,8 @@ export default function Galley({
             rows={rows}
             resolved={resolved}
             unresolved={unresolved}
+            claimResolved={claimResolved}
+            showProvenance={showProvenance}
             runId={runId}
             revisionId={revisionId}
             reloadDraft={reloadDraft}
@@ -154,6 +237,8 @@ export default function Galley({
           rows={bonusRows}
           resolved={bonusResolution.resolved}
           unresolved={bonusResolution.unresolved}
+          claimResolved={bonusClaimResolved}
+          showProvenance={showProvenance}
           runId={runId}
           revisionId={revisionId}
           reloadDraft={reloadDraft}
