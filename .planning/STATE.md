@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to plan
-stopped_at: Phase 33 context gathered
-last_updated: "2026-07-08T04:07:20.573Z"
+status: Ready to execute
+stopped_at: Completed 33-01-PLAN.md (contract amendment)
+last_updated: "2026-07-08T04:52:07.898Z"
 progress:
   total_phases: 39
   completed_phases: 31
-  total_plans: 204
-  completed_plans: 202
+  total_plans: 209
+  completed_plans: 203
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 32 — native-galley-read-only-span-resolver
+**Current focus:** Phase 33 — accept-fix-wiring-decision-rail
 
 ## Current Position
 
-Phase: 33
-Plan: Not started
+Phase: 33 (accept-fix-wiring-decision-rail) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -229,6 +229,7 @@ Plan: Not started
 | Phase 32 P05 | 12min | 3 tasks | 3 files |
 | Phase 32-native-galley-read-only-span-resolver P06 | 27min | 3 tasks | 3 files |
 | Phase 32 P07 | 9min | 2 tasks | 2 files |
+| Phase 33-accept-fix-wiring-decision-rail P01 | 6min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -585,6 +586,7 @@ Recent decisions affecting current work:
 - [Phase 32-native-galley-read-only-span-resolver]: Galley.tsx assembled: renders all 8 D-05 reader sections natively from draft-read data, resolves live open QA findings per-section via resolveSectionFindings + qaSectionToGalleyId, sandboxes the game in an iframe, and applies theme fonts/accent - Galley.test.tsx green (5/5), GLY-01 satisfied
 - [Phase 32]: Chip counts for sections without draft blocks (game/podcast/theme/deliberation, non-specAd bonus) tally by severity only with unresolved=0 -- no anchor concept there
 - [Phase 32]: Edit affordance is a header-level 'Edit {label}' button, not an inline per-section control inside Galley.tsx (out of this plan's files_modified scope)
+- [Phase 33-accept-fix-wiring-decision-rail]: §33 contract: three verb endpoints (accept/dismiss/reopen) over one /resolution endpoint; schedule_issue gets the same open_error_findings gate (Pitfall 8); editor-memo key documented as 'notes' correcting D-16; setResolution pipeline-lane guarded (requirePipelineSecret + _PIPELINE_SECRET_GUARDED_PATHS)
 
 ### Pending Todos
 
@@ -669,6 +671,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T04:07:20.558Z
-Stopped at: Phase 33 context gathered
-Resume file: .planning/phases/33-accept-fix-wiring-decision-rail/33-CONTEXT.md
+Last session: 2026-07-08T04:52:07.885Z
+Stopped at: Completed 33-01-PLAN.md (contract amendment)
+Resume file: None

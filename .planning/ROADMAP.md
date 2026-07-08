@@ -432,7 +432,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
-| 33. Accept-Fix Wiring + Decision Rail | 0/? | Not started | - |
+| 33. Accept-Fix Wiring + Decision Rail | 1/5 | In Progress|  |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
@@ -727,7 +727,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. After any content patch, annotation anchors are re-resolved against the updated content; annotations invalidated by the edit are surfaced as orphaned for operator review, not dropped.
   4. The decision rail shows unresolved error-severity findings first and blocks Publish until they're resolved; it also shows the editor memo, hook card, and a verification summary with an affirmative timestamp state ("checked Nm ago" — never blank).
 **Plans**: 5 plans
-- [ ] 33-01-contract-amendment-PLAN.md — Amend docs/API_CONTRACTS.md §33 (findings endpoints, resolution fields, publish gate, checkedAt) BEFORE any code
+- [x] 33-01-contract-amendment-PLAN.md — Amend docs/API_CONTRACTS.md §33 (findings endpoints, resolution fields, publish gate, checkedAt) BEFORE any code
 - [ ] 33-02-convex-resolution-state-PLAN.md — Additive qaCorrections resolution fields + secret-guarded setResolution + byId + pitchLog:selectedByRunId + claim_checks.checkedAt + codegen + convex-test
 - [ ] 33-03-pipeline-findings-endpoints-PLAN.md — Python span-resolver port + api/findings.py accept/dismiss/reopen + open-error-findings 409 on publish_issue & schedule_issue
 - [ ] 33-04-popover-actions-reresolution-PLAN.md — findingsClient + shared isOpenFinding + popover Accept/Edit/Dismiss + unresolved-card actions + reloadDraft/edit-inline plumbing

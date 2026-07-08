@@ -282,17 +282,17 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Galley & Review Desk (GLY)
 - [x] **GLY-01**: Operator reads the issue as the reader will see it — a native render of the Sanity draft (all sections including the sandboxed game) inside the Review Desk, replacing the preview iframe.
 - [x] **GLY-02**: QA findings render as inline severity-colored span annotations, resolved by quotedSpan text-match with a block-index hint; anchors that no longer resolve are surfaced as orphaned, never silently dropped.
-- [ ] **GLY-03**: Clicking an annotation opens a popover showing axis, severity, reason, and suggested fix, with Accept fix / Edit inline / Dismiss actions.
-- [ ] **GLY-04**: The decision rail is blockers-first: unresolved error-severity findings gate Publish; rail shows the editor memo, hook card, and a verification summary with affirmative states ("checked Nm ago" — never blank).
+- [x] **GLY-03**: Clicking an annotation opens a popover showing axis, severity, reason, and suggested fix, with Accept fix / Edit inline / Dismiss actions.
+- [x] **GLY-04**: The decision rail is blockers-first: unresolved error-severity findings gate Publish; rail shows the editor memo, hook card, and a verification summary with affirmative states ("checked Nm ago" — never blank).
 - [x] **GLY-05**: Section-status chips show per-section finding counts and act as jump navigation.
 
 ### Editing & Write Boundary (EDT)
 - [x] **EDT-01**: Operator can edit any section's prose per-section from the console (structured block-list editing, not inline WYSIWYG); saves write to the Sanity draft via a pipeline content-patch endpoint using scoped patches.
 - [x] **EDT-02**: Operator can edit structured fields from the console: section headlines, PDF key data points, game embed code, theme values.
 - [x] **EDT-03**: Operator can upload assets (podcast audio, Suno audio, storyboard images) through the console → pipeline → Sanity assets.
-- [ ] **EDT-04**: Accept-fix applies the suggested text to the draft via content-patch and logs it; Dismiss requires a one-line reason; every content mutation lands in the audit log ("nothing silent").
+- [x] **EDT-04**: Accept-fix applies the suggested text to the draft via content-patch and logs it; Dismiss requires a one-line reason; every content mutation lands in the audit log ("nothing silent").
 - [x] **EDT-05**: All content writes flow dashboard → pipeline API → Sanity; the dashboard has no direct Sanity write path (source-scan enforceable).
-- [ ] **EDT-06**: After any content patch, annotation anchors are re-resolved; annotations invalidated by the edit surface as orphaned for operator review.
+- [x] **EDT-06**: After any content patch, annotation anchors are re-resolved; annotations invalidated by the edit surface as orphaned for operator review.
 
 ### Two-Sign-off Publish Gate (PUB)
 - [ ] **PUB-01**: Publishing requires two independent server-enforced sign-offs — "Facts cleared" and "Sounds human" — the publish endpoint refuses (409) unless both are recorded.
