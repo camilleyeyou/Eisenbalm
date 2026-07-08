@@ -18,12 +18,23 @@
  *
  * Wrapped in `<section id="galley-{sectionId}">` so the chip jump-nav
  * (Plan 32-07) can `scrollIntoView` directly.
+ *
+ * Phase 35 (PRV-03, Plan 35-05): threads `claimResolved` + `showProvenance`
+ * into `toSyntheticBlocks` so a span can additionally carry a `claimSpan`
+ * mark (rendered by `ClaimMark`), stacked alongside `annotation` marks —
+ * the marigold/rust provenance wash. When `showProvenance` is false, `[]`
+ * is passed instead so no wash renders (annotations are unaffected).
  */
 import { useMemo } from 'react'
 import { PortableText, type PortableTextReactComponents } from '@portabletext/react'
-import { toSyntheticBlocks } from '@/lib/galley/syntheticPortableText'
+import {
+  toSyntheticBlocks,
+  type ClaimSpanMarkDef,
+  type ResolvedClaim,
+} from '@/lib/galley/syntheticPortableText'
 import type { ResolvedAnnotation, UnresolvedFinding } from '@/lib/galley/spanResolver'
 import AnnotationMark from './AnnotationMark'
+import ClaimMark from './ClaimMark'
 import UnresolvedFindingCard from './UnresolvedFindingCard'
 
 export interface GallerySectionContentBlock {
@@ -43,6 +54,9 @@ interface GallerySectionProps {
   revisionId: string
   reloadDraft: () => Promise<void> | void
   onEditSection: (sectionId: string, findingId?: string) => void
+  // Phase 35 (PRV-03) — provenance wash resolution + visibility toggle.
+  claimResolved?: ResolvedClaim[]
+  showProvenance?: boolean
 }
 
 export default function GallerySection({
@@ -56,10 +70,18 @@ export default function GallerySection({
   revisionId,
   reloadDraft,
   onEditSection,
+  claimResolved = [],
+  showProvenance = true,
 }: GallerySectionProps) {
-  // toSyntheticBlocks groups `resolved` by blockIndex internally (it filters
-  // the flat annotation list per-row), so the flat array is passed directly.
-  const syntheticBlocks = toSyntheticBlocks(rows, resolved, sectionId)
+  // toSyntheticBlocks groups `resolved`/`claimResolved` by blockIndex
+  // internally (it filters the flat lists per-row), so the flat arrays are
+  // passed directly. showProvenance=false passes [] so no wash renders.
+  const syntheticBlocks = toSyntheticBlocks(
+    rows,
+    resolved,
+    sectionId,
+    showProvenance ? claimResolved : [],
+  )
 
   // Built per-render (memoized on the action context) because
   // marks.annotation must close over runId/revisionId/reloadDraft/
@@ -86,6 +108,11 @@ export default function GallerySection({
           >
             {children}
           </AnnotationMark>
+        ),
+        claimSpan: ({ value, children }) => (
+          <ClaimMark value={value as ClaimSpanMarkDef} runId={runId}>
+            {children}
+          </ClaimMark>
         ),
       },
     }),

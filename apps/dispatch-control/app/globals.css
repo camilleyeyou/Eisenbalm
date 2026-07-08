@@ -210,3 +210,24 @@ body {
 .galley-root {
   background: var(--background);
 }
+
+/**
+ * Phase 35 (PRV-03, D-09/D-10) — claim provenance wash. BACKGROUND ONLY —
+ * no underline treatment here — so a span carrying both a `.galley-claim`
+ * wash AND a `.galley-anno` QA underline reads as underline-over-wash,
+ * never a collision. Sourced claims get a marigold wash; unsourced get a
+ * rust wash; an already-checked/skipped claim dims slightly so a scan
+ * favors what's still open.
+ */
+.galley-claim {
+  position: relative;
+}
+.galley-claim[data-provenance="sourced"] {
+  background: linear-gradient(transparent 60%, rgba(242, 176, 30, 0.5) 60%);
+}
+.galley-claim[data-provenance="unsourced"] {
+  background: rgba(232, 71, 29, 0.13);
+}
+.galley-claim[data-checked="true"] {
+  opacity: 0.72;
+}
