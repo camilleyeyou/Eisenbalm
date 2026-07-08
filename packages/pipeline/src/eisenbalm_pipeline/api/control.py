@@ -172,6 +172,19 @@ async def _emit_audit(
         )
 
 
+# ── Shared sign-off revocation helper ──────────────────────────────────────
+
+async def _revoke_active_signoffs(http: Any, *, run_id: str, reason: str) -> None:
+    """Phase 34 (§34.6, D-08) — auto-revoke both sign-off kinds when the issue's
+    content changes. Fail-open (mirrors _emit_audit): a revoke failure must NOT
+    block the content save the operator is actively doing. The rail (subscribed
+    to signOffs:activeByRunId) goes red live; Andrew re-signs after review."""
+    try:
+        await _cc.convex_mutation(http, "signOffs:revokeAll", {"runId": run_id, "reason": reason})
+    except Exception:  # noqa: BLE001
+        log.warning("signOffs:revokeAll failed for run=%s (non-blocking)", run_id)
+
+
 # ── POST /pipeline/run ─────────────────────────────────────────────────────
 
 @router.post("/pipeline/run")
@@ -571,5 +584,8 @@ async def rerun_agent(
         resource_type="run",
         resource_id=f"{run_id}:{agent_key}",
     )
+
+    # Phase 34 (D-08): re-rolling a section changes content — void both sign-offs.
+    await _revoke_active_signoffs(http, run_id=run_id, reason="section re-rolled")
 
     return {"runId": run_id, "agentKey": agent_key, "rerolled": True}
