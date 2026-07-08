@@ -24,6 +24,8 @@ import type { DraftResponse } from '@/lib/contentPatchClient'
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
+  // Phase 35: ClaimMark calls useMutation(api.claimChecks.setStatus).
+  useMutation: vi.fn(() => vi.fn()),
 }))
 
 // Phase 33: AnnotationMark/UnresolvedFindingCard now read Clerk's getToken.
@@ -35,6 +37,11 @@ vi.mock('@convex/_generated/api', () => ({
   api: {
     qaCorrections: {
       byRunId: 'qaCorrections:byRunId',
+    },
+    // Phase 35 (PRV-03): claim_checks subscription + status mutation.
+    claimChecks: {
+      listByRunId: 'claimChecks:listByRunId',
+      setStatus: 'claimChecks:setStatus',
     },
   },
 }))
@@ -135,12 +142,36 @@ const qaFindings = [
   },
 ]
 
+// Phase 35 (PRV-03): claim_checks fixture rows -- one sourced (claimId
+// present), one unsourced (claimId absent), both anchored via
+// sectionName/blockIndexHint in the galley section id vocabulary.
+const claimRows = [
+  {
+    claimIndex: 0,
+    text: 'in a garage',
+    status: 'pending',
+    claimId: 'c-0',
+    sourceUrl: 'https://example.com/history',
+    retrievedAt: 1700000000000,
+    sectionName: 'originStory',
+    blockIndexHint: 0,
+  },
+  {
+    claimIndex: 1,
+    text: 'the regional bank closed',
+    status: 'pending',
+    sectionName: 'problemStatement',
+    blockIndexHint: 0,
+  },
+]
+
 // Phase 33 (Plan 33-04): Galley now requires the action-context props.
 const noop = () => {}
 
 function mockFindings() {
   ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
     if (queryRef === 'qaCorrections:byRunId') return qaFindings
+    if (queryRef === 'claimChecks:listByRunId') return claimRows
     return undefined
   })
 }
@@ -191,5 +222,52 @@ describe('Galley', () => {
     expect(screen.getByText(/imagine a world where lip balm funds shelters/i)).toBeDefined()
     expect(screen.getByText(/today we cover an obscure charity/i)).toBeDefined()
     expect(screen.getByText(/found a promising candidate/i)).toBeDefined()
+  })
+
+  // Phase 35 (PRV-03): provenance wash -- sourced/unsourced claims, the
+  // default-ON toggle, and legacy-row safety.
+  it('renders a sourced (marigold) wash for a claimId-bearing claim and an unsourced (rust) wash for a claimId-absent claim', () => {
+    mockFindings()
+    const { container } = render(
+      <Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />,
+    )
+
+    const sourced = container.querySelectorAll('[data-provenance="sourced"]')
+    const unsourced = container.querySelectorAll('[data-provenance="unsourced"]')
+    expect(sourced.length).toBeGreaterThan(0)
+    expect(unsourced.length).toBeGreaterThan(0)
+    sourced.forEach((el) => expect(el.className).toContain('galley-claim'))
+  })
+
+  it('renders no galley-claim wash marks when the provenance toggle is off', () => {
+    mockFindings()
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        showProvenance={false}
+      />,
+    )
+
+    expect(container.querySelectorAll('.galley-claim').length).toBe(0)
+    // Annotations still render even with the provenance layer off.
+    expect(container.querySelectorAll('[data-severity]').length).toBeGreaterThan(0)
+  })
+
+  it('a legacy claim_checks row with no blockIndexHint/sectionName never crashes the galley', () => {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') return qaFindings
+      if (queryRef === 'claimChecks:listByRunId') {
+        return [{ claimIndex: 9, text: 'nonexistent phrase', status: 'pending' }]
+      }
+      return undefined
+    })
+
+    expect(() =>
+      render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />),
+    ).not.toThrow()
   })
 })
