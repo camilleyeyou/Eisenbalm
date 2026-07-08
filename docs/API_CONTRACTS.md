@@ -2728,6 +2728,188 @@ codebase — every content-patch endpoint operates on the plain `issue-{n}` docu
 
 ---
 
+## Phase 33 — Accept-Fix Wiring + Decision Rail
+
+Findings become actionable (GLY-03, GLY-04, EDT-04, EDT-06): the operator can Accept fix
+/ Edit inline / Dismiss any QA finding from the galley, every action flows dashboard →
+pipeline API → Sanity/Convex with an audit row ("nothing silent"), and a blockers-first
+decision rail gates Publish on open error-severity findings — client-side AND
+server-side. This contract is written BEFORE any endpoint or schema code exists
+(CLAUDE.md contract-first hard rule). Plans 33-02..33-05 implement these shapes
+verbatim — no field names, endpoint paths, or 409 reason strings may be invented later.
+
+### §33.1 — `qaCorrections` resolution fields + `setResolution` mutation (D-01, additive optional)
+
+Convex `qaCorrections` (schema + §4.5/§32.1 shapes unchanged otherwise) gains four
+additive optional fields:
+
+```typescript
+resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'))), // absent = open
+resolutionReason: v.optional(v.string()),  // required-for-dismiss enforced at the ENDPOINT, not the schema
+resolvedBy: v.optional(v.string()),
+resolvedAt: v.optional(v.number()),
+```
+
+Legacy `accepted: boolean` STAYS and is kept in sync for Phase 26 back-compat:
+accept → `accepted: true`; dismiss → `accepted: false` (a no-op in practice — open
+findings already carry `false`); reopen → `accepted: false`.
+
+A NEW `qaCorrections:setResolution` mutation is **pipeline-lane**: it MUST call
+`requirePipelineSecret` and MUST be added to `_PIPELINE_SECRET_GUARDED_PATHS` in
+`packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py` (both edits land
+together — the set's docstring demands sync). The existing `insert` mutation's public
+GAM-05 exception is UNCHANGED — do not copy its no-auth pattern.
+
+```typescript
+export const setResolution = mutation({
+  args: {
+    id: v.id('qaCorrections'),
+    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'))), // absent = reopen
+    resolutionReason: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+    resolvedAt: v.optional(v.number()),
+    pipelineSecret: v.optional(v.string()),
+  },
+  // handler: requirePipelineSecret(pipelineSecret); patch the row and set
+  // accepted = (resolution === 'accepted'). Passing resolution: undefined
+  // clears resolution/resolutionReason/resolvedBy/resolvedAt (reopen).
+})
+```
+
+A tiny public `qaCorrections:byId` query (`args: { id: v.id('qaCorrections') }`) is
+added so the pipeline can load one finding by its Convex `_id`; reads are public per
+existing convention.
+
+### §33.2 — `claim_checks.checkedAt` (D-13, additive optional)
+
+`claim_checks` gains one additive optional field: `checkedAt: v.optional(v.number())`.
+It is stamped inside the existing `claimChecks:setStatus` mutation with `Date.now()`
+whenever status flips to `checked` or `skipped` (NOT when a claim is set back to
+`pending`). Legacy rows without `checkedAt` degrade to an honest "not yet checked"
+state in the rail — never blank. The Phase 26 `ClaimsChecklist.tsx` component needs
+ZERO changes: the stamp lives entirely server-side in the mutation it already calls.
+
+### §33.3 — Findings endpoints (D-02, EDT-04)
+
+Three new POST routes in a NEW `packages/pipeline/src/eisenbalm_pipeline/api/findings.py`
+router, all Clerk-JWT-guarded via `_require_clerk_jwt_control` (the same dependency as
+`api/review.py` / `api/content.py`). The Convex resolution flip flows through these
+endpoints — never a dashboard-side Convex mutation (write boundary preserved).
+
+```
+POST /issues/{run_id}/findings/{finding_id}/accept   # body { ifRevisionID: string }
+POST /issues/{run_id}/findings/{finding_id}/dismiss  # body { reason: string }
+POST /issues/{run_id}/findings/{finding_id}/reopen   # no body
+```
+
+**Accept** flow (in order):
+1. Load finding via `qaCorrections:byId` — 404 if missing or wrong run; 409
+   `{"reason": "already_resolved"}` if `resolution` is already set.
+2. 409 `{"reason": "accept_unavailable"}` if `suggestedFix` or `quotedSpan` is absent
+   (D-07 — nothing to apply / nothing to anchor; also covers `game` and
+   non-specAd `bonus`, which have no block body).
+3. Map the QA `sectionName` → draft key (Python mirror of `sectionIdMap.ts`;
+   `problem` → `problemStatement` is the one non-obvious mapping) →
+   `get_issue_draft`.
+4. Server-side span resolution (§33.5). No match or ambiguous → 409
+   `{"reason": "span_not_resolved", "message": "Couldn't locate this text in the
+   current draft. Use Edit inline instead."}` (D-05 — never guess).
+5. Apply via Phase 31 machinery:
+   `patch_issue_field(field_path=f"{section}.body", value=compose_section_body(blocks),
+   if_revision_id=body.ifRevisionID)` — a stale revision raises the standard 409
+   `{"reason": "revision_mismatch"}` (D-06).
+6. `qaCorrections:setResolution` with `resolution='accepted'`, `resolvedBy`,
+   `resolvedAt`.
+7. `_emit_audit(action="finding.accepted", before=quotedSpan, after=suggestedFix)`
+   (truncated snapshots per §31.8).
+
+Returns `{ "revisionId": string, "findingId": string, "resolution": "accepted" }`.
+
+**Dismiss** flow: empty/whitespace `reason` → 422. Load finding (404 / 409
+`already_resolved` as above) → `qaCorrections:setResolution` with
+`resolution='dismissed'`, `resolutionReason=reason`, `resolvedBy`, `resolvedAt` →
+`_emit_audit(action="finding.dismissed", after=reason)`. Returns
+`{ "findingId": string, "resolution": "dismissed" }`. NO Sanity write.
+
+**Reopen** flow (D-04 — no text revert): load finding (404; 409
+`{"reason": "not_resolved"}` if `resolution` is absent) →
+`qaCorrections:setResolution` with `resolution` omitted (clears the four resolution
+fields, sets `accepted=false`) → `_emit_audit(action="finding.reopened")`. Returns
+`{ "findingId": string, "resolution": null }`.
+
+### §33.4 — Publish/schedule open-error-findings gate (D-14, D-11b, GLY-04 server)
+
+`review.py::publish_issue` AND `review.py::schedule_issue` BOTH gain a new guard,
+slotted in AFTER the existing claims-signoff gate (`claims_not_signed_off`) in each
+endpoint's guard chain: read `qaCorrections:byRunId`, compute
+`open_errors = [f for f in findings if f.severity == "error" and not f.resolution]`,
+and if non-empty raise:
+
+```json
+409 { "reason": "open_error_findings",
+      "message": "{n} error finding(s) must be accepted or dismissed before publishing.",
+      "count": n }
+```
+
+The check is **anchor-state-blind**: an orphaned error finding (one whose `quotedSpan`
+no longer resolves against the current draft) still blocks until explicitly accepted or
+dismissed — losing an anchor must never silently un-block Publish (D-11b).
+`schedule_issue` gets the SAME gate explicitly (Pitfall 8): scheduled runs publish via
+the tick sweep and must not bypass the gate by scheduling instead of publishing.
+Phase 34 layers its additional server-enforced sign-offs on top of this same guard
+chain; nothing beyond the error-findings check belongs to Phase 33.
+
+### §33.5 — Server-side span resolution (D-05)
+
+A NEW `packages/pipeline/src/eisenbalm_pipeline/lib/span_resolver.py` is a 1:1 Python
+port of `apps/dispatch-control/lib/galley/spanResolver.ts`, so client and server
+resolution always agree (a finding the galley renders as anchored must not 409 on
+accept). Three stages, each searched block-by-block (NEVER against joined section
+text — cross-block matches are not real matches):
+
+1. **Exact:** `str.find(quotedSpan)` per block.
+2. **Curly-quote-normalized:** map `‘ ’ → '` and `“ ” → "` on BOTH sides — a 1:1,
+   length-preserving character swap, so offsets computed on normalized text index the
+   original text directly.
+3. **Whitespace-tolerant:** `re.escape` the quote-normalized span with every `\s+` run
+   collapsed to a `\s+` pattern, matched via `re.finditer` over the quote-normalized
+   block text; use the match's own `start()`/`end()` (the matched run in the TEXT may
+   differ in length from `quotedSpan`).
+
+Disambiguation (identical to the TS `disambiguate`): 0 matches → next stage; exactly
+1 → winner; 2+ → `blockIndexHint` wins ONLY if it names an actual candidate block,
+otherwise ambiguous = unresolved (→ 409 `span_not_resolved`). **Never guess.**
+
+Replacement is `text[:start] + suggestedFix + text[end:]` applied to the ORIGINAL block
+text (valid because normalization is length-preserving — offsets index the original).
+
+### §33.6 — Editor memo payload key (D-16 correction)
+
+The decision rail's editor memo reads the `editor-final` row from `deliberationEvents`
+(`byRunIdAndType`). The `payload` is a JSON **string** whose key is **`notes`** —
+`{"approved": bool, "notes": str}` per `agents/editor.py::_editor_final_payload` —
+NOT `editor_final_notes` (the CONTEXT D-16 wording is corrected here). Consumers
+`JSON.parse(payload).notes` inside a try/catch and render an honest empty state
+("No editor memo for this run") for legacy/malformed rows.
+
+### §33.7 — Hook card + verification data sources (D-12, D-13)
+
+**Hook card:** renders the run's selected pitch — a NEW public query
+`pitchLog:selectedByRunId` (`args: { runId: v.string() }`) on the EXISTING
+`by_runId_and_selected` index, filtered `selected === true` — surfacing `charityName`
++ `scoutSummary`. Phase 37's `hookClaim`/`hookVerified` model upgrades this card in
+place; no fake data in the meantime.
+
+**Verification summary:** reads `claimChecks:listByRunId` — "X/Y claims checked"
+where X = rows with `status !== 'pending'`, and "checked Nm ago" from
+`max(checkedAt)` across done rows. Affirmative states only, never blank: no rows →
+"No claims extracted yet"; rows without `checkedAt` → "not yet checked".
+
+*All Phase 33 changes are additive: `qaCorrections`/`claim_checks` gain only optional
+fields; the `insert` public exception and all Phase 26/31/32 shapes are unchanged.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
