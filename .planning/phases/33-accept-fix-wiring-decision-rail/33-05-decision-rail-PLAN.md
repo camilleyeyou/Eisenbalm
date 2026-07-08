@@ -105,7 +105,7 @@ Design tokens (§Design tokens): rail 336px, bg #f1f0ea, vermilion #e8471d (bloc
     - Actions row: Publish (gated), Hold (rejectIssue), Re-run section ▾ (rerollAgent — a select of agent keys), Transcript (scroll to #galley-deliberation).
   </behavior>
   <action>
-Create `apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` as a `'use client'` component. Props: `{ runId: string }` (it self-fetches via useQuery + useAuth().getToken(), matching page conventions). Compose the sections IN THIS ORDER per the design (D-17): (1) headline count line; (2) Blocking items checklist; (3) Editor's memo; (4) Hook card; (5) Verification block; (6) Actions row; (7) `<ResolvedFindingsList runId={runId} />` collapsed at the foot (D-04 — Task 3).
+Create `apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` as a `'use client'` component. Props: `{ runId: string }` (it self-fetches via useQuery + useAuth().getToken(), matching page conventions). Compose the sections IN THIS ORDER per the design (D-17): (1) headline count line; (2) Blocking items checklist; (3) Editor's memo; (4) Hook card; (5) Verification block; (6) Actions row; (7) `<ResolvedFindingsList runId={runId} />` collapsed at the foot (D-04 — Task 2).
 
 Data:
 - Open findings: `useQuery(api.qaCorrections.byRunId, { runId })` filtered by `isOpenFinding`. `blockers = open.filter(f => f.severity === 'error')`; `warnings = open.filter(f => f.severity === 'warning').length`. Fold `info` into a muted count or omit (discretion — do not inflate the headline).
@@ -117,7 +117,7 @@ Data:
 
 Style to the design tokens: the rail is a fixed 336px column with `bg` matching the design's `#f1f0ea` rail (use the existing `--color-rail` token if present in globals, else the raw token per the 1c system already wired in Phase 30 — check globals for a rail token first). Hard edges (no rounded corners), Space Grotesk micro-labels via the wired `--font-ui`. Keep every interactive target ≥44px.
 
-Create `apps/dispatch-control/__tests__/DecisionRail.test.tsx` (jsdom) mocking `convex/react` useQuery + the action clients: assert (a) blockers-first ordering (Blocking items appears before memo/hook/verification in the DOM), (b) Publish disabled with reason when an open error finding exists and enabled when none, (c) verification shows "checked Nm ago" when a checkedAt exists and "No claims extracted yet"/"not yet checked" in the empty/legacy cases (never blank), (d) editor memo reads `notes` and falls back gracefully when payload is malformed.
+Create `apps/dispatch-control/__tests__/DecisionRail.test.tsx` (jsdom) mocking `convex/react` useQuery + the action clients + `vi.mock('./ResolvedFindingsList')` (the sub-component is created in Task 2 — mock it here so this task's verify passes standalone): assert (a) blockers-first ordering (Blocking items appears before memo/hook/verification in the DOM), (b) Publish disabled with reason when an open error finding exists and enabled when none, (c) verification shows "checked Nm ago" when a checkedAt exists and "No claims extracted yet"/"not yet checked" in the empty/legacy cases (never blank), (d) editor memo reads `notes` and falls back gracefully when payload is malformed.
   </action>
   <verify>
     <automated>cd /Users/user/Desktop/Eisenbalm && pnpm --filter dispatch-control test:unit __tests__/DecisionRail.test.tsx -- --run</automated>
@@ -214,5 +214,3 @@ In `page.tsx`, mount `<DecisionRail runId={runId} />` as a third column inside t
 <output>
 After completion, create `.planning/phases/33-accept-fix-wiring-decision-rail/33-05-SUMMARY.md`
 </output>
-</content>
-</invoke>
