@@ -3123,6 +3123,182 @@ sign-off, one new missing_signoffs guard added); no field is renamed; Phase
 
 ---
 
+## §35 — Provenance (Phase 35)
+
+Every claim the Researcher extracts carries `{claim, sourceUrl, retrievedAt}` and
+survives into final prose: the writers reference claim IDs at generation time (never
+post-hoc fuzzy matching), and the galley renders sourced claims (marigold) and
+unsourced claims (rust) as first-class states (PRV-01..PRV-04). This contract is
+written BEFORE any schema/agent code exists (CLAUDE.md contract-first hard rule,
+mirroring §31/§32/§33/§34). Plans 35-02..35-06 implement these shapes verbatim — no
+field name, claim-ID scheme, or row shape may be invented later.
+
+### §35.1 — Researcher LLM output claim (D-01)
+
+The Researcher's Pydantic response model gains a `claims` field. The LLM emits a
+**source index**, never a URL — code numbers each Tavily result (S1, S2, …) before
+the parse call, and the LLM references those indices:
+
+```python
+class ClaimOutput(BaseModel):
+    text: str
+    sourceIndex: int | None = None   # 1-based index into the numbered Tavily results (S1=1, S2=2, …); None = writer asserts no source
+```
+
+`ResearchOutputModel.claims: list[ClaimOutput] = []` (additive field, `researcher.py`).
+Absorbs `keyStatistics` (D-02 — the old unsourced-strings field is removed; verified
+3 total repo references, all safe to update — see 35-RESEARCH.md Pitfall 2). The
+existing paired fields `founderName`/`founderNameSourceUrl`/`subjectName`/
+`subjectNameSourceUrl` are UNCHANGED and stay as-is for back-compat.
+
+### §35.2 — Code-side research claim (D-01, assembled in `researcher()`)
+
+Immediately after the LLM call returns, code maps `sourceIndex` → the real Tavily
+result at that position (the same `SearchResult` list the numbering was drawn from)
+and assigns a stable `claimId`. The assembled shape written to
+`state["research"]["claims"]`:
+
+```python
+{
+    "claimId": str,               # code-assigned, stable, collision-free — e.g. f"{run_id[:8]}-{ordinal}"
+    "text": str,
+    "sourceUrl": str | None,      # the real Tavily result URL at position sourceIndex; None if sourceIndex absent/out-of-range
+    "retrievedAt": int | None,    # Unix ms, stamped at the moment that Tavily query ran; None alongside a None sourceUrl
+}
+```
+
+Out-of-range or absent `sourceIndex` → `sourceUrl=None, retrievedAt=None` (honestly
+unsourced — never a fabricated or best-guess URL). `graph/state.py::ResearchOutput`
+gains `claims: NotRequired[list[dict]]` (TypedDict cannot express `ClaimOutput`'s
+shape precisely; the Pydantic model at the writer/researcher boundary is
+authoritative, matching the existing `body: list[dict]` precedent for BodyBlock).
+
+### §35.3 — Writer `claimSpans` sidecar (D-05, D-06)
+
+The five prose writers (`origin_story`, `problem`, `founder_bio`, `case_study`, and
+`bonus` — SpecAd branch ONLY, per D-06) gain a flat sibling field next to `body`:
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/graph/blocks.py — new sibling class
+class ClaimSpanRef(BaseModel):
+    claimId: str
+    asWritten: str = ""   # the verbatim phrase as the writer wrote it in the body — handles rewording, e.g. "$2.3M annual budget" -> "a budget of $2.3 million"
+```
+
+Each writer's output model (e.g. `OriginStoryOutput`) adds
+`claimSpans: list[ClaimSpanRef] = []`. **HARD CONSTRAINT: no `oneOf`/discriminated
+unions** — Anthropic's structured-output API rejects `oneOf` with HTTP 400 (see
+`graph/blocks.py`'s "Phase 18 post-launch fix" docstring for the production incident
+that already forced `BodyBlock` into a flat single-class shape; `ClaimSpanRef` is
+already flat, so it is compliant by construction — do not later "improve" it into a
+union). Writers whitelist-drop any `claimId` not present in
+`state["research"]["claims"]` in the AGENT FUNCTION body (D-07 — lenient, logged,
+never fatal; the whitelist isn't visible to a Pydantic field validator). `claimSpans`
+is NEVER forwarded to Sanity — `write_issue_draft` builds each section's payload as an
+explicit dict literal (`headline`, `body` only), so no stripping code is needed
+(verified, `lib/sanity_client.py`). The game and non-prose outputs are exempt (D-06)
+— their factual content still reaches the checklist via the D-04 regex catch-all,
+unsourced by default.
+
+### §35.4 — `claim_checks` additive fields (D-03) — amends §26.2 in place
+
+`claim_checks` (§26.2) gains five additive optional fields, mirroring the
+`qaCorrections` `sectionName`/`blockIndexHint` precedent (§32/§33) exactly:
+
+```typescript
+claim_checks: defineTable({
+  // ── existing (Phase 26/33, unchanged) ──
+  workspace_id: v.string(),
+  runId: v.string(),
+  claimIndex: v.number(),
+  text: v.string(),
+  claimType: v.string(),
+  context: v.string(),
+  status: v.string(),
+  checkedAt: v.optional(v.number()),
+  // ── NEW additive (Phase 35) ──
+  claimId: v.optional(v.string()),        // present ONLY for writer-bound (sourced) rows
+  sourceUrl: v.optional(v.string()),      // present only when index-bound to a real Tavily result
+  retrievedAt: v.optional(v.number()),    // Unix ms, code-stamped at Tavily query time
+  sectionName: v.optional(v.string()),    // §35 claim_checks additive field: galley section this claim occurs in — NEW for ALL rows (sourced + unsourced), not just legacy global rows
+  blockIndexHint: v.optional(v.number()), // hint-only anchor, mirrors qaCorrections' semantics — never authoritative
+})
+  .index('by_runId', ['runId'])
+  .index('by_workspace', ['workspace_id'])
+```
+
+**Invariant:** a row with `claimId` present = sourced (marigold in the galley); a row
+with `claimId` absent = unsourced (rust). Legacy rows (all five fields absent —
+pre-Phase-35 runs) degrade honestly to unsourced with zero migration — the absence of
+`claimId` alone is sufficient, no backfill script, no schema version flag.
+
+### §35.5 — `insertBatch` signature change (§26.6 amendment) + one-row-per-occurrence (D-13)
+
+Each object in the `claims: v.array(v.object({...}))` validator gains the same five
+optional fields as §35.4, and the handler's `ctx.db.insert('claim_checks', {...})`
+call passes them through (Convex omits `undefined` optionals automatically, so legacy
+callers with no provenance fields keep producing legacy-shaped rows — zero consumer
+break):
+
+```typescript
+claims: v.array(
+  v.object({
+    claimIndex: v.number(),
+    text: v.string(),
+    claimType: v.string(),
+    context: v.string(),
+    claimId: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    retrievedAt: v.optional(v.number()),
+    sectionName: v.optional(v.string()),
+    blockIndexHint: v.optional(v.number()),
+  }),
+)
+```
+
+**Row model change (D-13, 35-RESEARCH.md Pitfall 6, deliberate and visible):** the
+row model moves to **ONE-ROW-PER-OCCURRENCE**. Phase 26/33's `extract_claims` joined
+all sections into one string before dedup, producing one global row per unique claim
+text. Phase 35 restructures extraction to run per-section, per-block, so the same
+fact stated in two sections (e.g. a founding year mentioned in both the origin story
+and the founder bio) becomes TWO independent rows with distinct `claimIndex` values,
+each carrying its own `sectionName`/`blockIndexHint` — every row owns a jump-link
+target in the galley (D-14 — no row can point at more than one span). This is a
+checklist-size increase for repeated facts versus Phase 26 behavior; it is
+intentional, not a regression.
+
+### §35.6 — `ResearchOutput` TypedDict drift (Research Pitfall 3) — documented as KNOWN, left unchanged
+
+`graph/state.py::ResearchOutput` and its byte-identical copy in this document's §7
+list fields (`foundingMoment`, `founderBackground`, `caseStudySubject`,
+`caseStudyOutcome`, `verifiedFacts`, `sources`) that **do not exist** on the real
+`ResearchOutputModel` the Researcher actually emits (`summary`, `foundingYear`,
+`annualBudget`, `founderName`, `founderNameSourceUrl`, `founderRole`, `founderBio`,
+`subjectName`, `subjectNameSourceUrl`, `subjectRole`, `subjectStory`,
+`keyStatistics`, `fundingSources`). Consequently `lib/voice.py::build_section_writer_prompt`'s
+`research_lines` block — which reads `research.get("foundingMoment")`,
+`research.get("caseStudySubject")`, `research.get("verifiedFacts")`, etc. — has been
+**silently empty since Phase 5**: those keys are always absent from the real research
+dict, so no research context has ever reached the five prose writers through that
+code path.
+
+This is pre-existing drift, not something Phase 35 caused. **Decision recorded for
+Phase 35:** the drift is documented here as **known** and the existing broken
+`research_lines` fields are **left unchanged** — reconciling the whole naming split is
+out of scope for a provenance phase. Phase 35 ONLY adds `claims: list[ClaimOutput]`
+to `ResearchOutputModel`/`ResearchOutput`/this section, and adds the claims-whitelist
+injection to the writer user prompt (§35.3) as a NEW, separate mechanism from the
+stale `research_lines` block. A future phase may reconcile `ResearchOutput` vs
+`ResearchOutputModel` field names; this phase does not silently paper over the gap by
+pretending it doesn't exist.
+
+*All Phase 35 changes are additive: `claim_checks` gains five optional fields;
+`ResearchOutputModel`/`ResearchOutput` gain one `claims` field; five writer output
+models gain one `claimSpans` field. No existing field is renamed or removed; Phase
+26/31/32/33/34 shapes are unchanged.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
