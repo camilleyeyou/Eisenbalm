@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 33-01-PLAN.md (contract amendment)
-last_updated: "2026-07-08T04:52:07.898Z"
+stopped_at: Completed 33-02-convex-resolution-state-PLAN.md
+last_updated: "2026-07-08T05:04:10.933Z"
 progress:
   total_phases: 39
   completed_phases: 31
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 33 (accept-fix-wiring-decision-rail) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -230,6 +230,7 @@ Plan: 2 of 5
 | Phase 32-native-galley-read-only-span-resolver P06 | 27min | 3 tasks | 3 files |
 | Phase 32 P07 | 9min | 2 tasks | 2 files |
 | Phase 33-accept-fix-wiring-decision-rail P01 | 6min | 1 tasks | 1 files |
+| Phase 33 P02 | 12 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -587,6 +588,8 @@ Recent decisions affecting current work:
 - [Phase 32]: Chip counts for sections without draft blocks (game/podcast/theme/deliberation, non-specAd bonus) tally by severity only with unresolved=0 -- no anchor concept there
 - [Phase 32]: Edit affordance is a header-level 'Edit {label}' button, not an inline per-section control inside Galley.tsx (out of this plan's files_modified scope)
 - [Phase 33-accept-fix-wiring-decision-rail]: §33 contract: three verb endpoints (accept/dismiss/reopen) over one /resolution endpoint; schedule_issue gets the same open_error_findings gate (Pitfall 8); editor-memo key documented as 'notes' correcting D-16; setResolution pipeline-lane guarded (requirePipelineSecret + _PIPELINE_SECRET_GUARDED_PATHS)
+- [Phase 33]: qaCorrections resolution modeled as additive optional enum with legacy accepted kept in sync inside setResolution (pipeline-lane secret guard); reopen = patch-with-undefined clears fields
+- [Phase 33]: checkedAt stamped only on checked/skipped and never cleared on re-open to pending; rail derives 'last checked' from max(checkedAt) of done rows
 
 ### Pending Todos
 
@@ -671,6 +674,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T04:52:07.885Z
-Stopped at: Completed 33-01-PLAN.md (contract amendment)
+Last session: 2026-07-08T05:04:10.921Z
+Stopped at: Completed 33-02-convex-resolution-state-PLAN.md
 Resume file: None

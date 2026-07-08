@@ -93,6 +93,11 @@ export default defineSchema({
     quotedSpan: v.optional(v.string()),       // exact offending text
     suggestedFix: v.optional(v.string()),     // concrete alternative
     blockIndexHint: v.optional(v.number()),   // Phase 32 D-11: QA-recorded block ordinal within the section body; a resolver hint, never authoritative
+    // ── Phase 33 resolution fields (D-01, additive optional — §33.1) ───────
+    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'))), // Phase 33 D-01: absent = open
+    resolutionReason: v.optional(v.string()), // required-for-dismiss enforced at the ENDPOINT, not the schema
+    resolvedBy: v.optional(v.string()),
+    resolvedAt: v.optional(v.number()),
     timestamp: v.number(),
   })
     .index('by_runId', ['runId'])
@@ -401,6 +406,7 @@ export default defineSchema({
     claimType: v.string(),        // "number" | "date" | "proper_noun"
     context: v.string(),          // 60-char surrounding window for review
     status: v.string(),           // "pending" | "checked" | "skipped"
+    checkedAt: v.optional(v.number()), // Phase 33 D-13: stamped by setStatus on checked/skipped
   })
     .index('by_runId', ['runId'])
     .index('by_workspace', ['workspace_id']),

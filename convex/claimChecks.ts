@@ -102,7 +102,12 @@ export const setStatus = mutation({
       throw new Error(`Claim not found: runId=${runId}, claimIndex=${claimIndex}`)
     }
 
-    await ctx.db.patch(row._id, { status })
+    // Phase 33 D-13 (§33.2): stamp checkedAt only when the claim flips to a
+    // completed state. A re-open back to 'pending' must NOT falsely record a
+    // check time.
+    const patch: { status: string; checkedAt?: number } = { status }
+    if (status === 'checked' || status === 'skipped') patch.checkedAt = Date.now()
+    await ctx.db.patch(row._id, patch)
   },
 })
 

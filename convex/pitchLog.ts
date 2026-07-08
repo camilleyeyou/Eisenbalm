@@ -13,6 +13,17 @@ export const byRunId = query({
   },
 })
 
+// Phase 33 §33.7 (D-12) — the run's selected pitch for the decision rail's
+// hook card (charityName + scoutSummary). Public read per existing convention.
+export const selectedByRunId = query({
+  args: { runId: v.string() },
+  handler: async (ctx, { runId }) =>
+    await ctx.db
+      .query('pitchLog')
+      .withIndex('by_runId_and_selected', q => q.eq('runId', runId).eq('selected', true))
+      .first(),
+})
+
 export const insert = mutation({
   args: {
     runId: v.string(),
