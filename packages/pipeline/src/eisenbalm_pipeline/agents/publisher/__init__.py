@@ -30,7 +30,13 @@ from slugify import slugify
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
-from eisenbalm_pipeline.lib.claims import extract_claims
+from eisenbalm_pipeline.lib.claims import (
+    _SECTION_ORDER,
+    _SECTION_TO_GALLEY_ID,
+    _normalise,
+    block_index_hint,
+    extract_claims_by_block,
+)
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.cost import cost_payload_to_json, end_run
 from eisenbalm_pipeline.lib.sanity_client import (
@@ -71,10 +77,22 @@ async def publisher(state: DispatchState) -> DispatchState:
 
     issue_id = await write_issue_draft(sanity_http, state, cost_payload)
 
-    # Phase 26 RVW-05: deterministic claims extraction at run-end.
+    # Phase 35 (PRV-02/PRV-04): sourced + unsourced claim_checks seeding.
     # Extract BEFORE flipping to awaiting-review so claims are ready the instant
     # the run hits the review queue. Wrapped in try/except — claims are
     # best-effort; a Convex failure here must never block the run from landing.
+    #
+    # Row model (D-13, one-row-per-occurrence, §35.4/§35.5):
+    #   1. SOURCED rows come from each prose writer's own `claimSpans`
+    #      sidecar, resolved against `state['research']['claims']` for the
+    #      real sourceUrl/retrievedAt (never post-hoc fuzzy-matched).
+    #   2. UNSOURCED rows are the per-block regex catch-all
+    #      (lib.claims.extract_claims_by_block) for everything else, MINUS
+    #      any span already covered by a sourced claimSpan in the SAME
+    #      (sectionName, blockIndexHint) bucket (D-04/Pitfall — do not
+    #      double-list an already-sourced fact as unsourced).
+    #   3. Both lists merge into one global claimIndex ordering, stable
+    #      across re-runs on the same content.
     try:
         sections = {
             "origin_story": state.get("origin_story"),
@@ -83,16 +101,101 @@ async def publisher(state: DispatchState) -> DispatchState:
             "case_study": state.get("case_study"),
             "bonus": state.get("bonus"),
         }
-        claims = extract_claims(sections)
+
+        # claimId -> {claimId, text, sourceUrl, retrievedAt} from the
+        # Researcher's index-bound mapping (§35.2).
+        research_claims = {
+            c["claimId"]: c
+            for c in ((state.get("research") or {}).get("claims") or [])
+            if isinstance(c, dict) and c.get("claimId")
+        }
+
+        # SOURCED rows — one per writer-declared claimSpans occurrence.
+        # Also tracks, per (sectionName, blockIndexHint), the set of
+        # normalised asWritten strings already sourced there, so step 2
+        # below can exclude the matching regex catch-all row.
+        sourced_rows: list[dict] = []
+        covered: dict[tuple[str, int | None], set[str]] = {}
+
+        for key in _SECTION_ORDER:
+            section = sections.get(key)
+            if not isinstance(section, dict):
+                continue
+            galley_id = _SECTION_TO_GALLEY_ID[key]
+            body = section.get("body")
+            for span in section.get("claimSpans") or []:
+                if not isinstance(span, dict):
+                    continue
+                claim_id = span.get("claimId")
+                as_written = span.get("asWritten") or ""
+                if not claim_id or not as_written:
+                    continue
+                rc = research_claims.get(claim_id)
+                bih = block_index_hint(body, as_written)
+                row: dict = {
+                    "text": as_written,
+                    "claimType": "sourced",
+                    "context": as_written[:120],
+                    "claimId": claim_id,
+                    "sectionName": galley_id,
+                }
+                # Convex `v.optional()` fields must be OMITTED (not `null`)
+                # when absent — mirrors agents/qa/__init__.py's
+                # `if hint is not None: payload["blockIndexHint"] = hint`
+                # precedent exactly.
+                if bih is not None:
+                    row["blockIndexHint"] = bih
+                source_url = rc.get("sourceUrl") if rc else None
+                if source_url is not None:
+                    row["sourceUrl"] = source_url
+                retrieved_at = rc.get("retrievedAt") if rc else None
+                if retrieved_at is not None:
+                    row["retrievedAt"] = retrieved_at
+                sourced_rows.append(row)
+                covered.setdefault((galley_id, bih), set()).add(
+                    _normalise(as_written)
+                )
+
+        # UNSOURCED rows — per-block regex catch-all, minus anything already
+        # covered by a bound sourced claimSpan in the same (section, block).
+        unsourced_rows: list[dict] = []
+        for row in extract_claims_by_block(sections):
+            bucket = (row["sectionName"], row["blockIndexHint"])
+            if _normalise(row["text"]) in covered.get(bucket, set()):
+                continue
+            unsourced_rows.append(row)
+
+        # Merge: iterate sections in canonical order, then blocks in
+        # ascending order, sourced-then-unsourced within each block — a
+        # stable, deterministic ordering across re-runs (D-13).
+        merged_rows: list[dict] = []
+        for key in _SECTION_ORDER:
+            galley_id = _SECTION_TO_GALLEY_ID[key]
+            section_sourced = [
+                r for r in sourced_rows if r["sectionName"] == galley_id
+            ]
+            section_unsourced = [
+                r for r in unsourced_rows if r["sectionName"] == galley_id
+            ]
+            block_keys = sorted(
+                {
+                    r.get("blockIndexHint")
+                    for r in section_sourced + section_unsourced
+                },
+                key=lambda b: (b is None, b if b is not None else 0),
+            )
+            for bi in block_keys:
+                merged_rows.extend(
+                    r for r in section_sourced if r.get("blockIndexHint") == bi
+                )
+                merged_rows.extend(
+                    r for r in section_unsourced if r.get("blockIndexHint") == bi
+                )
+
         claim_rows = [
-            {
-                "claimIndex": c["claimIndex"],
-                "text": c["text"],
-                "claimType": c["claimType"],
-                "context": c["context"],
-            }
-            for c in claims
+            {**row, "claimIndex": idx} for idx, row in enumerate(merged_rows)
         ]
+
         await convex_mutation_safe(
             "claimChecks:insertBatch",
             {
