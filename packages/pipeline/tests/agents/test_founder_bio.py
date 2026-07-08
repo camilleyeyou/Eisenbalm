@@ -106,9 +106,11 @@ async def test_founder_bio_voice_isolation(sample_dispatch_state) -> None:
 
     # Phase 16 (Plan 16-05 NRR-04): voice_constraints added as a 7th
     # whitelisted kwarg so the calibrator-set narrator voice can propagate.
+    # Phase 35 PRV-02: claims added as an 8th whitelisted kwarg (the run's
+    # claims whitelist derived from state["research"]["claims"]).
     allowed = {
         "section_id", "section_title", "section_guidance",
-        "charity", "research", "style_brief", "voice_constraints",
+        "charity", "research", "style_brief", "voice_constraints", "claims",
     }
     assert set(captured.keys()).issubset(allowed)
 

@@ -29,7 +29,7 @@ from typing import Any
 from pydantic import BaseModel, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
-from eisenbalm_pipeline.graph.blocks import BodyBlock
+from eisenbalm_pipeline.graph.blocks import BodyBlock, ClaimSpanRef
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt
@@ -60,6 +60,7 @@ SECTION_GUIDANCE = SECTION_GUIDANCE + STRUCTURE_CONTRACT
 class OriginStoryOutput(BaseModel):
     headline: str = ""
     body: list[BodyBlock] = []  # Phase 18 D-01 (was: body: str = "")
+    claimSpans: list[ClaimSpanRef] = []  # Phase 35 PRV-02 (D-05) — additive; NOT part of the structural floor
 
     @field_validator('body')
     @classmethod
@@ -105,6 +106,7 @@ def _origin_story_payload(state: DispatchState) -> dict:
 async def origin_story(state: DispatchState) -> DispatchState:
     run_id = state["run_id"]
     style_brief = state.get("style_brief") or {}
+    research = state.get("research") or {}
     # Phase 24 (PRM-01): read operator-editable guidance from RunConfig (loaded
     # once at run start), falling back to the in-code SECTION_GUIDANCE (which is
     # byte-identical to the on-disk seed) when config/key is absent.
@@ -114,17 +116,24 @@ async def origin_story(state: DispatchState) -> DispatchState:
         if cfg
         else SECTION_GUIDANCE
     )
+    # Phase 35 PRV-02: terse claims whitelist (claimId + text only) so the
+    # writer can bind a body phrase to a real research claim ID via claimSpans.
+    claims = [
+        {"claimId": c["claimId"], "text": c["text"]}
+        for c in research.get("claims", [])
+    ]
     messages = build_section_writer_prompt(
         section_id="origin_story",
         section_title="Origin Story",
         section_guidance=guidance,
         charity=state.get("winning_charity") or {},
-        research=state.get("research") or {},
+        research=research,
         style_brief=style_brief,
         # Phase 16 NRR-04 / Plan 16-05: forward the calibrator-set voice
         # (narrator-aware composition). When no narrator is set this is
         # byte-identical to VOICE_CONSTRAINTS — NRR-10 byte-equivalence.
         voice_constraints=style_brief.get("voice") or VOICE_CONSTRAINTS,
+        claims=claims,
     )
     out_obj, usage = await acomplete(
         agent_id="origin_story",
@@ -141,6 +150,19 @@ async def origin_story(state: DispatchState) -> DispatchState:
         out_dict = dict(out_obj)
     else:
         out_dict = {"headline": "", "body": []}
+
+    # Phase 35 D-07: lenient whitelist-drop — a claimId the writer references
+    # that isn't in this run's claims whitelist is dropped (logged, never fatal).
+    valid_ids = {c["claimId"] for c in research.get("claims", [])}
+    spans = out_dict.get("claimSpans") or []
+    kept = [s for s in spans if s.get("claimId") in valid_ids]
+    if len(spans) != len(kept):
+        import logging
+        logging.getLogger(__name__).info(
+            "%s: dropped %d claimSpan(s) with unknown claimId (D-07 lenient)",
+            "origin_story", len(spans) - len(kept),
+        )
+    out_dict["claimSpans"] = kept
 
     # AGT-17: parallel writers each contribute their OWN key to
     # model_versions; the DispatchState Annotated reducer merges across

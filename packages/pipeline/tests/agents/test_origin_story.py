@@ -24,8 +24,11 @@ def test_section_guidance_is_substantive() -> None:
 
 
 def test_output_schema_shape() -> None:
-    """OriginStoryOutput is {headline, body}."""
-    assert set(OriginStoryOutput.model_fields.keys()) == {"headline", "body"}
+    """OriginStoryOutput is {headline, body, claimSpans} (Phase 35 PRV-02 adds
+    claimSpans as an additive sidecar field)."""
+    assert set(OriginStoryOutput.model_fields.keys()) == {
+        "headline", "body", "claimSpans",
+    }
 
 
 @pytest.mark.asyncio
@@ -80,9 +83,12 @@ async def test_origin_story_voice_isolation(sample_dispatch_state) -> None:
     # through to the writer's system prompt. Voice-isolation property
     # still holds: voice_constraints is the narrator-aware voice string,
     # NOT a sibling-section's output.
+    # Phase 35 PRV-02: claims added as an 8th whitelisted kwarg (the run's
+    # claims whitelist derived from state["research"]["claims"] — not a
+    # sibling-section's output either).
     allowed = {
         "section_id", "section_title", "section_guidance",
-        "charity", "research", "style_brief", "voice_constraints",
+        "charity", "research", "style_brief", "voice_constraints", "claims",
     }
     assert set(captured.keys()).issubset(allowed)
 

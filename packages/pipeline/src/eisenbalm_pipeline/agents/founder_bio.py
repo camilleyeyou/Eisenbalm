@@ -30,7 +30,7 @@ from typing import Any
 from pydantic import BaseModel, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
-from eisenbalm_pipeline.graph.blocks import BodyBlock
+from eisenbalm_pipeline.graph.blocks import BodyBlock, ClaimSpanRef
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_section_writer_prompt
@@ -69,6 +69,7 @@ GUIDANCE_ANONYMOUS = GUIDANCE_ANONYMOUS + STRUCTURE_CONTRACT
 class FounderBioOutput(BaseModel):
     headline: str = ""
     body: list[BodyBlock] = []  # Phase 18 D-01 (was: body: str = "")
+    claimSpans: list[ClaimSpanRef] = []  # Phase 35 PRV-02 (D-05) — additive; NOT part of the structural floor
 
     @field_validator('body')
     @classmethod
@@ -160,6 +161,14 @@ async def founder_bio(state: DispatchState) -> DispatchState:
         research, section_guidance
     )
     style_brief = state.get("style_brief") or {}
+    # Phase 35 PRV-02: terse claims whitelist (claimId + text only) so the
+    # writer can bind a body phrase to a real research claim ID via claimSpans.
+    # Computed from the UNSCRUBBED research dict — claims are unrelated to
+    # the founderName scrub (RESEARCH Pitfall 5).
+    claims = [
+        {"claimId": c["claimId"], "text": c["text"]}
+        for c in research.get("claims", [])
+    ]
 
     messages = build_section_writer_prompt(
         section_id="founder_bio",
@@ -170,6 +179,7 @@ async def founder_bio(state: DispatchState) -> DispatchState:
         style_brief=style_brief,
         # Phase 16 NRR-04 / Plan 16-05: forward narrator-aware voice.
         voice_constraints=style_brief.get("voice") or VOICE_CONSTRAINTS,
+        claims=claims,
     )
     out_obj, usage = await acomplete(
         agent_id="founder_bio",
@@ -186,6 +196,19 @@ async def founder_bio(state: DispatchState) -> DispatchState:
         out_dict = dict(out_obj)
     else:
         out_dict = {"headline": "", "body": []}
+
+    # Phase 35 D-07: lenient whitelist-drop — a claimId the writer references
+    # that isn't in this run's claims whitelist is dropped (logged, never fatal).
+    valid_ids = {c["claimId"] for c in research.get("claims", [])}
+    spans = out_dict.get("claimSpans") or []
+    kept = [s for s in spans if s.get("claimId") in valid_ids]
+    if len(spans) != len(kept):
+        import logging
+        logging.getLogger(__name__).info(
+            "%s: dropped %d claimSpan(s) with unknown claimId (D-07 lenient)",
+            "founder_bio", len(spans) - len(kept),
+        )
+    out_dict["claimSpans"] = kept
 
     # AGT-17: parallel writers each contribute their OWN key to
     # model_versions; the DispatchState Annotated reducer merges across

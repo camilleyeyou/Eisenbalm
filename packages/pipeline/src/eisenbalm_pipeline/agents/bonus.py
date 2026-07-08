@@ -33,11 +33,11 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
-from eisenbalm_pipeline.graph.blocks import BodyBlock
+from eisenbalm_pipeline.graph.blocks import BodyBlock, ClaimSpanRef
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_claims_block
 
 
 # ── Pydantic shapes (D-19) ──────────────────────────────────────────────
@@ -90,6 +90,7 @@ class SpecAdBonus(BaseModel):
         default_factory=list,
         description="100-300 words rendered as list[BodyBlock]; >=2 h2/h3 + >=1 blockquote",
     )
+    claimSpans: list[ClaimSpanRef] = []  # Phase 35 PRV-02 (D-05/D-06) — additive; NOT part of the structural floor
 
     @field_validator('body')
     @classmethod
@@ -208,6 +209,18 @@ def _build_spec_ad_prompt(
         .replace("{mission_statement}", charity.get("missionStatement", ""))
         .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
+    # Phase 35 PRV-02/D-06: SpecAd is the one bonus branch that emits
+    # claimSpans, but it does NOT route through build_section_writer_prompt
+    # (it assembles its own system/user messages from on-disk templates
+    # above). Reuse build_claims_block so the writer-facing format matches
+    # the 4 narrative writers exactly; appended to the USER message only.
+    claims = [
+        {"claimId": c["claimId"], "text": c["text"]}
+        for c in (state.get("research") or {}).get("claims", [])
+    ]
+    claims_block = build_claims_block(claims)
+    if claims_block:
+        user = f"{user}\n\n{claims_block.rstrip()}"
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
@@ -279,6 +292,25 @@ async def bonus(state: DispatchState) -> DispatchState:
     # model returned. Andrew populates this manually until Suno API is wired.
     if bonus_type == "jingle":
         out_dict["sunoAudioUrl"] = ""
+
+    # Phase 35 D-06/D-07: only the SpecAd branch carries claimSpans
+    # (BigBudget/Jingle are non-prose and exempt — they never gain a
+    # claimSpans key at all). Lenient whitelist-drop mirrors the 4
+    # narrative writers: an unrecognized claimId is dropped, logged, never
+    # fatal.
+    if bonus_type == "specAd":
+        valid_ids = {
+            c["claimId"] for c in (state.get("research") or {}).get("claims", [])
+        }
+        spans = out_dict.get("claimSpans") or []
+        kept = [s for s in spans if s.get("claimId") in valid_ids]
+        if len(spans) != len(kept):
+            import logging
+            logging.getLogger(__name__).info(
+                "bonus[specAd]: dropped %d claimSpan(s) with unknown claimId (D-07 lenient)",
+                len(spans) - len(kept),
+            )
+        out_dict["claimSpans"] = kept
 
     # Tag with bonusType so downstream (QA, Publisher, Studio) routes
     # without re-checking style_brief.
