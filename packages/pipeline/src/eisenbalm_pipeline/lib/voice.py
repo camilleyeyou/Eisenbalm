@@ -213,6 +213,40 @@ def assemble_voice(
     return persona_block + _SEPARATOR + UNIVERSAL_CORE
 
 
+def build_claims_block(claims: list[dict[str, Any]] | None) -> str:
+    """Phase 35 PRV-02 (D-05) — terse claims whitelist injected into a
+    writer's USER message only (never system — voice isolation). Returns
+    ``""`` when ``claims`` is None/empty so callers can concatenate safely.
+
+    Per Research Pitfall 7 (cost), each entry carries ONLY ``claimId`` +
+    ``text`` — no URL/context — to keep the addition cheap.
+
+    Shared by ``build_section_writer_prompt`` (the 4 narrative writers) and
+    ``agents/bonus.py::_build_spec_ad_prompt`` (the SpecAd branch, which does
+    NOT route through ``build_section_writer_prompt`` — it assembles its
+    system/user messages from the on-disk prompt templates instead). Both
+    call sites reuse this single formatter so the writer-facing format never
+    drifts between the two prompt-assembly paths.
+
+    When non-empty, the returned string ends with a blank line (``"\\n\\n"``)
+    so callers can concatenate it directly before their closing instruction
+    line.
+    """
+    if not claims:
+        return ""
+    lines = [
+        "SOURCEABLE CLAIMS (reference by id in claimSpans when you state one in the body):"
+    ]
+    for c in claims:
+        lines.append(f"  [{c.get('claimId', '')}] {c.get('text', '')}")
+    lines.append(
+        "For every sourceable claim you state in the body, add a claimSpans "
+        "entry {claimId, asWritten} where asWritten is the exact phrase as "
+        "you wrote it."
+    )
+    return "\n".join(lines) + "\n\n"
+
+
 def build_section_writer_prompt(
     *,
     section_id: str,
@@ -222,6 +256,7 @@ def build_section_writer_prompt(
     research: dict[str, Any],
     style_brief: dict[str, Any],
     voice_constraints: str = VOICE_CONSTRAINTS,
+    claims: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, str]]:
     """Assemble a section-writer message list with structural voice isolation.
 
@@ -250,6 +285,11 @@ def build_section_writer_prompt(
             override this with ``style_brief.get("voice", VOICE_CONSTRAINTS)``
             so the narrator voice propagates through Calibrator → writers
             (per Plan 16-05 + Research §C Pitfall C-1).
+        claims: Phase 35 PRV-02 — optional terse claims whitelist (list of
+            ``{"claimId": ..., "text": ...}``) injected into the USER message
+            ONLY (never system — voice isolation, D-05). ``None``/empty emits
+            no claims header at all (byte-identical to the pre-Phase-35 user
+            message shape).
 
     Returns:
         A 2-element list of {"role": "system" | "user", "content": str}.
@@ -282,6 +322,7 @@ def build_section_writer_prompt(
         f"MISSION: {charity.get('missionStatement', '')}\n\n"
         f"RESEARCH:\n" + "\n".join(research_lines) + "\n\n"
         f"GUIDANCE:\n{section_guidance}\n\n"
+        + build_claims_block(claims) +
         f"Return valid JSON matching the schema for the {section_id} section."
     )
 

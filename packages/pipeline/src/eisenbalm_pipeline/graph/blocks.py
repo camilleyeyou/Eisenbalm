@@ -62,3 +62,20 @@ class BodyBlock(BaseModel):
 
     type: Literal['paragraph', 'h2', 'h3', 'blockquote']
     text: str = ""
+
+
+class ClaimSpanRef(BaseModel):
+    """Phase 35 D-05 — a writer's declaration that a body phrase carries a
+    research claim. ``claimId`` references ``state['research']['claims'][].claimId``;
+    ``asWritten`` is the verbatim phrase as the writer wrote it in the body
+    (handles rewording, e.g. "$2.3M annual budget" -> "a budget of $2.3 million").
+
+    Flat single-class shape (no oneOf/discriminated union) per the BodyBlock
+    docstring's "Phase 18 post-launch fix" incident above — Anthropic's
+    structured-output API rejects `oneOf` with HTTP 400. `ClaimSpanRef` is
+    already flat, so it is compliant by construction; do not later "improve"
+    it into a union.
+    """
+
+    claimId: str = ""
+    asWritten: str = ""
