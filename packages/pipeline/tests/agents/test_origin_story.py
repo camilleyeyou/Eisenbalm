@@ -14,6 +14,7 @@ from eisenbalm_pipeline.agents.origin_story import (
     SECTION_GUIDANCE,
     origin_story,
 )
+from eisenbalm_pipeline.lib.voice import build_section_writer_prompt
 
 
 def test_section_guidance_is_substantive() -> None:
@@ -84,3 +85,84 @@ async def test_origin_story_voice_isolation(sample_dispatch_state) -> None:
         "charity", "research", "style_brief", "voice_constraints",
     }
     assert set(captured.keys()).issubset(allowed)
+
+
+# ─── Phase 35 PRV-02 — claims whitelist injection + claimSpans drop ────────
+
+
+def _base_prompt_kwargs(claims=None) -> dict:
+    kwargs = dict(
+        section_id="origin_story",
+        section_title="Origin Story",
+        section_guidance="guidance",
+        charity={"name": "Foo Org", "location": "Nowhere"},
+        research={},
+        style_brief={},
+    )
+    if claims is not None:
+        kwargs["claims"] = claims
+    return kwargs
+
+
+def test_build_section_writer_prompt_claims_injection() -> None:
+    """PRV-02: claims whitelist (claimId + text) lands in the USER message
+    only — never the system message (voice isolation, D-05)."""
+    messages = build_section_writer_prompt(**_base_prompt_kwargs(
+        claims=[{"claimId": "a-0", "text": "$2.3M budget"}]
+    ))
+    system_content = messages[0]["content"]
+    user_content = messages[1]["content"]
+    assert "a-0" in user_content
+    assert "$2.3M budget" in user_content
+    assert "a-0" not in system_content
+    assert "$2.3M budget" not in system_content
+
+
+def test_build_section_writer_prompt_no_claims_no_crash() -> None:
+    """No claims kwarg -> still a valid 2-message list, no claims header
+    emitted (PRV-02, empty-claims path)."""
+    messages = build_section_writer_prompt(**_base_prompt_kwargs())
+    assert len(messages) == 2
+    assert messages[0]["role"] == "system"
+    assert messages[1]["role"] == "user"
+    assert "SOURCEABLE CLAIMS" not in messages[1]["content"]
+
+
+def test_build_section_writer_prompt_system_byte_identical_with_claims() -> None:
+    """Voice isolation (D-05): system message is byte-identical whether or
+    not claims are passed — claims injection is user-prompt only."""
+    no_claims = build_section_writer_prompt(**_base_prompt_kwargs())
+    with_claims = build_section_writer_prompt(**_base_prompt_kwargs(
+        claims=[{"claimId": "a-0", "text": "$2.3M budget"}]
+    ))
+    assert no_claims[0]["content"] == with_claims[0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_origin_story_drops_unknown_claim_id(sample_dispatch_state) -> None:
+    """D-07: a claimSpans entry whose claimId is not in the run's claims
+    whitelist is dropped leniently — never raises."""
+    sample_dispatch_state["research"] = {
+        **(sample_dispatch_state.get("research") or {}),
+        "claims": [{"claimId": "a-0", "text": "x", "sourceUrl": None, "retrievedAt": None}],
+    }
+    out = OriginStoryOutput.model_construct(
+        headline="H",
+        body=[],
+        claimSpans=[
+            {"claimId": "a-0", "asWritten": "x"},
+            {"claimId": "ZZZ", "asWritten": "y"},
+        ],
+    )
+    with patch(
+        "eisenbalm_pipeline.agents.origin_story.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await origin_story(sample_dispatch_state)
+
+    spans = result["origin_story"]["claimSpans"]
+    assert len(spans) == 1
+    assert spans[0]["claimId"] == "a-0"

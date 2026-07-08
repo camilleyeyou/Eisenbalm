@@ -95,3 +95,44 @@ async def test_spec_ad_branch(sample_dispatch_state) -> None:
     assert "storyboards" not in result["bonus"]
     assert "sunoPrompt" not in result["bonus"]
     assert result["bonus"]["bonusType"] == "specAd"
+
+
+@pytest.mark.asyncio
+async def test_spec_ad_drops_unknown_claim_id(sample_dispatch_state) -> None:
+    """Phase 35 D-06/D-07: SpecAd branch emits claimSpans and leniently
+    drops any claimSpans entry whose claimId isn't in the run's whitelist."""
+    state = _state_with_bonus_type("specAd", sample_dispatch_state)
+    state["research"] = {
+        **(state.get("research") or {}),
+        "claims": [{"claimId": "a-0", "text": "x", "sourceUrl": None, "retrievedAt": None}],
+    }
+    _spec_ad_body = [
+        {"type": "paragraph", "text": "The charity addresses an invisible crisis."},
+        {"type": "h2", "text": "The ask"},
+        {"type": "paragraph", "text": "One year. No excuses."},
+        {"type": "blockquote", "text": "No excuses."},
+        {"type": "h2", "text": "Why now"},
+        {"type": "paragraph", "text": "Because next year is already too late."},
+    ]
+    out = SpecAdBonus.model_construct(
+        headline="H",
+        body=_spec_ad_body,
+        claimSpans=[
+            {"claimId": "a-0", "asWritten": "x"},
+            {"claimId": "ZZZ", "asWritten": "y"},
+        ],
+    )
+    with patch(
+        "eisenbalm_pipeline.agents.bonus.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0,
+            "tokens_out": 0,
+            "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await bonus(state)
+
+    spans = result["bonus"]["claimSpans"]
+    assert len(spans) == 1
+    assert spans[0]["claimId"] == "a-0"

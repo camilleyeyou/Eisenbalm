@@ -139,3 +139,33 @@ async def test_case_study_unverified_scrubs_subject_name(sample_dispatch_state) 
 
     assert captured["research"]["subjectName"] is None
     assert "Do NOT name the subject" in captured["section_guidance"]
+
+
+@pytest.mark.asyncio
+async def test_case_study_drops_unknown_claim_id(sample_dispatch_state) -> None:
+    """Phase 35 D-07: unknown claimId dropped leniently; known claimId kept."""
+    sample_dispatch_state["research"] = {
+        "subjectName": "Alex Park",
+        "subjectNameVerified": True,
+        "claims": [{"claimId": "a-0", "text": "x", "sourceUrl": None, "retrievedAt": None}],
+    }
+    out = CaseStudyOutput.model_construct(
+        headline="H",
+        body=[],
+        claimSpans=[
+            {"claimId": "a-0", "asWritten": "x"},
+            {"claimId": "ZZZ", "asWritten": "y"},
+        ],
+    )
+    with patch(
+        "eisenbalm_pipeline.agents.case_study.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await case_study(sample_dispatch_state)
+
+    spans = result["case_study"]["claimSpans"]
+    assert len(spans) == 1
+    assert spans[0]["claimId"] == "a-0"

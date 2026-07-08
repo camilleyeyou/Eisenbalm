@@ -145,3 +145,33 @@ async def test_founder_bio_unverified_scrubs_name(sample_dispatch_state) -> None
 
     assert captured["research"]["founderName"] is None
     assert "Do NOT use or guess a name" in captured["section_guidance"]
+
+
+@pytest.mark.asyncio
+async def test_founder_bio_drops_unknown_claim_id(sample_dispatch_state) -> None:
+    """Phase 35 D-07: unknown claimId dropped leniently; known claimId kept."""
+    sample_dispatch_state["research"] = {
+        "founderName": "Jane Doe",
+        "founderNameVerified": True,
+        "claims": [{"claimId": "a-0", "text": "x", "sourceUrl": None, "retrievedAt": None}],
+    }
+    out = FounderBioOutput.model_construct(
+        headline="H",
+        body=[],
+        claimSpans=[
+            {"claimId": "a-0", "asWritten": "x"},
+            {"claimId": "ZZZ", "asWritten": "y"},
+        ],
+    )
+    with patch(
+        "eisenbalm_pipeline.agents.founder_bio.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await founder_bio(sample_dispatch_state)
+
+    spans = result["founder_bio"]["claimSpans"]
+    assert len(spans) == 1
+    assert spans[0]["claimId"] == "a-0"

@@ -128,3 +128,38 @@ async def test_problem_voice_isolation(sample_dispatch_state) -> None:
         "charity", "research", "style_brief", "voice_constraints",
     }
     assert set(captured.keys()).issubset(allowed)
+
+
+@pytest.mark.asyncio
+async def test_problem_drops_unknown_claim_id(sample_dispatch_state) -> None:
+    """Phase 35 D-07: unknown claimId dropped leniently; known claimId kept."""
+    pdf = PdfContent(
+        problemStatement="p",
+        keyDataPoints=[KeyDataPoint(stat=f"s{i}", source=f"u{i}") for i in range(3)],
+        interventionMechanism="i",
+    )
+    sample_dispatch_state["research"] = {
+        **(sample_dispatch_state.get("research") or {}),
+        "claims": [{"claimId": "a-0", "text": "x", "sourceUrl": None, "retrievedAt": None}],
+    }
+    out = ProblemOutput.model_construct(
+        headline="H",
+        body=[],
+        pdfContent=pdf,
+        claimSpans=[
+            {"claimId": "a-0", "asWritten": "x"},
+            {"claimId": "ZZZ", "asWritten": "y"},
+        ],
+    )
+    with patch(
+        "eisenbalm_pipeline.agents.problem.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await problem(sample_dispatch_state)
+
+    spans = result["problem_statement"]["claimSpans"]
+    assert len(spans) == 1
+    assert spans[0]["claimId"] == "a-0"
