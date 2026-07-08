@@ -10,13 +10,18 @@ import pytest
 
 from eisenbalm_pipeline.agents.researcher import (
     MAX_TOOL_CALLS,
+    ClaimOutput,
     ResearchOutputModel,
     researcher,
 )
 from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
+from eisenbalm_pipeline.lib.search_client import SearchResult
 
 
-def _make_research(founder: str | None = "Jane Doe") -> ResearchOutputModel:
+def _make_research(
+    founder: str | None = "Jane Doe",
+    claims: list[ClaimOutput] | None = None,
+) -> ResearchOutputModel:
     return ResearchOutputModel(
         summary="summary text",
         foundingYear=2003,
@@ -29,8 +34,8 @@ def _make_research(founder: str | None = "Jane Doe") -> ResearchOutputModel:
         subjectNameSourceUrl="https://foo.example/stories/alex",
         subjectRole="a program participant",
         subjectStory="story text",
-        keyStatistics=["a", "b"],
         fundingSources=["donors"],
+        claims=claims or [],
     )
 
 
@@ -99,3 +104,111 @@ async def test_model_version_recorded(sample_dispatch_state) -> None:
     ):
         result = await researcher(sample_dispatch_state)
     assert result["model_versions"]["researcher"] == "anthropic/claude-sonnet-4-6-20251101"
+
+
+# ── PRV-01: index-bound claims (Phase 35 Plan 02) ───────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_claims_index_binding(sample_dispatch_state) -> None:
+    """A claim with a valid sourceIndex maps to the real Tavily URL at that
+    position + a code-stamped int retrievedAt (never an LLM-written URL)."""
+    sample_dispatch_state["winning_charity"] = {
+        "name": "Foo Org", "website": "https://foo.org",
+    }
+    results = [
+        SearchResult(url="https://foo.example/one", title="One", content="c1", score=0.9),
+        SearchResult(url="https://foo.example/two", title="Two", content="c2", score=0.8),
+    ]
+    out = _make_research(claims=[ClaimOutput(text="$2.3M budget", sourceIndex=0)])
+
+    with patch(
+        "eisenbalm_pipeline.agents.researcher.web_search",
+        AsyncMock(return_value=results),
+    ), patch(
+        "eisenbalm_pipeline.agents.researcher.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await researcher(sample_dispatch_state)
+
+    claims = result["research"]["claims"]
+    assert len(claims) == 1
+    assert claims[0]["text"] == "$2.3M budget"
+    assert claims[0]["sourceUrl"] == results[0].url
+    assert isinstance(claims[0]["retrievedAt"], int)
+
+
+@pytest.mark.asyncio
+async def test_claims_out_of_range_or_none_index_is_honestly_unsourced(
+    sample_dispatch_state,
+) -> None:
+    """An out-of-range or absent sourceIndex yields sourceUrl=None AND
+    retrievedAt=None — never a fabricated or best-guess URL."""
+    sample_dispatch_state["winning_charity"] = {
+        "name": "Foo Org", "website": "https://foo.org",
+    }
+    results = [
+        SearchResult(url="https://foo.example/one", title="One", content="c1", score=0.9),
+    ]
+    out = _make_research(claims=[
+        ClaimOutput(text="out of range claim", sourceIndex=99),
+        ClaimOutput(text="no source claim", sourceIndex=None),
+    ])
+
+    with patch(
+        "eisenbalm_pipeline.agents.researcher.web_search",
+        AsyncMock(return_value=results),
+    ), patch(
+        "eisenbalm_pipeline.agents.researcher.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await researcher(sample_dispatch_state)
+
+    claims = result["research"]["claims"]
+    assert len(claims) == 2
+    for claim in claims:
+        assert claim["sourceUrl"] is None
+        assert claim["retrievedAt"] is None
+
+
+@pytest.mark.asyncio
+async def test_claim_ids_unique_and_non_empty(sample_dispatch_state) -> None:
+    """Every mapped claim carries a non-empty, collision-free claimId."""
+    sample_dispatch_state["winning_charity"] = {
+        "name": "Foo Org", "website": "https://foo.org",
+    }
+    results = [
+        SearchResult(url="https://foo.example/one", title="One", content="c1", score=0.9),
+    ]
+    out = _make_research(claims=[
+        ClaimOutput(text="a", sourceIndex=0),
+        ClaimOutput(text="b", sourceIndex=None),
+        ClaimOutput(text="c", sourceIndex=99),
+    ])
+
+    with patch(
+        "eisenbalm_pipeline.agents.researcher.web_search",
+        AsyncMock(return_value=results),
+    ), patch(
+        "eisenbalm_pipeline.agents.researcher.acomplete",
+        AsyncMock(return_value=(out, {
+            "tokens_in": 0, "tokens_out": 0, "usd": 0.0,
+            "resolved_model": "anthropic/claude-sonnet-4-6",
+        })),
+    ):
+        result = await researcher(sample_dispatch_state)
+
+    ids = [c["claimId"] for c in result["research"]["claims"]]
+    assert all(ids)
+    assert len(set(ids)) == len(ids)
+
+
+def test_key_statistics_field_removed() -> None:
+    """D-02: keyStatistics is absorbed by the claims list and removed."""
+    assert "keyStatistics" not in ResearchOutputModel.model_fields

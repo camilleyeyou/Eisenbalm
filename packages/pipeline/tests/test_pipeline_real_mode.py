@@ -121,7 +121,6 @@ def _research_output() -> ResearchOutputModel:
         subjectNameSourceUrl="https://testorg2.example.org/stories/alex",
         subjectRole="a parent",
         subjectStory="Alex's son benefited directly from the program.",
-        keyStatistics=["50 families served", "12 programs"],
         fundingSources=["Vermont Community Foundation"],
     )
 
