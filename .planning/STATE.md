@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 35-06-decision-rail-source-index-PLAN.md
-last_updated: "2026-07-08T20:47:55.459Z"
+stopped_at: Completed 35-04-publisher-provenance-seeding-PLAN.md
+last_updated: "2026-07-08T21:14:44.839Z"
 progress:
   total_phases: 39
-  completed_phases: 33
+  completed_phases: 34
   total_plans: 222
-  completed_plans: 217
+  completed_plans: 220
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 35 (provenance-pipeline-sourced-unsourced-galley-rendering) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -244,6 +244,7 @@ Plan: 5 of 6
 | Phase 35 P05 | 30min | 3 tasks | 8 files |
 | Phase 35 P03 | ~15min | 3 tasks | 12 files |
 | Phase 35 P06 | ~20min | 2 tasks | 2 files |
+| Phase 35 P04 | 15min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -624,6 +625,7 @@ Recent decisions affecting current work:
 - [Phase 35]: Claims whitelist for founder_bio/case_study is computed from the UNSCRUBBED research dict (not the name-scrubbed copy passed to the prompt) since claim provenance is orthogonal to the founderName/subjectName anonymity scrub
 - [Phase 35]: SourceIndex.tsx (Plan 35-06) runs its own claimChecks:listByRunId subscription instead of receiving rows as a prop, keeping the component self-contained per the plan's stated interface
 - [Phase 35]: Sourced claim_checks rows (Plan 35-06) with an unrecognized/absent sectionName land in a trailing Other sourced claims group rather than being dropped (nothing-silent house rule)
+- [Phase 35]: Kept legacy extract_claims/extract_all_claim_types byte-unchanged (Phase 26/33 back-compat) while publisher now calls the new per-block extract_claims_by_block; Convex optional fields omitted (not null) when absent, mirroring the qa/__init__.py blockIndexHint precedent
 
 ### Pending Todos
 
@@ -708,6 +710,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T20:45:40.775Z
-Stopped at: Completed 35-06-decision-rail-source-index-PLAN.md
+Last session: 2026-07-08T21:14:44.827Z
+Stopped at: Completed 35-04-publisher-provenance-seeding-PLAN.md
 Resume file: None

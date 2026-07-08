@@ -39,7 +39,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe (completed 2026-07-07)
 - [x] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail (completed 2026-07-08)
 - [x] **Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement** - Server-enforced "Facts cleared" + "Sounds human" sign-offs, webhook-level re-validation closing the Studio status-flip bypass, Studio retired to read-only fallback (completed 2026-07-08)
-- [ ] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist
+- [x] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist (completed 2026-07-08)
 - [ ] **Phase 36: Voice Pass De-Slop Screen** - Dedicated machine-tell screen reusing the existing QA two-layer detector (rules + Opus judge), as-written vs. house-voice rewrite popovers, its own "Sounds human" sign-off
 - [ ] **Phase 37: Run Monitor v2 + Signal Desk** - Forensic run spine (agents as dots, code gates as diamonds), handoff inspector, 7-writer per-section strength scores, run-vs-last-8 drift strip, Gate 1 candidate slate + interrupt/adjudication mode
 - [ ] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run
@@ -434,7 +434,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 7/7 | Complete    | 2026-07-08 |
-| 35. Provenance Pipeline + Sourced/Unsourced Galley | 5/6 | In Progress|  |
+| 35. Provenance Pipeline + Sourced/Unsourced Galley | 6/6 | Complete   | 2026-07-08 |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
 | 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
 | 38. Prompt Lab Evals + Eval Center | 0/? | Not started | - |
@@ -766,7 +766,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 35-01-contract-and-convex-schema-foundation-PLAN.md — Wave 1: amend docs/API_CONTRACTS.md §35/§26.2 (claims model, writer claimSpans, one-row-per-occurrence, ResearchOutput drift note) + claim_checks additive optional fields (claimId/sourceUrl/retrievedAt/sectionName/blockIndexHint) + insertBatch args + convex codegen
 - [x] 35-02-researcher-index-bound-claims-PLAN.md — Wave 2: ResearchOutputModel.claims (index-bound, D-01) + S1..Sn result numbering + code-side index→URL + retrievedAt stamping + keyStatistics removal + ResearchOutput TypedDict (PRV-01)
 - [x] 35-03-writer-claimspans-PLAN.md — Wave 2: ClaimSpanRef flat model + build_section_writer_prompt claims-whitelist injection (user-prompt only) + 5 prose writers emit claimSpans with lenient unknown-claimId drop (PRV-02)
-- [ ] 35-04-publisher-provenance-seeding-PLAN.md — Wave 3: per-section/per-block extractor + corrected flat-shape blockIndexHint (Pitfall 1 fix) + publisher seeds sourced+unsourced claim_checks rows one-per-occurrence (PRV-02/PRV-04 data)
+- [x] 35-04-publisher-provenance-seeding-PLAN.md — Wave 3: per-section/per-block extractor + corrected flat-shape blockIndexHint (Pitfall 1 fix) + publisher seeds sourced+unsourced claim_checks rows one-per-occurrence (PRV-02/PRV-04 data)
 - [x] 35-05-galley-provenance-wash-PLAN.md — Wave 2: claimSpan mark stacking + ClaimMark wash component (marigold sourced / rust unsourced, background-only D-09) + hover tooltip + check/skip popover + default-on toolbar toggle (PRV-03)
 - [x] 35-06-decision-rail-source-index-PLAN.md — Wave 2: SourceIndex (unsourced-on-top + sourced-by-section, check/skip + jump links) mounted in the rail Verification section; facts-cleared gate untouched (PRV-04)
 **UI hint**: yes
