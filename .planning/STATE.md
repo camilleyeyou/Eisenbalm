@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
+status: Ready to plan
 stopped_at: Completed 35-04-publisher-provenance-seeding-PLAN.md
-last_updated: "2026-07-08T21:14:44.839Z"
+last_updated: "2026-07-08T21:23:37.973Z"
 progress:
   total_phases: 39
   completed_phases: 34
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 
 ## Current Position
 
-Phase: 35 (provenance-pipeline-sourced-unsourced-galley-rendering) — EXECUTING
-Plan: 6 of 6
+Phase: 36
+Plan: Not started
 
 ## Performance Metrics
 
