@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to plan
-stopped_at: Completed 32-07-chip-counts-and-page-wiring-PLAN.md
-last_updated: "2026-07-07T22:35:57.963Z"
+stopped_at: Phase 33 context gathered
+last_updated: "2026-07-08T04:07:20.573Z"
 progress:
   total_phases: 39
   completed_phases: 31
@@ -669,6 +669,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-07T22:26:54.798Z
-Stopped at: Completed 32-07-chip-counts-and-page-wiring-PLAN.md
-Resume file: None
+Last session: 2026-07-08T04:07:20.558Z
+Stopped at: Phase 33 context gathered
+Resume file: .planning/phases/33-accept-fix-wiring-decision-rail/33-CONTEXT.md
