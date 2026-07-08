@@ -18,6 +18,7 @@ import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/re
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
+  useMutation: vi.fn(),
 }))
 
 vi.mock('@clerk/nextjs', () => ({
@@ -29,7 +30,7 @@ vi.mock('@convex/_generated/api', () => ({
     qaCorrections: { byRunId: 'qaCorrections:byRunId' },
     deliberationEvents: { byRunIdAndType: 'deliberationEvents:byRunIdAndType' },
     pitchLog: { selectedByRunId: 'pitchLog:selectedByRunId' },
-    claimChecks: { listByRunId: 'claimChecks:listByRunId' },
+    claimChecks: { listByRunId: 'claimChecks:listByRunId', setStatus: 'claimChecks:setStatus' },
     signOffs: { activeByRunId: 'signOffs:activeByRunId' },
   },
 }))
@@ -85,7 +86,7 @@ vi.mock(
   }),
 )
 
-import { useQuery } from 'convex/react'
+import { useQuery, useMutation } from 'convex/react'
 import { publishIssue } from '@/lib/reviewClient'
 import { recordSignOff } from '@/lib/signOffClient'
 import DecisionRail from '../app/(dashboard)/review-desk/[runId]/_components/DecisionRail'
@@ -94,8 +95,17 @@ afterEach(() => {
   cleanup()
 })
 
+// The setStatus spy used by the source-index (Task 2) check/skip controls.
+// Rebound in beforeEach so each test gets a clean spy.
+let setStatusSpy: Mock
+
 beforeEach(() => {
   vi.clearAllMocks()
+  setStatusSpy = vi.fn(async () => undefined)
+  ;(useMutation as unknown as Mock).mockImplementation((mutation: unknown) => {
+    if (mutation === 'claimChecks:setStatus') return setStatusSpy
+    return vi.fn()
+  })
 })
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -376,5 +386,130 @@ describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
       (screen.getByRole('button', { name: /sign: sounds human/i }) as HTMLButtonElement)
         .disabled,
     ).toBe(false)
+  })
+})
+
+// ── Source index (Phase 35, PRV-04, D-12/D-13/D-14) ─────────────────────────
+//
+// The Verification block's plain checklist is upgraded to a source index:
+// unsourced claims (no claimId) pin on top, sourced claims (claimId present)
+// group below by galley section in reading order, each row carries a
+// check/skip control (the same claimChecks:setStatus) and a jump link.
+// Legacy rows (no claimId, no sectionName) render honestly as unsourced with
+// no jump target and never crash (D-03 additive-optional degrade).
+
+const sourcedCaseStudy = {
+  claimIndex: 0,
+  text: 'The organization fed 12,000 families in 2019.',
+  status: 'pending',
+  claimId: 'run1-001',
+  sourceUrl: 'https://example.org/report-a',
+  retrievedAt: Date.now(),
+  sectionName: 'caseStudy',
+}
+
+const sourcedOriginStory = {
+  claimIndex: 1,
+  text: 'Founded by two teachers in a garage in 2004.',
+  status: 'checked',
+  checkedAt: Date.now(),
+  claimId: 'run1-002',
+  sourceUrl: 'https://example.org/report-b',
+  retrievedAt: Date.now(),
+  sectionName: 'originStory',
+}
+
+const unsourcedProblem = {
+  claimIndex: 2,
+  text: 'Roughly 1 in 5 local children go hungry.',
+  status: 'pending',
+  sectionName: 'problemStatement',
+}
+
+const legacyRow = {
+  claimIndex: 3,
+  text: 'Founded in 1998.',
+  status: 'pending',
+}
+
+describe('DecisionRail source index (Phase 35, PRV-04)', () => {
+  it('renders the unsourced group ABOVE the sourced group', () => {
+    mockQueries({ claims: [sourcedCaseStudy, sourcedOriginStory, unsourcedProblem] })
+    render(<DecisionRail runId="run-1" />)
+
+    const unsourcedHeader = screen.getByText(/^unsourced$/i)
+    const sourcedRowText = screen.getByText(sourcedCaseStudy.text)
+    // DOCUMENT_POSITION_FOLLOWING: the sourced group comes after Unsourced.
+    expect(
+      unsourcedHeader.compareDocumentPosition(sourcedRowText) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('groups sourced rows by section in galley reading order and shows each sourceUrl', () => {
+    // Deliberately out of reading order in the fixture array (caseStudy before
+    // originStory) to prove the component re-sorts, not just echoes input order.
+    mockQueries({ claims: [sourcedCaseStudy, sourcedOriginStory] })
+    render(<DecisionRail runId="run-1" />)
+
+    const originText = screen.getByText(sourcedOriginStory.text)
+    const caseStudyText = screen.getByText(sourcedCaseStudy.text)
+    // originStory precedes caseStudy in D-14's fixed galley order.
+    expect(
+      originText.compareDocumentPosition(caseStudyText) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+
+    const sourceLinks = screen.getAllByRole('link', { name: /open source/i })
+    const hrefs = sourceLinks.map(a => a.getAttribute('href'))
+    expect(hrefs).toContain(sourcedCaseStudy.sourceUrl)
+    expect(hrefs).toContain(sourcedOriginStory.sourceUrl)
+  })
+
+  it('exposes a check control per row that calls claimChecks.setStatus with the claimIndex', async () => {
+    mockQueries({ claims: [unsourcedProblem] })
+    render(<DecisionRail runId="run-1" />)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(`check claim ${unsourcedProblem.claimIndex}`, 'i') }),
+    )
+    await waitFor(() => {
+      expect(setStatusSpy).toHaveBeenCalledWith({
+        runId: 'run-1',
+        claimIndex: unsourcedProblem.claimIndex,
+        status: 'checked',
+      })
+    })
+  })
+
+  it('exposes a skip control per row that calls claimChecks.setStatus with the claimIndex', async () => {
+    mockQueries({ claims: [sourcedOriginStory] })
+    render(<DecisionRail runId="run-1" />)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(`skip claim ${sourcedOriginStory.claimIndex}`, 'i') }),
+    )
+    await waitFor(() => {
+      expect(setStatusSpy).toHaveBeenCalledWith({
+        runId: 'run-1',
+        claimIndex: sourcedOriginStory.claimIndex,
+        status: 'skipped',
+      })
+    })
+  })
+
+  it('renders a legacy row (no claimId, no sectionName) as unsourced with no jump link, and does not crash', () => {
+    mockQueries({ claims: [sourcedCaseStudy, legacyRow] })
+    expect(() => render(<DecisionRail runId="run-1" />)).not.toThrow()
+
+    // The legacy row's text still renders (never hidden).
+    expect(screen.getByText(legacyRow.text)).toBeDefined()
+    // It has a check/skip control like any other row.
+    expect(
+      screen.getByRole('button', { name: new RegExp(`check claim ${legacyRow.claimIndex}`, 'i') }),
+    ).toBeDefined()
+    // But it carries no jump-to-section link (no sectionName to jump to).
+    expect(
+      screen.queryByRole('button', { name: new RegExp(`jump.*claim ${legacyRow.claimIndex}`, 'i') }),
+    ).toBeNull()
   })
 })
