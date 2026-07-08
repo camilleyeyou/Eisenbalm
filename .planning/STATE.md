@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to plan
-stopped_at: Completed 33-05-decision-rail-PLAN.md
-last_updated: "2026-07-08T13:42:45.875Z"
+stopped_at: Phase 34 context gathered
+last_updated: "2026-07-08T14:03:17.666Z"
 progress:
   total_phases: 39
   completed_phases: 32
@@ -681,6 +681,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T13:30:08.963Z
-Stopped at: Completed 33-05-decision-rail-PLAN.md
-Resume file: None
+Last session: 2026-07-08T14:03:17.651Z
+Stopped at: Phase 34 context gathered
+Resume file: .planning/phases/34-two-sign-off-publish-gate-studio-bypass-retirement/34-CONTEXT.md
