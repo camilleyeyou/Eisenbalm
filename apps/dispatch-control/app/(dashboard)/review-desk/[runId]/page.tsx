@@ -38,6 +38,7 @@ import SectionChipList, {
 } from './_components/SectionChipList'
 import SectionEditorPanel from './_components/SectionEditorPanel'
 import Galley from './_components/Galley'
+import DecisionRail from './_components/DecisionRail'
 import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
@@ -422,6 +423,16 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
                 </div>
               ))}
           </div>
+
+          {/* FAR RIGHT — decision rail (GLY-04, D-17): the design's 336px
+              column, scoped to galley mode only — it belongs beside the
+              galley, not the editor or the iframe fallback. Stacks below
+              the galley on mobile via the existing flex-col lg:flex-row. */}
+          {viewMode === 'galley' && (
+            <div className="w-full shrink-0 lg:w-[336px]">
+              <DecisionRail runId={runId} />
+            </div>
+          )}
         </div>
       )}
     </div>
