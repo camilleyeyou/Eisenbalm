@@ -116,6 +116,30 @@ async def publish_issue(
             },
         )
 
+    # 3b. Open-error-findings gate (Phase 33 §33.4, D-14 — server-enforced,
+    # not just a disabled button). Anchor-BLIND (D-11b): an orphaned error
+    # finding (whose quotedSpan no longer resolves) still has no `resolution`
+    # and still blocks — losing an anchor must never silently un-block.
+    findings = await _cc.convex_query(
+        http, "qaCorrections:byRunId", {"runId": run_id}
+    ) or []
+    open_errors = [
+        f for f in findings
+        if f.get("severity") == "error" and not f.get("resolution")
+    ]
+    if open_errors:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "reason": "open_error_findings",
+                "message": (
+                    f"{len(open_errors)} error finding(s) must be accepted "
+                    "or dismissed before publishing."
+                ),
+                "count": len(open_errors),
+            },
+        )
+
     # 4. Sanity issue ID guard
     sanity_id = run.get("sanityIssueId")
     if not sanity_id:
@@ -223,6 +247,30 @@ async def schedule_issue(
             detail={
                 "reason": "claims_not_signed_off",
                 "message": "All claim checks must be signed off before scheduling.",
+            },
+        )
+
+    # 3b. Open-error-findings gate — IDENTICAL to publish_issue's (Phase 33
+    # §33.4, Pitfall 8): scheduled runs publish via the tick sweep and must
+    # not bypass the gate by scheduling instead of publishing. Anchor-blind
+    # (D-11b) — orphaned error findings still block.
+    findings = await _cc.convex_query(
+        http, "qaCorrections:byRunId", {"runId": run_id}
+    ) or []
+    open_errors = [
+        f for f in findings
+        if f.get("severity") == "error" and not f.get("resolution")
+    ]
+    if open_errors:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "reason": "open_error_findings",
+                "message": (
+                    f"{len(open_errors)} error finding(s) must be accepted "
+                    "or dismissed before publishing."
+                ),
+                "count": len(open_errors),
             },
         )
 
