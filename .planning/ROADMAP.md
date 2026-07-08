@@ -433,7 +433,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
-| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
+| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 1/6 | In Progress|  |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
 | 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
@@ -744,7 +744,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. Sanity Studio's publish action for `weeklyIssue` is disabled/removed after a soak period of real weekly cycles on the console, with Studio documented as a read-only fallback.
   4. Every sign-off, publish attempt, and any override is recorded in the audit log with actor and timestamp.
 **Plans**: 6 plans
-- [ ] 34-01-contract-amendment-PLAN.md — §34 API_CONTRACTS: sign_offs table, sign-off endpoint, gate restructure, webhook revert, Studio action (contract-first)
+- [x] 34-01-contract-amendment-PLAN.md — §34 API_CONTRACTS: sign_offs table, sign-off endpoint, gate restructure, webhook revert, Studio action (contract-first)
 - [ ] 34-02-convex-sign-offs-table-PLAN.md — Convex sign_offs table + signOffs.ts (record/revokeAll/activeByRunId/listByRunId)
 - [ ] 34-03-signoff-endpoints-publish-gate-PLAN.md — api/signoffs.py sign-off endpoint (relocated facts prereqs) + publish/schedule missing_signoffs gate + guarded paths
 - [ ] 34-04-webhook-revalidation-revert-PLAN.md — webhook D-07 re-check + _revert_sanity_status + bypass audit/alert (PUB-02)

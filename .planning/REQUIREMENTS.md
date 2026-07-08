@@ -295,10 +295,10 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **EDT-06**: After any content patch, annotation anchors are re-resolved; annotations invalidated by the edit surface as orphaned for operator review.
 
 ### Two-Sign-off Publish Gate (PUB)
-- [ ] **PUB-01**: Publishing requires two independent server-enforced sign-offs — "Facts cleared" and "Sounds human" — the publish endpoint refuses (409) unless both are recorded.
-- [ ] **PUB-02**: The Sanity publish webhook handler verifies sign-off state before running the publisher — a direct Studio status-flip can no longer bypass the gate.
-- [ ] **PUB-03**: Sanity Studio is retired as the editing/publish surface (publish path locked down, documented as read-only fallback) after a soak period of real weekly cycles on the console.
-- [ ] **PUB-04**: Every sign-off, publish, and override is audit-logged with actor and timestamp.
+- [x] **PUB-01**: Publishing requires two independent server-enforced sign-offs — "Facts cleared" and "Sounds human" — the publish endpoint refuses (409) unless both are recorded.
+- [x] **PUB-02**: The Sanity publish webhook handler verifies sign-off state before running the publisher — a direct Studio status-flip can no longer bypass the gate.
+- [x] **PUB-03**: Sanity Studio is retired as the editing/publish surface (publish path locked down, documented as read-only fallback) after a soak period of real weekly cycles on the console.
+- [x] **PUB-04**: Every sign-off, publish, and override is audit-logged with actor and timestamp.
 
 ### Voice Pass (VOX)
 - [ ] **VOX-01**: Operator has a dedicated Voice Pass screen — machine-tells and voice violations lit inline over clean prose, with a per-screen tell count.

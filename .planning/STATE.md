@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to plan
-stopped_at: Phase 34 context gathered
-last_updated: "2026-07-08T14:03:17.666Z"
+status: Ready to execute
+stopped_at: Completed 34-01-contract-amendment-PLAN.md
+last_updated: "2026-07-08T14:49:10.637Z"
 progress:
   total_phases: 39
   completed_phases: 32
-  total_plans: 209
-  completed_plans: 207
+  total_plans: 215
+  completed_plans: 208
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 33 — accept-fix-wiring-decision-rail
+**Current focus:** Phase 34 — two-sign-off-publish-gate-studio-bypass-retirement
 
 ## Current Position
 
-Phase: 34
-Plan: Not started
+Phase: 34 (two-sign-off-publish-gate-studio-bypass-retirement) — EXECUTING
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -233,6 +233,7 @@ Plan: Not started
 | Phase 33 P02 | 12 | 3 tasks | 6 files |
 | Phase 33 P04 | 17min | 3 tasks | 13 files |
 | Phase 33-accept-fix-wiring-decision-rail P05 | 15min | 3 tasks | 5 files |
+| Phase 34 P01 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -597,6 +598,9 @@ Recent decisions affecting current work:
 - [Phase 33]: AnnotationMark reads Clerk token via useAuth().getToken() directly instead of prop-drilling; action props optional so components degrade to Phase 32 read-only
 - [Phase 33]: DecisionRail uses real client signatures (publishIssue/rejectIssue take token FIRST) and parses the LAST editor-final row's payload .notes (§33.6) — plan pseudo-code corrected against verified code
 - [Phase 33]: ResolvedFindingsList empty state ('No resolved findings yet') renders even while collapsed — never-blank rule beats disclosure gating; Reopen relies purely on Convex reactivity (no text rollback, no draft refetch)
+- [Phase 34]: sign_offs table PATCHes the same (runId,kind) row on revoke/re-sign rather than append-only rows — audit_log carries the immutable history
+- [Phase 34]: Webhook blocks publish when run_id is None (no pipelineMetadata.runId at all), not just when sign-offs are missing
+- [Phase 34]: D-07 bypass alert reuses frozen deliberationEvents eventType='cost-warning' with inner payload discriminator, following the auto-publish-enabled precedent
 
 ### Pending Todos
 
@@ -681,6 +685,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T14:03:17.651Z
-Stopped at: Phase 34 context gathered
-Resume file: .planning/phases/34-two-sign-off-publish-gate-studio-bypass-retirement/34-CONTEXT.md
+Last session: 2026-07-08T14:49:10.625Z
+Stopped at: Completed 34-01-contract-amendment-PLAN.md
+Resume file: None
