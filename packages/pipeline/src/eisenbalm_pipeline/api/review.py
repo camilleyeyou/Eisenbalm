@@ -12,8 +12,12 @@ Every decision writes:
   - a reviewActions:record row (canonical action vocabulary §26.5)
   - an auditLog:record row via _emit_audit (non-blocking)
 
-Publish + schedule both enforce the claims-signoff gate server-side
-(claimChecks:allSignedOff → 409 when not all signed off — Pitfall 6).
+Publish + schedule both enforce the two-sign-off gate server-side
+(signOffs:activeByRunId → 409 {reason:"missing_signoffs"} unless BOTH
+facts-cleared and sounds-human are active — Phase 34 §34.4, PUB-01). The
+claims-signoff + open-error-findings checks that previously gated publish
+directly have been relocated to the facts-cleared sign-off endpoint
+(api/signoffs.py, §34.3, D-04).
 
 The publish endpoint does NOT call _run_publisher directly.  It calls
 _flip_sanity_published (lib/sanity_publish.py), which flips
@@ -70,7 +74,8 @@ async def publish_issue(
     Guards (in order):
       1. run must exist → 404 if not
       2. run.status == "awaiting-review" → 409 {reason:"wrong_status"} if not
-      3. claimChecks:allSignedOff → 409 {reason:"claims_not_signed_off"} if pending
+      3. both sign-offs active (signOffs:activeByRunId) → 409
+         {reason:"missing_signoffs"} if either is missing (Phase 34 §34.4)
       4. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
 
     Action:
@@ -103,40 +108,24 @@ async def publish_issue(
             },
         )
 
-    # 3. Claims signoff gate (Pitfall 6 — server-side guard, not just disabled button)
-    signoff = await _cc.convex_query(
-        http, "claimChecks:allSignedOff", {"runId": run_id}
+    # 3. Two-sign-off gate (Phase 34 §34.4, PUB-01) — server refuses unless
+    # BOTH attestations are active. The machine-checkable facts prerequisites
+    # (claims, open-error findings) now gate RECORDING "facts-cleared"
+    # (§34.3), not publish directly.
+    active = await _cc.convex_query(
+        http, "signOffs:activeByRunId", {"runId": run_id}
     ) or {}
-    if not signoff.get("allSignedOff"):
+    missing = [k for k in ("facts-cleared", "sounds-human") if k not in active]
+    if missing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
-                "reason": "claims_not_signed_off",
-                "message": "All claim checks must be signed off before publishing.",
-            },
-        )
-
-    # 3b. Open-error-findings gate (Phase 33 §33.4, D-14 — server-enforced,
-    # not just a disabled button). Anchor-BLIND (D-11b): an orphaned error
-    # finding (whose quotedSpan no longer resolves) still has no `resolution`
-    # and still blocks — losing an anchor must never silently un-block.
-    findings = await _cc.convex_query(
-        http, "qaCorrections:byRunId", {"runId": run_id}
-    ) or []
-    open_errors = [
-        f for f in findings
-        if f.get("severity") == "error" and not f.get("resolution")
-    ]
-    if open_errors:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "reason": "open_error_findings",
+                "reason": "missing_signoffs",
                 "message": (
-                    f"{len(open_errors)} error finding(s) must be accepted "
-                    "or dismissed before publishing."
+                    "Both sign-offs (Facts cleared + Sounds human) are "
+                    "required before publishing."
                 ),
-                "count": len(open_errors),
+                "missing": missing,
             },
         )
 
@@ -199,7 +188,8 @@ async def schedule_issue(
     Guards (in order):
       1. run must exist → 404 if not
       2. run.status == "awaiting-review" → 409 if not
-      3. claimChecks:allSignedOff → 409 {reason:"claims_not_signed_off"} if pending
+      3. both sign-offs active (signOffs:activeByRunId) → 409
+         {reason:"missing_signoffs"} if either is missing (Phase 34 §34.4, D-09)
       4. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
       5. scheduledAt > now → 400 {reason:"schedule_in_past"} if not
 
@@ -237,40 +227,25 @@ async def schedule_issue(
             },
         )
 
-    # 3. Claims signoff gate
-    signoff = await _cc.convex_query(
-        http, "claimChecks:allSignedOff", {"runId": run_id}
+    # 3. Two-sign-off gate — IDENTICAL to publish_issue's (Phase 34 §34.4,
+    # D-09): scheduled runs publish via the tick sweep and must not bypass
+    # the gate by scheduling instead of publishing. The D-07 webhook
+    # re-check covers fire-time if a sign-off is revoked between scheduling
+    # and the tick.
+    active = await _cc.convex_query(
+        http, "signOffs:activeByRunId", {"runId": run_id}
     ) or {}
-    if not signoff.get("allSignedOff"):
+    missing = [k for k in ("facts-cleared", "sounds-human") if k not in active]
+    if missing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
-                "reason": "claims_not_signed_off",
-                "message": "All claim checks must be signed off before scheduling.",
-            },
-        )
-
-    # 3b. Open-error-findings gate — IDENTICAL to publish_issue's (Phase 33
-    # §33.4, Pitfall 8): scheduled runs publish via the tick sweep and must
-    # not bypass the gate by scheduling instead of publishing. Anchor-blind
-    # (D-11b) — orphaned error findings still block.
-    findings = await _cc.convex_query(
-        http, "qaCorrections:byRunId", {"runId": run_id}
-    ) or []
-    open_errors = [
-        f for f in findings
-        if f.get("severity") == "error" and not f.get("resolution")
-    ]
-    if open_errors:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "reason": "open_error_findings",
+                "reason": "missing_signoffs",
                 "message": (
-                    f"{len(open_errors)} error finding(s) must be accepted "
-                    "or dismissed before publishing."
+                    "Both sign-offs (Facts cleared + Sounds human) are "
+                    "required before scheduling."
                 ),
-                "count": len(open_errors),
+                "missing": missing,
             },
         )
 

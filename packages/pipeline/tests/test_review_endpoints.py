@@ -1,10 +1,17 @@
 """
-Phase 26 RVW-03: Review FastAPI endpoint tests.
+Phase 26 RVW-03 (gate restructured in Phase 34 §34.4): Review FastAPI
+endpoint tests.
 
 Tests for the three FastAPI endpoints defined in API_CONTRACTS §26.7:
   POST /issues/{run_id}/publish
   POST /issues/{run_id}/schedule
   POST /issues/{run_id}/reject
+
+Phase 34 (D-04): the claims-signoff + open-error-findings checks that used
+to gate publish/schedule directly have been RELOCATED to the facts-cleared
+sign-off endpoint (api/signoffs.py, tested in test_signoffs_endpoints.py).
+publish_issue/schedule_issue now gate on BOTH sign-offs being active
+(signOffs:activeByRunId) — 409 {reason:"missing_signoffs"} otherwise.
 
 All tests monkeypatch Convex queries/mutations and the Sanity flip helper.
 """
@@ -48,21 +55,28 @@ def _awaiting_run(sanity_id: str = "issue-42") -> dict:
     return {"status": "awaiting-review", "sanityIssueId": sanity_id, "runId": "run-abc"}
 
 
-# ── test_publish_requires_claims_signoff ──────────────────────────────────
+def _active_signoffs(*kinds: str) -> dict:
+    """Build a signOffs:activeByRunId-shaped response for the given kinds."""
+    return {k: {"actorId": "user_1", "signedAt": 1} for k in kinds}
 
 
-def test_publish_requires_claims_signoff(monkeypatch):
+_BOTH_SIGNOFFS = ("facts-cleared", "sounds-human")
+
+
+# ── test_publish_requires_both_signoffs ────────────────────────────────────
+
+
+def test_publish_requires_both_signoffs(monkeypatch):
     """
-    POST /issues/{run_id}/publish → 409 when allSignedOff is false.
-
-    Server-side claims gate must reject the request even when the run is
-    in awaiting-review status (Pitfall 6 in plan 26-01).
+    POST /issues/{run_id}/publish → 409 {reason:"missing_signoffs"} when
+    either sign-off is missing/revoked — the server refuses regardless of
+    button state (Phase 34 §34.4, PUB-01).
     """
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _awaiting_run()
-        if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 1, "allSignedOff": False}
+        if path == "signOffs:activeByRunId":
+            return _active_signoffs("facts-cleared")  # sounds-human missing
         return None
 
     monkeypatch.setattr(
@@ -72,15 +86,33 @@ def test_publish_requires_claims_signoff(monkeypatch):
 
     response = _client.post("/issues/run-abc/publish")
     assert response.status_code == 409, (
-        f"Expected 409 (claims not signed off), got {response.status_code}: {response.text}"
+        f"Expected 409 (missing signoffs), got {response.status_code}: {response.text}"
     )
-    data = response.json()
-    # FastAPI wraps HTTPException detail in {"detail": ...}
-    detail = data.get("detail", {})
-    reason = detail.get("reason") if isinstance(detail, dict) else str(detail)
-    assert "claims_not_signed_off" in reason, (
-        f"Expected reason='claims_not_signed_off' in {detail}"
+    detail = response.json()["detail"]
+    assert detail["reason"] == "missing_signoffs"
+    assert detail["missing"] == ["sounds-human"]
+
+
+def test_publish_409_when_no_signoffs_active(monkeypatch):
+    """POST /issues/{run_id}/publish → 409 missing_signoffs when NEITHER
+    sign-off is active."""
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run()
+        if path == "signOffs:activeByRunId":
+            return {}
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
     )
+
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["reason"] == "missing_signoffs"
+    assert set(detail["missing"]) == {"facts-cleared", "sounds-human"}
 
 
 # ── test_publish_success ──────────────────────────────────────────────────
@@ -88,7 +120,8 @@ def test_publish_requires_claims_signoff(monkeypatch):
 
 def test_publish_success(monkeypatch):
     """
-    POST /issues/{run_id}/publish → 200 + {published: true} when all claims signed off.
+    POST /issues/{run_id}/publish → 200 + {published: true} when BOTH
+    sign-offs are active.
 
     The endpoint should:
       1. Flip Sanity weeklyIssue.status='published' (D-01 path)
@@ -100,8 +133,8 @@ def test_publish_success(monkeypatch):
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _awaiting_run("issue-42")
-        if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        if path == "signOffs:activeByRunId":
+            return _active_signoffs(*_BOTH_SIGNOFFS)
         return None
 
     async def mock_convex_mutation(http, path, args):
@@ -137,12 +170,43 @@ def test_publish_success(monkeypatch):
     )
 
 
-# ── test_schedule_writes_scheduled_at ────────────────────────────────────
+# ── test_schedule_requires_both_signoffs / test_schedule_writes_scheduled_at ──
+
+
+def test_schedule_requires_both_signoffs(monkeypatch):
+    """
+    POST /issues/{run_id}/schedule → 409 {reason:"missing_signoffs"} when
+    either sign-off is missing (Phase 34 §34.4, D-09 — identical gate to
+    publish, no bypass via scheduling).
+    """
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _awaiting_run()
+        if path == "signOffs:activeByRunId":
+            return _active_signoffs("sounds-human")  # facts-cleared missing
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.review._cc.convex_query",
+        mock_convex_query,
+    )
+
+    response = _client.post(
+        "/issues/run-abc/schedule",
+        json={"scheduledAt": _future_ts()},
+    )
+    assert response.status_code == 409, (
+        f"Expected 409 (missing signoffs), got {response.status_code}: {response.text}"
+    )
+    detail = response.json()["detail"]
+    assert detail["reason"] == "missing_signoffs"
+    assert detail["missing"] == ["facts-cleared"]
 
 
 def test_schedule_writes_scheduled_at(monkeypatch):
     """
-    POST /issues/{run_id}/schedule → 200 + {scheduledAt: <timestamp>, issueId: <id>}.
+    POST /issues/{run_id}/schedule → 200 + {scheduledAt: <timestamp>, issueId: <id>}
+    when BOTH sign-offs are active.
 
     The endpoint should call runs:setScheduledPublish and write a review_actions row
     with action='approved_and_scheduled'.
@@ -153,8 +217,8 @@ def test_schedule_writes_scheduled_at(monkeypatch):
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _awaiting_run("issue-42")
-        if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+        if path == "signOffs:activeByRunId":
+            return _active_signoffs(*_BOTH_SIGNOFFS)
         return None
 
     async def mock_convex_mutation(http, path, args):
@@ -235,129 +299,13 @@ def test_reject_records_action(monkeypatch):
     assert review_action_calls[0]["action"] == "rejected"
 
 
-# ── Phase 33 (§33.4, D-14, D-11b) — open-error-findings gate ──────────────
-
-
-def _error_finding(**overrides) -> dict:
-    base = {
-        "_id": "fnd-1",
-        "runId": "run-abc",
-        "sectionName": "problem",
-        "severity": "error",
-        "reason": "vague date",
-        "quotedSpan": "opened its doors",
-        "accepted": False,
-    }
-    base.update(overrides)
-    return base
-
-
-def test_publish_409_on_open_error_findings(monkeypatch):
-    """
-    POST /issues/{run_id}/publish → 409 {reason:"open_error_findings", count:n}
-    when unresolved error-severity findings exist. The check is anchor-blind
-    (D-11b): an ORPHANED error finding (no quotedSpan — its anchor would fail)
-    still blocks until explicitly accepted or dismissed.
-    """
-    async def mock_convex_query(http, path, args):
-        if path == "pipelineRuns:byRunId":
-            return _awaiting_run()
-        if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
-        if path == "qaCorrections:byRunId":
-            return [
-                _error_finding(_id="fnd-1"),
-                # Orphaned: no quotedSpan at all — must STILL block.
-                _error_finding(_id="fnd-2", quotedSpan=None),
-                # Open warning — must NOT count toward the gate.
-                _error_finding(_id="fnd-3", severity="warning"),
-            ]
-        return None
-
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_query",
-        mock_convex_query,
-    )
-
-    response = _client.post("/issues/run-abc/publish")
-    assert response.status_code == 409, (
-        f"Expected 409 (open error findings), got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "open_error_findings"
-    assert detail["count"] == 2
-
-
-def test_publish_passes_gate_when_errors_resolved_or_only_warnings_open(monkeypatch):
-    """
-    Resolved/dismissed error findings and open warning/info findings do NOT
-    block publish — the gate counts only severity=='error' with no resolution.
-    """
-    sanity_flip_calls = []
-
-    async def mock_convex_query(http, path, args):
-        if path == "pipelineRuns:byRunId":
-            return _awaiting_run("issue-42")
-        if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
-        if path == "qaCorrections:byRunId":
-            return [
-                _error_finding(_id="fnd-1", resolution="accepted"),
-                _error_finding(_id="fnd-2", resolution="dismissed"),
-                _error_finding(_id="fnd-3", severity="warning"),
-                _error_finding(_id="fnd-4", severity="info"),
-            ]
-        return None
-
-    async def mock_convex_mutation(http, path, args):
-        return None
-
-    async def mock_flip(http, sanity_issue_id: str):
-        sanity_flip_calls.append(sanity_issue_id)
-
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_query", mock_convex_query
-    )
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation
-    )
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip
-    )
-
-    response = _client.post("/issues/run-abc/publish")
-    assert response.status_code == 200, (
-        f"Expected 200, got {response.status_code}: {response.text}"
-    )
-    assert sanity_flip_calls == ["issue-42"]
-
-
-def test_schedule_409_on_open_error_findings(monkeypatch):
-    """
-    POST /issues/{run_id}/schedule gets the IDENTICAL gate (Pitfall 8):
-    scheduling must not bypass the open-error-findings block.
-    """
-    async def mock_convex_query(http, path, args):
-        if path == "pipelineRuns:byRunId":
-            return _awaiting_run()
-        if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
-        if path == "qaCorrections:byRunId":
-            return [_error_finding(_id="fnd-1")]
-        return None
-
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_query",
-        mock_convex_query,
-    )
-
-    response = _client.post(
-        "/issues/run-abc/schedule",
-        json={"scheduledAt": _future_ts()},
-    )
-    assert response.status_code == 409, (
-        f"Expected 409 (open error findings), got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "open_error_findings"
-    assert detail["count"] == 1
+# ── Phase 34 (§34.4, D-04) — claims + open-error-findings gate RELOCATED ───
+#
+# The claims-signoff and open-error-findings checks previously asserted here
+# (Phase 33 §33.4) now live in api/signoffs.py — they gate RECORDING a
+# "facts-cleared" sign-off, not publish/schedule directly. See
+# test_signoffs_endpoints.py::test_facts_cleared_409_claims_not_signed_off
+# and ::test_facts_cleared_409_open_error_findings for that coverage.
+# publish_issue/schedule_issue now only check that both sign-offs are
+# ACTIVE (signOffs:activeByRunId) — see test_publish_requires_both_signoffs
+# and test_schedule_requires_both_signoffs above.
