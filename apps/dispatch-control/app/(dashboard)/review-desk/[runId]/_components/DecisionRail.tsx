@@ -14,7 +14,9 @@
  *   4. Hook card — the run's selected pitch (D-12; Phase 37 upgrades in place)
  *   5. Verification — claims progress with an affirmative timestamp state
  *      (D-13: "checked Nm ago" / "not yet checked" / "No claims extracted
- *      yet" — never blank)
+ *      yet" — never blank), plus the Phase 35 (PRV-04) source index:
+ *      unsourced claims pinned on top, sourced claims grouped by galley
+ *      section below — see `SourceIndex.tsx`
  *   6. Actions — Publish (gated, D-14 client half; the server 409 shipped in
  *      33-03), Hold, Re-run section ▾, Transcript (D-15)
  *   7. ResolvedFindingsList — the collapsed D-04 reopen surface (Task 2)
@@ -33,6 +35,7 @@ import { recordSignOff, SignOffApiError, type SignOffKind } from '@/lib/signOffC
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import ResolvedFindingsList from './ResolvedFindingsList'
+import SourceIndex from './SourceIndex'
 
 interface DecisionRailProps {
   runId: string
@@ -351,6 +354,12 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
             )}
           </div>
         )}
+        {/* Phase 35 (PRV-04, D-12/D-13/D-14) — the source index: unsourced
+            claims pinned on top, sourced claims grouped by galley section
+            below, each with check/skip + jump link. Reads/writes the SAME
+            claim_checks table this section's summary above already reads;
+            the facts-cleared gate contract is untouched. */}
+        <SourceIndex runId={runId} />
       </section>
 
       {/* 5b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,
