@@ -43,7 +43,7 @@ Frontend (dispatch-control) has its own Vitest suite; no existing `DecisionRail.
 | 34-03 T1 | 34-03 | 2 | PUB-01, PUB-04 | unit | `uv run pytest tests/test_signoffs_endpoints.py -x -q` | ✅ new (created in task) | ⬜ pending |
 | 34-03 T3 | 34-03 | 2 | PUB-01 | unit | `uv run pytest tests/test_review_endpoints.py -x -q` | ✅ extend existing | ⬜ pending |
 | 34-04 T2 | 34-04 | 3 | PUB-02, PUB-04 | unit | `uv run pytest tests/api/test_webhook_sanity.py -x -q` | ✅ extend existing | ⬜ pending |
-| 34-05 T2 | 34-05 | 3 | PUB-01, PUB-04 | unit | `uv run pytest tests/test_content_endpoints.py tests/test_findings_endpoints.py -x -q` | ✅ extend existing | ⬜ pending |
+| 34-05 T2 | 34-05 | 3 | PUB-01, PUB-04 | unit | `uv run pytest tests/test_content_patch_endpoints.py tests/test_findings_endpoints.py -x -q` | ✅ extend existing | ⬜ pending |
 | 34-06 T1 | 34-06 | 3 | PUB-01 | build | `pnpm --filter dispatch-control build` | ✅ strict type-check | ⬜ pending |
 | 34-06 T2 | 34-06 | 3 | PUB-03 | manual | Studio flag flip (SANITY_STUDIO_DISABLE_PUBLISH) — soak mechanism non-automatable | N/A (grep + UAT) | ⬜ pending |
 
@@ -59,7 +59,7 @@ Test coverage is co-created with implementation (tdd-style), not a separate Wave
 - [x] `packages/pipeline/tests/test_signoffs_endpoints.py` — NEW, created in **34-03 Task 1** (sign-off record + relocated facts prerequisites; PUB-01/PUB-04)
 - [x] `packages/pipeline/tests/test_review_endpoints.py` — extended in **34-03 Task 3** (missing_signoffs gate on publish + schedule; PUB-01)
 - [x] `packages/pipeline/tests/api/test_webhook_sanity.py` — extended in **34-04 Task 2** (D-07 re-validation + revert + run-less block; PUB-02)
-- [x] `packages/pipeline/tests/test_content_endpoints.py` + `test_findings_endpoints.py` — extended in **34-05 Task 2** (D-08 auto-revoke assertions; PUB-01)
+- [x] `packages/pipeline/tests/test_content_patch_endpoints.py` + `test_findings_endpoints.py` — extended in **34-05 Task 2** (D-08 auto-revoke assertions; PUB-01)
 
 *Convex mutations are validated via FastAPI-level tests that monkeypatch `_cc.convex_query`/`convex_mutation` — existing project convention, no phase-specific gap.*
 

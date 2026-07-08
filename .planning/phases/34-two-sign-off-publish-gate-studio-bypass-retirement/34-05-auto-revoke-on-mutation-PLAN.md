@@ -8,7 +8,7 @@ files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/api/control.py
   - packages/pipeline/src/eisenbalm_pipeline/api/content.py
   - packages/pipeline/src/eisenbalm_pipeline/api/findings.py
-  - packages/pipeline/tests/test_content_endpoints.py
+  - packages/pipeline/tests/test_content_patch_endpoints.py
   - packages/pipeline/tests/test_findings_endpoints.py
 autonomous: true
 requirements: [PUB-01, PUB-04]
@@ -112,7 +112,7 @@ await _revoke_active_signoffs(http, run_id=run_id, reason="section re-rolled")
   <read_first>
     - packages/pipeline/src/eisenbalm_pipeline/api/content.py (all 9 routes + their `await _emit_audit(...)` call-sites listed in the interfaces block — the convex http var + run_id in each)
     - packages/pipeline/src/eisenbalm_pipeline/api/findings.py (accept_finding/dismiss_finding/reopen_finding + their `_emit_audit` calls at ~L226/L279/L326; note it already imports `_emit_audit` from api.control — add `_revoke_active_signoffs` to that same import)
-    - packages/pipeline/tests/test_content_endpoints.py (existing harness — extend to assert the revoke call fires on a patch)
+    - packages/pipeline/tests/test_content_patch_endpoints.py (existing harness — extend to assert the revoke call fires on a patch)
     - packages/pipeline/tests/test_findings_endpoints.py (existing harness — extend to assert revoke fires on accept/dismiss/reopen)
     - docs/API_CONTRACTS.md §34.6 (the endpoint list + "clears BOTH kinds")
   </read_first>
@@ -125,17 +125,17 @@ using the same convex http variable the adjacent `_emit_audit` uses. (A more spe
 
 In `packages/pipeline/src/eisenbalm_pipeline/api/findings.py`: extend the `from eisenbalm_pipeline.api.control import _emit_audit, _require_clerk_jwt_control` import to include `_revoke_active_signoffs`, and add the revoke call after the `_emit_audit(...)` in all THREE routes — `accept_finding` (reason="fix accepted"), `dismiss_finding` (reason="finding dismissed"), `reopen_finding` (reason="finding reopened"). Rationale to note in a comment on reopen/dismiss: they change the facts-cleared PREREQUISITE basis (open-error findings / claim posture), so they void the sign-offs and force a re-sign — this closes the gate-integrity hole created by relocating the error-findings check to sign-off time (§34.6, §34.3).
 
-Extend `packages/pipeline/tests/test_content_endpoints.py`: add (or amend) at least one patch test that monkeypatches `_cc.convex_mutation` and asserts `signOffs:revokeAll` is invoked with the run's id after a successful patch. Extend `packages/pipeline/tests/test_findings_endpoints.py`: assert `signOffs:revokeAll` fires on accept AND on dismiss (and reopen). Keep the existing assertions green.
+Extend `packages/pipeline/tests/test_content_patch_endpoints.py`: add (or amend) at least one patch test that monkeypatches `_cc.convex_mutation` and asserts `signOffs:revokeAll` is invoked with the run's id after a successful patch. Extend `packages/pipeline/tests/test_findings_endpoints.py`: assert `signOffs:revokeAll` fires on accept AND on dismiss (and reopen). Keep the existing assertions green.
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm/packages/pipeline && uv run pytest tests/test_content_endpoints.py tests/test_findings_endpoints.py -x -q</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm/packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py tests/test_findings_endpoints.py -x -q</automated>
   </verify>
   <acceptance_criteria>
-    - `cd packages/pipeline && uv run pytest tests/test_content_endpoints.py tests/test_findings_endpoints.py -x -q` exits 0
+    - `cd packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py tests/test_findings_endpoints.py -x -q` exits 0
     - `grep -c "_revoke_active_signoffs" packages/pipeline/src/eisenbalm_pipeline/api/content.py` returns ≥ 9 (all patch routes hooked)
     - `grep -c "_revoke_active_signoffs" packages/pipeline/src/eisenbalm_pipeline/api/findings.py` returns ≥ 3 (accept/dismiss/reopen hooked)
     - Both routers import the helper: `grep -q "_revoke_active_signoffs" packages/pipeline/src/eisenbalm_pipeline/api/content.py` and `...findings.py` import lines include it (verify by reading the import statements)
-    - test files assert the revoke mutation: `grep -q "signOffs:revokeAll" packages/pipeline/tests/test_content_endpoints.py && grep -q "signOffs:revokeAll" packages/pipeline/tests/test_findings_endpoints.py` succeed
+    - test files assert the revoke mutation: `grep -q "signOffs:revokeAll" packages/pipeline/tests/test_content_patch_endpoints.py && grep -q "signOffs:revokeAll" packages/pipeline/tests/test_findings_endpoints.py` succeed
     - Full pipeline suite green: `cd packages/pipeline && uv run pytest -x -q` exits 0 (no regression)
   </acceptance_criteria>
   <done>All 9 content patches and all 3 findings routes revoke both sign-offs after their mutation, fail-open, and the content + findings + full suites pass.</done>
@@ -144,7 +144,7 @@ Extend `packages/pipeline/tests/test_content_endpoints.py`: add (or amend) at le
 </tasks>
 
 <verification>
-- `cd packages/pipeline && uv run pytest tests/test_content_endpoints.py tests/test_findings_endpoints.py -x -q` green.
+- `cd packages/pipeline && uv run pytest tests/test_content_patch_endpoints.py tests/test_findings_endpoints.py -x -q` green.
 - `cd packages/pipeline && uv run pytest -x -q` ≥ prior baseline passing.
 - `grep -c _revoke_active_signoffs packages/pipeline/src/eisenbalm_pipeline/api/content.py` ≥ 9.
 </verification>

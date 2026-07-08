@@ -7,6 +7,8 @@ depends_on: [34-01]
 files_modified:
   - convex/schema.ts
   - convex/signOffs.ts
+  - convex/_generated/api.d.ts
+  - convex/_generated/api.js
 autonomous: true
 requirements: [PUB-01, PUB-04]
 
@@ -23,6 +25,9 @@ must_haves:
     - path: "convex/signOffs.ts"
       provides: "record / revokeAll mutations + activeByRunId / listByRunId queries"
       exports: ["record", "revokeAll", "activeByRunId", "listByRunId"]
+    - path: "convex/_generated/api.d.ts"
+      provides: "regenerated typed api including api.signOffs.* (required for DecisionRail's useQuery in 34-06 to type-check)"
+      contains: "signOffs"
   key_links:
     - from: "convex/signOffs.ts::record"
       to: "convex/lib/auth.ts::requirePipelineSecret"
@@ -34,7 +39,7 @@ must_haves:
 Add the new `sign_offs` Convex table (D-02) and the `convex/signOffs.ts` module (record / revokeAll mutations + activeByRunId / listByRunId queries) exactly per the frozen §34.1/§34.2 contract. This is the datastore the publish gate (34-03), the webhook re-check (34-04), the auto-revoke hook (34-05), and the rail's live subscription (34-06) all read/write.
 
 Purpose: One append-friendly, audit-shaped attestation table with a single active row per (run, kind), so "both greens = publishable" and "content changed = both greens void" are enforceable server-side.
-Output: `convex/schema.ts` gains the `sign_offs` table; `convex/signOffs.ts` is new.
+Output: `convex/schema.ts` gains the `sign_offs` table; `convex/signOffs.ts` is new; `convex/_generated/api.d.ts` + `api.js` are regenerated and committed so `api.signOffs.*` exists for the dashboard (34-06).
 </objective>
 
 <execution_context>
@@ -173,15 +178,43 @@ Add a module docstring citing §34.2 and noting: mutations are pipeline-lane (se
   <done>convex/signOffs.ts exports record (secret-guarded upsert), revokeAll (secret-guarded patch), and the two public queries, matching §34.2 exactly.</done>
 </task>
 
+
+<task type="auto">
+  <name>Task 3: Regenerate + commit convex/_generated (api.d.ts + api.js)</name>
+  <read_first>
+    - convex/_generated/api.d.ts (the codegen target — the new signOffs module must appear here after regen)
+    - .planning/phases/33-accept-fix-wiring-decision-rail/33-02-convex-resolution-state-PLAN.md (Task 2 — the exact codegen precedent this task mirrors)
+  </read_first>
+  <action>
+Regenerate Convex codegen so the new `sign_offs` table + `signOffs.ts` functions land in `convex/_generated` (without this, apps/dispatch-control's `api.signOffs.activeByRunId` in DecisionRail.tsx — plan 34-06 — does not exist in the typed `api` object and `pnpm --filter dispatch-control build` fails):
+
+Run exactly (the 33-02 precedent command):
+```bash
+pnpm --filter @eisenbalm/convex exec convex codegen
+```
+(Offline codegen is sufficient for types; the full `convex dev --once` deploy happens at phase deploy time.) Commit the updated `convex/_generated/api.d.ts` and `convex/_generated/api.js`. Do NOT introduce any new `api as any` casts anywhere.
+  </action>
+  <verify>
+    <automated>grep -q "signOffs" convex/_generated/api.d.ts</automated>
+  </verify>
+  <acceptance_criteria>
+    - `grep -q "signOffs" convex/_generated/api.d.ts` succeeds (codegen ran and captured the new module)
+    - `git status --porcelain convex/_generated/` is clean after the task's commit (regenerated files are committed, not left dirty)
+    - `grep -rn "api as any" apps/dispatch-control | wc -l` did not increase (no new casts added by this plan)
+  </acceptance_criteria>
+  <done>convex/_generated/api.d.ts + api.js include the signOffs module and are committed, so 34-06's typed `api.signOffs.activeByRunId` subscription type-checks.</done>
+</task>
+
 </tasks>
 
 <verification>
 - `grep -q "sign_offs: defineTable" convex/schema.ts` and all four exports exist in `convex/signOffs.ts`.
 - Mutations call `requirePipelineSecret`; queries do not.
+- `grep -q "signOffs" convex/_generated/api.d.ts` — codegen regenerated and committed.
 </verification>
 
 <success_criteria>
-- The sign_offs table + signOffs.ts exist and match §34.1/§34.2; the pipeline plans can call these paths by name.
+- The sign_offs table + signOffs.ts exist and match §34.1/§34.2; the pipeline plans can call these paths by name and the dashboard's typed `api.signOffs.*` exists via committed codegen.
 </success_criteria>
 
 <output>
