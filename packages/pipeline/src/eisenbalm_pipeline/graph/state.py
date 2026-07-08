@@ -88,6 +88,12 @@ class ResearchOutput(TypedDict):
     subjectNameSourceUrl: NotRequired[Optional[str]]   # AGT-09 verification source
     subjectNameVerified: NotRequired[bool]             # AGT-09: set by verify_research node
     subjectRole: NotRequired[str]                      # D-12 fallback role e.g. "a parent", "a program participant"
+    # §35.2 (Phase 35 PRV-01): code-mapped index-bound claims — each dict is
+    # {claimId, text, sourceUrl|None, retrievedAt|None}. TypedDict cannot
+    # express ClaimOutput's shape precisely; the Pydantic model at the
+    # researcher/writer boundary is authoritative (matches the existing
+    # body: list[dict] BodyBlock precedent).
+    claims: NotRequired[list[dict]]
 
 
 class SectionContent(TypedDict):

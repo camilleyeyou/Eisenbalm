@@ -19,6 +19,7 @@ section-draft for purposes of live deliberation visualization).
 """
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -33,6 +34,20 @@ from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 
 MAX_TOOL_CALLS: int = 12  # AGT-18 / D-21
+
+
+class ClaimOutput(BaseModel):
+    """§35.1 (Phase 35 PRV-01) — the LLM emits a source INDEX, never a URL.
+
+    Code numbers each Tavily result (S0, S1, … — 0-based, aligned with the
+    ``tavily_results`` list position) before the parse call; the LLM
+    references those indices only. ``sourceIndex=None`` means the writer
+    asserts no source. A hallucinated URL is structurally impossible because
+    the model has no URL field to fill in.
+    """
+
+    text: str = ""
+    sourceIndex: int | None = None
 
 
 class ResearchOutputModel(BaseModel):
@@ -54,8 +69,8 @@ class ResearchOutputModel(BaseModel):
     subjectNameSourceUrl: str | None = None
     subjectRole: str = "a program participant"
     subjectStory: str = ""
-    keyStatistics: list[str] = Field(default_factory=list)
     fundingSources: list[str] = Field(default_factory=list)
+    claims: list[ClaimOutput] = Field(default_factory=list)  # §35.1 (Phase 35 PRV-01)
 
 
 def _build_queries(charity: dict) -> list[str]:
@@ -120,6 +135,9 @@ async def researcher(state: DispatchState) -> DispatchState:
     # AGT-18: Enforce max_tool_calls=12 across all web_search calls.
     tool_calls = 0
     tavily_results: list[SearchResult] = []
+    # §35.2 (PRV-01): parallel, same-length list — each tavily_results[i] gets
+    # its retrieval timestamp stamped at the moment its batch returned.
+    retrieved_at_by_index: list[int] = []
     for q in queries:
         if tool_calls >= MAX_TOOL_CALLS:
             # Plan 05-03 Task 1 — 3-arg constructor for introspection.
@@ -128,7 +146,9 @@ async def researcher(state: DispatchState) -> DispatchState:
             )
         tool_calls += 1
         batch = await web_search(q, max_results=4)
+        batch_retrieved_at = int(time.time() * 1000)
         tavily_results.extend(batch)
+        retrieved_at_by_index.extend([batch_retrieved_at] * len(batch))
 
     # Defensive guard: if the loop list itself exceeds MAX_TOOL_CALLS (e.g.
     # patched _build_queries in tests), the in-loop pre-check above raises
@@ -155,6 +175,28 @@ async def researcher(state: DispatchState) -> DispatchState:
         research_dict = dict(out_obj)
     else:
         research_dict = {}
+
+    # §35.2 (PRV-01): map each LLM-emitted sourceIndex to the real Tavily URL
+    # at that position + the code-stamped retrievedAt. Out-of-range/absent
+    # sourceIndex -> sourceUrl=None, retrievedAt=None (honestly unsourced —
+    # never a fabricated or best-guess URL). Pure, synchronous, no new node.
+    raw_claims = research_dict.get("claims") or []
+    mapped_claims: list[dict[str, Any]] = []
+    for i, claim in enumerate(raw_claims):
+        claim_dict = claim if isinstance(claim, dict) else dict(claim)
+        source_index = claim_dict.get("sourceIndex")
+        source_url: str | None = None
+        retrieved_at: int | None = None
+        if isinstance(source_index, int) and 0 <= source_index < len(tavily_results):
+            source_url = tavily_results[source_index].url
+            retrieved_at = retrieved_at_by_index[source_index]
+        mapped_claims.append({
+            "claimId": f"{run_id[:8]}-{i}",
+            "text": claim_dict.get("text", ""),
+            "sourceUrl": source_url,
+            "retrievedAt": retrieved_at,
+        })
+    research_dict["claims"] = mapped_claims
 
     # AGT-17: record resolved model.
     model_versions = dict(state.get("model_versions") or {})
