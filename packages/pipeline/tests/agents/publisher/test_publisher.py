@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 
-from eisenbalm_pipeline.agents.publisher import _run_publisher
+from eisenbalm_pipeline.agents.publisher import _run_publisher, publisher
 
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -467,3 +467,150 @@ async def test_publisher_upsert_skipped_when_no_charity_name(
     assert "charities:upsertFeatured" not in mutation_names, (
         "charities:upsertFeatured should not be called when charityName is absent"
     )
+
+
+# ── Phase 35 (PRV-02/PRV-04): the @agent_node `publisher` claims seeding ─────
+#
+# Distinct from `_run_publisher` above: `publisher` is the pipeline-end
+# @agent_node (LangGraph node) that writes the Sanity draft AND seeds
+# claim_checks via claimChecks:insertBatch (see module docstring at the top
+# of agents/publisher/__init__.py for the two-coroutine distinction).
+
+
+async def test_publisher_seeds_sourced_and_unsourced_claim_checks_rows(monkeypatch):
+    """Publisher resolves writer claimSpans into sourced claim_checks rows
+    (claimId + sourceUrl + retrievedAt + sectionName + blockIndexHint) and
+    runs the per-block regex catch-all for everything else as unsourced rows
+    (no claimId) — excluding any regex span whose normalized text matches an
+    already-sourced span in the SAME (section, block).
+    """
+    captured_calls: list[tuple[str, dict]] = []
+
+    async def capturing_convex(path: str, args: dict) -> None:
+        captured_calls.append((path, args))
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.get_sanity_http", lambda: MagicMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.write_issue_draft",
+        AsyncMock(return_value="issue-42"),
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.convex_mutation_safe",
+        capturing_convex,
+    )
+
+    state = {
+        "run_id": "run-abc123",
+        "issue_number": 42,
+        "origin_story": {
+            "headline": "H",
+            "body": [
+                {
+                    "type": "paragraph",
+                    "text": "The charity had a $2.3M budget, founded in 1998.",
+                },
+            ],
+            "claimSpans": [{"claimId": "a-0", "asWritten": "$2.3M"}],
+        },
+        "problem_statement": None,
+        "founder_bio": None,
+        "case_study": None,
+        "bonus": None,
+        "research": {
+            "claims": [
+                {
+                    "claimId": "a-0",
+                    "text": "$2.3M",
+                    "sourceUrl": "https://x",
+                    "retrievedAt": 123,
+                },
+            ],
+        },
+    }
+
+    await publisher(state)
+
+    insert_calls = [
+        args for path, args in captured_calls if path == "claimChecks:insertBatch"
+    ]
+    assert insert_calls, "expected claimChecks:insertBatch to be called"
+    payload = insert_calls[0]
+    # Regression-safe shape: workspace_id + runId + claims still present.
+    assert payload["workspace_id"] == "eisenbalm"
+    assert payload["runId"] == "run-abc123"
+    rows = payload["claims"]
+
+    sourced = [r for r in rows if r.get("claimId")]
+    unsourced = [r for r in rows if not r.get("claimId")]
+
+    assert len(sourced) == 1
+    sourced_row = sourced[0]
+    assert sourced_row["claimId"] == "a-0"
+    assert sourced_row["sourceUrl"] == "https://x"
+    assert sourced_row["retrievedAt"] == 123
+    assert sourced_row["sectionName"] == "originStory"
+    assert sourced_row["blockIndexHint"] == 0
+
+    # The bound "$2.3M" span must NOT also appear as an unsourced row.
+    assert not any(r["text"] == "$2.3M" for r in unsourced), (
+        f"bound span leaked into unsourced rows: {unsourced}"
+    )
+
+    # The unbound "1998" date claim IS present, unsourced.
+    assert any(
+        r["text"] == "1998" and r["sectionName"] == "originStory"
+        for r in unsourced
+    ), f"expected unbound '1998' date claim in unsourced rows: {unsourced}"
+
+    # Every row (sourced + unsourced) carries a unique claimIndex ordinal.
+    indices = [r["claimIndex"] for r in rows]
+    assert len(indices) == len(set(indices)), "claimIndex values must be unique"
+
+
+async def test_publisher_claims_seeding_defensive_when_no_claimspans_or_research(
+    monkeypatch,
+):
+    """No claimSpans / no research claims → all extracted spans land as
+    unsourced rows (honest degrade, no crash)."""
+    captured_calls: list[tuple[str, dict]] = []
+
+    async def capturing_convex(path: str, args: dict) -> None:
+        captured_calls.append((path, args))
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.get_sanity_http", lambda: MagicMock()
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.write_issue_draft",
+        AsyncMock(return_value="issue-42"),
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.publisher.convex_mutation_safe",
+        capturing_convex,
+    )
+
+    state = {
+        "run_id": "run-abc456",
+        "issue_number": 43,
+        "origin_story": {
+            "headline": "H",
+            "body": [{"type": "paragraph", "text": "Founded in 1998."}],
+        },
+        "problem_statement": None,
+        "founder_bio": None,
+        "case_study": None,
+        "bonus": None,
+    }
+
+    await publisher(state)
+
+    insert_calls = [
+        args for path, args in captured_calls if path == "claimChecks:insertBatch"
+    ]
+    assert insert_calls
+    rows = insert_calls[0]["claims"]
+    assert rows
+    assert all(not r.get("claimId") for r in rows)
+    assert all(r["sectionName"] == "originStory" for r in rows)

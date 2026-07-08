@@ -250,3 +250,122 @@ def test_extract_empty_blocks_returns_empty_list():
     """Empty portable text → empty claims list (no crash)."""
     claims = extract_all_claim_types([])
     assert claims == []
+
+
+# ── extract_claims_by_block (Phase 35 PRV-02/PRV-04) ──────────────────────
+#
+# Per-section/per-block extraction restructure (D-13, one-row-per-occurrence):
+# every row carries a sectionName (galley id vocabulary) + blockIndexHint (the
+# block's own 0-based loop index) anchor. This is a NEW function alongside the
+# legacy extract_claims (global-join, Phase 26/33) — legacy exports stay
+# unchanged. Imported locally inside each test (not at module import time) so
+# a not-yet-implemented function only fails these new tests, not every test
+# already passing in this file.
+
+
+def test_extract_claims_by_block_emits_sectionname_and_blockindexhint():
+    """Per-section/per-block extraction: every row carries sectionName (galley
+    vocabulary) + blockIndexHint (the block's own loop index)."""
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    sections = {
+        "origin_story": {
+            "body": [
+                {"type": "paragraph", "text": "Founded in 1998 by Jane Doe."},
+                {"type": "paragraph", "text": "The Riverside Trust grew slowly."},
+            ]
+        },
+    }
+    rows = extract_claims_by_block(sections)
+    assert rows, "expected at least one extracted claim row"
+    for row in rows:
+        assert row["sectionName"] == "originStory"
+        assert isinstance(row["blockIndexHint"], int)
+
+    date_rows = [r for r in rows if r["claimType"] == "date"]
+    assert any(r["blockIndexHint"] == 0 for r in date_rows)
+
+
+def test_extract_claims_by_block_same_fact_two_sections_yields_two_rows():
+    """The same fact stated in two sections yields TWO independent rows with
+    distinct (sectionName, blockIndexHint) anchors — D-13 one-row-per-
+    occurrence (not the legacy global-dedup behavior)."""
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    sections = {
+        "origin_story": {
+            "body": [{"type": "paragraph", "text": "Founded in 1998."}],
+        },
+        "founder_bio": {
+            "body": [{"type": "paragraph", "text": "The org was founded in 1998."}],
+        },
+    }
+    rows = extract_claims_by_block(sections)
+    date_rows = [r for r in rows if r["text"] == "1998"]
+    assert len(date_rows) == 2
+    section_names = {r["sectionName"] for r in date_rows}
+    assert section_names == {"originStory", "founderBio"}
+
+
+def test_extract_claims_by_block_dedups_within_block_only():
+    """Two occurrences of the same claim text WITHIN one block dedup to one
+    row (dedup is per-block, not per-section or global)."""
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    sections = {
+        "origin_story": {
+            "body": [
+                {
+                    "type": "paragraph",
+                    "text": (
+                        "Founded in 1998. Also founded in 1998 by a second "
+                        "account."
+                    ),
+                },
+            ],
+        },
+    }
+    rows = extract_claims_by_block(sections)
+    date_rows = [r for r in rows if r["text"] == "1998"]
+    assert len(date_rows) == 1
+
+
+def test_extract_claims_by_block_ignores_unknown_section_keys():
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    rows = extract_claims_by_block({"not_a_real_section": {"body": []}})
+    assert rows == []
+
+
+def test_extract_claims_by_block_rows_have_no_claimindex():
+    """claimIndex ordinals are assigned by the publisher (global merge of
+    sourced + unsourced rows), never by this per-block extractor."""
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    sections = {
+        "origin_story": {"body": [{"type": "paragraph", "text": "Founded in 1998."}]},
+    }
+    rows = extract_claims_by_block(sections)
+    assert rows
+    for row in rows:
+        assert "claimIndex" not in row
+
+
+def test_extract_claims_by_block_maps_all_five_galley_section_ids():
+    """Internal section keys map to the galley sectionName vocabulary the
+    frontend uses: originStory | problemStatement | founderBio | caseStudy |
+    bonus."""
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    sections = {
+        "origin_story": {"body": [{"type": "paragraph", "text": "Founded 1998."}]},
+        "problem_statement": {"body": [{"type": "paragraph", "text": "Founded 1998."}]},
+        "founder_bio": {"body": [{"type": "paragraph", "text": "Founded 1998."}]},
+        "case_study": {"body": [{"type": "paragraph", "text": "Founded 1998."}]},
+        "bonus": {"body": [{"type": "paragraph", "text": "Founded 1998."}]},
+    }
+    rows = extract_claims_by_block(sections)
+    section_names = {r["sectionName"] for r in rows}
+    assert section_names == {
+        "originStory", "problemStatement", "founderBio", "caseStudy", "bonus",
+    }
