@@ -60,7 +60,7 @@ Insert a new `## Phase 33 — Accept-Fix Wiring + Decision Rail` section into do
 - `resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed')))` — absent = open.
 - `resolutionReason: v.optional(v.string())` — required-for-dismiss enforced at the ENDPOINT, not the schema.
 - `resolvedBy: v.optional(v.string())`, `resolvedAt: v.optional(v.number())`.
-- Legacy `accepted: boolean` STAYS and is kept in sync (accept → `accepted: true`; dismiss → unchanged; reopen → `accepted: false`) for Phase 26 back-compat.
+- Legacy `accepted: boolean` STAYS and is kept in sync (accept → `accepted: true`; dismiss → `accepted: false` (no-op in practice); reopen → `accepted: false`) for Phase 26 back-compat.
 - `setResolution` mutation signature (pipeline lane — MUST call `requirePipelineSecret`, MUST be added to `_PIPELINE_SECRET_GUARDED_PATHS`): args `{ id: v.id('qaCorrections'), resolution: v.optional(union('accepted','dismissed')) /* absent = reopen */, resolutionReason: v.optional(v.string()), resolvedBy: v.optional(v.string()), resolvedAt: v.optional(v.number()), pipelineSecret: v.optional(v.string()) }`. Handler patches the row and sets `accepted = (resolution === 'accepted')`. Passing `resolution: undefined` clears the fields (reopen).
 - A tiny public `qaCorrections:byId` query (`args: { id: v.id('qaCorrections') }`) is added so the pipeline can load one finding; reads are public per existing convention.
 

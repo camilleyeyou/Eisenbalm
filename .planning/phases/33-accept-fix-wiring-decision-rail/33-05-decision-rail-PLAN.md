@@ -7,7 +7,9 @@ depends_on: [33-01, 33-02, 33-03, 33-04]
 files_modified:
   - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx
   - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/page.tsx
+  - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx
   - apps/dispatch-control/__tests__/DecisionRail.test.tsx
+  - apps/dispatch-control/__tests__/ResolvedFindingsList.test.tsx
 autonomous: true
 requirements: [GLY-04]
 
@@ -17,10 +19,14 @@ must_haves:
     - "Publish is disabled with a reason when open error findings exist, and the four actions (Publish/Hold/Re-run section/Transcript) wire to existing backends"
     - "The rail shows the editor memo (from editor-final notes), a hook card (selected pitch), and a verification block with an affirmative timestamp state — never blank"
     - "The rail mounts as the design's 336px right column beside the galley"
+    - "Resolved (accepted/dismissed) findings are reachable via a collapsed list with a Reopen button that returns them to the galley (D-04)"
   artifacts:
     - path: "apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx"
       provides: "blockers-first decision rail (336px, #f1f0ea)"
       contains: "DecisionRail"
+    - path: "apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx"
+      provides: "collapsed resolved-findings list with Reopen affordance (D-04)"
+      contains: "reopenFinding"
     - path: "apps/dispatch-control/__tests__/DecisionRail.test.tsx"
       provides: "GLY-04 coverage — ordering, publish gate, never-blank states"
       contains: "DecisionRail"
@@ -33,13 +39,17 @@ must_haves:
       to: "api.deliberationEvents.byRunIdAndType"
       via: "editor memo (eventType editor-final, key notes)"
       pattern: "editor-final"
+    - from: "apps/dispatch-control/.../ResolvedFindingsList.tsx"
+      to: "apps/dispatch-control/lib/findingsClient.ts::reopenFinding"
+      via: "Reopen button"
+      pattern: "reopenFinding"
 ---
 
 <objective>
-Build the blockers-first decision rail (GLY-04, D-10..D-17) and mount it as the design's 336px right column on the Review Desk. It leads with a count summary, lists blocking items first (unresolved error findings with jump links), shows the editor's memo, the hook card (selected pitch — D-12), and a verification block with an affirmative "checked Nm ago" state (D-13, never blank), then the four actions (Publish/Hold/Re-run section/Transcript — D-15) wired to existing backends. Publish is disabled with a reason while blockers remain (D-14 client half; the server half shipped in 33-03).
+Build the blockers-first decision rail (GLY-04, D-10..D-17) and mount it as the design's 336px right column on the Review Desk. It leads with a count summary, lists blocking items first (unresolved error findings with jump links), shows the editor's memo, the hook card (selected pitch — D-12), and a verification block with an affirmative "checked Nm ago" state (D-13, never blank), then the four actions (Publish/Hold/Re-run section/Transcript — D-15) wired to existing backends. Publish is disabled with a reason while blockers remain (D-14 client half; the server half shipped in 33-03). A collapsed Resolved-findings list at the foot of the rail makes accepted/dismissed findings reachable again with a Reopen button (D-04) — the only operator surface where resolved findings are visible, since the galley hides them (D-03).
 
-Purpose: The rail is the operator's "is anything unaccounted for" answer and the single place the publish decision happens.
-Output: A new DecisionRail component + page mount + tests.
+Purpose: The rail is the operator's "is anything unaccounted for" answer and the single place the publish decision happens; it is also the one place a resolved finding can be reopened.
+Output: A new DecisionRail component, a ResolvedFindingsList sub-component (D-04 Reopen), a page mount + tests.
 </objective>
 
 <execution_context>
@@ -65,8 +75,9 @@ Action clients (existing):
   reviewClient.publishIssue(runId, token)     — POST /issues/{runId}/publish  (now 409 open_error_findings — 33-03)
   reviewClient.rejectIssue(runId, note, token) — Hold
   pipelineControlClient.rerollAgent(runId, agentKey, token) — POST /runs/{id}/agents/{key}/rerun; keys: origin_story/problem/founder_bio/case_study/game/bonus/design
+  findingsClient.reopenFinding(runId, findingId, token) — POST /issues/{runId}/findings/{findingId}/reopen (NEW in 33-04; clears resolution, accepted=false)
   Transcript — scroll to the galley element id `galley-deliberation`
-Shared helper: isOpenFinding from @/lib/galley/findingState (33-04)
+Shared helper: isOpenFinding from @/lib/galley/findingState (33-04). Resolved = the complement: `row.accepted === true || row.resolution != null`.
 Design tokens (§Design tokens): rail 336px, bg #f1f0ea, vermilion #e8471d (blocking), marigold text-on-light #9a6f04 (warning), green #148a52 (verified), cobalt #253ad4 (interactive). Use the --color-* token system already in globals (do not hardcode hex where a token exists).
 </interfaces>
 </context>
@@ -94,7 +105,7 @@ Design tokens (§Design tokens): rail 336px, bg #f1f0ea, vermilion #e8471d (bloc
     - Actions row: Publish (gated), Hold (rejectIssue), Re-run section ▾ (rerollAgent — a select of agent keys), Transcript (scroll to #galley-deliberation).
   </behavior>
   <action>
-Create `apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` as a `'use client'` component. Props: `{ runId: string }` (it self-fetches via useQuery + useAuth().getToken(), matching page conventions). Compose the sections IN THIS ORDER per the design (D-17): (1) headline count line; (2) Blocking items checklist; (3) Editor's memo; (4) Hook card; (5) Verification block; (6) Actions row.
+Create `apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` as a `'use client'` component. Props: `{ runId: string }` (it self-fetches via useQuery + useAuth().getToken(), matching page conventions). Compose the sections IN THIS ORDER per the design (D-17): (1) headline count line; (2) Blocking items checklist; (3) Editor's memo; (4) Hook card; (5) Verification block; (6) Actions row; (7) `<ResolvedFindingsList runId={runId} />` collapsed at the foot (D-04 — Task 3).
 
 Data:
 - Open findings: `useQuery(api.qaCorrections.byRunId, { runId })` filtered by `isOpenFinding`. `blockers = open.filter(f => f.severity === 'error')`; `warnings = open.filter(f => f.severity === 'warning').length`. Fold `info` into a muted count or omit (discretion — do not inflate the headline).
@@ -119,13 +130,54 @@ Create `apps/dispatch-control/__tests__/DecisionRail.test.tsx` (jsdom) mocking `
     - `grep -q "checkedAt" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` succeeds (verification timestamp, D-13)
     - `grep -c "publishIssue\|rejectIssue\|rerollAgent" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` returns ≥ 3 (all four actions wired, D-15)
     - `grep -q "disabled" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` succeeds AND the test asserts a visible blocker reason (D-14 client)
+    - `grep -q "ResolvedFindingsList" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx` succeeds (D-04 list mounted at the rail foot)
     - DecisionRail.test.tsx asserts the Blocking-items block renders BEFORE the editor memo in the DOM (blockers-first, D-17)
   </acceptance_criteria>
-  <done>DecisionRail renders blockers-first, gates Publish with a reason, wires all four actions to existing backends, and shows memo/hook/verification with never-blank affirmative states.</done>
+  <done>DecisionRail renders blockers-first, gates Publish with a reason, wires all four actions to existing backends, shows memo/hook/verification with never-blank affirmative states, and mounts the resolved-findings list at its foot.</done>
+</task>
+
+<task type="auto" tdd="true">
+  <name>Task 2: ResolvedFindingsList — collapsed resolved findings + Reopen (D-04)</name>
+  <read_first>
+    - apps/dispatch-control/lib/findingsClient.ts (reopenFinding signature + FindingsError shape — from 33-04)
+    - apps/dispatch-control/lib/galley/findingState.ts (isOpenFinding — Resolved is its complement)
+    - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/page.tsx (QaCorrectionRow shape: findingId, severity, sectionName, reason, resolution, resolutionReason, accepted; useAuth().getToken() pattern)
+    - .planning/phases/33-accept-fix-wiring-decision-rail/33-CONTEXT.md (D-03 galley hides resolved; D-04 reopen returns to open state + galley visibility, no text revert)
+    - docs/design/dispatch-control-v2/README.md §Design tokens (muted/tertiary treatment for a collapsed secondary list)
+  </read_first>
+  <behavior>
+    - Renders a collapsed (default-closed) disclosure labelled e.g. "Resolved ({K})" at the foot of the rail; K = count of findings where NOT isOpenFinding.
+    - Expanded, it lists each resolved finding with its section + reason and a resolution badge ("accepted" vs "dismissed" — from `resolution`, falling back to `accepted===true` ⇒ accepted).
+    - Each row has a Reopen `<button>` that calls `reopenFinding(runId, findingId, await getToken())`; on success the finding returns to open (Convex reactivity re-adds it to the galley + blockers — no manual refetch); on a `not_resolved` 409 (already open) it surfaces a small note and does not crash.
+    - When K === 0, renders an honest "No resolved findings yet" line — never blank (affirmative-state rule).
+    - This is the ONLY operator surface exposing resolved findings, since D-03 hides them from the galley — without it reopenFinding is unreachable (RESEARCH Open Question 2).
+  </behavior>
+  <action>
+Create `apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx` as a `'use client'` component. Props: `{ runId: string }`. Self-fetch `const rows = useQuery(api.qaCorrections.byRunId, { runId })`; `const resolved = (rows ?? []).filter(r => !isOpenFinding(r))` (import `isOpenFinding` from `@/lib/galley/findingState`). Obtain the token via `useAuth().getToken()` (matching sibling client components). Render:
+- A collapsed disclosure (a `useState(false)` open flag + a toggle `<button>` reading "Resolved ({resolved.length})"). This component is NOT inside a `<p>`, so normal block elements (`<div>`, `<ul>`) are fine — the phrasing-content constraint is only inside AnnotationMark.
+- When open, map `resolved` to rows showing `sectionName`, truncated `reason`, a badge computed as `r.resolution ?? (r.accepted ? 'accepted' : 'dismissed')`, and a Reopen `<button>`.
+- Reopen onClick: `try { await reopenFinding(runId, r.findingId, await getToken()) } catch (e) { /* FindingsError: if reason==='not_resolved' show an inline 'already open' note, else the message */ }`. Do NOT attempt any text revert (D-04) and do NOT refetch the draft — reopening only flips finding state; Convex reactivity re-adds it to the open surfaces.
+- `resolved.length === 0` → an honest "No resolved findings yet" line (never blank). `rows === undefined` → "Loading…".
+Style muted/tertiary per the design (this is a secondary, collapsed affordance — do not compete with the blockers checklist). Keep the Reopen target ≥44px.
+
+Create `apps/dispatch-control/__tests__/ResolvedFindingsList.test.tsx` (jsdom) mocking `convex/react` useQuery, `@clerk/nextjs` useAuth, and `@/lib/findingsClient`: assert (a) the disclosure shows the resolved count and expands to list resolved findings, (b) clicking Reopen invokes `reopenFinding` with the runId + findingId, (c) an all-open dataset renders "No resolved findings yet" (never blank), (d) an accepted-vs-dismissed badge is derived correctly (including the legacy `accepted===true`, `resolution` absent case ⇒ "accepted").
+  </action>
+  <verify>
+    <automated>cd /Users/user/Desktop/Eisenbalm && pnpm --filter dispatch-control test:unit __tests__/ResolvedFindingsList.test.tsx -- --run</automated>
+  </verify>
+  <acceptance_criteria>
+    - `pnpm --filter dispatch-control test:unit __tests__/ResolvedFindingsList.test.tsx -- --run` exits 0
+    - `grep -q "reopenFinding" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx` succeeds (D-04 wired to the existing client fn — reopen is now operator-reachable, no dead code)
+    - `grep -q "isOpenFinding" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx` succeeds (Resolved = complement of open — agrees with the galley/rail)
+    - `grep -q "No resolved findings yet" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx` succeeds (never-blank empty state)
+    - ResolvedFindingsList.test.tsx asserts a Reopen click calls `reopenFinding` with `runId` + a `findingId`
+    - `grep -q "revert\|reload\|reloadDraft\|patchSection" apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList.tsx` returns NOTHING (D-04 — reopen never reverts text nor refetches the draft)
+  </acceptance_criteria>
+  <done>Resolved (accepted/dismissed) findings are reachable in a collapsed rail list; Reopen calls the existing reopenFinding client and returns findings to the galley via Convex reactivity, with no text revert and a never-blank empty state.</done>
 </task>
 
 <task type="auto">
-  <name>Task 2: Mount the rail as the 336px right column</name>
+  <name>Task 3: Mount the rail as the 336px right column</name>
   <read_first>
     - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/page.tsx (the galley-mode layout at lines ~286-370: currently `chips (lg:w-64) | main`; the rail becomes a third column visible in galley mode)
     - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx (Task 1)
@@ -144,21 +196,23 @@ In `page.tsx`, mount `<DecisionRail runId={runId} />` as a third column inside t
     - `pnpm --filter dispatch-control typecheck` exits 0 AND `pnpm --filter dispatch-control build` exits 0 (strict — memory rule)
     - Full dashboard unit suite green: `pnpm --filter dispatch-control test:unit -- --run` exits 0 (no regression across Phase 32/31 tripwires)
   </acceptance_criteria>
-  <done>The decision rail renders as the 336px right column beside the galley in galley mode only; the dashboard type-checks, builds, and the full unit suite stays green.</done>
+  <done>The decision rail (with its resolved-findings list) renders as the 336px right column beside the galley in galley mode only; the dashboard type-checks, builds, and the full unit suite stays green.</done>
 </task>
 
 </tasks>
 
 <verification>
-- `pnpm --filter dispatch-control test:unit -- --run` green (incl. DecisionRail.test.tsx + all prior tripwires).
+- `pnpm --filter dispatch-control test:unit -- --run` green (incl. DecisionRail.test.tsx + ResolvedFindingsList.test.tsx + all prior tripwires).
 - `pnpm --filter dispatch-control typecheck && pnpm --filter dispatch-control build` both exit 0.
 - `__tests__/dispatch-control-no-sanity-write.test.ts` still green.
 </verification>
 
 <success_criteria>
-- The Review Desk shows a blockers-first decision rail beside the galley: Publish is gated with a reason, all four actions work, and the memo/hook/verification blocks always render an affirmative state.
+- The Review Desk shows a blockers-first decision rail beside the galley: Publish is gated with a reason, all four actions work, the memo/hook/verification blocks always render an affirmative state, and resolved findings stay reachable with a working Reopen (no dead code).
 </success_criteria>
 
 <output>
 After completion, create `.planning/phases/33-accept-fix-wiring-decision-rail/33-05-SUMMARY.md`
 </output>
+</content>
+</invoke>
