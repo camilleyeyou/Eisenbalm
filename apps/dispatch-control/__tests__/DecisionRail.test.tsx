@@ -323,3 +323,58 @@ describe('DecisionRail hook card (D-12) and rail foot (D-04)', () => {
     expect(screen.getByTestId('resolved-findings-list')).toBeDefined()
   })
 })
+
+// ── Sign-offs (Phase 34, D-01/D-05/D-06) ────────────────────────────────────
+
+describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
+  it('renders both sign-off controls when neither is active', () => {
+    mockQueries({ signoffs: {} })
+    render(<DecisionRail runId="run-1" />)
+    expect(screen.getByRole('button', { name: /sign: facts cleared/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /sign: sounds human/i })).toBeDefined()
+  })
+
+  it('records a facts-cleared sign-off via recordSignOff(token, runId, kind) on click', async () => {
+    mockQueries({ signoffs: {}, findings: [] })
+    render(<DecisionRail runId="run-1" />)
+    fireEvent.click(screen.getByRole('button', { name: /sign: facts cleared/i }))
+    await waitFor(() => {
+      expect(recordSignOff).toHaveBeenCalledWith('tok-clerk', 'run-1', 'facts-cleared')
+    })
+  })
+
+  it('shows the affirmative "signed Nm ago" state for an active sign-off — never blank', () => {
+    mockQueries({
+      signoffs: {
+        'facts-cleared': { actorId: 'andrew', signedAt: Date.now() - 2 * 60_000 },
+      },
+    })
+    render(<DecisionRail runId="run-1" />)
+    expect(screen.getByText(/facts cleared — signed \d+m ago/i)).toBeDefined()
+    expect(screen.getByRole('button', { name: /sign: sounds human/i })).toBeDefined()
+  })
+
+  it('gates Publish until BOTH sign-offs are green even with zero blockers', () => {
+    mockQueries({
+      findings: [],
+      signoffs: { 'facts-cleared': { actorId: 'andrew', signedAt: Date.now() } },
+    })
+    render(<DecisionRail runId="run-1" />)
+    const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
+    expect(publish.disabled).toBe(true)
+    expect(screen.getByText(/both sign-offs required to publish/i)).toBeDefined()
+  })
+
+  it('disables the Facts-cleared control while an open error blocker exists (D-01)', () => {
+    mockQueries({ findings: [errorFinding], signoffs: {} })
+    render(<DecisionRail runId="run-1" />)
+    const facts = screen.getByRole('button', {
+      name: /sign: facts cleared/i,
+    }) as HTMLButtonElement
+    expect(facts.disabled).toBe(true)
+    expect(
+      (screen.getByRole('button', { name: /sign: sounds human/i }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false)
+  })
+})
