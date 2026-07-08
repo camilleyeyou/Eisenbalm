@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase complete — ready for verification
-stopped_at: Completed 34-04-webhook-revalidation-revert-PLAN.md
-last_updated: "2026-07-08T15:18:20.001Z"
+status: Phase complete — gap closure done, ready for re-verification
+stopped_at: Completed 34-07-decisionrail-signoff-test-coverage-PLAN.md
+last_updated: "2026-07-08T15:52:31.188Z"
 progress:
   total_phases: 39
   completed_phases: 33
-  total_plans: 215
-  completed_plans: 213
+  total_plans: 216
+  completed_plans: 214
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 34 (two-sign-off-publish-gate-studio-bypass-retirement) — EXECUTING
-Plan: 6 of 6
+Plan: 7 of 7 (gap-closure)
 
 ## Performance Metrics
 
@@ -239,6 +239,7 @@ Plan: 6 of 6
 | Phase 34 P06 | 12min | 2 tasks | 5 files |
 | Phase 34 P05 | 12min | 2 tasks | 5 files |
 | Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P04 | 20min | 2 tasks | 3 files |
+| Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P07 | 8min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -611,6 +612,7 @@ Recent decisions affecting current work:
 - [Phase 34]: Facts-cleared sign button is client-disabled while any error-severity blocker is open (courtesy only — server 409s authoritatively)
 - [Phase 34]: Auto-revoke sign-offs on reopen/dismiss (not just accept) — closes the gate-integrity hole from relocating facts-cleared check to sign-off time
 - [Phase 34-two-sign-off-publish-gate-studio-bypass-retirement]: 34-04: webhook D-07 guard re-checks signOffs:activeByRunId before launching the publisher; a run with no runId is treated as unconditionally missing sign-offs (Research Open Q#2), and blocked bypasses revert Sanity status to in-review + audit + alert via the frozen cost-warning literal
+- [Phase 34-two-sign-off-publish-gate-studio-bypass-retirement]: Repaired DecisionRail.test.tsx Convex API mock (signOffs entry) + signOffClient mock, defaulted mockQueries signOffs to both-active to preserve pre-34-06 blocker-free Publish assertions, and added 5 regression tests for the two-sign-off publish gate UI (PUB-01) — test-only fix, zero production files touched
 
 ### Pending Todos
 
@@ -695,6 +697,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T15:18:19.988Z
-Stopped at: Completed 34-04-webhook-revalidation-revert-PLAN.md
+Last session: 2026-07-08T15:52:31.175Z
+Stopped at: Completed 34-07-decisionrail-signoff-test-coverage-PLAN.md
 Resume file: None

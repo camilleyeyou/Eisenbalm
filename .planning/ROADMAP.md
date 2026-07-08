@@ -433,7 +433,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
-| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 6/6 | Complete   | 2026-07-08 |
+| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 7/7 | Complete   | 2026-07-08 |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
 | 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
@@ -750,7 +750,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 34-04-webhook-revalidation-revert-PLAN.md — webhook D-07 re-check + _revert_sanity_status + bypass audit/alert (PUB-02)
 - [x] 34-05-auto-revoke-on-mutation-PLAN.md — D-08 auto-revoke both sign-offs across 9 content patches + 3 findings routes + rerun_agent
 - [x] 34-06-rail-signoffs-studio-retirement-PLAN.md — DecisionRail sign-off controls + signOffClient + flag-gated Studio publish-action removal + read-only-fallback docs
-- [ ] 34-07-decisionrail-signoff-test-coverage-PLAN.md — gap closure: repair DecisionRail.test.tsx signOffs mock (restores 16 tests) + add sign-off UI coverage (VERIFICATION.md)
+- [x] 34-07-decisionrail-signoff-test-coverage-PLAN.md — gap closure: repair DecisionRail.test.tsx signOffs mock (restores 16 tests) + add sign-off UI coverage (VERIFICATION.md)
 **UI hint**: yes
 
 ### Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering
