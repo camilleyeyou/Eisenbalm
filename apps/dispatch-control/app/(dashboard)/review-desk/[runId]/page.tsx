@@ -28,7 +28,7 @@
  * change (rerun rebuilds from the LangGraph checkpoint and calls the full
  * write_issue_draft). v1 position: documented ordering rule, not a code guard.
  */
-import { use, useEffect, useMemo, useState } from 'react'
+import { use, useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
@@ -41,6 +41,7 @@ import Galley from './_components/Galley'
 import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
+import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 
 interface ReviewDeskRunPageProps {
@@ -60,6 +61,8 @@ interface QaCorrectionRow {
   quotedSpan?: string
   blockIndexHint?: number
   accepted?: boolean
+  /** §33.1 resolution state — filtered via the shared isOpenFinding (Pitfall 9). */
+  resolution?: 'accepted' | 'dismissed'
 }
 
 /**
@@ -134,6 +137,13 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
   // against silently discarding unsaved edits when switching sections.
   const [dirty, setDirty] = useState<Record<string, boolean>>({})
 
+  // D-08 edit-inline deep-link context: which finding sent the operator into
+  // the editor, so SectionEditorPanel can keep its reason visible.
+  const [editFinding, setEditFinding] = useState<{
+    sectionId: string
+    findingId?: string
+  } | null>(null)
+
   /** Switches view mode, guarding an unsaved edit-mode section (D-07). */
   function switchViewMode(next: ViewMode) {
     if (
@@ -146,6 +156,7 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
     ) {
       return
     }
+    if (next !== 'edit') setEditFinding(null)
     setViewMode(next)
   }
 
@@ -159,6 +170,7 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
     ) {
       return
     }
+    setEditFinding(null)
     setSelectedSection(id)
     if (viewMode === 'galley') {
       const anchor = galleyAnchorFor(id)
@@ -168,36 +180,63 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
     }
   }
 
+  /**
+   * D-08 Edit-inline deep-link: flips the page into the section editor for
+   * the finding's section (galley section ids ARE editable section ids) with
+   * the finding stored so its reason stays visible. Guards unsaved edits the
+   * same way handleChipSelect does.
+   */
+  function handleEditSection(sectionId: string, findingId?: string) {
+    if (
+      viewMode === 'edit' &&
+      dirty[selectedSection] &&
+      !window.confirm(
+        'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
+      )
+    ) {
+      return
+    }
+    setSelectedSection(sectionId)
+    setEditFinding({ sectionId, findingId })
+    setViewMode('edit')
+  }
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  /**
+   * Loads (or re-loads) the draft. Extracted from the mount effect so the
+   * galley can refetch after a successful accept — or on a revision_mismatch
+   * 409 — so span re-resolution runs against fresh text (EDT-06, Pitfall 1).
+   */
+  const reloadDraft = useCallback(async () => {
+    setError(null)
+    try {
+      const token = await getToken()
+      const result = await getDraft(runId, token)
+      setDraft(result)
+    } catch (e) {
+      setError(
+        e instanceof ContentPatchError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : 'Failed to load draft.',
+      )
+    }
+  }, [runId, getToken])
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       setLoading(true)
-      setError(null)
-      try {
-        const token = await getToken()
-        const result = await getDraft(runId, token)
-        if (!cancelled) setDraft(result)
-      } catch (e) {
-        if (!cancelled) {
-          setError(
-            e instanceof ContentPatchError
-              ? e.message
-              : e instanceof Error
-                ? e.message
-                : 'Failed to load draft.',
-          )
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+      await reloadDraft()
+      if (!cancelled) setLoading(false)
     }
     void load()
     return () => {
       cancelled = true
     }
-  }, [runId, getToken])
+  }, [reloadDraft])
 
   useEffect(() => {
     if (viewMode !== 'iframe' || previewUrl) return
@@ -221,7 +260,9 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
   // feed -- open findings only (D-08), grouped via `qaSectionToGalleyId`.
   const rawFindings =
     (useQuery(api.qaCorrections.byRunId, { runId }) as QaCorrectionRow[] | undefined) ?? []
-  const openFindings = rawFindings.filter(row => row.accepted !== true)
+  // Pitfall 9: the ONE shared open-finding predicate — dismissed/accepted
+  // findings drop from chip counts the moment their resolution lands.
+  const openFindings = rawFindings.filter(isOpenFinding)
 
   const chipCounts = useMemo<Record<string, SectionChipCounts>>(() => {
     const findingsByGalleyId = new Map<string, QaFinding[]>()
@@ -238,6 +279,7 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
         quotedSpan: row.quotedSpan,
         blockIndexHint: row.blockIndexHint,
         accepted: row.accepted,
+        resolution: row.resolution,
       })
       findingsByGalleyId.set(galleyId, list)
     }
@@ -260,6 +302,12 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
 
   const selectedLabel =
     EDITABLE_SECTIONS.find(s => s.id === selectedSection)?.label ?? selectedSection
+
+  // D-08: the reason text for the finding that deep-linked into the editor,
+  // kept visible above the editing surface for reference.
+  const editFindingReason = editFinding?.findingId
+    ? rawFindings.find(row => row._id === editFinding.findingId)?.reason
+    : undefined
 
   return (
     <div className="flex min-h-[70vh] flex-col gap-4">
@@ -332,7 +380,13 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
 
             {viewMode === 'galley' &&
               (draft ? (
-                <Galley runId={runId} draft={draft} />
+                <Galley
+                  runId={runId}
+                  draft={draft}
+                  revisionId={draft.revisionId}
+                  reloadDraft={reloadDraft}
+                  onEditSection={handleEditSection}
+                />
               ) : (
                 <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
                   <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
@@ -346,6 +400,8 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
                   selectedSection={selectedSection}
                   draft={draft}
                   onDirtyChange={setDirty}
+                  focusFindingId={editFinding?.findingId}
+                  findingReason={editFindingReason}
                 />
               ) : (
                 <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">

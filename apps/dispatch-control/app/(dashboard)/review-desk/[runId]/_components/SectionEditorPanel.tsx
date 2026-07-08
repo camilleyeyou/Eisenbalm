@@ -208,6 +208,10 @@ interface SectionEditorPanelProps {
   selectedSection: string
   draft: DraftResponse
   onDirtyChange?: (dirty: Record<string, boolean>) => void
+  /** D-08 edit-inline deep-link: the finding that sent the operator here. */
+  focusFindingId?: string
+  /** D-08: the finding's reason, kept visible above the editor for reference. */
+  findingReason?: string
 }
 
 export default function SectionEditorPanel({
@@ -215,6 +219,8 @@ export default function SectionEditorPanel({
   selectedSection,
   draft,
   onDirtyChange,
+  focusFindingId,
+  findingReason,
 }: SectionEditorPanelProps) {
   const { getToken } = useAuth()
 
@@ -460,6 +466,20 @@ export default function SectionEditorPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* D-08: non-intrusive finding-context banner — the operator edits with
+          the QA finding's reason in view (edit-inline deep-link). */}
+      {findingReason && (
+        <div
+          data-finding-id={focusFindingId}
+          className="flex flex-col gap-1 border-l-2 border-[color:var(--color-marigold)] bg-[color:var(--color-card-alt)] p-3"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-[.08em] text-[color:var(--color-marigold-text,var(--color-ink-soft))]">
+            QA finding
+          </span>
+          <p className="text-xs text-[color:var(--color-ink)]">{findingReason}</p>
+        </div>
+      )}
+
       {LONG_READ_SECTIONS.includes(selectedSection) && working.longReads[selectedSection] && (
         <div className="flex flex-col gap-4">
           <HeadlineEditor

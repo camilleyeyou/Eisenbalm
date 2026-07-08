@@ -24,6 +24,7 @@ import {
   type ResolvedAnnotation,
   type UnresolvedFinding,
 } from '@/lib/galley/spanResolver'
+import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { ensureThemeFont, applyThemeAccent } from '@/lib/galley/googleFontLoader'
 import GallerySection from './GallerySection'
@@ -40,11 +41,19 @@ interface QaCorrectionRow {
   quotedSpan?: string
   blockIndexHint?: number
   accepted?: boolean
+  /** §33.1 resolution state — filtered via the shared isOpenFinding (Pitfall 9). */
+  resolution?: 'accepted' | 'dismissed'
 }
 
 interface GalleyProps {
   runId: string
   draft: DraftResponse
+  /** Current draft revision — the popover's Accept needs it as ifRevisionID. */
+  revisionId: string
+  /** Refetches the draft so re-resolution runs against fresh text (EDT-06). */
+  reloadDraft: () => Promise<void> | void
+  /** D-08 edit-inline deep-link into the section editor. */
+  onEditSection: (sectionId: string, findingId?: string) => void
 }
 
 // D-05 reader order for the four long-read sections.
@@ -55,14 +64,21 @@ const LONG_READ_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'caseStudy', label: 'Case Study' },
 ]
 
-export default function Galley({ runId, draft }: GalleyProps) {
+export default function Galley({
+  runId,
+  draft,
+  revisionId,
+  reloadDraft,
+  onEditSection,
+}: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Live findings — undefined while loading (default to []); accepted
-  // findings are excluded (D-08 — open findings only).
+  // Live findings — undefined while loading (default to []); resolved
+  // (accepted/dismissed) findings are excluded via the ONE shared
+  // isOpenFinding predicate (D-08 open findings only, Pitfall 9).
   const rawFindings =
     (useQuery(api.qaCorrections.byRunId, { runId }) as QaCorrectionRow[] | undefined) ?? []
-  const openFindings = rawFindings.filter((row) => row.accepted !== true)
+  const openFindings = rawFindings.filter(isOpenFinding)
 
   // Group open findings by galley section id (QA's sectionName vocabulary
   // differs from the galley's — qaSectionToGalleyId is the only bridge).
@@ -80,6 +96,7 @@ export default function Galley({ runId, draft }: GalleyProps) {
       quotedSpan: row.quotedSpan,
       blockIndexHint: row.blockIndexHint,
       accepted: row.accepted,
+      resolution: row.resolution,
     })
     findingsByGalleyId.set(galleyId, list)
   }
@@ -120,6 +137,10 @@ export default function Galley({ runId, draft }: GalleyProps) {
             rows={rows}
             resolved={resolved}
             unresolved={unresolved}
+            runId={runId}
+            revisionId={revisionId}
+            reloadDraft={reloadDraft}
+            onEditSection={onEditSection}
           />
         )
       })}
@@ -133,6 +154,10 @@ export default function Galley({ runId, draft }: GalleyProps) {
           rows={bonusRows}
           resolved={bonusResolution.resolved}
           unresolved={bonusResolution.unresolved}
+          runId={runId}
+          revisionId={revisionId}
+          reloadDraft={reloadDraft}
+          onEditSection={onEditSection}
         />
       )}
 

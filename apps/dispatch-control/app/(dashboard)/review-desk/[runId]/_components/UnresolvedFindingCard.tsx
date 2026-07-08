@@ -13,6 +13,10 @@ import type { UnresolvedFinding } from '@/lib/galley/spanResolver'
 
 interface UnresolvedFindingCardProps {
   finding: UnresolvedFinding
+  /** Phase 33 (D-11) action context, threaded from GallerySection. */
+  runId?: string
+  sectionId?: string
+  onEditSection?: (sectionId: string, findingId?: string) => void
 }
 
 export default function UnresolvedFindingCard({ finding }: UnresolvedFindingCardProps) {

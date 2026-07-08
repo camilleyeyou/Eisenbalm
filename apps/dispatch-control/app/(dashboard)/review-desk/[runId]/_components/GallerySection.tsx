@@ -9,9 +9,17 @@
  * failed to anchor onto the draft's blocks render as section-end
  * `UnresolvedFindingCard`s (D-09) so nothing is ever silently dropped.
  *
+ * Phase 33 (EDT-04, Plan 33-04): threads the action context — `runId`,
+ * `revisionId`, `reloadDraft`, `onEditSection` — down into each
+ * `AnnotationMark` (via a per-render `components` object that closes over
+ * the props) and each `UnresolvedFindingCard`, so the popover's
+ * Accept/Edit/Dismiss row and the card's Dismiss/Edit-inline actions can
+ * call the pipeline findings endpoints.
+ *
  * Wrapped in `<section id="galley-{sectionId}">` so the chip jump-nav
  * (Plan 32-07) can `scrollIntoView` directly.
  */
+import { useMemo } from 'react'
 import { PortableText, type PortableTextReactComponents } from '@portabletext/react'
 import { toSyntheticBlocks } from '@/lib/galley/syntheticPortableText'
 import type { ResolvedAnnotation, UnresolvedFinding } from '@/lib/galley/spanResolver'
@@ -30,18 +38,11 @@ interface GallerySectionProps {
   rows: GallerySectionContentBlock[]
   resolved: ResolvedAnnotation[]
   unresolved: UnresolvedFinding[]
-}
-
-const components: Partial<PortableTextReactComponents> = {
-  block: {
-    normal: ({ children }) => <p className="galley-body">{children}</p>,
-    h2: ({ children }) => <h2 className="galley-h2">{children}</h2>,
-    h3: ({ children }) => <h3 className="galley-h2">{children}</h3>,
-    blockquote: ({ children }) => <blockquote className="galley-pullquote">{children}</blockquote>,
-  },
-  marks: {
-    annotation: ({ value, children }) => <AnnotationMark value={value}>{children}</AnnotationMark>,
-  },
+  // Phase 33 action context — threaded into AnnotationMark + UnresolvedFindingCard.
+  runId: string
+  revisionId: string
+  reloadDraft: () => Promise<void> | void
+  onEditSection: (sectionId: string, findingId?: string) => void
 }
 
 export default function GallerySection({
@@ -51,10 +52,45 @@ export default function GallerySection({
   rows,
   resolved,
   unresolved,
+  runId,
+  revisionId,
+  reloadDraft,
+  onEditSection,
 }: GallerySectionProps) {
   // toSyntheticBlocks groups `resolved` by blockIndex internally (it filters
   // the flat annotation list per-row), so the flat array is passed directly.
   const syntheticBlocks = toSyntheticBlocks(rows, resolved, sectionId)
+
+  // Built per-render (memoized on the action context) because
+  // marks.annotation must close over runId/revisionId/reloadDraft/
+  // onEditSection to hand them to each AnnotationMark.
+  const components = useMemo<Partial<PortableTextReactComponents>>(
+    () => ({
+      block: {
+        normal: ({ children }) => <p className="galley-body">{children}</p>,
+        h2: ({ children }) => <h2 className="galley-h2">{children}</h2>,
+        h3: ({ children }) => <h3 className="galley-h2">{children}</h3>,
+        blockquote: ({ children }) => (
+          <blockquote className="galley-pullquote">{children}</blockquote>
+        ),
+      },
+      marks: {
+        annotation: ({ value, children }) => (
+          <AnnotationMark
+            value={value}
+            runId={runId}
+            sectionId={sectionId}
+            revisionId={revisionId}
+            reloadDraft={reloadDraft}
+            onEditSection={onEditSection}
+          >
+            {children}
+          </AnnotationMark>
+        ),
+      },
+    }),
+    [runId, sectionId, revisionId, reloadDraft, onEditSection],
+  )
 
   return (
     <section id={`galley-${sectionId}`} className="galley-section">
@@ -65,7 +101,13 @@ export default function GallerySection({
       <PortableText value={syntheticBlocks as any} components={components} />
 
       {unresolved.map((finding) => (
-        <UnresolvedFindingCard key={finding.findingId} finding={finding} />
+        <UnresolvedFindingCard
+          key={finding.findingId}
+          finding={finding}
+          runId={runId}
+          sectionId={sectionId}
+          onEditSection={onEditSection}
+        />
       ))}
     </section>
   )

@@ -26,6 +26,12 @@ export interface AnnotationMarkDef {
 interface AnnotationMarkProps {
   value: AnnotationMarkDef
   children: React.ReactNode
+  /** Phase 33 (EDT-04) action context, threaded from GallerySection. */
+  runId?: string
+  sectionId?: string
+  revisionId?: string
+  reloadDraft?: () => Promise<void> | void
+  onEditSection?: (sectionId: string, findingId?: string) => void
 }
 
 export default function AnnotationMark({ value, children }: AnnotationMarkProps) {

@@ -130,6 +130,9 @@ const qaFindings = [
   },
 ]
 
+// Phase 33 (Plan 33-04): Galley now requires the action-context props.
+const noop = () => {}
+
 function mockFindings() {
   ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
     if (queryRef === 'qaCorrections:byRunId') return qaFindings
@@ -140,7 +143,7 @@ function mockFindings() {
 describe('Galley', () => {
   it('renders all four long-read section headlines', () => {
     mockFindings()
-    render(<Galley runId="r1" draft={draft} />)
+    render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />)
 
     expect(screen.getByText('A Quiet Beginning')).toBeDefined()
     expect(screen.getByText('The Problem')).toBeDefined()
@@ -150,7 +153,7 @@ describe('Galley', () => {
 
   it('renders a <blockquote> for a blockquote row', () => {
     mockFindings()
-    const { container } = render(<Galley runId="r1" draft={draft} />)
+    const { container } = render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />)
 
     const blockquote = container.querySelector('blockquote')
     expect(blockquote).not.toBeNull()
@@ -159,7 +162,7 @@ describe('Galley', () => {
 
   it('renders the game inside a sandboxed iframe (srcdoc + sandbox="allow-scripts")', () => {
     mockFindings()
-    const { container } = render(<Galley runId="r1" draft={draft} />)
+    const { container } = render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />)
 
     const iframe = container.querySelector('iframe')
     expect(iframe).not.toBeNull()
@@ -168,7 +171,7 @@ describe('Galley', () => {
 
   it('renders at least one element with a data-severity attribute reflecting a resolved finding', () => {
     mockFindings()
-    const { container } = render(<Galley runId="r1" draft={draft} />)
+    const { container } = render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />)
 
     const severityEls = container.querySelectorAll('[data-severity]')
     expect(severityEls.length).toBeGreaterThan(0)
@@ -178,7 +181,7 @@ describe('Galley', () => {
 
   it('renders the bonus, podcast transcript, and deliberation conversation content', () => {
     mockFindings()
-    render(<Galley runId="r1" draft={draft} />)
+    render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />)
 
     expect(screen.getByText(/imagine a world where lip balm funds shelters/i)).toBeDefined()
     expect(screen.getByText(/today we cover an obscure charity/i)).toBeDefined()
