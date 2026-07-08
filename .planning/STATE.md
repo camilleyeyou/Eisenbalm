@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 35-03-writer-claimspans-PLAN.md
-last_updated: "2026-07-08T20:45:09.586Z"
+stopped_at: Completed 35-06-decision-rail-source-index-PLAN.md
+last_updated: "2026-07-08T20:45:40.788Z"
 progress:
   total_phases: 39
   completed_phases: 33
@@ -243,6 +243,7 @@ Plan: 5 of 6
 | Phase 35 P01 | 15min | 2 tasks | 3 files |
 | Phase 35 P05 | 30min | 3 tasks | 8 files |
 | Phase 35 P03 | ~15min | 3 tasks | 12 files |
+| Phase 35 P06 | ~20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -621,6 +622,8 @@ Recent decisions affecting current work:
 - [Phase 35]: Claim rows grouped by sectionName directly (no qaSectionToGalleyId bridge) since the publisher writes sectionName already in the galley id vocabulary
 - [Phase 35]: bonus.py SpecAd branch does not call build_section_writer_prompt (it uses on-disk .md templates); factored claims-block formatting into a shared voice.build_claims_block() helper so both prompt-assembly paths (build_section_writer_prompt and bonus's _build_spec_ad_prompt) stay byte-consistent
 - [Phase 35]: Claims whitelist for founder_bio/case_study is computed from the UNSCRUBBED research dict (not the name-scrubbed copy passed to the prompt) since claim provenance is orthogonal to the founderName/subjectName anonymity scrub
+- [Phase 35]: SourceIndex.tsx (Plan 35-06) runs its own claimChecks:listByRunId subscription instead of receiving rows as a prop, keeping the component self-contained per the plan's stated interface
+- [Phase 35]: Sourced claim_checks rows (Plan 35-06) with an unrecognized/absent sectionName land in a trailing Other sourced claims group rather than being dropped (nothing-silent house rule)
 
 ### Pending Todos
 
@@ -705,6 +708,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T20:44:47.977Z
-Stopped at: Completed 35-03-writer-claimspans-PLAN.md
+Last session: 2026-07-08T20:45:40.775Z
+Stopped at: Completed 35-06-decision-rail-source-index-PLAN.md
 Resume file: None
