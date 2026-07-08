@@ -726,7 +726,12 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   2. Accepting a fix applies the suggested text to the draft via the Phase 31 content-patch endpoint and logs the action to the audit log; dismissing requires a one-line reason, also logged — nothing is silent.
   3. After any content patch, annotation anchors are re-resolved against the updated content; annotations invalidated by the edit are surfaced as orphaned for operator review, not dropped.
   4. The decision rail shows unresolved error-severity findings first and blocks Publish until they're resolved; it also shows the editor memo, hook card, and a verification summary with an affirmative timestamp state ("checked Nm ago" — never blank).
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 33-01-contract-amendment-PLAN.md — Amend docs/API_CONTRACTS.md §33 (findings endpoints, resolution fields, publish gate, checkedAt) BEFORE any code
+- [ ] 33-02-convex-resolution-state-PLAN.md — Additive qaCorrections resolution fields + secret-guarded setResolution + byId + pitchLog:selectedByRunId + claim_checks.checkedAt + codegen + convex-test
+- [ ] 33-03-pipeline-findings-endpoints-PLAN.md — Python span-resolver port + api/findings.py accept/dismiss/reopen + open-error-findings 409 on publish_issue & schedule_issue
+- [ ] 33-04-popover-actions-reresolution-PLAN.md — findingsClient + shared isOpenFinding + popover Accept/Edit/Dismiss + unresolved-card actions + reloadDraft/edit-inline plumbing
+- [ ] 33-05-decision-rail-PLAN.md — Blockers-first DecisionRail (memo/hook/verification/actions) mounted as the 336px right column
 **UI hint**: yes
 
 ### Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement
