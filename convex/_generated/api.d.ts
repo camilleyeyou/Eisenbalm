@@ -34,6 +34,7 @@ import type * as promptVersions from "../promptVersions.js";
 import type * as qaCorrections from "../qaCorrections.js";
 import type * as reviewActions from "../reviewActions.js";
 import type * as runs from "../runs.js";
+import type * as signOffs from "../signOffs.js";
 import type * as stripeEvents from "../stripeEvents.js";
 import type * as stripeOrders from "../stripeOrders.js";
 import type * as users from "../users.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   qaCorrections: typeof qaCorrections;
   reviewActions: typeof reviewActions;
   runs: typeof runs;
+  signOffs: typeof signOffs;
   stripeEvents: typeof stripeEvents;
   stripeOrders: typeof stripeOrders;
   users: typeof users;
