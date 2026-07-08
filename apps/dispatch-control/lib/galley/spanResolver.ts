@@ -51,6 +51,8 @@ export interface QaFinding {
   quotedSpan?: string
   blockIndexHint?: number
   accepted?: boolean
+  /** §33.1 resolution state — callers filter via `isOpenFinding` (findingState.ts). */
+  resolution?: 'accepted' | 'dismissed'
 }
 
 interface MatchCandidate {
