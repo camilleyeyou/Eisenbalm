@@ -65,6 +65,9 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         "pitchLog:insert",
         "pitchLog:markSelected",
         "claimChecks:insertBatch",
+        # Phase 33 (§33.1): pipeline-lane resolution flip for the findings
+        # accept/dismiss/reopen endpoints — handler calls requirePipelineSecret.
+        "qaCorrections:setResolution",
         "reviewActions:record",
         "auditLog:record",
         "charities:upsertFeatured",

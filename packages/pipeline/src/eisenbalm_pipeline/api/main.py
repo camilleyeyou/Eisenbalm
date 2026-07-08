@@ -28,7 +28,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient
 
-from eisenbalm_pipeline.api import agents, content, control, health, review, runs, webhooks
+from eisenbalm_pipeline.api import (
+    agents,
+    content,
+    control,
+    findings,
+    health,
+    review,
+    runs,
+    webhooks,
+)
 from eisenbalm_pipeline.api.auth import assert_deployed_secrets
 from eisenbalm_pipeline.api.reconcile import reconcile_orphaned_runs
 from eisenbalm_pipeline.graph.builder import build_graph
@@ -190,3 +199,4 @@ app.include_router(agents.router)
 app.include_router(control.router)
 app.include_router(review.router)
 app.include_router(content.router)
+app.include_router(findings.router)
