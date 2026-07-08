@@ -30,8 +30,30 @@ vi.mock('@convex/_generated/api', () => ({
     deliberationEvents: { byRunIdAndType: 'deliberationEvents:byRunIdAndType' },
     pitchLog: { selectedByRunId: 'pitchLog:selectedByRunId' },
     claimChecks: { listByRunId: 'claimChecks:listByRunId' },
+    signOffs: { activeByRunId: 'signOffs:activeByRunId' },
   },
 }))
+
+vi.mock('@/lib/signOffClient', () => {
+  class SignOffApiError extends Error {
+    constructor(
+      public readonly status: number,
+      public readonly reason: string,
+      message: string,
+    ) {
+      super(message)
+      this.name = 'SignOffApiError'
+    }
+  }
+  return {
+    SignOffApiError,
+    recordSignOff: vi.fn(async () => ({
+      runId: 'run-1',
+      kind: 'facts-cleared',
+      signedAt: Date.now(),
+    })),
+  }
+})
 
 vi.mock('@/lib/reviewClient', () => {
   class ReviewApiError extends Error {
@@ -65,6 +87,7 @@ vi.mock(
 
 import { useQuery } from 'convex/react'
 import { publishIssue } from '@/lib/reviewClient'
+import { recordSignOff } from '@/lib/signOffClient'
 import DecisionRail from '../app/(dashboard)/review-desk/[runId]/_components/DecisionRail'
 
 afterEach(() => {
@@ -107,6 +130,7 @@ interface QueryState {
   editorFinal?: unknown
   pitch?: unknown
   claims?: unknown
+  signoffs?: unknown
 }
 
 function mockQueries(state: QueryState = {}) {
@@ -120,6 +144,13 @@ function mockQueries(state: QueryState = {}) {
         return state.pitch ?? null
       case 'claimChecks:listByRunId':
         return state.claims ?? []
+      case 'signOffs:activeByRunId':
+        return state.signoffs !== undefined
+          ? state.signoffs
+          : {
+              'facts-cleared': { actorId: 'andrew', signedAt: Date.now() },
+              'sounds-human': { actorId: 'andrew', signedAt: Date.now() },
+            }
       default:
         return undefined
     }
