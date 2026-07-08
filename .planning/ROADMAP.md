@@ -432,7 +432,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
-| 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete   | 2026-07-08 |
+| 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
