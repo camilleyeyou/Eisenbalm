@@ -37,7 +37,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix (completed 2026-07-07)
 - [x] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path (completed 2026-07-07)
 - [x] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe (completed 2026-07-07)
-- [ ] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail
+- [x] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail (completed 2026-07-08)
 - [ ] **Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement** - Server-enforced "Facts cleared" + "Sounds human" sign-offs, webhook-level re-validation closing the Studio status-flip bypass, Studio retired to read-only fallback
 - [ ] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist
 - [ ] **Phase 36: Voice Pass De-Slop Screen** - Dedicated machine-tell screen reusing the existing QA two-layer detector (rules + Opus judge), as-written vs. house-voice rewrite popovers, its own "Sounds human" sign-off
@@ -432,7 +432,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 30. Foundation — Design System, Chrome & Inbox | 8/8 | Complete    | 2026-07-07 |
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
-| 33. Accept-Fix Wiring + Decision Rail | 4/5 | In Progress|  |
+| 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete   | 2026-07-08 |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 0/? | Not started | - |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
@@ -731,7 +731,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 33-02-convex-resolution-state-PLAN.md — Additive qaCorrections resolution fields + secret-guarded setResolution + byId + pitchLog:selectedByRunId + claim_checks.checkedAt + codegen + convex-test
 - [x] 33-03-pipeline-findings-endpoints-PLAN.md — Python span-resolver port + api/findings.py accept/dismiss/reopen + open-error-findings 409 on publish_issue & schedule_issue
 - [x] 33-04-popover-actions-reresolution-PLAN.md — findingsClient + shared isOpenFinding + popover Accept/Edit/Dismiss + unresolved-card actions + reloadDraft/edit-inline plumbing
-- [ ] 33-05-decision-rail-PLAN.md — Blockers-first DecisionRail (memo/hook/verification/actions) mounted as the 336px right column
+- [x] 33-05-decision-rail-PLAN.md — Blockers-first DecisionRail (memo/hook/verification/actions) mounted as the 336px right column
 **UI hint**: yes
 
 ### Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement

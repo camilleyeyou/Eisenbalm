@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 33-04-popover-actions-reresolution-PLAN.md
-last_updated: "2026-07-08T05:32:21.864Z"
+stopped_at: Completed 33-05-decision-rail-PLAN.md
+last_updated: "2026-07-08T13:30:08.975Z"
 progress:
   total_phases: 39
-  completed_phases: 31
+  completed_phases: 32
   total_plans: 209
-  completed_plans: 206
+  completed_plans: 207
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 33 (accept-fix-wiring-decision-rail) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -232,6 +232,7 @@ Plan: 4 of 5
 | Phase 33-accept-fix-wiring-decision-rail P01 | 6min | 1 tasks | 1 files |
 | Phase 33 P02 | 12 | 3 tasks | 6 files |
 | Phase 33 P04 | 17min | 3 tasks | 13 files |
+| Phase 33-accept-fix-wiring-decision-rail P05 | 15min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -594,6 +595,8 @@ Recent decisions affecting current work:
 - [Phase 33]: FindingsError unwraps FastAPI {detail:{reason,message}} envelope first with flat-body fallback (older clients only read the flat shape)
 - [Phase 33]: isOpenFinding (accepted !== true && resolution == null) is the ONE shared open-finding predicate across chips, galley spans, and cards
 - [Phase 33]: AnnotationMark reads Clerk token via useAuth().getToken() directly instead of prop-drilling; action props optional so components degrade to Phase 32 read-only
+- [Phase 33]: DecisionRail uses real client signatures (publishIssue/rejectIssue take token FIRST) and parses the LAST editor-final row's payload .notes (§33.6) — plan pseudo-code corrected against verified code
+- [Phase 33]: ResolvedFindingsList empty state ('No resolved findings yet') renders even while collapsed — never-blank rule beats disclosure gating; Reopen relies purely on Convex reactivity (no text rollback, no draft refetch)
 
 ### Pending Todos
 
@@ -678,6 +681,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T05:32:21.852Z
-Stopped at: Completed 33-04-popover-actions-reresolution-PLAN.md
+Last session: 2026-07-08T13:30:08.963Z
+Stopped at: Completed 33-05-decision-rail-PLAN.md
 Resume file: None
