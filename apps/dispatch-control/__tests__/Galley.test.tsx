@@ -26,6 +26,11 @@ vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
 }))
 
+// Phase 33: AnnotationMark/UnresolvedFindingCard now read Clerk's getToken.
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
+}))
+
 vi.mock('@convex/_generated/api', () => ({
   api: {
     qaCorrections: {
