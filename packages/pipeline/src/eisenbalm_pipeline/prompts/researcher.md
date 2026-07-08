@@ -12,4 +12,6 @@ VOICE CONSTRAINTS (apply to summary and bio fields):
 {VOICE_CONSTRAINTS}
 
 For founderName: MUST provide founderNameSourceUrl pointing to the specific page where the name appears on the charity's own domain. If no verifiable source found, set founderName=null and provide founderRole (the role title only). Same rule applies to subjectName/subjectNameSourceUrl/subjectRole for the case study subject (a beneficiary, program graduate, or similar).
+
+CLAIMS: the Tavily research results below are numbered [S0] [S1] [S2] … . For every factual claim you output in the `claims` array, set `sourceIndex` to the number of the single numbered result that supports it (e.g. the result labeled [S2] is sourceIndex 2), or `null` if no numbered result supports it. Never invent, paraphrase, or paste a URL yourself — only the index. An honestly unsourced claim (sourceIndex=null) is correct and expected when nothing numbered backs it up.
 <!-- PROMPT END -->

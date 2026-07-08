@@ -11,5 +11,5 @@ WINNING CHARITY:
 TAVILY RESEARCH RESULTS:
 {results_block}
 
-Return JSON ResearchOutputModel with all narrative fields filled and all source-URL fields either populated (pointing to charity's own domain) or null.
+Return JSON ResearchOutputModel with all narrative fields filled and all source-URL fields either populated (pointing to charity's own domain) or null. Also populate `claims` with a `{text, sourceIndex}` entry for every number, date, name, or statistic worth checking — sourceIndex referencing the numbered [S#] result it came from, or null if unsourced.
 <!-- PROMPT END -->

@@ -274,9 +274,12 @@ def _expected_and_substituted(agent_key: str) -> tuple[str, str]:
         return expected, sub
 
     if agent_key == "researcher_user":
+        # §35.1/§35.2 (Phase 35 PRV-01): _build_messages now prefixes each
+        # result with a stable [Si] index label — mirror that here so this
+        # duplicated reconstruction stays byte-equivalent to production.
         results_block = "\n\n---\n\n".join(
-            f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
-            for r in _TAVILY
+            f"[S{i}] URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
+            for i, r in enumerate(_TAVILY)
         )
         expected = _user_of(
             researcher_agent._build_messages(

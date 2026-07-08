@@ -96,9 +96,13 @@ def _build_messages(
     Phase 22 (CFG-01): base prompt read from
     state["config"].agents["researcher"].system_prompt, disk fallback otherwise.
     """
+    # §35.1/§35.2 (PRV-01): each result is prefixed with a stable [Si] index
+    # label. Index i is 0-based and MUST equal the sourceIndex the researcher()
+    # mapping step (post-acomplete) uses to look up tavily_results[i] — keep
+    # this enumeration and that mapping aligned; do not renumber independently.
     results_block = "\n\n---\n\n".join(
-        f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
-        for r in tavily_results
+        f"[S{i}] URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
+        for i, r in enumerate(tavily_results)
     )
     cfg = state.get("config")
     base = cfg.agents["researcher"].system_prompt if cfg else load_prompt("researcher")
