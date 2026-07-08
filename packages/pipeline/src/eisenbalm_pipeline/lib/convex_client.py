@@ -74,6 +74,9 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         "charities:seedFromPublished",
         "charities:upsertCandidate",
         "pipelineConfig:upsert",
+        # Phase 34 (§34.8) — two-sign-off gate mutations
+        "signOffs:record",
+        "signOffs:revokeAll",
     }
 )
 
