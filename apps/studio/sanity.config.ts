@@ -26,4 +26,17 @@ export default defineConfig({
   schema: {
     types: schemaTypes,
   },
+  document: {
+    actions: (prev, context) => {
+      // Phase 34 (§34.9, PUB-03, D-10) — remove Studio's publish button for
+      // weeklyIssue once the soak ends. Flag defaults OFF; flipping it +
+      // redeploying Studio is the only change to end the soak (D-11). The
+      // webhook re-check (§34.5) protects the gate regardless of flag state.
+      const disablePublish = process.env.SANITY_STUDIO_DISABLE_PUBLISH === 'true'
+      if (disablePublish && context.schemaType === 'weeklyIssue') {
+        return prev.filter(({ action }) => action !== 'publish')
+      }
+      return prev
+    },
+  },
 })

@@ -153,6 +153,31 @@ regenerated `sanity.types.ts`.
 
 ---
 
+## Publishing & the console (Phase 34)
+
+The **dispatch-control** operator console (`apps/dispatch-control`) is the
+editing and publishing surface of record. Andrew reviews, edits, and
+publishes issues entirely from the console's Review Desk.
+
+Studio is a **read-only fallback for emergencies**. Two-sign-off publish
+gate ("Facts cleared" + "Sounds human") and the webhook re-check mean a
+direct Studio publish flip for a run without both active sign-offs is
+**reverted** — the webhook flips `weeklyIssue.status` back to `in-review`,
+writes an audit row, and alerts — and the issue never deploys. A Studio
+publish click cannot bypass the gate; it can only trigger a loud, logged
+no-op.
+
+The `SANITY_STUDIO_DISABLE_PUBLISH` env var (default OFF/unset) removes
+Studio's `weeklyIssue` publish button entirely once set to `'true'` and the
+Studio is redeployed. See `apps/studio/EDITOR_GUIDE.md` for the soak-end
+criterion that governs when this flag is flipped.
+
+Studio **editing** remains possible as the emergency fallback — full
+editing lockdown is a later Sanity-removal milestone, not part of this
+phase.
+
+---
+
 ## Day-to-day workflow
 
 | Task | Command (run from repo root) |

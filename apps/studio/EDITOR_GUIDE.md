@@ -38,3 +38,29 @@ You're an Administrator, so you *can* see everything — but stay out of **Proje
 
 ## 6. Stuck?
 Anything that won't publish, looks broken, or you're unsure about — ping Ghislain. Nothing you do in an issue is permanent until you hit Publish.
+
+## 7. Soak & retiring Studio publish (Phase 34)
+
+The dispatch-control console is now the editing + publishing surface of
+record for weekly issues — you review, edit, and publish from the console's
+Review Desk, using the two sign-offs there ("Facts cleared" + "Sounds
+human"). Studio remains available as a **read-only fallback** for
+emergencies: if a direct Studio publish is attempted on a run that hasn't
+been signed off in the console, the pipeline reverts it back to "In Review"
+and it never goes live — the console gate cannot be bypassed by flipping
+the Studio status dropdown.
+
+**Soak-end criterion:** during this soak period, the console is the
+publishing surface and Studio is the tested-but-unused fallback. Once 2–3
+consecutive real weekly issues have shipped entirely via the console with
+no Studio publish fallback needed, the soak ends: the
+`SANITY_STUDIO_DISABLE_PUBLISH` env flag is set to `true` and Studio is
+redeployed — this removes the **Publish** button from weekly issues in
+Studio entirely (other document types are unaffected). There is no
+automatic counter; this is a manual decision Andrew/Ghislain makes together
+against the criterion above.
+
+Studio remains open for **editing** as a read-only-publish fallback even
+after the flag flips — only the publish action is removed. Full Studio
+retirement (content moved elsewhere, Studio deleted) is a separate,
+later milestone.
