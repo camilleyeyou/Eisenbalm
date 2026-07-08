@@ -1,9 +1,9 @@
 ---
 phase: 34
 slug: two-sign-off-publish-gate-studio-bypass-retirement
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: planned
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-08
 ---
 
@@ -38,24 +38,28 @@ Frontend (dispatch-control) has its own Vitest suite; no existing `DecisionRail.
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | PUB-01 | unit | `uv run pytest tests/test_review_endpoints.py -k signoff -x -q` | ❌ W0 (extend existing file) | ⬜ pending |
-| TBD | TBD | TBD | PUB-01 | unit | sign-off record endpoint prerequisite 409s | ❌ W0 (new test module) | ⬜ pending |
-| TBD | TBD | TBD | PUB-02 | unit | `uv run pytest tests/api/test_webhook_sanity.py -k signoff -x -q` | ❌ W0 (extend existing file) | ⬜ pending |
-| TBD | TBD | TBD | PUB-03 | manual | Studio flag flip verification (soak mechanism non-automatable) | N/A | ⬜ pending |
-| TBD | TBD | TBD | PUB-04 | unit | `_emit_audit` call assertions for sign-off/revoke/block actions | ❌ W0 | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File | Status |
+|---------|------|------|-------------|-----------|-------------------|------|--------|
+| 34-03 T1 | 34-03 | 2 | PUB-01, PUB-04 | unit | `uv run pytest tests/test_signoffs_endpoints.py -x -q` | ✅ new (created in task) | ⬜ pending |
+| 34-03 T3 | 34-03 | 2 | PUB-01 | unit | `uv run pytest tests/test_review_endpoints.py -x -q` | ✅ extend existing | ⬜ pending |
+| 34-04 T2 | 34-04 | 3 | PUB-02, PUB-04 | unit | `uv run pytest tests/api/test_webhook_sanity.py -x -q` | ✅ extend existing | ⬜ pending |
+| 34-05 T2 | 34-05 | 3 | PUB-01, PUB-04 | unit | `uv run pytest tests/test_content_endpoints.py tests/test_findings_endpoints.py -x -q` | ✅ extend existing | ⬜ pending |
+| 34-06 T1 | 34-06 | 3 | PUB-01 | build | `pnpm --filter dispatch-control build` | ✅ strict type-check | ⬜ pending |
+| 34-06 T2 | 34-06 | 3 | PUB-03 | manual | Studio flag flip (SANITY_STUDIO_DISABLE_PUBLISH) — soak mechanism non-automatable | N/A (grep + UAT) | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-*(Planner fills Task IDs when plans are created.)*
+*Test creation is co-located in the implementing task (tdd-style), not a separate Wave 0 plan — the pipeline test files already exist to extend, and the one new module (test_signoffs_endpoints.py) is created inside 34-03 Task 1, matching the Phase 33 precedent.*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `packages/pipeline/tests/test_review_endpoints.py` — extend with sign-off-gate cases for `publish_issue`/`schedule_issue` (PUB-01)
-- [ ] `packages/pipeline/tests/api/test_webhook_sanity.py` — extend with D-07 re-validation + revert cases (PUB-02)
-- [ ] New test module for the sign-off record/revoke endpoints (PUB-01/PUB-04) — no existing file to extend
+Test coverage is co-created with implementation (tdd-style), not a separate Wave 0 plan:
+
+- [x] `packages/pipeline/tests/test_signoffs_endpoints.py` — NEW, created in **34-03 Task 1** (sign-off record + relocated facts prerequisites; PUB-01/PUB-04)
+- [x] `packages/pipeline/tests/test_review_endpoints.py` — extended in **34-03 Task 3** (missing_signoffs gate on publish + schedule; PUB-01)
+- [x] `packages/pipeline/tests/api/test_webhook_sanity.py` — extended in **34-04 Task 2** (D-07 re-validation + revert + run-less block; PUB-02)
+- [x] `packages/pipeline/tests/test_content_endpoints.py` + `test_findings_endpoints.py` — extended in **34-05 Task 2** (D-08 auto-revoke assertions; PUB-01)
 
 *Convex mutations are validated via FastAPI-level tests that monkeypatch `_cc.convex_query`/`convex_mutation` — existing project convention, no phase-specific gap.*
 
