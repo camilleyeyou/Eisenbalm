@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to plan
-stopped_at: Phase 35 context gathered
-last_updated: "2026-07-08T19:15:36.222Z"
+status: Ready to execute
+stopped_at: Completed 35-01-contract-and-convex-schema-foundation-PLAN.md
+last_updated: "2026-07-08T20:08:33.841Z"
 progress:
   total_phases: 39
   completed_phases: 33
-  total_plans: 216
-  completed_plans: 214
+  total_plans: 222
+  completed_plans: 215
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 34 — two-sign-off-publish-gate-studio-bypass-retirement
+**Current focus:** Phase 35 — provenance-pipeline-sourced-unsourced-galley-rendering
 
 ## Current Position
 
-Phase: 35
-Plan: Not started
+Phase: 35 (provenance-pipeline-sourced-unsourced-galley-rendering) — EXECUTING
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -240,6 +240,7 @@ Plan: Not started
 | Phase 34 P05 | 12min | 2 tasks | 5 files |
 | Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P04 | 20min | 2 tasks | 3 files |
 | Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P07 | 8min | 2 tasks | 1 files |
+| Phase 35 P01 | 15min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -613,6 +614,8 @@ Recent decisions affecting current work:
 - [Phase 34]: Auto-revoke sign-offs on reopen/dismiss (not just accept) — closes the gate-integrity hole from relocating facts-cleared check to sign-off time
 - [Phase 34-two-sign-off-publish-gate-studio-bypass-retirement]: 34-04: webhook D-07 guard re-checks signOffs:activeByRunId before launching the publisher; a run with no runId is treated as unconditionally missing sign-offs (Research Open Q#2), and blocked bypasses revert Sanity status to in-review + audit + alert via the frozen cost-warning literal
 - [Phase 34-two-sign-off-publish-gate-studio-bypass-retirement]: Repaired DecisionRail.test.tsx Convex API mock (signOffs entry) + signOffClient mock, defaulted mockQueries signOffs to both-active to preserve pre-34-06 blocker-free Publish assertions, and added 5 regression tests for the two-sign-off publish gate UI (PUB-01) — test-only fix, zero production files touched
+- [Phase 35]: ResearchOutput TypedDict drift (Pitfall 3) documented as known/out-of-scope this phase; only claims field added
+- [Phase 35]: claim_checks row model moves to one-row-per-occurrence (visible, intentional checklist-size change from Phase 26)
 
 ### Pending Todos
 
@@ -697,6 +700,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T19:15:36.182Z
-Stopped at: Phase 35 context gathered
-Resume file: .planning/phases/35-provenance-pipeline-sourced-unsourced-galley-rendering/35-CONTEXT.md
+Last session: 2026-07-08T20:08:33.827Z
+Stopped at: Completed 35-01-contract-and-convex-schema-foundation-PLAN.md
+Resume file: None

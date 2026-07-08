@@ -434,7 +434,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 7/7 | Complete    | 2026-07-08 |
-| 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
+| 35. Provenance Pipeline + Sourced/Unsourced Galley | 1/6 | In Progress|  |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
 | 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
 | 38. Prompt Lab Evals + Eval Center | 0/? | Not started | - |
@@ -763,7 +763,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. The galley renders sourced claims with a marigold highlight (hover reveals source URL + retrieval date) and unsourced claims with a rust tint, as first-class visual states.
   4. The decision rail's source index groups unsourced claims on top with jump links and lists sourced claims with their sources; the claims sign-off checklist is upgraded to source-bound claims instead of free-text.
 **Plans**: 6 plans
-- [ ] 35-01-contract-and-convex-schema-foundation-PLAN.md — Wave 1: amend docs/API_CONTRACTS.md §35/§26.2 (claims model, writer claimSpans, one-row-per-occurrence, ResearchOutput drift note) + claim_checks additive optional fields (claimId/sourceUrl/retrievedAt/sectionName/blockIndexHint) + insertBatch args + convex codegen
+- [x] 35-01-contract-and-convex-schema-foundation-PLAN.md — Wave 1: amend docs/API_CONTRACTS.md §35/§26.2 (claims model, writer claimSpans, one-row-per-occurrence, ResearchOutput drift note) + claim_checks additive optional fields (claimId/sourceUrl/retrievedAt/sectionName/blockIndexHint) + insertBatch args + convex codegen
 - [ ] 35-02-researcher-index-bound-claims-PLAN.md — Wave 2: ResearchOutputModel.claims (index-bound, D-01) + S1..Sn result numbering + code-side index→URL + retrievedAt stamping + keyStatistics removal + ResearchOutput TypedDict (PRV-01)
 - [ ] 35-03-writer-claimspans-PLAN.md — Wave 2: ClaimSpanRef flat model + build_section_writer_prompt claims-whitelist injection (user-prompt only) + 5 prose writers emit claimSpans with lenient unknown-claimId drop (PRV-02)
 - [ ] 35-04-publisher-provenance-seeding-PLAN.md — Wave 3: per-section/per-block extractor + corrected flat-shape blockIndexHint (Pitfall 1 fix) + publisher seeds sourced+unsourced claim_checks rows one-per-occurrence (PRV-02/PRV-04 data)
