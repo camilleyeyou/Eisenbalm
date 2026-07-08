@@ -212,6 +212,115 @@ _SECTION_ORDER = (
 )
 
 
+# ── Public API: block_index_hint (Phase 35 PRV-02/PRV-04) ────────────────────
+
+
+def block_index_hint(blocks: Any, as_written: str | None) -> int | None:
+    """Return the 0-based index of the first flat BodyBlock containing
+    ``as_written`` (case-insensitive substring), else ``None``.
+
+    Research Pitfall 1: at publish time ``state[section]["body"]`` is the
+    RAW ``BodyBlock.model_dump()`` output — a flat list of
+    ``{"type": ..., "text": ...}`` dicts. This is NOT the same shape as
+    Sanity Portable Text's nested-span-list block shape, which is what
+    ``agents/qa/__init__.py::_block_index_hint`` reads. Reading the nested
+    key against this flat shape would never match (the key is absent here)
+    — this helper reads ``text`` DIRECTLY instead, and must never be
+    "corrected" to read the nested-span-list shape.
+
+    Unlike the QA helper's D-12 "never guess" ambiguous-match-returns-None
+    rule (which is resolving an UNKNOWN quoted span against a whole
+    section), this helper is always called with a writer-declared
+    ``asWritten`` span that already names one physical location — the
+    first match is the correct, deterministic answer, not a guess.
+    """
+    if not as_written:
+        return None
+    needle = as_written.strip().lower()
+    if not needle:
+        return None
+    if not isinstance(blocks, list):
+        return None
+    for i, block in enumerate(blocks):
+        if not isinstance(block, dict):
+            continue
+        text = block.get("text", "")
+        if not isinstance(text, str):
+            continue
+        if needle in text.lower():
+            return i
+    return None
+
+
+# ── Public API: extract_claims_by_block (Phase 35 PRV-02/PRV-04) ─────────────
+
+# Internal DispatchState section key -> galley sectionName vocabulary the
+# frontend uses (matches the publisher's writer claimSpans sectionName and
+# the Phase 32/33 qaCorrections precedent).
+_SECTION_TO_GALLEY_ID = {
+    "origin_story": "originStory",
+    "problem_statement": "problemStatement",
+    "founder_bio": "founderBio",
+    "case_study": "caseStudy",
+    "bonus": "bonus",
+}
+
+
+def extract_claims_by_block(sections: dict) -> list[dict]:
+    """Per-section, per-block deterministic claims extraction (D-13).
+
+    Restructures extraction from Phase 26/33's globally-joined-then-dedup
+    behavior (``extract_claims``, unchanged, kept for back-compat) to run
+    the three regexes independently against EACH block's own text, so every
+    returned row owns a resolvable (sectionName, blockIndexHint) anchor for
+    the galley + decision-rail jump links. Dedup happens WITHIN a block
+    only — the same fact repeated across two blocks (or two sections)
+    yields two independent rows, by design (one-row-per-occurrence).
+
+    Does NOT assign ``claimIndex`` — the publisher assigns a single global
+    ordinal after merging sourced + unsourced rows (§35.5).
+
+    Args:
+        sections: Dict keyed by internal section name (``origin_story``,
+                  ``problem_statement``, ``founder_bio``, ``case_study``,
+                  ``bonus``) with DispatchState section values (each a dict
+                  with a ``body`` list of flat ``{"type","text"}`` blocks).
+                  Keys not in the canonical order, or values without a list
+                  ``body``, are skipped.
+
+    Returns:
+        Flat list of ``{sectionName, blockIndexHint, text, claimType,
+        context}`` dicts, in canonical section order then block order.
+    """
+    rows: list[dict] = []
+    for key in _SECTION_ORDER:
+        value = sections.get(key)
+        if not isinstance(value, dict):
+            continue
+        body = value.get("body")
+        if not isinstance(body, list):
+            continue
+        galley_id = _SECTION_TO_GALLEY_ID[key]
+        for bi, block in enumerate(body):
+            if not isinstance(block, dict):
+                continue
+            text = block.get("text", "")
+            if not isinstance(text, str) or not text.strip():
+                continue
+            claims = _extract_and_dedup(text)
+            for c in claims:
+                rows.append(
+                    {
+                        "sectionName": galley_id,
+                        "blockIndexHint": bi,
+                        "text": c["text"],
+                        "claimType": c["claimType"],
+                        "context": c["context"],
+                    }
+                )
+    return rows
+
+
 def extract_claims(sections: dict) -> list[dict]:
     """Extract claims from DispatchState section dict at pipeline run-end.
 
