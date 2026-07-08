@@ -187,13 +187,13 @@ class OriginStoryOutput(BaseModel):
     For bonus.py: apply steps 1-4 ONLY to the SpecAdBonus output model / SpecAd path. Leave BigBudgetBonus and JingleBonus untouched (D-06 — non-prose exempt).
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm/packages/pipeline && uv run pytest tests/agents/test_origin_story.py tests/agents/test_problem.py tests/agents/test_founder_bio.py tests/agents/test_case_study.py tests/agents/test_bonus.py tests/test_writer_structural_floor.py -x -q</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm/packages/pipeline && uv run pytest tests/agents/test_origin_story.py tests/agents/test_problem.py tests/agents/test_founder_bio.py tests/agents/test_case_study.py tests/agents/test_bonus.py tests/agents/test_writer_structural_floor.py -x -q</automated>
   </verify>
   <acceptance_criteria>
     - `grep -rln "claimSpans: list\[ClaimSpanRef\]" packages/pipeline/src/eisenbalm_pipeline/agents/{origin_story,problem,founder_bio,case_study,bonus}.py` lists all 5 files
     - `grep -rn "unknown claimId (D-07" packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py` matches (drop logging present)
     - `grep -n "BigBudgetBonus\|JingleBonus" packages/pipeline/src/eisenbalm_pipeline/agents/bonus.py` confirms those models are NOT given claimSpans (D-06)
-    - `uv run pytest tests/agents/test_origin_story.py tests/agents/test_problem.py tests/agents/test_founder_bio.py tests/agents/test_case_study.py tests/agents/test_bonus.py tests/test_writer_structural_floor.py -x -q` passes (GREEN)
+    - `uv run pytest tests/agents/test_origin_story.py tests/agents/test_problem.py tests/agents/test_founder_bio.py tests/agents/test_case_study.py tests/agents/test_bonus.py tests/agents/test_writer_structural_floor.py -x -q` passes (GREEN)
   </acceptance_criteria>
   <done>All 5 prose writers emit claimSpans, receive the claims whitelist, and drop unknown claimIds leniently; structural-floor + writer tests green; bonus non-prose branches untouched.</done>
 </task>

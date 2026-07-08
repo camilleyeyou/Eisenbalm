@@ -45,7 +45,7 @@ created: 2026-07-08
 | 02-T3 prompt S-index | 02 | 2 | PRV-01 | unit | `cd packages/pipeline && uv run pytest tests/agents/test_researcher.py tests/test_pipeline_real_mode.py -x -q` | ✅ | ⬜ |
 | 03-T1 RED writer tests | 03 | 2 | PRV-02 | unit | `cd packages/pipeline && uv run pytest tests/agents/test_origin_story.py -x -q` | ✅ extend | ⬜ |
 | 03-T2 ClaimSpanRef + prompt inject | 03 | 2 | PRV-02 | unit | `cd packages/pipeline && uv run pytest tests/test_voice.py tests/test_section_writer_voice_propagation.py -x -q` | ✅ | ⬜ |
-| 03-T3 5 writers claimSpans | 03 | 2 | PRV-02 | unit | `cd packages/pipeline && uv run pytest tests/agents/test_{origin_story,problem,founder_bio,case_study,bonus}.py tests/test_writer_structural_floor.py -x -q` | ✅ | ⬜ |
+| 03-T3 5 writers claimSpans | 03 | 2 | PRV-02 | unit | `cd packages/pipeline && uv run pytest tests/agents/test_{origin_story,problem,founder_bio,case_study,bonus}.py tests/agents/test_writer_structural_floor.py -x -q` | ✅ | ⬜ |
 | 04-T1 RED publisher/extractor tests | 04 | 3 | PRV-02/04 | unit | `cd packages/pipeline && uv run pytest tests/agents/test_claim_block_index_hint.py tests/test_claims_extractor.py -x -q` | ❌ NEW `tests/agents/test_claim_block_index_hint.py` | ⬜ |
 | 04-T2 per-block extractor + hint | 04 | 3 | PRV-02/04 | unit | `cd packages/pipeline && uv run pytest tests/agents/test_claim_block_index_hint.py tests/test_claims_extractor.py -x -q` | ✅ | ⬜ |
 | 04-T3 publisher seeding | 04 | 3 | PRV-02/04 | integration | `cd packages/pipeline && uv run pytest tests/agents/publisher/test_publisher.py -x -q` | ✅ extend | ⬜ |
