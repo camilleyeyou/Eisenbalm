@@ -27,7 +27,11 @@ from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 import eisenbalm_pipeline.lib.sanity_client as _sc
-from eisenbalm_pipeline.api.control import _emit_audit, _require_clerk_jwt_control
+from eisenbalm_pipeline.api.control import (
+    _emit_audit,
+    _require_clerk_jwt_control,
+    _revoke_active_signoffs,
+)
 from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.portable_text import (
     compose_section_body,
@@ -271,6 +275,7 @@ async def patch_section(
         before=_truncate(json.dumps(before, default=str)),
         after=_truncate(json.dumps(blocks, default=str)),
     )
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="section edited")
     return {"revisionId": new_rev, "warnings": warnings}
 
 
@@ -318,6 +323,7 @@ async def patch_headline(
         before=_truncate(before or ""),
         after=_truncate(body.headline),
     )
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="headline edited")
     return {"revisionId": new_rev}
 
 
@@ -367,6 +373,7 @@ async def patch_theme(
         before=_truncate(json.dumps(before, default=str)),
         after=_truncate(json.dumps(theme_dict, default=str)),
     )
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="theme edited")
     return {"revisionId": new_rev}
 
 
@@ -419,6 +426,7 @@ async def patch_game(
         before=_truncate(json.dumps(before, default=str)),
         after=_truncate(json.dumps(value, default=str)),
     )
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="game edited")
     return {"revisionId": new_rev}
 
 
@@ -472,6 +480,9 @@ async def patch_pdf_data_points(
         resource_id=sanity_id,
         before=_truncate(json.dumps(before, default=str)),
         after=_truncate(json.dumps(value, default=str)),
+    )
+    await _revoke_active_signoffs(
+        convex_http, run_id=run_id, reason="pdf data points edited"
     )
     return {"revisionId": new_rev}
 
@@ -548,6 +559,7 @@ async def patch_bonus(
         before=_truncate(json.dumps(before, default=str)),
         after=_truncate(json.dumps(fields, default=str)),
     )
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="bonus edited")
     return {"revisionId": new_rev, "warnings": warnings}
 
 
@@ -595,6 +607,9 @@ async def patch_deliberation_conversation(
         before=_truncate(json.dumps(before, default=str)),
         after=_truncate(json.dumps(turns, default=str)),
     )
+    await _revoke_active_signoffs(
+        convex_http, run_id=run_id, reason="deliberation conversation edited"
+    )
     return {"revisionId": new_rev}
 
 
@@ -631,6 +646,9 @@ async def patch_podcast_transcript(
         resource_id=sanity_id,
         before=_truncate(before or ""),
         after=_truncate(body.transcript),
+    )
+    await _revoke_active_signoffs(
+        convex_http, run_id=run_id, reason="podcast transcript edited"
     )
     return {"revisionId": new_rev}
 
@@ -771,6 +789,7 @@ async def upload_content_asset(
         before=_truncate(old_value),
         after=_truncate(new_value),
     )
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="asset uploaded")
     return result
 
 

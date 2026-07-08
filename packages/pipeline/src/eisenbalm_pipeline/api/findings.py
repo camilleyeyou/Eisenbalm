@@ -28,7 +28,11 @@ from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.api.content import _resolve_sanity_id
-from eisenbalm_pipeline.api.control import _emit_audit, _require_clerk_jwt_control
+from eisenbalm_pipeline.api.control import (
+    _emit_audit,
+    _require_clerk_jwt_control,
+    _revoke_active_signoffs,
+)
 from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.portable_text import compose_section_body
 from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
@@ -233,6 +237,9 @@ async def accept_finding(
         after=_truncate(suggested_fix),
     )
 
+    # Phase 34 (D-08): content changed — void both sign-offs.
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="fix accepted")
+
     return {"revisionId": new_rev, "findingId": finding_id, "resolution": "accepted"}
 
 
@@ -285,6 +292,10 @@ async def dismiss_finding(
         after=_truncate(reason),
     )
 
+    # Phase 34 (D-08): dismissing changes the facts-cleared PREREQUISITE basis
+    # (open-error findings posture) — void both sign-offs to force a re-sign.
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="finding dismissed")
+
     return {"findingId": finding_id, "resolution": "dismissed"}
 
 
@@ -330,5 +341,11 @@ async def reopen_finding(
         resource_type="finding",
         resource_id=f"{run_id}:{finding_id}",
     )
+
+    # Phase 34 (D-08): reopening changes the facts-cleared PREREQUISITE basis
+    # (open-error findings posture) — void both sign-offs to force a re-sign.
+    # This closes the gate-integrity hole created by relocating the
+    # error-findings check to sign-off time (§34.6, §34.3).
+    await _revoke_active_signoffs(convex_http, run_id=run_id, reason="finding reopened")
 
     return {"findingId": finding_id, "resolution": None}

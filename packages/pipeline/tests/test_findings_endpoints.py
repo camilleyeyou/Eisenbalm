@@ -190,6 +190,11 @@ def test_accept_happy_path_patches_flips_and_audits(monkeypatch):
     assert audits[0]["before"] == "opened its doors"
     assert audits[0]["after"] == "opened on 3 March 1974"
 
+    # Phase 34 (D-08): accepting a fix voids both sign-offs.
+    revokes = [args for path, args in mutation_calls if path == "signOffs:revokeAll"]
+    assert len(revokes) == 1
+    assert revokes[0]["runId"] == "run-abc"
+
 
 def test_accept_bonus_specad_uses_bonus_body_path(monkeypatch):
     """A bonus finding on a specAd issue patches field_path='bonus.body'."""
@@ -361,6 +366,11 @@ def test_dismiss_flips_resolution_and_audits_no_sanity_write(monkeypatch):
     assert audits[0]["action"] == "finding.dismissed"
     assert audits[0]["after"].startswith("Editorial judgment")
 
+    # Phase 34 (D-08): dismissing a finding voids both sign-offs.
+    revokes = [args for path, args in mutation_calls if path == "signOffs:revokeAll"]
+    assert len(revokes) == 1
+    assert revokes[0]["runId"] == "run-abc"
+
     # NO Sanity write on dismiss.
     assert patch_calls == []
 
@@ -403,6 +413,13 @@ def test_reopen_clears_resolution_and_audits(monkeypatch):
     audits = [args for path, args in mutation_calls if path == "auditLog:record"]
     assert len(audits) == 1
     assert audits[0]["action"] == "finding.reopened"
+
+    # Phase 34 (D-08): reopening a finding voids both sign-offs (closes the
+    # gate-integrity hole from relocating the error-findings check to
+    # sign-off time).
+    revokes = [args for path, args in mutation_calls if path == "signOffs:revokeAll"]
+    assert len(revokes) == 1
+    assert revokes[0]["runId"] == "run-abc"
 
     # Reopen never reverts text (D-04) — no Sanity write.
     assert patch_calls == []

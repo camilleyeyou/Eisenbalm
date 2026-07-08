@@ -257,6 +257,41 @@ async def test_theme_patch_validation(monkeypatch: pytest.MonkeyPatch):
     assert audit_calls[0]["action"] == "content.theme_patched"
 
 
+async def test_theme_patch_revokes_signoffs(monkeypatch: pytest.MonkeyPatch):
+    """Phase 34 (D-08): a successful content patch calls signOffs:revokeAll
+    for the run — content mutations auto-void both sign-off kinds."""
+
+    async def mock_convex_query(http, path, args):
+        return {"sanityIssueId": "issue-42"}
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft()
+
+    async def mock_patch_issue_field(http, *, issue_id, field_path, value, if_revision_id):
+        return "rev-2"
+
+    mutation_calls: list[dict] = []
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append({"path": path, "args": args})
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
+    monkeypatch.setattr(f"{_C}._cc.convex_mutation", mock_convex_mutation)
+
+    ok = _content_client.patch("/issues/run-abc/theme", json=_valid_theme_body())
+    assert ok.status_code == 200, ok.text
+
+    revoke_calls = [c for c in mutation_calls if c["path"] == "signOffs:revokeAll"]
+    assert len(revoke_calls) == 1
+    assert revoke_calls[0]["args"]["runId"] == "run-abc"
+
+    audit_calls = [c for c in mutation_calls if c["path"] == "auditLog:record"]
+    assert len(audit_calls) == 1
+    assert audit_calls[0]["args"]["action"] == "content.theme_patched"
+
+
 async def test_structural_floor_warns_not_blocks(monkeypatch: pytest.MonkeyPatch):
     """A long-read section-body patch with 0 h2/blockquote returns 200 with
     a non-empty warnings list — it never 4xxs (D-08)."""
