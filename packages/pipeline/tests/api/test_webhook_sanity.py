@@ -15,6 +15,30 @@ import pytest
 
 SECRET = "test-secret-32-bytes"
 
+# ── Phase 34 (§34.5, D-07) — D-07 re-validation guard helpers ────────────────
+#
+# The webhook now re-checks signOffs:activeByRunId before launching the
+# publisher. A LEGIT dashboard publish already passed the §34.4 gate before
+# flipping Sanity, so both sign-offs are active by the time the webhook
+# fires — patch both active so pre-existing test intent (webhook reaches the
+# publisher-scheduling path) is preserved.
+
+_BOTH_SIGNOFFS_ACTIVE = {
+    "facts-cleared": {"actorId": "user_1", "signedAt": 1},
+    "sounds-human": {"actorId": "user_1", "signedAt": 1},
+}
+
+
+def _patch_both_signoffs_active(monkeypatch):
+    async def mock_convex_query(http, path, args):
+        if path == "signOffs:activeByRunId":
+            return dict(_BOTH_SIGNOFFS_ACTIVE)
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._cc.convex_query", mock_convex_query
+    )
+
 
 async def test_route_exists(client):
     """WHK-01: POST /webhook/sanity-publish returns < 500 for ANY input (handler exists)."""
@@ -32,6 +56,9 @@ async def test_signature_accept_and_reject(
         "eisenbalm_pipeline.api.webhooks._run_publisher",
         AsyncMock(return_value=None),
     )
+    # D-07 guard: simulate a legit dashboard publish (both sign-offs active)
+    # so this signature test still reaches the publisher-scheduling path.
+    _patch_both_signoffs_active(monkeypatch)
     ts = int(time.time() * 1000)
     body = json.dumps(
         {
@@ -96,6 +123,8 @@ async def test_idempotency_dedup(
     monkeypatch.setattr(
         "eisenbalm_pipeline.api.webhooks._run_publisher", pub_spy
     )
+    # D-07 guard: simulate a legit dashboard publish (both sign-offs active).
+    _patch_both_signoffs_active(monkeypatch)
 
     ts = int(time.time() * 1000)
     body = json.dumps(
@@ -137,9 +166,11 @@ async def test_missing_idempotency_proceeds(
         "eisenbalm_pipeline.api.webhooks._run_publisher",
         AsyncMock(return_value=None),
     )
+    # D-07 guard: simulate a legit dashboard publish (both sign-offs active).
+    _patch_both_signoffs_active(monkeypatch)
     ts = int(time.time() * 1000)
     body = json.dumps(
-        {"_id": "issue-8", "issueNumber": 8, "status": "published"}
+        {"_id": "issue-8", "issueNumber": 8, "status": "published", "runId": "r8"}
     ).encode()
     header = sanity_signature_encoder(body, ts, SECRET)
     # No idempotency-key header
@@ -150,3 +181,162 @@ async def test_missing_idempotency_proceeds(
     )
     assert r.status_code == 200, r.text
     assert r.json().get("scheduled") is True
+
+
+# ── Phase 34 (§34.5, D-07) — sign-off re-validation guard ─────────────────────
+
+
+async def test_webhook_proceeds_when_both_signoffs_active(
+    client, sanity_signature_encoder, monkeypatch
+):
+    """Both sign-offs active (legit dashboard publish) → publisher IS
+    scheduled; no revert, no block."""
+    monkeypatch.setenv("SANITY_WEBHOOK_SECRET", SECRET)
+    pub_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._run_publisher", pub_spy)
+    revert_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._revert_sanity_status", revert_spy
+    )
+    _patch_both_signoffs_active(monkeypatch)
+
+    ts = int(time.time() * 1000)
+    body = json.dumps(
+        {
+            "_id": "issue-20",
+            "issueNumber": 20,
+            "status": "published",
+            "runId": "r20",
+        }
+    ).encode()
+    header = sanity_signature_encoder(body, ts, SECRET)
+    r = await client.post(
+        "/webhook/sanity-publish",
+        content=body,
+        headers={
+            "sanity-webhook-signature": header,
+            "idempotency-key": "test-both-active",
+        },
+    )
+    assert r.status_code == 200, r.text
+    assert r.json().get("scheduled") is True
+    assert r.json().get("blocked") is None
+    revert_spy.assert_not_called()
+
+
+async def test_webhook_blocked_when_signoff_missing(
+    client, sanity_signature_encoder, monkeypatch
+):
+    """One sign-off missing → publisher NOT scheduled; Sanity status reverted
+    to in-review; an audit row + cost-warning alert are emitted."""
+    monkeypatch.setenv("SANITY_WEBHOOK_SECRET", SECRET)
+    pub_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._run_publisher", pub_spy)
+    revert_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._revert_sanity_status", revert_spy
+    )
+    audit_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._emit_audit", audit_spy)
+
+    mutation_calls: list[tuple[str, dict]] = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "signOffs:activeByRunId":
+            # sounds-human missing.
+            return {"facts-cleared": {"actorId": "user_1", "signedAt": 1}}
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._cc.convex_mutation", mock_convex_mutation
+    )
+
+    ts = int(time.time() * 1000)
+    body = json.dumps(
+        {
+            "_id": "issue-21",
+            "issueNumber": 21,
+            "status": "published",
+            "runId": "r21",
+        }
+    ).encode()
+    header = sanity_signature_encoder(body, ts, SECRET)
+    r = await client.post(
+        "/webhook/sanity-publish",
+        content=body,
+        headers={
+            "sanity-webhook-signature": header,
+            "idempotency-key": "test-missing-signoff",
+        },
+    )
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data.get("blocked") == "missing_signoffs"
+    assert data.get("missing") == ["sounds-human"]
+    pub_spy.assert_not_called()
+    revert_spy.assert_awaited_once()
+    assert revert_spy.call_args.args[1] == "issue-21"
+    assert revert_spy.call_args.kwargs.get("status") == "in-review"
+    audit_spy.assert_awaited_once()
+    assert audit_spy.call_args.kwargs.get("action") == "run.publish_bypass_blocked"
+    assert any(path == "deliberationEvents:insert" for path, _ in mutation_calls)
+    cost_warning_calls = [
+        args for path, args in mutation_calls if path == "deliberationEvents:insert"
+    ]
+    assert cost_warning_calls[0]["eventType"] == "cost-warning"
+    inner_payload = json.loads(cost_warning_calls[0]["payload"])
+    assert inner_payload["eventType"] == "publish-bypass-blocked"
+
+
+async def test_webhook_blocked_when_run_id_absent(
+    client, sanity_signature_encoder, monkeypatch
+):
+    """payload.runId absent (run-less manually-authored draft) → BLOCKED
+    identically; the run-less spirit of D-07 (Research Open Q#2)."""
+    monkeypatch.setenv("SANITY_WEBHOOK_SECRET", SECRET)
+    pub_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._run_publisher", pub_spy)
+    revert_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._revert_sanity_status", revert_spy
+    )
+    audit_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._emit_audit", audit_spy)
+    # Guard should short-circuit on run_id is None WITHOUT even querying
+    # signOffs:activeByRunId — but patch it anyway so a regression that DOES
+    # query doesn't hit real Convex.
+    query_spy = AsyncMock(return_value={})
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._cc.convex_query", query_spy)
+    mutation_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._cc.convex_mutation", mutation_spy
+    )
+
+    ts = int(time.time() * 1000)
+    body = json.dumps(
+        {"_id": "issue-22", "issueNumber": 22, "status": "published"}
+    ).encode()  # no runId key at all
+    header = sanity_signature_encoder(body, ts, SECRET)
+    r = await client.post(
+        "/webhook/sanity-publish",
+        content=body,
+        headers={
+            "sanity-webhook-signature": header,
+            "idempotency-key": "test-no-run-id",
+        },
+    )
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data.get("blocked") == "missing_signoffs"
+    pub_spy.assert_not_called()
+    revert_spy.assert_awaited_once()
+    assert revert_spy.call_args.args[1] == "issue-22"
+    audit_spy.assert_awaited_once()
+    assert audit_spy.call_args.kwargs.get("action") == "run.publish_bypass_blocked"

@@ -21,8 +21,11 @@ import os
 
 from fastapi import APIRouter, HTTPException, Request, status
 
+import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.agents.publisher import _run_publisher
+from eisenbalm_pipeline.api.control import _emit_audit
 from eisenbalm_pipeline.lib.idempotency import claim_idempotency_key
+from eisenbalm_pipeline.lib.sanity_publish import _revert_sanity_status
 from eisenbalm_pipeline.lib.sanity_webhook import (
     SIGNATURE_HEADER_NAME,
     SignatureError,
@@ -119,6 +122,44 @@ async def sanity_publish(request: Request) -> dict:
             detail=f"Webhook payload missing required field: {e}",
         )
     run_id = payload.get("runId")  # may be None for manually-authored drafts
+
+    # Phase 34 (§34.5, D-07, PUB-02) — re-validate sign-off state before the
+    # publisher runs. Closes the Studio status-flip bypass: a direct flip skips the
+    # dashboard's §34.4 gate, so its sign-offs are absent and this reverts + blocks.
+    # A LEGIT dashboard publish flips Sanity only AFTER its gate passed, so both
+    # sign-offs are already active here and this check passes — no race.
+    convex_http = getattr(request.app.state, "convex_http", None)
+    sanity_http = getattr(request.app.state, "sanity_http", None)
+    active = (
+        await _cc.convex_query(convex_http, "signOffs:activeByRunId", {"runId": run_id})
+        if run_id else {}
+    ) or {}
+    missing = [k for k in ("facts-cleared", "sounds-human") if k not in active]
+    if run_id is None or missing:
+        log.warning("Webhook publish BLOCKED — run=%s missing=%s", run_id, missing)
+        try:
+            await _revert_sanity_status(sanity_http, issue_id, status="in-review")
+        except Exception:  # noqa: BLE001 — still return 200; the block already happened by not launching the publisher
+            log.exception("revert failed for issue=%s (publisher still NOT launched)", issue_id)
+        await _emit_audit(
+            convex_http, actor_id="webhook", action="run.publish_bypass_blocked",
+            resource_type="run", resource_id=run_id or issue_id,
+            after=json.dumps({"missing": missing, "reason": "missing_signoffs" if run_id else "no_run_id"}),
+        )
+        # §34.6b — reuse the FROZEN deliberationEvents.eventType union (Phase 27 D-04:
+        # do NOT add a new literal). Outer "cost-warning" routes to notification
+        # dispatch; the real semantic name rides in the inner payload. Known tradeoff:
+        # the alert email subject renders "budget" (same as auto-publish-enabled).
+        try:
+            await _cc.convex_mutation(convex_http, "deliberationEvents:insert", {
+                "runId": run_id or issue_id,
+                "agentId": "webhook",
+                "eventType": "cost-warning",
+                "payload": json.dumps({"eventType": "publish-bypass-blocked", "runId": run_id, "missing": missing}),
+            })
+        except Exception:  # noqa: BLE001
+            log.warning("bypass alert emit failed for run=%s (non-blocking)", run_id)
+        return {"ok": True, "blocked": "missing_signoffs", "missing": missing}
 
     task = asyncio.create_task(
         _run_publisher(
