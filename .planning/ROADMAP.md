@@ -38,7 +38,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path (completed 2026-07-07)
 - [x] **Phase 32: Native Galley (read-only) + Span-Resolver** - `@portabletext/react` galley rendering the Sanity draft with existing QA annotations overlaid via a text-anchored resolver, running in parallel with the existing preview iframe (completed 2026-07-07)
 - [x] **Phase 33: Accept-Fix Wiring + Decision Rail** - Annotation popover (accept/edit/dismiss) wired to Phase 31's content-patch, post-edit annotation re-resolution, blockers-first decision rail (completed 2026-07-08)
-- [ ] **Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement** - Server-enforced "Facts cleared" + "Sounds human" sign-offs, webhook-level re-validation closing the Studio status-flip bypass, Studio retired to read-only fallback
+- [x] **Phase 34: Two-Sign-Off Publish Gate + Studio Bypass Retirement** - Server-enforced "Facts cleared" + "Sounds human" sign-offs, webhook-level re-validation closing the Studio status-flip bypass, Studio retired to read-only fallback (completed 2026-07-08)
 - [ ] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist
 - [ ] **Phase 36: Voice Pass De-Slop Screen** - Dedicated machine-tell screen reusing the existing QA two-layer detector (rules + Opus judge), as-written vs. house-voice rewrite popovers, its own "Sounds human" sign-off
 - [ ] **Phase 37: Run Monitor v2 + Signal Desk** - Forensic run spine (agents as dots, code gates as diamonds), handoff inspector, 7-writer per-section strength scores, run-vs-last-8 drift strip, Gate 1 candidate slate + interrupt/adjudication mode
@@ -433,7 +433,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 31. Content-Patch Endpoints + Full Editing | 6/6 | Complete    | 2026-07-07 |
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
-| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 5/6 | In Progress|  |
+| 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 6/6 | Complete   | 2026-07-08 |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 0/? | Not started | - |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
 | 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
@@ -747,7 +747,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 34-01-contract-amendment-PLAN.md — §34 API_CONTRACTS: sign_offs table, sign-off endpoint, gate restructure, webhook revert, Studio action (contract-first)
 - [x] 34-02-convex-sign-offs-table-PLAN.md — Convex sign_offs table + signOffs.ts (record/revokeAll/activeByRunId/listByRunId)
 - [x] 34-03-signoff-endpoints-publish-gate-PLAN.md — api/signoffs.py sign-off endpoint (relocated facts prereqs) + publish/schedule missing_signoffs gate + guarded paths
-- [ ] 34-04-webhook-revalidation-revert-PLAN.md — webhook D-07 re-check + _revert_sanity_status + bypass audit/alert (PUB-02)
+- [x] 34-04-webhook-revalidation-revert-PLAN.md — webhook D-07 re-check + _revert_sanity_status + bypass audit/alert (PUB-02)
 - [x] 34-05-auto-revoke-on-mutation-PLAN.md — D-08 auto-revoke both sign-offs across 9 content patches + 3 findings routes + rerun_agent
 - [x] 34-06-rail-signoffs-studio-retirement-PLAN.md — DecisionRail sign-off controls + signOffClient + flag-gated Studio publish-action removal + read-only-fallback docs
 **UI hint**: yes

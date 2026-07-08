@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 34-05-auto-revoke-on-mutation-PLAN.md
-last_updated: "2026-07-08T15:09:42.764Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 34-04-webhook-revalidation-revert-PLAN.md
+last_updated: "2026-07-08T15:18:20.001Z"
 progress:
   total_phases: 39
-  completed_phases: 32
+  completed_phases: 33
   total_plans: 215
-  completed_plans: 212
+  completed_plans: 213
 ---
 
 # Project State
@@ -238,6 +238,7 @@ Plan: 6 of 6
 | Phase 34 P03 | 15min | 3 tasks | 6 files |
 | Phase 34 P06 | 12min | 2 tasks | 5 files |
 | Phase 34 P05 | 12min | 2 tasks | 5 files |
+| Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P04 | 20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -609,6 +610,7 @@ Recent decisions affecting current work:
 - [Phase 34]: Sign-off buttons render only when the kind is not yet active; once active the row switches to an affirmative 'signed Nm ago' green line — never a blank/neutral state
 - [Phase 34]: Facts-cleared sign button is client-disabled while any error-severity blocker is open (courtesy only — server 409s authoritatively)
 - [Phase 34]: Auto-revoke sign-offs on reopen/dismiss (not just accept) — closes the gate-integrity hole from relocating facts-cleared check to sign-off time
+- [Phase 34-two-sign-off-publish-gate-studio-bypass-retirement]: 34-04: webhook D-07 guard re-checks signOffs:activeByRunId before launching the publisher; a run with no runId is treated as unconditionally missing sign-offs (Research Open Q#2), and blocked bypasses revert Sanity status to in-review + audit + alert via the frozen cost-warning literal
 
 ### Pending Todos
 
@@ -693,6 +695,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T15:09:42.751Z
-Stopped at: Completed 34-05-auto-revoke-on-mutation-PLAN.md
+Last session: 2026-07-08T15:18:19.988Z
+Stopped at: Completed 34-04-webhook-revalidation-revert-PLAN.md
 Resume file: None
