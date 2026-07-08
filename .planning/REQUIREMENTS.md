@@ -307,7 +307,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **VOX-04**: Detection is two-layer — deterministic rules render instantly, the LLM judge runs on demand — reusing the existing QA rules + Opus judge.
 
 ### Provenance (PRV)
-- [ ] **PRV-01**: The Researcher emits per-claim `{claim, sourceUrl, retrievedAt}` bindings (generalizing the existing founder/subject paired-field pattern).
+- [x] **PRV-01**: The Researcher emits per-claim `{claim, sourceUrl, retrievedAt}` bindings (generalizing the existing founder/subject paired-field pattern).
 - [x] **PRV-02**: Section writers carry claim references forward via their structured output schemas so bindings survive into final prose (established at generation time, never post-hoc matched).
 - [x] **PRV-03**: The galley renders sourced claims (marigold highlight, hover → source URL + retrieval date) and unsourced claims (rust tint) as first-class visual states.
 - [x] **PRV-04**: The decision rail shows a source index — unsourced claims grouped on top with jump links, sourced claims listed with their sources; the claims checklist upgrades to source-bound claims.
