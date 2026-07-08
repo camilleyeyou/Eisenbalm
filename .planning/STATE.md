@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 35-01-contract-and-convex-schema-foundation-PLAN.md
-last_updated: "2026-07-08T20:08:33.841Z"
+stopped_at: Completed 35-03-writer-claimspans-PLAN.md
+last_updated: "2026-07-08T20:45:09.586Z"
 progress:
   total_phases: 39
   completed_phases: 33
   total_plans: 222
-  completed_plans: 215
+  completed_plans: 216
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 35 (provenance-pipeline-sourced-unsourced-galley-rendering) — EXECUTING
-Plan: 2 of 6
+Plan: 5 of 6
 
 ## Performance Metrics
 
@@ -241,6 +241,8 @@ Plan: 2 of 6
 | Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P04 | 20min | 2 tasks | 3 files |
 | Phase 34-two-sign-off-publish-gate-studio-bypass-retirement P07 | 8min | 2 tasks | 1 files |
 | Phase 35 P01 | 15min | 2 tasks | 3 files |
+| Phase 35 P05 | 30min | 3 tasks | 8 files |
+| Phase 35 P03 | ~15min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -616,6 +618,9 @@ Recent decisions affecting current work:
 - [Phase 34-two-sign-off-publish-gate-studio-bypass-retirement]: Repaired DecisionRail.test.tsx Convex API mock (signOffs entry) + signOffClient mock, defaulted mockQueries signOffs to both-active to preserve pre-34-06 blocker-free Publish assertions, and added 5 regression tests for the two-sign-off publish gate UI (PUB-01) — test-only fix, zero production files touched
 - [Phase 35]: ResearchOutput TypedDict drift (Pitfall 3) documented as known/out-of-scope this phase; only claims field added
 - [Phase 35]: claim_checks row model moves to one-row-per-occurrence (visible, intentional checklist-size change from Phase 26)
+- [Phase 35]: Claim rows grouped by sectionName directly (no qaSectionToGalleyId bridge) since the publisher writes sectionName already in the galley id vocabulary
+- [Phase 35]: bonus.py SpecAd branch does not call build_section_writer_prompt (it uses on-disk .md templates); factored claims-block formatting into a shared voice.build_claims_block() helper so both prompt-assembly paths (build_section_writer_prompt and bonus's _build_spec_ad_prompt) stay byte-consistent
+- [Phase 35]: Claims whitelist for founder_bio/case_study is computed from the UNSCRUBBED research dict (not the name-scrubbed copy passed to the prompt) since claim provenance is orthogonal to the founderName/subjectName anonymity scrub
 
 ### Pending Todos
 
@@ -700,6 +705,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T20:08:33.827Z
-Stopped at: Completed 35-01-contract-and-convex-schema-foundation-PLAN.md
+Last session: 2026-07-08T20:44:47.977Z
+Stopped at: Completed 35-03-writer-claimspans-PLAN.md
 Resume file: None
