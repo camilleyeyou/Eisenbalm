@@ -434,7 +434,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 32. Native Galley (read-only) + Span-Resolver | 7/7 | Complete    | 2026-07-07 |
 | 33. Accept-Fix Wiring + Decision Rail | 5/5 | Complete    | 2026-07-08 |
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 7/7 | Complete    | 2026-07-08 |
-| 35. Provenance Pipeline + Sourced/Unsourced Galley | 2/6 | In Progress|  |
+| 35. Provenance Pipeline + Sourced/Unsourced Galley | 4/6 | In Progress|  |
 | 36. Voice Pass De-Slop Screen | 0/? | Not started | - |
 | 37. Run Monitor v2 + Signal Desk | 0/? | Not started | - |
 | 38. Prompt Lab Evals + Eval Center | 0/? | Not started | - |
@@ -767,8 +767,8 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [ ] 35-02-researcher-index-bound-claims-PLAN.md — Wave 2: ResearchOutputModel.claims (index-bound, D-01) + S1..Sn result numbering + code-side index→URL + retrievedAt stamping + keyStatistics removal + ResearchOutput TypedDict (PRV-01)
 - [x] 35-03-writer-claimspans-PLAN.md — Wave 2: ClaimSpanRef flat model + build_section_writer_prompt claims-whitelist injection (user-prompt only) + 5 prose writers emit claimSpans with lenient unknown-claimId drop (PRV-02)
 - [ ] 35-04-publisher-provenance-seeding-PLAN.md — Wave 3: per-section/per-block extractor + corrected flat-shape blockIndexHint (Pitfall 1 fix) + publisher seeds sourced+unsourced claim_checks rows one-per-occurrence (PRV-02/PRV-04 data)
-- [ ] 35-05-galley-provenance-wash-PLAN.md — Wave 2: claimSpan mark stacking + ClaimMark wash component (marigold sourced / rust unsourced, background-only D-09) + hover tooltip + check/skip popover + default-on toolbar toggle (PRV-03)
-- [ ] 35-06-decision-rail-source-index-PLAN.md — Wave 2: SourceIndex (unsourced-on-top + sourced-by-section, check/skip + jump links) mounted in the rail Verification section; facts-cleared gate untouched (PRV-04)
+- [x] 35-05-galley-provenance-wash-PLAN.md — Wave 2: claimSpan mark stacking + ClaimMark wash component (marigold sourced / rust unsourced, background-only D-09) + hover tooltip + check/skip popover + default-on toolbar toggle (PRV-03)
+- [x] 35-06-decision-rail-source-index-PLAN.md — Wave 2: SourceIndex (unsourced-on-top + sourced-by-section, check/skip + jump links) mounted in the rail Verification section; facts-cleared gate untouched (PRV-04)
 **UI hint**: yes
 
 ### Phase 36: Voice Pass De-Slop Screen
