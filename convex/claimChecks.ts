@@ -36,6 +36,12 @@ export const insertBatch = mutation({
         text: v.string(),
         claimType: v.string(), // "number" | "date" | "proper_noun"
         context: v.string(),
+        // Phase 35 provenance (PRV-01/03/04) — additive optional; absent => legacy/unsourced shape
+        claimId: v.optional(v.string()),
+        sourceUrl: v.optional(v.string()),
+        retrievedAt: v.optional(v.number()),
+        sectionName: v.optional(v.string()),
+        blockIndexHint: v.optional(v.number()),
       }),
     ),
     // Phase 29 D-1: pipeline-lane secret (injected centrally by
@@ -63,6 +69,12 @@ export const insertBatch = mutation({
           claimType: claim.claimType,
           context: claim.context,
           status: 'pending',
+          // Phase 35 provenance — pass through when present; Convex omits undefined optionals
+          claimId: claim.claimId,
+          sourceUrl: claim.sourceUrl,
+          retrievedAt: claim.retrievedAt,
+          sectionName: claim.sectionName,
+          blockIndexHint: claim.blockIndexHint,
         }),
       ),
     )

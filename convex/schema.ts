@@ -407,6 +407,12 @@ export default defineSchema({
     context: v.string(),          // 60-char surrounding window for review
     status: v.string(),           // "pending" | "checked" | "skipped"
     checkedAt: v.optional(v.number()), // Phase 33 D-13: stamped by setStatus on checked/skipped
+    // ── Phase 35 provenance (PRV-01/03/04) — additive optional; legacy rows omit all five ──
+    claimId: v.optional(v.string()),        // present only for writer-bound (sourced) rows
+    sourceUrl: v.optional(v.string()),      // index-bound Tavily URL; absent => unsourced
+    retrievedAt: v.optional(v.number()),    // Unix ms, code-stamped at Tavily query time
+    sectionName: v.optional(v.string()),    // galley section this claim occurs in (all new rows)
+    blockIndexHint: v.optional(v.number()), // hint-only anchor, mirrors qaCorrections
   })
     .index('by_runId', ['runId'])
     .index('by_workspace', ['workspace_id']),
