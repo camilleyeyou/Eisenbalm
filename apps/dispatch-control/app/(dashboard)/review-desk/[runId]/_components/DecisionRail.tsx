@@ -29,6 +29,7 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { publishIssue, rejectIssue, ReviewApiError } from '@/lib/reviewClient'
 import { rerollAgent } from '@/lib/pipelineControlClient'
+import { recordSignOff, SignOffApiError, type SignOffKind } from '@/lib/signOffClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import ResolvedFindingsList from './ResolvedFindingsList'
@@ -146,10 +147,19 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
   const totalClaims = claims?.length ?? 0
   const lastChecked = Math.max(0, ...done.map(c => c.checkedAt ?? 0))
 
+  // Sign-offs (D-01/D-05/D-06, §34.2 live subscription) — affirmative state,
+  // never blank. A kind absent from `active` = not signed (or revoked).
+  const active = useQuery(api.signOffs.activeByRunId, { runId }) as
+    | Record<SignOffKind, { actorId: string; signedAt: number }>
+    | undefined
+  const factsActive = !!active?.['facts-cleared']
+  const humanActive = !!active?.['sounds-human']
+
   // ── Actions state ─────────────────────────────────────────────────────────
   const [busy, setBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [rerunKey, setRerunKey] = useState<string>(RERUN_AGENT_KEYS[0])
+  const [signOffBusy, setSignOffBusy] = useState<SignOffKind | null>(null)
 
   async function handlePublish() {
     setBusy(true)
@@ -168,6 +178,28 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
       )
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleSignOff(kind: SignOffKind) {
+    setSignOffBusy(kind)
+    setActionMessage(null)
+    try {
+      const token = await getToken()
+      await recordSignOff(token, runId, kind)
+      setActionMessage(
+        kind === 'facts-cleared' ? 'Facts cleared.' : 'Sounds human — signed.',
+      )
+    } catch (e) {
+      setActionMessage(
+        e instanceof SignOffApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : 'Sign-off failed.',
+      )
+    } finally {
+      setSignOffBusy(null)
     }
   }
 
@@ -321,20 +353,60 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
         )}
       </section>
 
+      {/* 5b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,
+          both required to publish (PUB-01). Affirmative state, never blank. */}
+      <section aria-label="Sign-offs">
+        <h3 className={MICRO_LABEL}>Sign-offs</h3>
+        <div className="mt-1 flex flex-col gap-2">
+          {factsActive ? (
+            <p className="text-[13px] text-[color:var(--color-green,#148a52)]">
+              Facts cleared — signed {formatAgo(active!['facts-cleared'].signedAt)}
+            </p>
+          ) : (
+            <button
+              type="button"
+              disabled={blockers.length > 0 || signOffBusy !== null}
+              onClick={() => handleSignOff('facts-cleared')}
+              className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Sign: Facts cleared
+            </button>
+          )}
+          {humanActive ? (
+            <p className="text-[13px] text-[color:var(--color-green,#148a52)]">
+              Sounds human — signed {formatAgo(active!['sounds-human'].signedAt)}
+            </p>
+          ) : (
+            <button
+              type="button"
+              disabled={signOffBusy !== null}
+              onClick={() => handleSignOff('sounds-human')}
+              className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Sign: Sounds human
+            </button>
+          )}
+        </div>
+      </section>
+
       {/* 6 — Actions (D-15: all four wired to existing backends) */}
       <section aria-label="Actions" className="flex flex-col gap-2">
         <h3 className={MICRO_LABEL}>Actions</h3>
         <button
           type="button"
-          disabled={blockers.length > 0 || busy}
+          disabled={blockers.length > 0 || !factsActive || !humanActive || busy}
           onClick={handlePublish}
           className="min-h-[44px] w-full bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-paper,#f4f2ec)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           Publish
         </button>
-        {blockers.length > 0 && (
+        {blockers.length > 0 ? (
           <p className="text-[11px] text-[color:var(--color-vermilion)]">{blockerReason}</p>
-        )}
+        ) : (!factsActive || !humanActive) ? (
+          <p className="text-[11px] text-[color:var(--color-vermilion)]">
+            Both sign-offs required to publish.
+          </p>
+        ) : null}
         <button
           type="button"
           disabled={busy}
