@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to plan
-stopped_at: Completed 34-07-decisionrail-signoff-test-coverage-PLAN.md
-last_updated: "2026-07-08T15:59:49.023Z"
+stopped_at: Phase 35 context gathered
+last_updated: "2026-07-08T19:15:36.222Z"
 progress:
   total_phases: 39
   completed_phases: 33
@@ -697,6 +697,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T15:52:31.175Z
-Stopped at: Completed 34-07-decisionrail-signoff-test-coverage-PLAN.md
-Resume file: None
+Last session: 2026-07-08T19:15:36.182Z
+Stopped at: Phase 35 context gathered
+Resume file: .planning/phases/35-provenance-pipeline-sourced-unsourced-galley-rendering/35-CONTEXT.md
