@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 37-02-adjudication-bridge-PLAN.md
-last_updated: "2026-07-09T17:39:31.017Z"
+stopped_at: Completed 37-03-run-monitor-spine-handoff-PLAN.md
+last_updated: "2026-07-09T18:00:03.935Z"
 progress:
   total_phases: 39
   completed_phases: 35
   total_plans: 234
-  completed_plans: 229
+  completed_plans: 230
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 37 (run-monitor-v2-signal-desk) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -254,6 +254,7 @@ Plan: 3 of 5
 | Phase 36 P07 | 27min | 2 tasks | 3 files |
 | Phase 37 P01 | 20min | 3 tasks | 13 files |
 | Phase 37 P02 | 14min | 2 tasks | 3 files |
+| Phase 37 P03 | 15min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -649,6 +650,9 @@ Recent decisions affecting current work:
 - [Phase 37]: retryCount sources honestly from acomplete()'s existing invoke-error/schema-miss regenerate signal (no new node-retry mechanism); editor_confidence is a plain sequential DispatchState field (no reducer needed, editor_gate_1 runs once).
 - [Phase 37]: _resume_paused_run(app, run_id, charity_name) is the single shared resume implementation — resolves app.state.graph itself so both the trigger-secret /run/{id}/resume and the Clerk-guarded /issues/{id}/adjudicate get the 503-degraded-lifespan guard for free
 - [Phase 37]: adjudicate pre-checks graph.aget_state().next BEFORE _emit_audit so a non-paused run 409s with zero audit/resume side effects; operator reason is logged via audit_log.after JSON only — no new deliberationEvents.eventType literal, union stays FROZEN (D-13)
+- [Phase 37]: GATE_KEYS deliberately excludes a stale third gate ('Verify Candidates') absent from builder.py
+- [Phase 37]: Model chip renders unconditionally on AgentNode so model+cost+duration+retry never mutually exclusive on an executed node
+- [Phase 37]: AgentIOPanel handoff fetches use a per-key HandoffNode child component to keep useQuery hook counts stable across variable fan-out/fan-in
 
 ### Pending Todos
 
@@ -733,6 +737,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T17:39:31.004Z
-Stopped at: Completed 37-02-adjudication-bridge-PLAN.md
+Last session: 2026-07-09T18:00:03.922Z
+Stopped at: Completed 37-03-run-monitor-spine-handoff-PLAN.md
 Resume file: None

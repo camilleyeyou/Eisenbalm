@@ -436,7 +436,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 7/7 | Complete    | 2026-07-08 |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 6/6 | Complete    | 2026-07-08 |
 | 36. Voice Pass De-Slop Screen | 7/7 | Complete    | 2026-07-09 |
-| 37. Run Monitor v2 + Signal Desk | 2/5 | In Progress|  |
+| 37. Run Monitor v2 + Signal Desk | 3/5 | In Progress|  |
 | 38. Prompt Lab Evals + Eval Center | 0/? | Not started | - |
 | 39. Registry Coverage-Memory Strip | 0/? | Not started | - |
 
