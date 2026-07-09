@@ -302,7 +302,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Voice Pass (VOX)
 - [x] **VOX-01**: Operator has a dedicated Voice Pass screen — machine-tells and voice violations lit inline over clean prose, with a per-screen tell count.
-- [ ] **VOX-02**: Clicking a tell opens an as-written vs suggested-house-voice comparison with Accept rewrite / Write my own / Keep (not a tell) actions; accept mutates via content-patch.
+- [x] **VOX-02**: Clicking a tell opens an as-written vs suggested-house-voice comparison with Accept rewrite / Write my own / Keep (not a tell) actions; accept mutates via content-patch.
 - [x] **VOX-03**: Voice Pass carries its own "Sounds human" sign-off, distinct from factual clearance (feeds PUB-01).
 - [x] **VOX-04**: Detection is two-layer — deterministic rules render instantly, the LLM judge runs on demand — reusing the existing QA rules + Opus judge.
 

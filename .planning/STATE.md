@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 36-05-machine-tell-predicate-PLAN.md
-last_updated: "2026-07-09T13:37:18.475Z"
+stopped_at: Completed 36-03-voice-pass-endpoints-PLAN.md
+last_updated: "2026-07-09T13:51:06.768Z"
 progress:
   total_phases: 39
   completed_phases: 34
   total_plans: 228
-  completed_plans: 223
+  completed_plans: 224
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 36
-Plan: 4 of 6
+Plan: 5 of 6
 
 ## Performance Metrics
 
@@ -248,6 +248,7 @@ Plan: 4 of 6
 | Phase 36 P01 | 10min | 2 tasks | 3 files |
 | Phase 36 P02 | 10min | 2 tasks | 3 files |
 | Phase 36 P05 | ~10min | 2 tasks | 4 files |
+| Phase 36 P03 | 12min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -633,6 +634,8 @@ Recent decisions affecting current work:
 - [Phase 36]: Left pre-existing test_sounds_human_ungated unmodified (its fixture axis-less finding stays outside VOICE_AXES, assertion remains valid)
 - [Phase 36]: Conservative v1 machine-tell lexicon (12 patterns) favors precision over recall since severity=error gates the Sounds-human sign-off
 - [Phase 36]: machine-tell lexicon not mirrored into lib/voice.py generation-time forbidden sets in v1 (detection-time only, per 36-CONTEXT D-05 discretion)
+- [Phase 36]: voice-recheck uses the RAISING convex_mutation (not convex_mutation_safe) for every write — a live operator-triggered re-check must surface Convex failures loudly rather than silently drop findings
+- [Phase 36]: voice-recheck hardcodes narrator=None per NRR-10 byte-compatible legacy default — narrator resolution has no persisted, independently queryable record
 
 ### Pending Todos
 
@@ -717,6 +720,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T13:37:18.462Z
-Stopped at: Completed 36-05-machine-tell-predicate-PLAN.md
+Last session: 2026-07-09T13:51:06.755Z
+Stopped at: Completed 36-03-voice-pass-endpoints-PLAN.md
 Resume file: None
