@@ -15,6 +15,9 @@
  * RED at authoring time:
  * `../app/(dashboard)/review-desk/[runId]/_components/Galley` does not
  * exist yet. Turns GREEN in Plan 32-07.
+ *
+ * Phase 36 (Plan 36-04, Task 1): Galley promoted to the route-agnostic
+ * `components/galley/` so both Review Desk and Voice Pass can import it.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
@@ -47,7 +50,7 @@ vi.mock('@convex/_generated/api', () => ({
 }))
 
 import { useQuery } from 'convex/react'
-import Galley from '../app/(dashboard)/review-desk/[runId]/_components/Galley'
+import Galley from '../components/galley/Galley'
 
 afterEach(() => {
   cleanup()

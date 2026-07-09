@@ -37,7 +37,7 @@ import SectionChipList, {
   type SectionChipCounts,
 } from './_components/SectionChipList'
 import SectionEditorPanel from './_components/SectionEditorPanel'
-import Galley from './_components/Galley'
+import Galley from '@/components/galley/Galley'
 import DecisionRail from './_components/DecisionRail'
 import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'

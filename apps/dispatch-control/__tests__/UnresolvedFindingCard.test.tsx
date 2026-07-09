@@ -42,7 +42,7 @@ vi.mock('@/lib/findingsClient', () => {
 })
 
 import { dismissFinding } from '@/lib/findingsClient'
-import UnresolvedFindingCard from '../app/(dashboard)/review-desk/[runId]/_components/UnresolvedFindingCard'
+import UnresolvedFindingCard from '../components/galley/UnresolvedFindingCard'
 
 afterEach(() => {
   cleanup()

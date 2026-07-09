@@ -42,7 +42,7 @@ vi.mock('@/lib/findingsClient', () => {
 import { acceptFinding, dismissFinding, FindingsError } from '@/lib/findingsClient'
 import AnnotationMark, {
   type AnnotationMarkDef,
-} from '../app/(dashboard)/review-desk/[runId]/_components/AnnotationMark'
+} from '../components/galley/AnnotationMark'
 
 const value: AnnotationMarkDef = {
   findingId: 'f1',
