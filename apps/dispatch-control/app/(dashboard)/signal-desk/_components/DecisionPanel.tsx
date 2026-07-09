@@ -65,8 +65,10 @@ export function DecisionPanel({ runId }: DecisionPanelProps) {
       ) : (
         (() => {
           // Take the latest row if several exist (mirrors DecisionRail's
-          // editor-final handling).
-          const latest = rows[rows.length - 1]
+          // editor-final handling). Guarded by the `rows.length === 0` branch
+          // above, so this index always exists — the fallback empty object
+          // is defensive only (satisfies noUncheckedIndexedAccess).
+          const latest = rows[rows.length - 1] ?? { payload: '{}' }
           const payload = parseDecisionPayload(latest.payload)
           const confidencePct =
             payload.confidence != null ? Math.round(payload.confidence * 100) : null
