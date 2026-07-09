@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 38-01-contract-eval-scores-foundation-PLAN.md
-last_updated: "2026-07-09T20:49:26.121Z"
+stopped_at: Completed 38-02-golden-scenarios-endpoint-PLAN.md
+last_updated: "2026-07-09T21:06:56.614Z"
 progress:
   total_phases: 39
   completed_phases: 36
   total_plans: 240
-  completed_plans: 233
+  completed_plans: 234
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 38
-Plan: 2 of 6
+Plan: 3 of 6
 
 ## Performance Metrics
 
@@ -258,6 +258,7 @@ Plan: 2 of 6
 | Phase 37 P04 | 20min | 3 tasks | 7 files |
 | Phase 37 P05 | 21 | 3 tasks | 9 files |
 | Phase 38 P01 | 20min | 2 tasks | 6 files |
+| Phase 38 P02 | 15 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -661,6 +662,8 @@ Recent decisions affecting current work:
 - [Phase 37]: AdjudicationPanel reuses CandidateSlate's exported joinCandidates() rather than a second pitchLog/advocate-argument join
 - [Phase 37]: adjudicateGate1() result typed permissively against the real 37-02 implementation ({runId, resumed}) rather than only the §37.3 doc prose
 - [Phase 38]: listForScenario/listForAgent order via Convex's native .order('asc'|'desc') on the index, not a manual JS sort on ranAt — avoids flaky tie-breaking when two rows share a millisecond timestamp
+- [Phase 38-02]: Golden scenarios target only test-run-replicable agentKeys (scout/advocate/researcher/bonus_spec_ad) — no section-writer scenarios (Pitfall 5)
+- [Phase 38-02]: api/eval.py reuses api/agents.py's _require_operator via direct cross-module import rather than re-declaring the optional-bearer dependency
 
 ### Pending Todos
 
@@ -745,6 +748,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T20:49:26.108Z
-Stopped at: Completed 38-01-contract-eval-scores-foundation-PLAN.md
+Last session: 2026-07-09T21:06:56.601Z
+Stopped at: Completed 38-02-golden-scenarios-endpoint-PLAN.md
 Resume file: None

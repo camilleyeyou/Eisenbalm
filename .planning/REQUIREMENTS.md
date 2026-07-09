@@ -324,7 +324,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **SIG-03**: When the pipeline interrupts at Gate 1, the screen enters side-by-side adjudication; the operator's pick plus a logged reason resumes the run via the existing resume endpoint.
 
 ### Prompt Lab Evals & Eval Center (EVL)
-- [ ] **EVL-01**: Golden scenarios exist as fixtures runnable against single agents through the existing test-run/score endpoints.
+- [x] **EVL-01**: Golden scenarios exist as fixtures runnable against single agents through the existing test-run/score endpoints.
 - [ ] **EVL-02**: The Prompt Lab eval drawer auto-selects scenarios affected by the edited asset, runs them, and shows a scoreboard with deltas vs the active version.
 - [ ] **EVL-03**: Prompt commit is gated on target-metric-up with no regressions, with an override-with-reason escape hatch (logged) so the gate cannot deadlock.
 - [x] **EVL-04**: The Eval Center shows scenario cards (description, what-it-catches, last result) and an append-only scoreboard time-series in new Convex tables — the editorial drift detector.
