@@ -16,6 +16,12 @@
  * Badge: `resolution` when present, else legacy `accepted===true` ⇒
  * "accepted".
  *
+ * Phase 36 (§36.3, Plan 36-04 Task 4): this is Review Desk's FACTUAL_AXES
+ * rail — the resolved list is further scoped to factual findings (undefined
+ * axis still counts as factual, per §36.3's conservative default) so a
+ * resolved voice/machine-tell row never appears here; it belongs to Voice
+ * Pass's own surface instead.
+ *
  * Muted/tertiary treatment by design — a secondary, collapsed affordance
  * that must not compete with the blockers checklist above it.
  */
@@ -25,6 +31,7 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { reopenFinding, FindingsError } from '@/lib/findingsClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
+import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 
 interface ResolvedFindingsListProps {
   runId: string
@@ -36,6 +43,7 @@ interface QaCorrectionRow {
   findingId?: string
   sectionName: string
   severity: 'info' | 'warning' | 'error'
+  axis?: string
   reason: string
   accepted?: boolean
   resolution?: 'accepted' | 'dismissed'
@@ -52,7 +60,11 @@ export default function ResolvedFindingsList({ runId }: ResolvedFindingsListProp
   const rows = useQuery(api.qaCorrections.byRunId, { runId }) as
     | QaCorrectionRow[]
     | undefined
-  const resolved = (rows ?? []).filter(r => !isOpenFinding(r))
+  // Phase 36 (§36.3): resolved AND factual (axis undefined || FACTUAL_AXES) —
+  // a resolved voice-axis row belongs to Voice Pass, not this factual rail.
+  const resolved = (rows ?? []).filter(
+    r => !isOpenFinding(r) && (r.axis === undefined || FACTUAL_AXES.has(r.axis)),
+  )
 
   const [open, setOpen] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
