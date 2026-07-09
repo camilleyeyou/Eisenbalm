@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase complete — ready for verification
-stopped_at: Completed 36-07-gap-write-my-own-editlink-PLAN.md
-last_updated: "2026-07-09T15:21:10.110Z"
+status: Ready to execute
+stopped_at: Completed 37-01-contract-and-data-foundations-PLAN.md
+last_updated: "2026-07-09T17:21:25.728Z"
 progress:
   total_phases: 39
   completed_phases: 35
-  total_plans: 229
-  completed_plans: 227
+  total_plans: 234
+  completed_plans: 228
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 36 — voice-pass-de-slop-screen
+**Current focus:** Phase 37 — run-monitor-v2-signal-desk
 
 ## Current Position
 
-Phase: 36
-Plan: 7 of 7
+Phase: 37 (run-monitor-v2-signal-desk) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -252,6 +252,7 @@ Plan: 7 of 7
 | Phase 36 P04 | 22min | 4 tasks | 19 files |
 | Phase 36 P06 | 20min | 2 tasks | 10 files |
 | Phase 36 P07 | 27min | 2 tasks | 3 files |
+| Phase 37 P01 | 20min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -644,6 +645,7 @@ Recent decisions affecting current work:
 - [Phase 36]: AnnotationMark voice-tell labels derive from an explicit labels prop only (never from value.axis) to avoid silently relabeling pre-existing Review Desk tests whose fixture axis happens to be a VOICE_AXES member
 - [Phase 36]: Extended plan scope to thread AnnotationMark labels through Galley/GallerySection (Rule 2) so the voice-tell variant actually reaches the operator on /voice-pass
 - [Phase 36]: Deep-linked Voice Pass's 'Write my own' into the existing Review Desk section editor via an ?edit= query param + once-per-mount guard, rather than building a second editor surface (closes VOX-02/D-09 gap)
+- [Phase 37]: retryCount sources honestly from acomplete()'s existing invoke-error/schema-miss regenerate signal (no new node-retry mechanism); editor_confidence is a plain sequential DispatchState field (no reducer needed, editor_gate_1 runs once).
 
 ### Pending Todos
 
@@ -728,6 +730,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T15:21:10.098Z
-Stopped at: Completed 36-07-gap-write-my-own-editlink-PLAN.md
+Last session: 2026-07-09T17:21:25.715Z
+Stopped at: Completed 37-01-contract-and-data-foundations-PLAN.md
 Resume file: None
