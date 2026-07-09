@@ -457,3 +457,64 @@ def test_findings_router_registered_on_app():
     assert "/issues/{run_id}/findings/{finding_id}/accept" in paths
     assert "/issues/{run_id}/findings/{finding_id}/dismiss" in paths
     assert "/issues/{run_id}/findings/{finding_id}/reopen" in paths
+
+
+# ── §36.6 — suggestedFixOverride ────────────────────────────────────────────
+
+
+def test_accept_applies_suggested_fix_override_when_no_stored_fix(monkeypatch):
+    """A finding with NO stored suggestedFix, but the request body carries
+    suggestedFixOverride, applies the override and resolves accepted (no
+    accept_unavailable 409)."""
+    _q, mutation_calls, patch_calls = _wire(
+        monkeypatch, finding=_finding(suggestedFix=None)
+    )
+
+    response = _client.post(
+        "/issues/run-abc/findings/fnd-1/accept",
+        json={"ifRevisionID": "rev-1", "suggestedFixOverride": "opened on 3 March 1974"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["resolution"] == "accepted"
+
+    pt_texts = [
+        child["text"]
+        for blk in patch_calls[0]["value"]
+        for child in blk.get("children", [])
+    ]
+    assert any("opened on 3 March 1974" in t for t in pt_texts)
+
+    audits = [args for path, args in mutation_calls if path == "auditLog:record"]
+    assert audits[0]["after"] == "opened on 3 March 1974"
+
+
+def test_accept_without_override_uses_stored_fix_unchanged(monkeypatch):
+    """Regression: accept with NO override on a finding that HAS a stored
+    suggestedFix behaves exactly as before."""
+    _q, _m, patch_calls = _wire(monkeypatch, finding=_finding())
+
+    response = _client.post(
+        "/issues/run-abc/findings/fnd-1/accept",
+        json={"ifRevisionID": "rev-1"},
+    )
+    assert response.status_code == 200, response.text
+
+    pt_texts = [
+        child["text"]
+        for blk in patch_calls[0]["value"]
+        for child in blk.get("children", [])
+    ]
+    assert any("opened on 3 March 1974" in t for t in pt_texts)
+
+
+def test_accept_409_when_neither_override_nor_stored_fix(monkeypatch):
+    """Accept with neither an override nor a stored fix still 409s
+    accept_unavailable."""
+    _wire(monkeypatch, finding=_finding(suggestedFix=None))
+
+    response = _client.post(
+        "/issues/run-abc/findings/fnd-1/accept",
+        json={"ifRevisionID": "rev-1"},
+    )
+    assert response.status_code == 409
+    assert _reason(response) == "accept_unavailable"
