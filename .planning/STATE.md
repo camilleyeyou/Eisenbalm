@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 36-04-voice-pass-screen-PLAN.md
-last_updated: "2026-07-09T14:26:26.568Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 36-06-rewrite-popover-signoff-PLAN.md
+last_updated: "2026-07-09T14:57:27.624Z"
 progress:
   total_phases: 39
-  completed_phases: 34
+  completed_phases: 35
   total_plans: 228
-  completed_plans: 225
+  completed_plans: 226
 ---
 
 # Project State
@@ -250,6 +250,7 @@ Plan: 6 of 6
 | Phase 36 P05 | ~10min | 2 tasks | 4 files |
 | Phase 36 P03 | 12min | 3 tasks | 5 files |
 | Phase 36 P04 | 22min | 4 tasks | 19 files |
+| Phase 36 P06 | 20min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -639,6 +640,8 @@ Recent decisions affecting current work:
 - [Phase 36]: voice-recheck hardcodes narrator=None per NRR-10 byte-compatible legacy default — narrator resolution has no persisted, independently queryable record
 - [Phase 36]: Placed the ResolvedFindingsList axis-scoping behavior test in its own test file rather than DecisionRail.test.tsx (which mocks that component out)
 - [Phase 36]: Split voice-pass/[runId]/page.tsx into a thin use(params) wrapper around a named VoicePassScreen(runId) component to work around React 19 use()+Suspense not resolving in the vitest/jsdom/RTL test harness
+- [Phase 36]: AnnotationMark voice-tell labels derive from an explicit labels prop only (never from value.axis) to avoid silently relabeling pre-existing Review Desk tests whose fixture axis happens to be a VOICE_AXES member
+- [Phase 36]: Extended plan scope to thread AnnotationMark labels through Galley/GallerySection (Rule 2) so the voice-tell variant actually reaches the operator on /voice-pass
 
 ### Pending Todos
 
@@ -723,6 +726,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T14:26:26.551Z
-Stopped at: Completed 36-04-voice-pass-screen-PLAN.md
+Last session: 2026-07-09T14:57:27.611Z
+Stopped at: Completed 36-06-rewrite-popover-signoff-PLAN.md
 Resume file: None
