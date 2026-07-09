@@ -307,6 +307,23 @@ export default defineSchema({
     .index('by_workspace_agentKey', ['workspace_id', 'agentKey'])
     .index('by_workspace_agentKey_version', ['workspace_id', 'agentKey', 'version']),
 
+  // ── eval_scores: append-only scenario-run time-series (Phase 38, §38.2) ─────
+  eval_scores: defineTable({
+    workspace_id: v.string(),
+    scenarioId: v.string(),       // matches the repo-fixture Scenario.id (§38.1)
+    agentKey: v.string(),
+    promptVersion: v.string(),    // String(prompt_versions.version) — see §38.3
+    overall: v.number(),          // 0-10, from ScoreResponse.overall (§3A.2)
+    axes: v.string(),             // JSON-encoded ScoreResponse.axes
+    costUsd: v.number(),          // combined test-run + score cost for this row
+    ranAt: v.number(),            // Date.now(), server-side
+    source: v.string(),           // "drawer" | "commit" | "manual"
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_scenario', ['workspace_id', 'scenarioId'])
+    .index('by_workspace_agentKey', ['workspace_id', 'agentKey'])
+    .index('by_workspace_agentKey_version', ['workspace_id', 'agentKey', 'promptVersion']),
+
   // ── pipeline_config: global pipeline settings (Phase 22) ────────────────────
   pipeline_config: defineTable({
     workspace_id: v.string(),
