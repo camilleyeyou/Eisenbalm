@@ -27,9 +27,17 @@
  * header — re-rolling a section after an operator edit overwrites the console
  * change (rerun rebuilds from the LangGraph checkpoint and calls the full
  * write_issue_draft). v1 position: documented ordering rule, not a code guard.
+ *
+ * Phase 36 (VOX-02, D-09, Plan 36-07 Task 1): the page also reads an
+ * `?edit=<sectionId>[&finding=<findingId>]` deep-link so a second surface
+ * (Voice Pass's "Write my own" action) can route straight into the section
+ * editor without duplicating any editor machinery. A `deepLinkAppliedRef`
+ * guard fires it at most once per mount — after that, normal in-page nav
+ * (chip clicks, "Back to galley") behaves exactly as before.
  */
-import { use, useCallback, useEffect, useMemo, useState } from 'react'
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
+import { useSearchParams } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import SectionChipList, {
@@ -207,6 +215,24 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
     setEditFinding({ sectionId, findingId })
     setViewMode('edit')
   }
+
+  // Phase 36 (VOX-02, D-09, Plan 36-07 Task 1): ?edit=<sectionId>[&finding=
+  // <findingId>] deep-link entry — fires handleEditSection once the draft is
+  // loaded (so the section is valid), and at most once per mount via the ref
+  // guard. Later in-page navigation (chip clicks, "Back to galley") is
+  // unaffected — this effect never re-fires after its first successful run.
+  const searchParams = useSearchParams()
+  const deepLinkAppliedRef = useRef(false)
+
+  useEffect(() => {
+    if (deepLinkAppliedRef.current) return
+    if (!draft) return
+    const editSection = searchParams.get('edit')
+    if (!editSection) return
+    deepLinkAppliedRef.current = true
+    handleEditSection(editSection, searchParams.get('finding') ?? undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, searchParams])
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
