@@ -9,8 +9,10 @@ Three defense layers, listed in the order they fire:
   1. lib/voice.py VOICE_CONSTRAINTS injected at every section-writer's
      prompt-assembly time (preventative).
   2. agents/qa/rules.py — Layer-1 deterministic predicates (curative
-     hard-rule backstop). Hits emit axis='hard-rule' for Layer-1-specific
-     observability.
+     rule-based backstop). Phase 36 (§36.2): each predicate's true axis
+     (gravity/sentiment/irony-signaling/precision) is written verbatim —
+     the prior single-literal axis collapse is retired so Voice Pass's
+     axis filter can see these findings.
   3. agents/qa/judge.py — Layer-2 LLM-as-judge (curative judgment).
      Emits findings on the five evaluative axes from rubric.md.
 
@@ -182,20 +184,12 @@ async def qa(state: DispatchState) -> DispatchState:
     research = state.get("research") or {}
 
     # Layer 1: deterministic predicates (per-section, in-process; no I/O).
-    # Override Layer-1 axis to 'hard-rule' so Andrew can tell which layer
-    # produced each finding when reading qaCorrections in Studio.
+    # §36.2: each raw finding already carries its predicate's true axis
+    # (gravity/sentiment/irony-signaling/precision) — no override. The prior
+    # single-literal axis collapse silently hid the axis from Voice Pass's
+    # axis filter and is retired for new rows.
     layer1_raw: list[QAFinding] = run_all_predicates(sections, research)
-    layer1: list[QAFinding] = [
-        QAFinding(
-            section=f.section,
-            severity=f.severity,
-            axis="hard-rule",
-            quotedSpan=f.quotedSpan,
-            reason=f.reason,
-            suggestedFix=f.suggestedFix,
-        )
-        for f in layer1_raw
-    ]
+    layer1: list[QAFinding] = layer1_raw
 
     # Layer 2: LLM-as-judge (one Opus call, all sections concatenated).
     # Phase 16 (NRR-09): pass the resolved narrator (if any) so the judge can
@@ -218,7 +212,8 @@ async def qa(state: DispatchState) -> DispatchState:
     #   - 'sectionName' (NOT 'section') — matches Convex validator field name
     #   - 'reason' (NOT 'reasoning') — Pydantic field is `reason`
     #   - 'accepted: False' boolean (D-02 annotation-only); Andrew flips in Phase 9
-    #   - 'axis' carries the 6-literal union including 'hard-rule' for Layer-1
+    #   - 'axis' carries each finding's true predicate/judge axis (§36.2 —
+    #     Layer-1 no longer collapses to a single literal)
     for f in all_findings:
         hint = _block_index_hint(state, f.section, f.quotedSpan)
         payload = {
