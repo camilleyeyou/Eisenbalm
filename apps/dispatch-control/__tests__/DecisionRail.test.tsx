@@ -90,6 +90,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { publishIssue } from '@/lib/reviewClient'
 import { recordSignOff } from '@/lib/signOffClient'
 import DecisionRail from '../app/(dashboard)/review-desk/[runId]/_components/DecisionRail'
+import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 
 afterEach(() => {
   cleanup()
@@ -511,5 +512,81 @@ describe('DecisionRail source index (Phase 35, PRV-04)', () => {
     expect(
       screen.queryByRole('button', { name: new RegExp(`jump.*claim ${legacyRow.claimIndex}`, 'i') }),
     ).toBeNull()
+  })
+})
+
+// ── Axis scoping (Phase 36, §36.3/§36.7, Plan 36-04 Task 4) ─────────────────
+//
+// The "Facts cleared" gate, the blocking-items list, and the headline
+// counts must all be scoped to FACTUAL_AXES (undefined axis = factual, per
+// §36.3) so a voice/machine-tell error never blocks or clutters the
+// factual sign-off — mirrors 36-02's server-side facts-cleared narrowing.
+
+const machineTellError = {
+  _id: 'f-voice',
+  findingId: 'f-voice',
+  sectionName: 'origin_story',
+  severity: 'error' as const,
+  axis: 'machine-tell',
+  reason: 'Reads like AI-generated prose.',
+}
+
+const precisionError = {
+  _id: 'f-factual',
+  findingId: 'f-factual',
+  sectionName: 'problem',
+  severity: 'error' as const,
+  axis: 'precision',
+  reason: 'Vague causal claim.',
+}
+
+describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
+  it('only counts the factual-axis error as a blocker — a machine-tell error does not block Facts cleared', () => {
+    mockQueries({ findings: [machineTellError, precisionError] })
+    render(<DecisionRail runId="run-1" />)
+
+    expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
+    // The voice finding's own reason never appears in the blocking-items list.
+    expect(screen.queryByText(/reads like ai-generated prose/i)).toBeNull()
+    expect(screen.getByText(/vague causal claim/i)).toBeDefined()
+  })
+
+  it('enables "Sign: Facts cleared" when the ONLY open error is a voice/machine-tell finding', () => {
+    mockQueries({ findings: [machineTellError], signoffs: {} })
+    render(<DecisionRail runId="run-1" />)
+
+    const facts = screen.getByRole('button', {
+      name: /sign: facts cleared/i,
+    }) as HTMLButtonElement
+    expect(facts.disabled).toBe(false)
+  })
+
+  it('the blocking-items jump-link list contains only FACTUAL_AXES findings', () => {
+    mockQueries({ findings: [machineTellError, precisionError] })
+    render(<DecisionRail runId="run-1" />)
+
+    const blockingSection = screen.getByText(/blocking items/i).closest('section')!
+    expect(blockingSection.textContent).toMatch(/vague causal claim/i)
+    expect(blockingSection.textContent).not.toMatch(/reads like ai-generated prose/i)
+  })
+
+  it('a legacy finding with no axis at all still counts as factual (blocks Facts cleared)', () => {
+    const legacyNoAxis = {
+      _id: 'f-legacy',
+      findingId: 'f-legacy',
+      sectionName: 'founder_bio',
+      severity: 'error' as const,
+      reason: 'Pre-Phase-36 row with no axis field.',
+    }
+    mockQueries({ findings: [legacyNoAxis] })
+    render(<DecisionRail runId="run-1" />)
+
+    expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/pre-phase-36 row with no axis field/i)).toBeDefined()
+  })
+
+  it('FACTUAL_AXES sanity: machine-tell is never a member', () => {
+    expect(FACTUAL_AXES.has('machine-tell')).toBe(false)
+    expect(FACTUAL_AXES.has('precision')).toBe(true)
   })
 })
