@@ -97,6 +97,8 @@ async def test_success_emits_started_completed_savePayload(monkeypatch: pytest.M
     assert completed_args["tokensOut"] == 340
     assert completed_args["durationMs"] == 8400
     assert "completedAt" in completed_args
+    # Phase 37 §37.1: no retries recorded — retryCount defaults to 0.
+    assert completed_args["retryCount"] == 0
 
     # savePayload carries runId + agentKey
     payload_args = recorder.args_for("agentRuns:savePayload")
@@ -177,3 +179,33 @@ async def test_no_cost_node_emits_zero_cost(monkeypatch: pytest.MonkeyPatch) -> 
     assert completed_args["tokensIn"] == 0
     assert completed_args["tokensOut"] == 0
     assert completed_args["durationMs"] == 0
+    assert completed_args["retryCount"] == 0
+
+
+# ── Test (d): retryCount plumbing (Phase 37 §37.1) ───────────────────────────
+
+@pytest.mark.anyio
+async def test_completed_carries_recorded_retries_as_retry_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A node whose acomplete() call(s) needed a regenerate-retry surfaces retryCount."""
+    run_id = "test-run-retries-001"
+    agent_key = "editor_gate1"
+
+    begin_run(run_id)
+    record_cost(run_id, agent_key, tokens_in=200, tokens_out=100, usd=0.02, duration_ms=400, retries=1)
+
+    recorder = _MutationRecorder()
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.agent_wrapper.convex_mutation_safe",
+        recorder,
+    )
+
+    from eisenbalm_pipeline.lib.agent_wrapper import wrap_agent_node
+
+    async def fn(state: dict) -> dict:
+        return {"ok": 1}
+
+    wrapped = wrap_agent_node(agent_key, fn)
+    await wrapped(_make_state(run_id))
+
+    completed_args = recorder.args_for("agentRuns:completed")
+    assert completed_args["retryCount"] == 1

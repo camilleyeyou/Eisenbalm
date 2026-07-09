@@ -190,17 +190,23 @@ async def acomplete(
         # include_raw=True returns {"raw", "parsed", "parsing_error"} so we can
         # read real token usage + USD off the underlying AIMessage. CRITICAL:
         # a schema miss no longer raises — it surfaces as parsed=None (D-14).
+        # Phase 37 §37.1: `retries` tracks whether EITHER the invoke-error retry
+        # or the schema-miss regenerate below fired — the only genuine LLM
+        # regenerate-retry signal in the pipeline, surfaced into agent_runs.
+        retries = 0
         structured = llm.with_structured_output(response_format, include_raw=True)
         try:
             result = await structured.ainvoke(messages)
         except Exception as exc:  # transport/transient only (schema misses don't raise now)
             log.warning("acomplete %s: invoke error, retrying once: %r", agent_id, exc)
+            retries = 1
             result = await structured.ainvoke(messages)
         if result["parsed"] is None:  # schema/refusal miss — corrective retry (D-14)
             log.warning(
                 "acomplete %s: schema miss, retrying once: %r",
                 agent_id, result.get("parsing_error"),
             )
+            retries = 1
             retry_messages = messages + [{
                 "role": "user",
                 "content": (
@@ -221,6 +227,7 @@ async def acomplete(
         record_cost(
             run_id, agent_id,
             tokens_in=u["tokens_in"], tokens_out=u["tokens_out"], usd=u["usd"],
+            retries=retries,
         )
         recorder = get_recorder(run_id)
         recorder._last_agent = agent_id

@@ -45,6 +45,7 @@ class AgentCost(TypedDict):
     tokens_out: int
     usd: float
     duration_ms: int
+    retries: int
 
 
 # Module-level in-memory store keyed by run_id (mirrors convex_client._CLIENT
@@ -147,24 +148,31 @@ def record_cost(
     tokens_out: int = 0,
     usd: float = 0.0,
     duration_ms: int = 0,
+    retries: int = 0,
 ) -> None:
     """Record one agent's cost contribution. Stub mode passes all 0s.
 
     Called by the ``@agent_node`` wrapper (Plan 06) after each successful
     agent execution. Multiple calls for the same ``(run_id, agent_name)``
     pair are additive — useful when an agent makes multiple tool calls.
+
+    ``retries`` (Phase 37 §37.1): count of genuine LLM regenerate-retries
+    ``acomplete()`` performed for this call (invoke-error retry or
+    schema-miss regenerate, each capped at one). Defaults to 0 — legacy
+    call sites that never pass it accumulate no retries.
     """
     with _store_lock:
         agents = _store.setdefault(run_id, {})
         existing = agents.get(
             agent_name,
-            AgentCost(tokens_in=0, tokens_out=0, usd=0.0, duration_ms=0),
+            AgentCost(tokens_in=0, tokens_out=0, usd=0.0, duration_ms=0, retries=0),
         )
         agents[agent_name] = AgentCost(
             tokens_in=existing["tokens_in"] + tokens_in,
             tokens_out=existing["tokens_out"] + tokens_out,
             usd=existing["usd"] + usd,
             duration_ms=existing["duration_ms"] + duration_ms,
+            retries=existing.get("retries", 0) + retries,
         )
 
 

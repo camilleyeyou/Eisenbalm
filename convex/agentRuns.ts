@@ -102,9 +102,11 @@ export const completed = internalMutation({
     durationMs: v.number(),
     tokensIn: v.number(),
     tokensOut: v.number(),
+    retryCount: v.optional(v.number()),  // Phase 37 §37.1
   },
   handler: async (ctx, args) => {
-    const { workspace_id, runId, agentKey, completedAt, costUsd, durationMs, tokensIn, tokensOut } = args
+    const { workspace_id, runId, agentKey, completedAt, costUsd, durationMs, tokensIn, tokensOut, retryCount } = args
+    const retryCountField = retryCount !== undefined ? { retryCount } : {}
     const existing = await ctx.db
       .query('agent_runs')
       .withIndex('by_runId', q => q.eq('runId', runId))
@@ -118,6 +120,7 @@ export const completed = internalMutation({
         durationMs,
         tokensIn,
         tokensOut,
+        ...retryCountField,
       })
     } else {
       await ctx.db.insert('agent_runs', {
@@ -130,6 +133,7 @@ export const completed = internalMutation({
         durationMs,
         tokensIn,
         tokensOut,
+        ...retryCountField,
       })
     }
   },

@@ -58,6 +58,55 @@ describe('agentRuns: started → completed → byRunId', () => {
   })
 })
 
+describe('agentRuns: retryCount (Phase 37 §37.1)', () => {
+  it('stores retryCount when provided', async () => {
+    const t = convexTest({ schema, modules })
+
+    await t.mutation(internal.agentRuns.started, {
+      workspace_id: 'eisenbalm',
+      runId: 'test-run-retry-001',
+      agentKey: 'calibrator',
+      startedAt: 1000000,
+    })
+
+    await t.mutation(internal.agentRuns.completed, {
+      workspace_id: 'eisenbalm',
+      runId: 'test-run-retry-001',
+      agentKey: 'calibrator',
+      completedAt: 1010000,
+      costUsd: 0.01,
+      durationMs: 5000,
+      tokensIn: 100,
+      tokensOut: 50,
+      retryCount: 1,
+    })
+
+    const rows = await t.query(api.agentRuns.byRunId, { runId: 'test-run-retry-001' })
+    expect(rows).toHaveLength(1)
+    expect(rows[0].retryCount).toBe(1)
+  })
+
+  it('leaves retryCount undefined when omitted (legacy compat) and still upserts', async () => {
+    const t = convexTest({ schema, modules })
+
+    await t.mutation(internal.agentRuns.completed, {
+      workspace_id: 'eisenbalm',
+      runId: 'test-run-retry-002',
+      agentKey: 'scout',
+      completedAt: 2010000,
+      costUsd: 0.02,
+      durationMs: 3000,
+      tokensIn: 200,
+      tokensOut: 80,
+    })
+
+    const rows = await t.query(api.agentRuns.byRunId, { runId: 'test-run-retry-002' })
+    expect(rows).toHaveLength(1)
+    expect(rows[0].status).toBe('done')
+    expect(rows[0].retryCount).toBeUndefined()
+  })
+})
+
 describe('agentRuns: queueForRun', () => {
   it('pre-populates queued rows for all agentKeys', async () => {
     const t = convexTest({ schema, modules })

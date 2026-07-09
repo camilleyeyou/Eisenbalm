@@ -331,6 +331,7 @@ export default defineSchema({
     tokensIn: v.optional(v.number()),    // Phase 23 OBS-03
     tokensOut: v.optional(v.number()),   // Phase 23 OBS-03
     error: v.optional(v.string()),       // Phase 23 OBS-03 — error message on failure
+    retryCount: v.optional(v.number()),  // Phase 37 §37.1 — genuine LLM regenerate-retries, legacy = 0/absent
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId', ['runId']),

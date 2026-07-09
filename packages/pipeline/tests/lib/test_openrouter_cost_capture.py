@@ -75,6 +75,8 @@ async def test_structured_capture_records_real_cost():
     payload = get_cost_payload("run-cap-1")
     assert payload["agents"]["calibrator"]["usd"] == pytest.approx(0.0271)  # recorded once
     assert payload["agents"]["calibrator"]["tokens_in"] == 1200
+    # Phase 37 §37.1: first-try success — no regenerate-retry occurred.
+    assert payload["agents"]["calibrator"]["retries"] == 0
 
 
 async def test_plain_text_capture_records_real_cost():
@@ -108,6 +110,25 @@ async def test_schema_miss_retries_once_and_records_once():
     assert isinstance(parsed, StyleBriefOutput)
     # Cost from the SECOND raw only (0.0271), not the failed 0.99 attempt.
     assert get_cost_payload("run-retry")["agents"]["calibrator"]["usd"] == pytest.approx(0.0271)
+    # Phase 37 §37.1: the schema-miss regenerate is the genuine retry signal.
+    assert get_cost_payload("run-retry")["agents"]["calibrator"]["retries"] == 1
+
+
+async def test_invoke_error_retries_once_and_records_retry():
+    """Phase 37 §37.1: the invoke-error retry path also counts as one retry."""
+    begin_run("run-invoke-error-retry")
+    good = {"raw": _fake_raw_message(cost=0.0271), "parsed": StyleBriefOutput.model_construct(), "parsing_error": None}
+    fake_model, structured = _structured_fake(None)
+    structured.ainvoke = AsyncMock(side_effect=[RuntimeError("transient"), good])
+    with patch("eisenbalm_pipeline.lib.openrouter_client._build_chat_model", return_value=fake_model):
+        parsed, usage = await acomplete(
+            agent_id="calibrator", run_id="run-invoke-error-retry",
+            messages=[{"role": "system", "content": "x"}],
+            response_format=StyleBriefOutput,
+        )
+    assert structured.ainvoke.call_count == 2
+    assert isinstance(parsed, StyleBriefOutput)
+    assert get_cost_payload("run-invoke-error-retry")["agents"]["calibrator"]["retries"] == 1
 
 
 async def test_cap_trips_after_real_usd(monkeypatch):

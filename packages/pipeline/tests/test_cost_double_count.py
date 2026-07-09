@@ -82,3 +82,27 @@ def test_record_cost_is_additive_but_get_cost_payload_is_not():
     # This confirms get_cost_payload is a pure read of current state, not a writer
     assert re_read["total"] == pytest.approx(0.02, abs=1e-9)
     assert re_read == snapshot2  # Consistent with second snapshot
+
+
+def test_record_cost_accumulates_retries_phase_37():
+    """Phase 37 §37.1: record_cost's retries kwarg accumulates per-agent.
+
+    Legacy call sites that never pass retries=... still default to 0.
+    """
+    run_id = "test-double-count-004"
+    begin_run(run_id)
+
+    # Legacy call site — no retries kwarg — defaults to 0.
+    record_cost(run_id, "calibrator", usd=0.01, tokens_in=100, tokens_out=50, duration_ms=200)
+    payload = get_cost_payload(run_id)
+    assert payload["agents"]["calibrator"]["retries"] == 0
+
+    # A node that needed one regenerate-retry.
+    record_cost(run_id, "editor_gate1", usd=0.02, tokens_in=200, tokens_out=100, duration_ms=400, retries=1)
+    payload = get_cost_payload(run_id)
+    assert payload["agents"]["editor_gate1"]["retries"] == 1
+
+    # A second acomplete() call for the SAME agent accumulates retries additively.
+    record_cost(run_id, "editor_gate1", usd=0.02, tokens_in=200, tokens_out=100, duration_ms=400, retries=1)
+    payload = get_cost_payload(run_id)
+    assert payload["agents"]["editor_gate1"]["retries"] == 2

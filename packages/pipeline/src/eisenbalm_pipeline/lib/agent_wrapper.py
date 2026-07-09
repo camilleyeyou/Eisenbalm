@@ -167,6 +167,8 @@ def wrap_agent_node(agent_key: str, fn: Callable) -> Callable:
                 "durationMs": agent_cost.get("duration_ms", 0),
                 "tokensIn": agent_cost.get("tokens_in", 0),
                 "tokensOut": agent_cost.get("tokens_out", 0),
+                # Phase 37 §37.1 — genuine acomplete() regenerate-retries, honest 0 default.
+                "retryCount": agent_cost.get("retries", 0),
             },
         )
 
