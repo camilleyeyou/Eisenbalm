@@ -233,3 +233,107 @@ def test_voice_pass_router_registered_on_app():
 
     paths = {route.path for route in app.routes}
     assert "/issues/{run_id}/voice-recheck" in paths
+    assert "/issues/{run_id}/voice-rewrite" in paths
+
+
+# ── voice-rewrite (§36.5) ───────────────────────────────────────────────────
+
+
+def _rewrite_finding(**overrides) -> dict:
+    base = {
+        "_id": "fnd-1",
+        "runId": "run-abc",
+        "sectionName": "origin_story",
+        "severity": "warning",
+        "axis": "sentiment",
+        "quotedSpan": "a tapestry of hope",
+        "reason": "AI-slop metaphor",
+        "suggestedFix": None,
+        "resolution": None,
+    }
+    base.update(overrides)
+    return base
+
+
+def _wire_rewrite(monkeypatch, *, finding: dict | None, rewrite_text: str = "grant renewals since 1974"):
+    query_calls: list[tuple[str, dict]] = []
+    acomplete_calls: list[dict] = []
+
+    async def mock_convex_query(http, path, args):
+        query_calls.append((path, args))
+        if path == "qaCorrections:byId":
+            return finding
+        return None
+
+    async def mock_acomplete(*, agent_id, run_id, messages, response_format=None):
+        acomplete_calls.append(
+            {
+                "agent_id": agent_id,
+                "run_id": run_id,
+                "messages": messages,
+                "response_format": response_format,
+            }
+        )
+        return response_format(suggestedFix=rewrite_text), {
+            "tokens_in": 10,
+            "tokens_out": 5,
+            "usd": 0.001,
+            "resolved_model": "anthropic/claude-opus-4-1",
+        }
+
+    monkeypatch.setattr(f"{_V}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_V}.acomplete", mock_acomplete)
+    return query_calls, acomplete_calls
+
+
+def test_voice_rewrite_returns_suggested_fix(monkeypatch):
+    _q, acomplete_calls = _wire_rewrite(
+        monkeypatch, finding=_rewrite_finding(), rewrite_text="grant renewals since 1974"
+    )
+
+    response = _client.post(
+        "/issues/run-abc/voice-rewrite", json={"findingId": "fnd-1"}
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {
+        "findingId": "fnd-1",
+        "suggestedFix": "grant renewals since 1974",
+    }
+    assert len(acomplete_calls) == 1
+
+
+def test_voice_rewrite_404_finding_wrong_run(monkeypatch):
+    _wire_rewrite(monkeypatch, finding=_rewrite_finding(runId="run-other"))
+
+    response = _client.post(
+        "/issues/run-abc/voice-rewrite", json={"findingId": "fnd-1"}
+    )
+    assert response.status_code == 404
+
+
+def test_voice_rewrite_404_finding_missing(monkeypatch):
+    _wire_rewrite(monkeypatch, finding=None)
+
+    response = _client.post(
+        "/issues/run-abc/voice-rewrite", json={"findingId": "fnd-1"}
+    )
+    assert response.status_code == 404
+
+
+def test_voice_rewrite_calls_acomplete_with_agent_qa_and_run_id(monkeypatch):
+    """The acomplete call passes agent_id='qa' and a run_id (cost recording),
+    and the user prompt includes the finding's quotedSpan."""
+    _q, acomplete_calls = _wire_rewrite(
+        monkeypatch, finding=_rewrite_finding(quotedSpan="a tapestry of hope")
+    )
+
+    response = _client.post(
+        "/issues/run-abc/voice-rewrite", json={"findingId": "fnd-1"}
+    )
+    assert response.status_code == 200, response.text
+
+    call = acomplete_calls[0]
+    assert call["agent_id"] == "qa"
+    assert call["run_id"]
+    user_contents = [m["content"] for m in call["messages"] if m["role"] == "user"]
+    assert any("a tapestry of hope" in c for c in user_contents)
