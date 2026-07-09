@@ -228,6 +228,9 @@ def _editor_decision_payload(state: DispatchState) -> dict:
     return {
         "winner": winning.get("name", "<unknown>"),
         "rationale": state.get("editor_decision", ""),
+        # Phase 37 §37.2 — previously computed by editor_gate_1 then discarded.
+        "confidence": state.get("editor_confidence"),
+        "runnerUpNotes": state.get("runner_up_notes", ""),
     }
 
 
@@ -404,6 +407,7 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
         "winning_charity": winning_charity,
         "editor_decision": decision.editorReasoning,
         "runner_up_notes": decision.runnerUpNotes,
+        "editor_confidence": decision.confidence,
         "deliberation_transcript": transcript,
         "model_versions": model_versions,
     }

@@ -14,6 +14,7 @@ from eisenbalm_pipeline.agents.editor import (
     EDITOR_CONFIDENCE_THRESHOLD,
     EDITOR_INTERRUPT_THRESHOLD,
     EditorDecision,
+    _editor_decision_payload,
     _format_deliberation_transcript,
     _score_gap,
     _sort_candidates_by_score,
@@ -87,6 +88,21 @@ def test_score_gap_single_candidate() -> None:
 def test_thresholds() -> None:
     assert EDITOR_INTERRUPT_THRESHOLD == 1.0
     assert EDITOR_CONFIDENCE_THRESHOLD == 0.7
+
+
+def test_editor_decision_payload_carries_confidence_and_runner_up_notes() -> None:
+    """Phase 37 §37.2: payload gains confidence + runnerUpNotes, keeps winner/rationale."""
+    state = {
+        "winning_charity": {"name": "HighOrg"},
+        "editor_decision": "HighOrg wins on operational rigor.",
+        "editor_confidence": 0.87,
+        "runner_up_notes": "LowOrg was a fine candidate.",
+    }
+    payload = _editor_decision_payload(state)
+    assert payload["winner"] == "HighOrg"
+    assert payload["rationale"] == "HighOrg wins on operational rigor."
+    assert payload["confidence"] == 0.87
+    assert payload["runnerUpNotes"] == "LowOrg was a fine candidate."
 
 
 def test_transcript_format() -> None:
@@ -166,6 +182,8 @@ async def test_winner_selection_deterministic() -> None:
     # Transcript present + format
     assert "## Scout Findings" in result["deliberation_transcript"]
     assert "**Winner:** HighOrg" in result["deliberation_transcript"]
+    # Phase 37 §37.2: editor_confidence persisted (was computed then discarded)
+    assert result["editor_confidence"] == 0.9
 
 
 def _interrupt_raises_graph_interrupt(*args, **kwargs) -> None:

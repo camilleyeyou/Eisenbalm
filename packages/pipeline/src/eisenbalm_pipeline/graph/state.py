@@ -175,6 +175,7 @@ class DispatchState(TypedDict):
     deliberation_conversation: Optional[list[dict]]  # Phase 13 (DEL-CONV): Chronicler turns [{"speaker","text"}] — VERBATIM from docs/API_CONTRACTS.md §7
     editor_decision: Optional[str]              # why this charity won
     runner_up_notes: Optional[str]
+    editor_confidence: Optional[float]          # Phase 37 §37.2 — EditorDecision.confidence, persisted (was computed then discarded)
 
     # ── Phase 2: Content (populated in parallel) ───────────────────────────────
     research: Optional[ResearchOutput]
