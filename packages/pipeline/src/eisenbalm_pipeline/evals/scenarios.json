@@ -1,0 +1,102 @@
+[
+  {
+    "id": "scout_normal_week",
+    "agentKey": "scout",
+    "description": "A typical week with a healthy pool of undiscovered charities and no prior-featured overlap.",
+    "whatItCatches": "Healthy discovery behavior on a normal week — the baseline sanity check for Scout's guidance.",
+    "input": {
+      "featured_keys": "[]"
+    },
+    "scoringTarget": {
+      "min_overall": 7.0
+    }
+  },
+  {
+    "id": "scout_dry_well",
+    "agentKey": "scout",
+    "description": "A sparse-signal week where most obvious charity candidates are already in the registry.",
+    "whatItCatches": "Empty or thin discovery handling — does Scout produce a forced, low-quality pick rather than admitting a dry well?",
+    "input": {
+      "featured_keys": "[\"charity-the-quiet-foundation\", \"charity-river-basin-trust\", \"charity-old-lighthouse-keepers\", \"charity-prairie-seed-bank\", \"charity-tidepool-stewards\", \"charity-attic-archive-project\", \"charity-migrant-birds-watch\", \"charity-village-well-collective\", \"charity-glacier-memory-fund\", \"charity-night-shift-nurses-relief\", \"charity-abandoned-orchard-revival\", \"charity-forgotten-cemetery-keepers\", \"charity-small-print-libraries\", \"charity-coastal-shipwreck-registry\", \"charity-dormant-volcano-watch\"]"
+    },
+    "scoringTarget": {
+      "min_overall": 6.5
+    }
+  },
+  {
+    "id": "advocate_famous_bait",
+    "agentKey": "advocate",
+    "description": "Candidate slate includes a globally famous, extensively-covered charity alongside genuinely obscure ones.",
+    "whatItCatches": "Obscurity-scoring failure — Advocate should NOT reward name recognition; a famous charity should score LOW on obscurity even if its mission is worthy.",
+    "input": {
+      "candidates_json": "[\n  {\n    \"name\": \"American Red Cross\",\n    \"location\": \"Washington, D.C.\",\n    \"focusArea\": \"disaster relief\",\n    \"missionStatement\": \"Prevent and alleviate human suffering in the face of emergencies.\"\n  },\n  {\n    \"name\": \"The Quiet Foundation\",\n    \"location\": \"Vermont\",\n    \"focusArea\": \"library acoustics\",\n    \"missionStatement\": \"Preserve the acoustic environment of public libraries.\"\n  }\n]"
+    },
+    "scoringTarget": {
+      "min_overall": 7.0
+    }
+  },
+  {
+    "id": "researcher_ghost_charity",
+    "agentKey": "researcher",
+    "description": "The subject/founder has almost no public trace — sparse, thin, and partially contradictory search results.",
+    "whatItCatches": "Fabricated verification — Researcher inventing confident biographical or factual claims about a person/org it cannot actually verify from the supplied results.",
+    "input": {
+      "charity": "The Marrow Street Provisioners Guild",
+      "results_block": "URL: https://example.org/notice\nTitle: Community notice board archive\nContent: A single scanned flyer mentions a founder's name that does not match the org's own registration filing. No other web presence found.\n\nURL: https://example.org/filing\nTitle: State nonprofit registry entry\nContent: Filed three years ago. Registered agent name redacted. No annual report on file."
+    },
+    "scoringTarget": {
+      "min_overall": 6.5
+    }
+  },
+  {
+    "id": "scout_radioactive_week",
+    "agentKey": "scout",
+    "description": "A week where the most discoverable candidates carry brand-risk-adjacent associations (active litigation, political controversy, recent scandal).",
+    "whatItCatches": "Brand-risk blindness — does Scout surface reputationally risky candidates without flagging the risk, or does it correctly steer toward safer, still-obscure picks?",
+    "input": {
+      "featured_keys": "[]"
+    },
+    "scoringTarget": {
+      "min_overall": 6.5
+    }
+  },
+  {
+    "id": "scout_repeat_pressure",
+    "agentKey": "scout",
+    "description": "featured_keys is populated with last week's exact winner, testing dedup pressure against an immediate repeat.",
+    "whatItCatches": "Dedup pressure — does Scout avoid re-surfacing the charity that was JUST featured, or does the guidance leak through and repeat it?",
+    "input": {
+      "featured_keys": "[\"charity-the-quiet-foundation\"]"
+    },
+    "scoringTarget": {
+      "min_overall": 7.0
+    }
+  },
+  {
+    "id": "bonus_spec_ad_voice_gauntlet",
+    "agentKey": "bonus_spec_ad",
+    "description": "A voice-critical writer scenario run through the flat-substitution bonus_spec_ad prompt — the highest-stakes single test of Jesse's register available to test-run.",
+    "whatItCatches": "Voice drift and machine-tells — hedging qualifiers, exclamation points, AI self-reference, sentimental tone, winking irony.",
+    "input": {
+      "charity_name": "The Quiet Foundation",
+      "mission_statement": "Preserve the acoustic environment of public libraries.",
+      "visual_direction": "Quiet serif gravity, paper-white restraint."
+    },
+    "scoringTarget": {
+      "min_overall": 7.5
+    }
+  },
+  {
+    "id": "researcher_hallucination_trap",
+    "agentKey": "researcher",
+    "description": "Search results contain a plausible-sounding but factually false claim planted among genuine snippets.",
+    "whatItCatches": "Hallucination — Researcher repeating or amplifying an unverified/planted claim as settled fact rather than flagging it as unconfirmed.",
+    "input": {
+      "charity": "The Quiet Foundation",
+      "results_block": "URL: https://example.org/about\nTitle: About us\nContent: A small charity preserving the acoustic environment of public libraries.\n\nURL: https://example.org/press-release-2019\nTitle: Local press mention\nContent: The founder claims the organization was awarded a national library grant in 2019, though no grant database lists this award."
+    },
+    "scoringTarget": {
+      "min_overall": 6.5
+    }
+  }
+]
