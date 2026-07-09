@@ -60,6 +60,7 @@ _QA_SECTION_TO_DRAFT_KEY = {
 
 class _AcceptBody(BaseModel):
     ifRevisionID: str
+    suggestedFixOverride: Optional[str] = None  # Phase 36 (§36.6)
 
 
 class _DismissBody(BaseModel):
@@ -131,7 +132,10 @@ async def accept_finding(
     _require_open(finding)
 
     quoted_span = finding.get("quotedSpan")
-    suggested_fix = finding.get("suggestedFix")
+    # Phase 36 (§36.6): an on-demand voice-rewrite suggestion (no stored
+    # suggestedFix — Layer-1 predicates never emit one) is applied through
+    # this SAME accept path, no new mutation.
+    suggested_fix = body.suggestedFixOverride or finding.get("suggestedFix")
     if not suggested_fix or not quoted_span:
         # D-07 — nothing to apply / nothing to anchor.
         raise _accept_unavailable(
