@@ -187,7 +187,7 @@ def _expected_and_substituted(agent_key: str) -> tuple[str, str]:
         )
         expected = _user_of(
             scout_agent._build_messages(
-                state=_STATE, tavily_results=_TAVILY, featured_keys=[]
+                config=None, tavily_results=_TAVILY, featured_keys=[]
             )
         )
         sub = load_prompt(agent_key).replace("{results_block}", results_block)

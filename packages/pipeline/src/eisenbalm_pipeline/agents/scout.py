@@ -154,27 +154,30 @@ async def _load_registry_keys(http) -> list[str]:
 
 
 def _build_messages(
-    *, state: DispatchState, tavily_results: list[SearchResult], featured_keys: list[str]
+    *, config: Any, tavily_results: list[SearchResult], featured_keys: list[str]
 ) -> list[dict[str, str]]:
     """System prompt embeds rejection rule + max_tool_calls budget verbatim
     from RESEARCH §Scout. featured_keys are interpolated for the LLM to use
     defensively (the real filter runs in Python after the model returns).
 
     Phase 22 (CFG-01): the base system prompt is read from
-    state["config"].agents["scout"].system_prompt when present, falling back to
+    config.agents["scout"].system_prompt when present, falling back to
     the on-disk default only on legacy/test paths without a resolved config.
+
+    Plan 38-03: takes ``config`` directly (not the full DispatchState) so
+    ``discover_candidates()`` can call this without fabricating pipeline
+    state (Research Pattern 3) — the shadow-run endpoint has no DispatchState.
     """
     results_block = "\n\n".join(
         f"URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:600]}"
         for r in tavily_results
     )
-    cfg = state.get("config")
-    base = cfg.agents["scout"].system_prompt if cfg else load_prompt("scout")
+    base = config.agents["scout"].system_prompt if config else load_prompt("scout")
     system = base.replace("{featured_keys}", f"{featured_keys}")
     # Phase 24 (PRM-01): user template read from config, on-disk .md fallback.
     user_tmpl = (
-        cfg.user_templates.get("scout_user")
-        if cfg and cfg.user_templates.get("scout_user")
+        config.user_templates.get("scout_user")
+        if config and config.user_templates.get("scout_user")
         else load_prompt("scout_user")
     )
     user = user_tmpl.replace("{results_block}", results_block)
@@ -184,12 +187,49 @@ def _build_messages(
     ]
 
 
-# ── Agent body ──────────────────────────────────────────────────────────
+# ── Pure discovery (no writes) ───────────────────────────────────────────
 
 
-@agent_node(name="scout", emit_event=None, max_tool_calls=8)
-async def scout(state: DispatchState) -> DispatchState:
-    run_id = state["run_id"]
+def _extract_candidates(out: Any) -> list[Any]:
+    """Extract raw candidates list from an acomplete return value.
+
+    Defensive shape extraction: stub-mode returns model_construct() (empty
+    candidates list); real mode returns a populated ScoutBatchOutput.
+    """
+    if hasattr(out, "candidates"):
+        return list(out.candidates or [])
+    if isinstance(out, dict):
+        return list(out.get("candidates") or [])
+    return []
+
+
+async def discover_candidates(
+    *, run_id: str, config: Any = None,
+) -> tuple[list[dict], list[str], dict]:
+    """Pure discovery: registry read -> Tavily search -> LLM parse -> dedup.
+
+    Extracted from ``scout()`` (Plan 38-03 / RESEARCH Pattern 3) so the
+    read-only shadow-run endpoint (EVL-05) can preview real live-search
+    discovery output without ever touching Sanity or a Convex run table.
+
+    This function performs NO Sanity write and NO Convex mutation —
+    ``charities:listForDedup`` (inside ``_load_registry_keys``) is a READ
+    only. Writes (``write_charity`` + ``pitchLog:insert`` +
+    ``charities:upsertCandidate``) live ONLY in ``scout()``, after this
+    function returns.
+
+    Args:
+        run_id: identifies the acomplete cost-recording bucket; may be a
+            synthetic id (e.g. ``f"shadow-{uuid4()}"``) for preview callers
+            that have no real pipeline run.
+        config: resolved RunConfig, or None to fall back to on-disk prompts
+            (mirrors the legacy/test path — see ``_build_messages``).
+
+    Returns:
+        ``(surviving_candidates, featured_keys, usage)`` —
+        ``surviving_candidates`` is a list of plain dicts
+        (``CharityCandidate.model_dump()``), post-dedup.
+    """
     max_calls = 8  # mirrors @agent_node decorator parameter (AGT-18)
 
     # 1. Registry dedup load (D-03 / REG-02) — Convex charities registry.
@@ -228,7 +268,7 @@ async def scout(state: DispatchState) -> DispatchState:
 
     # 3. LLM parses Tavily output into Pydantic-validated candidates.
     messages = _build_messages(
-        state=state, tavily_results=tavily_results, featured_keys=featured_keys
+        config=config, tavily_results=tavily_results, featured_keys=featured_keys
     )
     batch_out, usage = await acomplete(
         agent_id="scout",
@@ -236,17 +276,6 @@ async def scout(state: DispatchState) -> DispatchState:
         messages=messages,
         response_format=ScoutBatchOutput,
     )
-
-    # Defensive shape extraction: stub-mode returns model_construct() (empty
-    # candidates list); real mode returns a populated ScoutBatchOutput.
-    # Tests also exercise both paths.
-    def _extract_candidates(out: Any) -> list[Any]:
-        """Extract raw candidates list from an acomplete return value."""
-        if hasattr(out, "candidates"):
-            return list(out.candidates or [])
-        if isinstance(out, dict):
-            return list(out.get("candidates") or [])
-        return []
 
     candidates_raw: list[Any] = _extract_candidates(batch_out)
 
@@ -299,6 +328,20 @@ async def scout(state: DispatchState) -> DispatchState:
         if keys & featured_set:
             continue
         surviving.append(c.model_dump())
+
+    return surviving, featured_keys, usage
+
+
+# ── Agent body ──────────────────────────────────────────────────────────
+
+
+@agent_node(name="scout", emit_event=None, max_tool_calls=8)
+async def scout(state: DispatchState) -> DispatchState:
+    run_id = state["run_id"]
+
+    surviving, featured_keys, usage = await discover_candidates(
+        run_id=run_id, config=state.get("config"),
+    )
 
     # 5. Sanity + Convex writes per Phase 4 D-18 order (verbatim from
     # Phase 4 stub: Sanity halts the pipeline on failure; Convex logs+continues).
