@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 36-01-contract-convex-axis-PLAN.md
-last_updated: "2026-07-09T13:14:47.850Z"
+stopped_at: Completed 36-02-pipeline-axis-foundations-PLAN.md
+last_updated: "2026-07-09T13:27:57.702Z"
 progress:
   total_phases: 39
   completed_phases: 34
   total_plans: 228
-  completed_plans: 221
+  completed_plans: 222
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 36
-Plan: 2 of 6
+Plan: 3 of 6
 
 ## Performance Metrics
 
@@ -246,6 +246,7 @@ Plan: 2 of 6
 | Phase 35 P06 | ~20min | 2 tasks | 2 files |
 | Phase 35 P04 | 15min | 3 tasks | 5 files |
 | Phase 36 P01 | 10min | 2 tasks | 3 files |
+| Phase 36 P02 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -628,6 +629,7 @@ Recent decisions affecting current work:
 - [Phase 35]: Sourced claim_checks rows (Plan 35-06) with an unrecognized/absent sectionName land in a trailing Other sourced claims group rather than being dropped (nothing-silent house rule)
 - [Phase 35]: Kept legacy extract_claims/extract_all_claim_types byte-unchanged (Phase 26/33 back-compat) while publisher now calls the new per-block extract_claims_by_block; Convex optional fields omitted (not null) when absent, mirroring the qa/__init__.py blockIndexHint precedent
 - [Phase 36]: Widened Convex qaCorrections.axis union to include structural-variety alongside machine-tell in the same commit — closes a pre-existing Phase 18 gap where the judge's axis silently dropped on write
+- [Phase 36]: Left pre-existing test_sounds_human_ungated unmodified (its fixture axis-less finding stays outside VOICE_AXES, assertion remains valid)
 
 ### Pending Todos
 
@@ -712,6 +714,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T13:14:39.704Z
-Stopped at: Completed 36-01-contract-convex-axis-PLAN.md
+Last session: 2026-07-09T13:27:57.689Z
+Stopped at: Completed 36-02-pipeline-axis-foundations-PLAN.md
 Resume file: None
