@@ -14,9 +14,115 @@
  * filename. The seed (Plan 04) is responsible for mapping files → keys.
  */
 import { query, mutation } from './_generated/server'
+import type { MutationCtx } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import { requireOperator } from './lib/auth'
+
+// ── Phase 38 §38.3 (EVL-03): commit gate tolerance ───────────────────────────
+// 0-10 scale. Absorbs LLM-judge scoring non-determinism (Research Pitfall 7) —
+// a regression smaller than this is noise, not a real quality drop.
+const EVAL_REGRESSION_TOLERANCE = 0.5
+
+/**
+ * evaluateEvalGate (§38.3) — reads `eval_scores` for the target version being
+ * committed and the currently-active version, and decides whether `activate`
+ * should block.
+ *
+ * Freshness: the target version needs at least one eval_scores row recorded
+ * AT OR AFTER its own `createdAt` (i.e. run against the actual saved prompt
+ * text, not a stale run from before this version existed).
+ *
+ * Regression / aggregate: only scenarios present on BOTH sides are compared
+ * (using each side's most-recently-run score per scenarioId) — a scenario
+ * with no active-side score simply isn't part of the comparison.
+ */
+async function evaluateEvalGate(
+  ctx: MutationCtx,
+  args: {
+    workspace_id: string
+    agentKey: string
+    targetVersion: number
+    targetCreatedAt: number
+    activeVersion: number
+  },
+): Promise<{ blocked: boolean; reason?: string }> {
+  const { workspace_id, agentKey, targetVersion, targetCreatedAt, activeVersion } = args
+
+  const targetRows = await ctx.db
+    .query('eval_scores')
+    .withIndex('by_workspace_agentKey_version', q =>
+      q
+        .eq('workspace_id', workspace_id)
+        .eq('agentKey', agentKey)
+        .eq('promptVersion', String(targetVersion)),
+    )
+    .collect()
+
+  const hasFreshTargetRow = targetRows.some(r => r.ranAt >= targetCreatedAt)
+  if (!hasFreshTargetRow) {
+    return {
+      blocked: true,
+      reason: `No fresh eval results for v${targetVersion} — run the scenario evals against this saved version before activating.`,
+    }
+  }
+
+  const activeRows = await ctx.db
+    .query('eval_scores')
+    .withIndex('by_workspace_agentKey_version', q =>
+      q
+        .eq('workspace_id', workspace_id)
+        .eq('agentKey', agentKey)
+        .eq('promptVersion', String(activeVersion)),
+    )
+    .collect()
+
+  // Most-recently-run score per scenarioId, for each side.
+  function latestByScenario(rows: typeof targetRows) {
+    const map = new Map<string, { overall: number; ranAt: number }>()
+    for (const row of rows) {
+      const existing = map.get(row.scenarioId)
+      if (!existing || row.ranAt > existing.ranAt) {
+        map.set(row.scenarioId, { overall: row.overall, ranAt: row.ranAt })
+      }
+    }
+    return map
+  }
+
+  const targetByScenario = latestByScenario(targetRows)
+  const activeByScenario = latestByScenario(activeRows)
+  const pairedScenarioIds = [...targetByScenario.keys()].filter(id =>
+    activeByScenario.has(id),
+  )
+
+  for (const scenarioId of pairedScenarioIds) {
+    const targetOverall = targetByScenario.get(scenarioId)!.overall
+    const activeOverall = activeByScenario.get(scenarioId)!.overall
+    if (targetOverall < activeOverall - EVAL_REGRESSION_TOLERANCE) {
+      return {
+        blocked: true,
+        reason: `Scenario '${scenarioId}' regressed: v${targetVersion} scored ${targetOverall.toFixed(1)} vs active v${activeVersion}'s ${activeOverall.toFixed(1)} (tolerance ${EVAL_REGRESSION_TOLERANCE}).`,
+      }
+    }
+  }
+
+  if (pairedScenarioIds.length > 0) {
+    const avgTarget =
+      pairedScenarioIds.reduce((sum, id) => sum + targetByScenario.get(id)!.overall, 0) /
+      pairedScenarioIds.length
+    const avgActive =
+      pairedScenarioIds.reduce((sum, id) => sum + activeByScenario.get(id)!.overall, 0) /
+      pairedScenarioIds.length
+    if (avgTarget < avgActive) {
+      return {
+        blocked: true,
+        reason: `Target metric not up (v${targetVersion} avg ${avgTarget.toFixed(2)} < active v${activeVersion} avg ${avgActive.toFixed(2)}).`,
+      }
+    }
+  }
+
+  return { blocked: false }
+}
 
 export const upsertActive = mutation({
   args: {
@@ -134,12 +240,28 @@ export const saveVersion = mutation({
 })
 
 /**
- * activate (PRM-04) — flip exactly one version active, guarded by in-progress runs.
+ * activate (PRM-04) — flip exactly one version active, guarded by in-progress
+ * runs AND (Phase 38 §38.3, EVL-03) an eval-gate on target-metric-up-with-no-
+ * regressions.
  *
  * D-02 in-progress guard: if any run in this workspace has status === 'running',
  * activation is blocked (no isActive flip) and a { blocked: true, reason } is
- * returned. Otherwise: every currently-active row is set isActive:false, the
- * target version is set isActive:true, and an audit_log row with action
+ * returned. This guard runs FIRST and is NEVER bypassable — not even by
+ * `override`.
+ *
+ * §38.3 eval gate: when there IS a currently-active version for this agentKey
+ * (and it differs from the target — reactivating the already-active version
+ * is a no-op with nothing to regress against), the target version must have a
+ * FRESH eval_scores row and must not regress vs the active version's scores
+ * (see evaluateEvalGate). First-ever activation always passes (nothing to
+ * regress against). A red gate can be bypassed by supplying
+ * `override: { reason }` — this ONLY skips the eval gate, never the
+ * in-progress guard — and writes an ADDITIONAL `prompt_version.activate_override`
+ * audit row (alongside, not instead of, the normal `prompt_version.activated`
+ * row — "nothing silent").
+ *
+ * Otherwise: every currently-active row is set isActive:false, the target
+ * version is set isActive:true, and an audit_log row with action
  * 'prompt_version.activated' is emitted. Rollback is just activate(olderVersion).
  */
 export const activate = mutation({
@@ -148,15 +270,18 @@ export const activate = mutation({
     agentKey: v.string(),
     version: v.number(),
     actorId: v.string(),
+    override: v.optional(v.object({ reason: v.string() })),
   },
-  handler: async (ctx, { workspace_id, agentKey, version, actorId: _actorId }) => {
+  handler: async (ctx, { workspace_id, agentKey, version, actorId: _actorId, override }) => {
     // Phase 29 D-1: dashboard-only mutation — Clerk identity required. The
     // audit row uses the VERIFIED actor from the JWT; the caller-supplied
     // `actorId` arg is intentionally ignored (never trust an incoming arg
     // for identity/attribution) but stays in the signature for compatibility.
     const actor = await requireOperator(ctx)
 
-    // D-02: block activation while a run is in progress.
+    // D-02: block activation while a run is in progress. This guard always
+    // wins — it is checked BEFORE the eval gate and is never bypassed by
+    // `override` (§38.3).
     const runningRun = await ctx.db
       .query('runs')
       .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
@@ -187,6 +312,28 @@ export const activate = mutation({
       )
     }
 
+    // §38.3 eval gate — only applies when there's a DIFFERENT currently-active
+    // version to regress against. No active version (first-ever activation)
+    // or reactivating the already-active version both skip the gate.
+    let overridden = false
+    if (previousActive !== undefined && previousActive !== version) {
+      const gate = await evaluateEvalGate(ctx, {
+        workspace_id,
+        agentKey,
+        targetVersion: version,
+        targetCreatedAt: target.createdAt,
+        activeVersion: previousActive,
+      })
+
+      if (gate.blocked) {
+        if (override?.reason) {
+          overridden = true
+        } else {
+          return { blocked: true, reason: gate.reason }
+        }
+      }
+    }
+
     // Deactivate any currently-active rows, then activate the target.
     for (const row of rows) {
       if (row.isActive && row._id !== target._id) {
@@ -194,6 +341,19 @@ export const activate = mutation({
       }
     }
     await ctx.db.patch(target._id, { isActive: true })
+
+    if (overridden && override) {
+      // "Nothing silent" — logged ALONGSIDE (not instead of) the normal
+      // activated row below, per §38.3.
+      await ctx.runMutation(internal.auditLog.write, {
+        workspace_id,
+        actorId: actor,
+        action: 'prompt_version.activate_override',
+        resourceType: 'prompt_version',
+        resourceId: `${agentKey}:${version}`,
+        after: JSON.stringify({ agentKey, version, reason: override.reason }),
+      })
+    }
 
     await ctx.runMutation(internal.auditLog.write, {
       workspace_id,
@@ -205,7 +365,7 @@ export const activate = mutation({
       after: JSON.stringify({ agentKey, version }),
     })
 
-    return { blocked: false }
+    return overridden ? { blocked: false, overridden: true } : { blocked: false }
   },
 })
 

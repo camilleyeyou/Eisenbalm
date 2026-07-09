@@ -88,6 +88,24 @@ describe('promptVersions.activate (PRM-04, D-02 in-progress guard)', () => {
     const t = convexTest({ schema, modules })
     await seedTwoVersions(t)
 
+    // Phase 38 §38.3: a currently-active version (v1) means the eval gate
+    // applies to v2 — seed a fresh, non-regressing eval_scores row for v2 so
+    // this test continues to exercise ONLY the D-02 in-progress guard (the
+    // eval gate itself is covered by promptVersionsEvalGate.test.ts).
+    await t.run(async (ctx) => {
+      await ctx.db.insert('eval_scores', {
+        workspace_id: WS,
+        agentKey: AGENT,
+        scenarioId: 'scout_normal_week',
+        promptVersion: '2',
+        overall: 8.0,
+        axes: JSON.stringify([]),
+        costUsd: 0.01,
+        ranAt: Date.now() + 10_000_000, // guarantees freshness vs v2.createdAt
+        source: 'commit',
+      })
+    })
+
     await t.withIdentity({ subject: 'user_operator' }).mutation(
       api.promptVersions.activate,
       {
