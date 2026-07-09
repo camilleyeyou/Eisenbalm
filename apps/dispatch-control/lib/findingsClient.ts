@@ -124,11 +124,16 @@ async function _findingsFetch<T>(
  * re-resolution, §33.5). The caller MUST refetch the draft on success (and on
  * a `revision_mismatch` 409) so client-side re-resolution runs against fresh
  * text (EDT-06).
+ *
+ * Phase 36 (§36.6): `payload.suggestedFixOverride` lets a rule-only tell
+ * (no stored `suggestedFix`) be accepted with an on-demand voice-rewrite
+ * result (`voicePassClient.rewrite`) — the server prefers the override when
+ * present, falling back to the finding's stored `suggestedFix` otherwise.
  */
 export async function acceptFinding(
   runId: string,
   findingId: string,
-  payload: { ifRevisionID: string },
+  payload: { ifRevisionID: string; suggestedFixOverride?: string },
   token: string | null,
 ): Promise<AcceptFindingResult> {
   return _findingsFetch<AcceptFindingResult>(

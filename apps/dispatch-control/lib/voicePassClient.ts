@@ -109,3 +109,30 @@ export async function recheck(
     token,
   )
 }
+
+// ── rewrite (§36.5, VOX-02/D-08) ─────────────────────────────────────────────
+
+/** Typed result for `POST /issues/{runId}/voice-rewrite` (§36.5). */
+export interface VoiceRewriteResult {
+  findingId: string
+  suggestedFix: string
+}
+
+/**
+ * POST /issues/{runId}/voice-rewrite — generates a house-voice rewrite
+ * suggestion for a rule-only tell that has no stored `suggestedFix`. This
+ * endpoint ONLY generates text; it never mutates the draft or the finding.
+ * The caller passes the returned `suggestedFix` into `findingsClient.
+ * acceptFinding` as `suggestedFixOverride` (§36.6) to actually apply it.
+ */
+export async function rewrite(
+  runId: string,
+  findingId: string,
+  token: string | null,
+): Promise<VoiceRewriteResult> {
+  return _voicePassFetch<VoiceRewriteResult>(
+    `/issues/${encodeURIComponent(runId)}/voice-rewrite`,
+    token,
+    { findingId },
+  )
+}

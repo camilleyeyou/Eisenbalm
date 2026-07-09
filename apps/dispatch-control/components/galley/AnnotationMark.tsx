@@ -20,10 +20,23 @@
  *
  * The `value` prop is the `AnnotationMarkDef` markDef payload injected by
  * `syntheticPortableText.ts`'s `toSyntheticBlocks` (Plan 32-04).
+ *
+ * Phase 36 (VOX-02, D-10, Plan 36-06): an optional `labels` prop gives this
+ * SAME component a voice-tell presentation variant — different LABELS, not
+ * different mechanics. Undefined = today's Review Desk labels (Accept fix /
+ * Edit inline / Dismiss), unchanged. Voice Pass passes { accept: 'Accept
+ * rewrite', editInline: 'Write my own', dismiss: 'Keep (not a tell)',
+ * dismissReasonDefault: 'not a tell' }. When `labels.accept === 'Accept
+ * rewrite'`: the "Suggested:" line reads "Suggested house voice:"; Accept is
+ * available even with no stored `suggestedFix` (a rule-only tell) — clicking
+ * it first calls `voicePassClient.rewrite` to generate one on demand, then
+ * applies it via `acceptFinding`'s `suggestedFixOverride` (§36.5/§36.6) — so
+ * the "Accept unavailable" message never shows in this variant.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { acceptFinding, dismissFinding, FindingsError } from '@/lib/findingsClient'
+import { rewrite } from '@/lib/voicePassClient'
 
 export interface AnnotationMarkDef {
   findingId: string
@@ -43,6 +56,16 @@ interface AnnotationMarkProps {
   revisionId?: string
   reloadDraft?: () => Promise<void> | void
   onEditSection?: (sectionId: string, findingId?: string) => void
+  /**
+   * Phase 36 (VOX-02, D-10) — voice-tell label variant. Undefined = today's
+   * Review Desk labels (Accept fix / Edit inline / Dismiss / '').
+   */
+  labels?: {
+    accept?: string
+    editInline?: string
+    dismiss?: string
+    dismissReasonDefault?: string
+  }
 }
 
 const actionButtonStyle: React.CSSProperties = {
@@ -68,6 +91,7 @@ export default function AnnotationMark({
   revisionId,
   reloadDraft,
   onEditSection,
+  labels,
 }: AnnotationMarkProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
@@ -80,6 +104,15 @@ export default function AnnotationMark({
   const [dismissReason, setDismissReason] = useState('')
 
   const canAct = Boolean(runId && revisionId)
+
+  // Phase 36 (VOX-02, D-10) — the voice-tell variant, keyed off the caller's
+  // explicit `labels.accept` value (never inferred from `value.axis` — the
+  // Review Desk fixture set already uses a 'gravity' axis for unrelated
+  // Phase 33 tests, so axis-based inference would silently relabel it).
+  const acceptLabel = labels?.accept ?? 'Accept fix'
+  const editInlineLabel = labels?.editInline ?? 'Edit inline'
+  const dismissLabel = labels?.dismiss ?? 'Dismiss'
+  const isRewriteVariant = labels?.accept === 'Accept rewrite'
 
   function toggle() {
     setOpen(prev => {
@@ -129,13 +162,29 @@ export default function AnnotationMark({
    * re-resolution runs against fresh text (EDT-06). A revision_mismatch 409
    * ALSO refetches — the operator re-opens the finding and retries against
    * the new revision.
+   *
+   * Phase 36 (VOX-02, D-08/D-09): when the finding has no stored
+   * `suggestedFix` (a rule-only tell), first call `voicePassClient.rewrite`
+   * to generate a house-voice suggestion on demand, then apply it via
+   * `suggestedFixOverride` (§36.5/§36.6) — otherwise the stored fix is used
+   * unchanged (suggestedFixOverride stays undefined).
    */
   async function handleAccept() {
     if (!runId || !revisionId || busy) return
     setBusy(true)
     setNote(null)
     try {
-      await acceptFinding(runId, value.findingId, { ifRevisionID: revisionId }, await getToken())
+      let suggestedFixOverride: string | undefined
+      if (!value.suggestedFix) {
+        const rewriteResult = await rewrite(runId, value.findingId, await getToken())
+        suggestedFixOverride = rewriteResult.suggestedFix
+      }
+      await acceptFinding(
+        runId,
+        value.findingId,
+        { ifRevisionID: revisionId, suggestedFixOverride },
+        await getToken(),
+      )
       await reloadDraft?.()
       setOpen(false)
     } catch (e) {
@@ -197,23 +246,24 @@ export default function AnnotationMark({
           </span>
           {value.suggestedFix && (
             <span className="galley-popover__fix" style={{ display: 'block' }}>
-              Suggested: {value.suggestedFix}
+              {isRewriteVariant ? 'Suggested house voice:' : 'Suggested:'} {value.suggestedFix}
             </span>
           )}
 
-          {/* Phase 33 (EDT-04): Accept/Edit/Dismiss action row — phrasing content only. */}
+          {/* Phase 33 (EDT-04) / Phase 36 (VOX-02, D-10): Accept/Edit/Dismiss
+              action row — phrasing content only. */}
           <span className="galley-popover__actions" style={{ display: 'block', marginTop: 8 }}>
-            {canAct && value.suggestedFix && (
+            {canAct && (isRewriteVariant || value.suggestedFix) && (
               <button
                 type="button"
                 style={actionButtonStyle}
                 disabled={busy}
                 onClick={() => void handleAccept()}
               >
-                Accept fix
+                {acceptLabel}
               </button>
             )}
-            {!value.suggestedFix && (
+            {!isRewriteVariant && !value.suggestedFix && (
               <span
                 className="galley-popover__accept-unavailable"
                 style={{ display: 'block', fontSize: 11, opacity: 0.75, marginBottom: 6 }}
@@ -228,7 +278,7 @@ export default function AnnotationMark({
                 disabled={busy}
                 onClick={() => onEditSection(sectionId, value.findingId)}
               >
-                Edit inline
+                {editInlineLabel}
               </button>
             )}
             {canAct && !dismissing && (
@@ -236,9 +286,12 @@ export default function AnnotationMark({
                 type="button"
                 style={actionButtonStyle}
                 disabled={busy}
-                onClick={() => setDismissing(true)}
+                onClick={() => {
+                  setDismissing(true)
+                  setDismissReason(labels?.dismissReasonDefault ?? '')
+                }}
               >
-                Dismiss
+                {dismissLabel}
               </button>
             )}
             {dismissing && (

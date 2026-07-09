@@ -11,6 +11,18 @@
  *     trimmed reason is non-empty.
  *   - Edit inline calls onEditSection(sectionId, findingId).
  *
+ * Phase 36 (VOX-02, D-10, Plan 36-06 Task 1) adds a voice-tell label variant
+ * (below, second describe block):
+ *   - An explicit `labels` prop renders custom button text (Accept rewrite /
+ *     Write my own / Keep (not a tell)) instead of the Review Desk defaults.
+ *   - Accept rewrite on a finding WITH a stored suggestedFix uses it as-is
+ *     (no on-demand rewrite call; suggestedFixOverride stays undefined).
+ *   - Accept rewrite on a finding with NO suggestedFix first calls
+ *     voicePassClient.rewrite, then applies the result via
+ *     suggestedFixOverride.
+ *   - "Keep (not a tell)" prefills the dismiss reason from
+ *     labels.dismissReasonDefault and submits it unchanged.
+ *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
@@ -39,7 +51,12 @@ vi.mock('@/lib/findingsClient', () => {
   }
 })
 
+vi.mock('@/lib/voicePassClient', () => ({
+  rewrite: vi.fn(async () => ({ findingId: 'f1', suggestedFix: 'Rewritten in house voice.' })),
+}))
+
 import { acceptFinding, dismissFinding, FindingsError } from '@/lib/findingsClient'
+import { rewrite } from '@/lib/voicePassClient'
 import AnnotationMark, {
   type AnnotationMarkDef,
 } from '../components/galley/AnnotationMark'
@@ -76,9 +93,17 @@ function openPopover() {
   fireEvent.click(screen.getByRole('button', { name: /qa error finding/i }))
 }
 
+const VOICE_LABELS = {
+  accept: 'Accept rewrite',
+  editInline: 'Write my own',
+  dismiss: 'Keep (not a tell)',
+  dismissReasonDefault: 'not a tell',
+}
+
 beforeEach(() => {
   vi.mocked(acceptFinding).mockClear()
   vi.mocked(dismissFinding).mockClear()
+  vi.mocked(rewrite).mockClear()
 })
 
 afterEach(() => {
@@ -210,5 +235,83 @@ describe('AnnotationMark action row (EDT-04)', () => {
     expect(container.querySelector('form')).toBeNull()
     // The wrapping <p> is the test's own; no nested <p> inside the mark.
     expect(container.querySelectorAll('p').length).toBe(1)
+  })
+})
+
+describe('AnnotationMark voice-tell variant (VOX-02, D-10)', () => {
+  it('renders custom voice labels when an explicit labels prop is provided', () => {
+    renderMark({}, { labels: VOICE_LABELS })
+    openPopover()
+
+    expect(screen.getByRole('button', { name: /accept rewrite/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /write my own/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /keep \(not a tell\)/i })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /^accept fix$/i })).toBeNull()
+  })
+
+  it('Accept rewrite on a finding WITH a stored suggestedFix uses it as-is (no on-demand rewrite call)', async () => {
+    renderMark({}, { labels: VOICE_LABELS })
+    openPopover()
+
+    fireEvent.click(screen.getByRole('button', { name: /accept rewrite/i }))
+
+    await waitFor(() => {
+      expect(acceptFinding).toHaveBeenCalledWith(
+        'run-1',
+        'f1',
+        { ifRevisionID: 'rev-1', suggestedFixOverride: undefined },
+        'tok-clerk',
+      )
+    })
+    expect(rewrite).not.toHaveBeenCalled()
+  })
+
+  it('Accept rewrite on a finding with NO suggestedFix calls voice-rewrite then accepts with suggestedFixOverride', async () => {
+    renderMark({ suggestedFix: undefined }, { labels: VOICE_LABELS })
+    openPopover()
+
+    // No stored fix and no diff panel — Accept still renders (rewrite-on-demand
+    // covers it) and the "no suggested fix" message never shows in this variant.
+    expect(screen.queryByText(/accept unavailable/i)).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /accept rewrite/i }))
+
+    await waitFor(() => {
+      expect(rewrite).toHaveBeenCalledWith('run-1', 'f1', 'tok-clerk')
+      expect(acceptFinding).toHaveBeenCalledWith(
+        'run-1',
+        'f1',
+        { ifRevisionID: 'rev-1', suggestedFixOverride: 'Rewritten in house voice.' },
+        'tok-clerk',
+      )
+    })
+  })
+
+  it('relabels the "Suggested:" line to "Suggested house voice:" in the voice variant', () => {
+    renderMark({}, { labels: VOICE_LABELS })
+    openPopover()
+
+    expect(screen.getByText(/suggested house voice:/i)).toBeDefined()
+  })
+
+  it('"Keep (not a tell)" prefills the dismiss reason from dismissReasonDefault and submits it unchanged', async () => {
+    renderMark({}, { labels: VOICE_LABELS })
+    openPopover()
+
+    fireEvent.click(screen.getByRole('button', { name: /keep \(not a tell\)/i }))
+
+    const input = screen.getByLabelText(/dismissal reason/i) as HTMLInputElement
+    expect(input.value).toBe('not a tell')
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm dismiss/i }))
+
+    await waitFor(() => {
+      expect(dismissFinding).toHaveBeenCalledWith(
+        'run-1',
+        'f1',
+        { reason: 'not a tell' },
+        'tok-clerk',
+      )
+    })
   })
 })
