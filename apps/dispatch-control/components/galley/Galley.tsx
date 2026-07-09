@@ -33,6 +33,11 @@
  * only findings whose `axis` is BOTH present AND a member of the whitelist
  * render; an axis-less row is omitted from any axis-scoped surface (see
  * `lib/galley/axisPartition.ts`).
+ *
+ * Phase 36 (VOX-02, D-10, Plan 36-06): an optional `labels` prop is
+ * forwarded, unmodified, into every `GallerySection`/`AnnotationMark` this
+ * Galley mounts — the voice-tell label variant. Undefined (Review Desk's
+ * default) leaves today's Accept fix / Edit inline / Dismiss labels intact.
  */
 import { useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
@@ -95,6 +100,16 @@ interface GalleyProps {
    * is present AND in this set render.
    */
   includeAxes?: ReadonlySet<string>
+  /**
+   * Phase 36 (VOX-02, D-10, Plan 36-06) — AnnotationMark voice-tell label
+   * variant, forwarded unmodified to every GallerySection this Galley mounts.
+   */
+  labels?: {
+    accept?: string
+    editInline?: string
+    dismiss?: string
+    dismissReasonDefault?: string
+  }
 }
 
 // D-05 reader order for the four long-read sections.
@@ -113,6 +128,7 @@ export default function Galley({
   onEditSection,
   showProvenance = true,
   includeAxes,
+  labels,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -246,6 +262,7 @@ export default function Galley({
             revisionId={revisionId}
             reloadDraft={reloadDraft}
             onEditSection={onEditSection}
+            labels={labels}
           />
         )
       })}
@@ -265,6 +282,7 @@ export default function Galley({
           revisionId={revisionId}
           reloadDraft={reloadDraft}
           onEditSection={onEditSection}
+          labels={labels}
         />
       )}
 

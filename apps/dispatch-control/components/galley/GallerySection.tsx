@@ -24,6 +24,11 @@
  * mark (rendered by `ClaimMark`), stacked alongside `annotation` marks —
  * the marigold/rust provenance wash. When `showProvenance` is false, `[]`
  * is passed instead so no wash renders (annotations are unaffected).
+ *
+ * Phase 36 (VOX-02, D-10, Plan 36-06): threads an optional `labels` prop
+ * straight through into every `AnnotationMark` this section mounts — the
+ * voice-tell label variant (Accept rewrite / Write my own / Keep (not a
+ * tell)). Undefined (Review Desk's default) is unchanged.
  */
 import { useMemo } from 'react'
 import { PortableText, type PortableTextReactComponents } from '@portabletext/react'
@@ -57,6 +62,13 @@ interface GallerySectionProps {
   // Phase 35 (PRV-03) — provenance wash resolution + visibility toggle.
   claimResolved?: ResolvedClaim[]
   showProvenance?: boolean
+  // Phase 36 (VOX-02, D-10) — voice-tell AnnotationMark label variant.
+  labels?: {
+    accept?: string
+    editInline?: string
+    dismiss?: string
+    dismissReasonDefault?: string
+  }
 }
 
 export default function GallerySection({
@@ -72,6 +84,7 @@ export default function GallerySection({
   onEditSection,
   claimResolved = [],
   showProvenance = true,
+  labels,
 }: GallerySectionProps) {
   // toSyntheticBlocks groups `resolved`/`claimResolved` by blockIndex
   // internally (it filters the flat lists per-row), so the flat arrays are
@@ -105,6 +118,7 @@ export default function GallerySection({
             revisionId={revisionId}
             reloadDraft={reloadDraft}
             onEditSection={onEditSection}
+            labels={labels}
           >
             {children}
           </AnnotationMark>
@@ -116,7 +130,7 @@ export default function GallerySection({
         ),
       },
     }),
-    [runId, sectionId, revisionId, reloadDraft, onEditSection],
+    [runId, sectionId, revisionId, reloadDraft, onEditSection, labels],
   )
 
   return (
