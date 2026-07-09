@@ -14,6 +14,15 @@
  *     (api.runs.latest.status === 'running'), with an inline explanation
  *     (D-02 block-with-explanation, no queue). On a server-side `{ blocked }`
  *     return (TOCTOU race, Pitfall 2) the reason is surfaced inline.
+ *
+ * Phase 38 Plan 38-04 (§38.3, EVL-03) adds:
+ *   - when a `{ blocked: true, reason }` comes back from the NEW eval-gate
+ *     (not the in-progress guard — that keeps the run disabled entirely, per
+ *     D-02), a typed-reason override affordance appears: an input for the
+ *     operator's justification + "Commit anyway (override)" button. Submitting
+ *     calls activate again with `override: { reason }`; a `{ overridden: true }`
+ *     response clears the blocked state. The override is NEVER offered while
+ *     a run is in progress — that guard is unbypassable by design.
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
@@ -57,9 +66,17 @@ export default function VersionHistoryPanel({
   // server-returned block reason (defensive TOCTOU surface, Pitfall 2).
   const [activating, setActivating] = useState<number | null>(null)
   const [blockedReason, setBlockedReason] = useState<string | null>(null)
+  // Phase 38 §38.3: which version the eval-gate blocked, so the override
+  // affordance re-submits activation for the SAME version. Never set while
+  // runInProgress — that guard stays a hard disable, no override offered.
+  const [blockedVersion, setBlockedVersion] = useState<number | null>(null)
+  const [overrideReason, setOverrideReason] = useState('')
 
-  async function handleActivate(version: number) {
-    setBlockedReason(null)
+  async function handleActivate(version: number, override?: { reason: string }) {
+    if (!override) {
+      setBlockedReason(null)
+      setBlockedVersion(null)
+    }
     setActivating(version)
     try {
       const result = await activateVersion({
@@ -67,12 +84,19 @@ export default function VersionHistoryPanel({
         agentKey,
         version,
         actorId: user?.id ?? 'unknown',
+        ...(override ? { override } : {}),
       })
       if (result?.blocked) {
+        setBlockedVersion(version)
         setBlockedReason(
           result.reason ??
             'A run is in progress — activation will be available when it finishes.',
         )
+      } else {
+        // Clean pass OR a successful override — clear any blocked state.
+        setBlockedReason(null)
+        setBlockedVersion(null)
+        setOverrideReason('')
       }
     } finally {
       setActivating(null)
@@ -135,6 +159,36 @@ export default function VersionHistoryPanel({
           className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
         >
           {blockedReason}
+        </div>
+      )}
+
+      {/* Phase 38 §38.3 — eval-gate override-with-reason escape hatch.
+          NEVER shown while a run is in progress: that guard is unbypassable,
+          so no override is offered for it (D-02 stays a hard block). */}
+      {blockedReason && blockedVersion !== null && !runInProgress && (
+        <div className="space-y-2 rounded border border-red-200 bg-red-50 px-3 py-2">
+          <label className="block text-xs font-medium text-red-900">
+            Override reason (required to commit anyway)
+            <input
+              type="text"
+              value={overrideReason}
+              onChange={e => setOverrideReason(e.target.value)}
+              placeholder="Why activate despite the red eval gate?"
+              className="mt-1 block w-full min-h-[44px] rounded border border-red-300 bg-white px-2 py-1.5 text-xs text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() =>
+              handleActivate(blockedVersion, { reason: overrideReason.trim() })
+            }
+            disabled={overrideReason.trim().length === 0 || activating !== null}
+            className="min-h-[44px] rounded border border-red-700 bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-1"
+          >
+            {activating === blockedVersion
+              ? 'Committing anyway…'
+              : 'Commit anyway (override)'}
+          </button>
         </div>
       )}
 
