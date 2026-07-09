@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 38-05-prompt-lab-eval-drawer-PLAN.md
-last_updated: "2026-07-09T22:30:22.014Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 38-06-eval-center-drift-shadow-PLAN.md
+last_updated: "2026-07-09T22:50:28.955Z"
 progress:
   total_phases: 39
-  completed_phases: 36
+  completed_phases: 37
   total_plans: 240
-  completed_plans: 237
+  completed_plans: 238
 ---
 
 # Project State
@@ -262,6 +262,7 @@ Plan: 6 of 6
 | Phase 38 P04 | 20min | 2 tasks | 5 files |
 | Phase 38 P03 | 17min | 2 tasks | 5 files |
 | Phase 38 P05 | 25min | 3 tasks | 4 files |
+| Phase 38 P06 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -672,6 +673,8 @@ Recent decisions affecting current work:
 - [Phase 38]: Extracted pure discover_candidates() from scout.py (registry read -> Tavily search -> LLM parse -> dedup, zero writes); scout() calls it then performs its unchanged write tail; POST /eval/shadow-run previews live discovery over it with D-12 isolation proven by test (zero Convex run-table writes, zero Sanity write_charity).
 - [Phase 38]: EvalDrawer scales TestRunPanel's 1-scenario draft-vs-active pattern to N scenarios; a single targetVersion prop switches draft-side eval_scores tagging between normal-iteration ('draft'/'drawer') and freshness-producer ('commit') modes with no duplicated run logic
 - [Phase 38]: VersionHistoryPanel's 'Run evals for v{N}' producer toggles the SAME EvalDrawer inline (expand/collapse) rather than a separate simplified variant, guaranteeing the freshness-producer path exercises identical run/scoring/persistence logic to normal iteration
+- [Phase 38]: eval-center/page.tsx is a plain 'use client' component (no Server-Component + getCurrentWorkspace() split) — mirrors voice-pass/page.tsx's precedent since all data is client-driven and workspace_id is a single-tenant constant
+- [Phase 38]: ScenarioCard and DriftScoreboard both read listForScenario directly (per-item child components for dynamic useQuery lists) — ScenarioCard reduces max-by-ranAt for 'last result', DriftScoreboard renders the full series for the drift detector
 
 ### Pending Todos
 
@@ -756,6 +759,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T22:30:22.001Z
-Stopped at: Completed 38-05-prompt-lab-eval-drawer-PLAN.md
+Last session: 2026-07-09T22:50:28.942Z
+Stopped at: Completed 38-06-eval-center-drift-shadow-PLAN.md
 Resume file: None

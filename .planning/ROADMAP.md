@@ -42,7 +42,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 35: Provenance Pipeline + Sourced/Unsourced Galley Rendering** - Per-claim `{claim, sourceUrl, retrievedAt}` bindings from Researcher carried through the 7 writers into prose; galley renders sourced/unsourced spans; source-bound claims checklist (completed 2026-07-08)
 - [x] **Phase 36: Voice Pass De-Slop Screen** - Dedicated machine-tell screen reusing the existing QA two-layer detector (rules + Opus judge), as-written vs. house-voice rewrite popovers, its own "Sounds human" sign-off (completed 2026-07-09)
 - [x] **Phase 37: Run Monitor v2 + Signal Desk** - Forensic run spine (agents as dots, code gates as diamonds), handoff inspector, 7-writer per-section strength scores, run-vs-last-8 drift strip, Gate 1 candidate slate + interrupt/adjudication mode (completed 2026-07-09)
-- [ ] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run
+- [x] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run (completed 2026-07-09)
 - [ ] **Phase 39: Registry Coverage-Memory Strip** - Last-8-issues cause/geo/signal coverage strip, append-only charity corrections log re-read by the Researcher
 
 ## Phase Details
@@ -437,7 +437,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 6/6 | Complete    | 2026-07-08 |
 | 36. Voice Pass De-Slop Screen | 7/7 | Complete    | 2026-07-09 |
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
-| 38. Prompt Lab Evals + Eval Center | 5/6 | In Progress|  |
+| 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 0/? | Not started | - |
 
 ## Backlog
@@ -813,7 +813,7 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
 - [x] 38-04-commit-gate-override-PLAN.md — promptVersions.activate eval-gate (target-up/no-regression, freshness-guarded) + logged override-with-reason + VersionHistoryPanel UI (EVL-03)
 - [x] 38-03-shadow-run-discover-candidates-PLAN.md — pure discover_candidates() extraction from scout.py + read-only POST /eval/shadow-run + D-12 isolation proof (EVL-05)
 - [x] 38-05-prompt-lab-eval-drawer-PLAN.md — EvalDrawer auto-select + N-scenario draft-vs-active scoreboard + eval_scores persistence (EVL-02)
-- [ ] 38-06-eval-center-drift-shadow-PLAN.md — Eval Center scenario cards + append-only drift time-series + ShadowRunPanel trigger (EVL-04, EVL-05)
+- [x] 38-06-eval-center-drift-shadow-PLAN.md — Eval Center scenario cards + append-only drift time-series + ShadowRunPanel trigger (EVL-04, EVL-05)
 **UI hint**: yes
 
 ### Phase 39: Registry Coverage-Memory Strip
