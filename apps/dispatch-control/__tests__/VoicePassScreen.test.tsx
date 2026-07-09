@@ -1,0 +1,208 @@
+/**
+ * Phase 36 (VOX-01/VOX-04, Plan 36-04 Task 3) — Voice Pass screen tests.
+ *
+ * (a) only voice-axis findings render (VOICE_AXES scoping, through the full
+ *     screen mount — not just the Galley unit)
+ * (b) the per-screen tell count reflects the voice-scoped OPEN findings
+ * (c) clicking "Run deep check" calls voicePassClient.recheck(runId, token)
+ *
+ * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
+ */
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import type { DraftResponse } from '@/lib/contentPatchClient'
+
+// ── Module mocks ─────────────────────────────────────────────────────────────
+
+vi.mock('convex/react', () => ({
+  useQuery: vi.fn(),
+  // Galley's ClaimMark calls useMutation(api.claimChecks.setStatus).
+  useMutation: vi.fn(() => vi.fn()),
+}))
+
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
+}))
+
+vi.mock('@convex/_generated/api', () => ({
+  api: {
+    qaCorrections: { byRunId: 'qaCorrections:byRunId' },
+    claimChecks: {
+      listByRunId: 'claimChecks:listByRunId',
+      setStatus: 'claimChecks:setStatus',
+    },
+  },
+}))
+
+vi.mock('@/lib/contentPatchClient', () => ({
+  ContentPatchError: class ContentPatchError extends Error {
+    constructor(
+      public readonly status: number,
+      public readonly reason: string,
+      message: string,
+    ) {
+      super(message)
+      this.name = 'ContentPatchError'
+    }
+  },
+  getDraft: vi.fn(),
+}))
+
+vi.mock('@/lib/voicePassClient', () => ({
+  VoicePassApiError: class VoicePassApiError extends Error {
+    constructor(
+      public readonly status: number,
+      public readonly reason: string,
+      message: string,
+    ) {
+      super(message)
+      this.name = 'VoicePassApiError'
+    }
+  },
+  recheck: vi.fn(async () => ({ runId: 'r1', findingCount: 2 })),
+}))
+
+import { useQuery } from 'convex/react'
+import { getDraft } from '@/lib/contentPatchClient'
+import { recheck } from '@/lib/voicePassClient'
+import { VoicePassScreen } from '../app/(dashboard)/voice-pass/[runId]/page.tsx'
+
+afterEach(() => {
+  cleanup()
+})
+
+// ── Fixtures ─────────────────────────────────────────────────────────────────
+
+const draft: DraftResponse = {
+  revisionId: 'rev-1',
+  sections: {
+    originStory: {
+      headline: 'A Quiet Beginning',
+      blocks: [{ type: 'paragraph', text: 'The founder started in a garage in 1974.' }],
+      lossy: false,
+    },
+    problemStatement: {
+      headline: 'The Problem',
+      blocks: [{ type: 'paragraph', text: 'Funding dried up after the regional bank closed.' }],
+      lossy: false,
+    },
+    founderBio: {
+      headline: 'Founder Bio',
+      blocks: [{ type: 'paragraph', text: 'She trained as an engineer before switching fields.' }],
+      lossy: false,
+    },
+    caseStudy: {
+      headline: 'Case Study',
+      blocks: [{ type: 'paragraph', text: 'One family used the program for three winters.' }],
+      lossy: false,
+    },
+  },
+  theme: { fontDisplay: 'Newsreader', fontBody: 'Lora', accentColor: '#9A3324' },
+  game: {},
+  bonus: {},
+  bonusType: 'specAd',
+  podcast: { transcript: 'Host: Today we cover an obscure charity.' },
+  conversation: [],
+}
+
+// One voice-axis (machine-tell) finding, one factual-axis (precision)
+// finding — Voice Pass must light only the former.
+const mixedFindings = [
+  {
+    _id: 'v1',
+    runId: 'r1',
+    sectionName: 'origin_story',
+    severity: 'error',
+    axis: 'machine-tell',
+    reason: 'Reads like AI-generated prose.',
+    accepted: false,
+    quotedSpan: 'in a garage',
+    blockIndexHint: 0,
+  },
+  {
+    _id: 'f1',
+    runId: 'r1',
+    sectionName: 'problem',
+    severity: 'warning',
+    axis: 'precision',
+    reason: 'Vague causal claim.',
+    accepted: false,
+    quotedSpan: 'the regional bank closed',
+    blockIndexHint: 0,
+  },
+]
+
+function mockFindings(findings: unknown[] = mixedFindings) {
+  ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+    if (queryRef === 'qaCorrections:byRunId') return findings
+    if (queryRef === 'claimChecks:listByRunId') return []
+    return undefined
+  })
+}
+
+beforeEach(() => {
+  vi.mocked(getDraft).mockReset()
+  vi.mocked(getDraft).mockResolvedValue(draft)
+  vi.mocked(recheck).mockClear()
+})
+
+async function renderScreen() {
+  // Render the named VoicePassScreen (runId already unwrapped) directly —
+  // the default export's `use(params)` wrapper is a thin, untested Next.js
+  // 15 async-params adapter around this same component.
+  const utils = render(<VoicePassScreen runId="r1" />)
+  await waitFor(() => {
+    expect(screen.queryByText(/loading draft/i)).toBeNull()
+  })
+  return utils
+}
+
+describe('Voice Pass screen (VOX-01, VOX-04)', () => {
+  it('renders only the voice-axis (machine-tell) annotation, omitting the factual (precision) one', async () => {
+    mockFindings()
+    const { container } = await renderScreen()
+
+    const marks = Array.from(container.querySelectorAll('mark.galley-anno')).map(el => el.textContent)
+    expect(marks).toContain('in a garage')
+    expect(marks).not.toContain('the regional bank closed')
+  })
+
+  it('shows a per-screen tell count reflecting the voice-scoped OPEN findings', async () => {
+    mockFindings()
+    await renderScreen()
+
+    expect(screen.getByLabelText(/tell count/i).textContent).toMatch(/1 tell/i)
+  })
+
+  it('excludes a resolved (dismissed) voice finding from the tell count', async () => {
+    mockFindings([
+      { ...mixedFindings[0], resolution: 'dismissed' as const },
+      mixedFindings[1],
+    ])
+    await renderScreen()
+
+    expect(screen.getByLabelText(/tell count/i).textContent).toMatch(/0 tells/i)
+  })
+
+  it('clicking "Run deep check" calls voicePassClient.recheck(runId, token)', async () => {
+    mockFindings()
+    await renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /run deep check/i }))
+
+    await waitFor(() => {
+      expect(recheck).toHaveBeenCalledWith('r1', 'tok-clerk')
+    })
+  })
+
+  it('shows the returned finding count after a successful deep check', async () => {
+    mockFindings()
+    await renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /run deep check/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toMatch(/2 findings/i)
+    })
+  })
+})
