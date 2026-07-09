@@ -14,6 +14,7 @@ from eisenbalm_pipeline.agents.qa.rules import (
     QAFinding,
     check_ai_reference,
     check_exclamation_marks,
+    check_machine_tell,
     check_sentiment_keywords,
     check_unverified_name,
     check_winking,
@@ -134,6 +135,46 @@ def test_passing_text_yields_no_findings() -> None:
     }
     findings = run_all_predicates(sections, {})
     assert findings == []
+
+
+def test_machine_tell_lexicon_caught() -> None:
+    """D-05: 'delve' and 'tapestry' are canonical AI-slop machine-tells."""
+    findings = check_machine_tell(
+        "origin_story", "We delve into the tapestry of local aid.",
+    )
+    assert len(findings) >= 2
+    assert all(
+        f.severity == "error" and f.axis == "machine-tell" and f.section == "origin_story"
+        for f in findings
+    )
+
+
+def test_machine_tell_phrase_hits() -> None:
+    """Multi-word machine-tell phrases both fire independently."""
+    findings = check_machine_tell(
+        "problem",
+        "The shelter is a testament to persistence. It's important to note the gap.",
+    )
+    assert len(findings) >= 2
+    matched = {f.quotedSpan.lower() for f in findings}
+    assert any("testament to" in m for m in matched)
+    assert any("important to note" in m for m in matched)
+
+
+def test_machine_tell_over_fire_guard() -> None:
+    """Conservative lexicon: plain factual prose must not fire (over-fire guard)."""
+    findings = check_machine_tell(
+        "case_study",
+        "The clinic opened in 1998. It treats 400 patients a year. "
+        "Funding comes from three county grants.",
+    )
+    assert findings == []
+
+
+def test_machine_tell_registered_in_run_all_predicates() -> None:
+    """Registration proof: run_all_predicates fans out check_machine_tell."""
+    findings = run_all_predicates({"origin_story": "We delve into it."}, {})
+    assert any(f.axis == "machine-tell" for f in findings)
 
 
 def test_qa_finding_namedtuple_fields() -> None:
