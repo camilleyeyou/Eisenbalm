@@ -25,6 +25,14 @@
  * caseStudy/bonus), so no `qaSectionToGalleyId` bridge is needed here. A
  * `showProvenance` prop (default ON, D-10) controls whether the resolved
  * claims are passed through to `GallerySection` at all.
+ *
+ * Phase 36 (§36.3, Plan 36-04 Task 2): an optional `includeAxes` prop lets
+ * ONE Galley instance serve two axis-partitioned surfaces — Review Desk
+ * (FACTUAL_AXES) and Voice Pass (VOICE_AXES) — with no duplicated render
+ * stack. Omitted = no filter (both axis groups render, back-compat). Set =
+ * only findings whose `axis` is BOTH present AND a member of the whitelist
+ * render; an axis-less row is omitted from any axis-scoped surface (see
+ * `lib/galley/axisPartition.ts`).
  */
 import { useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
@@ -81,6 +89,12 @@ interface GalleyProps {
   onEditSection: (sectionId: string, findingId?: string) => void
   /** Phase 35 (PRV-03, D-10) — provenance wash layer, default ON. */
   showProvenance?: boolean
+  /**
+   * Phase 36 (§36.3, Task 2) — axis whitelist. Undefined = render every open
+   * finding regardless of axis (back-compat). Set = only findings whose axis
+   * is present AND in this set render.
+   */
+  includeAxes?: ReadonlySet<string>
 }
 
 // D-05 reader order for the four long-read sections.
@@ -98,6 +112,7 @@ export default function Galley({
   reloadDraft,
   onEditSection,
   showProvenance = true,
+  includeAxes,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -108,10 +123,17 @@ export default function Galley({
     (useQuery(api.qaCorrections.byRunId, { runId }) as QaCorrectionRow[] | undefined) ?? []
   const openFindings = rawFindings.filter(isOpenFinding)
 
-  // Group open findings by galley section id (QA's sectionName vocabulary
+  // Phase 36 (§36.3, Task 2) — axis-scope the open findings when an
+  // includeAxes whitelist is passed; undefined = no filter (both Review
+  // Desk's FACTUAL_AXES and Voice Pass's VOICE_AXES reuse this ONE Galley).
+  const scopedFindings = includeAxes
+    ? openFindings.filter(row => row.axis !== undefined && includeAxes.has(row.axis))
+    : openFindings
+
+  // Group scoped findings by galley section id (QA's sectionName vocabulary
   // differs from the galley's — qaSectionToGalleyId is the only bridge).
   const findingsByGalleyId = new Map<string, QaFinding[]>()
-  for (const row of openFindings) {
+  for (const row of scopedFindings) {
     const galleyId = qaSectionToGalleyId(row.sectionName)
     if (!galleyId) continue
     const list = findingsByGalleyId.get(galleyId) ?? []

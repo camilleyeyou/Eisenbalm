@@ -44,6 +44,7 @@ import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPa
 import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
+import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 
 interface ReviewDeskRunPageProps {
   params: Promise<{ runId: string }>
@@ -271,8 +272,15 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
   const openFindings = rawFindings.filter(isOpenFinding)
 
   const chipCounts = useMemo<Record<string, SectionChipCounts>>(() => {
+    // Phase 36 (§36.3, Task 2): Review Desk's Galley mount is scoped to
+    // FACTUAL_AXES below — the chip tally applies the SAME scoping rule
+    // (axis present AND in FACTUAL_AXES) so badge counts never disagree
+    // with what the galley actually lights.
+    const factualOpenFindings = openFindings.filter(
+      row => row.axis !== undefined && FACTUAL_AXES.has(row.axis),
+    )
     const findingsByGalleyId = new Map<string, QaFinding[]>()
-    for (const row of openFindings) {
+    for (const row of factualOpenFindings) {
       const galleyId = qaSectionToGalleyId(row.sectionName)
       if (!galleyId) continue
       const list = findingsByGalleyId.get(galleyId) ?? []
@@ -402,6 +410,7 @@ export default function ReviewDeskRunPage({ params }: ReviewDeskRunPageProps) {
                   reloadDraft={reloadDraft}
                   onEditSection={handleEditSection}
                   showProvenance={showProvenance}
+                  includeAxes={FACTUAL_AXES}
                 />
               ) : (
                 <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
