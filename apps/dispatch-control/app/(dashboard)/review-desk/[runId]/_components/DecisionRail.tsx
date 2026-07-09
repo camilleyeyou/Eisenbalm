@@ -24,6 +24,14 @@
  * Publish is disabled with a visible reason while blockers remain; if the
  * server still 409s `open_error_findings`, the message is surfaced
  * (belt-and-suspenders with the D-14 server gate).
+ *
+ * Phase 36 (§36.3/§36.7, Plan 36-04 Task 4): the blockers/warnings/infos
+ * counts, the blocking-items jump-link list, and the "Facts cleared" gate
+ * are all further scoped to `FACTUAL_AXES` (a finding whose `axis` is
+ * `undefined` still counts as factual, per §36.3) — this mirrors 36-02's
+ * server-side `facts-cleared` narrowing so a voice/machine-tell error can
+ * never block or clutter this rail; it belongs to Voice Pass's own
+ * "Sounds human" surface instead.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -34,6 +42,7 @@ import { rerollAgent } from '@/lib/pipelineControlClient'
 import { recordSignOff, SignOffApiError, type SignOffKind } from '@/lib/signOffClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
+import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 import ResolvedFindingsList from './ResolvedFindingsList'
 import SourceIndex from './SourceIndex'
 
@@ -47,6 +56,7 @@ interface QaCorrectionRow {
   findingId?: string
   sectionName: string
   severity: 'info' | 'warning' | 'error'
+  axis?: string
   reason: string
   accepted?: boolean
   resolution?: 'accepted' | 'dismissed'
@@ -110,9 +120,14 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
   // Pitfall 9: the ONE shared open-finding predicate — the rail must agree
   // with the galley and chip counts on what "open" means.
   const openFindings = rawFindings.filter(isOpenFinding)
-  const blockers = openFindings.filter(f => f.severity === 'error')
-  const warnings = openFindings.filter(f => f.severity === 'warning').length
-  const infos = openFindings.filter(f => f.severity === 'info').length
+  // Phase 36 (§36.3/§36.7): this factual rail only ever blocks/counts
+  // FACTUAL_AXES findings — undefined axis = factual (legacy rows still
+  // block, per §36.3's conservative default). Voice/machine-tell errors
+  // belong to Voice Pass's "Sounds human" gate, never this one.
+  const factualOpen = openFindings.filter(f => f.axis === undefined || FACTUAL_AXES.has(f.axis))
+  const blockers = factualOpen.filter(f => f.severity === 'error')
+  const warnings = factualOpen.filter(f => f.severity === 'warning').length
+  const infos = factualOpen.filter(f => f.severity === 'info').length
 
   // Editor memo: the editor-final event stream (payload is a JSON STRING; the
   // memo key is `notes` — §33.6). Take the latest row if several exist.
