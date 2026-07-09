@@ -32,10 +32,12 @@ import '@xyflow/react/dist/style.css'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 
-import { PIPELINE_NODES, PIPELINE_EDGES, GATE_KEYS } from './pipelineTopology'
+import { PIPELINE_NODES, PIPELINE_EDGES, GATE_KEYS, SECTION_WRITER_KEYS } from './pipelineTopology'
 import { computeLayout } from './useGraphLayout'
 import { AgentNode, type AgentNodeData } from './AgentNode'
 import { AgentIOPanel } from './AgentIOPanel'
+import { DriftStrip } from './DriftStrip'
+import { WriterExpansion } from './WriterExpansion'
 
 // Register the custom AgentNode type with React Flow.
 const nodeTypes = { agent: AgentNode }
@@ -149,32 +151,48 @@ function PipelineGraphInner({ workspace_id }: PipelineGraphInnerProps) {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative h-full w-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodeClick={onNodeClick}
-        fitView
-        fitViewOptions={{ padding: 0.1 }}
-        nodesConnectable={false}
-        nodesDraggable={false}
-        elementsSelectable
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background />
-        <Controls showInteractive={false} />
-      </ReactFlow>
+    <div className="flex h-full w-full flex-col">
+      {/* Run-summary area (MON-04): current run vs the trailing 8 completed
+          runs, cost + duration. Only meaningful once at least one run exists. */}
+      {runId && <DriftStrip currentRunId={runId} workspace_id={workspace_id} />}
 
-      {/* I/O slide-over panel — shown when a node is selected */}
-      {selectedAgentKey && (
-        <AgentIOPanel
-          runId={runId ?? null}
-          agentKey={selectedAgentKey}
-          agentRun={selectedAgentRun}
-          onClose={() => setSelectedAgentKey(null)}
-        />
-      )}
+      <div className="relative flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodeClick={onNodeClick}
+          fitView
+          fitViewOptions={{ padding: 0.1 }}
+          nodesConnectable={false}
+          nodesDraggable={false}
+          elementsSelectable
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+
+        {/* I/O slide-over panel — shown when a node is selected */}
+        {selectedAgentKey && (
+          <AgentIOPanel
+            runId={runId ?? null}
+            agentKey={selectedAgentKey}
+            agentRun={selectedAgentRun}
+            onClose={() => setSelectedAgentKey(null)}
+          />
+        )}
+
+        {/* 7-writers strength expansion (MON-03) — shown when the selected
+            node is one of the section-writer fan-out nodes. Docked
+            bottom-left so it doesn't collide with the right-hand
+            AgentIOPanel slide-over (MON-02). */}
+        {selectedAgentKey && runId && SECTION_WRITER_KEYS.includes(selectedAgentKey) && (
+          <div className="absolute bottom-4 left-4 right-104 z-10 max-h-72 overflow-y-auto">
+            <WriterExpansion runId={runId} runStatus={latestRun?.status} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
