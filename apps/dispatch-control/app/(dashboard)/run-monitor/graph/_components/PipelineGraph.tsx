@@ -32,7 +32,7 @@ import '@xyflow/react/dist/style.css'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 
-import { PIPELINE_NODES, PIPELINE_EDGES } from './pipelineTopology'
+import { PIPELINE_NODES, PIPELINE_EDGES, GATE_KEYS } from './pipelineTopology'
 import { computeLayout } from './useGraphLayout'
 import { AgentNode, type AgentNodeData } from './AgentNode'
 import { AgentIOPanel } from './AgentIOPanel'
@@ -103,6 +103,10 @@ function PipelineGraphInner({ workspace_id }: PipelineGraphInnerProps) {
         status: run?.status as AgentNodeData['status'] | undefined,
         costUsd: run?.costUsd ?? undefined,
         durationMs: run?.durationMs ?? undefined,
+        // Phase 37 (MON-01): retryCount now lives on the agent_runs row
+        // (37-01); isGate drives the dot vs marigold-diamond shape marker.
+        retryCount: run?.retryCount ?? undefined,
+        isGate: GATE_KEYS.has(agentKey),
       }
 
       return {
