@@ -53,6 +53,11 @@ export const record = mutation({
 /**
  * Returns eval_scores rows for one scenario, oldest-first — the drift chart's
  * data source (each point is one historical run against a prompt version).
+ *
+ * Ordering is the Convex index's native ascending order (default), NOT a
+ * manual JS sort on `ranAt` — two rows recorded in the same millisecond would
+ * make a `ranAt`-keyed sort ambiguous, whereas the index order is always
+ * deterministic (ties break on `_creationTime`, Convex's own insertion clock).
  */
 export const listForScenario = query({
   args: {
@@ -60,14 +65,13 @@ export const listForScenario = query({
     scenarioId: v.string(),
   },
   handler: async (ctx, { workspace_id, scenarioId }) => {
-    const rows = await ctx.db
+    return await ctx.db
       .query('eval_scores')
       .withIndex('by_workspace_scenario', (q) =>
         q.eq('workspace_id', workspace_id).eq('scenarioId', scenarioId),
       )
+      .order('asc')
       .collect()
-
-    return rows.sort((a, b) => a.ranAt - b.ranAt)
   },
 })
 
@@ -76,6 +80,9 @@ export const listForScenario = query({
 /**
  * Returns eval_scores rows for one agent, newest-first — the scenario card's
  * "last result" source and the per-agent drift view.
+ *
+ * Ordering is the Convex index's native descending order (`.order('desc')`),
+ * NOT a manual JS sort on `ranAt` — see the `listForScenario` note above.
  */
 export const listForAgent = query({
   args: {
@@ -83,13 +90,12 @@ export const listForAgent = query({
     agentKey: v.string(),
   },
   handler: async (ctx, { workspace_id, agentKey }) => {
-    const rows = await ctx.db
+    return await ctx.db
       .query('eval_scores')
       .withIndex('by_workspace_agentKey', (q) =>
         q.eq('workspace_id', workspace_id).eq('agentKey', agentKey),
       )
+      .order('desc')
       .collect()
-
-    return rows.sort((a, b) => b.ranAt - a.ranAt)
   },
 })
