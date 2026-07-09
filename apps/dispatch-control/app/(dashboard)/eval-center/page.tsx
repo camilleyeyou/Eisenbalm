@@ -16,9 +16,8 @@
  *     "last result" per scenario, D-08)
  *   - a DriftScoreboard (the FULL append-only eval_scores time-series per
  *     scenario — the actual drift detector, D-09/D-10)
- *
- * Plan 38-06 Task 2 adds a ShadowRunPanel mount below (the read-only
- * shadow-discovery preview affordance, D-11/D-13).
+ *   - a ShadowRunPanel (the read-only shadow-discovery preview affordance,
+ *     D-11/D-13 — triggers POST /eval/shadow-run and shows the preview inline)
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -26,6 +25,7 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { fetchScenarios, type EvalScenario } from '@/lib/evalScenarioClient'
 import ScenarioCard from './_components/ScenarioCard'
 import DriftScoreboard from './_components/DriftScoreboard'
+import ShadowRunPanel from './_components/ShadowRunPanel'
 
 export default function EvalCenterPage() {
   const { getToken } = useAuth()
@@ -106,6 +106,8 @@ export default function EvalCenterPage() {
           <DriftScoreboard workspaceId={DEFAULT_WORKSPACE_ID} scenarios={scenarios} />
         </>
       )}
+
+      <ShadowRunPanel />
     </div>
   )
 }
