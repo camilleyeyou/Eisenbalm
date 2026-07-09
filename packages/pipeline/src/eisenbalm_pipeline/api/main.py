@@ -37,6 +37,7 @@ from eisenbalm_pipeline.api import (
     review,
     runs,
     signoffs,
+    voice_pass,
     webhooks,
 )
 from eisenbalm_pipeline.api.auth import assert_deployed_secrets
@@ -202,3 +203,4 @@ app.include_router(review.router)
 app.include_router(content.router)
 app.include_router(findings.router)
 app.include_router(signoffs.router)
+app.include_router(voice_pass.router)
