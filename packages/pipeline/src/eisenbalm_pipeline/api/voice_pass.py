@@ -18,13 +18,16 @@ from __future__ import annotations
 import logging
 import time
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.agents.qa.judge import run_llm_judge
 from eisenbalm_pipeline.api.content import _resolve_sanity_id
 from eisenbalm_pipeline.api.control import _emit_audit, _require_clerk_jwt_control
+from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.sanity_client import get_issue_draft
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -131,6 +134,75 @@ async def voice_recheck(
     )
 
     return {"runId": run_id, "findingCount": len(findings)}
+
+
+# ── POST /issues/{run_id}/voice-rewrite — §36.5 ────────────────────────────
+
+
+class _RewriteBody(BaseModel):
+    findingId: str
+
+
+class _Rewrite(BaseModel):
+    suggestedFix: str
+
+
+@router.post("/issues/{run_id}/voice-rewrite")
+async def voice_rewrite(
+    request: Request,
+    run_id: str,
+    body: _RewriteBody,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Generate a house-voice suggestedFix for one finding (§36.5).
+
+    ONLY generates text — never mutates the draft, never calls
+    qaCorrections:setResolution, never patches Sanity. The client passes the
+    returned suggestedFix into the existing accept endpoint (§33.3) as
+    suggestedFixOverride (§36.6) to actually apply it.
+    """
+    convex_http = getattr(request.app.state, "convex_http", None)
+
+    finding = await _cc.convex_query(convex_http, "qaCorrections:byId", {"id": body.findingId})
+    if finding is None or finding.get("runId") != run_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Finding not found for run {run_id}: {body.findingId}",
+        )
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                f"{VOICE_CONSTRAINTS}\n\n"
+                "Rewrite the QUOTED span into Jesse's dry, precise, "
+                "Fortune-500 register. Return ONLY the rewritten span text. "
+                "Do NOT add AI self-reference, hedging, or sentiment."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"QUOTED SPAN: {finding.get('quotedSpan', '')}\n"
+                f"REASON THIS IS A TELL: {finding.get('reason', '')}"
+            ),
+        },
+    ]
+
+    rewrite, _usage = await acomplete(
+        agent_id="qa",
+        run_id=f"voice-rewrite-{run_id}",
+        messages=messages,
+        response_format=_Rewrite,
+    )
+    if hasattr(rewrite, "suggestedFix"):
+        suggested_fix = rewrite.suggestedFix
+    elif isinstance(rewrite, dict):
+        suggested_fix = rewrite.get("suggestedFix", "")
+    else:
+        suggested_fix = ""
+
+    return {"findingId": body.findingId, "suggestedFix": suggested_fix}
 
 
 __all__ = ["router"]
