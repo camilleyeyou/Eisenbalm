@@ -51,6 +51,7 @@ vi.mock('@convex/_generated/api', () => ({
 
 import { useQuery } from 'convex/react'
 import Galley from '../components/galley/Galley'
+import { VOICE_AXES, FACTUAL_AXES } from '@/lib/galley/axisPartition'
 
 afterEach(() => {
   cleanup()
@@ -272,5 +273,128 @@ describe('Galley', () => {
     expect(() =>
       render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />),
     ).not.toThrow()
+  })
+})
+
+// ── Task 2 (Phase 36) — includeAxes filter ──────────────────────────────────
+//
+// One Galley instance now serves two axis-partitioned surfaces: Review Desk
+// (FACTUAL_AXES) and Voice Pass (VOICE_AXES). A finding with no axis at all
+// is omitted whenever ANY includeAxes whitelist is passed (only known-axis
+// rows pass the filter) — undefined-as-factual is a DecisionRail-level
+// concern (Task 4), not a Galley-render concern.
+
+const axisFindings = [
+  {
+    _id: 'v1',
+    runId: 'r1',
+    sectionName: 'origin_story',
+    severity: 'error',
+    axis: 'machine-tell',
+    reason: 'Reads like AI-generated prose.',
+    accepted: false,
+    quotedSpan: 'in a garage',
+    blockIndexHint: 0,
+  },
+  {
+    _id: 'f1',
+    runId: 'r1',
+    sectionName: 'problem',
+    severity: 'warning',
+    axis: 'precision',
+    reason: 'Vague causal claim.',
+    accepted: false,
+    quotedSpan: 'the regional bank closed',
+    blockIndexHint: 0,
+  },
+]
+
+function mockAxisFindings() {
+  ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+    if (queryRef === 'qaCorrections:byRunId') return axisFindings
+    if (queryRef === 'claimChecks:listByRunId') return []
+    return undefined
+  })
+}
+
+function markTexts(container: HTMLElement): (string | null)[] {
+  return Array.from(container.querySelectorAll('mark.galley-anno')).map(el => el.textContent)
+}
+
+describe('Galley includeAxes filter (Phase 36, Task 2)', () => {
+  it('includeAxes=VOICE_AXES renders the machine-tell annotation and omits the precision one', () => {
+    mockAxisFindings()
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        includeAxes={VOICE_AXES}
+      />,
+    )
+    const marks = markTexts(container)
+    expect(marks).toContain('in a garage')
+    expect(marks).not.toContain('the regional bank closed')
+  })
+
+  it('includeAxes=FACTUAL_AXES renders the precision annotation and omits machine-tell', () => {
+    mockAxisFindings()
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        includeAxes={FACTUAL_AXES}
+      />,
+    )
+    const marks = markTexts(container)
+    expect(marks).toContain('the regional bank closed')
+    expect(marks).not.toContain('in a garage')
+  })
+
+  it('back-compat: no includeAxes renders BOTH findings', () => {
+    mockAxisFindings()
+    const { container } = render(
+      <Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />,
+    )
+    const marks = markTexts(container)
+    expect(marks).toContain('in a garage')
+    expect(marks).toContain('the regional bank closed')
+  })
+
+  it('a finding with axis === undefined is omitted when includeAxes is set', () => {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') {
+        return [
+          {
+            _id: 'u1',
+            runId: 'r1',
+            sectionName: 'origin_story',
+            severity: 'error',
+            reason: 'Legacy row with no axis at all.',
+            accepted: false,
+            quotedSpan: 'in a garage',
+            blockIndexHint: 0,
+          },
+        ]
+      }
+      if (queryRef === 'claimChecks:listByRunId') return []
+      return undefined
+    })
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        includeAxes={FACTUAL_AXES}
+      />,
+    )
+    expect(container.querySelectorAll('mark.galley-anno').length).toBe(0)
   })
 })
