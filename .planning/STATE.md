@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 36-02-pipeline-axis-foundations-PLAN.md
-last_updated: "2026-07-09T13:27:57.702Z"
+stopped_at: Completed 36-05-machine-tell-predicate-PLAN.md
+last_updated: "2026-07-09T13:37:18.475Z"
 progress:
   total_phases: 39
   completed_phases: 34
   total_plans: 228
-  completed_plans: 222
+  completed_plans: 223
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 36
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -247,6 +247,7 @@ Plan: 3 of 6
 | Phase 35 P04 | 15min | 3 tasks | 5 files |
 | Phase 36 P01 | 10min | 2 tasks | 3 files |
 | Phase 36 P02 | 10min | 2 tasks | 3 files |
+| Phase 36 P05 | ~10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -630,6 +631,8 @@ Recent decisions affecting current work:
 - [Phase 35]: Kept legacy extract_claims/extract_all_claim_types byte-unchanged (Phase 26/33 back-compat) while publisher now calls the new per-block extract_claims_by_block; Convex optional fields omitted (not null) when absent, mirroring the qa/__init__.py blockIndexHint precedent
 - [Phase 36]: Widened Convex qaCorrections.axis union to include structural-variety alongside machine-tell in the same commit — closes a pre-existing Phase 18 gap where the judge's axis silently dropped on write
 - [Phase 36]: Left pre-existing test_sounds_human_ungated unmodified (its fixture axis-less finding stays outside VOICE_AXES, assertion remains valid)
+- [Phase 36]: Conservative v1 machine-tell lexicon (12 patterns) favors precision over recall since severity=error gates the Sounds-human sign-off
+- [Phase 36]: machine-tell lexicon not mirrored into lib/voice.py generation-time forbidden sets in v1 (detection-time only, per 36-CONTEXT D-05 discretion)
 
 ### Pending Todos
 
@@ -714,6 +717,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T13:27:57.689Z
-Stopped at: Completed 36-02-pipeline-axis-foundations-PLAN.md
+Last session: 2026-07-09T13:37:18.462Z
+Stopped at: Completed 36-05-machine-tell-predicate-PLAN.md
 Resume file: None
