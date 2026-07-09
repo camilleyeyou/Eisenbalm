@@ -420,22 +420,41 @@ async def run_status(request: Request, run_id: str) -> dict:
     }
 
 
-# ── POST /run/{run_id}/resume — research §2 + Example 1 ─────────────────
+# ── Shared resume implementation (Phase 37 Plan 02, SIG-03/D-13) ──────────
+#
+# _resume_paused_run is the SINGLE authoritative resume body, extracted from
+# resume_run so a second, differently-authed entry point (the Clerk-guarded
+# POST /issues/{run_id}/adjudicate bridge in control.py) can invoke the exact
+# same paused-check + Command(resume=...) machinery without duplicating it.
+# There is exactly one resume implementation (37-02 must_haves).
 
-@router.post("/run/{run_id}/resume")
-async def resume_run(
-    request: Request, run_id: str, body: ResumeBody
-) -> dict:
+async def _resume_paused_run(app: Any, run_id: str, charity_name: str) -> dict:
     """Resume a paused (interrupted) pipeline run.
 
     The graph for this run_id was paused inside Editor gate 1 via
-    interrupt(). This endpoint passes Command(resume=...) into a fresh
+    interrupt(). This schedules Command(resume=...) into a fresh
     graph.ainvoke with the SAME thread_id, which causes LangGraph to load
     the checkpoint and re-run the editor node — interrupt() returns the
     resume value this time (research §2).
+
+    Callers are responsible for their own auth guard (trigger-secret or
+    Clerk JWT) BEFORE calling this helper — it performs no auth itself.
+
+    Raises:
+        HTTPException(503) if the graph is unavailable (degraded lifespan).
+        HTTPException(409) if the run is not currently paused (state.next
+            is empty — research §2 race-cond mitigation).
     """
-    _require_trigger_secret(request)
-    graph = _require_graph(request)
+    graph = getattr(app.state, "graph", None)
+    if graph is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Pipeline graph unavailable — the FastAPI lifespan started in "
+                "degraded mode (SUPABASE_POSTGRES_URL missing or Supabase "
+                "unreachable). Check the service logs."
+            ),
+        )
 
     config = {"configurable": {"thread_id": run_id}}
 
@@ -449,7 +468,7 @@ async def resume_run(
             detail=f"Run {run_id} is not paused (state.next is empty)",
         )
 
-    resume_payload = {"editorSelection": body.selection.charityName}
+    resume_payload = {"editorSelection": charity_name}
 
     async def _resume_run_task() -> None:
         try:
@@ -461,10 +480,26 @@ async def resume_run(
             log.exception("Resume task for %s raised", run_id)
 
     task = asyncio.create_task(_resume_run_task())
-    request.app.state.background_tasks.add(task)
-    task.add_done_callback(request.app.state.background_tasks.discard)
+    app.state.background_tasks.add(task)
+    task.add_done_callback(app.state.background_tasks.discard)
 
     return {"runId": run_id, "resumed": True}
+
+
+# ── POST /run/{run_id}/resume — research §2 + Example 1 ─────────────────
+
+@router.post("/run/{run_id}/resume")
+async def resume_run(
+    request: Request, run_id: str, body: ResumeBody
+) -> dict:
+    """Resume a paused (interrupted) pipeline run (trigger-secret guarded).
+
+    Delegates to _resume_paused_run — the single shared resume
+    implementation also invoked by the Clerk-guarded adjudication bridge
+    (POST /issues/{run_id}/adjudicate, control.py).
+    """
+    _require_trigger_secret(request)
+    return await _resume_paused_run(request.app, run_id, body.selection.charityName)
 
 
 # ── POST /run/{run_id}/publish — WHK-08 manual fallback (real) ───────────
