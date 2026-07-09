@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase complete — ready for verification
-stopped_at: Completed 37-05-signal-desk-PLAN.md
-last_updated: "2026-07-09T18:47:39.846Z"
+status: Ready to execute
+stopped_at: Completed 38-01-contract-eval-scores-foundation-PLAN.md
+last_updated: "2026-07-09T20:49:26.121Z"
 progress:
   total_phases: 39
   completed_phases: 36
-  total_plans: 234
-  completed_plans: 232
+  total_plans: 240
+  completed_plans: 233
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 
 ## Current Position
 
-Phase: 37 (run-monitor-v2-signal-desk) — EXECUTING
-Plan: 5 of 5
+Phase: 38
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -257,6 +257,7 @@ Plan: 5 of 5
 | Phase 37 P03 | 15min | 3 tasks | 7 files |
 | Phase 37 P04 | 20min | 3 tasks | 7 files |
 | Phase 37 P05 | 21 | 3 tasks | 9 files |
+| Phase 38 P01 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -659,6 +660,7 @@ Recent decisions affecting current work:
 - [Phase 37]: SignalDeskScreen.tsx added as a new Client Component shell (Server/Client split, mirrors run-monitor/graph) not explicitly named in 37-05's files_modified
 - [Phase 37]: AdjudicationPanel reuses CandidateSlate's exported joinCandidates() rather than a second pitchLog/advocate-argument join
 - [Phase 37]: adjudicateGate1() result typed permissively against the real 37-02 implementation ({runId, resumed}) rather than only the §37.3 doc prose
+- [Phase 38]: listForScenario/listForAgent order via Convex's native .order('asc'|'desc') on the index, not a manual JS sort on ranAt — avoids flaky tie-breaking when two rows share a millisecond timestamp
 
 ### Pending Todos
 
@@ -743,6 +745,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T18:47:39.832Z
-Stopped at: Completed 37-05-signal-desk-PLAN.md
+Last session: 2026-07-09T20:49:26.108Z
+Stopped at: Completed 38-01-contract-eval-scores-foundation-PLAN.md
 Resume file: None

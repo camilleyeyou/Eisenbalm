@@ -436,8 +436,8 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 34. Two-Sign-Off Publish Gate + Studio Bypass Retirement | 7/7 | Complete    | 2026-07-08 |
 | 35. Provenance Pipeline + Sourced/Unsourced Galley | 6/6 | Complete    | 2026-07-08 |
 | 36. Voice Pass De-Slop Screen | 7/7 | Complete    | 2026-07-09 |
-| 37. Run Monitor v2 + Signal Desk | 5/5 | Complete   | 2026-07-09 |
-| 38. Prompt Lab Evals + Eval Center | 0/? | Not started | - |
+| 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
+| 38. Prompt Lab Evals + Eval Center | 1/6 | In Progress|  |
 | 39. Registry Coverage-Memory Strip | 0/? | Not started | - |
 
 ## Backlog
@@ -807,7 +807,13 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   3. Committing a prompt is gated on target-metric-up-with-no-regressions, with a logged override-with-reason escape hatch so the gate cannot deadlock.
   4. The Eval Center shows scenario cards (description, what-it-catches, last result) plus an append-only scoreboard time-series in new Convex tables — the editorial drift detector.
   5. Operator can run a shadow run — the discovery scenario against current real news — and see what a paid run would produce, without publishing or affecting run state.
-**Plans**: TBD
+**Plans**: 6 plans
+- [x] 38-01-contract-eval-scores-foundation-PLAN.md — Contract §38 (whole-phase boundary) + append-only eval_scores Convex table + evalScores.record/list queries (EVL-04)
+- [ ] 38-02-golden-scenarios-endpoint-PLAN.md — 8 golden scenario fixtures (replicable agentKeys only) + Pydantic loader + GET /eval/scenarios + TS client (EVL-01)
+- [ ] 38-04-commit-gate-override-PLAN.md — promptVersions.activate eval-gate (target-up/no-regression, freshness-guarded) + logged override-with-reason + VersionHistoryPanel UI (EVL-03)
+- [ ] 38-03-shadow-run-discover-candidates-PLAN.md — pure discover_candidates() extraction from scout.py + read-only POST /eval/shadow-run + D-12 isolation proof (EVL-05)
+- [ ] 38-05-prompt-lab-eval-drawer-PLAN.md — EvalDrawer auto-select + N-scenario draft-vs-active scoreboard + eval_scores persistence (EVL-02)
+- [ ] 38-06-eval-center-drift-shadow-PLAN.md — Eval Center scenario cards + append-only drift time-series + ShadowRunPanel trigger (EVL-04, EVL-05)
 **UI hint**: yes
 
 ### Phase 39: Registry Coverage-Memory Strip
