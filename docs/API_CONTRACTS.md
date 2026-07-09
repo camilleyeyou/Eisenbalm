@@ -679,6 +679,8 @@ await convex_mutation('deliberationEvents:insert', {
 })
 
 # Editor gate 1 decision
+# NOTE: Phase 37 §37.2 adds 'confidence' + 'runnerUpNotes' to this payload —
+# see §37.2 for the full amended shape.
 await convex_mutation('deliberationEvents:insert', {
     'runId': run_id,
     'agentId': 'editor',
@@ -686,6 +688,8 @@ await convex_mutation('deliberationEvents:insert', {
     'payload': json.dumps({
         'winner': state['winning_charity']['name'],
         'rationale': state['editor_decision'],
+        'confidence': state['editor_confidence'],
+        'runnerUpNotes': state['runner_up_notes'],
     }),
 })
 
@@ -1945,6 +1949,7 @@ class DispatchState(TypedDict):
 
     editor_decision: Optional[str]              # why this charity won
     runner_up_notes: Optional[str]
+    editor_confidence: Optional[float]          # Phase 37 §37.2 — EditorDecision.confidence, persisted (was computed then discarded)
 
     # ── Phase 2: Content (populated in parallel) ───────────────────────────────
     research: Optional[ResearchOutput]
@@ -3514,6 +3519,135 @@ audit emission, response shape) is UNCHANGED.
 out explicitly since they touch already-shipped, tested Phase 5/34 code; and purely
 additive elsewhere (two new endpoints, one new optional request field). No field is
 renamed; Phase 26/31/32/33/34/35 shapes are otherwise unchanged.*
+
+---
+
+## §37 — Run Monitor v2 + Signal Desk (Phase 37)
+
+Two operator surfaces over EXISTING run data — no new pipeline agents, no topology
+change (MON-01..MON-04, SIG-01..SIG-03). Run Monitor v2 rebuilds the existing
+`run-monitor/graph` view in place into a vertical forensic spine (agents as dots,
+`verify_research`/`validate_sections` code gates as marigold diamonds) with a
+handoff inspector, per-section strength scores on the 7-writers node, and a
+run-vs-trailing-8 drift strip. Signal Desk builds out the existing stub into the
+Gate 1 candidate slate + decision panel + adjudication mode over the existing
+`editor_gate_1` interrupt and `POST /run/{run_id}/resume`. All changes additive; no
+field renames. This contract is written BEFORE any schema/agent/endpoint code exists
+(CLAUDE.md contract-first hard rule, mirroring §31/§32/§33/§34/§35/§36). Plans
+37-02..37-05 implement these shapes verbatim — no field name, endpoint path, or read
+pattern may be invented later.
+
+### §37.1 — `agent_runs.retryCount` (additive optional)
+
+```typescript
+// convex/schema.ts — agent_runs table
+retryCount: v.optional(v.number()),  // Phase 37 §37.1 — genuine LLM regenerate-retries, legacy = 0/absent
+```
+
+```typescript
+// convex/agentRuns.ts — completed internalMutation args
+retryCount: v.optional(v.number()),
+```
+
+Semantics: the count of genuine LLM regenerate-retries `acomplete()` performed for
+that node in that run — specifically the one-shot invoke-error retry and the
+one-shot schema-miss regenerate already present in
+`lib/openrouter_client.py::acomplete()` (~L196-212). Legacy rows (written before
+this field existed) and non-retrying nodes read `0`/absent. **No new node-retry
+mechanism is introduced** — this surfaces a retry signal that already occurs inside
+`acomplete()` today but is currently discarded before it reaches `agent_runs`
+(Research Pitfall 1). `wrap_agent_node`'s own exception→`agentRuns:failed`→re-raise
+path is unchanged; `retryCount` never reflects a full node-level retry, only the
+in-flight LLM-call regenerate that `acomplete()` already silently performs.
+
+### §37.2 — editor-decision payload gains `confidence` + `runnerUpNotes` (amends the inline `editor-decision` example above)
+
+The `deliberationEvents:insert` `editor-decision` payload (the inline example
+earlier in this document, and `agents/editor.py::_editor_decision_payload`) becomes:
+
+```python
+await convex_mutation('deliberationEvents:insert', {
+    'runId': run_id,
+    'agentId': 'editor',
+    'eventType': 'editor-decision',
+    'payload': json.dumps({
+        'winner': state['winning_charity']['name'],
+        'rationale': state['editor_decision'],
+        'confidence': state['editor_confidence'],   # NEW Phase 37 §37.2
+        'runnerUpNotes': state['runner_up_notes'],  # NEW Phase 37 §37.2 — already in state, zero new plumbing
+    }),
+})
+```
+
+`confidence` is the float `EditorDecision.confidence` (0.0-1.0) that `editor_gate_1`
+already computes to decide whether to interrupt, but today discards — never added to
+`state`, never returned, never emitted (Research Pitfall 2). `DispatchState` (§7)
+gains a plain sequential field:
+
+```python
+editor_confidence: Optional[float]   # NEW Phase 37 §37.2 — EditorDecision.confidence, persisted (was computed then discarded)
+```
+
+placed immediately after `runner_up_notes: Optional[str]`. No `Annotated` reducer is
+needed — `editor_gate_1` runs once, sequentially, not in the parallel phase-2
+fan-out. The `deliberationEvents.eventType` union is UNCHANGED (still `'editor-decision'`
+— this only adds keys to that event's `payload` JSON).
+
+### §37.3 — `POST /issues/{run_id}/adjudicate` (Clerk-guarded adjudication bridge)
+
+```
+POST /issues/{run_id}/adjudicate
+Authorization: Bearer <Clerk JWT>   # _require_clerk_jwt_control — NOT the trigger secret
+Body: { "selection": { "charityName": str }, "reason": str }
+```
+
+Behavior, in order:
+1. 409 unless the run is paused at Gate 1 (§37.4(c) below is the exact predicate).
+2. `_emit_audit` the operator's pick + `reason` ("nothing silent" — every dashboard
+   write is audit-logged like every other v3.0 mutation). The `reason` is stored via
+   `audit_log` (`action`/`before`/`after` free-form strings) ONLY — it is NEVER
+   threaded into `Command(resume=...)` or into any `deliberationEvents` payload,
+   because the `deliberationEvents.eventType` union is FROZEN (no new literal may be
+   added for it).
+3. Invoke the existing resume machinery server-side with the chosen `charityName` —
+   the same `Command(resume={"editorSelection": charityName})` path
+   `POST /run/{run_id}/resume` already uses (`api/runs.py::resume_run`). The
+   dashboard/operator NEVER handles the `_require_trigger_secret` value; this bridge
+   is the only path from a Clerk-authenticated browser session to a resume.
+
+Returns `{ "runId": run_id, "charityName": <selection.charityName> }`.
+
+### §37.4 — Read-model notes (no new tables/queries)
+
+(a) **Drift strip (MON-04)**: aggregates `pipelineRuns:byRunId(runId).cost` /
+`.durationMs` per trailing run (trailing 8, plus the current run). `runs.cost` /
+`runs.durationMs` are declared-but-never-written dead fields on the `runs` table —
+**do not read them** for drift (Research Pitfall 5); `pipelineRuns`'s mirror of
+those two fields is reliably populated by the Publisher and by the failure/cancel
+paths.
+
+(b) **Candidate slate (SIG-01)** is a client-side JOIN, not a single-table read:
+`pitchLog:byRunId` (name/location/website/assetRange/focusArea/scoutSummary) joined
+with `deliberationEvents:byRunIdAndType(runId, 'advocate-argument')` (payload JSON
+`{charityName, score, argument, keyStrengths, primaryConcern}`, row keyed by
+`charityId`) on `charityId` (fallback to `charityName`). Advocate data is NOT in
+`pitchLog` (Research Pitfall 3). `primaryConcern` is rendered always-visible, never
+truncated.
+
+(c) **Gate-1-paused detection (SIG-03)**: `status === 'awaiting-review' && completedAt
+== null` on `pipelineRuns`. Both the Gate-1 interrupt write (`editor.py`) and the
+finished-pipeline review-gate write (`publisher/__init__.py`) use the identical
+`status: 'awaiting-review'` literal, but only the Publisher's write ever sets
+`completedAt` (Research Pitfall 4) — this is the reliable disambiguator between
+"paused at Gate 1, needs adjudication" and "finished, awaiting Review Desk decision."
+
+*All Phase 37 changes are: additive to `convex/schema.ts`/`convex/agentRuns.ts` (one
+new optional field, `retryCount`); additive to `DispatchState` and the
+`editor-decision` payload JSON (`editor_confidence`, `confidence`, `runnerUpNotes` —
+no eventType change); one new Clerk-guarded endpoint
+(`POST /issues/{run_id}/adjudicate`); and read-model conventions for two screens that
+introduce zero new tables/queries. No field is renamed; Phase 26/31/32/33/34/35/36
+shapes are otherwise unchanged.*
 
 ---
 
