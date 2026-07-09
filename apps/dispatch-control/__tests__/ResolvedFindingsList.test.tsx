@@ -52,6 +52,7 @@ vi.mock('@/lib/findingsClient', () => {
 import { useQuery } from 'convex/react'
 import { reopenFinding, FindingsError } from '@/lib/findingsClient'
 import ResolvedFindingsList from '../app/(dashboard)/review-desk/[runId]/_components/ResolvedFindingsList'
+import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 
 afterEach(() => {
   cleanup()
@@ -188,5 +189,55 @@ describe('ResolvedFindingsList badges', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /resolved \(1\)/i }))
     expect(screen.getByText(/^accepted$/i)).toBeDefined()
+  })
+})
+
+// ── Axis scoping (Phase 36, §36.3, Plan 36-04 Task 4) ───────────────────────
+//
+// This is Review Desk's factual rail — a resolved VOICE_AXES (e.g.
+// machine-tell) row belongs to Voice Pass, not here, and must never appear
+// in this list or its count.
+
+const resolvedVoiceFinding = {
+  _id: 'f-voice-res',
+  findingId: 'f-voice-res',
+  sectionName: 'origin_story',
+  severity: 'error' as const,
+  axis: 'machine-tell',
+  reason: 'Reads like AI-generated prose.',
+  resolution: 'dismissed' as const,
+}
+
+const resolvedLegacyNoAxis = {
+  _id: 'f-legacy-res',
+  findingId: 'f-legacy-res',
+  sectionName: 'problem',
+  severity: 'warning' as const,
+  reason: 'Pre-Phase-36 resolved row with no axis field.',
+  resolution: 'accepted' as const,
+}
+
+describe('ResolvedFindingsList axis scoping (Phase 36, §36.3)', () => {
+  it('excludes a resolved voice-axis (machine-tell) row from both the count and the list', () => {
+    mockRows([dismissedFinding, resolvedVoiceFinding])
+    render(<ResolvedFindingsList runId="run-1" />)
+
+    // Only the factual dismissedFinding counts — the voice row is excluded.
+    const toggle = screen.getByRole('button', { name: /resolved \(1\)/i })
+    fireEvent.click(toggle)
+    expect(screen.getByText(dismissedFinding.reason)).toBeDefined()
+    expect(screen.queryByText(resolvedVoiceFinding.reason)).toBeNull()
+  })
+
+  it('still includes a resolved row with no axis at all (legacy = factual, per §36.3)', () => {
+    mockRows([resolvedLegacyNoAxis])
+    render(<ResolvedFindingsList runId="run-1" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /resolved \(1\)/i }))
+    expect(screen.getByText(resolvedLegacyNoAxis.reason)).toBeDefined()
+  })
+
+  it('FACTUAL_AXES sanity: machine-tell is never a member', () => {
+    expect(FACTUAL_AXES.has('machine-tell')).toBe(false)
   })
 })
