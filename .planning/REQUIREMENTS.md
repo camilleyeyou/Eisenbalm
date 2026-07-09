@@ -319,7 +319,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **MON-04**: A drift strip compares this run's cost and duration against the trailing 8 runs.
 
 ### Signal Desk (SIG)
-- [ ] **SIG-01**: Operator sees the candidate slate from existing data (pitchLog scout summaries, Advocate scores with expandable arguments, primaryConcern always visible, never truncated).
+- [x] **SIG-01**: Operator sees the candidate slate from existing data (pitchLog scout summaries, Advocate scores with expandable arguments, primaryConcern always visible, never truncated).
 - [x] **SIG-02**: The Gate 1 decision panel shows the winner, confidence meter, and editor reasoning in full.
 - [x] **SIG-03**: When the pipeline interrupts at Gate 1, the screen enters side-by-side adjudication; the operator's pick plus a logged reason resumes the run via the existing resume endpoint.
 

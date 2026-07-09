@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 37-04-run-monitor-strength-drift-PLAN.md
-last_updated: "2026-07-09T18:23:21.971Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 37-05-signal-desk-PLAN.md
+last_updated: "2026-07-09T18:47:39.846Z"
 progress:
   total_phases: 39
-  completed_phases: 35
+  completed_phases: 36
   total_plans: 234
-  completed_plans: 231
+  completed_plans: 232
 ---
 
 # Project State
@@ -256,6 +256,7 @@ Plan: 5 of 5
 | Phase 37 P02 | 14min | 2 tasks | 3 files |
 | Phase 37 P03 | 15min | 3 tasks | 7 files |
 | Phase 37 P04 | 20min | 3 tasks | 7 files |
+| Phase 37 P05 | 21 | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -655,6 +656,9 @@ Recent decisions affecting current work:
 - [Phase 37]: Model chip renders unconditionally on AgentNode so model+cost+duration+retry never mutually exclusive on an executed node
 - [Phase 37]: AgentIOPanel handoff fetches use a per-key HandoffNode child component to keep useQuery hook counts stable across variable fan-out/fan-in
 - [Phase 37]: WriterExpansion scores the 6 re-rollable writer sections (design excluded from strength rows, stays dimmed-only on the spine per Phase 23 Pitfall 4); DriftBar/HandoffNode per-row Convex fetch pattern reused for the drift strip's trailing-8 aggregation
+- [Phase 37]: SignalDeskScreen.tsx added as a new Client Component shell (Server/Client split, mirrors run-monitor/graph) not explicitly named in 37-05's files_modified
+- [Phase 37]: AdjudicationPanel reuses CandidateSlate's exported joinCandidates() rather than a second pitchLog/advocate-argument join
+- [Phase 37]: adjudicateGate1() result typed permissively against the real 37-02 implementation ({runId, resumed}) rather than only the §37.3 doc prose
 
 ### Pending Todos
 
@@ -739,6 +743,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T18:23:21.960Z
-Stopped at: Completed 37-04-run-monitor-strength-drift-PLAN.md
+Last session: 2026-07-09T18:47:39.832Z
+Stopped at: Completed 37-05-signal-desk-PLAN.md
 Resume file: None
