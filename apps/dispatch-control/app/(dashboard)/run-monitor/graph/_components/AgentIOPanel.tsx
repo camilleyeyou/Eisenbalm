@@ -1,19 +1,32 @@
 'use client'
 /**
  * Phase 23 — AgentIOPanel: slide-over panel for per-agent I/O + error + cost.
+ * Phase 37 (MON-02) — extended into the upstream→node→downstream handoff
+ * inspector.
  *
  * OBS-05: Operator can inspect per-agent input/output and any error/retry.
  *
  * Queries agent_run_payloads on node click (NOT subscribed — keeps live
  * subscription lean, per RESEARCH Pattern 4 / Pitfall 2). Renders:
- *   - inputSnapshot + outputSnapshot (pretty-printed JSON in <pre>)
  *   - error message when status === 'failed'
  *   - costUsd / durationMs / tokensIn / tokensOut from the agentRun row
+ *   - the handoff (MON-02): upstream node's output → this node's
+ *     input/output → downstream node's input, resolved from PIPELINE_EDGES.
+ *     Human-readable summary first; raw JSON (the existing prettyJson <pre>
+ *     blocks) sits behind a "Show raw JSON" toggle. Snapshots are truncated
+ *     ~2000 chars server-side (Phase 23 OBS-05) — the truncation is noted
+ *     in the UI, not hidden.
+ *
+ * A node with no upstream (calibrator) or multiple upstream/downstream
+ * (verify_research/validate_sections fan-out/fan-in) degrades gracefully:
+ * renders whatever exists, never crashes.
  *
  * Read-only panel — no mutating actions.
  */
+import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import { PIPELINE_EDGES } from './pipelineTopology'
 
 interface AgentRun {
   agentKey: string
@@ -32,27 +45,104 @@ interface AgentIOPanelProps {
   onClose: () => void
 }
 
+// ── shared helpers ───────────────────────────────────────────────────────────
+
+/** Pretty-print a JSON string for display (raw JSON, behind the toggle). */
+function prettyJson(raw: string | undefined): string {
+  if (!raw) return '—'
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2)
+  } catch {
+    return raw
+  }
+}
+
+/**
+ * Compact, human-readable one-line summary of a snapshot: top-level key
+ * highlights rather than the full structure (the full structure is the raw
+ * JSON behind the toggle).
+ */
+function summarize(raw: string | undefined): string {
+  if (!raw) return '—'
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const keys = Object.keys(parsed as Record<string, unknown>).slice(0, 6)
+      return keys.length > 0 ? keys.join(', ') : '(empty object)'
+    }
+    if (Array.isArray(parsed)) {
+      return `array (${parsed.length} items)`
+    }
+    return String(parsed).slice(0, 120)
+  } catch {
+    return raw.slice(0, 120)
+  }
+}
+
+// ── HandoffNode ──────────────────────────────────────────────────────────────
+
+/**
+ * Fetches + renders one upstream/downstream node's payload snapshot as a
+ * compact human-readable summary. Kept as its own component (one useQuery
+ * call per instance) so the hook count stays stable regardless of how many
+ * upstream/downstream edges the selected node has (MON-02 fan-out/fan-in).
+ */
+function HandoffNode({
+  runId,
+  agentKey,
+  direction,
+}: {
+  runId: string
+  agentKey: string
+  direction: 'upstream' | 'downstream'
+}) {
+  const payload = useQuery(api.agentRuns.payloadByRunIdAgentKey, { runId, agentKey })
+
+  if (payload === undefined) {
+    return <p className="text-[10px] text-neutral-400">{agentKey}: loading…</p>
+  }
+  if (payload === null) {
+    return <p className="text-[10px] text-neutral-400">{agentKey}: no snapshot stored</p>
+  }
+
+  // Upstream: we care about what it produced (its output).
+  // Downstream: we care about what it receives (its input).
+  const snapshot = direction === 'upstream' ? payload.outputSnapshot : payload.inputSnapshot
+
+  return (
+    <p className="text-[10px] text-neutral-600">
+      <span className="font-medium text-neutral-700">{agentKey}</span>
+      {': '}
+      {summarize(snapshot ?? undefined)}
+    </p>
+  )
+}
+
+// ── AgentIOPanel ─────────────────────────────────────────────────────────────
+
 export function AgentIOPanel({
   runId,
   agentKey,
   agentRun,
   onClose,
 }: AgentIOPanelProps) {
-  // Fetch I/O payload on demand (NOT subscribed — see OBS-05 / Pattern 4).
+  // Fetch this node's own I/O payload on demand (NOT subscribed — see
+  // OBS-05 / Pattern 4).
   const payload = useQuery(
     api.agentRuns.payloadByRunIdAgentKey,
     runId && agentKey ? { runId, agentKey } : 'skip',
   )
 
-  // Pretty-print a JSON string for display.
-  function prettyJson(raw: string | undefined): string {
-    if (!raw) return '—'
-    try {
-      return JSON.stringify(JSON.parse(raw), null, 2)
-    } catch {
-      return raw
-    }
-  }
+  // Raw JSON is hidden by default — human-readable summary renders first
+  // (MON-02).
+  const [showRawJson, setShowRawJson] = useState(false)
+
+  // Resolve upstream/downstream keys from the static topology. A node can
+  // have zero (calibrator has no upstream; publisher has no downstream),
+  // one, or many (verify_research fans out to 7; validate_sections fans in
+  // from 7) — all degrade gracefully below.
+  const upstreamKeys = PIPELINE_EDGES.filter(([, tgt]) => tgt === agentKey).map(([src]) => src)
+  const downstreamKeys = PIPELINE_EDGES.filter(([src]) => src === agentKey).map(([, tgt]) => tgt)
 
   return (
     <div
@@ -133,17 +223,90 @@ export function AgentIOPanel({
           </p>
         )}
 
-        {/* Loading state */}
-        {runId && payload === undefined && (
-          <p className="text-xs text-neutral-400">Loading…</p>
+        {/* Handoff — upstream output → this node's input/output → downstream
+            input (MON-02). Human-readable summary first; raw JSON behind
+            the toggle below. */}
+        {runId && (
+          <section>
+            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+              Handoff
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                  From (upstream output)
+                </p>
+                {upstreamKeys.length > 0 ? (
+                  <div className="space-y-1">
+                    {upstreamKeys.map(key => (
+                      <HandoffNode key={key} runId={runId} agentKey={key} direction="upstream" />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-neutral-400">
+                    No upstream node (start of pipeline)
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                  This node (input → output)
+                </p>
+                {payload === undefined ? (
+                  <p className="text-[10px] text-neutral-400">Loading…</p>
+                ) : payload === null ? (
+                  <p className="text-[10px] text-neutral-400">
+                    No I/O snapshot stored for this agent in this run.
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-neutral-600">
+                    {summarize(payload.inputSnapshot ?? undefined)}
+                    {' → '}
+                    {summarize(payload.outputSnapshot ?? undefined)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                  To (downstream input)
+                </p>
+                {downstreamKeys.length > 0 ? (
+                  <div className="space-y-1">
+                    {downstreamKeys.map(key => (
+                      <HandoffNode key={key} runId={runId} agentKey={key} direction="downstream" />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-neutral-400">
+                    No downstream node (end of pipeline)
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <p className="mt-3 text-[9px] italic text-neutral-400">
+              Snapshots truncated to ~2000 characters.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowRawJson(v => !v)}
+              className="mt-2 text-[10px] font-medium text-neutral-600 underline hover:text-neutral-900"
+            >
+              {showRawJson ? 'Hide raw JSON' : 'Show raw JSON'}
+            </button>
+          </section>
         )}
 
-        {/* I/O snapshots */}
-        {payload !== undefined && payload !== null && (
+        {/* Raw JSON — this node's own input/output snapshots, behind the
+            toggle above. */}
+        {showRawJson && payload !== undefined && payload !== null && (
           <>
             <section>
               <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
-                Input Snapshot
+                Input Snapshot (raw)
               </h3>
               <pre className="text-[10px] bg-neutral-50 border border-neutral-200 rounded p-2 whitespace-pre-wrap break-words text-neutral-700 max-h-64 overflow-y-auto">
                 {prettyJson(payload.inputSnapshot ?? undefined)}
@@ -152,20 +315,13 @@ export function AgentIOPanel({
 
             <section>
               <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
-                Output Snapshot
+                Output Snapshot (raw)
               </h3>
               <pre className="text-[10px] bg-neutral-50 border border-neutral-200 rounded p-2 whitespace-pre-wrap break-words text-neutral-700 max-h-64 overflow-y-auto">
                 {prettyJson(payload.outputSnapshot ?? undefined)}
               </pre>
             </section>
           </>
-        )}
-
-        {/* No payload stored yet for this agent */}
-        {payload === null && runId && (
-          <p className="text-xs text-neutral-400">
-            No I/O snapshot stored for this agent in this run.
-          </p>
         )}
       </div>
     </div>
