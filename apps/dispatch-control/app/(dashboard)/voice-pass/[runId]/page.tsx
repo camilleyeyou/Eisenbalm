@@ -23,6 +23,13 @@
  * `onEditSection` is a safe no-op stub for this plan — Plan 36-06 finalizes
  * the rewrite/edit-inline actions for voice tells.
  *
+ * Phase 36 (VOX-02/VOX-03, Plan 36-06 Task 1/2): the mounted `<Galley>` now
+ * gets `labels={VOICE_LABELS}` — the voice-tell AnnotationMark variant
+ * (Accept rewrite / Write my own / Keep (not a tell)) — and the right
+ * column mounts `<VoicePassRail>` (machine-tells list + voice-law reference
+ * + the server-gated "Sounds human" sign-off), mirroring Review Desk's
+ * galley+rail two-column layout.
+ *
  * The default export is a thin `use(params)` wrapper around the named
  * `VoicePassScreen` component below — split out so tests can render the
  * screen directly with a plain `runId` string, without needing a Suspense
@@ -33,10 +40,19 @@ import { useAuth } from '@clerk/nextjs'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import Galley from '@/components/galley/Galley'
+import VoicePassRail from './_components/VoicePassRail'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { VOICE_AXES } from '@/lib/galley/axisPartition'
 import { recheck, VoicePassApiError } from '@/lib/voicePassClient'
+
+/** Phase 36 (VOX-02, D-10) — the voice-tell AnnotationMark label variant. */
+const VOICE_LABELS = {
+  accept: 'Accept rewrite',
+  editInline: 'Write my own',
+  dismiss: 'Keep (not a tell)',
+  dismissReasonDefault: 'not a tell',
+} as const
 
 interface VoicePassRunPageProps {
   params: Promise<{ runId: string }>
@@ -191,15 +207,28 @@ export function VoicePassScreen({ runId }: { runId: string }) {
       )}
 
       {!loading && !error && draft && (
-        <Galley
-          runId={runId}
-          draft={draft}
-          revisionId={draft.revisionId}
-          reloadDraft={reloadDraft}
-          onEditSection={handleEditSection}
-          showProvenance={false}
-          includeAxes={VOICE_AXES}
-        />
+        <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+          {/* LEFT — the VOICE_AXES-scoped galley, voice-tell labels (D-10). */}
+          <div className="flex flex-1 flex-col gap-3">
+            <Galley
+              runId={runId}
+              draft={draft}
+              revisionId={draft.revisionId}
+              reloadDraft={reloadDraft}
+              onEditSection={handleEditSection}
+              showProvenance={false}
+              includeAxes={VOICE_AXES}
+              labels={VOICE_LABELS}
+            />
+          </div>
+
+          {/* RIGHT — the Voice Pass rail (VOX-03): machine-tells, voice law,
+              the server-gated "Sounds human" sign-off. Mirrors Review Desk's
+              336px decision-rail column. */}
+          <div className="w-full shrink-0 lg:w-[336px]">
+            <VoicePassRail runId={runId} />
+          </div>
+        </div>
       )}
     </div>
   )

@@ -31,8 +31,33 @@ vi.mock('@convex/_generated/api', () => ({
       listByRunId: 'claimChecks:listByRunId',
       setStatus: 'claimChecks:setStatus',
     },
+    // Phase 36 (Plan 36-06 Task 2): the mounted VoicePassRail subscribes to
+    // the same sign-offs query DecisionRail already reads.
+    signOffs: { activeByRunId: 'signOffs:activeByRunId' },
   },
 }))
+
+// Phase 36 (Plan 36-06 Task 2): VoicePassRail's "Sign: Sounds human" button.
+vi.mock('@/lib/signOffClient', () => {
+  class SignOffApiError extends Error {
+    constructor(
+      public readonly status: number,
+      public readonly reason: string,
+      message: string,
+    ) {
+      super(message)
+      this.name = 'SignOffApiError'
+    }
+  }
+  return {
+    SignOffApiError,
+    recordSignOff: vi.fn(async () => ({
+      runId: 'r1',
+      kind: 'sounds-human',
+      signedAt: Date.now(),
+    })),
+  }
+})
 
 vi.mock('@/lib/contentPatchClient', () => ({
   ContentPatchError: class ContentPatchError extends Error {
@@ -136,6 +161,8 @@ function mockFindings(findings: unknown[] = mixedFindings) {
   ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
     if (queryRef === 'qaCorrections:byRunId') return findings
     if (queryRef === 'claimChecks:listByRunId') return []
+    // VoicePassRail's sign-offs subscription — no sign-off active by default.
+    if (queryRef === 'signOffs:activeByRunId') return {}
     return undefined
   })
 }
