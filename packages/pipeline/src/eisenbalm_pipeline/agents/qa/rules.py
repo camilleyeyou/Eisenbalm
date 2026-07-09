@@ -86,6 +86,35 @@ AI_SELF_REFERENCE: list[str] = [
     r"\bAI assistant\b",
 ]
 
+# Machine-tell (AI-slop) lexicon — Phase 36 D-05. A CONSERVATIVE, high-precision
+# v1 set: severity is "error" and gates the "Sounds human" sign-off (Phase 36
+# D-12), so this list favors precision over recall. False positives are
+# dismissed by Andrew via "Keep (not a tell)" on the Voice Pass screen
+# (Phase 36 D-09); Andrew extends this list over time. Exact contents are
+# Claude's-discretion v1 per 36-CONTEXT D-05 — cross-verified against common
+# LLM-generated-prose tells (36-RESEARCH.md).
+#
+# LOCKSTEP NOTE: unlike SENTIMENT_KEYWORDS / WINKING_PATTERNS / AI_SELF_REFERENCE
+# above, this lexicon is NOT mirrored into ``lib/voice.py`` prompt-assembly
+# forbidden sets in v1 (Claude's discretion, 36-CONTEXT D-05) — it is a
+# Voice-Pass-specific detection-time addition, not a generation-time
+# constraint. It IS documented (by pointer, not restatement) in
+# ``agents/qa/rubric.md``; keep that pointer in sync if this list changes.
+MACHINE_TELL_LEXICON: list[str] = [
+    r"\bdelv(e|es|ing)\b",
+    r"\btapestr(y|ies)\b",
+    r"\ba testament to\b",
+    r"\bin the realm of\b",
+    r"\bit'?s important to note\b",
+    r"\bit'?s worth noting\b",
+    r"\bnavigat\w* the (landscape|complexities|complex)\b",
+    r"\bunderscore(s|d)? the (importance|need|significance)\b",
+    r"\bnot only\b[^.!?]{0,60}\bbut also\b",
+    r"\bat the end of the day\b",
+    r"\bever[-\s]evolving\b",
+    r"\bplays? a (pivotal|crucial|vital) role\b",
+]
+
 
 def check_exclamation_marks(section_id: str, body: str) -> list[QAFinding]:
     """Forbidden: any exclamation mark.
@@ -179,6 +208,37 @@ def check_ai_reference(section_id: str, body: str) -> list[QAFinding]:
     return findings
 
 
+def check_machine_tell(section_id: str, body: str) -> list[QAFinding]:
+    """Forbidden: AI-slop machine-tells from the canonical lexicon.
+
+    Axis is its own axis (``machine-tell``, not ``sentiment``/``gravity``) —
+    Phase 36 D-05: the current Jesse-voice forbidden sets (sentiment /
+    winking / AI-reference) don't cover generic LLM-prose tells like "delve"
+    or "a testament to". Mirrors ``check_sentiment_keywords`` verbatim in
+    structure.
+    """
+    findings: list[QAFinding] = []
+    for pattern in MACHINE_TELL_LEXICON:
+        for m in re.finditer(pattern, body, re.IGNORECASE):
+            span = body[max(0, m.start() - 30):m.end() + 30].strip()
+            findings.append(
+                QAFinding(
+                    section=section_id,
+                    severity="error",
+                    axis="machine-tell",
+                    quotedSpan=span,
+                    reason=(
+                        f"Machine-tell '{m.group()}' — reads as AI slop, not "
+                        "Jesse voice."
+                    ),
+                    suggestedFix=(
+                        "Rewrite in Jesse's dry, precise register; delete the tell."
+                    ),
+                )
+            )
+    return findings
+
+
 def check_unverified_name(
     section_id: str,
     body: str,
@@ -264,5 +324,6 @@ def run_all_predicates(
         all_findings.extend(check_sentiment_keywords(section_id, body))
         all_findings.extend(check_winking(section_id, body))
         all_findings.extend(check_ai_reference(section_id, body))
+        all_findings.extend(check_machine_tell(section_id, body))
         all_findings.extend(check_unverified_name(section_id, body, research))
     return all_findings
