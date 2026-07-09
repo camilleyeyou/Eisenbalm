@@ -7,8 +7,11 @@ One Clerk-JWT-guarded POST route:
 `facts-cleared` carries the machine-checkable prerequisites RELOCATED
 verbatim from `review.py::publish_issue` / `schedule_issue` (D-04): all
 claim checks must be signed off, and there must be no open (unresolved)
-error-severity QA findings. `sounds-human` is intentionally UNGATED (D-06 —
-nothing machine-checkable exists for it until Phase 36).
+error-severity QA findings on a FACTUAL axis (voice-axis errors are excluded
+— they belong to `sounds-human`, §36.7a). `sounds-human` is now
+server-enforced (§36.7b, upgrading Phase 34 D-06's interim ungated
+attestation now that voice IS machine-checkable, per Phase 36 D-12/D-14):
+it 409s when any open error-severity finding carries a voice axis.
 
 There is NO manual revoke endpoint — revocation happens ONLY via the D-08
 auto-revoke-on-content-mutation path (§34.6, Plan 34-05). There is NO
@@ -31,6 +34,11 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 WORKSPACE_ID = "eisenbalm"
+
+# §36.3/§36.7 — voice-axis findings gate "sounds-human"; everything else
+# (including a missing/None axis, the conservative factual default) gates
+# "facts-cleared". Keep in lockstep with docs/API_CONTRACTS.md §36.3.
+VOICE_AXES = {"gravity", "sentiment", "irony-signaling", "machine-tell"}
 
 
 # ── Request body model ──────────────────────────────────────────────────────
@@ -56,9 +64,12 @@ async def record_sign_off(
       1. run must exist → 404 if not
       2. `kind == "facts-cleared"` only:
          a. claimChecks:allSignedOff → 409 {reason:"claims_not_signed_off"}
-         b. open error-severity findings (anchor-blind, D-11b) →
+         b. open error-severity findings on a FACTUAL axis (not in
+            VOICE_AXES; anchor-blind, D-11b) →
             409 {reason:"open_error_findings", count:n}
-      3. `kind == "sounds-human"` — NO prerequisite checks (D-06).
+      3. `kind == "sounds-human"` only (§36.7b):
+         open error-severity findings on a VOICE axis (anchor-blind) →
+            409 {reason:"open_voice_findings", count:n}
 
     Action:
       - signOffs:record({workspace_id, runId, kind, actorId})
@@ -99,12 +110,18 @@ async def record_sign_off(
         # (D-04). Anchor-blind (D-11b): an orphaned error finding (whose
         # quotedSpan no longer resolves) still has no `resolution` and still
         # blocks — losing an anchor must never silently un-block.
+        # §36.7a: NARROWED to exclude voice-axis findings — those belong to
+        # `sounds-human` below, not `facts-cleared`. A missing/None axis is
+        # NOT in VOICE_AXES, so it still blocks facts-cleared (the safe
+        # factual default).
         findings = await _cc.convex_query(
             http, "qaCorrections:byRunId", {"runId": run_id}
         ) or []
         open_errors = [
             f for f in findings
-            if f.get("severity") == "error" and not f.get("resolution")
+            if f.get("severity") == "error"
+            and not f.get("resolution")
+            and f.get("axis") not in VOICE_AXES
         ]
         if open_errors:
             raise HTTPException(
@@ -118,7 +135,33 @@ async def record_sign_off(
                     "count": len(open_errors),
                 },
             )
-    # `kind == "sounds-human"`: no prerequisite checks (D-06, ungated).
+    elif body.kind == "sounds-human":
+        # §36.7b: server-enforced prerequisite (D-12/D-14) — upgrades Phase
+        # 34 D-06's interim ungated attestation now that voice IS
+        # machine-checkable. Anchor-blind exactly like facts-cleared's
+        # D-11b guard: an orphaned voice-axis error finding still has no
+        # `resolution` and still blocks.
+        findings = await _cc.convex_query(
+            http, "qaCorrections:byRunId", {"runId": run_id}
+        ) or []
+        open_voice_errors = [
+            f for f in findings
+            if f.get("severity") == "error"
+            and not f.get("resolution")
+            and f.get("axis") in VOICE_AXES
+        ]
+        if open_voice_errors:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "reason": "open_voice_findings",
+                    "message": (
+                        f"{len(open_voice_errors)} voice finding(s) must be "
+                        "accepted or dismissed before signing sounds-human."
+                    ),
+                    "count": len(open_voice_errors),
+                },
+            )
 
     # Record the sign-off (upsert by (runId, kind) on the Convex side).
     await _cc.convex_mutation(
