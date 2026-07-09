@@ -23,12 +23,24 @@
  *     calls activate again with `override: { reason }`; a `{ overridden: true }`
  *     response clears the blocked state. The override is NEVER offered while
  *     a run is in progress — that guard is unbypassable by design.
+ *
+ * Phase 38 Plan 38-05 Task 3 (closes the plan-review Blocker 1) adds:
+ *   - a "Run evals for v{N}" affordance on every NON-active version row. It
+ *     toggles an inline <EvalDrawer> mounted with `draftPrompt = that
+ *     version's SAVED content` and `targetVersion={{ version: N }}` — this is
+ *     the producer that writes the commit-tagged (`promptVersion: String(N)`,
+ *     `source: 'commit'`) eval_scores rows the §38.3 gate above reads before
+ *     allowing Activate(N) to pass without an override. Without this
+ *     affordance, every commit after the first would force-block into the
+ *     override path (there is never a fresh scored row for the version being
+ *     activated). Does NOT alter the Activate/override logic itself.
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
 import { DiffViewer } from './DiffViewer'
+import EvalDrawer from './EvalDrawer'
 
 interface VersionHistoryPanelProps {
   workspaceId: string
@@ -71,6 +83,10 @@ export default function VersionHistoryPanel({
   // runInProgress — that guard stays a hard disable, no override offered.
   const [blockedVersion, setBlockedVersion] = useState<number | null>(null)
   const [overrideReason, setOverrideReason] = useState('')
+
+  // Phase 38 Plan 38-05 Task 3: which non-active version's eval-producer
+  // drawer is currently expanded (at most one at a time — toggled per row).
+  const [evalOpenVersion, setEvalOpenVersion] = useState<number | null>(null)
 
   async function handleActivate(version: number, override?: { reason: string }) {
     if (!override) {
@@ -257,6 +273,36 @@ export default function VersionHistoryPanel({
                   </button>
                 )}
               </div>
+
+              {/* Phase 38 Plan 38-05 Task 3 — freshness producer. Only on
+                  non-active rows (the active version has nothing to commit;
+                  it's already the baseline the gate compares against). */}
+              {!v.isActive && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEvalOpenVersion(prev => (prev === v.version ? null : v.version))
+                    }
+                    className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 min-h-[44px]"
+                  >
+                    {evalOpenVersion === v.version
+                      ? 'Hide eval run'
+                      : `Run evals for v${v.version}`}
+                  </button>
+
+                  {evalOpenVersion === v.version && (
+                    <div className="mt-2">
+                      <EvalDrawer
+                        workspaceId={workspaceId}
+                        agentKey={agentKey}
+                        draftPrompt={v.content}
+                        targetVersion={{ version: v.version }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>

@@ -55,6 +55,7 @@ import { fetchScenarios } from '@/lib/evalScenarioClient'
 import { runAgentTest, runActiveVersionTest } from '@/lib/testRunClient'
 import { scoreOutput } from '@/lib/scoreClient'
 import EvalDrawer from '../app/(dashboard)/prompt-lab/_components/EvalDrawer'
+import VersionHistoryPanel from '../app/(dashboard)/prompt-lab/_components/VersionHistoryPanel'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -246,5 +247,65 @@ describe('EvalDrawer — auto-select + N-scenario scoreboard (D-04/D-05, Plan 38
     const activeCalls = recordMock.mock.calls.filter(([args]) => args.promptVersion === '3')
     expect(activeCalls).toHaveLength(2)
     activeCalls.forEach(([args]) => expect(args.source).toBe('drawer'))
+  })
+})
+
+// ── Task 3 ───────────────────────────────────────────────────────────────────
+
+describe('VersionHistoryPanel — "Run evals for v{N}" freshness producer (Plan 38-05 Task 3)', () => {
+  const VERSIONS = [
+    {
+      _id: 'pv1',
+      version: 1,
+      content: 'v1 content',
+      isActive: false,
+      createdAt: 1000,
+      createdBy: 'user_1',
+      note: undefined,
+    },
+    {
+      _id: 'pv2',
+      version: 2,
+      content: 'v2 content',
+      isActive: true,
+      createdAt: 2000,
+      createdBy: 'user_1',
+      note: undefined,
+    },
+  ]
+
+  it('shows "Run evals for v{N}" on the non-active row only — not on the active row', () => {
+    mockConvex({ active: { version: 2, content: 'v2 content' }, versions: VERSIONS })
+    render(<VersionHistoryPanel workspaceId="eisenbalm" agentKey="scout" />)
+
+    expect(screen.getByRole('button', { name: /run evals for v1/i })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /run evals for v2/i })).toBeNull()
+  })
+
+  it("clicking it mounts EvalDrawer with draftPrompt = that version's content + targetVersion set, writing commit-tagged eval_scores", async () => {
+    mockRunAndScore()
+    mockConvex({ active: { version: 2, content: 'v2 content' }, versions: VERSIONS })
+    render(<VersionHistoryPanel workspaceId="eisenbalm" agentKey="scout" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /run evals for v1/i }))
+
+    await waitForScenarios()
+
+    fireEvent.click(screen.getByRole('button', { name: /run evals \(/i }))
+
+    await waitFor(() => {
+      expect(recordMock).toHaveBeenCalledTimes(4)
+    })
+
+    // v1's SAVED content flowed through as the draft-side run input.
+    expect(runAgentTest).toHaveBeenCalledWith(
+      'scout',
+      expect.objectContaining({ draft_prompt: 'v1 content' }),
+      'tok-clerk',
+    )
+
+    const draftCalls = recordMock.mock.calls.filter(([args]) => args.promptVersion === '1')
+    expect(draftCalls).toHaveLength(2)
+    draftCalls.forEach(([args]) => expect(args.source).toBe('commit'))
   })
 })
