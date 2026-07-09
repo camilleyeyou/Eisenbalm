@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 38-02-golden-scenarios-endpoint-PLAN.md
-last_updated: "2026-07-09T21:06:56.614Z"
+stopped_at: Completed 38-04-commit-gate-override-PLAN.md
+last_updated: "2026-07-09T21:37:35.815Z"
 progress:
   total_phases: 39
   completed_phases: 36
   total_plans: 240
-  completed_plans: 234
+  completed_plans: 235
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 38
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -259,6 +259,7 @@ Plan: 3 of 6
 | Phase 37 P05 | 21 | 3 tasks | 9 files |
 | Phase 38 P01 | 20min | 2 tasks | 6 files |
 | Phase 38 P02 | 15 | 2 tasks | 9 files |
+| Phase 38 P04 | 20min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -664,6 +665,8 @@ Recent decisions affecting current work:
 - [Phase 38]: listForScenario/listForAgent order via Convex's native .order('asc'|'desc') on the index, not a manual JS sort on ranAt — avoids flaky tie-breaking when two rows share a millisecond timestamp
 - [Phase 38-02]: Golden scenarios target only test-run-replicable agentKeys (scout/advocate/researcher/bonus_spec_ad) — no section-writer scenarios (Pitfall 5)
 - [Phase 38-02]: api/eval.py reuses api/agents.py's _require_operator via direct cross-module import rather than re-declaring the optional-bearer dependency
+- [Phase 38]: activate() eval gate is skipped (not just passed) when there is no currently-active version or the target IS the currently-active version — both have nothing to regress against
+- [Phase 38]: Eval gate regression/aggregate comparison uses the most-recently-run eval_scores row per scenarioId on each side, not first-seen or summed
 
 ### Pending Todos
 
@@ -748,6 +751,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T21:06:56.601Z
-Stopped at: Completed 38-02-golden-scenarios-endpoint-PLAN.md
+Last session: 2026-07-09T21:37:35.799Z
+Stopped at: Completed 38-04-commit-gate-override-PLAN.md
 Resume file: None
