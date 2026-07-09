@@ -3299,6 +3299,224 @@ models gain one `claimSpans` field. No existing field is renamed or removed; Pha
 
 ---
 
+## §36 — Voice Pass (Phase 36)
+
+A dedicated `/voice-pass/[runId]` screen lights machine-tells and voice violations
+inline over the same draft prose the Review Desk renders, lets the operator rewrite
+each tell to house voice via the existing content-patch machinery, and carries its
+own "Sounds human" sign-off — distinct from "Facts cleared" — that upgrades Phase
+34 D-06's interim ungated attestation now that voice is machine-checkable
+(VOX-01..VOX-04). Detection reuses the existing two-layer QA detector
+(`agents/qa/rules.py` deterministic predicates + `agents/qa/judge.py` Opus judge) —
+no new detector (VOX-04, binding). This contract is written BEFORE any
+endpoint/schema code exists (CLAUDE.md contract-first hard rule, mirroring
+§31/§32/§33/§34/§35). Plans 36-02..36-06 implement these shapes verbatim — no field
+name, axis literal, endpoint path, or 409 reason string may be invented later.
+
+### §36.1 — `qaCorrections.axis` gains `machine-tell` (additive literal)
+
+Both `convex/schema.ts`'s `qaCorrections` table definition AND
+`convex/qaCorrections.ts`'s `insert` mutation's `axis` union ADD two literals,
+alongside the existing six:
+
+```typescript
+axis: v.optional(v.union(
+  v.literal('gravity'),
+  v.literal('sentiment'),
+  v.literal('irony-signaling'),
+  v.literal('precision'),
+  v.literal('cross-section-consistency'),
+  v.literal('hard-rule'),
+  v.literal('machine-tell'),        // NEW Phase 36 §36.1 — Voice Pass machine-tell axis
+  v.literal('structural-variety'),  // NEW Phase 36 §36.1 — closes the pre-existing Phase 18 gap (judge already emits this Python-side, Convex never accepted it)
+)),
+```
+
+Failure mode being closed: pipeline writes go through `convex_mutation_safe`
+(`lib/convex_client.py`), which wraps every call in try/except and only
+`log.warning`s on failure — never raises. A missing literal does not crash the
+pipeline; it silently drops the finding (confirmed already happening today for
+`"structural-variety"`, a valid Python `Literal` since Phase 18 MEL-04 that has
+never once round-tripped through Convex — Research Pitfall 1). Both literals are
+added in the SAME change as D-05's new predicate so this class of gap cannot
+regress silently again.
+
+### §36.2 — Layer-1 axis passthrough
+
+`agents/qa/__init__.py::qa()` STOPS collapsing every Layer-1 (`rules.py`) finding's
+axis to `"hard-rule"` before writing to Convex. Each Layer-1 finding is written with
+its predicate's true axis (`gravity` / `sentiment` / `irony-signaling` / `precision`
+/ `machine-tell`) instead. This is a deliberate MODIFICATION of shipped Phase 5
+behavior (Research Pitfall 3, option 2) — the collapse existed only so Andrew could
+tell which layer produced a finding while reading `qaCorrections` in Sanity Studio;
+Studio is being retired as an editing/publish surface (PUB-03), and no test asserts
+the collapsed `"hard-rule"` value at the orchestrator/integration level (only
+`test_rules.py`, which tests the raw predicates BEFORE the collapse, is unaffected
+either way). Stopping the collapse also correctly routes `check_unverified_name`'s
+`precision`-axis output to the factual side (§36.3) instead of leaving it
+indistinguishable from genuine voice tells inside a shared `"hard-rule"` bucket
+(Research Pitfall 5).
+
+### §36.3 — Voice/factual axis partition
+
+```python
+VOICE_AXES = {"gravity", "sentiment", "irony-signaling", "machine-tell"}
+FACTUAL_AXES = {"precision", "cross-section-consistency", "structural-variety", "hard-rule"}
+```
+
+Voice Pass lights findings whose axis is in `VOICE_AXES`; the Review Desk galley
+lights findings whose axis is in `FACTUAL_AXES`. A finding whose axis is `None`/
+absent (legacy rows, pre-Phase-5 shapes) counts as factual — it surfaces on the
+Review Desk / blocks "Facts cleared", never Voice Pass (the conservative default:
+no finding is ever silently invisible to both screens). `"hard-rule"` remains in
+`FACTUAL_AXES` as a legacy label for any row written before §36.2 ships; no
+backfill — old rows keep reading exactly as they do today.
+
+### §36.4 — `POST /issues/{run_id}/voice-recheck`
+
+New Clerk-JWT-guarded (`_require_clerk_jwt_control`) POST route in a NEW
+`packages/pipeline/src/eisenbalm_pipeline/api/voice_pass.py` router:
+
+```
+POST /issues/{run_id}/voice-recheck   # no body
+```
+
+Flow (in order):
+1. `_resolve_sanity_id(request, run_id, claims)` → `get_issue_draft(sanity_http,
+   sanity_id)` (identical draft-read path `findings.py`/`content.py` already use).
+2. `_draft_to_qa_sections(draft)` — a NEW helper that mirrors
+   `agents/qa/__init__.py::_extract_sections`'s flattening logic, but reads
+   `get_issue_draft`'s `{headline, blocks, lossy}` shape per section (origin_story,
+   problem, founder_bio, case_study, game, bonus) instead of `DispatchState`'s
+   Portable-Text-block-list shape.
+3. Auto-supersede dedup (Research Pitfall 4): read `qaCorrections:byRunId`, find any
+   OPEN row where `agentId == "qa-recheck"` and `resolution` is absent (a prior
+   re-check's still-unresolved findings), and for each call
+   `qaCorrections:setResolution(resolution="dismissed", resolutionReason="superseded
+   by re-check")`. Rule-layer findings (`agentId == "qa"`) are NEVER superseded here
+   — they are stable/idempotent (same predicate, same text, same result every time).
+4. `run_llm_judge(sections, run_id=run_id, narrator=None, rubric=None)` — narrator is
+   always `None` for the on-demand path (Research Pitfall 6: narrator resolution is
+   an in-memory, run-start-only concern with no persisted, independently-queryable
+   record; `narrator=None` is the documented byte-compatible legacy default, NRR-10
+   — a safe fallback, not a hack).
+5. Write each returned finding via `qaCorrections:insert` with `agentId="qa-recheck"`,
+   `accepted=False`, passing through `axis`/`severity`/`quotedSpan`/`reason`/
+   `suggestedFix`/`sectionName` from the judge finding unchanged. Use the RAISING
+   `convex_mutation` (not `convex_mutation_safe`) for this write — this is a live,
+   synchronous, operator-triggered call; a silently-swallowed failure here is worse
+   than the pipeline's fire-and-forget writes (the operator would believe they got a
+   fresh check when they got nothing — Research Pitfall 1's exact failure mode,
+   surfaced instead of hidden).
+
+Returns `{ "runId": run_id, "findingCount": n }`.
+
+### §36.5 — `POST /issues/{run_id}/voice-rewrite`
+
+Same router, same guard:
+
+```
+POST /issues/{run_id}/voice-rewrite   # body { findingId: string }
+```
+
+Flow: load the finding via `qaCorrections:byId` (404 if missing or wrong run) →
+build a house-voice rewrite instruction over `finding.quotedSpan`, using
+`VOICE_CONSTRAINTS` (Jesse's voice, or the resolved narrator's constraints where
+NRR-04 propagation already applies) — the instruction MUST NOT introduce AI
+self-reference or hedging language (CLAUDE.md: "Voice is non-negotiable") — and call
+`acomplete` (the OpenRouter client wrapper with cost recording; NEVER a raw
+OpenRouter/Anthropic client) to generate the replacement text. Returns
+`{ "findingId": finding_id, "suggestedFix": <generated text> }`.
+
+This endpoint ONLY generates text — it does not mutate the draft, does not call
+`qaCorrections:setResolution`, and does not patch Sanity. The client passes the
+returned `suggestedFix` straight into the existing `POST
+/issues/{run_id}/findings/{finding_id}/accept` call (§33.3) as
+`suggestedFixOverride` (§36.6) to actually apply it.
+
+### §36.6 — `_AcceptBody.suggestedFixOverride`
+
+`api/findings.py::_AcceptBody` (§33.3) gains one new optional field:
+
+```python
+class _AcceptBody(BaseModel):
+    ifRevisionID: str
+    suggestedFixOverride: Optional[str] = None  # NEW Phase 36 §36.6
+```
+
+Inside `accept_finding`, the line that reads `suggested_fix =
+finding.get("suggestedFix")` becomes:
+
+```python
+suggested_fix = body.suggestedFixOverride or finding.get("suggestedFix")
+```
+
+Every other step of the §33.3 accept flow (finding load, `already_resolved` 409,
+`accept_unavailable` 409 when BOTH `suggestedFixOverride` and the finding's stored
+`suggestedFix` are absent, section-key mapping, server-side span resolution,
+`patch_issue_field` with the `ifRevisionID` guard, `qaCorrections:setResolution`,
+audit emission) is UNCHANGED. This lets a rule-only tell (no stored `suggestedFix`
+— Layer-1 predicates do not emit one) be accepted with an on-demand §36.5 rewrite,
+with zero new mutation path (Research Code Example 2).
+
+### §36.7 — Sign-off prerequisite partition
+
+`api/signoffs.py::record_sign_off` (§34.3) changes in two places:
+
+**(a) NARROW the existing `facts-cleared` branch** (Research Pitfall 2 — this
+MODIFIES already-shipped, tested Phase 34 code, not a pure addition) so its open-
+error scan excludes voice axes:
+
+```python
+open_errors = [
+    f for f in findings
+    if f.get("severity") == "error"
+    and not f.get("resolution")
+    and f.get("axis") not in VOICE_AXES   # NEW Phase 36 §36.7(a) narrowing
+]
+```
+
+Without this narrowing, a single open `sentiment`/`gravity`/`machine-tell` error
+would block BOTH sign-offs once (b) below exists, contradicting VOX-03's "distinct
+from factual clearance."
+
+**(b) ADD a new `elif body.kind == "sounds-human":` branch**, mirroring (a)'s
+pattern exactly but scoped to `VOICE_AXES` (D-12/D-14):
+
+```python
+elif body.kind == "sounds-human":
+    findings = await _cc.convex_query(http, "qaCorrections:byRunId", {"runId": run_id}) or []
+    open_voice_errors = [
+        f for f in findings
+        if f.get("severity") == "error"
+        and not f.get("resolution")
+        and f.get("axis") in VOICE_AXES
+    ]
+    if open_voice_errors:
+        raise HTTPException(status_code=409, detail={
+            "reason": "open_voice_findings",
+            "message": f"{len(open_voice_errors)} voice finding(s) must be accepted or dismissed before signing sounds-human.",
+            "count": len(open_voice_errors),
+        })
+```
+
+This check is anchor-state-blind exactly like facts-cleared's D-11b guard — an
+orphaned (unresolvable-span) voice error finding still has no `resolution` and
+still blocks; losing the anchor must never silently un-block the gate. This branch
+REPLACES §34.3's prior "no prerequisites (D-06, ungated)" behavior for
+`kind == "sounds-human"` — the ungated interim attestation is upgraded in place, as
+Phase 34 D-06 anticipated. The rest of §34.3's flow (run lookup, `signOffs:record`,
+audit emission, response shape) is UNCHANGED.
+
+*All Phase 36 changes are: additive to `convex/schema.ts`/`convex/qaCorrections.ts`
+(two new axis literals); a MODIFICATION to `agents/qa/__init__.py`'s axis-collapse
+(§36.2) and to `api/signoffs.py`'s facts-cleared prerequisite (§36.7a) — both called
+out explicitly since they touch already-shipped, tested Phase 5/34 code; and purely
+additive elsewhere (two new endpoints, one new optional request field). No field is
+renamed; Phase 26/31/32/33/34/35 shapes are otherwise unchanged.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
