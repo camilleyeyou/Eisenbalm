@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 38-04-commit-gate-override-PLAN.md
-last_updated: "2026-07-09T21:37:35.815Z"
+stopped_at: Completed 38-03-shadow-run-discover-candidates-PLAN.md
+last_updated: "2026-07-09T21:57:50.902Z"
 progress:
   total_phases: 39
   completed_phases: 36
   total_plans: 240
-  completed_plans: 235
+  completed_plans: 236
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 38
-Plan: 4 of 6
+Plan: 5 of 6
 
 ## Performance Metrics
 
@@ -260,6 +260,7 @@ Plan: 4 of 6
 | Phase 38 P01 | 20min | 2 tasks | 6 files |
 | Phase 38 P02 | 15 | 2 tasks | 9 files |
 | Phase 38 P04 | 20min | 2 tasks | 5 files |
+| Phase 38 P03 | 17min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -667,6 +668,7 @@ Recent decisions affecting current work:
 - [Phase 38-02]: api/eval.py reuses api/agents.py's _require_operator via direct cross-module import rather than re-declaring the optional-bearer dependency
 - [Phase 38]: activate() eval gate is skipped (not just passed) when there is no currently-active version or the target IS the currently-active version — both have nothing to regress against
 - [Phase 38]: Eval gate regression/aggregate comparison uses the most-recently-run eval_scores row per scenarioId on each side, not first-seen or summed
+- [Phase 38]: Extracted pure discover_candidates() from scout.py (registry read -> Tavily search -> LLM parse -> dedup, zero writes); scout() calls it then performs its unchanged write tail; POST /eval/shadow-run previews live discovery over it with D-12 isolation proven by test (zero Convex run-table writes, zero Sanity write_charity).
 
 ### Pending Todos
 
@@ -751,6 +753,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T21:37:35.799Z
-Stopped at: Completed 38-04-commit-gate-override-PLAN.md
+Last session: 2026-07-09T21:57:50.888Z
+Stopped at: Completed 38-03-shadow-run-discover-candidates-PLAN.md
 Resume file: None

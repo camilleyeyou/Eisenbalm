@@ -328,7 +328,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **EVL-02**: The Prompt Lab eval drawer auto-selects scenarios affected by the edited asset, runs them, and shows a scoreboard with deltas vs the active version.
 - [x] **EVL-03**: Prompt commit is gated on target-metric-up with no regressions, with an override-with-reason escape hatch (logged) so the gate cannot deadlock.
 - [x] **EVL-04**: The Eval Center shows scenario cards (description, what-it-catches, last result) and an append-only scoreboard time-series in new Convex tables — the editorial drift detector.
-- [ ] **EVL-05**: Operator can run a shadow run — the discovery scenario against current real news, previewing what a paid run would produce, without publishing or affecting run state.
+- [x] **EVL-05**: Operator can run a shadow run — the discovery scenario against current real news, previewing what a paid run would produce, without publishing or affecting run state.
 
 ### Registry Memory (MEM)
 - [ ] **MEM-01**: A coverage-memory strip visualizes the last 8 issues' cause/geo/signal chips so thematic repetition is visible at a glance.
