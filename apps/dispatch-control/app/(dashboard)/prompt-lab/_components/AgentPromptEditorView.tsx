@@ -19,6 +19,7 @@ import { api } from '@convex/_generated/api'
 import { PromptEditor } from './PromptEditor'
 import VersionHistoryPanel from './VersionHistoryPanel'
 import TestRunPanel from './TestRunPanel'
+import EvalDrawer from './EvalDrawer'
 import PromptMarkerExport from './PromptMarkerExport'
 import VariableChips from './VariableChips'
 import AssembledPreview from './AssembledPreview'
@@ -204,6 +205,21 @@ export default function AgentPromptEditorView({
             {/* Test-run the CURRENT unsaved draft (D-03) — does NOT run the
                 pipeline. Wired to the live editor draft state above. */}
             <TestRunPanel
+              workspaceId={workspaceId}
+              agentKey={agentKey}
+              draftPrompt={draft}
+            />
+
+            {/* Phase 38 (EVL-02, D-04/D-05) — the eval drawer: auto-selects
+                this agent's golden scenarios and runs the N-scenario
+                draft-vs-active scoreboard on demand. No targetVersion here —
+                this is the normal iteration loop (draft side tags
+                promptVersion:'draft', source:'drawer'). §38.3 freshness
+                workflow: after Save-as-version, re-run evals against the
+                SAVED version's content from VersionHistoryPanel's "Run evals
+                for v{N}" producer (Task 3) BEFORE activating it, so the
+                commit gate has a fresh, target-version-tagged score to read. */}
+            <EvalDrawer
               workspaceId={workspaceId}
               agentKey={agentKey}
               draftPrompt={draft}

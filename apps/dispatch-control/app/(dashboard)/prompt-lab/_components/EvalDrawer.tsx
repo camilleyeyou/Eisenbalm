@@ -97,6 +97,28 @@ function average(values: number[]): number | null {
   return values.reduce((sum, v) => sum + v, 0) / values.length
 }
 
+/**
+ * Merge a partial row update, falling back to a fresh idle row when the
+ * scenario has no prior entry — keeps every `setRows` call fully-typed as
+ * `Record<string, ScenarioRow>` (no optional/undefined fields), since
+ * `prev[scenario.id]` is typed as possibly-undefined even though in practice
+ * `buildInitialRows` always seeds every scenario before this is called.
+ */
+function mergeRow(
+  prev: Record<string, ScenarioRow>,
+  scenario: EvalScenario,
+  patch: Partial<Omit<ScenarioRow, 'scenario'>>,
+): ScenarioRow {
+  const existing: ScenarioRow = prev[scenario.id] ?? {
+    scenario,
+    status: 'idle',
+    draftOverall: null,
+    activeOverall: null,
+    error: null,
+  }
+  return { ...existing, scenario, ...patch }
+}
+
 export default function EvalDrawer({
   workspaceId,
   agentKey,
@@ -162,7 +184,7 @@ export default function EvalDrawer({
       for (const scenario of scenarioList) {
         setRows(prev => ({
           ...prev,
-          [scenario.id]: { ...prev[scenario.id], status: 'running', error: null },
+          [scenario.id]: mergeRow(prev, scenario, { status: 'running', error: null }),
         }))
 
         try {
@@ -225,23 +247,21 @@ export default function EvalDrawer({
 
           setRows(prev => ({
             ...prev,
-            [scenario.id]: {
-              ...prev[scenario.id],
+            [scenario.id]: mergeRow(prev, scenario, {
               status: 'done',
               draftOverall: draftScore.overall,
               activeOverall,
               error: null,
-            },
+            }),
           }))
         } catch (e) {
           // Partial-failure per row: keep the other scenarios running.
           setRows(prev => ({
             ...prev,
-            [scenario.id]: {
-              ...prev[scenario.id],
+            [scenario.id]: mergeRow(prev, scenario, {
               status: 'error',
               error: e instanceof Error ? e.message : String(e),
-            },
+            }),
           }))
         }
       }
