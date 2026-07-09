@@ -315,8 +315,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Run Monitor v2 (MON)
 - [x] **MON-01**: Runs render as a vertical forensic spine — LLM agents as dots, code gates (verify_research, validate_sections) as marigold diamonds — with per-node cost, latency, model chip, and retry count.
 - [x] **MON-02**: Clicking a node shows the handoff (upstream → node → downstream) and human-readable output, with raw JSON behind a toggle.
-- [ ] **MON-03**: The 7-writers node expands to per-section rows with a QA-derived strength score (0–100 colored bar) and flag counts; each section individually re-runnable.
-- [ ] **MON-04**: A drift strip compares this run's cost and duration against the trailing 8 runs.
+- [x] **MON-03**: The 7-writers node expands to per-section rows with a QA-derived strength score (0–100 colored bar) and flag counts; each section individually re-runnable.
+- [x] **MON-04**: A drift strip compares this run's cost and duration against the trailing 8 runs.
 
 ### Signal Desk (SIG)
 - [ ] **SIG-01**: Operator sees the candidate slate from existing data (pitchLog scout summaries, Advocate scores with expandable arguments, primaryConcern always visible, never truncated).
