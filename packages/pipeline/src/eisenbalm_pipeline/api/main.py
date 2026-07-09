@@ -40,6 +40,7 @@ from eisenbalm_pipeline.api import (
     voice_pass,
     webhooks,
 )
+from eisenbalm_pipeline.api import eval as eval_api
 from eisenbalm_pipeline.api.auth import assert_deployed_secrets
 from eisenbalm_pipeline.api.reconcile import reconcile_orphaned_runs
 from eisenbalm_pipeline.graph.builder import build_graph
@@ -204,3 +205,4 @@ app.include_router(content.router)
 app.include_router(findings.router)
 app.include_router(signoffs.router)
 app.include_router(voice_pass.router)
+app.include_router(eval_api.router)
