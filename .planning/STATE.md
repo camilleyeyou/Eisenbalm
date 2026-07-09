@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to plan
-stopped_at: Completed 35-04-publisher-provenance-seeding-PLAN.md
-last_updated: "2026-07-08T21:23:37.973Z"
+status: Ready to execute
+stopped_at: Completed 36-01-contract-convex-axis-PLAN.md
+last_updated: "2026-07-09T13:14:47.850Z"
 progress:
   total_phases: 39
   completed_phases: 34
-  total_plans: 222
-  completed_plans: 220
+  total_plans: 228
+  completed_plans: 221
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 35 — provenance-pipeline-sourced-unsourced-galley-rendering
+**Current focus:** Phase 36 — voice-pass-de-slop-screen
 
 ## Current Position
 
 Phase: 36
-Plan: Not started
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -245,6 +245,7 @@ Plan: Not started
 | Phase 35 P03 | ~15min | 3 tasks | 12 files |
 | Phase 35 P06 | ~20min | 2 tasks | 2 files |
 | Phase 35 P04 | 15min | 3 tasks | 5 files |
+| Phase 36 P01 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -626,6 +627,7 @@ Recent decisions affecting current work:
 - [Phase 35]: SourceIndex.tsx (Plan 35-06) runs its own claimChecks:listByRunId subscription instead of receiving rows as a prop, keeping the component self-contained per the plan's stated interface
 - [Phase 35]: Sourced claim_checks rows (Plan 35-06) with an unrecognized/absent sectionName land in a trailing Other sourced claims group rather than being dropped (nothing-silent house rule)
 - [Phase 35]: Kept legacy extract_claims/extract_all_claim_types byte-unchanged (Phase 26/33 back-compat) while publisher now calls the new per-block extract_claims_by_block; Convex optional fields omitted (not null) when absent, mirroring the qa/__init__.py blockIndexHint precedent
+- [Phase 36]: Widened Convex qaCorrections.axis union to include structural-variety alongside machine-tell in the same commit — closes a pre-existing Phase 18 gap where the judge's axis silently dropped on write
 
 ### Pending Todos
 
@@ -710,6 +712,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-08T21:14:44.827Z
-Stopped at: Completed 35-04-publisher-provenance-seeding-PLAN.md
+Last session: 2026-07-09T13:14:39.704Z
+Stopped at: Completed 36-01-contract-convex-axis-PLAN.md
 Resume file: None
