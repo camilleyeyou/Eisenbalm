@@ -65,6 +65,22 @@ export const SECTION_WRITER_KEYS: string[] = [
  *   - 7-way fan-in: each SECTION_WRITER_KEY → validate_sections
  *   - Sequential post-fan-in spine: validate_sections → qa → editor_final → publisher
  */
+// ── code gates ───────────────────────────────────────────────────────────────
+
+/**
+ * Phase 37 (MON-01, D-02) — the two real code-gate nodes, rendered as
+ * marigold diamonds on the forensic spine (everything else is a dot).
+ *
+ * SCOPE CORRECTION (Research Pitfall 8): the design brief describes THREE
+ * code-gate diamonds — that phantom third gate name is stale and does not
+ * exist in `builder.py`. Only two nodes are wrapped as code gates. Do NOT
+ * add a third gate to this set.
+ */
+export const GATE_KEYS: Set<string> = new Set<string>([
+  'verify_research',
+  'validate_sections',
+])
+
 export const PIPELINE_EDGES: [string, string][] = [
   // Sequential pre-fan-out spine
   ['calibrator', 'scout'],

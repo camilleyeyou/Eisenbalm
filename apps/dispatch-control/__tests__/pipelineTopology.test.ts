@@ -13,6 +13,7 @@ import {
   PIPELINE_NODES,
   PIPELINE_EDGES,
   SECTION_WRITER_KEYS,
+  GATE_KEYS,
 } from '../app/(dashboard)/run-monitor/graph/_components/pipelineTopology'
 
 describe('pipelineTopology', () => {
@@ -66,5 +67,25 @@ describe('pipelineTopology', () => {
       .sort()
     const writerKeys = [...SECTION_WRITER_KEYS].sort()
     expect(fanInSources).toEqual(writerKeys)
+  })
+
+  // ── GATE_KEYS (Phase 37, MON-01, D-02) ─────────────────────────────────────
+
+  it('GATE_KEYS contains exactly verify_research and validate_sections', () => {
+    expect(GATE_KEYS.size).toBe(2)
+    expect(GATE_KEYS.has('verify_research')).toBe(true)
+    expect(GATE_KEYS.has('validate_sections')).toBe(true)
+  })
+
+  it('does NOT introduce a third gate (design brief\'s "Verify Candidates" is stale)', () => {
+    expect(GATE_KEYS.has('verify_candidates' as string)).toBe(false)
+    expect([...GATE_KEYS].sort()).toEqual(['validate_sections', 'verify_research'])
+  })
+
+  it('every GATE_KEYS member is a known PIPELINE_NODE', () => {
+    const nodeSet = new Set(PIPELINE_NODES)
+    for (const key of GATE_KEYS) {
+      expect(nodeSet.has(key), `Unknown gate key: "${key}"`).toBe(true)
+    }
   })
 })
