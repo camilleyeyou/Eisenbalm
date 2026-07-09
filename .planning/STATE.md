@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 36-03-voice-pass-endpoints-PLAN.md
-last_updated: "2026-07-09T13:51:06.768Z"
+stopped_at: Completed 36-04-voice-pass-screen-PLAN.md
+last_updated: "2026-07-09T14:26:26.568Z"
 progress:
   total_phases: 39
   completed_phases: 34
   total_plans: 228
-  completed_plans: 224
+  completed_plans: 225
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 36
-Plan: 5 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -249,6 +249,7 @@ Plan: 5 of 6
 | Phase 36 P02 | 10min | 2 tasks | 3 files |
 | Phase 36 P05 | ~10min | 2 tasks | 4 files |
 | Phase 36 P03 | 12min | 3 tasks | 5 files |
+| Phase 36 P04 | 22min | 4 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -636,6 +637,8 @@ Recent decisions affecting current work:
 - [Phase 36]: machine-tell lexicon not mirrored into lib/voice.py generation-time forbidden sets in v1 (detection-time only, per 36-CONTEXT D-05 discretion)
 - [Phase 36]: voice-recheck uses the RAISING convex_mutation (not convex_mutation_safe) for every write — a live operator-triggered re-check must surface Convex failures loudly rather than silently drop findings
 - [Phase 36]: voice-recheck hardcodes narrator=None per NRR-10 byte-compatible legacy default — narrator resolution has no persisted, independently queryable record
+- [Phase 36]: Placed the ResolvedFindingsList axis-scoping behavior test in its own test file rather than DecisionRail.test.tsx (which mocks that component out)
+- [Phase 36]: Split voice-pass/[runId]/page.tsx into a thin use(params) wrapper around a named VoicePassScreen(runId) component to work around React 19 use()+Suspense not resolving in the vitest/jsdom/RTL test harness
 
 ### Pending Todos
 
@@ -720,6 +723,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T13:51:06.755Z
-Stopped at: Completed 36-03-voice-pass-endpoints-PLAN.md
+Last session: 2026-07-09T14:26:26.551Z
+Stopped at: Completed 36-04-voice-pass-screen-PLAN.md
 Resume file: None
