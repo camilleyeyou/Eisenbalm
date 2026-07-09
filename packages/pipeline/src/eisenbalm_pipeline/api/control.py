@@ -29,13 +29,16 @@ from eisenbalm_pipeline.lib.cost import emit_monthly_alert
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.api.auth import _deployed
 from eisenbalm_pipeline.api.runs import (
+    ResumeSelection,
     RunWeeklyBody,
     _require_graph,
     _require_trigger_secret,
+    _resume_paused_run,
     _start_run,
 )
 from eisenbalm_pipeline.lib.scheduler import _is_due, compute_next_run_at
@@ -589,3 +592,66 @@ async def rerun_agent(
     await _revoke_active_signoffs(http, run_id=run_id, reason="section re-rolled")
 
     return {"runId": run_id, "agentKey": agent_key, "rerolled": True}
+
+
+# ── POST /issues/{run_id}/adjudicate — SIG-03, D-12/D-13 ─────────────────────
+
+class AdjudicateBody(BaseModel):
+    selection: ResumeSelection
+    reason: str
+
+
+@router.post("/issues/{run_id}/adjudicate")
+async def adjudicate(
+    request: Request,
+    run_id: str,
+    body: AdjudicateBody,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Clerk-guarded Gate-1 adjudication bridge (SIG-03).
+
+    The Signal Desk dashboard is Clerk-guarded, but the existing
+    POST /run/{run_id}/resume is guarded by the server-to-server trigger
+    secret (cron/CLI only) and has no `reason` field — the browser must
+    NEVER see that secret (D-13). This endpoint:
+
+      1. Pre-checks the graph's checkpoint state so a non-paused run 409s
+         with ZERO side effects (no audit, no resume attempt).
+      2. Audit-logs the operator's pick + reason via _emit_audit ("nothing
+         silent") BEFORE the resume is scheduled — `reason` is logged via
+         audit_log ONLY. The deliberationEvents.eventType union stays
+         FROZEN (no new literal is added, D-13).
+      3. Invokes _resume_paused_run (the SAME resume implementation
+         resume_run uses, api/runs.py) server-side with the chosen
+         charityName — there is exactly one resume implementation.
+
+    The operator never handles PIPELINE_TRIGGER_SECRET.
+    """
+    http = getattr(request.app.state, "convex_http", None)
+    actor_id = claims.get("sub") or "unknown"
+
+    # Pre-check paused state BEFORE any audit/resume side effect (D-13:
+    # a non-paused run must 409 with nothing logged).
+    graph = _require_graph(request)
+    config = {"configurable": {"thread_id": run_id}}
+    state = await graph.aget_state(config)
+    if not state or not state.next:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Run {run_id} is not paused (state.next is empty)",
+        )
+
+    # Audit BEFORE resume ("nothing silent") — pick + reason logged via
+    # audit_log ONLY (deliberationEvents.eventType union stays FROZEN).
+    await _emit_audit(
+        http,
+        actor_id=actor_id,
+        action="gate1.adjudicate",
+        resource_type="run",
+        resource_id=run_id,
+        after=json.dumps(
+            {"charityName": body.selection.charityName, "reason": body.reason}
+        ),
+    )
+
+    return await _resume_paused_run(request.app, run_id, body.selection.charityName)
