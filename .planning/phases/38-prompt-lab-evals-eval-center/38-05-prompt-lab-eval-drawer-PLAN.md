@@ -3,7 +3,7 @@ phase: 38-prompt-lab-evals-eval-center
 plan: 05
 type: execute
 wave: 3
-depends_on: ["38-01", "38-02"]
+depends_on: ["38-01", "38-02", "38-04"]
 files_modified:
   - apps/dispatch-control/app/(dashboard)/prompt-lab/_components/EvalDrawer.tsx
   - apps/dispatch-control/app/(dashboard)/prompt-lab/_components/AgentPromptEditorView.tsx
