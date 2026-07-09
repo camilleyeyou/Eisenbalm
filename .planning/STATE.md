@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 37-01-contract-and-data-foundations-PLAN.md
-last_updated: "2026-07-09T17:21:25.728Z"
+stopped_at: Completed 37-02-adjudication-bridge-PLAN.md
+last_updated: "2026-07-09T17:39:31.017Z"
 progress:
   total_phases: 39
   completed_phases: 35
   total_plans: 234
-  completed_plans: 228
+  completed_plans: 229
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 37 (run-monitor-v2-signal-desk) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -253,6 +253,7 @@ Plan: 2 of 5
 | Phase 36 P06 | 20min | 2 tasks | 10 files |
 | Phase 36 P07 | 27min | 2 tasks | 3 files |
 | Phase 37 P01 | 20min | 3 tasks | 13 files |
+| Phase 37 P02 | 14min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -646,6 +647,8 @@ Recent decisions affecting current work:
 - [Phase 36]: Extended plan scope to thread AnnotationMark labels through Galley/GallerySection (Rule 2) so the voice-tell variant actually reaches the operator on /voice-pass
 - [Phase 36]: Deep-linked Voice Pass's 'Write my own' into the existing Review Desk section editor via an ?edit= query param + once-per-mount guard, rather than building a second editor surface (closes VOX-02/D-09 gap)
 - [Phase 37]: retryCount sources honestly from acomplete()'s existing invoke-error/schema-miss regenerate signal (no new node-retry mechanism); editor_confidence is a plain sequential DispatchState field (no reducer needed, editor_gate_1 runs once).
+- [Phase 37]: _resume_paused_run(app, run_id, charity_name) is the single shared resume implementation — resolves app.state.graph itself so both the trigger-secret /run/{id}/resume and the Clerk-guarded /issues/{id}/adjudicate get the 503-degraded-lifespan guard for free
+- [Phase 37]: adjudicate pre-checks graph.aget_state().next BEFORE _emit_audit so a non-paused run 409s with zero audit/resume side effects; operator reason is logged via audit_log.after JSON only — no new deliberationEvents.eventType literal, union stays FROZEN (D-13)
 
 ### Pending Todos
 
@@ -730,6 +733,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T17:21:25.715Z
-Stopped at: Completed 37-01-contract-and-data-foundations-PLAN.md
+Last session: 2026-07-09T17:39:31.004Z
+Stopped at: Completed 37-02-adjudication-bridge-PLAN.md
 Resume file: None

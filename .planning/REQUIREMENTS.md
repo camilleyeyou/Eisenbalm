@@ -321,7 +321,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Signal Desk (SIG)
 - [ ] **SIG-01**: Operator sees the candidate slate from existing data (pitchLog scout summaries, Advocate scores with expandable arguments, primaryConcern always visible, never truncated).
 - [x] **SIG-02**: The Gate 1 decision panel shows the winner, confidence meter, and editor reasoning in full.
-- [ ] **SIG-03**: When the pipeline interrupts at Gate 1, the screen enters side-by-side adjudication; the operator's pick plus a logged reason resumes the run via the existing resume endpoint.
+- [x] **SIG-03**: When the pipeline interrupts at Gate 1, the screen enters side-by-side adjudication; the operator's pick plus a logged reason resumes the run via the existing resume endpoint.
 
 ### Prompt Lab Evals & Eval Center (EVL)
 - [ ] **EVL-01**: Golden scenarios exist as fixtures runnable against single agents through the existing test-run/score endpoints.
