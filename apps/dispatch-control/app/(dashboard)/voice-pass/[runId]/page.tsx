@@ -20,15 +20,18 @@
  * `showProvenance` is OFF — Voice Pass is a voice-only surface; the
  * factual provenance wash (Phase 35) belongs on Review Desk only (D-02/D-03).
  *
- * `onEditSection` is a safe no-op stub for this plan — Plan 36-06 finalizes
- * the rewrite/edit-inline actions for voice tells.
- *
  * Phase 36 (VOX-02/VOX-03, Plan 36-06 Task 1/2): the mounted `<Galley>` now
  * gets `labels={VOICE_LABELS}` — the voice-tell AnnotationMark variant
  * (Accept rewrite / Write my own / Keep (not a tell)) — and the right
  * column mounts `<VoicePassRail>` (machine-tells list + voice-law reference
  * + the server-gated "Sounds human" sign-off), mirroring Review Desk's
  * galley+rail two-column layout.
+ *
+ * Phase 36 (VOX-02, D-09, Plan 36-07 Task 2): `onEditSection`/"Write my own"
+ * deep-links into the Review Desk's `?edit=<sectionId>[&finding=<findingId>]`
+ * entry (Plan 36-07 Task 1) rather than building a second editor surface on
+ * Voice Pass — the lowest-cost fix that satisfies D-09 with zero new editing
+ * machinery.
  *
  * The default export is a thin `use(params)` wrapper around the named
  * `VoicePassScreen` component below — split out so tests can render the
@@ -37,6 +40,7 @@
  */
 import { use, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import Galley from '@/components/galley/Galley'
@@ -77,6 +81,7 @@ export default function VoicePassRunPage({ params }: VoicePassRunPageProps) {
 
 export function VoicePassScreen({ runId }: { runId: string }) {
   const { getToken } = useAuth()
+  const router = useRouter()
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -153,12 +158,15 @@ export function VoicePassScreen({ runId }: { runId: string }) {
   }
 
   /**
-   * Safe no-op stub — Voice Pass's Galley mount requires onEditSection, but
-   * this plan does not wire an edit destination for voice tells yet. Plan
-   * 36-06 finalizes the rewrite popover / edit-inline action.
+   * "Write my own" (VOX-02, D-09, Plan 36-07 Task 2) — deep-links into the
+   * Review Desk's section editor for this tell's section, carrying the
+   * finding id when present so the editor can keep its reason visible
+   * (mirrors review-desk/[runId]/page.tsx's own handleEditSection contract).
    */
-  function handleEditSection() {
-    // Intentionally inert.
+  function handleEditSection(sectionId: string, findingId?: string) {
+    const q = new URLSearchParams({ edit: sectionId })
+    if (findingId) q.set('finding', findingId)
+    router.push('/review-desk/' + encodeURIComponent(runId) + '?' + q.toString())
   }
 
   return (

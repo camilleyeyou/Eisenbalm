@@ -6,6 +6,10 @@
  * (b) the per-screen tell count reflects the voice-scoped OPEN findings
  * (c) clicking "Run deep check" calls voicePassClient.recheck(runId, token)
  *
+ * Phase 36 (VOX-02, D-09, Plan 36-07 Task 2) also covers:
+ * (d) clicking "Write my own" on a voice tell pushes a Review Desk
+ *     `?edit=<sectionId>&finding=<findingId>` deep-link (no longer inert).
+ *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
@@ -13,6 +17,15 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import type { DraftResponse } from '@/lib/contentPatchClient'
 
 // ── Module mocks ─────────────────────────────────────────────────────────────
+
+// Plan 36-07 Task 2: handleEditSection ("Write my own") now navigates via
+// next/navigation's useRouter — hoisted so the spy is available inside the
+// vi.mock factory below (which runs before this file's other top-level code).
+const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: pushMock }),
+}))
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
@@ -171,6 +184,7 @@ beforeEach(() => {
   vi.mocked(getDraft).mockReset()
   vi.mocked(getDraft).mockResolvedValue(draft)
   vi.mocked(recheck).mockClear()
+  pushMock.mockClear()
 })
 
 async function renderScreen() {
@@ -231,5 +245,28 @@ describe('Voice Pass screen (VOX-01, VOX-04)', () => {
     await waitFor(() => {
       expect(screen.getByRole('status').textContent).toMatch(/2 findings/i)
     })
+  })
+})
+
+// ── Plan 36-07 gap-closure test ──────────────────────────────────────────────
+
+describe('Voice Pass screen — "Write my own" deep-link (VOX-02, D-09)', () => {
+  it('clicking "Write my own" on a voice tell pushes a Review Desk ?edit= deep-link', async () => {
+    mockFindings()
+    const { container } = await renderScreen()
+
+    const mark = Array.from(container.querySelectorAll('mark.galley-anno')).find(
+      el => el.textContent === 'in a garage',
+    )
+    expect(mark).toBeDefined()
+    fireEvent.click(mark as Element)
+
+    fireEvent.click(screen.getByRole('button', { name: /write my own/i }))
+
+    expect(pushMock).toHaveBeenCalledTimes(1)
+    const url = pushMock.mock.calls[0]?.[0] as string
+    expect(url).toContain('/review-desk/r1')
+    expect(url).toContain('edit=')
+    expect(url).toContain('finding=v1')
   })
 })
