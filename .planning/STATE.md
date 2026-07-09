@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Phase complete — ready for verification
-stopped_at: Completed 36-06-rewrite-popover-signoff-PLAN.md
-last_updated: "2026-07-09T14:57:27.624Z"
+stopped_at: Completed 36-07-gap-write-my-own-editlink-PLAN.md
+last_updated: "2026-07-09T15:21:10.110Z"
 progress:
   total_phases: 39
   completed_phases: 35
-  total_plans: 228
-  completed_plans: 226
+  total_plans: 229
+  completed_plans: 227
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 36
-Plan: 6 of 6
+Plan: 7 of 7
 
 ## Performance Metrics
 
@@ -251,6 +251,7 @@ Plan: 6 of 6
 | Phase 36 P03 | 12min | 3 tasks | 5 files |
 | Phase 36 P04 | 22min | 4 tasks | 19 files |
 | Phase 36 P06 | 20min | 2 tasks | 10 files |
+| Phase 36 P07 | 27min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -642,6 +643,7 @@ Recent decisions affecting current work:
 - [Phase 36]: Split voice-pass/[runId]/page.tsx into a thin use(params) wrapper around a named VoicePassScreen(runId) component to work around React 19 use()+Suspense not resolving in the vitest/jsdom/RTL test harness
 - [Phase 36]: AnnotationMark voice-tell labels derive from an explicit labels prop only (never from value.axis) to avoid silently relabeling pre-existing Review Desk tests whose fixture axis happens to be a VOICE_AXES member
 - [Phase 36]: Extended plan scope to thread AnnotationMark labels through Galley/GallerySection (Rule 2) so the voice-tell variant actually reaches the operator on /voice-pass
+- [Phase 36]: Deep-linked Voice Pass's 'Write my own' into the existing Review Desk section editor via an ?edit= query param + once-per-mount guard, rather than building a second editor surface (closes VOX-02/D-09 gap)
 
 ### Pending Todos
 
@@ -726,6 +728,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T14:57:27.611Z
-Stopped at: Completed 36-06-rewrite-popover-signoff-PLAN.md
+Last session: 2026-07-09T15:21:10.098Z
+Stopped at: Completed 36-07-gap-write-my-own-editlink-PLAN.md
 Resume file: None
