@@ -35,6 +35,8 @@ export const insert = mutation({
       v.literal('precision'),
       v.literal('cross-section-consistency'),
       v.literal('hard-rule'),
+      v.literal('machine-tell'),             // Phase 36 §36.1: Voice Pass machine-tell axis
+      v.literal('structural-variety'),       // Phase 18 gap-close: judge structural-variety axis
     )),
     quotedSpan: v.optional(v.string()),
     suggestedFix: v.optional(v.string()),

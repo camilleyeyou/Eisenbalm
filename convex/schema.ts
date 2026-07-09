@@ -89,6 +89,8 @@ export default defineSchema({
       v.literal('precision'),
       v.literal('cross-section-consistency'),
       v.literal('hard-rule'),                // Layer-1 deterministic findings
+      v.literal('machine-tell'),             // Phase 36 §36.1: Voice Pass machine-tell axis
+      v.literal('structural-variety'),       // Phase 18 gap-close: judge structural-variety axis
     )),
     quotedSpan: v.optional(v.string()),       // exact offending text
     suggestedFix: v.optional(v.string()),     // concrete alternative
