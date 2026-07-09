@@ -27,6 +27,21 @@ The question "Why do you deserve to exist?" is answered without sentiment.
 - Adjectives that are also compliments ("impressive", "wonderful", "great")
 - Passive hedging ("might be", "could perhaps", "seems to")
 
+## Machine-tells (deterministic, Layer-1 only)
+
+AI-slop machine-tells — "delve", "tapestry", "a testament to", "it's
+important to note", correlative/tricolon overuse, and similar generic
+LLM-prose tells — are caught deterministically by
+`agents/qa/rules.py::check_machine_tell` on the `machine-tell` axis (Phase
+36 D-05) and surfaced on the Voice Pass screen. This axis is rules-only: you
+(the judge) are NOT asked to emit `machine-tell` findings and it does not
+appear in your Evaluation Axes or Output Format below — keep evaluating the
+six axes you already have.
+
+LOCKSTEP NOTE: the machine-tell lexicon lives in `rules.py` as the single
+source of truth. If Andrew edits it, this note stays a pointer — do not
+restate the full lexicon here.
+
 ## Evaluation Axes
 
 1. **gravity** — Is the charity treated with Fortune-500 seriousness?
