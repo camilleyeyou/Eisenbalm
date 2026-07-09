@@ -3651,6 +3651,166 @@ shapes are otherwise unchanged.*
 
 ---
 
+## §38 — Prompt Lab Evals + Eval Center (Phase 38)
+
+Golden scenarios run single-agent through the EXISTING `test-run`/`score` endpoints
+(§3A.1/§3A.2, unchanged); editing a prompt auto-selects and runs the scenarios for
+that `agentKey`, scoring draft vs active and showing per-scenario deltas; committing
+a prompt version is gated on target-metric-up-with-no-regressions, with a logged
+override-with-reason escape hatch; the Eval Center shows scenario cards plus an
+append-only scoreboard time-series — the editorial drift detector; and a read-only
+shadow run previews Scout's live discovery without touching run state (EVL-01..EVL-05).
+This contract is written BEFORE any schema/agent/endpoint code exists (CLAUDE.md
+contract-first hard rule, mirroring §31-§37). Plans 38-02..38-0N implement these
+shapes verbatim — no field name, endpoint path, or gate predicate may be invented
+later.
+
+### §38.1 — `GET /eval/scenarios` (pipeline, `api/eval.py`, prefix `/eval`)
+
+```
+GET /eval/scenarios
+GET /eval/scenarios?agentKey={agentKey}
+Auth: Depends(_require_operator)   # same optional-bearer pattern as api/agents.py
+                                    # (dev-mode no-op, prod-mode delegates to Clerk verify)
+
+# Response body
+{
+  "scenarios": [
+    {
+      "id": str,                       # stable scenario id, e.g. "scout_normal_week"
+      "agentKey": str,                 # the single agentKey this scenario exercises (D-02)
+      "description": str,              # human-readable summary for the scenario card
+      "whatItCatches": str,            # the failure mode this scenario is designed to surface
+      "input": dict[str, str],         # EXACTLY a TestRunRequest.variables map (§3A.1) —
+                                        #   NOT a full test-run request body; draft_prompt
+                                        #   varies per run (draft vs active) and is never
+                                        #   part of the fixture
+      "scoringTarget": { "min_overall": float }  # absolute floor for this scenario (0-10)
+    }
+  ]
+}
+```
+
+Scenarios are read from versioned repo fixtures (D-01) — the pipeline is the only
+reader/writer of scenario definitions; the Eval Center and eval drawer read them
+ONLY via this endpoint. No scenario data is duplicated into Convex. The optional
+`agentKey` query param filters the returned list to scenarios for that agent
+(mirrors the eval drawer's auto-select behavior, D-04).
+
+### §38.2 — `eval_scores` Convex table (append-only, D-09)
+
+```typescript
+// convex/schema.ts
+eval_scores: defineTable({
+  workspace_id: v.string(),
+  scenarioId: v.string(),       // matches §38.1 Scenario.id
+  agentKey: v.string(),
+  promptVersion: v.string(),    // String(prompt_versions.version) — see §38.3 freshness rule
+  overall: v.number(),          // 0-10, from ScoreResponse.overall (§3A.2)
+  axes: v.string(),             // JSON-encoded ScoreResponse.axes
+  costUsd: v.number(),          // combined test-run + score cost for this row
+  ranAt: v.number(),            // Date.now(), server-side
+  source: v.string(),           // "drawer" | "commit" | "manual"
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_workspace_scenario', ['workspace_id', 'scenarioId'])
+  .index('by_workspace_agentKey', ['workspace_id', 'agentKey'])
+  .index('by_workspace_agentKey_version', ['workspace_id', 'agentKey', 'promptVersion']),
+```
+
+**Append-only invariant:** rows are inserted, never patched or deleted — the
+time-series IS the drift record (D-09/D-10). `convex/evalScores.ts` exports:
+
+- `record` (mutation, `requireOperator` — dashboard-only, mirrors
+  `prompt_versions`/`audit_log`; NOT a pipeline-authenticated write; no
+  `pipelineSecret` arg): inserts one row per scenario per side (draft or active)
+  scored by the eval drawer or the pre-commit gate check.
+- `listForScenario` (query, `by_workspace_scenario` index): time-series rows for
+  one scenario, ascending by `ranAt` — the drift chart's data source.
+- `listForAgent` (query, `by_workspace_agentKey` index): rows for one agent,
+  newest-first — the scenario card's "last result" source.
+
+Written directly dashboard → Convex, mirroring how `prompt_versions` already works
+(no pipeline round-trip). The EDT-05 write-boundary rule ("dashboard → pipeline API
+→ Sanity for every write") governs Sanity *content* writes only — it does not apply
+to Convex-native entities like `eval_scores`, exactly as it already does not apply to
+`prompt_versions` or `audit_log`.
+
+### §38.3 — `promptVersions.activate` eval-gate + override (EVL-03, extends the existing mutation)
+
+`convex/promptVersions.ts::activate` (the existing `{blocked, reason}` mutation) gains
+one new guard clause and one new optional argument — this is NOT a new endpoint:
+
+```typescript
+// convex/promptVersions.ts — activate args gain:
+override: v.optional(v.object({ reason: v.string() })),
+```
+
+**Gate logic** (evaluated after the existing in-progress-run guard, reads
+`eval_scores` only):
+
+- **Freshness:** block unless a FRESH `eval_scores` row exists for the target
+  version — a row with `promptVersion === String(version)` AND
+  `ranAt >= ` the target `prompt_versions` row's `createdAt`.
+- **No regression:** block if any scenario's `overall` for the target version is
+  worse than the currently-active version's `overall` for that same scenario
+  beyond a tolerance (`targetOverall < activeOverall - TOLERANCE`, `TOLERANCE = 0.5`
+  on the 0-10 scale — absorbs LLM-judge scoring non-determinism).
+- **Aggregate:** block if the aggregate average `overall` across all scenarios for
+  the target version is lower than the aggregate average for the active version.
+- **First-ever activation** (no currently-active version for this `agentKey`)
+  always passes the eval-gate (nothing to regress against).
+
+On failure: `{ blocked: true, reason: str }` (same shape as the existing
+in-progress-run guard) — `isActive` is NOT flipped.
+
+**Override:** an `override: { reason: string }` arg bypasses the eval-gate check
+ONLY — it NEVER bypasses the in-progress-run guard. When supplied (and the
+in-progress-run guard passes), activation proceeds and an additional `audit_log`
+row is written with `action: 'prompt_version.activate_override'`,
+`resourceType: 'prompt_version'`, `resourceId: '{agentKey}:{version}'`, and
+`after: JSON.stringify({ agentKey, version, reason })` — logged alongside (not
+instead of) the existing `prompt_version.activated` audit row ("nothing silent").
+
+**Return shape:** `{ blocked: false }` on a normal pass, `{ blocked: false,
+overridden: true }` when the override path was used.
+
+### §38.4 — `POST /eval/shadow-run` (pipeline, `api/eval.py`)
+
+```
+POST /eval/shadow-run
+Auth: Depends(_require_operator)   # same pattern as §38.1
+
+# Request body
+{ "workspace_id": str }
+
+# Response body
+{
+  "candidates": [ /* CharityCandidate shape — same as scout.py's real-run output */ ],
+  "featuredKeysCount": int   # size of the registry-dedup featured-keys set consulted
+}
+```
+
+Runs Scout's PURE `discover_candidates()` helper (extracted from `scout.py` for this
+purpose — registry-dedup read → live Tavily search → LLM parse → Python dedup
+filter) against LIVE search, previewing what a paid discovery run would surface.
+
+**Isolation contract (D-12, hard requirement):** writes NOTHING. No
+`pipelineRuns`, `pitchLog`, `charities` (`upsertCandidate`), `agent_runs`, or
+`deliberationEvents` Convex rows; no Sanity `write_charity`. This is a read-only
+preview — the isolation test for this endpoint MUST assert absence of both the
+Convex mutation prefixes AND any Sanity `write_charity` call (the latter is a gap
+the existing `test-run`/`score` isolation tests do not need to cover, since neither
+of those endpoints ever calls Scout).
+
+*All Phase 38 changes are additive: one new pipeline router (`api/eval.py`, two
+endpoints); one new Convex table (`eval_scores`) + `convex/evalScores.ts`; one new
+optional arg (`override`) + one new guard clause on the existing
+`promptVersions.activate` mutation. No existing field is renamed or removed; Phase
+26/31/32/33/34/35/36/37 shapes are unchanged.*
+
+---
+
 ## Error handling rules
 
 All contract boundaries must follow these rules:
