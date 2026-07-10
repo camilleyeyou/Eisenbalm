@@ -11,8 +11,9 @@
  *   - The CodeMirror body highlights known vs unknown/mangled {tokens}.
  *   - This component computes `findUnknownVariables(value, allowedVariables)`
  *     live and renders a warning banner listing any unknown tokens.
- *   - The "Save as new version" button is DISABLED whenever unknown tokens are
- *     present (the save-blocking gate) — distinct from the visual decoration.
+ *   - The "Save draft as new version" button is DISABLED whenever unknown
+ *     tokens are present (the save-blocking gate) — distinct from the visual
+ *     decoration.
  *
  * Controlled value is required (`value`/`onChange`) so the host page owns the
  * draft. When `agentKey` + `workspaceId` are supplied, the save-as-version
@@ -70,16 +71,15 @@ export function PromptEditor({
           role="alert"
           className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
         >
-          <p className="font-medium">
-            Unknown variable{unknown.length > 1 ? 's' : ''} — fix before saving:
-          </p>
-          <ul className="mt-1 flex flex-wrap gap-1.5">
+          <ul className="mt-1 space-y-1">
             {unknown.map(name => (
-              <li
-                key={name}
-                className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs"
-              >
-                {`{${name}}`}
+              <li key={name}>
+                <span className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
+                  {`{${name}}`}
+                </span>{' '}
+                {
+                  "isn't supplied by the pipeline — remove it or ask your developer to wire it"
+                }
               </li>
             ))}
           </ul>
@@ -96,11 +96,11 @@ export function PromptEditor({
               className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
               title={
                 hasUnknown
-                  ? 'Resolve unknown variables before saving'
+                  ? `{${unknown[0]}} isn't supplied by the pipeline — remove it or ask your developer to wire it`
                   : 'Save the current draft as a new version'
               }
             >
-              Save as new version
+              Save draft as new version
             </button>
           ) : (
             <PromptSaveDialog

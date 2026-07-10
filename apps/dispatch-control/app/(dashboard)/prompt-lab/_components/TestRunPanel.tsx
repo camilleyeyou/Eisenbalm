@@ -18,7 +18,7 @@
  *   - PRC-09: every draft run is SCORED against the live voice rubric and shows a
  *     per-axis breakdown + overall headline + 1-2 line rationale. ADVISORY ONLY —
  *     the score never gates any action (D-05/D-06).
- *   - PRC-08 (D-07): a "compare against active" action runs the ACTIVE version's
+ *   - PRC-08 (D-07): a "Draft vs. live" action runs the LIVE (active) version's
  *     prompt ON DEMAND (the default Run stays 1×), scores it too, and renders both
  *     outputs + costs side-by-side with the score delta (D-08).
  *
@@ -90,7 +90,7 @@ export default function TestRunPanel({
   const [result, setResult] = useState<TestRunResult | null>(null)
   const [draftScore, setDraftScore] = useState<ScoreResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // Active side (only populated by "compare against active")
+  // Live side (only populated by "Draft vs. live")
   const [comparing, setComparing] = useState(false)
   const [activeResult, setActiveResult] = useState<TestRunResult | null>(null)
   const [activeScore, setActiveScore] = useState<ScoreResult | null>(null)
@@ -145,7 +145,7 @@ export default function TestRunPanel({
     }
   }
 
-  // Compare against active (PRC-08, D-07): runs the ACTIVE version's prompt ON
+  // Draft vs. live (PRC-08, D-07): runs the LIVE (active) version's prompt ON
   // DEMAND (only this handler calls runActiveVersionTest), then scores it.
   async function handleCompare() {
     if (!active) return

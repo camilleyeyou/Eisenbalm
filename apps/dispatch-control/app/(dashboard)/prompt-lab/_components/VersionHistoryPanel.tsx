@@ -3,13 +3,13 @@
  * Phase 24 (PRM-04) — version-history list + compare for one agent.
  *
  * Subscribes to api.promptVersions.listForAgent (newest-first) and renders each
- * version's number, author, timestamp, note, and an Active badge.
+ * version's number, author, timestamp, note, and a LIVE badge.
  *
  * Plan 08 adds:
  *   - a two-version compare selector (pick A + B) that renders <DiffViewer> for
  *     the chosen pair (default A = active version, B = the selected version).
- *   - per-version Activate / "Rollback to this version" controls wired to
- *     api.promptVersions.activate. Rollback IS activate(olderVersion) — no
+ *   - per-version "Make live" / "Restore this version" controls wired to
+ *     api.promptVersions.activate. Restore IS activate(olderVersion) — no
  *     separate call. The control is DISABLED while a run is in progress
  *     (api.runs.latest.status === 'running'), with an inline explanation
  *     (D-02 block-with-explanation, no queue). On a server-side `{ blocked }`
@@ -224,7 +224,7 @@ export default function VersionHistoryPanel({
                 </span>
                 {v.isActive && (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                    Active
+                    LIVE
                   </span>
                 )}
               </div>
@@ -249,7 +249,7 @@ export default function VersionHistoryPanel({
               >
                 {v.isActive ? (
                   <span className="text-xs text-neutral-400">
-                    Currently active
+                    Currently live
                   </span>
                 ) : (
                   <button
@@ -260,16 +260,16 @@ export default function VersionHistoryPanel({
                       runInProgress
                         ? 'A run is in progress — activation will be available when it finishes.'
                         : activeVersion !== null && v.version < activeVersion
-                          ? `Roll back to v${v.version}`
-                          : `Activate v${v.version}`
+                          ? `Restore v${v.version}`
+                          : `Make live v${v.version}`
                     }
                     className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px]"
                   >
                     {activating === v.version
-                      ? 'Activating…'
+                      ? 'Making live…'
                       : activeVersion !== null && v.version < activeVersion
-                        ? 'Rollback to this version'
-                        : 'Activate'}
+                        ? 'Restore this version'
+                        : 'Make live'}
                   </button>
                 )}
               </div>
@@ -326,7 +326,7 @@ export default function VersionHistoryPanel({
                 {versions.map(v => (
                   <option key={v._id} value={v.version}>
                     v{v.version}
-                    {v.isActive ? ' (active)' : ''}
+                    {v.isActive ? ' (live)' : ''}
                   </option>
                 ))}
               </select>
@@ -343,7 +343,7 @@ export default function VersionHistoryPanel({
                 {versions.map(v => (
                   <option key={v._id} value={v.version}>
                     v{v.version}
-                    {v.isActive ? ' (active)' : ''}
+                    {v.isActive ? ' (live)' : ''}
                   </option>
                 ))}
               </select>
