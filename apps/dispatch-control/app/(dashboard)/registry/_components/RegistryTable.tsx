@@ -11,11 +11,13 @@
  * Filter pills are client-side (status is the only axis).
  * Blocklist action is gated behind an inline confirmation popover.
  */
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { Id } from '@convex/_generated/dataModel'
 import CharityStatusBadge from './CharityStatusBadge'
+import AddCorrectionDialog from './AddCorrectionDialog'
+import CorrectionsList from './CorrectionsList'
 
 interface RegistryTableProps {
   workspace_id: string
@@ -65,6 +67,8 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
   const [confirmingBlocklistId, setConfirmingBlocklistId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
+  // Phase 39 (MEM-02): which charity row has its corrections detail expanded
+  const [expandedCharityId, setExpandedCharityId] = useState<string | null>(null)
 
   if (charities === undefined) {
     return (
@@ -159,8 +163,8 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                 const isPendingThisAction = pendingAction === charity._id
 
                 return (
+                  <Fragment key={charity._id}>
                   <tr
-                    key={charity._id}
                     className="hover:bg-neutral-50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm text-neutral-800">
@@ -193,58 +197,90 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                       {formatRelativeTime(charity.lastFeaturedAt)}
                     </td>
                     <td className="px-4 py-3">
-                      {charity.status === 'blocklisted' ? (
-                        /* Unblocklist action — immediate */
-                        <button
-                          type="button"
-                          onClick={() => handleUnblocklist(charity._id)}
-                          disabled={isPendingThisAction}
-                          aria-busy={isPendingThisAction}
-                          className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
-                        >
-                          {isPendingThisAction ? 'Updating…' : 'Remove from Blocklist'}
-                        </button>
-                      ) : isConfirmingThisBlocklist ? (
-                        /* Inline blocklist confirmation */
-                        <div className="space-y-2 rounded border border-neutral-200 bg-neutral-50 p-3 text-sm">
-                          <p className="font-semibold text-neutral-900">Blocklist this charity?</p>
-                          <p className="text-neutral-600">
-                            The Scout will skip{' '}
-                            <span className="font-medium">{charity.name}</span> in all
-                            future runs.
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleBlocklist(charity._id)}
-                              disabled={isPendingThisAction}
-                              aria-busy={isPendingThisAction}
-                              className="min-h-[44px] rounded bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
-                            >
-                              {isPendingThisAction ? 'Blocklisting…' : 'Blocklist Charity'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmingBlocklistId(null)}
-                              disabled={isPendingThisAction}
-                              className="min-h-[44px] rounded border border-neutral-300 px-3 text-sm text-neutral-700 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
-                            >
-                              Cancel
-                            </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {charity.status === 'blocklisted' ? (
+                          /* Unblocklist action — immediate */
+                          <button
+                            type="button"
+                            onClick={() => handleUnblocklist(charity._id)}
+                            disabled={isPendingThisAction}
+                            aria-busy={isPendingThisAction}
+                            className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
+                          >
+                            {isPendingThisAction ? 'Updating…' : 'Remove from Blocklist'}
+                          </button>
+                        ) : isConfirmingThisBlocklist ? (
+                          /* Inline blocklist confirmation */
+                          <div className="space-y-2 rounded border border-neutral-200 bg-neutral-50 p-3 text-sm">
+                            <p className="font-semibold text-neutral-900">Blocklist this charity?</p>
+                            <p className="text-neutral-600">
+                              The Scout will skip{' '}
+                              <span className="font-medium">{charity.name}</span> in all
+                              future runs.
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleBlocklist(charity._id)}
+                                disabled={isPendingThisAction}
+                                aria-busy={isPendingThisAction}
+                                className="min-h-[44px] rounded bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                              >
+                                {isPendingThisAction ? 'Blocklisting…' : 'Blocklist Charity'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingBlocklistId(null)}
+                                disabled={isPendingThisAction}
+                                className="min-h-[44px] rounded border border-neutral-300 px-3 text-sm text-neutral-700 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        /* Blocklist trigger — opens inline confirm */
+                        ) : (
+                          /* Blocklist trigger — opens inline confirm */
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingBlocklistId(charity._id)}
+                            className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
+                          >
+                            Blocklist Charity
+                          </button>
+                        )}
+
+                        {/* Phase 39 (MEM-02): Add correction / view corrections toggle */}
                         <button
                           type="button"
-                          onClick={() => setConfirmingBlocklistId(charity._id)}
+                          onClick={() =>
+                            setExpandedCharityId(
+                              expandedCharityId === charity._id ? null : charity._id,
+                            )
+                          }
+                          aria-expanded={expandedCharityId === charity._id}
                           className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
                         >
-                          Blocklist Charity
+                          {expandedCharityId === charity._id ? 'Hide corrections' : 'Add correction'}
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
+
+                  {/* Phase 39 (MEM-02): expanded row — add correction + chronological log */}
+                  {expandedCharityId === charity._id && (
+                    <tr className="bg-neutral-50">
+                      <td colSpan={6} className="px-4 py-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <AddCorrectionDialog workspace_id={workspace_id} charity={charity} />
+                          <CorrectionsList
+                            workspace_id={workspace_id}
+                            charityKey={charity.dedupKey ?? ''}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 )
               })}
             </tbody>
