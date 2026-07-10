@@ -438,7 +438,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 36. Voice Pass De-Slop Screen | 7/7 | Complete    | 2026-07-09 |
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
-| 39. Registry Coverage-Memory Strip | 0/? | Not started | - |
+| 39. Registry Coverage-Memory Strip | 1/5 | In Progress|  |
 
 ## Backlog
 

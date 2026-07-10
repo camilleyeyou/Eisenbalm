@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase complete — ready for verification
-stopped_at: Completed 38-06-eval-center-drift-shadow-PLAN.md
-last_updated: "2026-07-09T22:50:28.955Z"
+status: Ready to execute
+stopped_at: Completed 39-01-contract-convex-foundations-PLAN.md
+last_updated: "2026-07-10T07:12:58.587Z"
 progress:
   total_phases: 39
   completed_phases: 37
-  total_plans: 240
-  completed_plans: 238
+  total_plans: 245
+  completed_plans: 239
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-06)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 37 — run-monitor-v2-signal-desk
+**Current focus:** Phase 39 — registry-coverage-memory-strip
 
 ## Current Position
 
-Phase: 38
-Plan: 6 of 6
+Phase: 39 (registry-coverage-memory-strip) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -263,6 +263,7 @@ Plan: 6 of 6
 | Phase 38 P03 | 17min | 2 tasks | 5 files |
 | Phase 38 P05 | 25min | 3 tasks | 4 files |
 | Phase 38 P06 | 20min | 2 tasks | 6 files |
+| Phase 39 P01 | 20min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -675,6 +676,8 @@ Recent decisions affecting current work:
 - [Phase 38]: VersionHistoryPanel's 'Run evals for v{N}' producer toggles the SAME EvalDrawer inline (expand/collapse) rather than a separate simplified variant, guaranteeing the freshness-producer path exercises identical run/scoring/persistence logic to normal iteration
 - [Phase 38]: eval-center/page.tsx is a plain 'use client' component (no Server-Component + getCurrentWorkspace() split) — mirrors voice-pass/page.tsx's precedent since all data is client-driven and workspace_id is a single-tenant constant
 - [Phase 38]: ScenarioCard and DriftScoreboard both read listForScenario directly (per-item child components for dynamic useQuery lists) — ScenarioCard reduces max-by-ranAt for 'last result', DriftScoreboard renders the full series for the drift detector
+- [Phase 39]: 39-01: contract-first §39 landed before code; append-only charity_corrections mirrors promptVersions.saveVersion's audit pattern, not charities.setStatus's gapped one
+- [Phase 39]: 39-01: convex/_generated/api.d.ts hand-edited (network-sandboxed codegen fetch fails offline) — 2-line additive diff mirrors what codegen would produce, per Phase 38-01 precedent
 
 ### Pending Todos
 
@@ -759,6 +762,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-09T22:50:28.942Z
-Stopped at: Completed 38-06-eval-center-drift-shadow-PLAN.md
+Last session: 2026-07-10T07:12:58.575Z
+Stopped at: Completed 39-01-contract-convex-foundations-PLAN.md
 Resume file: None

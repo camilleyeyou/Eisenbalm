@@ -331,9 +331,9 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **EVL-05**: Operator can run a shadow run — the discovery scenario against current real news, previewing what a paid run would produce, without publishing or affecting run state.
 
 ### Registry Memory (MEM)
-- [ ] **MEM-01**: A coverage-memory strip visualizes the last 8 issues' cause/geo/signal chips so thematic repetition is visible at a glance.
-- [ ] **MEM-02**: Operator can append corrections to a charity's record (append-only corrections log) surfaced in the Registry.
-- [ ] **MEM-03**: The Researcher re-reads a charity's corrections log on any future mention of that charity.
+- [x] **MEM-01**: A coverage-memory strip visualizes the last 8 issues' cause/geo/signal chips so thematic repetition is visible at a glance.
+- [x] **MEM-02**: Operator can append corrections to a charity's record (append-only corrections log) surfaced in the Registry.
+- [x] **MEM-03**: The Researcher re-reads a charity's corrections log on any future mention of that charity.
 
 ## Future Requirements (deferred beyond v2.0)
 
