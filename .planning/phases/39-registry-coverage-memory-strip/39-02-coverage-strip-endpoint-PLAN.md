@@ -59,7 +59,7 @@ Output: A new `registry.py` router with `GET /registry/coverage-strip`, register
 
 content.py precedents (packages/pipeline/src/eisenbalm_pipeline/api/content.py):
   import eisenbalm_pipeline.lib.convex_client as _cc      # _cc.convex_query(http, path, args)
-  import eisenbalm_pipeline.lib.sanity_client as _sc      # _sc.groq_query(http, groq, params=...)
+  import eisenbalm_pipeline.lib.sanity_client as _sc      # _sc.groq_query(groq, params=...)  # NOTE: groq_query(query, *, params=None) — NO http arg; uses module-level client (calibrator.py:70 precedent)
   from eisenbalm_pipeline.api.control import _require_clerk_jwt_control
   router = APIRouter()
   @router.get("/issues/{run_id}/draft")
@@ -67,7 +67,7 @@ content.py precedents (packages/pipeline/src/eisenbalm_pipeline/api/content.py):
 
 WORKSPACE_ID: the pipeline's workspace slug is the literal "eisenbalm" (see agents/scout.py WORKSPACE_ID usage). Use the same constant/literal the scout uses.
 Convex query call shape: `await convex_query(http, "charities:listRecentFeatured", {"workspace_id": "eisenbalm", "limit": 8})`.
-Sanity read shape: `await groq_query(http, '*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}', params={"ids": ids})`.
+Sanity read shape: `await groq_query('*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}', params={"ids": ids})`.
 </interfaces>
 </context>
 
@@ -86,7 +86,7 @@ Sanity read shape: `await groq_query(http, '*[_type=="charity" && _id in $ids]{_
     - The endpoint calls convex charities:listRecentFeatured with limit 8 and issues at most one groq_query with the collected ids.
   </behavior>
   <action>
-    Author packages/pipeline/tests/test_registry_coverage.py. Build the coverage handler's core join as a testable unit — call the endpoint's handler function directly (constructing a fake `request`/`http` per the content.py test precedent) with `_cc.convex_query` and `_sc.groq_query` patched via AsyncMock. Two tests:
+    Author packages/pipeline/tests/test_registry_coverage.py. Build the coverage handler's core join as a testable unit — call the endpoint's handler function directly (constructing a fake `request`/`http` per the content.py test precedent) with `_cc.convex_query` and `_sc.groq_query` patched. IMPORTANT: patch `groq_query` with `autospec=True` so the mock ENFORCES the real `groq_query(query, *, params=None)` signature — a bare AsyncMock would silently accept a wrong-arity call and let the endpoint ship broken. Two tests:
     - `test_coverage_strip_joins_cause_geo_signal`: assert the 2-item shape above, order preserved, chips populated for the sanityCharityId row.
     - `test_coverage_strip_skips_missing_sanity_id` (marker `missing_sanity_id`): the row without sanityCharityId yields empty chips (None/"" cause/geo/signal), no exception, and its _id is NOT in the groq `$ids` param.
     Run — fails RED (registry.py does not exist yet).
@@ -118,7 +118,7 @@ Sanity read shape: `await groq_query(http, '*[_type=="charity" && _id in $ids]{_
       1. Get the shared AsyncClient the way content.py does (via request app state / the `_cc`/`_sc` helper convention — follow content.py exactly).
       2. `rows = await _cc.convex_query(http, "charities:listRecentFeatured", {"workspace_id": WORKSPACE_ID, "limit": 8})` (default to [] if None).
       3. `ids = [r["sanityCharityId"] for r in rows if r.get("sanityCharityId")]`.
-      4. `sanity_rows = await _sc.groq_query(http, '*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}', params={"ids": ids}) if ids else []`.
+      4. `sanity_rows = await _sc.groq_query('*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}', params={"ids": ids}) if ids else []`. IMPORTANT: `groq_query(query, *, params=None)` takes NO `http`/positional-client arg — it uses the module-level client registered at FastAPI lifespan (calibrator.py:70 precedent). Passing `http` as a first positional arg raises TypeError at runtime.
       5. Build a dict `by_id = {s["_id"]: s for s in sanity_rows}`. For each charities row (preserve listRecentFeatured order = lastFeaturedAt desc), emit `{ "name": r.get("name"), "sanityCharityId": r.get("sanityCharityId"), "lastFeaturedAt": r.get("lastFeaturedAt"), "cause": s.get("focusArea"), "geo": s.get("location"), "signal": s.get("scoutNotes") }` where `s = by_id.get(r.get("sanityCharityId")) or {}` — so rows with no sanityCharityId (or no Sanity match) get None chips, never crash (Pitfall 6).
       6. Return the list (≤8). No audit row (reads are not audited).
     - Register in main.py: `from eisenbalm_pipeline.api import ... registry` and `app.include_router(registry.router)` alongside the other routers.

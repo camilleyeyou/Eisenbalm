@@ -10,6 +10,7 @@ files_modified:
   - convex/charityCorrections.ts
   - convex/charities.ts
   - apps/dispatch-control/__tests__/charity-corrections-append-only.test.ts
+  - apps/dispatch-control/__tests__/charityCorrections.test.ts
 autonomous: true
 requirements: [MEM-01, MEM-02, MEM-03]
 must_haves:
@@ -137,14 +138,18 @@ Queries in this codebase are UNGUARDED (read-only) — listByCharityKey takes NO
     - convex/charities.ts (top imports ~L1-20 — `requireOperator` import path `./lib/auth`; `internal` import path)
     - convex/auditLog.ts (write args ~L37-45)
     - apps/dispatch-control/__tests__/dispatch-control-no-sanity-write.test.ts (source-scan tripwire pattern to mirror for the append-only test)
+    - apps/dispatch-control/__tests__/saveVersion.test.ts (the convex-test harness — t.withIdentity/t.mutation/t.run — to mirror for the FUNCTIONAL append/list test, plan-review Warning 3)
     - convex/CLAUDE.md → then convex/_generated/ai/guidelines.md (Convex API rules)
   </read_first>
   <behavior>
     - Tripwire test: reading convex/charityCorrections.ts source, the exported function names include `append` and `listByCharityKey` and DO NOT include any of: `update`, `patch`, `remove`, `delete`, `edit` (append-only enforcement, Pitfall 3).
-    - append inserts a row and calls internal.auditLog.write (asserted by presence in source; no Convex unit harness needed).
+    - Functional convex-test (plan-review Warning 3 — mirror saveVersion.test.ts, do NOT rely on source-presence alone): (a) `append` called WITHOUT `t.withIdentity(...)` THROWS (requireOperator gate is real, not just present in source); (b) `append` WITH an operator identity inserts a charity_corrections row AND writes an audit_log row with `action: 'charity_correction.added'`; (c) `listByCharityKey` returns only the rows for the given (workspace_id, charityKey), in createdAt-ascending (insertion) order.
   </behavior>
   <action>
-    RED first — author `apps/dispatch-control/__tests__/charity-corrections-append-only.test.ts` (Vitest): read `../../convex/charityCorrections.ts` as text (path relative to the test file — resolve via `path.join(__dirname, ...)` + `fs.readFileSync`, mirroring dispatch-control-no-sanity-write.test.ts); assert the source contains `export const append` and `export const listByCharityKey`, and assert it does NOT match `/export const (update|patch|remove|delete|edit)/`. Run it — it fails RED (file missing).
+    RED first — author TWO tests:
+    (i) `apps/dispatch-control/__tests__/charity-corrections-append-only.test.ts` (Vitest, source-scan): read `../../convex/charityCorrections.ts` as text (path relative to the test file — resolve via `path.join(__dirname, ...)` + `fs.readFileSync`, mirroring dispatch-control-no-sanity-write.test.ts); assert the source contains `export const append` and `export const listByCharityKey`, and assert it does NOT match `/export const (update|patch|remove|delete|edit)/`.
+    (ii) `apps/dispatch-control/__tests__/charityCorrections.test.ts` (convex-test, FUNCTIONAL — mirror saveVersion.test.ts's harness `import { convexTest, schema } from './setup'` + `import.meta.glob` + `import { api } from '../../../convex/_generated/api'`): assert (a) `t.mutation(api.charityCorrections.append, {...})` WITHOUT identity rejects/throws; (b) `t.withIdentity({subject:'user_operator'}).mutation(api.charityCorrections.append, {workspace_id, charityKey, text})` inserts a row (verify via `t.run(ctx => ctx.db.query('charity_corrections')...)`) AND an `audit_log` row with `action: 'charity_correction.added'`; (c) after appending two rows, `api.charityCorrections.listByCharityKey` returns both for that charityKey in createdAt-ascending order and excludes a row under a different charityKey.
+    Run them — they fail RED (file missing).
 
     Then GREEN:
     1. convex/schema.ts — add the `charity_corrections` table (place it right after the `charities` table block for locality):
@@ -168,7 +173,7 @@ Queries in this codebase are UNGUARDED (read-only) — listByCharityKey takes NO
     3. Run `pnpm --filter @eisenbalm/convex exec convex codegen` (or the repo's codegen script) so `_generated` reflects the new table, then re-run the tripwire test — GREEN.
   </action>
   <verify>
-    <automated>cd apps/dispatch-control && npx vitest run charity-corrections-append-only</automated>
+    <automated>cd apps/dispatch-control && npx vitest run charity-corrections-append-only charityCorrections</automated>
   </verify>
   <acceptance_criteria>
     - `grep -q "charity_corrections: defineTable" convex/schema.ts` succeeds
@@ -177,7 +182,7 @@ Queries in this codebase are UNGUARDED (read-only) — listByCharityKey takes NO
     - `grep -Eq "export const listByCharityKey" convex/charityCorrections.ts` succeeds
     - `grep -Eq "export const (update|patch|remove|delete|edit)" convex/charityCorrections.ts` returns NOTHING (exit 1)
     - `grep -q "internal.auditLog.write" convex/charityCorrections.ts` succeeds
-    - `npx vitest run charity-corrections-append-only` passes (from apps/dispatch-control)
+    - `npx vitest run charity-corrections-append-only charityCorrections` passes (from apps/dispatch-control) — BOTH the source-scan tripwire AND the functional convex-test (auth-throws, audit row, ascending order)
   </acceptance_criteria>
   <done>The append-only table exists, charityCorrections.ts exposes exactly append (guarded + audited) and listByCharityKey (unguarded), and the source-scan tripwire is green.</done>
 </task>

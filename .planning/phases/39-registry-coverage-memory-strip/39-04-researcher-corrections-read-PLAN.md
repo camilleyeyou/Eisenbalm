@@ -8,6 +8,7 @@ files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/agents/researcher.py
   - packages/pipeline/src/eisenbalm_pipeline/prompts/researcher_user.md
   - packages/pipeline/tests/agents/test_researcher.py
+  - apps/dispatch-control/app/(dashboard)/prompt-lab/_components/VariableRegistry.ts
 autonomous: true
 requirements: [MEM-03]
 must_haves:
@@ -100,6 +101,8 @@ researcher.py current structure (agents/researcher.py):
   <read_first>
     - packages/pipeline/src/eisenbalm_pipeline/agents/researcher.py (L20-33 imports; L90-124 _build_messages; L128-171 researcher())
     - packages/pipeline/src/eisenbalm_pipeline/prompts/researcher_user.md (existing {charity}/{results_block} placeholders — where to add {corrections})
+    - apps/dispatch-control/app/(dashboard)/prompt-lab/_components/VariableRegistry.ts (the HARDCODED VARIABLE_REGISTRY/VARIABLE_DESCRIPTIONS/VARIABLE_SAMPLES maps — `researcher_user: ['charity', 'results_block']` at ~L54; it gates the pre-save unknown-variable warning and is NOT derived from the .md file)
+    - apps/dispatch-control/__tests__/variableMaps.test.ts (the coverage invariant that every registry var needs a description + sample)
   </read_first>
   <action>
     In researcher.py:
@@ -119,8 +122,9 @@ researcher.py current structure (agents/researcher.py):
       ```
     - Thread `corrections` into `_build_messages` (extend its signature to `corrections: list[dict] | None = None`). Build a `corrections_block` string: if corrections, join each row's `text` as a bulleted list under a header like "PRIOR EDITORIAL CORRECTIONS (account for these):"; else empty string. Interpolate via `.replace("{corrections}", corrections_block)` on the user template (mirroring the existing `{charity}`/`{results_block}` replaces).
     - Pass `corrections=corrections` at the `_build_messages(...)` call site.
-    In researcher_user.md: add a `{corrections}` placeholder in a sensible location (e.g. above or below the research results block) so Prompt Lab's variable validator (PRM-02) sees a declared placeholder for what's injected. Keep it minimal — a single `{corrections}` line/section.
-    Run the RED tests — GREEN.
+    In researcher_user.md: add a `{corrections}` placeholder in a sensible location (e.g. above or below the research results block). Keep it minimal — a single `{corrections}` line/section.
+    In VariableRegistry.ts (MANDATORY — plan-review Blocker 2): the registry is a hardcoded static map, NOT derived from the .md file, and it gates Prompt Lab's pre-save unknown-variable warning (PRM-02). Adding `{corrections}` to researcher_user.md WITHOUT registering it here would flag `{corrections}` as unknown and BLOCK operators from saving the researcher_user template — a regression to shipped Phase 24 behavior. So: (a) append `'corrections'` to `VARIABLE_REGISTRY['researcher_user']` (making it `['charity', 'results_block', 'corrections']`); (b) add a `VARIABLE_DESCRIPTIONS['researcher_user'].corrections` (or the equivalent map shape used in the file) entry describing it (e.g. "Prior editorial corrections logged for this charity, injected so research accounts for them"); (c) add a `VARIABLE_SAMPLES` entry for `corrections` (the coverage invariant in variableMaps.test.ts requires every registered var to have a description + sample) — use a short realistic sample bullet.
+    Run the RED tests — GREEN, and confirm the dispatch-control build + variableMaps test stay green.
   </action>
   <verify>
     <automated>cd packages/pipeline && uv run pytest tests/agents/test_researcher.py -q</automated>
@@ -131,8 +135,10 @@ researcher.py current structure (agents/researcher.py):
     - researcher.py contains NO local re-implementation of domain-stripping/case-folding (no new `_domain_of`/`bareDomain` helper): `grep -Eq "def _domain_of|def _bare_domain|def _make_key" packages/pipeline/src/eisenbalm_pipeline/agents/researcher.py` returns NOTHING
     - `grep -q "read %d correction" packages/pipeline/src/eisenbalm_pipeline/agents/researcher.py` succeeds (the MEM-03 log line)
     - `grep -q "{corrections}" packages/pipeline/src/eisenbalm_pipeline/prompts/researcher_user.md` succeeds
+    - `grep -q "corrections" apps/dispatch-control/app/(dashboard)/prompt-lab/_components/VariableRegistry.ts` succeeds (registered so PRM-02 save-gate does not flag it)
     - `cd packages/pipeline && uv run pytest tests/agents/test_researcher.py -q` passes
     - `cd packages/pipeline && uv run pytest -q` full suite passes (voice/byte-equivalence tests unaffected when corrections are empty)
+    - `cd apps/dispatch-control && npx vitest run __tests__/variableMaps.test.ts __tests__/VariableRegistry.test.ts` passes (corrections var has description + sample) AND `pnpm --filter dispatch-control build` exits 0
   </acceptance_criteria>
   <done>The Researcher reads corrections via the shared make_dedup_key, injects them into the prompt, logs the count for verifiability, and fails open — MEM-03 closed.</done>
 </task>
