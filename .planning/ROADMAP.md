@@ -43,7 +43,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 36: Voice Pass De-Slop Screen** - Dedicated machine-tell screen reusing the existing QA two-layer detector (rules + Opus judge), as-written vs. house-voice rewrite popovers, its own "Sounds human" sign-off (completed 2026-07-09)
 - [x] **Phase 37: Run Monitor v2 + Signal Desk** - Forensic run spine (agents as dots, code gates as diamonds), handoff inspector, 7-writer per-section strength scores, run-vs-last-8 drift strip, Gate 1 candidate slate + interrupt/adjudication mode (completed 2026-07-09)
 - [x] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run (completed 2026-07-09)
-- [ ] **Phase 39: Registry Coverage-Memory Strip** - Last-8-issues cause/geo/signal coverage strip, append-only charity corrections log re-read by the Researcher
+- [x] **Phase 39: Registry Coverage-Memory Strip** - Last-8-issues cause/geo/signal coverage strip, append-only charity corrections log re-read by the Researcher (completed 2026-07-10)
 
 ## Phase Details
 
@@ -438,7 +438,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 36. Voice Pass De-Slop Screen | 7/7 | Complete    | 2026-07-09 |
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
-| 39. Registry Coverage-Memory Strip | 4/5 | In Progress|  |
+| 39. Registry Coverage-Memory Strip | 5/5 | Complete   | 2026-07-10 |
 
 ## Backlog
 

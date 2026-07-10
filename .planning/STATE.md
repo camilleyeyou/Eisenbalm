@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Ready to execute
-stopped_at: Completed 39-04-researcher-corrections-read-PLAN.md
-last_updated: "2026-07-10T08:48:44.399Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 39-05-coverage-strip-ui-PLAN.md
+last_updated: "2026-07-10T09:03:59.601Z"
 progress:
   total_phases: 39
-  completed_phases: 37
+  completed_phases: 38
   total_plans: 245
-  completed_plans: 242
+  completed_plans: 243
 ---
 
 # Project State
@@ -267,6 +267,7 @@ Plan: 5 of 5
 | Phase 39 P02 | 15 | 2 tasks | 3 files |
 | Phase 39 P03 | ~10min | 3 tasks | 5 files |
 | Phase 39 P04 | ~15min | 2 tasks | 5 files |
+| Phase 39 P05 | 4min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -683,6 +684,7 @@ Recent decisions affecting current work:
 - [Phase 39]: 39-01: convex/_generated/api.d.ts hand-edited (network-sandboxed codegen fetch fails offline) — 2-line additive diff mirrors what codegen would produce, per Phase 38-01 precedent
 - [Phase 39]: Corrections UI: charity.dedupKey passed straight through as charityKey (never re-derived); legacy rows without a dedupKey disable the form instead of fabricating a key
 - [Phase 39]: Researcher reads corrections via shared make_dedup_key (no reimplementation) + convex_query_safe (fail-open); {corrections} placeholder registered in Prompt Lab VariableRegistry.ts to avoid regressing the PRM-02 save-gate
+- [Phase 39]: CoverageStrip uses 1c CSS-token classes (var(--color-cobalt/green/marigold-text)) for chip coloring, matching newer review-desk/eval-center components rather than RegistryTable's older neutral-* Tailwind classes
 
 ### Pending Todos
 
@@ -767,6 +769,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T08:48:44.386Z
-Stopped at: Completed 39-04-researcher-corrections-read-PLAN.md
+Last session: 2026-07-10T09:03:59.587Z
+Stopped at: Completed 39-05-coverage-strip-ui-PLAN.md
 Resume file: None
