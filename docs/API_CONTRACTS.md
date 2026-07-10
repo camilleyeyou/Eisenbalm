@@ -1985,6 +1985,8 @@ class DispatchState(TypedDict):
 All new fields are additive only. No existing field is renamed or removed.
 Amend this section before consuming any new endpoint, table field, mutation, or query.
 
+> Phase 39 extends the registry with a coverage-memory strip + append-only corrections log — see §39.
+
 ---
 
 ### §26.1 — charities table additive fields
@@ -3808,6 +3810,134 @@ endpoints); one new Convex table (`eval_scores`) + `convex/evalScores.ts`; one n
 optional arg (`override`) + one new guard clause on the existing
 `promptVersions.activate` mutation. No existing field is renamed or removed; Phase
 26/31/32/33/34/35/36/37 shapes are unchanged.*
+
+---
+
+## §39 — Registry Coverage-Memory Strip (Phase 39)
+
+The operator can see thematic repetition across recent issues at a glance (a
+coverage-memory strip of the last 8 featured charities' cause/geo/signal chips,
+MEM-01) and keep a durable, append-only record of corrections to a charity that
+the Researcher actually re-reads on any future mention of that charity (MEM-02/
+MEM-03). This contract is written BEFORE any schema/agent/endpoint code exists
+(CLAUDE.md contract-first hard rule, mirroring §31-§38). Plan 39-01 implements
+these shapes verbatim — no field name, endpoint path, or match-key scheme may be
+invented later.
+
+### §39.1 — `charity_corrections` Convex table (NEW, append-only)
+
+```typescript
+// convex/schema.ts
+charity_corrections: defineTable({
+  workspace_id: v.string(),
+  charityKey: v.string(),                  // registry dedupKey (§26.1 format) — PRIMARY match key
+  sanityCharityId: v.optional(v.string()), // denormalized display/fallback convenience
+  text: v.string(),                        // the correction itself
+  author: v.string(),                      // Clerk actorId from requireOperator(ctx) — NEVER client-supplied
+  createdAt: v.number(),
+})
+  .index('by_workspace_charityKey', ['workspace_id', 'charityKey'])
+  .index('by_workspace', ['workspace_id']),
+```
+
+`charityKey` uses the SAME dedupKey format as `charities.dedupKey`
+(`{name.trim().toLowerCase()}|{domain}`, §26.1) — not a new key scheme.
+
+**APPEND-ONLY invariant:** rows are inserted, never patched or deleted — the log
+IS the durable record (mirrors `audit_log`/`eval_scores`, §38.2). No
+`update`/`patch`/`remove`/`delete` function is ever defined against this table.
+
+### §39.2 — `convex/charityCorrections.ts` functions (NEW)
+
+```typescript
+// Mutation — dashboard-only (requireOperator, matches promptVersions.saveVersion,
+// NOT a pipeline endpoint, NOT pipelineSecret-guarded):
+append({ workspace_id, charityKey, sanityCharityId?, text }): Promise<Id<'charity_corrections'>>
+  // const actor = await requireOperator(ctx)
+  // const id = await ctx.db.insert('charity_corrections', {
+  //   workspace_id, charityKey, sanityCharityId, text, author: actor, createdAt: Date.now(),
+  // })
+  // await ctx.runMutation(internal.auditLog.write, {
+  //   workspace_id, actorId: actor, action: 'charity_correction.added',
+  //   resourceType: 'charity_correction', resourceId: charityKey,
+  //   after: JSON.stringify({ text }),
+  // })
+  // return id
+
+// Query — UNGUARDED (matches charities.listForDedup — reads are unguarded, read-only):
+listByCharityKey({ workspace_id, charityKey }): Promise<Doc<'charity_corrections'>[]>
+  // by_workspace_charityKey index, sorted createdAt ASC (chronological — oldest first)
+```
+
+`charityKey` is ALWAYS supplied by the caller (already-loaded from a `charities`
+doc's `dedupKey`) — `append` never re-derives a dedup key from a raw name/website
+pair. `append` is guarded + audited exactly like `promptVersions.saveVersion`
+(NOT like `charities.setStatus`, which currently has no audit-log call — that is
+an existing Phase 26 gap, out of scope to fix, and must not be replicated here).
+
+**NO update/patch/remove/delete function is defined against `charity_corrections`**
+— append-only enforcement (D-05, Pitfall 3). A source-scan tripwire test asserts
+this invariant holds.
+
+### §39.3 — `charities:listRecentFeatured` query (NEW, extends `convex/charities.ts`)
+
+```typescript
+listRecentFeatured({ workspace_id, limit? }): Promise<Doc<'charities'>[]>
+  // Uses the EXISTING by_workspace_status index (status: 'featured');
+  // sorted by lastFeaturedAt desc; take(limit ?? 8). Unguarded (read-only).
+```
+
+Returns at most 8 (or `limit`, if supplied) featured charities, most-recently-
+featured first. Matches the `listByWorkspace`/`listForDedup` convention — no
+`requireOperator`/`requirePipelineSecret` guard.
+
+### §39.4 — `GET /registry/coverage-strip` (pipeline, FastAPI, read-only, no audit row)
+
+```
+GET /registry/coverage-strip
+Auth: Depends(_require_clerk_jwt_control)   # same guard as GET /issues/{run_id}/draft
+
+Action:
+  1. rows = await convex_query(http, "charities:listRecentFeatured", {"workspace_id": WORKSPACE_ID, "limit": 8})
+  2. ids = [r["sanityCharityId"] for r in rows if r.get("sanityCharityId")]
+  3. sanity_rows = await groq_query('*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}', params={"ids": ids})
+  4. zip sanity_rows back onto `rows` by _id == sanityCharityId, preserving lastFeaturedAt-desc order;
+     rows missing sanityCharityId (legacy/backfilled charities) render with empty
+     chips — never crash the whole request (Pitfall 6)
+
+Response:
+[
+  { "name": str, "sanityCharityId": str | null, "lastFeaturedAt": int | null,
+    "cause": str | null,   # Sanity charity.focusArea
+    "geo": str | null,     # Sanity charity.location
+    "signal": str | null   # Sanity charity.scoutNotes (truncated for chip display) }
+]  // 8 or fewer rows
+```
+
+The server performs the Convex→Sanity join. dispatch-control has ZERO Sanity
+access (EDT-05, enforced by the standing `dispatch-control-no-sanity-write.test.ts`
+tripwire) — this join CANNOT happen client-side. `signal` is sourced from the
+ALREADY-PERSISTED Sanity `charity.scoutNotes` field (populated from the Scout's
+`scoutSummary` at candidate-write time) — no new write path, no fabricated
+taxonomy (D-03).
+
+### §39.5 — Researcher corrections read (D-08/D-09/D-10)
+
+The Researcher (Phase 2, per the winning charity — NOT the Scout) computes the
+dedupKey via the ALREADY-EXISTING `eisenbalm_pipeline.lib.charity_registry.make_dedup_key(name, website)`
+helper (do not reimplement domain-stripping/case-folding a fourth time), calls
+`charityCorrections:listByCharityKey` with that key, and injects the returned
+corrections text into its prompt context before building research queries/messages.
+It logs a line recording the count and whether corrections were injected — the
+concrete mechanism that makes MEM-03 ("verifiable in pipeline output/logs for a
+repeat-charity run") demonstrable rather than merely stored.
+
+*All Phase 39 changes are additive: one new Convex table (`charity_corrections`) +
+`convex/charityCorrections.ts` (append + listByCharityKey only); one new query
+(`charities:listRecentFeatured`) on the existing `charities` table; one new
+pipeline GET endpoint (`/registry/coverage-strip`); one new read-and-inject step
+in `researcher.py`. No existing field is renamed or removed; Phase
+26/31/32/33/34/35/36/37/38 shapes are unchanged.*
 
 ---
 
