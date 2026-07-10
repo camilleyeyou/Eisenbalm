@@ -382,6 +382,20 @@ export default defineSchema({
     .index('by_workspace_dedupKey', ['workspace_id', 'dedupKey'])  // dedup lookup
     .index('by_workspace_status', ['workspace_id', 'status']),      // Scout filter
 
+  // ── charity_corrections: append-only corrections log (Phase 39, MEM-02) ────
+  // Never updated or deleted — the log IS the durable record. Keyed by the
+  // SAME dedupKey format as charities.dedupKey (§26.1). API_CONTRACTS §39.1.
+  charity_corrections: defineTable({
+    workspace_id: v.string(),
+    charityKey: v.string(),                   // registry dedupKey — PRIMARY match key
+    sanityCharityId: v.optional(v.string()),  // denormalized display/fallback convenience
+    text: v.string(),                         // the correction itself
+    author: v.string(),                       // Clerk actorId from requireOperator(ctx)
+    createdAt: v.number(),
+  })
+    .index('by_workspace_charityKey', ['workspace_id', 'charityKey'])
+    .index('by_workspace', ['workspace_id']),
+
   // ── model_pricing: cost projection table (Phase 27) ─────────────────────────
   model_pricing: defineTable({
     workspace_id: v.string(),
