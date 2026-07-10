@@ -42,11 +42,12 @@ export default function AssembledPreview({ draft, allowed }: AssembledPreviewPro
       className="rounded-lg border border-neutral-200 bg-neutral-50"
     >
       <summary className="cursor-pointer select-none px-4 py-2 text-xs font-medium text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400">
-        Assembled preview (sample values)
+        What the agent sees
       </summary>
       <div className="border-t border-neutral-200 px-4 py-3">
         <p className="mb-2 text-[11px] text-neutral-400">
-          Readability aid only — sample values substituted client-side. Not a
+          The final assembled text — your prompt plus filled variables —
+          exactly as the model receives it. Readability aid only — not a
           test-run.
         </p>
         <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded border border-neutral-200 bg-white p-3 font-mono text-xs text-neutral-800">

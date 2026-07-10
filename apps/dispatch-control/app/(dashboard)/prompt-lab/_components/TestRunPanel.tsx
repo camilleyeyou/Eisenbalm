@@ -7,11 +7,11 @@
  * (D-04) and shows the raw output + cost. It does NOT trigger a pipeline run;
  * it POSTs to POST /agents/{key}/test-run via testRunClient with a Clerk token.
  *
- * Four input modes:
- *   (1) Prior-real input — pick a prior run → sets prior_run_id.
- *   (2) Manual variable entry — a form generated from VARIABLE_REGISTRY[agentKey].
- *   (3) Canned fixture — "use sample": leaves variables empty + no prior_run_id,
- *       so the server fills from SAMPLE_FIXTURES.
+ * Four input modes (labeled in the UI as "Rehearsal"):
+ *   (1) Replay a real run (prior) — pick a prior run → sets prior_run_id.
+ *   (2) Your own input (manual) — a form generated from VARIABLE_REGISTRY[agentKey].
+ *   (3) Sample week (fixture) — "use sample": leaves variables empty + no
+ *       prior_run_id, so the server fills from SAMPLE_FIXTURES.
  *   (4) Unsaved draft — implicit: the draft is ALWAYS sent.
  *
  * Phase 28 authoring loop (the standout guardrail):
@@ -39,6 +39,18 @@ import { scoreOutput, type ScoreResult } from '@/lib/scoreClient'
 
 type InputMode = 'prior' | 'manual' | 'fixture'
 
+/**
+ * Per-mode descriptor shown beneath the Rehearsal mode radiogroup (Prompt Lab
+ * Nomenclature Proposal, quick 260710-k8y). Copied verbatim from PROPOSAL.md.
+ */
+const MODE_DESCRIPTORS: Record<InputMode, string> = {
+  fixture: 'Runs the draft on a stored example input. Quick smoke test.',
+  manual:
+    'You supply the values — paste a real dossier or candidate list and see what the draft does with it.',
+  prior:
+    'The exact input this agent received in a past run. Same input, new prompt — any difference is your edit. The gold standard.',
+}
+
 interface TestRunPanelProps {
   workspaceId: string
   agentKey: string
@@ -57,7 +69,7 @@ export default function TestRunPanel({
   const { getToken } = useAuth()
   const allowedVariables = VARIABLE_REGISTRY[agentKey] ?? []
 
-  // Prior-real input: list runs for the workspace so the operator can pick one.
+  // Replay a real run: list runs for the workspace so the operator can pick one.
   const runs = useQuery(api.runs.listForWorkspace, {
     workspace_id: workspaceId,
   })
@@ -180,7 +192,7 @@ export default function TestRunPanel({
   return (
     <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-neutral-900">Test run</h2>
+        <h2 className="text-base font-semibold text-neutral-900">Rehearsal</h2>
         <span className="text-xs text-neutral-400">
           Tests the unsaved draft — does not run the pipeline
         </span>
@@ -194,9 +206,9 @@ export default function TestRunPanel({
       >
         {(
           [
-            ['fixture', 'Canned fixture'],
-            ['manual', 'Manual variables'],
-            ['prior', 'Prior-real input'],
+            ['fixture', 'Sample week'],
+            ['manual', 'Your own input'],
+            ['prior', 'Replay a real run'],
           ] as [InputMode, string][]
         ).map(([m, label]) => (
           <button
@@ -215,6 +227,7 @@ export default function TestRunPanel({
           </button>
         ))}
       </div>
+      <p className="text-[11px] text-neutral-400">{MODE_DESCRIPTORS[mode]}</p>
 
       {/* Mode 1: prior-real run picker → prior_run_id */}
       {mode === 'prior' && (
@@ -265,10 +278,10 @@ export default function TestRunPanel({
         </div>
       )}
 
-      {/* Mode 3: canned fixture — server fills SAMPLE_FIXTURES when empty. */}
+      {/* Mode 3: Sample week — server fills SAMPLE_FIXTURES when empty. */}
       {mode === 'fixture' && (
         <p className="text-xs text-neutral-500">
-          Uses the canned sample fixture for{' '}
+          Uses the stored sample input for{' '}
           <span className="font-mono">{agentKey}</span> (no variables or prior
           run needed).
         </p>
@@ -298,9 +311,12 @@ export default function TestRunPanel({
           }
           className="rounded border border-neutral-900 bg-white px-3 py-2 text-sm font-medium text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px] hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
         >
-          {comparing ? 'Comparing…' : 'Compare against active'}
+          {comparing ? 'Comparing…' : 'Draft vs. live'}
         </button>
       </div>
+      <p className="text-[11px] text-neutral-400">
+        Runs both on the same input, side by side. Answers: did my edit help?
+      </p>
 
       {error && (
         <div
@@ -329,10 +345,10 @@ export default function TestRunPanel({
             }
           >
             {scoreDelta >= 0 ? '+' : ''}
-            {scoreDelta.toFixed(1)} vs active
+            {scoreDelta.toFixed(1)} vs live
           </span>
           <span className="ml-1 text-neutral-400">
-            (draft {draftScore!.overall.toFixed(1)} · active{' '}
+            (draft {draftScore!.overall.toFixed(1)} · live{' '}
             {activeScore!.overall.toFixed(1)})
           </span>
         </div>
@@ -355,7 +371,7 @@ export default function TestRunPanel({
           />
           {sideBySide && (
             <ResultColumn
-              label="Active"
+              label="Live"
               result={activeResult}
               score={activeScore}
               scored
