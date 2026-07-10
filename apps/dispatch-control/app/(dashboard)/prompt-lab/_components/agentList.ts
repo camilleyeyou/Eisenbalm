@@ -53,10 +53,45 @@ export function listEditableAgentKeys(): string[] {
 }
 
 export const GROUP_LABELS: Record<EditableAgentGroup, string> = {
-  system: 'Agent system prompts',
-  'user-template': 'User templates',
-  'section-guidance': 'Section guidance',
-  asset: 'Shared assets',
+  system: 'Job Descriptions',
+  'user-template': 'Assignment Memos',
+  'section-guidance': 'Section Briefs',
+  asset: 'House Rules',
+}
+
+/**
+ * One-line descriptor shown under each group header (Prompt Lab Nomenclature
+ * Proposal, quick 260710-k8y). Copied verbatim from PROPOSAL.md.
+ */
+export const GROUP_DESCRIPTORS: Record<EditableAgentGroup, string> = {
+  system:
+    'Who each agent is and the rules it never breaks. Edit these to change judgment and behavior.',
+  'user-template':
+    "The note each agent gets every run, carrying that week's data. Plumbing — edit only to change what an agent is handed.",
+  'section-guidance':
+    'The standing brief for each section of the issue: its job, its length, what it owns, what it must not do.',
+  asset:
+    'Law that many prompts inherit. Edit once, everyone obeys — the most powerful lever on this page.',
+}
+
+/**
+ * Human display titles for known agent slugs (Prompt Lab Nomenclature
+ * Proposal, quick 260710-k8y). Copied verbatim from PROPOSAL.md ("Agent
+ * display names" table; bonus_* expanded to the three concrete slugs).
+ */
+export const AGENT_DISPLAY_NAMES: Record<string, string> = {
+  editor_gate1: 'Editor — Picks the Winner',
+  editor_final: 'Editor — Publish Brief',
+  scout: 'Scout — Finds Candidates',
+  advocate: 'Advocate — Argues the Case',
+  researcher: 'Researcher — Builds the Dossier',
+  calibrator: "Calibrator — Sets the Week's Style",
+  game: 'Game Writer',
+  bonus_jingle: 'Bonus Writer — Jingle',
+  bonus_spec_ad: 'Bonus Writer — Spec Ad',
+  bonus_big_budget: 'Bonus Writer — Big Budget',
+  rubric: "QA Judge's Rubric",
+  voice_constraints: 'The Voice (House Style)',
 }
 
 /**
@@ -75,4 +110,14 @@ export function humanizeAgentKey(key: string): string {
     .filter(Boolean)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+/**
+ * Resolve the editor-facing display name for an agentKey (quick 260710-k8y):
+ * a curated human title when one exists (AGENT_DISPLAY_NAMES), falling back
+ * to the deterministic humanizeAgentKey for *_user, design, and
+ * section-guidance keys not covered by the curated map.
+ */
+export function displayNameForAgentKey(key: string): string {
+  return AGENT_DISPLAY_NAMES[key] ?? humanizeAgentKey(key)
 }

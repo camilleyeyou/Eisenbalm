@@ -17,7 +17,8 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import {
   GROUP_LABELS,
-  humanizeAgentKey,
+  GROUP_DESCRIPTORS,
+  displayNameForAgentKey,
   type EditableAgentGroup,
 } from './agentList'
 import { descriptionFor } from './promptDescriptions'
@@ -48,10 +49,10 @@ function buildPreview(content: string): string {
 }
 
 const GROUP_FILTER_OPTIONS: EditableAgentGroup[] = [
-  'system',
-  'user-template',
-  'section-guidance',
   'asset',
+  'system',
+  'section-guidance',
+  'user-template',
 ]
 
 export default function PromptsListClient({
@@ -111,7 +112,7 @@ export default function PromptsListClient({
     if (groupFilter !== 'all' && group !== groupFilter) return false
     if (driftOnly && !isDrifted(key)) return false
     if (q) {
-      const haystack = `${key} ${humanizeAgentKey(key)}`.toLowerCase()
+      const haystack = `${key} ${displayNameForAgentKey(key)}`.toLowerCase()
       if (!haystack.includes(q)) return false
     }
     return true
@@ -162,7 +163,7 @@ export default function PromptsListClient({
               : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50'
           }`}
         >
-          Drift only
+          Edits only
         </button>
       </div>
 
@@ -173,9 +174,14 @@ export default function PromptsListClient({
       ) : (
         visibleGroups.map(({ group, keys }) => (
           <section key={group} className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              {GROUP_LABELS[group]}
-            </h2>
+            <div className="space-y-0.5">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                {GROUP_LABELS[group]}
+              </h2>
+              <p className="text-xs text-neutral-500">
+                {GROUP_DESCRIPTORS[group]}
+              </p>
+            </div>
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {keys.map(key => {
                 const active = byKey.get(key)
@@ -190,11 +196,11 @@ export default function PromptsListClient({
                       <div className="space-y-0.5">
                         <span className="flex items-center gap-1.5">
                           <span className="block text-sm font-medium text-neutral-900">
-                            {humanizeAgentKey(key)}
+                            {displayNameForAgentKey(key)}
                           </span>
                           {drifted && (
                             <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-800">
-                              edited since seed
+                              edited since launch
                             </span>
                           )}
                         </span>

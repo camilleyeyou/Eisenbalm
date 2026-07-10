@@ -22,10 +22,10 @@ import {
 import PromptsListClient from './_components/PromptsListClient'
 
 const GROUP_ORDER: EditableAgentGroup[] = [
-  'system',
-  'user-template',
-  'section-guidance',
   'asset',
+  'system',
+  'section-guidance',
+  'user-template',
 ]
 
 export default async function PromptsPage() {
