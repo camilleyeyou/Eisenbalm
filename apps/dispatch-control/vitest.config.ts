@@ -40,6 +40,8 @@ export default defineConfig({
       ['__tests__/evalScores.test.ts', 'edge-runtime'],
       // Phase 38 Plan 38-04 promptVersions eval-gate + override convex-test file
       ['__tests__/promptVersionsEvalGate.test.ts', 'edge-runtime'],
+      // Phase 39 Plan 39-01 charity_corrections convex-test file
+      ['__tests__/charityCorrections.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],
