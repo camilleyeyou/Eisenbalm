@@ -38,16 +38,53 @@ RE_DATE = re.compile(
 RE_PROPER_NOUN = re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b')
 
 
+# Heading + blockquote block markers. Matches BOTH vocabularies used across
+# the two extraction paths: nested Sanity Portable Text block `style`
+# ('h1'..'h4', 'blockquote') and flat writer BodyBlock `type` ('h2', 'h3',
+# 'blockquote' — see lib/portable_text.py compose_section_body). Blocks
+# carrying one of these markers are section HEADLINES or pull-quotes, not
+# body prose, and must never seed a factual claim (run 999605 regression).
+_HEADING_BLOCKQUOTE = frozenset({"h1", "h2", "h3", "h4", "blockquote"})
+
+# Section string-field keys that are titles/decorative copy, not factual
+# content. Excluded from `_section_to_text` extraction. Other string fields
+# (e.g. `subjectName`, `subjectRole`) are factual and must survive.
+_HEADLINE_KEYS = frozenset(
+    {
+        "headline",
+        "title",
+        "subtitle",
+        "subhead",
+        "subheading",
+        "sectiontitle",
+        "kicker",
+        "deck",
+        "pullquote",
+    }
+)
+
+# Person/org names are typically 2-5 words ("Jane Doe"=2, "The Riverside
+# Community Trust"=4). A Title-Case run of 6+ words is a headline or
+# multi-clause sentence fragment leaking past extraction, not a name — reject
+# it wholesale rather than truncate it (RE_PROPER_NOUN stays greedy/unbounded
+# so these runaway runs are matched in full, then dropped here).
+_MAX_PROPER_NOUN_WORDS = 5
+
+
 # ── Portable Text flattener ───────────────────────────────────────────────────
 
 
-def _flatten_portable_text(blocks: Any) -> str:
+def _flatten_portable_text(blocks: Any, exclude_styles: frozenset[str] = frozenset()) -> str:
     """Extract plain text from Sanity Portable Text block array.
 
     Args:
         blocks: Either a str (pass-through) or a list of Portable Text block
                 dicts. Each block dict may have a ``children`` list of spans,
                 each span having a ``text`` key.
+        exclude_styles: Block ``style`` values to skip entirely (e.g. heading
+                or blockquote styles). Defaults to empty, so the public
+                ``flatten_portable_text`` alias and its Wave 0 tests (which
+                only exercise 'normal' blocks) are unaffected.
 
     Returns:
         Flat plain-text string. Multiple blocks joined with newlines.
@@ -65,6 +102,8 @@ def _flatten_portable_text(blocks: Any) -> str:
     parts: list[str] = []
     for block in blocks:
         if not isinstance(block, dict):
+            continue
+        if exclude_styles and block.get("style") in exclude_styles:
             continue
         children = block.get("children")
         if not children or not isinstance(children, list):
@@ -84,19 +123,62 @@ flatten_portable_text = _flatten_portable_text
 # ── Per-type extractors ───────────────────────────────────────────────────────
 
 
+def _word_bounded_context(text: str, start: int, end: int, radius: int = 40) -> str:
+    """Build a ±radius-char context snippet, expanded to word boundaries.
+
+    A fixed-width slice (the old ``text[start-30:end+30]``) frequently cuts a
+    token in half at either edge (e.g. "Riverside" -> "side", "Justice" ->
+    "Just"). This takes a ±radius window, then advances the start past the
+    first whitespace (unless the window already starts at position 0) and
+    retreats the end before the last whitespace (unless the window already
+    reaches the end of ``text``), so neither edge cuts a word. The matched
+    claim text itself is never truncated — only the surrounding context.
+    """
+    win_start = max(0, start - radius)
+    win_end = min(len(text), end + radius)
+    window = text[win_start:win_end]
+
+    left_trim = 0
+    if win_start > 0:
+        # Advance past the first whitespace run so we don't start mid-word.
+        ws = re.search(r"\s", window)
+        if ws:
+            left_trim = ws.end()
+
+    right_trim = len(window)
+    if win_end < len(text):
+        # Retreat before the last whitespace run so we don't end mid-word.
+        ws_matches = list(re.finditer(r"\s", window))
+        if ws_matches:
+            right_trim = ws_matches[-1].start()
+
+    if left_trim > right_trim:
+        # Degenerate case (radius too small to contain any whitespace) —
+        # fall back to the raw window rather than an inverted slice.
+        return window.strip()
+    return window[left_trim:right_trim].strip()
+
+
 def _extract_from_text(text: str, claim_type: str, regex: re.Pattern) -> list[dict]:
     """Run a single compiled regex against text; return raw (un-deduped) matches.
 
     Returns list of dicts: {text, claimType, context}. claimIndex is assigned
     later by the dedup pass in extract_claims / extract_all_claim_types.
+
+    proper_noun matches longer than ``_MAX_PROPER_NOUN_WORDS`` words are
+    skipped entirely — a runaway Title-Case run (headline/pull-quote
+    sentence) is rejected wholesale, not truncated into a shorter fragment.
     """
     results: list[dict] = []
     for m in regex.finditer(text):
+        matched_text = m.group(0)
+        if claim_type == "proper_noun" and len(matched_text.split()) > _MAX_PROPER_NOUN_WORDS:
+            continue
         start, end = m.start(), m.end()
-        context = text[max(0, start - 30) : end + 30]
+        context = _word_bounded_context(text, start, end)
         results.append(
             {
-                "text": m.group(0),
+                "text": matched_text,
                 "claimType": claim_type,
                 "context": context,
             }
@@ -115,11 +197,38 @@ def _normalise(text: str) -> str:
 # ── Core extraction over a flat text string ───────────────────────────────────
 
 
+def _deoverlap_proper_nouns(claims: list[dict]) -> list[dict]:
+    """Drop a proper_noun claim whose normalised text is a whole-word
+    substring of a longer surviving proper_noun claim's normalised text.
+
+    Only proper_noun claims are compared; number/date claims (and their
+    relative order, and DATE-before-NUMBER typing) are untouched. Uses a
+    word-boundary containment check (padding both sides with a space) so
+    e.g. "Trust" is not treated as contained in "Trustees". Preserves
+    first-occurrence order of survivors.
+    """
+    proper_indices = [i for i, c in enumerate(claims) if c["claimType"] == "proper_noun"]
+    normalised = {i: _normalise(claims[i]["text"]) for i in proper_indices}
+
+    drop: set[int] = set()
+    for i in proper_indices:
+        short = normalised[i]
+        for j in proper_indices:
+            if i == j or len(normalised[j]) <= len(short):
+                continue
+            long = normalised[j]
+            if f" {short} " in f" {long} ":
+                drop.add(i)
+                break
+    return [c for idx, c in enumerate(claims) if idx not in drop]
+
+
 def _extract_and_dedup(text: str) -> list[dict]:
     """Run all three extractors against a flat string; return deduped claims.
 
     Run DATE before NUMBER so a bare four-digit year is typed "date" not
-    "number". Deduplicate on normalised text (first occurrence wins).
+    "number". Deduplicate on normalised text (first occurrence wins), then
+    collapse overlapping proper_noun fragments down to the longest survivor.
     Returns list without claimIndex — caller assigns ordinals.
     """
     raw: list[dict] = []
@@ -135,7 +244,7 @@ def _extract_and_dedup(text: str) -> list[dict]:
         if key not in seen:
             seen.add(key)
             deduped.append(item)
-    return deduped
+    return _deoverlap_proper_nouns(deduped)
 
 
 # ── Public API: extract_all_claim_types (portable-text-input variant) ─────────
@@ -155,7 +264,7 @@ def extract_all_claim_types(blocks: Any) -> list[dict]:
         ``claimIndex`` is the 0-based ordinal of first appearance after dedup.
         An empty input returns ``[]``.
     """
-    text = _flatten_portable_text(blocks)
+    text = _flatten_portable_text(blocks, exclude_styles=_HEADING_BLOCKQUOTE)
     if not text.strip():
         return []
     claims = _extract_and_dedup(text)
@@ -177,7 +286,10 @@ def _section_to_text(value: Any) -> str:
     """Extract plain text from a DispatchState section value.
 
     Section values are dicts that may have a ``body`` (Portable Text list)
-    and/or string headline fields. Plain str values pass through.
+    and/or string fields. Plain str values pass through. Headline/title-type
+    string fields (``_HEADLINE_KEYS``) are excluded — they're decorative
+    copy, not factual content; other string fields (e.g. ``subjectName``,
+    ``subjectRole``) are factual and still extracted.
     """
     if value is None:
         return ""
@@ -185,17 +297,25 @@ def _section_to_text(value: Any) -> str:
         return value
     if isinstance(value, list):
         # Treat bare list as Portable Text blocks
-        return _flatten_portable_text(value)
+        return _flatten_portable_text(value, exclude_styles=_HEADING_BLOCKQUOTE)
     if isinstance(value, dict):
         parts: list[str] = []
         # body is Portable Text blocks
         body = value.get("body")
         if body is not None:
-            parts.append(_flatten_portable_text(body))
-        # String fields (headlines, etc.)
-        for v in value.values():
-            if isinstance(v, str) and v:
-                parts.append(v)
+            parts.append(_flatten_portable_text(body, exclude_styles=_HEADING_BLOCKQUOTE))
+        # String fields (subjectName, subjectRole, etc.) — headline/title
+        # keys excluded. Joined with ". " (not "\n") so two adjacent
+        # Title-Case field values (e.g. subjectName + subjectRole) can never
+        # bleed into one accidental cross-field proper_noun match — "\n" is
+        # whitespace to RE_PROPER_NOUN's `\s+`, a period is not.
+        field_texts: list[str] = [
+            v
+            for key, v in value.items()
+            if key.lower() not in _HEADLINE_KEYS and isinstance(v, str) and v
+        ]
+        if field_texts:
+            parts.append(". ".join(field_texts))
         return "\n".join(p for p in parts if p)
     return ""
 
@@ -303,6 +423,11 @@ def extract_claims_by_block(sections: dict) -> list[dict]:
         galley_id = _SECTION_TO_GALLEY_ID[key]
         for bi, block in enumerate(body):
             if not isinstance(block, dict):
+                continue
+            if block.get("type") in _HEADING_BLOCKQUOTE:
+                # Heading/blockquote body blocks are section HEADLINES or
+                # pull-quotes, not factual prose — skip entirely (run 999605
+                # regression: h2/h3/blockquote leakage into claims).
                 continue
             text = block.get("text", "")
             if not isinstance(text, str) or not text.strip():
