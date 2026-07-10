@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic'
 
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AddCharityDialogTrigger from './_components/AddCharityDialogTrigger'
+import CoverageStrip from './_components/CoverageStrip'
 import RegistryTable from './_components/RegistryTable'
 
 export default async function RegistryPage() {
@@ -22,6 +23,12 @@ export default async function RegistryPage() {
         <h1 className="text-xl font-semibold text-neutral-900">Charity Registry</h1>
         <AddCharityDialogTrigger workspace_id={workspace_id} />
       </div>
+
+      {/* Phase 39 (MEM-01, D-01): the coverage-memory strip mounts at the
+          top of the Registry, above the charities table. It self-fetches
+          via an authenticated pipeline GET — no props needed (the endpoint
+          fixes the single "eisenbalm" workspace server-side). */}
+      <CoverageStrip />
 
       <RegistryTable workspace_id={workspace_id} />
     </div>
