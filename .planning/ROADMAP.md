@@ -32,7 +32,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v2.0 complete. v3.0: Dispatch Control v2 — Editorial Operator Console (Phases 30–39)**
 
-- 🚧 **v3.0 Dispatch Control v2 — Editorial Operator Console** — Phases 30-39 (in progress)
+- ✅ **v3.0 Dispatch Control v2 — Editorial Operator Console** — Phases 30-39 (shipped 2026-07-10) — 62 plans; archived to [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) (tag `v3.0`)
 
 - [x] **Phase 30: Foundation — Design System, Chrome & Awaiting-You Inbox** - 1c tokens/fonts on every screen, persistent masthead (issue/state/spend/lock chips), workflow-ordered nav + How-to-use screen, cross-screen Awaiting-you inbox, `NEXT_PUBLIC_PIPELINE_URL` production fix (completed 2026-07-07)
 - [x] **Phase 31: Content-Patch Endpoints + Full Editing** - Scoped Sanity-patch endpoint family; per-section prose editing, structured-field editing, asset uploads — all dashboard → pipeline API → Sanity, no direct Sanity write path (completed 2026-07-07)
@@ -44,6 +44,8 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 37: Run Monitor v2 + Signal Desk** - Forensic run spine (agents as dots, code gates as diamonds), handoff inspector, 7-writer per-section strength scores, run-vs-last-8 drift strip, Gate 1 candidate slate + interrupt/adjudication mode (completed 2026-07-09)
 - [x] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run (completed 2026-07-09)
 - [x] **Phase 39: Registry Coverage-Memory Strip** - Last-8-issues cause/geo/signal coverage strip, append-only charity corrections log re-read by the Researcher (completed 2026-07-10)
+
+**v3.0 complete (shipped 2026-07-10). Next milestone: TBD — run `/gsd:new-milestone`.**
 
 ## Phase Details
 
@@ -438,7 +440,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 36. Voice Pass De-Slop Screen | 7/7 | Complete    | 2026-07-09 |
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
-| 39. Registry Coverage-Memory Strip | 5/5 | Complete   | 2026-07-10 |
+| 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 
 ## Backlog
 

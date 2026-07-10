@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Phase complete — ready for verification
-stopped_at: Completed 39-05-coverage-strip-ui-PLAN.md
-last_updated: "2026-07-10T09:03:59.601Z"
+status: Milestone archived
+stopped_at: Archived v3.0 milestone (Phases 30-39, 62 plans); tag v3.0
+last_updated: "2026-07-10T11:30:00.000Z"
 progress:
   total_phases: 39
   completed_phases: 38
@@ -16,15 +16,15 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-06)
+See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 39 — registry-coverage-memory-strip
+**Current focus:** v3.0 shipped + archived (2026-07-10) — planning next milestone (`/gsd:new-milestone`)
 
 ## Current Position
 
-Phase: 39 (registry-coverage-memory-strip) — EXECUTING
-Plan: 5 of 5
+Phase: — (between milestones)
+Plan: v3.0 milestone archived; next milestone not yet defined
 
 ## Performance Metrics
 
