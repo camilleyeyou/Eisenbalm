@@ -25,6 +25,22 @@ Do not modify `schema.ts` field names without checking [`docs/API_CONTRACTS.md`]
 
 ---
 
+## Deploy parity
+
+**Why the drift is invisible locally:** there is ONE dev-tier deployment (`dev:modest-magpie-797`, see `convex/.env.local`). Git-committed `convex/*.ts` is NOT live on that deployment until someone runs `convex dev`/`convex deploy` to sync it. Locally generated `convex/_generated/api.d.ts` lists **modules**, not individual function names — so a function that was committed to git but never synced still looks present from a static read of the generated types. Nothing catches that drift until a caller hits it in production.
+
+This bit us on **2026-07-10**: `charities:listRecentFeatured` was committed to git but never synced to `dev:modest-magpie-797`. `GET /registry/coverage-strip` on the Railway pipeline threw `Could not find public function for 'charities:listRecentFeatured'` in production, with no local signal that anything was wrong.
+
+**What the guard does:** `pnpm check:convex-parity` runs [`convex/scripts/check-deploy-parity.mjs`](./scripts/check-deploy-parity.mjs). It reads the DEPLOYED `convex function-spec` for `dev:modest-magpie-797` and diffs it against every `module:function` string literal called anywhere in `packages/pipeline/src/**/*.py`. It is **report-only** — it never deploys or mutates anything. Exit codes:
+
+- `0` — every called function is present on the deployment
+- `1` — at least one called function is missing (real drift; the offending path + `file:line` references are printed)
+- `2` — could not check (deployment unreachable/unauthenticated, or CLI missing) — distinct from a clean pass
+
+**The rule (phase-done gate):** any phase that touches `convex/` MUST run `pnpm --filter @eisenbalm/convex dev:once` (syncs `convex/` to `dev:modest-magpie-797`), then `pnpm check:convex-parity` (must exit `0`), **before** the phase is marked done.
+
+---
+
 ## Phase 20 — Email lifecycle tables
 
 Two new tables added in Phase 20 (Plans 20-02). Both are **additive** — no existing table or field was modified.

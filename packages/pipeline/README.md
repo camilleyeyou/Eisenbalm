@@ -329,6 +329,7 @@ packages/pipeline/
 - `.planning/phases/04-pipeline-skeleton/04-CONTEXT.md` — Phase 4 architectural decisions
 - `.planning/phases/04-pipeline-skeleton/04-RESEARCH.md` — pattern walk-throughs + sharp edges
 - `convex/README.md` — Phase 3 Convex documentation (sibling — pipeline is the first real caller)
+- `convex/README.md` "Deploy parity" — any `module:function` Convex path called from this package must be synced (`pnpm --filter @eisenbalm/convex dev:once`) and verified with `pnpm check:convex-parity` (must exit `0`) before the phase touching it is marked done
 - `apps/web/README.md` — Phase 2 Next.js documentation (consumer of Sanity drafts via GROQ)
 
 ---
