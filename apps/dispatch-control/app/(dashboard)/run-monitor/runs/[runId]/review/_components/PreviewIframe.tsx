@@ -28,15 +28,19 @@ export default function PreviewIframe({ previewUrl }: PreviewIframeProps) {
   // Fallback: if the iframe doesn't fire onLoad within LOAD_TIMEOUT_MS, show the
   // error state. iframes don't expose HTTP status codes directly; the timeout
   // catches cases where the iframe loads a 4xx/5xx page silently.
+  //
+  // The effect depends on [loaded] and early-returns once loaded: when
+  // handleLoad() sets loaded=true, this effect re-runs, hits the early
+  // return, and its cleanup clears the still-pending timer from the
+  // PREVIOUS (loaded=false) run — so a successfully-loaded preview is never
+  // flipped to the error state by a stale timer.
   useEffect(() => {
+    if (loaded) return
     const timer = setTimeout(() => {
-      if (!loaded) {
-        setError(true)
-      }
+      setError(true)
     }, LOAD_TIMEOUT_MS)
     return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loaded])
 
   function handleLoad() {
     setLoaded(true)
