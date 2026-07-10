@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Dispatch Control v2 — Editorial Operator Console
 status: Ready to execute
-stopped_at: Completed 39-02-coverage-strip-endpoint-PLAN.md
-last_updated: "2026-07-10T08:22:14.228Z"
+stopped_at: Completed 39-03-corrections-registry-ui-PLAN.md
+last_updated: "2026-07-10T08:33:30.829Z"
 progress:
   total_phases: 39
   completed_phases: 37
   total_plans: 245
-  completed_plans: 240
+  completed_plans: 241
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-06)
 ## Current Position
 
 Phase: 39 (registry-coverage-memory-strip) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -265,6 +265,7 @@ Plan: 3 of 5
 | Phase 38 P06 | 20min | 2 tasks | 6 files |
 | Phase 39 P01 | 20min | 3 tasks | 8 files |
 | Phase 39 P02 | 15 | 2 tasks | 3 files |
+| Phase 39 P03 | ~10min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -679,6 +680,7 @@ Recent decisions affecting current work:
 - [Phase 38]: ScenarioCard and DriftScoreboard both read listForScenario directly (per-item child components for dynamic useQuery lists) — ScenarioCard reduces max-by-ranAt for 'last result', DriftScoreboard renders the full series for the drift detector
 - [Phase 39]: 39-01: contract-first §39 landed before code; append-only charity_corrections mirrors promptVersions.saveVersion's audit pattern, not charities.setStatus's gapped one
 - [Phase 39]: 39-01: convex/_generated/api.d.ts hand-edited (network-sandboxed codegen fetch fails offline) — 2-line additive diff mirrors what codegen would produce, per Phase 38-01 precedent
+- [Phase 39]: Corrections UI: charity.dedupKey passed straight through as charityKey (never re-derived); legacy rows without a dedupKey disable the form instead of fabricating a key
 
 ### Pending Todos
 
@@ -763,6 +765,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T08:22:14.217Z
-Stopped at: Completed 39-02-coverage-strip-endpoint-PLAN.md
+Last session: 2026-07-10T08:33:30.816Z
+Stopped at: Completed 39-03-corrections-registry-ui-PLAN.md
 Resume file: None
