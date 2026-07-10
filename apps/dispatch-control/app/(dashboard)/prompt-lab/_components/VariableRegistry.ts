@@ -51,7 +51,7 @@ export const VARIABLE_REGISTRY: Record<string, string[]> = {
   advocate_user: ['candidates_json'],
   editor_gate1_user: ['issue_number', 'candidates_block'],
   editor_final_user: ['qa_corrections_json', 'section_headlines_json'],
-  researcher_user: ['charity', 'results_block'],
+  researcher_user: ['charity', 'results_block', 'corrections'],
   game_user: ['charity_name', 'mission_statement'],
   design_user: ['charity_name', 'visual_direction'],
   bonus_big_budget_user: ['charity_name', 'mission_statement', 'visual_direction'],
@@ -134,6 +134,8 @@ export const VARIABLE_DESCRIPTIONS: Record<string, string> = {
   display_list: 'Whitelisted display-font names available to the design agent.',
   body_list: 'Whitelisted body-font names available to the design agent.',
   results_block: 'Formatted web-search results passed to the agent.',
+  corrections:
+    'Prior editorial corrections logged for this charity, injected so research accounts for them (MEM-03).',
   // ── structured JSON payloads ──────────────────────────────────────────────
   candidates_json: 'JSON array of charity candidates for the advocate to score.',
   candidates_block: 'Formatted candidate list with advocate scores for the editor.',
@@ -165,6 +167,8 @@ export const VARIABLE_SAMPLES: Record<string, string> = {
   body_list: 'Lora, Inter, Newsreader',
   results_block:
     'URL: https://example.org\nTitle: About\nContent: A small charity preserving library acoustics.',
+  corrections:
+    'PRIOR EDITORIAL CORRECTIONS (account for these):\n- AUM figure was wrong; use $4.2M',
   // ── structured JSON payloads ──────────────────────────────────────────────
   candidates_json:
     '[{"name": "The Quiet Foundation", "location": "Vermont", "focusArea": "library acoustics"}]',

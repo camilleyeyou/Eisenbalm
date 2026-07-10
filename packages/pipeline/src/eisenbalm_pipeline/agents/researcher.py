@@ -19,6 +19,7 @@ section-draft for purposes of live deliberation visualization).
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any
 
@@ -26,14 +27,21 @@ from pydantic import BaseModel, Field
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
+from eisenbalm_pipeline.lib.charity_registry import make_dedup_key
+from eisenbalm_pipeline.lib.convex_client import convex_query_safe
 from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.search_client import SearchResult, web_search
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
+log = logging.getLogger(__name__)
 
 MAX_TOOL_CALLS: int = 12  # AGT-18 / D-21
+
+# MEM-03/D-08: workspace slug used across the pipeline's Convex reads (Scout's
+# registry read + the coverage-strip endpoint both use the same literal).
+WORKSPACE_ID = "eisenbalm"
 
 
 class ClaimOutput(BaseModel):
@@ -87,8 +95,22 @@ def _build_queries(charity: dict) -> list[str]:
     ]
 
 
+def _build_corrections_block(corrections: list[dict] | None) -> str:
+    """MEM-03/D-08: render prior corrections as a bulleted block for prompt
+    injection. Empty string when there are none (byte-equivalent messages
+    for the common no-corrections case)."""
+    if not corrections:
+        return ""
+    bullets = "\n".join(f"- {c.get('text', '')}" for c in corrections)
+    return f"PRIOR EDITORIAL CORRECTIONS (account for these):\n{bullets}"
+
+
 def _build_messages(
-    *, state: DispatchState, charity: dict, tavily_results: list[SearchResult]
+    *,
+    state: DispatchState,
+    charity: dict,
+    tavily_results: list[SearchResult],
+    corrections: list[dict] | None = None,
 ) -> list[dict[str, str]]:
     """System prompt embeds verification + role-fallback rules verbatim
     from RESEARCH §"Researcher" lines 533-549.
@@ -113,10 +135,12 @@ def _build_messages(
         if cfg and cfg.user_templates.get("researcher_user")
         else load_prompt("researcher_user")
     )
+    corrections_block = _build_corrections_block(corrections)
     user = (
         user_tmpl
         .replace("{charity}", f"{charity}")
         .replace("{results_block}", results_block)
+        .replace("{corrections}", corrections_block)
     )
     return [
         {"role": "system", "content": system},
@@ -132,6 +156,21 @@ async def researcher(state: DispatchState) -> DispatchState:
             "researcher: state['winning_charity'] missing — Editor gate 1 "
             "must run first."
         )
+
+    # MEM-03/D-08/D-09: re-read this charity's append-only corrections log
+    # via the SHARED dedup-key helper (do not reimplement — Pitfall 2: a
+    # fourth independent key implementation risks silent drift that would
+    # make corrections invisibly never match).
+    dedup_key = make_dedup_key(charity.get("name", ""), charity.get("website"))
+    corrections = await convex_query_safe(
+        "charityCorrections:listByCharityKey",
+        {"workspace_id": WORKSPACE_ID, "charityKey": dedup_key},
+    ) or []
+    log.info(
+        "Researcher: read %d correction(s) for charity=%r (dedupKey=%r) — %s",
+        len(corrections), charity.get("name"), dedup_key,
+        "injected into research context" if corrections else "none found",
+    )
 
     run_id = state["run_id"]
     queries = _build_queries(charity)
@@ -162,7 +201,9 @@ async def researcher(state: DispatchState) -> DispatchState:
             agent_id="researcher", attempts=tool_calls, limit=MAX_TOOL_CALLS,
         )
 
-    messages = _build_messages(state=state, charity=charity, tavily_results=tavily_results)
+    messages = _build_messages(
+        state=state, charity=charity, tavily_results=tavily_results, corrections=corrections,
+    )
     out_obj, usage = await acomplete(
         agent_id="researcher",
         run_id=run_id,
