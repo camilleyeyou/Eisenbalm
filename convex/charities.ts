@@ -262,6 +262,33 @@ export const getByDedupKey = query({
   },
 })
 
+// ── listRecentFeatured ──────────────────────────────────────────────────────
+
+/**
+ * Phase 39 (MEM-01) — coverage-memory strip data source. Uses the EXISTING
+ * by_workspace_status index (status: 'featured'); sorted lastFeaturedAt desc;
+ * capped at `limit` (default 8). Unguarded (read-only), matches
+ * listByWorkspace/listForDedup convention — no requireOperator/
+ * requirePipelineSecret call. API_CONTRACTS §39.3.
+ */
+export const listRecentFeatured = query({
+  args: {
+    workspace_id: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { workspace_id, limit }) => {
+    const rows = await ctx.db
+      .query('charities')
+      .withIndex('by_workspace_status', q =>
+        q.eq('workspace_id', workspace_id).eq('status', 'featured'),
+      )
+      .collect()
+
+    rows.sort((a, b) => (b.lastFeaturedAt ?? 0) - (a.lastFeaturedAt ?? 0))
+    return rows.slice(0, limit ?? 8)
+  },
+})
+
 // ── seedFromPublished ───────────────────────────────────────────────────────
 
 /**
