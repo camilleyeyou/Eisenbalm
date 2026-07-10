@@ -34,6 +34,7 @@ from eisenbalm_pipeline.api import (
     control,
     findings,
     health,
+    registry,
     review,
     runs,
     signoffs,
@@ -203,6 +204,7 @@ app.include_router(control.router)
 app.include_router(review.router)
 app.include_router(content.router)
 app.include_router(findings.router)
+app.include_router(registry.router)
 app.include_router(signoffs.router)
 app.include_router(voice_pass.router)
 app.include_router(eval_api.router)
