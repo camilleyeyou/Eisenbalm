@@ -369,3 +369,268 @@ def test_extract_claims_by_block_maps_all_five_galley_section_ids():
     assert section_names == {
         "originStory", "problemStatement", "founderBio", "caseStudy", "bonus",
     }
+
+
+# ── De-noise: heading/blockquote exclusion, entity cap, de-overlap, ─────────
+# word-bounded context (Quick task 260710-iwy — Bug 2)
+#
+# Confirmed live on run 999605: Title-Case section HEADLINE and pull-quote
+# text was over-extracted as sentence-length "proper noun" claims, with
+# context truncated mid-word. These tests prove the fix without losing
+# genuine numbers/dates/2-5 word entity recall.
+
+
+def test_extract_all_claim_types_excludes_heading_and_blockquote_blocks():
+    """Nested Sanity 'h2' and 'blockquote' style blocks yield NO claims —
+    only 'normal' style body prose is extracted."""
+    blocks = [
+        {
+            "_type": "block",
+            "_key": "h1",
+            "style": "h2",
+            "markDefs": [],
+            "children": [
+                {
+                    "_type": "span",
+                    "_key": "s1",
+                    "text": "A Home For Every Wandering Soul In Portland",
+                    "marks": [],
+                }
+            ],
+        },
+        {
+            "_type": "block",
+            "_key": "bq1",
+            "style": "blockquote",
+            "markDefs": [],
+            "children": [
+                {
+                    "_type": "span",
+                    "_key": "s2",
+                    "text": "Justice Delayed Is Justice Denied Every Single Day",
+                    "marks": [],
+                }
+            ],
+        },
+        {
+            "_type": "block",
+            "_key": "p1",
+            "style": "normal",
+            "markDefs": [],
+            "children": [
+                {
+                    "_type": "span",
+                    "_key": "s3",
+                    "text": "Jane Doe founded the group in 1998.",
+                    "marks": [],
+                }
+            ],
+        },
+    ]
+    claims = extract_all_claim_types(blocks)
+    texts = {c["text"] for c in claims}
+    assert "Jane Doe" in texts
+    assert not any("Wandering Soul" in t for t in texts)
+    assert not any("Justice Delayed" in t for t in texts)
+
+
+def test_extract_claims_by_block_excludes_heading_body_block():
+    """A flat {"type": "h2", ...} body block yields zero rows for that
+    block — the LIVE publisher path over flat blocks."""
+    from eisenbalm_pipeline.lib.claims import extract_claims_by_block
+
+    sections = {
+        "origin_story": {
+            "body": [
+                {
+                    "type": "h2",
+                    "text": "A Home For Every Wandering Soul In Portland",
+                },
+                {"type": "paragraph", "text": "Jane Doe founded the group in 1998."},
+            ]
+        },
+    }
+    rows = extract_claims_by_block(sections)
+    assert all(r["blockIndexHint"] != 0 for r in rows)
+    texts = {r["text"] for r in rows}
+    assert "Jane Doe" in texts
+    assert not any("Wandering Soul" in t for t in texts)
+
+
+def test_extract_all_claim_types_rejects_runaway_title_case_run():
+    """A 6+ word Title-Case sentence run produces NO proper_noun claim, but a
+    2-5 word name still extracts."""
+    blocks = [
+        {
+            "_type": "block",
+            "_key": "b1",
+            "style": "normal",
+            "markDefs": [],
+            "children": [
+                {
+                    "_type": "span",
+                    "_key": "s1",
+                    "text": (
+                        "A Home For Every Wandering Soul In Portland tells the "
+                        "story of Jane Doe."
+                    ),
+                    "marks": [],
+                }
+            ],
+        }
+    ]
+    claims = extract_all_claim_types(blocks)
+    noun_claims = [c for c in claims if c["claimType"] == "proper_noun"]
+    assert noun_claims, "expected at least the short name to survive"
+    for c in noun_claims:
+        assert len(c["text"].split()) <= 5
+    assert any(c["text"] == "Jane Doe" for c in noun_claims)
+
+
+def test_extract_all_claim_types_deoverlaps_proper_nouns_to_longest():
+    """Overlapping proper-noun fragments collapse to the single longest
+    surviving entity.
+
+    "The Riverside Community Trust" and "Riverside Community" are two
+    DISTINCT regex matches (from two separate sentences), but the shorter
+    is a whole-word substring of the longer — it must be dropped, keeping
+    only the longest survivor."""
+    blocks = [
+        {
+            "_type": "block",
+            "_key": "b1",
+            "style": "normal",
+            "markDefs": [],
+            "children": [
+                {
+                    "_type": "span",
+                    "_key": "s1",
+                    "text": (
+                        "The Riverside Community Trust helps local families. "
+                        "Riverside Community members meet weekly."
+                    ),
+                    "marks": [],
+                }
+            ],
+        }
+    ]
+    claims = extract_all_claim_types(blocks)
+    noun_texts = {c["text"] for c in claims if c["claimType"] == "proper_noun"}
+    assert "The Riverside Community Trust" in noun_texts
+    assert "Riverside Community" not in noun_texts
+
+
+def test_extract_all_claim_types_recall_retained_with_date_before_number():
+    """Recall retained: numbers, dates, and entity names extract together;
+    DATE-before-NUMBER typing stays intact.
+
+    Note: RE_NUMBER is frozen by this task's invariants ("preserve existing
+    number/date extraction") — its pre-existing \\b boundary behavior strips
+    a leading "$" from amounts (a separate, out-of-scope issue, logged in
+    deferred-items.md), so the surviving number claim text is "500,000"
+    rather than "$500,000".
+    """
+    blocks = [
+        {
+            "_type": "block",
+            "_key": "b1",
+            "style": "normal",
+            "markDefs": [],
+            "children": [
+                {
+                    "_type": "span",
+                    "_key": "s1",
+                    "text": "Founded in 1998 by Jane Doe, who raised $500,000.",
+                    "marks": [],
+                }
+            ],
+        }
+    ]
+    claims = extract_all_claim_types(blocks)
+    by_text = {c["text"]: c["claimType"] for c in claims}
+    assert by_text.get("Jane Doe") == "proper_noun"
+    assert by_text.get("500,000") == "number"
+    assert by_text.get("1998") == "date"
+
+
+def test_extract_claims_excludes_headline_but_keeps_factual_string_fields():
+    """A section `headline` (title-type) string field is NOT extracted;
+    factual string fields (subjectName, subjectRole) still are."""
+    from eisenbalm_pipeline.lib.claims import extract_claims
+
+    sections = {
+        "founder_bio": {
+            "headline": "A Home For Every Wandering Soul In Portland",
+            "subjectName": "Jane Doe",
+            "subjectRole": "Founder",
+            "body": [
+                {
+                    "_type": "block",
+                    "_key": "b1",
+                    "style": "normal",
+                    "markDefs": [],
+                    "children": [
+                        {
+                            "_type": "span",
+                            "_key": "s1",
+                            "text": "She started the organization in 1998.",
+                            "marks": [],
+                        }
+                    ],
+                }
+            ],
+        },
+    }
+    claims = extract_claims(sections)
+    texts = {c["text"] for c in claims}
+    assert not any("Wandering Soul" in t for t in texts)
+    assert "Jane Doe" in texts
+
+
+def test_extract_all_claim_types_context_is_word_bounded():
+    """Every claim's context is stripped and word-bounded — no mid-word
+    truncation like '...Netw' / '...Just'.
+
+    The fixed-width text[start-30:end+30] slice used to cut "Riverside" down
+    to "side" at the front edge of the "12,000" claim's context; this test
+    fails under that behavior and passes once the context is expanded/
+    retreated to whitespace boundaries.
+    """
+    source_text = (
+        "The Riverside Community Network served 12,000 families "
+        "across the greater metropolitan area every single year "
+        "without exception or complaint."
+    )
+    blocks = [
+        {
+            "_type": "block",
+            "_key": "b1",
+            "style": "normal",
+            "markDefs": [],
+            "children": [
+                {"_type": "span", "_key": "s1", "text": source_text, "marks": []}
+            ],
+        }
+    ]
+    claims = extract_all_claim_types(blocks)
+    assert claims, "expected at least one claim"
+    for c in claims:
+        context = c["context"]
+        assert context == context.strip()
+        assert context, "context must not be empty"
+        pos = source_text.find(context)
+        assert pos != -1, "context must be a literal substring of the source text"
+        # Word-bounded: nothing precedes context except start-of-string or
+        # whitespace, and nothing follows it except end-of-string or
+        # whitespace — i.e. neither edge is a mid-word cut.
+        if pos > 0:
+            assert source_text[pos - 1].isspace(), (
+                f"context {context!r} starts mid-word (preceded by "
+                f"{source_text[pos - 1]!r})"
+            )
+        end_pos = pos + len(context)
+        if end_pos < len(source_text):
+            assert source_text[end_pos].isspace(), (
+                f"context {context!r} ends mid-word (followed by "
+                f"{source_text[end_pos]!r})"
+            )
