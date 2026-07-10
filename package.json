@@ -24,6 +24,7 @@
     "deploy:convex": "pnpm --filter @eisenbalm/convex deploy",
     "codegen:convex": "pnpm --filter @eisenbalm/convex codegen",
     "typecheck:convex": "pnpm --filter @eisenbalm/convex typecheck",
+    "check:convex-parity": "node convex/scripts/check-deploy-parity.mjs",
     "dev:dispatch-control": "pnpm --filter dispatch-control dev",
     "build:dispatch-control": "pnpm --filter dispatch-control build",
     "lint:dispatch-control": "pnpm --filter dispatch-control lint",
