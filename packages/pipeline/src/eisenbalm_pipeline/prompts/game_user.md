@@ -8,5 +8,7 @@
 CHARITY: {charity_name}
 MISSION: {mission_statement}
 
+Design the core mechanic from the mission above BEFORE writing any code — the player should perform, in miniature, what this charity does.
+
 Return JSON GameOutput with: headline (game title), description (50-100 word plain-text summary for accessibility), embedCode (complete self-contained HTML document including inline <style> and inline <script> — no external dependencies of any kind).
 <!-- PROMPT END -->
