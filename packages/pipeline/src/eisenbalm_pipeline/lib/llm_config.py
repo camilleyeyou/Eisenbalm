@@ -33,7 +33,11 @@ MODEL_BY_AGENT: dict[str, str] = {
     "founder_bio":  "anthropic/claude-sonnet-4-6",
     "case_study":   "anthropic/claude-sonnet-4-6",
     "bonus":        "anthropic/claude-sonnet-4-6",
-    "game":         "anthropic/claude-sonnet-4-6",
+    # Deliberate creative-code tier bump (quick-260711-iu2): Opus 4.8 is in
+    # charge of the game — code correctness + design judgment matter more
+    # here than for prose writers, so this one agent sits above the Sonnet
+    # section-writer tier.
+    "game":         "anthropic/claude-opus-4-8",
     # Mechanical (Haiku, latest-stable alias).
     "scout":    "anthropic/claude-haiku-4-5",
     "advocate": "anthropic/claude-haiku-4-5",
@@ -56,7 +60,10 @@ SAMPLING_BY_AGENT: dict[str, dict] = {
     "founder_bio":  {"temperature": 0.7, "top_p": 1.0},
     "case_study":   {"temperature": 0.7, "top_p": 1.0},
     "bonus":        {"temperature": 0.7, "top_p": 1.0},
-    "game":         {"temperature": 0.7, "top_p": 1.0},
+    # Code correctness matters more than prose variety here; lower than the
+    # other section writers (quick-260711-iu2). Inert if OpenRouter drops
+    # sampling params for this Opus-tier model.
+    "game":         {"temperature": 0.4, "top_p": 1.0},
 }
 
 # RESEARCH §"OpenRouter Client Architecture": per-agent max_tokens for the
@@ -64,4 +71,8 @@ SAMPLING_BY_AGENT: dict[str, dict] = {
 MAX_TOKENS_BY_AGENT: dict[str, int] = {
     "scout":      12_000,
     "researcher": 20_000,
+    # A full HTML game emitted as a JSON-escaped string needs headroom —
+    # truncation triggers a schema retry and produces broken games
+    # (quick-260711-iu2).
+    "game":       24_000,
 }
