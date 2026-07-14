@@ -1,15 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Dispatch Control v3 — The Editorial Workspace
-status: Roadmap created
-stopped_at: v4.0 roadmap created (2026-07-14); 62 requirements mapped 1:1 across Phases 40-50; awaiting /gsd:plan-phase 40
-last_updated: "2026-07-14T14:15:00.000Z"
+milestone: v2.0
+milestone_name: Phase Details — Mission Control Dashboard
+status: "Roadmap created — ready for /gsd:plan-phase 40"
+stopped_at: Phase 40 context gathered
+last_updated: "2026-07-14T21:57:34.674Z"
+last_activity: "2026-07-14 — v4.0 ROADMAP.md, STATE.md, and REQUIREMENTS.md traceability written; 62 requirements (ISS/WSP/FCT/TSK/INS/REV/SGE/BRF/ENT/ROL/WBN) mapped 1:1 across 11 phases (40-50)"
 progress:
   total_phases: 50
-  completed_phases: 39
+  completed_phases: 38
   total_plans: 245
-  completed_plans: 245
+  completed_plans: 243
 ---
 
 # Project State
@@ -777,6 +778,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-14T14:15:00.000Z
-Stopped at: v4.0 roadmap created — ROADMAP.md (Phases 40-50 detail + checklist + progress rows), REQUIREMENTS.md (v4.0 Traceability, 62/62 mapped), and STATE.md all written. Awaiting /gsd:plan-phase 40 to begin Phase 40 (Issue Entity & Issues Home). Prior session context (2026-07-11): GameWriter retuned to Opus 4.8 (temp 0.4, 24k cap) + prompts rewritten as a real game-design brief (quick 260711-iu2); Convex v4 INACTIVE prompt versions saved, awaiting Andrew's Rehearse/activate in Prompt Lab; v3.0 archived; Prompt Lab Nomenclature Proposal shipped (260710-k8y)
-Resume file: None
+Last session: 2026-07-14T21:57:34.655Z
+Stopped at: Phase 40 context gathered
+Resume file: .planning/phases/40-issue-entity-issues-home/40-CONTEXT.md
