@@ -480,4 +480,26 @@ export default defineSchema({
     .index('by_runId', ['runId'])
     .index('by_runId_and_kind', ['runId', 'kind'])
     .index('by_workspace', ['workspace_id']),
+
+  // ── issues: first-class issue entity (Phase 40 ISS-01/02/03/04) ───────────
+  // Operational state Convex owns; Sanity stays content-of-record (D-01).
+  // `held` and `published` are the ONLY stored status inputs — issue status is
+  // DERIVED (lib/derivedState.ts, §40.6), never persisted (D-18). There is no
+  // `status` column; a persisted status is exactly the stale "ready" ISS-06 bans.
+  issues: defineTable({
+    workspace_id: v.string(),
+    issueNumber: v.number(),
+    scheduledFor: v.optional(v.number()),
+    held: v.boolean(),
+    heldReason: v.optional(v.string()),
+    heldBy: v.optional(v.string()),
+    heldAt: v.optional(v.number()),
+    published: v.boolean(),
+    publishedAt: v.optional(v.number()),
+    sanityIssueId: v.optional(v.string()),
+    lastVisitedStage: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber']),
 })
