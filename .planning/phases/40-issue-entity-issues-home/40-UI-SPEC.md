@@ -64,6 +64,24 @@ Numeric/data values (cost figures, issue numbers, counts) render at **Label size
 
 ---
 
+## Visual Hierarchy (`/issues` home)
+
+**Primary focal point: the in-progress `IssueCard`.** It is the single visual anchor of the page and must win attention unambiguously against every other element. It earns this by size and surface, not by accent color — it is the only full-width `--color-card #ffffff` surface on the `--color-rail` background, it is the only element carrying the 5-segment `StageStrip`, and it is the only element whose heading renders at Display size. Nothing below it may match its width, its elevation, or its type size.
+
+Descending order of prominence — an executor must not flatten or reorder these:
+
+1. **In-progress `IssueCard`** — full-width, card surface, Display heading, stage strip. The one element a returning operator's eye should land on first.
+2. **`ScheduledSlotCard`** — narrower than the in-progress card and visually secondary (marigold status wash, Heading size, no stage strip). It answers "what's next," never competing with "what's now."
+3. **Held issues list** — row treatment, not card treatment. Present and legible, but structurally quieter: Body size, no surface elevation beyond the row.
+4. **Recently published list** — the quietest region on the page; it is a record, not a call to action.
+5. **`CreatePanel`** — placed after the lists rather than at the top. It is the fallback path when there is nothing in progress, not a competing primary action.
+
+**Empty-state inversion (the one exception):** when no issue is in progress, the `IssueCard` is absent, and the `CreatePanel`'s primary CTA ("Find a story with agents") is promoted to focal point — it takes the card surface and Display-size heading the `IssueCard` would have occupied. There is exactly one focal point in both states; which element holds it is what changes.
+
+The four header readouts are **deliberately not** the focal point. They are persistent chrome — glanceable at Label size, never scaled up to compete with the card, and never granted the card's surface treatment.
+
+---
+
 ## Color
 
 | Role | Value | Usage |
@@ -194,11 +212,13 @@ Four state systems, **never blended visually or spatially** (per D-24 / `DERIVED
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS — FLAG resolved: "Visual Hierarchy (`/issues` home)" section added, declaring the in-progress `IssueCard` as focal point (and the empty-state inversion to `CreatePanel`)
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** APPROVED (gsd-ui-checker, 2026-07-14) — 6/6 dimensions pass.
+
+**Non-blocking note carried into planning:** "Reopen" is a bare-verb CTA. Kept as-is — it sits adjacent to a specific "Held · {reason}" row, which disambiguates it, and it matches the codebase's existing row-scoped action convention.
