@@ -42,6 +42,8 @@ export default defineConfig({
       ['__tests__/promptVersionsEvalGate.test.ts', 'edge-runtime'],
       // Phase 39 Plan 39-01 charity_corrections convex-test file
       ['__tests__/charityCorrections.test.ts', 'edge-runtime'],
+      // Phase 40 Plan 40-01 issues-table convex-test file
+      ['__tests__/issues.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],
