@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 40-02-issues-table-convex-PLAN.md
-last_updated: "2026-07-14T23:38:05.099Z"
+stopped_at: Completed 40-03-repetition-note-backfill-pipeline-PLAN.md
+last_updated: "2026-07-14T23:50:47.714Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 40 (issue-entity-issues-home) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 
 ## Performance Metrics
 
@@ -270,6 +270,7 @@ Plan: 3 of 9
 | Phase 39 P05 | 4min | 3 tasks | 4 files |
 | Phase 40 P01 | 15min | 3 tasks | 9 files |
 | Phase 40 P02 | 10min | 3 tasks | 3 files |
+| Phase 40-issue-entity-issues-home P03 | 20min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -692,6 +693,8 @@ Recent decisions affecting current work:
 - [Phase 40]: Aligned the six dashboard RED test files' component prop contracts to the already-written downstream Plans 40-05/40-07 (read ahead) so no rewrite cycle is needed when those plans execute
 - [Phase 40]: reopen throws 'Issue not found' when no row exists, mirroring hold's guard for symmetry and because ctx.db.patch requires a resolved row
 - [Phase 40]: reopen audit_log before/after is the symmetric inverse of hold's envelope ({held:true,heldReason}→{held:false}) since the contract left the exact shape to discretion
+- [Phase 40-issue-entity-issues-home]: Registered issues:ensureByNumber/markPublished in convex_client.py's pipeline-secret-guarded paths, required for the pipeline lane to authenticate dual-lane Convex mutations (Rule 2 auto-fix)
+- [Phase 40-issue-entity-issues-home]: Routed the issues: mutation prefix through the convex_runs_store test fixture so test_control.py doesn't crash on the new defensive ensureByNumber call (Rule 3 auto-fix)
 
 ### Pending Todos
 
@@ -781,6 +784,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-14T23:38:05.086Z
-Stopped at: Completed 40-02-issues-table-convex-PLAN.md
+Last session: 2026-07-14T23:50:47.701Z
+Stopped at: Completed 40-03-repetition-note-backfill-pipeline-PLAN.md
 Resume file: None
