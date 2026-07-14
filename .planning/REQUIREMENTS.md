@@ -335,6 +335,96 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **MEM-02**: Operator can append corrections to a charity's record (append-only corrections log) surfaced in the Registry.
 - [x] **MEM-03**: The Researcher re-reads a charity's corrections log on any future mention of that charity.
 
+## Milestone v4.0 Requirements — Dispatch Control v3 (The Editorial Workspace)
+
+**Binding spec:** `docs/design/dispatch-control-v3/` — Annotations (semantics), DERIVED-STATE-CONTRACT (state machine, inspector shape, role gating), README (decisions, color semantics).
+
+**Thesis:** the console stops mirroring the pipeline and becomes an editorial product with an *issue* at its center. The machine retreats behind a System Workbench. The editor never "triggers a pipeline."
+
+### Issue Entity & Issues Home (ISS)
+- [ ] **ISS-01**: Operator sees an Issues home listing the in-progress issue as a card with its 5-stage strip, status, open-task count, claim coverage, voice state, estimated work remaining, and run cost.
+- [ ] **ISS-02**: Console routes are issue-keyed; a run is reachable only as a historical record *under* an issue, never as the primary navigation object.
+- [ ] **ISS-03**: Operator sees the next scheduled issue slot with the Calibrator's repetition note (e.g. "avoid US-SE · avoid weather") and can start it early.
+- [ ] **ISS-04**: Operator can hold an issue with a required reason; held issues appear on the home with reason + who + when, and can be reopened.
+- [ ] **ISS-05**: The global header separates four state systems that are never blended — issue status, system activity, My Tasks count, cost vs budget — each carrying label + icon, never color alone.
+- [ ] **ISS-06**: When issue status cannot load, the card reads "State unknown — refresh" rather than a silently stale "ready".
+
+### Issue Workspace Frame (WSP)
+- [ ] **WSP-01**: One Issue Workspace replaces the Review Desk, Signal Desk, and Voice Pass nav items, with stage tabs 1–5 carrying live status marks.
+- [ ] **WSP-02**: A persistent issue outline lists every section with its state (clean / review / must fix / changed since review / not generated) and jumps to it.
+- [ ] **WSP-03**: A collapsible context panel renders stage-appropriate context (open items, claim detail, findings, decision log) and can be hidden.
+- [ ] **WSP-04**: Stage 2 (Draft) renders the galley in publication typography — checked claims marigold-underlined with source on hover *and* keyboard focus; unchecked claims rust-tinted and clickable through to Fact Check.
+- [ ] **WSP-05**: Stage 5 (Approval) leads with blockers (Must fix / Review recommended / estimated review time, with jump links), then the readiness board, then the agent editor's recommendation labeled as agent judgment — "editor" unqualified is reserved for the human.
+- [ ] **WSP-06**: Publish is disabled until Must fix = 0 ∧ Fact Check complete ∧ Voice approved current, with the unlock condition written next to the control; publishing shows an exact preview (destination, title, time, consequences) and one confirmation click — no typed confirmation.
+- [ ] **WSP-07**: "Not generated" is a visible first-class state in canvas and outline (e.g. the Editor's note), never a blank.
+
+### Fact Check Stage (FCT)
+- [ ] **FCT-01**: The Researcher emits an `importance` tier (Load-bearing / Supporting / Incidental) on every claim.
+- [ ] **FCT-02**: Stage 3 shows an affirmative summary — claims checked X of Y, must fix, conflicting sources, checks not run, changed since check, last verified — so that blank never means verified.
+- [ ] **FCT-03**: Operator can filter claims by must fix, unchecked, changed, numbers & dates, people & titles, organization claims, and weak source.
+- [ ] **FCT-04**: Selecting a claim opens a provenance card (exact claim, importance, status, source + publisher, supporting passage, URL, retrieval date, agent, confidence) — the same component reused in Draft, Approval, and the inspector.
+- [ ] **FCT-05**: Operator can Confirm, Edit claim, Replace source, Remove claim, or Keep as written with a required reason; each action updates the counters, My Tasks, Approval readiness, and header status.
+- [ ] **FCT-06**: "Ask agent for better evidence" returns a replacement source **and** a rewritten claim; confirming applies both as a content patch + claim update and records a decision-log entry.
+- [ ] **FCT-07**: A revision touching a claim's block returns that claim to unchecked and increments the "changed since check" counter.
+
+### My Tasks & Decision Log (TSK)
+- [ ] **TSK-01**: My Tasks lists everything awaiting human judgment as a *derived projection* over open claims, open findings, and missing sign-offs — no separate task store.
+- [ ] **TSK-02**: Every task shows a plain-language title, the issue/area affected, why human judgment is required, severity (Must fix / Review recommended / Information), stage, age, and the agent's recommendation when one exists.
+- [ ] **TSK-03**: Each task's primary action deep-links to the exact claim, passage, or decision; "Inspect context" opens the inspector on that artifact.
+- [ ] **TSK-04**: When nothing needs the operator, My Tasks says so explicitly and points to Approval — silence is a designed state, not an empty list.
+- [ ] **TSK-05**: A task whose underlying step was restarted shows as superseded with a link to the new step, never disappearing silently.
+- [ ] **TSK-06**: Every reason-requiring action (remove lead, override a recommendation, keep as written, hold, activate with regression, Do not use) writes to one Decision log component recording actor, action, time, reason, before/after, instruction version, issue and run.
+
+### Inspect How This Was Made (INS)
+- [ ] **INS-01**: One "Inspect how this was made" panel is reachable from the brief organization card, the draft passage toolbar, the fact-check claim detail, a voice finding, the approval recommendation, and My Tasks.
+- [ ] **INS-02**: The panel has seven tabs (Summary, Inputs, Instructions, Output, Sources, Diagnostics, Technical), human-readable content first; raw JSON is never the default anywhere.
+- [ ] **INS-03**: The Inputs tab lists the values actually supplied and explicitly calls out **missing expected inputs** — computed as declared template variables minus keys present in the run's input payload.
+- [ ] **INS-04**: The Instructions tab shows the exact active instruction version, the shared rules referenced, and links through to Agent Instructions ("Improve this agent →").
+- [ ] **INS-05**: The Output tab shows the full human-readable output and notes when the issue text has since diverged from it.
+- [ ] **INS-06**: The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps.
+
+### Agent Revision (REV)
+- [ ] **REV-01**: Selecting a passage offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
+- [ ] **REV-02**: "Ask agent to revise" offers direction chips (Make clearer / Make more specific / Tighten / Match the brief / Reduce repetition / Try another approach / Custom) — never a bare "Regenerate".
+- [ ] **REV-03**: A revision returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) *before* anything is applied.
+- [ ] **REV-04**: Operator can Apply, Edit before applying, Try another approach, or Discard; applying mutates the draft through the existing content-patch write boundary and logs to `audit_log`.
+- [ ] **REV-05**: Agent revision calls are bounded by a per-issue cost guard, surfaced against the header's cost-vs-budget.
+
+### Signal Editor & Candidate Verification (SGE)
+- [ ] **SGE-01**: A Signal Editor agent emits 3–5 dated story leads per run, each with premise, dated peg + source link, reader energy, charitable angle, category, confidence, and a brand-risk flag where applicable.
+- [ ] **SGE-02**: The Signal Editor never self-selects a brand-risk-flagged lead — it routes the decision to the human.
+- [ ] **SGE-03**: A `verify_candidates` deterministic check runs after Scout and produces a verification record per organization (domain live, registration ID, obscurity/press scan), killing candidates that fail.
+- [ ] **SGE-04**: The pipeline graph runs 20 nodes with `signal_editor` before `scout` and `verify_candidates` between `scout` and `advocate`, and the Postgres checkpointer resumes correctly across the new nodes.
+- [ ] **SGE-05**: The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and *surfaces* a repetition warning alongside the lead rather than silently suppressing it.
+
+### Story & Brief Stage (BRF)
+- [ ] **BRF-01**: Stage 1 shows story leads as cards with peg + source, reader energy, angle, category, confidence, and any brand-risk warning shown in full — never truncated or tooltip-hidden.
+- [ ] **BRF-02**: Operator can Require a lead, or Remove it with a mandatory logged reason.
+- [ ] **BRF-03**: Organization options are grouped under the chosen lead, each showing mechanism, verification record with dates, agent case, confidence, prior-coverage warning, and its **main concern always visible**.
+- [ ] **BRF-04**: When agents cannot confidently choose, the stage enters a "Needs your decision" state with the top two options side by side (what each makes possible, evidence quality, risk, burden); the operator's choice requires a rationale and resumes the run via the existing interrupt/resume endpoint.
+- [ ] **BRF-05**: An editable Brief (premise, current peg, central claim, reader effect, known risks, voice intention) is generated after selection, and the section writers draft *from* it.
+- [ ] **BRF-06**: Operator can ask an agent to strengthen any single field of the brief.
+
+### Brief Entry Point (ENT)
+- [ ] **ENT-01**: Create issue offers two equal paths — "Find a story with agents" and "Start from my brief" — both landing in the Issue Workspace at Story & Brief.
+- [ ] **ENT-02**: "Start from my brief" accepts a human-supplied premise, peg, organization, and optional source material, and starts a run that skips Signal Editor, Scout, Advocate, and Gate 1, entering at the Researcher.
+- [ ] **ENT-03**: A brief-started run produces the same downstream artifacts (research, sections, QA, claims, sign-offs) as an agent-discovered run and is indistinguishable at Stages 2–5.
+- [ ] **ENT-04**: An organization supplied in a human brief is still put through `verify_candidates`, so the verification record is never absent.
+
+### Roles & Permissions (ROL)
+- [ ] **ROL-01**: A user carries a role of Editor-in-chief or Collaborator, enforced server-side — not only in the UI.
+- [ ] **ROL-02**: Exactly six actions are gated to Editor-in-chief: apply revision, confirm evidence replacement, approve the Voice Pass, publish, make an instruction active, mark an organization Do not use.
+- [ ] **ROL-03**: A Collaborator sees every gated control rendered and locked *with an explanation of why*, never hidden.
+- [ ] **ROL-04**: A Collaborator can read everything and comment.
+
+### Workbench & Nomenclature (WBN)
+- [ ] **WBN-01**: Nav splits into two visibly distinct groups — Editorial (Issues, My Tasks, Issue Workspace) and System Workbench (Run Details, Agent Instructions, Quality Tests, Editorial Memory) — with the signed-in role shown.
+- [ ] **WBN-02**: Run Details names steps by action ("Find story leads", "Verify research", "Draft sections") with the agent as secondary metadata, renders deterministic checks as diamond markers, and states plainly whether it is showing a historical record or a live run.
+- [ ] **WBN-03**: A failed run shows a plain-language recovery rail — what happened / what completed successfully / what did not happen / recommended recovery — with Restart from this step (reusing completed steps, not re-paying) and Improve this agent; downstream steps dim as Skipped.
+- [ ] **WBN-04**: Agent Instructions shows *why a draft instruction exists*, linking back to the specific issue output that motivated it.
+- [ ] **WBN-05**: Product vocabulary follows the nomenclature table throughout — deterministic check (not gate), step / Restart from this step (not node / re-run from node), Make active / Restore version (not commit / rollback), Quality test / Standard test case (not eval / golden scenario), Preview next run (not shadow run), Do not use (not blocklisted), Must fix (not blocking), Human approval required (not Auto-publish OFF).
+- [ ] **WBN-06**: Typed confirmation is reserved for Mark Do-not-use (organization name + required reason); the automation toggle leaves the operator surface for Administration.
+
 ## Future Requirements (deferred beyond v2.0)
 
 Tracked but not in the current roadmap.
@@ -342,9 +432,9 @@ Tracked but not in the current roadmap.
 ### Deferred from v3.0 (Dispatch Control v2)
 
 - **V3-DEF-01**: Sanity removal — content store → Convex, assets → blob storage, `apps/web` data-layer swap, Studio deletion. Own follow-up milestone after real weekly cycles prove the console; the EDT-05 write boundary makes this a contained adapter swap.
-- **V3-DEF-02**: Signal Editor agent + candidate gates (REAL/OBSCURE/SPECIFIC/TELLABLE), hookClaim, EIN/verification records — the full Signal Desk backend from the design brief.
+- ~~**V3-DEF-02**: Signal Editor agent + candidate gates, hookClaim, EIN/verification records~~ → **promoted into v4.0** as SGE-01..05. Stage 1 of the v3 design is built on story leads and a verification record, so the deferral came due.
 - **V3-DEF-03**: Inline WYSIWYG galley editing — upgrade from per-section editing only if Andrew's weekly friction demands it.
-- **V3-DEF-04**: Assignable Editor-in-Chief seat + read/comment collaborator roles (DECISIONS.md #7).
+- ~~**V3-DEF-04**: Assignable Editor-in-Chief seat + read/comment collaborator roles~~ → **promoted into v4.0** as ROL-01..04.
 - **V3-DEF-05**: Suno + NotebookLM API automation (manual upload flows ship in v3.0 EDT-03).
 
 ### Productization (deferred from v2.0 — the §6 SaaS-extraction groundwork)
