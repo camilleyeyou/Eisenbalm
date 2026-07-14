@@ -342,12 +342,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 **Thesis:** the console stops mirroring the pipeline and becomes an editorial product with an *issue* at its center. The machine retreats behind a System Workbench. The editor never "triggers a pipeline."
 
 ### Issue Entity & Issues Home (ISS)
-- [ ] **ISS-01**: Operator sees an Issues home listing the in-progress issue as a card with its 5-stage strip, status, open-task count, claim coverage, voice state, estimated work remaining, and run cost.
-- [ ] **ISS-02**: Console routes are issue-keyed; a run is reachable only as a historical record *under* an issue, never as the primary navigation object.
-- [ ] **ISS-03**: Operator sees the next scheduled issue slot with the Calibrator's repetition note (e.g. "avoid US-SE · avoid weather") and can start it early.
-- [ ] **ISS-04**: Operator can hold an issue with a required reason; held issues appear on the home with reason + who + when, and can be reopened.
-- [ ] **ISS-05**: The global header separates four state systems that are never blended — issue status, system activity, My Tasks count, cost vs budget — each carrying label + icon, never color alone.
-- [ ] **ISS-06**: When issue status cannot load, the card reads "State unknown — refresh" rather than a silently stale "ready".
+- [x] **ISS-01**: Operator sees an Issues home listing the in-progress issue as a card with its 5-stage strip, status, open-task count, claim coverage, voice state, estimated work remaining, and run cost.
+- [x] **ISS-02**: Console routes are issue-keyed; a run is reachable only as a historical record *under* an issue, never as the primary navigation object.
+- [x] **ISS-03**: Operator sees the next scheduled issue slot with the Calibrator's repetition note (e.g. "avoid US-SE · avoid weather") and can start it early.
+- [x] **ISS-04**: Operator can hold an issue with a required reason; held issues appear on the home with reason + who + when, and can be reopened.
+- [x] **ISS-05**: The global header separates four state systems that are never blended — issue status, system activity, My Tasks count, cost vs budget — each carrying label + icon, never color alone.
+- [x] **ISS-06**: When issue status cannot load, the card reads "State unknown — refresh" rather than a silently stale "ready".
 
 ### Issue Workspace Frame (WSP)
 - [ ] **WSP-01**: One Issue Workspace replaces the Review Desk, Signal Desk, and Voice Pass nav items, with stage tabs 1–5 carrying live status marks.

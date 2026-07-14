@@ -2,15 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: "Roadmap created — ready for /gsd:plan-phase 40"
-stopped_at: Phase 40 context gathered
-last_updated: "2026-07-14T21:57:34.674Z"
-last_activity: "2026-07-14 — v4.0 ROADMAP.md, STATE.md, and REQUIREMENTS.md traceability written; 62 requirements (ISS/WSP/FCT/TSK/INS/REV/SGE/BRF/ENT/ROL/WBN) mapped 1:1 across 11 phases (40-50)"
+status: Ready to execute
+stopped_at: Completed 40-01-contract-test-scaffolding-PLAN.md
+last_updated: "2026-07-14T23:30:46.990Z"
 progress:
-  total_phases: 50
-  completed_phases: 38
-  total_plans: 245
-  completed_plans: 243
+  total_phases: 29
+  completed_phases: 28
+  total_plans: 183
+  completed_plans: 181
 ---
 
 # Project State
@@ -20,14 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** v4.0 — Dispatch Control v3, the Editorial Workspace. The console becomes an editorial product with an *issue* at its center; the machine retreats behind a System Workbench. Binding spec: `docs/design/dispatch-control-v3/`.
+**Current focus:** Phase 40 — issue-entity-issues-home
 
 ## Current Position
 
-Phase: Phase 40 — Issue Entity & Issues Home (not started)
-Plan: —
-Status: Roadmap created — ready for /gsd:plan-phase 40
-Last activity: 2026-07-14 — v4.0 ROADMAP.md, STATE.md, and REQUIREMENTS.md traceability written; 62 requirements (ISS/WSP/FCT/TSK/INS/REV/SGE/BRF/ENT/ROL/WBN) mapped 1:1 across 11 phases (40-50)
+Phase: 40 (issue-entity-issues-home) — EXECUTING
+Plan: 2 of 9
 
 ## Performance Metrics
 
@@ -271,6 +268,7 @@ Last activity: 2026-07-14 — v4.0 ROADMAP.md, STATE.md, and REQUIREMENTS.md tra
 | Phase 39 P03 | ~10min | 3 tasks | 5 files |
 | Phase 39 P04 | ~15min | 2 tasks | 5 files |
 | Phase 39 P05 | 4min | 3 tasks | 4 files |
+| Phase 40 P01 | 15min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -689,6 +687,8 @@ Recent decisions affecting current work:
 - [Phase 39]: Corrections UI: charity.dedupKey passed straight through as charityKey (never re-derived); legacy rows without a dedupKey disable the form instead of fabricating a key
 - [Phase 39]: Researcher reads corrections via shared make_dedup_key (no reimplementation) + convex_query_safe (fail-open); {corrections} placeholder registered in Prompt Lab VariableRegistry.ts to avoid regressing the PRM-02 save-gate
 - [Phase 39]: CoverageStrip uses 1c CSS-token classes (var(--color-cobalt/green/marigold-text)) for chip coloring, matching newer review-desk/eval-center components rather than RegistryTable's older neutral-* Tailwind classes
+- [Phase 40]: Wrote docs/API_CONTRACTS.md §40 (nine subsections) as the binding contract for the issues Convex table, issue-keyed pipelineRuns queries, the repetition-note endpoint, and the derivedState/issueRouteResolver selector modules — before any implementation code exists
+- [Phase 40]: Aligned the six dashboard RED test files' component prop contracts to the already-written downstream Plans 40-05/40-07 (read ahead) so no rewrite cycle is needed when those plans execute
 
 ### Pending Todos
 
@@ -778,6 +778,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-14T21:57:34.655Z
-Stopped at: Phase 40 context gathered
-Resume file: .planning/phases/40-issue-entity-issues-home/40-CONTEXT.md
+Last session: 2026-07-14T23:30:46.977Z
+Stopped at: Completed 40-01-contract-test-scaffolding-PLAN.md
+Resume file: None

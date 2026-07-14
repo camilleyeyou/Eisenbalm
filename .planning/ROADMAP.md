@@ -455,7 +455,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
-| 40. Issue Entity & Issues Home | 0/TBD | Not started | - |
+| 40. Issue Entity & Issues Home | 1/9 | In Progress|  |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 0/TBD | Not started | - |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
@@ -872,7 +872,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   5. The global header shows issue status, system activity, My Tasks count, and cost vs budget as four separate, never-blended readouts, each carrying label + icon (never color alone).
   6. When issue status fails to load, the card reads "State unknown — refresh" rather than showing a silently stale "ready" state.
 **Plans**: 9 plans (5 waves)
-- [ ] 40-01-contract-test-scaffolding-PLAN.md — §40 API contract + all Wave-0 test scaffolds + vitest env
+- [x] 40-01-contract-test-scaffolding-PLAN.md — §40 API contract + all Wave-0 test scaffolds + vitest env
 - [ ] 40-02-issues-table-convex-PLAN.md — issues Convex table + functions + pipelineRuns issue-keyed queries
 - [ ] 40-03-repetition-note-backfill-pipeline-PLAN.md — repetition-note endpoint + ensureByNumber at run start + backfill
 - [ ] 40-04-derived-state-resolver-libs-PLAN.md — pure derivedState selector + route resolver + repetition-note client
