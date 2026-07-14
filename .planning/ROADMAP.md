@@ -45,7 +45,21 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 38: Prompt Lab Evals + Eval Center** - Golden scenarios, eval drawer scoreboard with deltas, commit gate with override-with-reason, append-only Eval Center scoreboard, shadow run (completed 2026-07-09)
 - [x] **Phase 39: Registry Coverage-Memory Strip** - Last-8-issues cause/geo/signal coverage strip, append-only charity corrections log re-read by the Researcher (completed 2026-07-10)
 
-**v3.0 complete (shipped 2026-07-10). Next milestone: TBD — run `/gsd:new-milestone`.**
+**v3.0 complete (shipped 2026-07-10). v4.0: Dispatch Control v3 — The Editorial Workspace (Phases 40–50)**
+
+- [ ] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems
+- [ ] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5
+- [ ] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card
+- [ ] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide
+- [ ] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic
+- [ ] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard
+- [ ] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection
+- [ ] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief
+- [ ] **Phase 48: Brief Entry Point** - "Start from my brief" becomes a real second pipeline entry point that skips discovery and enters at the Researcher
+- [ ] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves
+- [ ] **Phase 50: Workbench & Nomenclature** - Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; nomenclature pass + failed-run recovery rail
+
+**v4.0 in progress. Binding spec: `docs/design/dispatch-control-v3/`.**
 
 ## Phase Details
 
@@ -441,6 +455,17 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
+| 40. Issue Entity & Issues Home | 0/TBD | Not started | - |
+| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 0/TBD | Not started | - |
+| 42. Fact Check Stage | 0/TBD | Not started | - |
+| 43. My Tasks & Decision Log | 0/TBD | Not started | - |
+| 44. Inspect How This Was Made | 0/TBD | Not started | - |
+| 45. Agent Revision | 0/TBD | Not started | - |
+| 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
+| 47. Story & Brief Stage | 0/TBD | Not started | - |
+| 48. Brief Entry Point | 0/TBD | Not started | - |
+| 49. Roles & Permissions | 0/TBD | Not started | - |
+| 50. Workbench & Nomenclature | 0/TBD | Not started | - |
 
 ## Backlog
 
@@ -826,5 +851,160 @@ Derived 2026-07-06 from `.planning/research/SUMMARY.md`'s dependency-driven buil
   1. A coverage-memory strip visualizes the last 8 issues' cause/geo/signal chips so thematic repetition is visible at a glance.
   2. Operator can append a correction to a charity's record, stored as an append-only corrections log surfaced in the Registry.
   3. The Researcher re-reads a charity's corrections log on any future mention of that charity, verifiable in pipeline output/logs for a repeat-charity run.
+**Plans**: TBD
+**UI hint**: yes
+
+## v4.0 Phase Details — Dispatch Control v3 (The Editorial Workspace)
+
+Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED-STATE-CONTRACT, README) and PROJECT.md's Current Milestone locked decisions + reconciliation facts. 62 v4.0 requirements map one-to-one — one requirement block per phase — across 11 phases (40-50), continuing numbering from v3.0 (which ended at Phase 39). Sequencing is foundation-first: Phase 40 inverts routing to be issue-keyed (everything else sits on this); Phase 41 recomposes three existing shipped screens (galley, voice pass, decision rail/publish gate) into the new Workspace frame and is the first demoable milestone; Phase 42 is the only genuinely new stage; Phases 43-45 build the cross-cutting workspace mechanics (tasks, inspector, revision) that depend on Fact Check's claims existing; Phase 46 is a self-contained backend pipeline change (18→20 nodes) with no console dependency, sequenced before Phase 47 because Stage 1 cannot render without it; Phase 48 depends on the Brief artifact Phase 47 produces; Phase 49 gates the six actions built across Phases 41/42/45/47; Phase 50 is the wide-but-shallow nomenclature and Workbench-rename pass that ripples across everything before it, so it closes the milestone.
+
+**Reuse discipline (do not rebuild):** the 1c design system (Phase 30), the two-sign-off publish gate (Phase 34 `sign_offs`), the eval commit gate (Phase 38), and the provenance substrate (Phase 35 `claim_checks`) are v4.0's foundation, not v4.0's work. Every phase below builds strictly additively on them.
+
+### Phase 40: Issue Entity & Issues Home
+**Goal**: The console stops being run-keyed and becomes issue-keyed — a run is reachable only as a historical record under an issue — and an Issues home answers "what's the state of the operation, and does it need me?" at a glance.
+**Depends on**: Phase 39 (v3.0 substrate — existing `runs`/`pipelineRuns`/masthead/nav this phase inverts routing around); nothing new within v4.0 (first phase)
+**Requirements**: ISS-01, ISS-02, ISS-03, ISS-04, ISS-05, ISS-06
+**Success Criteria** (what must be TRUE):
+  1. Operator opens Issues home and sees the in-progress issue as a card with its 5-stage strip, status, open-task count, claim coverage, voice state, estimated work remaining, and run cost.
+  2. Every console URL for the active issue is issue-keyed; the underlying pipeline run is reachable only as a historical record inside that issue, never as a top-level nav destination.
+  3. Operator sees the next scheduled issue slot with the Calibrator's repetition note (e.g. "avoid US-SE · avoid weather") and can start it early.
+  4. Operator can hold an issue with a required reason; the held issue appears on the home with reason, who, and when, and can be reopened.
+  5. The global header shows issue status, system activity, My Tasks count, and cost vs budget as four separate, never-blended readouts, each carrying label + icon (never color alone).
+  6. When issue status fails to load, the card reads "State unknown — refresh" rather than showing a silently stale "ready" state.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval
+**Goal**: The Review Desk, Signal Desk, and Voice Pass nav items collapse into one Issue Workspace with stage tabs 1-5 — with no loss of capability. Stages 2 (Draft), 4 (Voice Pass), and 5 (Approval) are recompositions of the galley, voice-pass, and decision-rail work already shipped in v3.0 — not new backend. Stage 1 is not empty in the interim: it provisionally mounts the existing Phase 37 Signal Desk (candidate slate + Gate 1 adjudication) as-is, carried over until Phase 47 replaces it with the full Story & Brief design.
+**Depends on**: Phase 40 (issue-keyed routing the Workspace is mounted under); Phase 32/33 (galley + decision rail being recomposed), Phase 34 (publish gate being recomposed), Phase 36 (Voice Pass being recomposed), Phase 37 (Signal Desk candidate slate + Gate 1 adjudication provisionally mounted as Stage 1 — carried over as-is, not rebuilt)
+**Requirements**: WSP-01, WSP-02, WSP-03, WSP-04, WSP-05, WSP-06, WSP-07
+**Success Criteria** (what must be TRUE):
+  1. Operator navigates stage tabs 1-5 inside one Issue Workspace — the separate Review Desk / Signal Desk / Voice Pass nav items are gone — and each tab carries a live status mark.
+  2. The persistent issue outline lists every section with its state (clean / review / must fix / changed since review / not generated) and jumps to it on click.
+  3. Stage 2's galley renders in publication typography with checked claims marigold-underlined (source on hover and keyboard focus) and unchecked claims rust-tinted and clickable through to Fact Check.
+  4. Stage 5 leads with blockers (Must fix / Review recommended / estimated review time with jump links), then the readiness board, then the agent editor's recommendation labeled explicitly as agent judgment — "editor" unqualified stays reserved for the human.
+  5. Publish is disabled until Must fix = 0 AND Fact Check complete AND Voice approved current, with the unlock condition written next to the control; publishing shows an exact preview (destination, title, time, consequences) and completes on one confirmation click — no typed confirmation.
+  6. "Not generated" renders as a visible first-class state in the canvas and outline (e.g. the Editor's note), never a blank.
+  7. Stage 1 renders the existing candidate slate and Gate 1 adjudication, so a run that interrupts at charity selection can still be resolved from the Workspace — no capability is lost in the collapse.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 42: Fact Check Stage
+**Goal**: Stage 3 goes live — the only genuinely new stage in this milestone — built on the provenance substrate Phase 35 already shipped, plus one new Researcher-emitted field.
+**Depends on**: Phase 41 (Workspace frame + stage tabs Fact Check mounts into); Phase 35 (provenance substrate — `claim_checks` with claimId/sourceUrl/retrievedAt/sectionName)
+**Requirements**: FCT-01, FCT-02, FCT-03, FCT-04, FCT-05, FCT-06, FCT-07
+**Contract note**: FCT-06 ("Ask agent for better evidence") ESTABLISHES the shared span-scoped agent-revision endpoint contract — claim-scoped first. Phase 45 GENERALIZES this same endpoint to arbitrary passage revision; it does not build a second one. Both sit behind the EDT-05 write boundary (dashboard → pipeline API → Sanity, logged to `audit_log`) — the source-scan test forbidding direct Sanity writes from the console applies to this endpoint too.
+**Success Criteria** (what must be TRUE):
+  1. The Researcher emits an `importance` tier (Load-bearing / Supporting / Incidental) on every claim it produces.
+  2. Stage 3 shows an affirmative summary — claims checked X of Y, must fix, conflicting sources, checks not run, changed since check, last verified — where blank never stands in for a verified state.
+  3. Operator can filter the claim table by must fix, unchecked, changed, numbers & dates, people & titles, organization claims, and weak source.
+  4. Selecting a claim opens a provenance card (exact claim, importance, status, source + publisher, supporting passage, URL, retrieval date, agent, confidence) — the same component reused in Draft, Approval, and the inspector — and operator can Confirm, Edit claim, Replace source, Remove claim, or Keep as written with a required reason.
+  5. "Ask agent for better evidence" returns a replacement source and a rewritten claim together; confirming applies both as a content patch + claim update and records a decision-log entry.
+  6. A revision touching a claim's block returns that claim to unchecked and increments the "changed since check" counter, even when the replacement text is itself already sourced.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 43: My Tasks & Decision Log
+**Goal**: My Tasks becomes a derived projection over open claims, open findings, and missing sign-offs — no new task store — and every reason-requiring action console-wide writes to one shared Decision log.
+**Depends on**: Phase 42 (Fact Check's claims are the primary source My Tasks projects over); Phase 34/36 (existing sign-offs My Tasks also projects over)
+**Requirements**: TSK-01, TSK-02, TSK-03, TSK-04, TSK-05, TSK-06
+**Success Criteria** (what must be TRUE):
+  1. My Tasks lists every open claim, open finding, and missing sign-off as a derived task, computed as a selector over existing data — not a new tasks table.
+  2. Each task shows a plain-language title, the issue/area affected, why human judgment is required, severity (Must fix / Review recommended / Information), stage, age, and the agent's recommendation when one exists.
+  3. Clicking a task's primary action deep-links to the exact claim, passage, or decision; "Inspect context" opens the inspector on that artifact.
+  4. When nothing needs the operator, My Tasks says so explicitly and points to Approval — silence is a designed state, not an empty list.
+  5. A task whose underlying step was restarted shows as superseded with a link to the new step, rather than disappearing silently.
+  6. Every reason-requiring action across the console (remove lead, override a recommendation, keep as written, hold, activate with regression, Do not use) writes to one Decision log component recording actor, action, time, reason, before/after, instruction version, issue, and run.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 44: Inspect How This Was Made
+**Goal**: One universal 7-tab inspector panel is reachable from six places in the product, surfacing the missing-expected-input diff as the single highest-leverage diagnostic in the design.
+**Depends on**: Phase 43 (My Tasks' "Inspect context" is one of the six entry points); existing `agent_runs`/`prompt_versions`/`VariableRegistry` substrate (Phases 23-24, 28)
+**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
+**Success Criteria** (what must be TRUE):
+  1. Operator opens the same inspector panel from the brief organization card, the draft passage toolbar, the fact-check claim detail, a voice finding, the approval recommendation, and My Tasks.
+  2. The panel shows seven tabs (Summary, Inputs, Instructions, Output, Sources, Diagnostics, Technical) with human-readable content first — raw JSON is never the default view on any tab.
+  3. The Inputs tab explicitly calls out missing expected inputs, computed as declared template variables minus the keys actually supplied in the run's input payload.
+  4. The Instructions tab shows the exact active instruction version and the shared rules referenced, and links through to Agent Instructions via "Improve this agent."
+  5. The Output tab shows the full human-readable output and notes when the issue text has since diverged from it.
+  6. The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps on every artifact type.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 45: Agent Revision
+**Goal**: "Ask agent to revise" becomes an editing verb available everywhere a passage is selected, with direction chips and an explicit claim-delta comparison before anything applies, bounded by a per-issue cost guard.
+**Depends on**: Phase 44 (the inspector footer's "Ask agent to revise" action this phase implements); Phase 42 (generalizes the span-scoped revision endpoint FCT-06 establishes — do not build a second one; also the source of claim-delta computation via `claim_checks`)
+**Requirements**: REV-01, REV-02, REV-03, REV-04, REV-05
+**Success Criteria** (what must be TRUE):
+  1. Selecting a passage in Draft offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
+  2. "Ask agent to revise" presents direction chips (Make clearer / Make more specific / Tighten / Match the brief / Reduce repetition / Try another approach / Custom) — never a bare "Regenerate."
+  3. A revision request returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) before anything is applied.
+  4. Operator can Apply, Edit before applying, Try another approach, or Discard; Apply mutates the draft through the existing content-patch write boundary and logs to `audit_log`.
+  5. Revision calls are bounded by a per-issue cost guard, visible against the header's cost-vs-budget readout.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 46: Signal Editor & Candidate Verification
+**Goal**: The v3.0 deferral comes due — a Signal Editor agent and a deterministic `verify_candidates` check are added to the pipeline graph, growing it from 18 to 20 nodes, so Stage 1 has real leads and verification records to render.
+**Depends on**: Phase 39 (existing 18-node pipeline graph, Postgres checkpointer, Editorial Memory this phase extends); independent of Phases 40-45 — a self-contained backend track with no console dependency
+**Requirements**: SGE-01, SGE-02, SGE-03, SGE-04, SGE-05
+**Success Criteria** (what must be TRUE):
+  1. A pipeline run's new Signal Editor node emits 3-5 dated story leads, each with premise, dated peg + source link, reader energy, charitable angle, category, confidence, and a brand-risk flag where applicable.
+  2. The Signal Editor never self-selects a brand-risk-flagged lead — that decision always routes to the human.
+  3. A `verify_candidates` deterministic check runs after Scout and produces a verification record per organization (domain live, registration ID, obscurity/press scan), killing candidates that fail.
+  4. The pipeline graph runs 20 nodes end-to-end — `signal_editor` before `scout`, `verify_candidates` between `scout` and `advocate` — and the Postgres checkpointer resumes correctly across a pause/resume cycle that spans the new nodes.
+  5. The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and surfaces a repetition warning alongside a lead rather than silently suppressing it.
+**Plans**: TBD
+
+### Phase 47: Story & Brief Stage
+**Goal**: Stage 1 is REPLACED, not built from nothing: the provisional Signal Desk that Phase 41 mounted as Stage 1 is swapped out for the full v3 design, built on the leads and verification records Phase 46 now produces — organization options, "Needs your decision" adjudication when agents can't confidently choose, and an editable Brief the writers draft from.
+**Depends on**: Phase 46 (Signal Editor leads + `verify_candidates` records this stage renders); Phase 41 (Workspace frame + stage tabs Story & Brief mounts into, REPLACING the provisional Signal Desk Phase 41 carried over as Stage 1)
+**Requirements**: BRF-01, BRF-02, BRF-03, BRF-04, BRF-05, BRF-06
+**Success Criteria** (what must be TRUE):
+  1. Stage 1 shows story leads as cards with peg + source, reader energy, angle, category, confidence, and any brand-risk warning shown in full — never truncated or tooltip-hidden.
+  2. Operator can Require a lead, or Remove it with a mandatory logged reason.
+  3. Organization options are grouped under the chosen lead, each showing mechanism, verification record with dates, agent case, confidence, prior-coverage warning, and its main concern always visible.
+  4. When agents cannot confidently choose, the stage enters a "Needs your decision" state with the top two options side by side (what each makes possible, evidence quality, risk, burden); the operator's choice requires a rationale and resumes the run via the existing interrupt/resume endpoint.
+  5. An editable Brief (premise, current peg, central claim, reader effect, known risks, voice intention) is generated after selection, and the section writers draft from it.
+  6. Operator can ask an agent to strengthen any single field of the Brief.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 48: Brief Entry Point
+**Goal**: "Start from my brief" becomes a real second pipeline entry point — not a stub — letting a human-supplied premise skip discovery entirely and enter the run at the Researcher.
+**Depends on**: Phase 47 (the editable Brief artifact this entry point's human-authored input must match the shape of)
+**Requirements**: ENT-01, ENT-02, ENT-03, ENT-04
+**Success Criteria** (what must be TRUE):
+  1. Create issue offers two equal paths — "Find a story with agents" and "Start from my brief" — both landing in the Issue Workspace at Story & Brief.
+  2. Operator can submit a human-supplied premise, peg, organization, and optional source material, starting a run that skips Signal Editor, Scout, Advocate, and Gate 1, and enters directly at the Researcher.
+  3. A brief-started run produces the same downstream artifacts (research, sections, QA, claims, sign-offs) as an agent-discovered run and is indistinguishable from one at Stages 2-5.
+  4. An organization supplied in a human brief is still put through `verify_candidates`, so its verification record is never absent.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 49: Roles & Permissions
+**Goal**: Every action gated to Editor-in-chief across the workspace is enforced server-side, not just hidden in the UI, and a Collaborator sees exactly what they can't do and why.
+**Depends on**: Phase 41 (publish, Voice Pass approval), Phase 42 (evidence-replacement confirmation), Phase 45 (apply revision), Phase 47 (Do-not-use lives in Editorial Memory, gated the same way) — the surfaces whose six actions this phase gates
+**Requirements**: ROL-01, ROL-02, ROL-03, ROL-04
+**Success Criteria** (what must be TRUE):
+  1. A signed-in user carries a role of Editor-in-chief or Collaborator, and role checks are enforced server-side — a Collaborator's direct API call to a gated action is rejected, not merely hidden client-side.
+  2. Exactly six actions are gated to Editor-in-chief: apply revision, confirm evidence replacement, approve the Voice Pass, publish, make an instruction active, mark an organization Do not use.
+  3. A Collaborator sees every gated control rendered and locked with an explanation of why, never hidden from view.
+  4. A Collaborator can read every screen and leave comments.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 50: Workbench & Nomenclature
+**Goal**: The System Workbench gets its final rename and shape — Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory — and the nomenclature table from the binding spec is applied consistently everywhere in the console.
+**Depends on**: All prior v4.0 phases (nomenclature and the Editorial/Workbench nav split ripple across every screen built in Phases 40-49); Phases 37, 38, 39 (the v3.0 screens being renamed and extended with the recovery rail + "why this draft exists" bridge)
+**Requirements**: WBN-01, WBN-02, WBN-03, WBN-04, WBN-05, WBN-06
+**Success Criteria** (what must be TRUE):
+  1. Nav shows two visibly distinct groups — Editorial (Issues, My Tasks, Issue Workspace) and System Workbench (Run Details, Agent Instructions, Quality Tests, Editorial Memory) — with the signed-in role shown.
+  2. Run Details names steps by action ("Find story leads", "Verify research", "Draft sections") with the agent as secondary metadata, renders deterministic checks as diamond markers, and states plainly whether it's showing a historical record or a live run.
+  3. A failed run shows a plain-language recovery rail (what happened / what completed successfully / what did not happen / recommended recovery) with Restart from this step (reusing completed steps, not re-paying for them) and Improve this agent; downstream steps dim as Skipped.
+  4. Agent Instructions shows why a draft instruction exists, linking back to the specific issue output that motivated it.
+  5. Typed confirmation appears only for Mark Do-not-use (organization name + required reason); the automation toggle no longer lives on the operator surface, moved to Administration.
+  6. Every renamed term from the nomenclature table (deterministic check, step / Restart from this step, Make active / Restore version, Quality test / Standard test case, Preview next run, Do not use, Must fix, Human approval required) appears consistently across the console — no legacy term ("gate", "node", "eval", "golden scenario", "shadow run", "blocklisted") remains in operator-facing copy.
 **Plans**: TBD
 **UI hint**: yes

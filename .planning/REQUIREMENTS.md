@@ -791,6 +791,80 @@ Added 2026-07-06 during v3.0 roadmap creation. All 43 v3.0 requirements mapped t
 - Unmapped: 0 ✓
 - V3-DEF-01..05 deferred to a follow-up milestone (not in Phases 30-39) ✓
 
+## v4.0 Traceability
+
+Added 2026-07-14 during v4.0 roadmap creation. All 62 v4.0 requirements mapped to Phases 40-50 (continuing numbering from v3.0, which ended at Phase 39). One requirement block maps to exactly one phase.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ISS-01 | Phase 40: Issue Entity & Issues Home | Planned |
+| ISS-02 | Phase 40: Issue Entity & Issues Home | Planned |
+| ISS-03 | Phase 40: Issue Entity & Issues Home | Planned |
+| ISS-04 | Phase 40: Issue Entity & Issues Home | Planned |
+| ISS-05 | Phase 40: Issue Entity & Issues Home | Planned |
+| ISS-06 | Phase 40: Issue Entity & Issues Home | Planned |
+| WSP-01 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-02 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-03 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-04 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-05 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-06 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-07 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| FCT-01 | Phase 42: Fact Check Stage | Planned |
+| FCT-02 | Phase 42: Fact Check Stage | Planned |
+| FCT-03 | Phase 42: Fact Check Stage | Planned |
+| FCT-04 | Phase 42: Fact Check Stage | Planned |
+| FCT-05 | Phase 42: Fact Check Stage | Planned |
+| FCT-06 | Phase 42: Fact Check Stage | Planned |
+| FCT-07 | Phase 42: Fact Check Stage | Planned |
+| TSK-01 | Phase 43: My Tasks & Decision Log | Planned |
+| TSK-02 | Phase 43: My Tasks & Decision Log | Planned |
+| TSK-03 | Phase 43: My Tasks & Decision Log | Planned |
+| TSK-04 | Phase 43: My Tasks & Decision Log | Planned |
+| TSK-05 | Phase 43: My Tasks & Decision Log | Planned |
+| TSK-06 | Phase 43: My Tasks & Decision Log | Planned |
+| INS-01 | Phase 44: Inspect How This Was Made | Planned |
+| INS-02 | Phase 44: Inspect How This Was Made | Planned |
+| INS-03 | Phase 44: Inspect How This Was Made | Planned |
+| INS-04 | Phase 44: Inspect How This Was Made | Planned |
+| INS-05 | Phase 44: Inspect How This Was Made | Planned |
+| INS-06 | Phase 44: Inspect How This Was Made | Planned |
+| REV-01 | Phase 45: Agent Revision | Planned |
+| REV-02 | Phase 45: Agent Revision | Planned |
+| REV-03 | Phase 45: Agent Revision | Planned |
+| REV-04 | Phase 45: Agent Revision | Planned |
+| REV-05 | Phase 45: Agent Revision | Planned |
+| SGE-01 | Phase 46: Signal Editor & Candidate Verification | Planned |
+| SGE-02 | Phase 46: Signal Editor & Candidate Verification | Planned |
+| SGE-03 | Phase 46: Signal Editor & Candidate Verification | Planned |
+| SGE-04 | Phase 46: Signal Editor & Candidate Verification | Planned |
+| SGE-05 | Phase 46: Signal Editor & Candidate Verification | Planned |
+| BRF-01 | Phase 47: Story & Brief Stage | Planned |
+| BRF-02 | Phase 47: Story & Brief Stage | Planned |
+| BRF-03 | Phase 47: Story & Brief Stage | Planned |
+| BRF-04 | Phase 47: Story & Brief Stage | Planned |
+| BRF-05 | Phase 47: Story & Brief Stage | Planned |
+| BRF-06 | Phase 47: Story & Brief Stage | Planned |
+| ENT-01 | Phase 48: Brief Entry Point | Planned |
+| ENT-02 | Phase 48: Brief Entry Point | Planned |
+| ENT-03 | Phase 48: Brief Entry Point | Planned |
+| ENT-04 | Phase 48: Brief Entry Point | Planned |
+| ROL-01 | Phase 49: Roles & Permissions | Planned |
+| ROL-02 | Phase 49: Roles & Permissions | Planned |
+| ROL-03 | Phase 49: Roles & Permissions | Planned |
+| ROL-04 | Phase 49: Roles & Permissions | Planned |
+| WBN-01 | Phase 50: Workbench & Nomenclature | Planned |
+| WBN-02 | Phase 50: Workbench & Nomenclature | Planned |
+| WBN-03 | Phase 50: Workbench & Nomenclature | Planned |
+| WBN-04 | Phase 50: Workbench & Nomenclature | Planned |
+| WBN-05 | Phase 50: Workbench & Nomenclature | Planned |
+| WBN-06 | Phase 50: Workbench & Nomenclature | Planned |
+
+**Coverage (v4.0):**
+- v4.0 requirements: 62 total (ISS:6, WSP:7, FCT:7, TSK:6, INS:6, REV:5, SGE:5, BRF:6, ENT:4, ROL:4, WBN:6)
+- Mapped to phases: 62
+- Unmapped: 0 ✓
+
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-07-06 — added v3.0 Traceability (CHR/GLY/EDT/PUB/VOX/PRV/MON/SIG/EVL/MEM → Phases 30-39)*
+*Last updated: 2026-07-14 — added v4.0 Traceability (ISS/WSP/FCT/TSK/INS/REV/SGE/BRF/ENT/ROL/WBN → Phases 40-50)*
