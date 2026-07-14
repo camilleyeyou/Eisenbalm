@@ -13,6 +13,33 @@ export const byRunId = query({
   },
 })
 
+// ── Phase 40 §40.3 — issue-keyed queries over the already-declared
+// by_issueNumber index (schema.ts:25). PUBLIC/unguarded, matching byRunId. ──
+
+export const byIssueNumber = query({
+  args: { issueNumber: v.number() },
+  handler: async (ctx, { issueNumber }) => {
+    const rows = await ctx.db
+      .query('pipelineRuns')
+      .withIndex('by_issueNumber', q => q.eq('issueNumber', issueNumber))
+      .collect()
+    // Most-recent run for this issue — the runId the issue-keyed /issues/[n]/review
+    // and /issues/[n]/voice console routes resolve to.
+    return rows.sort((a, b) => b.startedAt - a.startedAt)[0] ?? null
+  },
+})
+
+export const listByIssueNumber = query({
+  args: { issueNumber: v.number() },
+  handler: async (ctx, { issueNumber }) => {
+    const rows = await ctx.db
+      .query('pipelineRuns')
+      .withIndex('by_issueNumber', q => q.eq('issueNumber', issueNumber))
+      .collect()
+    return rows.sort((a, b) => b.startedAt - a.startedAt) // run history (D-08), newest first
+  },
+})
+
 export const create = mutation({
   args: {
     runId: v.string(),
