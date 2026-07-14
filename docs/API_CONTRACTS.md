@@ -3954,3 +3954,325 @@ All contract boundaries must follow these rules:
 **Stripe webhook:** Always return `200` to Stripe even if processing fails internally. Log failures for manual review. Never return `4xx` or `5xx` to Stripe webhook calls (Stripe will retry aggressively).
 
 **Sanity webhook:** Return `200` immediately. Run the Publisher async. Never make Sanity wait for the Publisher to complete.
+
+---
+
+## §40 — Issue Entity & Issues Home (Phase 40)
+
+The console stops being run-keyed and becomes **issue-keyed**: a first-class Convex
+`issues` table exists *before* any run does, hold/reopen state and derived issue/stage
+status are computed rather than stored ad hoc, and the operator console's route tree
+moves from `/review-desk/[runId]`-shaped URLs to `/issues/[issueNumber]`-shaped ones
+(ISS-01..ISS-06). This contract is written BEFORE any schema/module/endpoint code
+exists (CLAUDE.md contract-first hard rule, mirroring §31-§39). Plans 40-02..40-09
+implement these shapes verbatim — no field name, endpoint path, function signature, or
+state literal may be invented later.
+
+**Naming note:** two unrelated things share the string `/issues/`.
+
+1. The FastAPI **pipeline** already exposes 18 endpoints shaped `/issues/{run_id}/...`
+   (`content.py`, `review.py`, `findings.py`, `signoffs.py`, `voice_pass.py`,
+   `control.py`). There, `{run_id}` is a **runId**. These are OUT OF SCOPE for this
+   phase and are not renamed.
+2. This phase creates a **console** (Next.js dashboard) route tree at
+   `/issues/[issueNumber]`, keyed by **issueNumber**.
+
+Different hosts, different frameworks, opposite path-param meanings. They collide in
+**name only** — every time this contract (or downstream code/comments) writes
+"/issues/...", it says which one it means.
+
+### §40.1 — `issues` Convex table (NEW)
+
+```typescript
+// convex/schema.ts
+issues: defineTable({
+  workspace_id: v.string(),
+  issueNumber: v.number(),                 // NATURAL KEY (D-02). Unique per workspace — enforced by a
+                                           // query-then-insert guard inside ensureByNumber, NOT the
+                                           // schema (Convex has no unique constraint; same pattern as
+                                           // runs:create's existing-row check, convex/runs.ts:37-41).
+  scheduledFor: v.optional(v.number()),    // Unix ms — the slot this issue is reserved for (D-11)
+  held: v.boolean(),                       // D-18: one of only TWO stored status inputs
+  heldReason: v.optional(v.string()),      // required-when-holding, enforced at the MUTATION (D-16)
+  heldBy: v.optional(v.string()),          // Clerk sub from requireOperator(ctx) — NEVER client-supplied
+  heldAt: v.optional(v.number()),
+  published: v.boolean(),                  // D-18: the other stored status input
+  publishedAt: v.optional(v.number()),
+  sanityIssueId: v.optional(v.string()),
+  lastVisitedStage: v.optional(v.string()),// Phase 41 writes this; Phase 40 only declares it
+  createdAt: v.number(),
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber']),
+```
+
+**Stored-vs-derived invariant (D-18, load-bearing):** `held` and `published` are the ONLY status
+inputs ever persisted. Issue status is recomputed from them plus live `sign_offs` on every read
+(§40.6). There is no `status` column and there must never be one — a persisted status is exactly the
+silently-stale "ready" ISS-06 forbids.
+
+### §40.2 — `convex/issues.ts` functions (NEW)
+
+```typescript
+// ── Queries (PUBLIC, unguarded reads — same convention as claimChecks:allSignedOff) ──
+byIssueNumber({ workspace_id, issueNumber }): Promise<Doc<'issues'> | null>
+listForWorkspace({ workspace_id }): Promise<Doc<'issues'>[]>   // issueNumber DESC
+
+// ── Mutations ──
+ensureByNumber({ workspace_id, issueNumber, scheduledFor?, pipelineSecret? })
+  : Promise<{ issueNumber: number; created: boolean }>
+  // DUAL LANE — requireOperatorOrPipeline(ctx, pipelineSecret). Console-created (D-03) AND
+  // pipeline-defensive (D-04) both call this.
+  // IDEMPOTENT insert-if-absent. On an existing row it is a strict NO-OP: it MUST NOT patch
+  // `held`, `heldReason`, `heldBy`, `heldAt`, or `published`. D-04's guard — a stray run
+  // (POST /run/weekly with an empty body, a curl, a future cron) can never silently resurrect a
+  // Held issue. Returns { created: false } on the no-op path.
+  // On insert: { workspace_id, issueNumber, scheduledFor, held: false, published: false,
+  //              createdAt: Date.now() }.
+
+hold({ workspace_id, issueNumber, reason }): Promise<null>
+  // requireOperator(ctx) → actor. THROWS new Error('A reason is required to hold this issue.')
+  // when reason.trim() === '' (D-16 — required free text, no preset taxonomy).
+  // THROWS new Error('Issue not found') when no row exists.
+  // Patches { held: true, heldReason: reason.trim(), heldBy: actor, heldAt: Date.now() }.
+  // Then ctx.runMutation(internal.auditLog.write, {
+  //   workspace_id, actorId: actor, action: 'issue.held', resourceType: 'issue',
+  //   resourceId: String(issueNumber),
+  //   before: JSON.stringify({ held: false }),
+  //   after:  JSON.stringify({ held: true, heldReason: reason.trim() }),
+  // })
+  // NOTE: hold does NOT touch runs.cancelRequested. D-14's "also stop the run in progress"
+  // checkbox is a SEPARATE client-side call to the existing runs:requestCancel mutation — the two
+  // state systems stay distinct in the model.
+
+reopen({ workspace_id, issueNumber }): Promise<null>
+  // requireOperator(ctx) → actor. Patches
+  // { held: false, heldReason: undefined, heldBy: undefined, heldAt: undefined }.
+  // Status re-derives on its own (D-17) — no "restore previous status" bookkeeping.
+  // audit_log action: 'issue.reopened' (same envelope as hold).
+
+markPublished({ workspace_id, issueNumber, sanityIssueId?, publishedAt?, pipelineSecret? }): Promise<null>
+  // DUAL LANE — requireOperatorOrPipeline(ctx, pipelineSecret). Used by the D-05 backfill script
+  // and (later) the publisher. Patches { published: true, publishedAt: publishedAt ?? Date.now(),
+  // sanityIssueId }. Idempotent.
+```
+
+**No `tasks` table, no `status` column, no `stage` column.** All three are derived (§40.6,
+`DERIVED-STATE-CONTRACT.md` §2/§3).
+
+### §40.3 — `convex/pipelineRuns.ts` issue-keyed queries (NEW)
+
+```typescript
+// Both PUBLIC/unguarded, matching the existing pipelineRuns:byRunId convention.
+// Both use the ALREADY-DECLARED `by_issueNumber` index (convex/schema.ts:25) — no schema change.
+
+byIssueNumber({ issueNumber }): Promise<Doc<'pipelineRuns'> | null>
+  // The MOST RECENT run for that issue (startedAt DESC, first). This is the runId the issue-keyed
+  // console routes /issues/[n]/review and /issues/[n]/voice resolve to.
+
+listByIssueNumber({ issueNumber }): Promise<Doc<'pipelineRuns'>[]>
+  // ALL runs for that issue, startedAt DESC — the run history the issue overview links into at the
+  // console route /issues/[n]/runs/[runId] (D-08).
+```
+
+### §40.4 — `GET /registry/repetition-note` (pipeline, FastAPI, read-only, no audit row)
+
+New endpoint in `packages/pipeline/src/eisenbalm_pipeline/api/registry.py`, alongside the existing
+`GET /registry/coverage-strip`. Same auth guard (`_require_clerk_jwt_control`), same Convex+Sanity
+join, read-only, no audit row.
+
+**Why an endpoint and not a client-side derivation:** the cause/geo chips live in Sanity, and
+dispatch-control has ZERO Sanity access (EDT-05, tripwire-enforced by
+`apps/dispatch-control/__tests__/dispatch-control-no-sanity-write.test.ts`).
+
+**No LLM call, no run required (D-10).** The note must render BEFORE a run exists. It is the
+Calibrator's *rule* applied outside a run — today's `agents/calibrator.py` only rotates `bonusType`
+and emits no such note; nothing in that agent changes.
+
+Request: `GET /registry/repetition-note` (no params).
+
+Response (200):
+```json
+{
+  "note": "avoid US-SE · avoid weather",
+  "avoid": [
+    { "dimension": "geo",   "value": "US-SE",   "count": 3 },
+    { "dimension": "cause", "value": "weather", "count": 3 }
+  ],
+  "sampleSize": 8
+}
+```
+`note` is `null` and `avoid` is `[]` when nothing is over-represented.
+
+Algorithm (deterministic — no model call):
+1. Read the SAME source `coverage-strip` reads: `convex_query(convex_http, "charities:listRecentFeatured", {workspace_id: "eisenbalm", limit: 8})`, then ONE `groq_query('*[_type=="charity" && _id in $ids]{_id, focusArea, location}', params={"ids": ids})` over the rows that have a `sanityCharityId`.
+2. `sampleSize` = number of rows returned by Convex (≤ 8).
+3. Count only TWO dimensions: `cause` (Sanity `focusArea`) and `geo` (Sanity `location`). **`signal` (`scoutNotes`) is deliberately EXCLUDED** — it is free prose, not a categorical value.
+4. Normalize each value with `value.strip()`, compare case-insensitively, keep the first-seen original casing for display. Skip `None`/empty.
+5. `REPETITION_THRESHOLD = 3` (module-level constant). A value is over-represented when its count is `>= REPETITION_THRESHOLD`.
+6. Sort over-represented values by `count` DESC, then `dimension` in the fixed order `geo` before `cause`, then `value` ascending. Take at most **2** (the UI-SPEC's "avoid X · avoid Y" shape).
+7. `note = " · ".join(f"avoid {value}" for each)`, or `None` when empty.
+
+### §40.5 — `apps/dispatch-control/lib/repetitionNoteClient.ts` (NEW)
+
+Mirrors `lib/coverageStripClient.ts` line-for-line: a private `pipelineBaseUrl()` reading
+`NEXT_PUBLIC_PIPELINE_URL`, a `RepetitionNoteError extends Error` carrying `status`, and:
+
+```typescript
+export interface RepetitionAvoidItem { dimension: 'geo' | 'cause'; value: string; count: number }
+export interface RepetitionNote { note: string | null; avoid: RepetitionAvoidItem[]; sampleSize: number }
+export async function fetchRepetitionNote(token: string | null): Promise<RepetitionNote>
+```
+
+### §40.6 — `apps/dispatch-control/lib/derivedState.ts` (NEW — pure TS, no Convex import)
+
+Pure functions over the RESULTS of existing Convex queries. Unit-testable in isolation. Consumed by
+the header (40-06), the issue card (40-05), the issue overview (40-09), Phase 41's stage tabs, and
+Phase 43's My Tasks. Editorial policy (severity weights, stage rules) lives HERE, never in the backend.
+
+```typescript
+export type IssueStatus = 'unknown' | 'draft' | 'needs-review' | 'ready' | 'published' | 'held'
+export type StageState  = 'not-generated' | 'in-progress' | 'needs-you' | 'clean'
+export type TaskSeverity = 'must-fix' | 'review-recommended' | 'information'
+
+export interface StageStateResult { state: StageState; openCount: number }
+
+export interface DerivedTask {            // DERIVED-STATE-CONTRACT §2 shape — NO tasks table
+  id: string
+  sev: TaskSeverity
+  title: string                           // plain language
+  where: string                           // section / area affected
+  why: string                             // why human judgment is required
+  rec?: string                            // the agent's recommendation, when one exists
+  primary: { label: string; href: string }
+  insp?: string                           // inspector target (Phase 44 consumes; may be omitted)
+  stage: 1 | 2 | 3 | 4 | 5
+}
+
+// D-22 — tunable in ONE place.
+export const SEVERITY_MINUTES: Record<TaskSeverity, number> = {
+  'must-fix': 6,
+  'review-recommended': 3,
+  'information': 1,
+}
+
+/**
+ * `undefined` means NOT LOADED (or the query failed). `null` means loaded-and-absent.
+ * The distinction is load-bearing: it is what makes ISS-06 structural.
+ */
+export interface DerivationInputs {
+  issueNumber: number | null
+  runId: string | null
+  issue: { held: boolean; published: boolean } | null | undefined
+  signOffs: Record<string, { actorId: string; signedAt: number }> | undefined
+  claimRows: Array<{ status: string; sourceUrl?: string; sectionName?: string; claimText?: string; _id: string }> | undefined
+  qaFindings: Array<{ _id: string; severity: 'info'|'warning'|'error'; axis?: string; sectionName: string; reason: string; suggestedFix?: string; accepted?: boolean; resolution?: 'accepted'|'dismissed'|null }> | undefined
+  pitchRows: Array<{ selected: boolean }> | undefined
+  runStatus: string | undefined            // runs.latest.status
+}
+
+export function deriveIssueStatus(i: DerivationInputs): IssueStatus
+export function deriveStageStates(i: DerivationInputs): [StageStateResult, StageStateResult, StageStateResult, StageStateResult, StageStateResult]
+export function deriveTasks(i: DerivationInputs): DerivedTask[]
+export function estimateWorkMinutes(tasks: DerivedTask[]): number
+```
+
+**`deriveIssueStatus` (D-18 + ISS-06) — exact precedence:**
+```
+if (issue === undefined || signOffs === undefined) return 'unknown'   // NOT LOADED / FAILED — never a stale value
+if (issue === null)                                 return 'unknown'   // no issue row => nothing to state
+if (issue.published)                                return 'published'
+if (issue.held)                                     return 'held'
+factDone  = signOffs['facts-cleared'] !== undefined
+voiceDone = signOffs['sounds-human']  !== undefined
+if (factDone && voiceDone)                          return 'ready'     // == DERIVED-STATE-CONTRACT §1 `ready`, plus D-15's `&& !held` (held returned above)
+if (runId === null)                                 return 'draft'
+return 'needs-review'
+```
+A silently stale "ready" is IMPOSSIBLE: `ready` is recomputed from `sign_offs` on every read, and an
+unloaded/failed input yields `'unknown'`, which the UI renders as "State unknown — refresh".
+
+**`deriveStageStates` (D-19 — ARTIFACT-derived, never pipeline-node-derived). Exactly 5 entries:**
+
+| # | Stage | Rule (evaluated top-down; first match wins) |
+|---|-------|---------------------------------------------|
+| 1 | Story | `runId === null` → not-generated/0 · `pitchRows === undefined` → in-progress/0 · `pitchRows.some(p => p.selected)` → clean/0 · `pitchRows.length > 0` → needs-you/1 (Gate 1 unresolved) · else in-progress/0 |
+| 2 | Draft | `runId === null` → not-generated/0 · `qaFindings === undefined \|\| claimRows === undefined` → in-progress/0 · `qaFindings.length === 0 && claimRows.length === 0` → (`runStatus === 'running'` ? in-progress/0 : not-generated/0) · else N = open findings whose axis is NOT in VOICE_AXES (undefined axis counts as factual, per axisPartition.ts's own rule) → N > 0 ? needs-you/N : clean/0 |
+| 3 | Fact Check | `runId === null` → not-generated/0 · `claimRows === undefined` → in-progress/0 · `claimRows.length === 0` → not-generated/0 · U = rows with `status === 'pending'` → U > 0 ? needs-you/U : clean/0 |
+| 4 | Voice | `runId === null` → not-generated/0 · `qaFindings === undefined \|\| signOffs === undefined` → in-progress/0 · V = open findings whose axis IS in VOICE_AXES → V > 0 ? needs-you/V : (`signOffs['sounds-human']` ? clean/0 : (`runStatus === 'running'` ? in-progress/0 : needs-you/1)) |
+| 5 | Approval | `issue?.published` → clean/0 · `runId === null` → not-generated/0 · `signOffs === undefined` → in-progress/0 · factDone && voiceDone → needs-you/1 · else in-progress/0 |
+
+**"Open" finding = `isOpenFinding(row)` from `lib/galley/findingState.ts` — the ONE shared predicate. Do not re-derive it inline.**
+
+**A completed run with zero checked claims MUST show Fact Check as `needs-you`, never `clean` (D-19's explicit warning).** Stage 3 reads `claim_checks` rows only; it never reads `runStatus`.
+
+**`deriveTasks` (D-21 — the REAL projection Phase 43 renders as a screen):**
+- one task per open `qaFindings` row: `sev` = `error → 'must-fix'`, `warning → 'review-recommended'`, `info → 'information'`; `stage` = 4 when `axis ∈ VOICE_AXES` else 2; `where` = `sectionName`; `why` = `reason`; `rec` = `suggestedFix`; `primary.href` = `issueVoiceHref(n)` for stage 4 else `issueReviewHref(n)`.
+- one task per `claimRows` row with `status === 'pending'`: `sev` = `'must-fix'` when `sourceUrl` is absent (an unsourced claim blocks) else `'review-recommended'`; `stage` = 3; `title` = `Check claim: {claimText truncated to 60 chars}`; `primary.href` = `issueReviewHref(n)`.
+- one task when `runId !== null && runStatus !== 'running' && !signOffs['facts-cleared']`: `sev:'must-fix'`, `stage:5`, `title:'Clear the facts'`.
+- one task when `runId !== null && runStatus !== 'running' && !signOffs['sounds-human']`: `sev:'must-fix'`, `stage:5`, `title:'Approve the voice'`.
+- returns `[]` when `runId === null`. Sorted `must-fix` → `review-recommended` → `information`, then by `stage` ascending.
+- **`deriveTasks(...).length` IS the header's My Tasks count and IS the card's open-task count.** A count-only shim is forbidden (a header saying 3 next to a list of 2).
+
+**`estimateWorkMinutes`** = `tasks.reduce((sum, t) => sum + SEVERITY_MINUTES[t.sev], 0)`. Rendered `~{n} min` (ISS-01). `0` renders as `~0 min`, never blank.
+
+### §40.7 — `apps/dispatch-control/lib/issueRouteResolver.ts` (NEW — pure TS)
+
+```typescript
+export function parseIssueNumber(param: string): number | null
+  // Strict: /^[0-9]+$/ AND > 0. Rejects '', '-1', '1.5', '07x', 'abc', ' 7 '. Leading zeros ARE
+  // accepted ('07' → 7) since Sanity's slug is issue-{n} and operators say "Issue 07".
+export function issueHref(issueNumber: number): string        // `/issues/${n}`
+export function issueReviewHref(issueNumber: number): string  // `/issues/${n}/review`
+export function issueVoiceHref(issueNumber: number): string   // `/issues/${n}/voice`
+export function issueRunHref(issueNumber: number, runId: string): string
+                                                              // `/issues/${n}/runs/${encodeURIComponent(runId)}`
+export function legacyRedirectTarget(surface: 'review' | 'voice', issueNumber: number | null | undefined): string
+  // issueNumber resolved  → issueReviewHref(n) / issueVoiceHref(n)
+  // issueNumber null/undefined (run has no issue row / unknown runId) → '/issues'
+  // NEVER returns a run-keyed URL — that would redirect-loop.
+```
+
+### §40.8 — Console route tree (NEW — Next.js dashboard, issue-keyed)
+
+| Console route | Purpose | Notes |
+|---|---|---|
+| `/issues` | Issues home (ISS-01/03/04/06) | new nav destination |
+| `/issues/[issueNumber]` | Issue overview (D-09) | **Phase 41 replaces its CONTENTS at this same URL** — the URL never moves |
+| `/issues/[issueNumber]/review` | thin issue→run translation around the already-shipped Review Desk screen (D-07) | internals NOT rewritten |
+| `/issues/[issueNumber]/voice` | thin issue→run translation around the already-shipped Voice Pass screen (D-07) | internals NOT rewritten |
+| `/issues/[issueNumber]/runs/[runId]` | a run as a HISTORICAL RECORD under its issue (D-08) | ISS-02 |
+
+Legacy run-keyed console URLs redirect (dynamic — a Convex lookup maps `runId → issueNumber`, so this
+can NEVER be a `next.config` rewrite):
+
+| Old console URL | Redirects to |
+|---|---|
+| `/review-desk/[runId]` | `/issues/{n}/review` (or `/issues` when unresolvable) |
+| `/voice-pass/[runId]` | `/issues/{n}/voice` (or `/issues` when unresolvable) |
+| `/review-desk` | `/issues` |
+| `/voice-pass` | `/issues` |
+| `/` (dashboard index) | `/issues` |
+
+`/run-monitor/**` and `/signal-desk` are UNCHANGED and remain functional. Run Monitor survives as a
+nav item under **System Workbench** (D-08) — ISS-02's "never a top-level nav destination" means a run
+stops being the *editorial* object, not that it becomes unreachable.
+
+### §40.9 — `NAV_GROUPS` restructure (`apps/dispatch-control/lib/nav.ts`)
+
+```typescript
+Editorial        → Issues (/issues)                                      // My Tasks joins in Phase 43; Workspace in Phase 41
+System Workbench → Run Monitor (/run-monitor) · Prompt Lab (/prompt-lab)
+                   · Eval Center (/eval-center) · Registry (/registry)
+Operations       → Config (/config) · Finance (/finance) · Settings (/settings)
+```
+`Review Desk`, `Signal Desk`, and `Voice Pass` LEAVE the nav — they are issue sub-routes now. Their
+labels are unchanged elsewhere; the nomenclature pass (Run Monitor → Run Details, Registry →
+Editorial Memory) is Phase 50.
+
+*All Phase 40 changes are additive: one new Convex table (`issues`) + `convex/issues.ts`; two new
+queries on the existing `pipelineRuns` table (using its already-declared `by_issueNumber` index); one
+new pipeline GET endpoint (`/registry/repetition-note`) + its dashboard client; two new pure-TS
+selector modules (`derivedState.ts`, `issueRouteResolver.ts`); a new issue-keyed route tree plus
+dynamic redirects from the old run-keyed routes; and a `NAV_GROUPS` restructure. No existing field is
+renamed or removed; Phase 21-39 shapes are unchanged.*
