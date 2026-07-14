@@ -1,30 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Dispatch Control v2 — Editorial Operator Console
-status: Milestone archived
-stopped_at: Archived v3.0 milestone (Phases 30-39, 62 plans); tag v3.0
-last_updated: "2026-07-10T11:30:00.000Z"
+milestone: v4.0
+milestone_name: Dispatch Control v3 — The Editorial Workspace
+status: Defining requirements
+stopped_at: Milestone v4.0 started (2026-07-14); phases 40-50, numbering continues from v3.0
+last_updated: "2026-07-14T13:30:00.000Z"
 progress:
   total_phases: 39
-  completed_phases: 38
+  completed_phases: 39
   total_plans: 245
-  completed_plans: 243
+  completed_plans: 245
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-10)
+See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** v3.0 shipped + archived (2026-07-10) — planning next milestone (`/gsd:new-milestone`)
+**Current focus:** v4.0 — Dispatch Control v3, the Editorial Workspace. The console becomes an editorial product with an *issue* at its center; the machine retreats behind a System Workbench. Binding spec: `docs/design/dispatch-control-v3/`.
 
 ## Current Position
 
-Phase: — (between milestones)
-Plan: v3.0 milestone archived; next milestone not yet defined
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-14 — Milestone v4.0 started
 
 ## Performance Metrics
 
