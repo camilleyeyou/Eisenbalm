@@ -279,6 +279,18 @@ async def _start_run(
 
     http = getattr(app.state, "convex_http", None)
 
+    # Phase 40 (D-04): defensively ensure the issues row exists so no trigger
+    # path (empty-body /run/weekly, a curl, a future cron) can orphan a run.
+    # ensureByNumber is a strict NO-OP on an existing row — it can NEVER
+    # resurrect a Held issue (guard lives in convex/issues.ts). Pipeline lane:
+    # convex_mutation injects the pipeline secret centrally, so no pipelineSecret
+    # arg is passed here (same as every other _cc.convex_mutation call in this file).
+    await _cc.convex_mutation(
+        http,
+        "issues:ensureByNumber",
+        {"workspace_id": "eisenbalm", "issueNumber": issue_number},
+    )
+
     # Step 3: Insert pipelineRuns row BEFORE launching the graph (Anti-Pattern:
     # otherwise the wrapper's failure path calls updateStatus on a missing row).
     # Use _cc.convex_mutation (module-level) so monkeypatching in tests reaches here.

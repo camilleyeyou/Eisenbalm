@@ -77,6 +77,12 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         # Phase 34 (§34.8) — two-sign-off gate mutations
         "signOffs:record",
         "signOffs:revokeAll",
+        # Phase 40 (§40.2) — issues table dual-lane mutations. The pipeline
+        # lane (_start_run's defensive ensure, scripts/backfill_issues.py)
+        # has no Clerk identity, so requireOperatorOrPipeline needs the
+        # secret injected here or every pipeline-side call is Unauthorized.
+        "issues:ensureByNumber",
+        "issues:markPublished",
     }
 )
 

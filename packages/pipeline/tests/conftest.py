@@ -559,24 +559,31 @@ def convex_runs_store(monkeypatch: pytest.MonkeyPatch) -> "_ConvexRunsStore":
     prev_query = _cc.convex_query
     prev_query_safe = getattr(_cc, "convex_query_safe", None)
 
+    # Phase 40 (§40.4/D-04): "issues:" is routed here too — ensureByNumber is
+    # called from _start_run on every trigger, and this store's default no-op
+    # ({"status": "success"}) is sufficient for run-control tests that don't
+    # assert on issues-table state directly (see __tests__/issues.test.ts /
+    # convex-test for the real Convex-side behavior).
+    _RUNS_STORE_PREFIXES = ("runs:", "agentRuns:", "pipelineRuns:", "issues:")
+
     async def _dispatch_mutation(http: Any, path: str, args: dict) -> Any:
-        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+        if path.startswith(_RUNS_STORE_PREFIXES):
             return await store._handle_mutation(http, path, args)
         return await prev_mutation(http, path, args)
 
     async def _dispatch_mutation_safe(path: str, args: dict) -> None:
-        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+        if path.startswith(_RUNS_STORE_PREFIXES):
             await store._handle_mutation_safe(path, args)
         else:
             await prev_mutation_safe(path, args)
 
     async def _dispatch_query(http: Any, path: str, args: dict) -> Any:
-        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+        if path.startswith(_RUNS_STORE_PREFIXES):
             return await store._handle_query(http, path, args)
         return await prev_query(http, path, args)
 
     async def _dispatch_query_safe(path: str, args: dict) -> Any:
-        if path.startswith("runs:") or path.startswith("agentRuns:") or path.startswith("pipelineRuns:"):
+        if path.startswith(_RUNS_STORE_PREFIXES):
             return await store._handle_query(None, path, args)
         if prev_query_safe is not None:
             return await prev_query_safe(path, args)
