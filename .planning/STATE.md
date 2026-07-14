@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 40-01-contract-test-scaffolding-PLAN.md
-last_updated: "2026-07-14T23:30:46.990Z"
+stopped_at: Completed 40-02-issues-table-convex-PLAN.md
+last_updated: "2026-07-14T23:38:05.099Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 40 (issue-entity-issues-home) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 
 ## Performance Metrics
 
@@ -269,6 +269,7 @@ Plan: 2 of 9
 | Phase 39 P04 | ~15min | 2 tasks | 5 files |
 | Phase 39 P05 | 4min | 3 tasks | 4 files |
 | Phase 40 P01 | 15min | 3 tasks | 9 files |
+| Phase 40 P02 | 10min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -689,6 +690,8 @@ Recent decisions affecting current work:
 - [Phase 39]: CoverageStrip uses 1c CSS-token classes (var(--color-cobalt/green/marigold-text)) for chip coloring, matching newer review-desk/eval-center components rather than RegistryTable's older neutral-* Tailwind classes
 - [Phase 40]: Wrote docs/API_CONTRACTS.md §40 (nine subsections) as the binding contract for the issues Convex table, issue-keyed pipelineRuns queries, the repetition-note endpoint, and the derivedState/issueRouteResolver selector modules — before any implementation code exists
 - [Phase 40]: Aligned the six dashboard RED test files' component prop contracts to the already-written downstream Plans 40-05/40-07 (read ahead) so no rewrite cycle is needed when those plans execute
+- [Phase 40]: reopen throws 'Issue not found' when no row exists, mirroring hold's guard for symmetry and because ctx.db.patch requires a resolved row
+- [Phase 40]: reopen audit_log before/after is the symmetric inverse of hold's envelope ({held:true,heldReason}→{held:false}) since the contract left the exact shape to discretion
 
 ### Pending Todos
 
@@ -778,6 +781,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-14T23:30:46.977Z
-Stopped at: Completed 40-01-contract-test-scaffolding-PLAN.md
+Last session: 2026-07-14T23:38:05.086Z
+Stopped at: Completed 40-02-issues-table-convex-PLAN.md
 Resume file: None
