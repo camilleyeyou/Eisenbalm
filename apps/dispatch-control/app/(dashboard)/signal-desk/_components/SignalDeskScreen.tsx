@@ -34,6 +34,16 @@ import { AdjudicationPanel } from './AdjudicationPanel'
 
 export interface SignalDeskScreenProps {
   workspace_id: string
+  /**
+   * Plan 41-04 (D-09, Pitfall 2 guard): ADDITIVE optional issue-keyed run.
+   * When provided, SignalDeskScreen scopes ENTIRELY to this run — it skips
+   * `api.runs.latest` altogether — so Stage 1 (Story, Plan 41-07) can mount
+   * the Signal Desk for a SPECIFIC issue's run, not the workspace's latest
+   * run. When absent, behavior is byte-identical to the legacy `/signal-desk`
+   * route (which passes only `workspace_id`): `runs.latest` resolves the
+   * run to show.
+   */
+  runId?: string
 }
 
 interface LatestRun {
@@ -45,24 +55,31 @@ interface PipelineRunRow {
   completedAt?: number
 }
 
-export function SignalDeskScreen({ workspace_id }: SignalDeskScreenProps) {
-  const latestRun = useQuery(api.runs.latest, { workspace_id }) as LatestRun | null | undefined
-  const runId = latestRun?.runId
+export function SignalDeskScreen({ workspace_id, runId: passedRunId }: SignalDeskScreenProps) {
+  // Legacy path (no runId prop): resolve the workspace's latest run exactly
+  // as before. Issue-keyed path (runId prop present): skip this query
+  // entirely — the passed run is authoritative and must never be silently
+  // overridden by whatever run happens to be latest.
+  const latestRun = useQuery(api.runs.latest, passedRunId ? 'skip' : { workspace_id }) as
+    | LatestRun
+    | null
+    | undefined
+  const effectiveRunId = passedRunId ?? latestRun?.runId
 
-  const run = useQuery(api.pipelineRuns.byRunId, runId ? { runId } : 'skip') as
+  const run = useQuery(api.pipelineRuns.byRunId, effectiveRunId ? { runId: effectiveRunId } : 'skip') as
     | PipelineRunRow
     | null
     | undefined
 
-  const pitchRows = useQuery(api.pitchLog.byRunId, runId ? { runId } : 'skip') as
+  const pitchRows = useQuery(api.pitchLog.byRunId, effectiveRunId ? { runId: effectiveRunId } : 'skip') as
     | PitchLogRow[]
     | undefined
   const advocateRows = useQuery(
     api.deliberationEvents.byRunIdAndType,
-    runId ? { runId, eventType: 'advocate-argument' } : 'skip',
+    effectiveRunId ? { runId: effectiveRunId, eventType: 'advocate-argument' } : 'skip',
   ) as AdvocateArgumentRow[] | undefined
 
-  if (!runId) {
+  if (!effectiveRunId) {
     return (
       <div className="p-6">
         <p className="text-[13px] text-[color:var(--color-ink-soft)]">No runs yet.</p>
@@ -89,18 +106,18 @@ export function SignalDeskScreen({ workspace_id }: SignalDeskScreenProps) {
         </p>
       </div>
 
-      <CandidateSlate runId={runId} />
+      <CandidateSlate runId={effectiveRunId} />
 
       {isPausedAtGate1 ? (
         <AdjudicationPanel
-          runId={runId}
+          runId={effectiveRunId}
           candidates={candidates.map(c => ({
             charityName: c.charityName,
             advocateScore: c.advocateScore,
           }))}
         />
       ) : (
-        <DecisionPanel runId={runId} />
+        <DecisionPanel runId={effectiveRunId} />
       )}
     </div>
   )
