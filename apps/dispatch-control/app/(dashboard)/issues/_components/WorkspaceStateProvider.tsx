@@ -65,6 +65,27 @@ export interface WorkspaceStateValue {
   workMinutes: number
   history: Doc<'pipelineRuns'>[] | undefined
   issue: Doc<'issues'> | null | undefined
+  /**
+   * Phase 41 Plan 41-11 (WSP-03 gap closure) — the frame's single persistent
+   * ContextPanel content slot. `null` when no mounted stage has published
+   * anything; the frame (`layout.tsx`) renders this verbatim inside
+   * `<ContextPanel>`. A stage publisher calls `setPanelContent` in an effect
+   * (with cleanup that resets to `null` on unmount/stage change) — see Plan
+   * 41-12.
+   */
+  panelContent: ReactNode
+  setPanelContent: (content: ReactNode) => void
+  /**
+   * The four arrays below are the SAME already-subscribed Convex queries this
+   * provider derives `stages`/`tasks`/`sectionStates` from (see the
+   * subscription block further down in this file) — exposed here so Plan
+   * 41-12's stage-panel publishers can reuse them with ZERO new `useQuery`
+   * calls (41-CONTEXT D-19 + the gap-closure "no new subscriptions" rule).
+   */
+  pitchRows: Doc<'pitchLog'>[] | undefined
+  qaFindings: DerivationInputs['qaFindings']
+  claimRows: DerivationInputs['claimRows']
+  signOffs: DerivationInputs['signOffs']
 }
 
 const WorkspaceStateContext = createContext<WorkspaceStateValue | null>(null)
@@ -176,6 +197,12 @@ export function WorkspaceStateProvider({
     ? deriveSectionStates(derivationInputs, draftSectionIdsFromDraft(draft))
     : undefined
 
+  // ── The panel-content slot (Plan 41-11, WSP-03 gap closure) ──────────────
+  // A stage publisher calls `setPanelContent` to feed the frame's single
+  // persistent ContextPanel; defaults to `null` (the panel's own honest
+  // "Nothing to show for this stage yet" placeholder) until one does.
+  const [panelContent, setPanelContent] = useState<ReactNode>(null)
+
   const value: WorkspaceStateValue = {
     issueNumber: n,
     runId,
@@ -188,6 +215,12 @@ export function WorkspaceStateProvider({
     workMinutes,
     history,
     issue,
+    panelContent,
+    setPanelContent,
+    pitchRows,
+    qaFindings,
+    claimRows,
+    signOffs,
   }
 
   return (
