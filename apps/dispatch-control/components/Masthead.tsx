@@ -1,35 +1,62 @@
 'use client'
 /**
  * Persistent 52px ink masthead (CHR-02, Plan 30-04).
+ * Rebuilt Phase 40 Plan 40-08 (ISS-05 / D-24..D-27, 40-UI-SPEC State & Icon
+ * Contract) — the single blended "pipeline-state" chip is split into FOUR
+ * separate, never-blended, label+icon readouts. Each is its own node; none
+ * of the four share a container.
  *
- * Mounted above the sidebar+main row in `(dashboard)/layout.tsx` so it
- * appears on every dashboard route. Renders four live chips sourced from
- * already-existing Convex queries (RESEARCH Pattern 2 — no new backend):
- *   - Issue number: `pipelineRuns.byRunId` cross-referenced off `runs.latest`
- *     (issueNumber lives on the older `pipelineRuns` table, not `runs`)
- *   - Pipeline-state chip: `runs.latest.status`
- *   - Month-to-date spend vs cap: `runs.monthToDateCost` + `pipelineConfig`
- *     row keyed `monthly_cap_usd` (the SAME canonical cap key
- *     `BudgetCapsPanel.tsx` reads/writes — NOT the pipeline-side env var)
- *   - Auto-publish lock chip: `pipelineConfig` row keyed `auto_publish`
+ *   1. Issue status  — `deriveIssueStatus` (lib/derivedState.ts, D-18). When
+ *      unresolved/failed it renders `AlertTriangle` + "State unknown —
+ *      refresh" (ISS-06) — structurally never a stale value.
+ *   2. System activity — relabels the OLD blended chip: `runs.latest.status`
+ *      mapped to Idle / Running / Paused for you / Failed / Complete.
+ *      `Loader2` (spin) is RESERVED to this readout's "Running" state.
+ *   3. My Tasks — `deriveTasks(...).length` (D-21, COUNT ONLY — Phase 43
+ *      builds the screen). Replaces `AwaitingYouTrigger`; clicking it still
+ *      opens the existing `AwaitingYouInbox` dropdown (D-25) — no
+ *      capability lost, no dead button.
+ *   4. Cost vs budget — UNCHANGED wiring: `runs.monthToDateCost` +
+ *      `pipelineConfig` `monthly_cap_usd`.
  *
- * The Awaiting-you trigger is a static button in this plan — Plan 30-06
- * wires its dropdown. `AwaitingYouTrigger` is exported standalone so 30-06
- * can attach open/close state without re-authoring the button markup.
+ * Issue status resolves the SAME way the `/issues` home does, but scoped to
+ * the latest run (reusing the masthead's EXISTING wiring, not the full
+ * issues-list scan `/issues/page.tsx` performs — see 40-08 plan interfaces):
+ *   `runs.latest` → its `issueNumber` (`pipelineRuns.byRunId`, already wired)
+ *   → `issues.byIssueNumber` for `held`/`published`, plus
+ *   `signOffs.activeByRunId` / `claimChecks.listByRunId` /
+ *   `qaCorrections.byRunId` / `pitchLog.byRunId` for the current runId — the
+ *   exact `DerivationInputs` shape `deriveIssueStatus`/`deriveTasks` expect.
+ *
+ * Also carries the D-26 rename: "Auto-publish OFF" → "Human approval
+ * required" (quiet reassurance). The ON case keeps its existing loud
+ * vermilion treatment exactly as before — `AutoPublishBanner` (elsewhere in
+ * the layout) is untouched.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { UserButton } from '@clerk/nextjs'
+import {
+  AlertTriangle,
+  BadgeCheck,
+  CheckCircle2,
+  Circle,
+  CircleDollarSign,
+  FileEdit,
+  ListChecks,
+  Loader2,
+  PauseCircle,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
+import {
+  deriveIssueStatus,
+  deriveTasks,
+  type DerivationInputs,
+  type IssueStatus,
+} from '@/lib/derivedState'
 import AwaitingYouInbox from './AwaitingYouInbox'
-
-const STATUS_LABELS: Record<string, string> = {
-  running: 'Running',
-  'awaiting-review': 'Awaiting review',
-  complete: 'Complete',
-  failed: 'Failed',
-}
 
 type ConfigRow = { key: string; value: string }
 
@@ -43,19 +70,115 @@ function readConfigValue<T>(rows: ConfigRow[] | undefined, key: string): T | und
   }
 }
 
-/**
- * The Awaiting-you trigger button. Exported standalone so Plan 30-06 can
- * wire the inbox dropdown's open/close state without re-authoring the
- * button markup here.
- */
-export function AwaitingYouTrigger({ onClick }: { onClick?: () => void }) {
+// ── Readout 1: Issue status (D-18, State & Icon Contract §1) ────────────────
+
+const ISSUE_STATUS_META: Record<
+  Exclude<IssueStatus, 'unknown'>,
+  { label: string; Icon: LucideIcon; color: string }
+> = {
+  draft: { label: 'Draft', Icon: FileEdit, color: 'var(--color-ink-soft)' },
+  'needs-review': {
+    label: 'Needs review',
+    Icon: AlertTriangle,
+    color: 'var(--color-marigold-text)',
+  },
+  ready: { label: 'Ready to publish', Icon: CheckCircle2, color: 'var(--color-green)' },
+  published: { label: 'Published', Icon: BadgeCheck, color: 'var(--color-green)' },
+  held: { label: 'Held', Icon: PauseCircle, color: 'var(--color-vermilion)' },
+}
+
+function IssueStatusReadout({ status }: { status: IssueStatus }) {
+  // ISS-06 — structural: never a stale/prior label can leak through here.
+  if (status === 'unknown') {
+    return (
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="flex min-h-[44px] items-center gap-[6px] rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]"
+      >
+        <AlertTriangle size={13} aria-hidden="true" />
+        State unknown — refresh
+      </button>
+    )
+  }
+  const meta = ISSUE_STATUS_META[status]
+  const Icon = meta.Icon
+  return (
+    <span
+      className="flex items-center gap-[6px] rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
+      style={{ color: meta.color }}
+    >
+      <Icon size={13} aria-hidden="true" />
+      {meta.label}
+    </span>
+  )
+}
+
+// ── Readout 2: System activity (runs.latest.status, State & Icon Contract §2) ─
+
+type SystemActivity = 'idle' | 'running' | 'paused-for-you' | 'failed' | 'complete'
+
+const SYSTEM_ACTIVITY_META: Record<
+  SystemActivity,
+  { label: string; Icon: LucideIcon; color: string; spin?: boolean }
+> = {
+  idle: { label: 'Idle', Icon: Circle, color: 'var(--color-faint)' },
+  running: { label: 'Running', Icon: Loader2, color: 'var(--color-cobalt)', spin: true },
+  'paused-for-you': {
+    label: 'Paused for you',
+    Icon: PauseCircle,
+    color: 'var(--color-marigold-text)',
+  },
+  failed: { label: 'Failed', Icon: AlertTriangle, color: 'var(--color-vermilion)' },
+  complete: { label: 'Complete', Icon: CheckCircle2, color: 'var(--color-green)' },
+}
+
+// `runs.status` literals: 'running' | 'awaiting-review' | 'complete' | 'failed'
+// (schema.ts). 'awaiting-review' === "paused at Andrew gate" — maps to the
+// UI-SPEC's "Paused for you". No `latest` row (fresh workspace) → Idle.
+function systemActivityFromRunStatus(status: string | undefined | null): SystemActivity {
+  if (status === 'running') return 'running'
+  if (status === 'awaiting-review') return 'paused-for-you'
+  if (status === 'failed') return 'failed'
+  if (status === 'complete') return 'complete'
+  return 'idle'
+}
+
+function SystemActivityReadout({ activity }: { activity: SystemActivity }) {
+  const meta = SYSTEM_ACTIVITY_META[activity]
+  const Icon = meta.Icon
+  return (
+    <span
+      className="flex items-center gap-[6px] rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
+      style={{ color: meta.color }}
+    >
+      <Icon size={13} aria-hidden="true" className={meta.spin ? 'animate-spin' : undefined} />
+      {meta.label}
+    </span>
+  )
+}
+
+// ── Readout 3: My Tasks (D-21/D-25, State & Icon Contract §3) ───────────────
+// Replaces the old `AwaitingYouTrigger` — COUNT ONLY (Phase 43 builds the
+// screen). Clicking it still opens the existing `AwaitingYouInbox` dropdown.
+
+export function MyTasksTrigger({
+  count,
+  onClick,
+}: {
+  count: number
+  onClick?: () => void
+}) {
+  const color = count > 0 ? 'var(--color-vermilion)' : 'var(--color-ink-soft)'
   return (
     <button
       type="button"
       onClick={onClick}
-      className="ml-auto cursor-pointer rounded-[2px] bg-[color:var(--color-vermilion)] px-[12px] py-[5px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-masthead-text)]"
+      className="flex min-h-[44px] cursor-pointer items-center gap-[6px] rounded-[2px] px-[12px] py-[5px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em]"
+      style={{ color }}
     >
-      Awaiting you
+      <ListChecks size={14} aria-hidden="true" />
+      My Tasks · {count}
     </button>
   )
 }
@@ -74,7 +197,40 @@ export default function Masthead() {
   const autoPublish = readConfigValue<boolean>(configRows, 'auto_publish')
 
   const issueNumber = pipelineRun?.issueNumber
-  const statusLabel = latest ? STATUS_LABELS[latest.status] ?? latest.status : undefined
+  const runId: string | null = latest?.runId ?? null
+
+  // ── Issue-status derivation inputs (D-18, same shape /issues/page.tsx assembles) ──
+  const issueRow = useQuery(
+    api.issues.byIssueNumber,
+    issueNumber != null ? { workspace_id: DEFAULT_WORKSPACE_ID, issueNumber } : 'skip',
+  )
+  const signOffs = useQuery(api.signOffs.activeByRunId, runId ? { runId } : 'skip')
+  const claimRowsRaw = useQuery(api.claimChecks.listByRunId, runId ? { runId } : 'skip')
+  const qaFindings = useQuery(api.qaCorrections.byRunId, runId ? { runId } : 'skip')
+  const pitchRows = useQuery(api.pitchLog.byRunId, runId ? { runId } : 'skip')
+
+  const claimRows = claimRowsRaw?.map(row => ({
+    _id: row._id,
+    status: row.status,
+    sourceUrl: row.sourceUrl,
+    sectionName: row.sectionName,
+    claimText: row.text,
+  }))
+
+  const derivationInputs: DerivationInputs = {
+    issueNumber: issueNumber ?? null,
+    runId,
+    issue: issueRow === undefined ? undefined : issueRow ? { held: issueRow.held, published: issueRow.published } : null,
+    signOffs,
+    claimRows,
+    qaFindings,
+    pitchRows,
+    runStatus: latest?.status,
+  }
+
+  const issueStatus = deriveIssueStatus(derivationInputs)
+  const taskCount = deriveTasks(derivationInputs).length
+  const systemActivity = systemActivityFromRunStatus(latest?.status)
 
   return (
     <header className="flex h-[52px] items-center gap-4 bg-[color:var(--color-ink)] px-[22px] text-[color:var(--color-masthead-text)]">
@@ -83,33 +239,42 @@ export default function Masthead() {
         DISPATCH<span className="text-[color:var(--color-vermilion)]">/</span>CONTROL
       </span>
 
-      {/* Issue number chip */}
+      {/* Issue number — contextual identifier, not one of the four ISS-05 readouts */}
       <span className="font-[family-name:var(--font-mono)] text-[color:var(--color-masthead-muted)]">
         {issueNumber != null ? `Issue ${issueNumber}` : 'Issue —'}
       </span>
 
-      {/* Pipeline-state chip */}
-      {statusLabel && (
-        <span className="rounded-[2px] bg-[color:var(--color-marigold)] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[9.5px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-ink)]">
-          {statusLabel}
-        </span>
-      )}
+      {/* Readout 1: Issue status (D-18) — separate node, never shares a
+          container with System activity below. */}
+      <IssueStatusReadout status={issueStatus} />
 
-      {/* Month-to-date spend vs cap — ambient warning at cap, not a hard stop */}
+      {/* Readout 2: System activity (relabel of the old blended chip) —
+          visibly distinct from Issue status; `Loader2` spin is exclusive
+          to this readout's "Running" state. */}
+      <SystemActivityReadout activity={systemActivity} />
+
+      {/* Readout 4: Cost vs budget — unchanged query wiring. */}
       {mtd !== undefined && cap !== undefined && (
-        <span className="font-[family-name:var(--font-mono)]">
-          <span
+        <span className="flex items-center gap-[6px] font-[family-name:var(--font-mono)]">
+          <CircleDollarSign
+            size={13}
+            aria-hidden="true"
             className={
-              mtd.mtdUsd >= cap ? 'text-[color:var(--color-vermilion)]' : undefined
+              mtd.mtdUsd >= cap
+                ? 'text-[color:var(--color-vermilion)]'
+                : 'text-[color:var(--color-ink-soft)]'
             }
-          >
+          />
+          <span className={mtd.mtdUsd >= cap ? 'text-[color:var(--color-vermilion)]' : undefined}>
             ${mtd.mtdUsd.toFixed(2)}
           </span>
           {` / $${cap}`}
         </span>
       )}
 
-      {/* Auto-publish lock chip — OFF is the safe/expected state, ON is the friction/danger state */}
+      {/* Auto-publish lock chip — D-26 rename. OFF is the safe/expected
+          state ("Human approval required", quiet reassurance); ON keeps the
+          existing loud vermilion treatment exactly. */}
       {autoPublish !== undefined && (
         <span
           className={
@@ -118,16 +283,16 @@ export default function Masthead() {
               : 'font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-green)]'
           }
         >
-          Auto-publish {autoPublish ? 'ON' : 'OFF'}
+          {autoPublish ? 'Auto-publish ON' : 'Human approval required'}
         </span>
       )}
 
-      {/* Awaiting-you trigger + dropdown — `relative` anchors the inbox's
-          `absolute top-[52px]` positioning under this chip. A full-screen
-          transparent backdrop below the dropdown (but above page content)
-          closes it on outside click. */}
-      <div className="relative">
-        <AwaitingYouTrigger onClick={() => setInboxOpen(v => !v)} />
+      {/* Readout 3: My Tasks (D-21/D-25) + the existing inbox dropdown —
+          `relative` anchors the inbox's `absolute top-[52px]` positioning
+          under this readout. A full-screen transparent backdrop below the
+          dropdown (but above page content) closes it on outside click. */}
+      <div className="relative ml-auto">
+        <MyTasksTrigger count={taskCount} onClick={() => setInboxOpen(v => !v)} />
         {inboxOpen && (
           <button
             type="button"
