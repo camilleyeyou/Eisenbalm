@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 42-04-factcheck-endpoints-PLAN.md
-last_updated: "2026-07-15T12:57:30.181Z"
+stopped_at: Completed 42-06-provenance-card-stage3-screen-PLAN.md
+last_updated: "2026-07-15T13:21:25.954Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 42 (fact-check-stage) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -294,6 +294,7 @@ Plan: 6 of 8
 | Phase 42 P03 | 12min | 2 tasks | 3 files |
 | Phase 42 P05 | 10 | 2 tasks | 3 files |
 | Phase 42 P04 | 20min | 2 tasks | 4 files |
+| Phase 42 P06 | 35min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -760,6 +761,8 @@ Recent decisions affecting current work:
 - [Phase 42]: WorkspaceStateProvider claimRows mapping widened with claimIndex/claimId/importance/changedSinceCheck/conflict/checkedAt but NOT claimType/context, per the plan's scope note — those stay full-row-only for the Stage 3 screen and Approval SourceIndex
 - [Phase 42]: PATCH's content-touching branch and evidence/apply both terminate via claimChecks:keepAsWritten (status defaults to checked) rather than a bespoke status, since D-08's locked chip vocabulary has no separate state for edited/kept/confirmed
 - [Phase 42]: claimChecks:updateClaim/keepAsWritten/remove were missing from convex_client.py's pipeline-secret-guarded paths (Plan 42-01 added the Convex-side guard only) - registered them in Plan 42-04, closing the same class of gap Plan 42-03 found for markChanged
+- [Phase 42]: ClaimProvenanceCard adds an additive changedSinceCheck field so its ONE chip derivation can render D-08's 'Changed' state, reused verbatim by the Stage 3 claim table
+- [Phase 42]: Reason/text/URL-collecting card actions reveal inline forms (mirrors UnresolvedFindingCard.tsx) instead of window.prompt, keeping every control visible and independently testable for Phase 49's later role-gating wrap
 
 ### Pending Todos
 
@@ -849,6 +852,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T12:57:30.168Z
-Stopped at: Completed 42-04-factcheck-endpoints-PLAN.md
+Last session: 2026-07-15T13:21:25.941Z
+Stopped at: Completed 42-06-provenance-card-stage3-screen-PLAN.md
 Resume file: None
