@@ -10,11 +10,15 @@ import {
   deriveIssueStatus,
   deriveStageStates,
   deriveTasks,
+  deriveSectionStates,
+  draftSectionIdsFromDraft,
   estimateWorkMinutes,
   SEVERITY_MINUTES,
   type DerivationInputs,
   type DerivedTask,
+  type SectionState,
 } from '../lib/derivedState'
+import type { DraftResponse } from '../lib/contentPatchClient'
 
 function baseInputs(overrides: Partial<DerivationInputs> = {}): DerivationInputs {
   return {
@@ -183,6 +187,194 @@ describe('deriveStageStates (§40.6, D-19)', () => {
     )
     expect(result[1].openCount).toBe(0)
     expect(result[3].openCount).toBe(0)
+  })
+})
+
+describe('deriveSectionStates + draftSectionIdsFromDraft (Phase 41 Plan 41-01, WSP-02/WSP-07)', () => {
+  function baseDraft(overrides: Partial<DraftResponse> = {}): DraftResponse {
+    return {
+      revisionId: 'rev-1',
+      sections: {},
+      theme: {},
+      game: {},
+      bonus: {},
+      bonusType: 'specAd',
+      podcast: {},
+      conversation: [],
+      ...overrides,
+    }
+  }
+
+  it('a section with an open error-severity finding is "must-fix"', () => {
+    const draftSectionIds = new Set(['originStory'])
+    const result = deriveSectionStates(
+      baseInputs({
+        qaFindings: [
+          {
+            _id: 'q1',
+            severity: 'error' as const,
+            sectionName: 'origin_story',
+            reason: 'unsourced number',
+          },
+        ],
+      }),
+      draftSectionIds,
+    )
+    expect(result.originStory).toEqual({ state: 'must-fix', openCount: 1 })
+  })
+
+  it('a section with an open warning/info finding (no error) is "review"', () => {
+    const draftSectionIds = new Set(['originStory'])
+    const result = deriveSectionStates(
+      baseInputs({
+        qaFindings: [
+          {
+            _id: 'q1',
+            severity: 'warning' as const,
+            sectionName: 'origin_story',
+            reason: 'banned word',
+          },
+        ],
+      }),
+      draftSectionIds,
+    )
+    expect(result.originStory).toEqual({ state: 'review', openCount: 1 })
+  })
+
+  it('a section present in the draft with zero open findings is "clean"', () => {
+    const draftSectionIds = new Set(['originStory'])
+    const result = deriveSectionStates(baseInputs({ qaFindings: [] }), draftSectionIds)
+    expect(result.originStory).toEqual({ state: 'clean', openCount: 0 })
+  })
+
+  it('a section absent from draftSectionIds is "not-generated"', () => {
+    const draftSectionIds = new Set<string>()
+    const result = deriveSectionStates(baseInputs({ qaFindings: [] }), draftSectionIds)
+    expect(result.originStory).toEqual({ state: 'not-generated', openCount: 0 })
+  })
+
+  it('resolved (accepted/dismissed) findings are excluded, matching deriveDraftStage', () => {
+    const draftSectionIds = new Set(['originStory'])
+    const result = deriveSectionStates(
+      baseInputs({
+        qaFindings: [
+          {
+            _id: 'q1',
+            severity: 'error' as const,
+            sectionName: 'origin_story',
+            reason: 'x',
+            resolution: 'dismissed' as const,
+          },
+          {
+            _id: 'q2',
+            severity: 'error' as const,
+            sectionName: 'origin_story',
+            reason: 'y',
+            accepted: true,
+          },
+        ],
+      }),
+      draftSectionIds,
+    )
+    expect(result.originStory).toEqual({ state: 'clean', openCount: 0 })
+  })
+
+  it('SAME-SOURCE anti-regression: a clean, claim-less, finding-less GENERATED section reads "clean", never "not-generated"', () => {
+    // The section has real, non-empty draft blocks but zero claims and zero
+    // open findings anywhere in the run — a legitimately clean, freshly
+    // generated section. Presence MUST come from draftSectionIdsFromDraft's
+    // real-content check, never be inferred absent because side-tables
+    // (claims/findings) a clean section legitimately lacks are also empty.
+    const draft = baseDraft({
+      sections: {
+        originStory: { blocks: [{ type: 'paragraph', text: 'Real content.' }], lossy: false },
+      },
+    })
+    const draftSectionIds = draftSectionIdsFromDraft(draft)
+    const result = deriveSectionStates(
+      baseInputs({ qaFindings: [], claimRows: [] }),
+      draftSectionIds,
+    )
+    expect(result.originStory.state).toBe('clean')
+    expect(result.originStory.state).not.toBe('not-generated')
+  })
+
+  it('a section whose draft blocks are empty/absent is omitted by draftSectionIdsFromDraft, and deriveSectionStates reports "not-generated" (canvas parity)', () => {
+    const draft = baseDraft({
+      sections: {
+        originStory: { blocks: [{ type: 'paragraph', text: 'Real content.' }], lossy: false },
+        founderBio: { blocks: [], lossy: false },
+        // caseStudy absent entirely from `sections`
+      },
+    })
+    const draftSectionIds = draftSectionIdsFromDraft(draft)
+    expect(draftSectionIds.has('founderBio')).toBe(false)
+    expect(draftSectionIds.has('caseStudy')).toBe(false)
+    const result = deriveSectionStates(baseInputs({ qaFindings: [] }), draftSectionIds)
+    expect(result.founderBio).toEqual({ state: 'not-generated', openCount: 0 })
+    expect(result.caseStudy).toEqual({ state: 'not-generated', openCount: 0 })
+  })
+
+  it('INVARIANT (WSP-07 + 41-RESEARCH Open Q3): deriveSectionStates NEVER returns "changed-since-review" in Phase 41 — it is a reserved legend label only', () => {
+    const draft = baseDraft({
+      sections: {
+        originStory: { blocks: [{ type: 'paragraph', text: 'Real content.' }], lossy: false },
+        problemStatement: { blocks: [{ type: 'paragraph', text: 'More content.' }], lossy: false },
+      },
+      bonus: { headline: 'A bonus' },
+    })
+    const draftSectionIds = draftSectionIdsFromDraft(draft)
+    const result = deriveSectionStates(
+      baseInputs({
+        qaFindings: [
+          {
+            _id: 'q1',
+            severity: 'error' as const,
+            sectionName: 'origin_story',
+            reason: 'x',
+          },
+          {
+            _id: 'q2',
+            severity: 'warning' as const,
+            sectionName: 'problem',
+            reason: 'y',
+          },
+        ],
+      }),
+      draftSectionIds,
+    )
+    const states: SectionState[] = Object.values(result).map((r) => r.state)
+    expect(states).not.toContain('changed-since-review')
+    // Every section resolves to one of the four reachable states.
+    for (const state of states) {
+      expect(['clean', 'review', 'must-fix', 'not-generated']).toContain(state)
+    }
+  })
+
+  it('draftSectionIdsFromDraft includes bonus/game/podcast/deliberation-conversation/theme when their top-level payload is non-empty', () => {
+    const draft = baseDraft({
+      bonus: { headline: 'A bonus' },
+      game: { embedCode: '<div></div>' },
+      podcast: { transcript: 'hello' },
+      conversation: [{ speaker: 'Scout', text: 'Found one.' }],
+      theme: { primaryColor: '#000000' },
+    })
+    const draftSectionIds = draftSectionIdsFromDraft(draft)
+    expect(draftSectionIds.has('bonus')).toBe(true)
+    expect(draftSectionIds.has('game')).toBe(true)
+    expect(draftSectionIds.has('podcast')).toBe(true)
+    expect(draftSectionIds.has('deliberation-conversation')).toBe(true)
+    expect(draftSectionIds.has('theme')).toBe(true)
+  })
+
+  it('draftSectionIdsFromDraft omits bonus/game/podcast/deliberation-conversation/theme when their top-level payload is empty', () => {
+    const draft = baseDraft()
+    const draftSectionIds = draftSectionIdsFromDraft(draft)
+    expect(draftSectionIds.has('bonus')).toBe(false)
+    expect(draftSectionIds.has('game')).toBe(false)
+    expect(draftSectionIds.has('podcast')).toBe(false)
+    expect(draftSectionIds.has('deliberation-conversation')).toBe(false)
+    expect(draftSectionIds.has('theme')).toBe(false)
   })
 })
 

@@ -14,7 +14,10 @@
  */
 import { isOpenFinding } from './galley/findingState'
 import { VOICE_AXES } from './galley/axisPartition'
+import { qaSectionToGalleyId } from './galley/sectionIdMap'
 import { issueReviewHref, issueVoiceHref } from './issueRouteResolver'
+import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
+import type { DraftResponse } from './contentPatchClient'
 
 // ── Types (§40.6, verbatim) ──────────────────────────────────────────────────
 
@@ -178,6 +181,95 @@ export function deriveStageStates(
     deriveVoiceStage(i),
     deriveApprovalStage(i),
   ]
+}
+
+// ── deriveSectionStates (Phase 41 Plan 41-01, WSP-02/WSP-07) ────────────────
+//
+// The per-SECTION sibling to `deriveStageStates` above. `deriveStageStates`
+// is stage-level (5 results, 4-value `StageState` vocabulary); the Workspace
+// outline (41-05) and frame tabs need a section-level grain that selector
+// does NOT provide (9 `EDITABLE_SECTIONS` entries, a different 5-value
+// vocabulary). Do NOT feed `deriveStageStates` output into the outline
+// (Pitfall 4, 41-RESEARCH) — this is the separate, purpose-built selector.
+//
+// `'changed-since-review'` is a RESERVED legend value with NO Phase-41 data
+// source (41-RESEARCH Open Q3 / DERIVED-STATE-CONTRACT §4): no
+// content-patch-touch tracking exists yet. It is intentionally never
+// produced by this function — Phase 42+ will drive it. Every section falls
+// through to one of the four REACHABLE states below; presence (absent ->
+// 'not-generated') is checked FIRST so a section is never silently reported
+// 'clean' when it is actually absent.
+export type SectionState = 'clean' | 'review' | 'must-fix' | 'changed-since-review' | 'not-generated'
+
+export interface SectionStateResult {
+  state: SectionState
+  openCount: number
+}
+
+export function deriveSectionStates(
+  i: DerivationInputs,
+  draftSectionIds: ReadonlySet<string>,
+): Record<string, SectionStateResult> {
+  const result: Record<string, SectionStateResult> = {}
+  for (const section of EDITABLE_SECTIONS) {
+    if (!draftSectionIds.has(section.id)) {
+      result[section.id] = { state: 'not-generated', openCount: 0 }
+      continue
+    }
+    const openFindings = (i.qaFindings ?? []).filter(
+      (row) => isOpenFinding(row) && qaSectionToGalleyId(row.sectionName) === section.id,
+    )
+    const openCount = openFindings.length
+    const hasError = openFindings.some((row) => row.severity === 'error')
+    if (hasError) {
+      result[section.id] = { state: 'must-fix', openCount }
+    } else if (openCount > 0) {
+      result[section.id] = { state: 'review', openCount }
+    } else {
+      result[section.id] = { state: 'clean', openCount: 0 }
+    }
+  }
+  return result
+}
+
+// ── draftSectionIdsFromDraft (Phase 41 Plan 41-01) ──────────────────────────
+//
+// THE single source of truth for "which sections are generated." Shared by
+// the outline provider (41-05) and the Stage-2 canvas (41-08) so they cannot
+// disagree: presence is read from real draft content, never inferred from
+// side-tables (claims/findings) a clean section legitimately lacks.
+//
+// Long-reads use the BYTE-IDENTICAL `(draft.sections[id]?.blocks ?? []).length
+// > 0` check the canvas renders (41-08 Task 2). Keep the two in lockstep —
+// if this predicate changes, the canvas's copy must change too. The
+// remaining galley sections check their corresponding top-level draft
+// payload for non-empty content. A type-only `DraftResponse` import keeps
+// this module free of runtime Convex/React/fetch coupling.
+const LONG_READ_SECTION_IDS = [
+  'originStory',
+  'problemStatement',
+  'founderBio',
+  'caseStudy',
+] as const
+
+function hasNonEmptyPayload(value: unknown): boolean {
+  if (value == null) return false
+  if (Array.isArray(value)) return value.length > 0
+  if (typeof value === 'object') return Object.keys(value).length > 0
+  return Boolean(value)
+}
+
+export function draftSectionIdsFromDraft(draft: DraftResponse): ReadonlySet<string> {
+  const ids = new Set<string>()
+  for (const id of LONG_READ_SECTION_IDS) {
+    if ((draft.sections[id]?.blocks ?? []).length > 0) ids.add(id)
+  }
+  if (hasNonEmptyPayload(draft.bonus)) ids.add('bonus')
+  if (hasNonEmptyPayload(draft.game)) ids.add('game')
+  if (hasNonEmptyPayload(draft.podcast)) ids.add('podcast')
+  if (hasNonEmptyPayload(draft.conversation)) ids.add('deliberation-conversation')
+  if (hasNonEmptyPayload(draft.theme)) ids.add('theme')
+  return ids
 }
 
 // ── deriveTasks (D-21 — the REAL projection Phase 43 renders as a screen) ───
