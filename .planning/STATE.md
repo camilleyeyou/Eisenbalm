@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 41-09-stage5-approval-publish-preview-PLAN.md
-last_updated: "2026-07-15T07:18:47.779Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 41-10-integration-gate-PLAN.md (automated gates green; human demo-path UAT pending in 41-UAT.md)
+last_updated: "2026-07-15T07:27:01.416Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -286,6 +286,7 @@ Plan: 10 of 10
 | Phase 41 P07 | 18min | 3 tasks | 5 files |
 | Phase 41 P08 | 9min | 2 tasks | 5 files |
 | Phase 41 P09 | 20min | 2 tasks | 6 files |
+| Phase 41 P10 | 15min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -737,6 +738,7 @@ Recent decisions affecting current work:
 - [Phase 41]: Stage 1's SignalDeskScreen internal header stays as an accepted provisional-mount carryover this phase; Stage 4's Voice header is stripped now (D-07) because Voice is fully frame-owned today, while Story's redesign is deferred to Phase 47
 - [Phase 41]: Stage 2 Draft recomposed: /review renamed to /draft, DecisionRail moved off the canvas (Stage 5), unchecked-claim click-through wired to Fact Check, and a WSP-07 Not-generated Editor's-note block added to Galley.tsx in lockstep with draftSectionIdsFromDraft
 - [Phase 41]: Stage 5 mounts DecisionRail full-width with held read from useWorkspaceState() (no re-query); readiness board + 'Agent editor's recommendation' relabel + PublishPreviewDialog interstitial ship additively, publishIssue()/API_CONTRACTS.md unchanged
+- [Phase 41]: Declined to auto-approve the checkpoint:human-verify UAT gate; persisted the 7 WSP demo-path criteria as an explicit PENDING checklist in 41-UAT.md rather than fabricating a human verification result
 
 ### Pending Todos
 
@@ -826,6 +828,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T07:18:47.765Z
-Stopped at: Completed 41-09-stage5-approval-publish-preview-PLAN.md
+Last session: 2026-07-15T07:27:01.403Z
+Stopped at: Completed 41-10-integration-gate-PLAN.md (automated gates green; human demo-path UAT pending in 41-UAT.md)
 Resume file: None
