@@ -32,6 +32,17 @@
  * it first calls `voicePassClient.rewrite` to generate one on demand, then
  * applies it via `acceptFinding`'s `suggestedFixOverride` (§36.5/§36.6) — so
  * the "Accept unavailable" message never shows in this variant.
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 1): an optional `onInspect?` prop adds
+ * an "Inspect how this was made" action to this SAME action row, following
+ * the identical `onEditSection?`/`sectionId` conditional-render convention.
+ * This one component is the shared finding surface behind BOTH the draft
+ * passage entry point (Review Desk's default `labels`) AND the voice
+ * finding entry point (Voice Pass's `labels` variant) — one prop covers
+ * both (44-RESEARCH.md "Six entry points" #2/#4). Clicking it calls
+ * `onInspect(sectionId)`; the caller (Galley -> GallerySection) supplies a
+ * callback that opens the shared inspector on this section's founder
+ * artifact (`openInspector({ type: 'founder', runId, locator: sectionId })`).
  */
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -56,6 +67,12 @@ interface AnnotationMarkProps {
   revisionId?: string
   reloadDraft?: () => Promise<void> | void
   onEditSection?: (sectionId: string, findingId?: string) => void
+  /**
+   * Phase 44 (INS-01) — opens the shared inspector on this finding's
+   * section. Render gate is `Boolean(onInspect)` (+ `sectionId`), mirroring
+   * `onEditSection`.
+   */
+  onInspect?: (sectionId: string) => void
   /**
    * Phase 36 (VOX-02, D-10) — voice-tell label variant. Undefined = today's
    * Review Desk labels (Accept fix / Edit inline / Dismiss / '').
@@ -91,6 +108,7 @@ export default function AnnotationMark({
   revisionId,
   reloadDraft,
   onEditSection,
+  onInspect,
   labels,
 }: AnnotationMarkProps) {
   const [open, setOpen] = useState(false)
@@ -279,6 +297,16 @@ export default function AnnotationMark({
                 onClick={() => onEditSection(sectionId, value.findingId)}
               >
                 {editInlineLabel}
+              </button>
+            )}
+            {onInspect && sectionId && (
+              <button
+                type="button"
+                style={actionButtonStyle}
+                disabled={busy}
+                onClick={() => onInspect(sectionId)}
+              >
+                Inspect how this was made
               </button>
             )}
             {canAct && !dismissing && (

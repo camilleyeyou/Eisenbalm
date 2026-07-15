@@ -183,6 +183,24 @@ describe('AnnotationMark action row (EDT-04)', () => {
     expect(onEditSection).toHaveBeenCalledWith('originStory', 'f1')
   })
 
+  it('renders no Inspect action when onInspect is absent (Phase 44, INS-01)', () => {
+    renderMark()
+    openPopover()
+
+    expect(screen.queryByRole('button', { name: /inspect how this was made/i })).toBeNull()
+  })
+
+  it('renders Inspect how this was made when onInspect is provided, and clicking it calls onInspect(sectionId)', () => {
+    const onInspect = vi.fn()
+    renderMark({}, { onInspect })
+    openPopover()
+
+    const inspectButton = screen.getByRole('button', { name: /inspect how this was made/i })
+    fireEvent.click(inspectButton)
+
+    expect(onInspect).toHaveBeenCalledWith('originStory')
+  })
+
   it('Dismiss reveals a reason input whose submit is disabled until a reason is typed', async () => {
     renderMark()
     openPopover()

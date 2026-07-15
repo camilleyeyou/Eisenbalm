@@ -45,6 +45,12 @@
  * export directly with a plain `runId`. Every relative import below is
  * unchanged — this file lives in the SAME directory `page.tsx` used to
  * occupy.
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 1): the mounted `<Galley>` now gets
+ * `onInspect` — the voice finding entry point into the shared "Inspect how
+ * this was made" panel (`useInspector().openInspector`, mounted once at the
+ * `(dashboard)` root layout). Same `AnnotationMark` component as Review
+ * Desk's draft-passage entry point — one prop covers both.
  */
 import { use, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -52,6 +58,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import Galley from '@/components/galley/Galley'
+import { useInspector } from '@/components/inspector/InspectorProvider'
 import VoicePassRail from './_components/VoicePassRail'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
@@ -90,6 +97,7 @@ export default function VoicePassRunView({ params }: VoicePassRunViewProps) {
 export function VoicePassScreen({ runId }: { runId: string }) {
   const { getToken } = useAuth()
   const router = useRouter()
+  const { openInspector } = useInspector()
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -177,6 +185,15 @@ export function VoicePassScreen({ runId }: { runId: string }) {
     router.push('/review-desk/' + encodeURIComponent(runId) + '?' + q.toString())
   }
 
+  /**
+   * Phase 44 (INS-01) — the voice finding entry point. Same `AnnotationMark`
+   * component Review Desk's draft-passage entry point uses; opens the
+   * shared inspector on this section's `founder` artifact.
+   */
+  function handleInspect(sectionId: string) {
+    openInspector({ type: 'founder', runId, locator: sectionId })
+  }
+
   return (
     <div className="flex min-h-[70vh] flex-col gap-4">
       {/* Phase 41 (D-07, Plan 41-07 Task 3): the standalone "Voice Pass —
@@ -227,6 +244,7 @@ export function VoicePassScreen({ runId }: { runId: string }) {
               revisionId={draft.revisionId}
               reloadDraft={reloadDraft}
               onEditSection={handleEditSection}
+              onInspect={handleInspect}
               showProvenance={false}
               includeAxes={VOICE_AXES}
               labels={VOICE_LABELS}

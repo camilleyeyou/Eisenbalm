@@ -152,3 +152,44 @@ describe('UnresolvedFindingCard actions (Phase 33, D-11)', () => {
     expect(screen.queryByRole('button', { name: /edit inline/i })).toBeNull()
   })
 })
+
+describe('UnresolvedFindingCard onInspect (Phase 44, INS-01)', () => {
+  it('renders no Inspect action when onInspect is absent, even with other action props present', () => {
+    render(
+      <UnresolvedFindingCard
+        finding={finding}
+        runId="run-1"
+        sectionId="originStory"
+        onEditSection={vi.fn()}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /inspect how this was made/i })).toBeNull()
+  })
+
+  it('renders Inspect how this was made only when onInspect + sectionId are both provided', () => {
+    const onInspect = vi.fn()
+    render(
+      <UnresolvedFindingCard
+        finding={finding}
+        runId="run-1"
+        sectionId="originStory"
+        onInspect={onInspect}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /inspect how this was made/i })).toBeDefined()
+  })
+
+  it('clicking Inspect how this was made calls onInspect(sectionId)', () => {
+    const onInspect = vi.fn()
+    render(
+      <UnresolvedFindingCard
+        finding={finding}
+        runId="run-1"
+        sectionId="originStory"
+        onInspect={onInspect}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /inspect how this was made/i }))
+    expect(onInspect).toHaveBeenCalledWith('originStory')
+  })
+})

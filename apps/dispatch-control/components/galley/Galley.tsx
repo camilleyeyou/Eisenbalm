@@ -47,6 +47,11 @@
  * BYTE-IDENTICAL to `draftSectionIdsFromDraft` (lib/derivedState.ts, Plan
  * 41-01), the shared source the workspace outline reads. Keep the two in
  * lockstep: if this predicate ever changes, change it there too.
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 1): an optional `onInspect?` prop is
+ * forwarded, unmodified, into every `GallerySection` this Galley mounts —
+ * the draft passage + voice finding entry points into the shared "Inspect
+ * how this was made" panel. Undefined leaves today's render unaffected.
  */
 import { useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
@@ -108,6 +113,12 @@ interface GalleyProps {
   reloadDraft: () => Promise<void> | void
   /** D-08 edit-inline deep-link into the section editor. */
   onEditSection: (sectionId: string, findingId?: string) => void
+  /**
+   * Phase 44 (INS-01) — opens the shared "Inspect how this was made" panel
+   * on this section's founder artifact. Optional; forwarded unmodified to
+   * every `GallerySection`. Undefined leaves today's render unaffected.
+   */
+  onInspect?: (sectionId: string) => void
   /** Phase 35 (PRV-03, D-10) — provenance wash layer, default ON. */
   showProvenance?: boolean
   /**
@@ -164,6 +175,7 @@ export default function Galley({
   revisionId,
   reloadDraft,
   onEditSection,
+  onInspect,
   showProvenance = true,
   includeAxes,
   labels,
@@ -317,6 +329,7 @@ export default function Galley({
             revisionId={revisionId}
             reloadDraft={reloadDraft}
             onEditSection={onEditSection}
+            onInspect={onInspect}
             labels={labels}
             onUnsourcedClaimClick={onUnsourcedClaimClick}
           />
@@ -345,6 +358,7 @@ export default function Galley({
           revisionId={revisionId}
           reloadDraft={reloadDraft}
           onEditSection={onEditSection}
+          onInspect={onInspect}
           labels={labels}
           onUnsourcedClaimClick={onUnsourcedClaimClick}
         />

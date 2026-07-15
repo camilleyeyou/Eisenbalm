@@ -29,6 +29,14 @@
  * straight through into every `AnnotationMark` this section mounts — the
  * voice-tell label variant (Accept rewrite / Write my own / Keep (not a
  * tell)). Undefined (Review Desk's default) is unchanged.
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 1): threads an optional `onInspect?`
+ * prop into every `AnnotationMark`/`UnresolvedFindingCard` this section
+ * mounts (covers the draft passage AND voice finding entry points via the
+ * shared finding chain), and renders a lightweight per-section "Inspect how
+ * this was made" header affordance for sections with no open finding to
+ * hang the action off. Both are gated on `Boolean(onInspect)`; existing
+ * callers that omit the prop are unaffected.
  */
 import { useMemo } from 'react'
 import { PortableText, type PortableTextReactComponents } from '@portabletext/react'
@@ -59,6 +67,10 @@ interface GallerySectionProps {
   revisionId: string
   reloadDraft: () => Promise<void> | void
   onEditSection: (sectionId: string, findingId?: string) => void
+  // Phase 44 (INS-01) — opens the shared inspector on this section's founder
+  // artifact. Optional; omitted callers see no "Inspect how this was made"
+  // affordance anywhere in this section.
+  onInspect?: (sectionId: string) => void
   // Phase 35 (PRV-03) — provenance wash resolution + visibility toggle.
   claimResolved?: ResolvedClaim[]
   showProvenance?: boolean
@@ -86,6 +98,7 @@ export default function GallerySection({
   revisionId,
   reloadDraft,
   onEditSection,
+  onInspect,
   claimResolved = [],
   showProvenance = true,
   labels,
@@ -123,6 +136,7 @@ export default function GallerySection({
             revisionId={revisionId}
             reloadDraft={reloadDraft}
             onEditSection={onEditSection}
+            onInspect={onInspect}
             labels={labels}
           >
             {children}
@@ -139,12 +153,34 @@ export default function GallerySection({
         ),
       },
     }),
-    [runId, sectionId, revisionId, reloadDraft, onEditSection, labels, onUnsourcedClaimClick],
+    [
+      runId,
+      sectionId,
+      revisionId,
+      reloadDraft,
+      onEditSection,
+      onInspect,
+      labels,
+      onUnsourcedClaimClick,
+    ],
   )
 
   return (
     <section id={`galley-${sectionId}`} className="galley-section">
-      {headline && <h2 className="galley-headline">{headline}</h2>}
+      {(headline || onInspect) && (
+        <div className="galley-section__header flex items-center justify-between gap-2">
+          {headline && <h2 className="galley-headline">{headline}</h2>}
+          {onInspect && (
+            <button
+              type="button"
+              onClick={() => onInspect(sectionId)}
+              className="min-h-[44px] shrink-0 rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+            >
+              Inspect how this was made
+            </button>
+          )}
+        </div>
+      )}
       {deck && <p className="galley-deck">{deck}</p>}
 
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -157,6 +193,7 @@ export default function GallerySection({
           runId={runId}
           sectionId={sectionId}
           onEditSection={onEditSection}
+          onInspect={onInspect}
         />
       ))}
     </section>

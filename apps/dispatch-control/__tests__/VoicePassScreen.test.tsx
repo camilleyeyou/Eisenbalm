@@ -104,6 +104,7 @@ import { useQuery } from 'convex/react'
 import { getDraft } from '@/lib/contentPatchClient'
 import { recheck } from '@/lib/voicePassClient'
 import { VoicePassScreen } from '../app/(dashboard)/voice-pass/[runId]/VoicePassRunView'
+import { InspectorProvider } from '../components/inspector/InspectorProvider'
 
 afterEach(() => {
   cleanup()
@@ -191,7 +192,17 @@ async function renderScreen() {
   // Render the named VoicePassScreen (runId already unwrapped) directly —
   // the default export's `use(params)` wrapper is a thin, untested Next.js
   // 15 async-params adapter around this same component.
-  const utils = render(<VoicePassScreen runId="r1" />)
+  //
+  // Phase 44 (INS-01, Plan 44-07 Task 1): the screen now calls
+  // `useInspector()` (the voice finding entry point), so it must render
+  // inside an `<InspectorProvider>` — mirroring
+  // `InspectorProvider.test.tsx`'s own wrapping convention. `activeKey`
+  // stays null throughout (no test here clicks Inspect).
+  const utils = render(
+    <InspectorProvider>
+      <VoicePassScreen runId="r1" />
+    </InspectorProvider>,
+  )
   await waitFor(() => {
     expect(screen.queryByText(/loading draft/i)).toBeNull()
   })

@@ -52,6 +52,11 @@
  * click-through route to the Fact Check tab (D-12); it is undefined for any
  * other caller of this component (none currently exist beyond the Draft
  * mount).
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 1): the mounted `<Galley>` now gets
+ * `onInspect` — the draft passage entry point into the shared "Inspect how
+ * this was made" panel (`useInspector().openInspector`, mounted once at the
+ * `(dashboard)` root layout). Opens on the section's `founder` artifact.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -64,6 +69,7 @@ import SectionChipList, {
 } from './_components/SectionChipList'
 import SectionEditorPanel from './_components/SectionEditorPanel'
 import Galley from '@/components/galley/Galley'
+import { useInspector } from '@/components/inspector/InspectorProvider'
 import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
@@ -149,6 +155,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
 
   const { getToken } = useAuth()
   const router = useRouter()
+  const { openInspector } = useInspector()
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -235,6 +242,16 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
     setSelectedSection(sectionId)
     setEditFinding({ sectionId, findingId })
     setViewMode('edit')
+  }
+
+  /**
+   * Phase 44 (INS-01) — the draft passage entry point. Opens the shared
+   * inspector on this section's `founder` artifact. The locator is the
+   * galley/draft camelCase section id; `resolveInspectorStep`
+   * (`lib/inspectorArtifact.ts`) normalizes it via `galleyIdToQaSection`.
+   */
+  function handleInspect(sectionId: string) {
+    openInspector({ type: 'founder', runId, locator: sectionId })
   }
 
   // Phase 36 (VOX-02, D-09, Plan 36-07 Task 1): ?edit=<sectionId>[&finding=
@@ -445,6 +462,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
                   revisionId={draft.revisionId}
                   reloadDraft={reloadDraft}
                   onEditSection={handleEditSection}
+                  onInspect={handleInspect}
                   showProvenance={showProvenance}
                   includeAxes={FACTUAL_AXES}
                   onUnsourcedClaimClick={() => {
