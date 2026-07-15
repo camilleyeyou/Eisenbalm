@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 43 context gathered
-last_updated: "2026-07-15T15:22:28.910Z"
+status: Ready to execute
+stopped_at: Completed 43-01-contract-audit-decision-shape-PLAN.md
+last_updated: "2026-07-15T16:13:00.624Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 42 — fact-check-stage
+**Current focus:** Phase 43 — my-tasks-decision-log
 
 ## Current Position
 
-Phase: 42
-Plan: Not started
+Phase: 43 (my-tasks-decision-log) — EXECUTING
+Plan: 2 of 9
 
 ## Performance Metrics
 
@@ -297,6 +297,7 @@ Plan: Not started
 | Phase 42 P06 | 35min | 3 tasks | 8 files |
 | Phase 42 P07 | 20min | 2 tasks | 7 files |
 | Phase 42 P08 | 25min | 1 tasks | 1 files |
+| Phase 43 P01 | 15min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -770,6 +771,9 @@ Recent decisions affecting current work:
 - [Phase 42]: [Phase 42-08]: Ran the Convex dev sync (dev:once) and verified it two ways (sync success output + independent check:convex-parity guard: 53/53 called functions present) to close the committed-but-unsynced gap flagged by 42-01/42-04/42-06
 - [Phase 42]: [Phase 42-08]: The no-Sanity-write tripwire was run both inside the full vitest suite and in isolation, per the plan's explicit instruction to assert it explicitly
 - [Phase 42]: [Phase 42-08]: The manual 8-step demo-leg UAT (Task 2) was NOT self-approved — recorded as a pending human-verification item in 42-08-SUMMARY.md and 42-VERIFICATION.md rather than fabricated as passed
+- [Phase 43]: Store only write-time-stable audit_log decision fields (reason/issueNumber/runId/instructionVersion); resolve actor display name at read time via users.byClerkUserId + a static system/agent label map
+- [Phase 43]: Corrected two research-confirmed contract errors: claim/facts-signoff task hrefs retarget to issueFactCheckHref/issueApprovalHref; Do-not-use retrofit is net-new reason-capture work, not a promotion of an existing reason
+- [Phase 43]: Superseded task detection is a client-side audit_log cross-reference (run.section_rerolled newer than openedAt) — no pipeline change to rerun_agent; resolved/superseded never added to the closed TaskSeverity union
 
 ### Pending Todos
 
@@ -860,6 +864,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T15:22:28.891Z
-Stopped at: Phase 43 context gathered
-Resume file: .planning/phases/43-my-tasks-decision-log/43-CONTEXT.md
+Last session: 2026-07-15T16:13:00.610Z
+Stopped at: Completed 43-01-contract-audit-decision-shape-PLAN.md
+Resume file: None
