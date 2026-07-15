@@ -158,7 +158,7 @@ function StatusReadout({ status }: { status: IssueStatus }) {
 
 function FrameChrome({ issueNumber: n, children }: { issueNumber: number; children: React.ReactNode }) {
   const pathname = usePathname()
-  const { status, stages, tasks, workMinutes } = useWorkspaceState()
+  const { status, stages, tasks, workMinutes, panelContent } = useWorkspaceState()
   const setLastVisitedStage = useMutation(api.issues.setLastVisitedStage)
 
   // Last-visited-stage writer (D-03/D-04) — best-effort, never blocks nav.
@@ -246,7 +246,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr_300px]">
           <WorkspaceOutline />
           <div className="min-w-0">{children}</div>
-          <ContextPanel title="Context">{null}</ContextPanel>
+          <ContextPanel title="Context">{panelContent}</ContextPanel>
         </div>
 
         <WorkspaceControls issueNumber={n} />
