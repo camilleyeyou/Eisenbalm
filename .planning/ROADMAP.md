@@ -455,7 +455,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
-| 40. Issue Entity & Issues Home | 4/9 | In Progress|  |
+| 40. Issue Entity & Issues Home | 5/9 | In Progress|  |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 0/TBD | Not started | - |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
@@ -876,7 +876,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 40-02-issues-table-convex-PLAN.md — issues Convex table + functions + pipelineRuns issue-keyed queries
 - [x] 40-03-repetition-note-backfill-pipeline-PLAN.md — repetition-note endpoint + ensureByNumber at run start + backfill
 - [x] 40-04-derived-state-resolver-libs-PLAN.md — pure derivedState selector + route resolver + repetition-note client
-- [ ] 40-05-issues-home-screen-PLAN.md — Issues home: in-progress card, stage strip, scheduled slot, held/published rows, Create
+- [x] 40-05-issues-home-screen-PLAN.md — Issues home: in-progress card, stage strip, scheduled slot, held/published rows, Create
 - [ ] 40-06-routing-inversion-PLAN.md — issue-keyed route wrappers + legacy redirects + dashboard index
 - [ ] 40-07-issue-overview-hold-PLAN.md — /issues/[n] overview + HoldDialog + hold/reopen wiring (ISS-04)
 - [ ] 40-08-masthead-nav-chrome-PLAN.md — four-readout header (ISS-05) + nav restructure (ISS-02/D-31)

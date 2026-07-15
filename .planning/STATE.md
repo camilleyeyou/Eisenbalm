@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 40-04-derived-state-resolver-libs-PLAN.md
-last_updated: "2026-07-15T00:00:15.367Z"
+stopped_at: Completed 40-05-issues-home-screen-PLAN.md
+last_updated: "2026-07-15T00:31:18.918Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 40 (issue-entity-issues-home) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 
 ## Performance Metrics
 
@@ -272,6 +272,7 @@ Plan: 5 of 9
 | Phase 40 P02 | 10min | 3 tasks | 3 files |
 | Phase 40-issue-entity-issues-home P03 | 20min | 3 tasks | 5 files |
 | Phase 40 P04 | 15min | 3 tasks | 3 files |
+| Phase 40 P05 | 28min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -698,6 +699,9 @@ Recent decisions affecting current work:
 - [Phase 40-issue-entity-issues-home]: Routed the issues: mutation prefix through the convex_runs_store test fixture so test_control.py doesn't crash on the new defensive ensureByNumber call (Rule 3 auto-fix)
 - [Phase 40]: Voice stage needs-you openCount uses 0 (not the contract's literal 1) for the sign-off-outstanding-with-no-open-findings branch, to match the 40-01 RED spec's exclusion test
 - [Phase 40]: deriveTasks guards signOffs !== undefined before generating missing-sign-off tasks to avoid crashing on an unloaded sign-offs query
+- [Phase 40]: Cobalt is link-style-only per UI-SPEC; CreatePanel's primary CTA uses the existing ink-filled-button convention, not a cobalt background
+- [Phase 40]: page.tsx normalizes skip-produced undefined signOffs into {} once a run-lookup resolves to no-run, so ISS-06's undefined-guard doesn't show 'State unknown' forever for a fresh draft issue
+- [Phase 40]: Moved convex/scripts/check-deploy-parity.mjs to repo-root scripts/ — it broke convex codegen's bundler by using Node builtins without a use-node directive, blocking local api.d.ts regeneration for the new issues module
 
 ### Pending Todos
 
@@ -787,6 +791,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T00:00:15.354Z
-Stopped at: Completed 40-04-derived-state-resolver-libs-PLAN.md
+Last session: 2026-07-15T00:31:18.905Z
+Stopped at: Completed 40-05-issues-home-screen-PLAN.md
 Resume file: None
