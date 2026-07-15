@@ -14,17 +14,30 @@
  * Honesty rule (never-blank): `undefined` (not loaded yet) renders a loading
  * line; `[]` (loaded, no candidates) renders "No charity selected yet" — the
  * generic ContextPanel placeholder is never faked into looking populated.
+ *
+ * Phase 44 Plan 44-08 (INS-01, §44.1/§44.3): the winner card also carries an
+ * "Inspect how this was made" affordance -> `openInspector({ type: 'org',
+ * runId, locator })`, resolving to `scout` (the pitch/candidate data itself).
+ * This is a LIVE entry point today — Scout's pitchLog is real for every run,
+ * NOT gated behind a Phase 46/47 reserved state (44-RESEARCH's "State of the
+ * Art" correction to CONTEXT.md's more pessimistic characterization).
  */
 import { useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import type { Doc } from '@convex/_generated/dataModel'
 import { useWorkspaceState } from '../../_components/WorkspaceStateProvider'
+import { useInspector } from '@/components/inspector/InspectorProvider'
 
 const MICRO_LABEL =
   'font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]'
 
 export function buildStoryPanelContent(
   pitchRows: Doc<'pitchLog'>[] | undefined,
+  // Phase 44 Plan 44-08 (INS-01) — supplied by the publisher below via
+  // `useInspector().openInspector`; optional so this stays a pure function
+  // callable without a live inspector context (existing StageContextPanels
+  // tests call it with pitchRows only).
+  onInspect?: (locator: string) => void,
 ): ReactNode {
   if (pitchRows === undefined) {
     return (
@@ -59,6 +72,17 @@ export function buildStoryPanelContent(
           <p className="mt-1 text-[13px] leading-snug text-[color:var(--color-ink)]">
             {winner.scoutSummary}
           </p>
+          {onInspect && (
+            // §44.1/§44.3 — `org` locator = the winner's candidateId,
+            // resolves to `scout`. Live today (not a reserved stub).
+            <button
+              type="button"
+              onClick={() => onInspect(winner._id)}
+              className="mt-2 min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+            >
+              Inspect how this was made
+            </button>
+          )}
         </div>
       ) : (
         <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
@@ -83,7 +107,21 @@ export function buildStoryPanelContent(
 
 export default function StoryPanelPublisher() {
   const ws = useWorkspaceState()
-  const content = useMemo(() => buildStoryPanelContent(ws.pitchRows), [ws.pitchRows])
+  // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector
+  // opener, mounted once at the (dashboard) root layout.
+  const { openInspector } = useInspector()
+  const runId = ws.runId
+  const onInspect = useMemo(
+    () =>
+      runId
+        ? (locator: string) => openInspector({ type: 'org', runId, locator })
+        : undefined,
+    [runId, openInspector],
+  )
+  const content = useMemo(
+    () => buildStoryPanelContent(ws.pitchRows, onInspect),
+    [ws.pitchRows, onInspect],
+  )
   const { setPanelContent } = ws
   useEffect(() => {
     setPanelContent(content)

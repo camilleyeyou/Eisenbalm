@@ -10,10 +10,18 @@
  * `useWorkspaceState`.
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
+ *
+ * Phase 44 (INS-01, Plan 44-08 Task 3): `StoryPanelPublisher` now calls
+ * `useInspector()` (for the winner card's "Inspect how this was made"
+ * affordance), so its plumbing-block render below is wrapped in
+ * `<InspectorProvider>` — mirroring 44-07's FactCheckScreen/VoicePassScreen
+ * wrapping convention. `buildStoryPanelContent`'s own tests are unaffected
+ * (its new `onInspect` param is optional).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import type { Doc } from '@convex/_generated/dataModel'
+import { InspectorProvider } from '../components/inspector/InspectorProvider'
 import StoryPanelPublisher, {
   buildStoryPanelContent,
 } from '../app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent'
@@ -277,7 +285,11 @@ describe('Stage panel publishers reach the ContextPanel slot', () => {
       setPanelContent,
     }
 
-    render(<StoryPanelPublisher />)
+    render(
+      <InspectorProvider>
+        <StoryPanelPublisher />
+      </InspectorProvider>,
+    )
 
     expect(setPanelContent).toHaveBeenCalled()
     expect(setPanelContent.mock.calls[0][0]).toBeDefined()
