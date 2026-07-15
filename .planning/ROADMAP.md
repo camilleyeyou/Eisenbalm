@@ -922,7 +922,15 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   4. Selecting a claim opens a provenance card (exact claim, importance, status, source + publisher, supporting passage, URL, retrieval date, agent, confidence) — the same component reused in Draft, Approval, and the inspector — and operator can Confirm, Edit claim, Replace source, Remove claim, or Keep as written with a required reason.
   5. "Ask agent for better evidence" returns a replacement source and a rewritten claim together; confirming applies both as a content patch + claim update and records a decision-log entry.
   6. A revision touching a claim's block returns that claim to unchecked and increments the "changed since check" counter, even when the replacement text is itself already sourced.
-**Plans**: TBD
+**Plans**: 8 plans (6 waves)
+- [ ] 42-01-contract-schema-convex-PLAN.md — §42 contract + claim_checks importance/changedSinceCheck/conflict + pipeline-lane claimChecks functions (Wave 1)
+- [ ] 42-02-researcher-publisher-importance-PLAN.md — Researcher emits importance; publisher merges onto sourced+unsourced rows (Wave 2, FCT-01)
+- [ ] 42-03-reset-touched-claims-PLAN.md — content.py _reset_touched_claims returns touched claims to unchecked + changed marker (Wave 2, FCT-07)
+- [ ] 42-04-factcheck-endpoints-PLAN.md — api/factcheck.py six actions + two-step evidence preview/apply (Wave 3, FCT-05/06)
+- [ ] 42-05-derived-selectors-workspace-provider-PLAN.md — deriveFactCheckSummary + isMustFix + provider claimRows extension (Wave 2, FCT-02)
+- [ ] 42-06-provenance-card-stage3-screen-PLAN.md — shared ClaimProvenanceCard + Stage 3 screen: summary/filters/table/actions (Wave 4, FCT-02/03/04/05/06)
+- [ ] 42-07-draft-approval-card-reuse-PLAN.md — Draft ClaimMark + Approval SourceIndex consume the shared card (Wave 5, FCT-04)
+- [ ] 42-08-integration-gate-PLAN.md — full suites + strict build + Convex dev sync + demo-leg UAT (Wave 6)
 **UI hint**: yes
 
 ### Phase 43: My Tasks & Decision Log
