@@ -90,12 +90,12 @@ describe('MyTasksList — active task row (TSK-01/02/03)', () => {
   it('renders "unknown" age (never a blank string) when openedAt is absent', () => {
     render(
       <MyTasksList
-        tasks={[makeActiveTask({ openedAt: undefined, title: 'Age unknown task' })]}
+        tasks={[makeActiveTask({ openedAt: undefined, title: 'No timestamp recorded' })]}
         approvalHref="/issues/7/approval"
       />,
     )
-    expect(screen.getByText('Age unknown task')).toBeDefined()
-    expect(screen.getByText(/unknown/i)).toBeDefined()
+    expect(screen.getByText('No timestamp recorded')).toBeDefined()
+    expect(screen.getByText('unknown')).toBeDefined()
   })
 })
 
