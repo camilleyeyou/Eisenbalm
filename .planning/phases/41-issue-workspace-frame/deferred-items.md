@@ -17,3 +17,21 @@ execute-plan Scope Boundary rule). Each entry notes which plan surfaced it.
     `ImportMeta`) and two `TS2532` possibly-undefined errors.
   - `__tests__/WriterExpansion.test.tsx` — one `TS2345` (`HTMLElement | undefined`
     not assignable) at line 103.
+
+## Plan 41-12 (per-stage-context-panel-content)
+
+- **`.planning/STATE.md` frontmatter `progress.total_plans` / `progress.completed_plans`
+  counters are frozen/stale, unrelated to this plan's changes.** Both
+  `state advance-plan` and `state update-progress` ran successfully (the former
+  correctly bumped "Current Position" to Plan 12 of 12; the latter reported
+  `181/183` — byte-identical to the value recorded at Phase 40's completion,
+  commit `66aa813`, well before Phase 41 started). Confirmed via `git show
+  66aa813:.planning/STATE.md` that these two numbers have not moved across
+  ANY of Phase 41's 12 plan completions (01 through 12), so this is a
+  pre-existing tool/data staleness (likely the frontmatter `milestone: v2.0`
+  label itself being stale relative to PROJECT.md's actual current milestone,
+  v4.0 — the progress tool may be scoped to a milestone definition that no
+  longer matches), not something plan 41-12 caused or should attempt to
+  guess-fix. Left untouched; `status`, `stopped_at`, and the "Current
+  Position" section (all freeform/narrative, not derived from that counter)
+  were hand-corrected to accurately reflect Phase 41's completion instead.

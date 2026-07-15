@@ -48,7 +48,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 **v3.0 complete (shipped 2026-07-10). v4.0: Dispatch Control v3 — The Editorial Workspace (Phases 40–50)**
 
 - [x] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems (completed 2026-07-15)
-- [ ] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5 (all 10 plans executed 2026-07-15; verification found 1 gap — WSP-03 context panel mounted empty on every stage; gap closure pending via `/gsd:plan-phase 41 --gaps`)
+- [x] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5 (all 12 plans executed 2026-07-15, including the WSP-03 gap closure: the context panel now feeds real, stage-specific content on all 5 stages) (completed 2026-07-15)
 - [ ] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card
 - [ ] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide
 - [ ] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic
@@ -456,7 +456,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
-| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 11/12 | In Progress|  |
+| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete   | 2026-07-15 |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
@@ -907,7 +907,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 41-09-stage5-approval-publish-preview-PLAN.md — Stage 5 Approval readiness board + exact publish preview (Wave 4)
 - [x] 41-10-integration-gate-PLAN.md — full suite + strict build + Convex live + demo-path UAT (Wave 5)
 - [x] 41-11-context-panel-slot-mechanism-PLAN.md — WSP-03 gap: ContextPanel per-stage content slot (setPanelContent) + expose provider data (Gap Wave 1)
-- [ ] 41-12-per-stage-context-panel-content-PLAN.md — WSP-03 gap: 5 stage panel publishers (lead/QA/claims/voice/readiness) + regression tests (Gap Wave 2)
+- [x] 41-12-per-stage-context-panel-content-PLAN.md — WSP-03 gap: 5 stage panel publishers (lead/QA/claims/voice/readiness) + regression tests (Gap Wave 2)
 **UI hint**: yes
 
 ### Phase 42: Fact Check Stage

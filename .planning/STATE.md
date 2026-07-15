@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Phase 41 gap closure in progress — 41-11 done (mechanism), 41-12 pending (stage publishers)
-stopped_at: Completed 41-11-context-panel-slot-mechanism-PLAN.md (WSP-03 gap closure, mechanism half). Next — 41-12 wires each stage's real content into the panelContent slot. Human demo-path UAT still pending in 41-UAT.md.
-last_updated: "2026-07-15T09:10:09.467Z"
+status: Phase 41 complete — WSP-03 gap closed (both halves shipped, 12/12 plans); ready for Phase 42
+stopped_at: Completed 41-12-per-stage-context-panel-content-PLAN.md (WSP-03 gap closure complete, both halves shipped). Phase 41 fully complete. Human demo-path UAT still pending in 41-UAT.md (recorded residual, not a gap).
+last_updated: "2026-07-15T09:31:44.893Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 
 ## Current Position
 
-Phase: 41 (issue-workspace-frame) — EXECUTING (gap closure)
-Plan: 11 of 12 (gap-closure plans 41-11/41-12 appended after verification found WSP-03 incomplete)
+Phase: 41 (issue-workspace-frame) — COMPLETE (12/12 plans, including WSP-03 gap closure)
+Plan: 12 of 12 — all base waves (01-10) and both gap-closure plans (41-11 mechanism, 41-12 per-stage content) shipped
 
 ## Performance Metrics
 
@@ -288,6 +288,7 @@ Plan: 11 of 12 (gap-closure plans 41-11/41-12 appended after verification found 
 | Phase 41 P09 | 20min | 2 tasks | 6 files |
 | Phase 41 P10 | 15min | 2 tasks | 1 files |
 | Phase 41 P11 | 12min | 2 tasks | 3 files |
+| Phase 41 P12 | 25min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -741,6 +742,9 @@ Recent decisions affecting current work:
 - [Phase 41]: Stage 5 mounts DecisionRail full-width with held read from useWorkspaceState() (no re-query); readiness board + 'Agent editor's recommendation' relabel + PublishPreviewDialog interstitial ship additively, publishIssue()/API_CONTRACTS.md unchanged
 - [Phase 41]: Declined to auto-approve the checkpoint:human-verify UAT gate; persisted the 7 WSP demo-path criteria as an explicit PENDING checklist in 41-UAT.md rather than fabricating a human verification result
 - [Phase 41]: [Phase 41-issue-workspace-frame]: 41-11 (WSP-03 gap closure, mechanism half): panelContent/setPanelContent slot added to WorkspaceStateProvider; layout.tsx renders {panelContent} instead of hardcoded {null}; pitchRows/qaFindings/claimRows/signOffs exposed on the context value for Plan 41-12's stage publishers with zero new Convex subscriptions (useQuery( count stayed at 8)
+- [Phase 41]: Each panel builder accepts the raw provider field (not pre-filtered) so the loading vs empty distinction lives in one place per stage
+- [Phase 41]: Approval's readiness board is an intentional read-only duplicate of the Stage 5 rail's readiness summary, never imported
+- [Phase 41]: 5-publisher plumbing test mocks useWorkspaceState via one vi.hoisted fixture ref, since Vitest matches mocks by resolved file path not import specifier
 
 ### Pending Todos
 
@@ -830,6 +834,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T09:10:09.456Z
-Stopped at: Completed 41-11-context-panel-slot-mechanism-PLAN.md (WSP-03 gap closure, mechanism half). Next — 41-12 wires each stage's real content into the panelContent slot. Human demo-path UAT still pending in 41-UAT.md.
+Last session: 2026-07-15T09:31:27.773Z
+Stopped at: Completed 41-12-per-stage-context-panel-content-PLAN.md (WSP-03 gap closure complete, both halves shipped). Phase 41 fully complete. Human demo-path UAT still pending in 41-UAT.md (recorded residual, not a gap).
 Resume file: None

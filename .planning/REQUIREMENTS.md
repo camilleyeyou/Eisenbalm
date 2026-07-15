@@ -805,7 +805,7 @@ Added 2026-07-14 during v4.0 roadmap creation. All 62 v4.0 requirements mapped t
 | ISS-06 | Phase 40: Issue Entity & Issues Home | Complete |
 | WSP-01 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Complete |
 | WSP-02 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
-| WSP-03 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
+| WSP-03 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Complete |
 | WSP-04 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
 | WSP-05 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
 | WSP-06 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
