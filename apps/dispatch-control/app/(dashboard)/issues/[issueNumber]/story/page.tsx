@@ -20,6 +20,7 @@ import { api } from '@convex/_generated/api'
 import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { SignalDeskScreen } from '../../../signal-desk/_components/SignalDeskScreen'
+import StoryPanelPublisher from './StoryPanelContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,5 +39,10 @@ export default async function IssueStoryPage({ params }: IssueStoryPageProps) {
     : null
   if (!run) redirect(issueHref(n))
 
-  return <SignalDeskScreen workspace_id={DEFAULT_WORKSPACE_ID} runId={run.runId} />
+  return (
+    <>
+      <StoryPanelPublisher />
+      <SignalDeskScreen workspace_id={DEFAULT_WORKSPACE_ID} runId={run.runId} />
+    </>
+  )
 }

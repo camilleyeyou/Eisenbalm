@@ -22,6 +22,7 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
 import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
 import ReviewDeskRunView from '../../../review-desk/[runId]/ReviewDeskRunView'
+import DraftPanelPublisher from './DraftPanelContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,5 +41,10 @@ export default async function IssueDraftPage({ params }: IssueDraftPageProps) {
     : null
   if (!run) redirect(issueHref(n))
 
-  return <ReviewDeskRunView params={Promise.resolve({ runId: run.runId })} issueNumber={n} />
+  return (
+    <>
+      <DraftPanelPublisher />
+      <ReviewDeskRunView params={Promise.resolve({ runId: run.runId })} issueNumber={n} />
+    </>
+  )
 }
