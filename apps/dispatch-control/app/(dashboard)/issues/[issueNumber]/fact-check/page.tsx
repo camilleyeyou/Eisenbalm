@@ -13,6 +13,7 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
 import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
 import FactCheckPlaceholder from './FactCheckPlaceholder'
+import FactCheckPanelPublisher from './FactCheckPanelContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,5 +32,10 @@ export default async function IssueFactCheckPage({ params }: IssueFactCheckPageP
     : null
   if (!run) redirect(issueHref(n))
 
-  return <FactCheckPlaceholder runId={run.runId} />
+  return (
+    <>
+      <FactCheckPanelPublisher />
+      <FactCheckPlaceholder runId={run.runId} />
+    </>
+  )
 }

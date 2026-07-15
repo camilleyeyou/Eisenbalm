@@ -13,6 +13,7 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
 import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
 import { VoicePassScreen } from '../../../voice-pass/[runId]/VoicePassRunView'
+import VoicePanelPublisher from './VoicePanelContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,5 +32,10 @@ export default async function IssueVoicePage({ params }: IssueVoicePageProps) {
     : null
   if (!run) redirect(issueHref(n))
 
-  return <VoicePassScreen runId={run.runId} />
+  return (
+    <>
+      <VoicePanelPublisher />
+      <VoicePassScreen runId={run.runId} />
+    </>
+  )
 }

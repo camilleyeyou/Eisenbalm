@@ -16,6 +16,8 @@ import { render, screen, cleanup } from '@testing-library/react'
 import type { Doc } from '@convex/_generated/dataModel'
 import { buildStoryPanelContent } from '../app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent'
 import { buildDraftPanelContent } from '../app/(dashboard)/issues/[issueNumber]/draft/DraftPanelContent'
+import { buildFactCheckPanelContent } from '../app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckPanelContent'
+import { buildVoicePanelContent } from '../app/(dashboard)/issues/[issueNumber]/voice/VoicePanelContent'
 import type { WorkspaceStateValue } from '../app/(dashboard)/issues/_components/WorkspaceStateProvider'
 
 afterEach(() => {
@@ -92,6 +94,82 @@ describe('Stage 2 Draft panel', () => {
 
   it('renders a loading state while qaFindings has not loaded', () => {
     render(<>{buildDraftPanelContent(undefined)}</>)
+    expect(screen.getByText(/loading/i)).toBeDefined()
+  })
+})
+
+describe('Stage 3 Fact Check panel', () => {
+  it('renders claim detail when populated', () => {
+    const claimRows: WorkspaceStateValue['claimRows'] = [
+      {
+        _id: 'cc1',
+        status: 'checked',
+        sourceUrl: 'https://example.org/source',
+        sectionName: 'originStory',
+        claimText: 'Founded in 1998 with three volunteers.',
+      },
+      {
+        _id: 'cc2',
+        status: 'pending',
+        sectionName: 'problemStatement',
+        claimText: 'Serves over 400 families annually.',
+      },
+    ]
+
+    render(<>{buildFactCheckPanelContent(claimRows)}</>)
+
+    expect(screen.getByText(/founded in 1998 with three volunteers/i)).toBeDefined()
+    expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
+  })
+
+  it('renders an honest empty state when there are no claims', () => {
+    render(<>{buildFactCheckPanelContent([])}</>)
+    expect(screen.getByText(/no claims extracted yet/i)).toBeDefined()
+  })
+
+  it('renders a loading state while claimRows has not loaded', () => {
+    render(<>{buildFactCheckPanelContent(undefined)}</>)
+    expect(screen.getByText(/loading/i)).toBeDefined()
+  })
+})
+
+describe('Stage 4 Voice panel', () => {
+  it('renders open voice findings when populated', () => {
+    const qaFindings: WorkspaceStateValue['qaFindings'] = [
+      {
+        _id: 'qa2',
+        severity: 'warning',
+        axis: 'machine-tell',
+        sectionName: 'founderBio',
+        reason: 'Reads like a press release, not Jesse.',
+        accepted: undefined,
+        resolution: null,
+      },
+      {
+        _id: 'qa3',
+        severity: 'warning',
+        axis: 'precision',
+        sectionName: 'caseStudy',
+        reason: 'A factual axis finding — must not show on the Voice panel.',
+        accepted: undefined,
+        resolution: null,
+      },
+    ]
+
+    render(<>{buildVoicePanelContent(qaFindings)}</>)
+
+    expect(screen.getByText(/reads like a press release, not jesse/i)).toBeDefined()
+    expect(screen.queryByText(/must not show on the voice panel/i)).toBeNull()
+    expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
+  })
+
+  it('renders an honest empty state when there are no voice tells', () => {
+    render(<>{buildVoicePanelContent([])}</>)
+    expect(screen.getByText(/no voice tells flagged/i)).toBeDefined()
+  })
+
+  it('renders a loading state while qaFindings has not loaded', () => {
+    render(<>{buildVoicePanelContent(undefined)}</>)
     expect(screen.getByText(/loading/i)).toBeDefined()
   })
 })
