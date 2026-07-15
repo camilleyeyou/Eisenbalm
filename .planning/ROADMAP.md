@@ -458,7 +458,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
-| 43. My Tasks & Decision Log | 6/9 | In Progress|  |
+| 43. My Tasks & Decision Log | 7/9 | In Progress|  |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
 | 45. Agent Revision | 0/TBD | Not started | - |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
@@ -951,7 +951,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 43-04-superseded-resolved-session-logic-PLAN.md — taskSupersession module: run.section_rerolled cross-ref + resolved session memory (Wave 3)
 - [x] 43-05-my-tasks-screen-nav-handoff-PLAN.md — /my-tasks screen + empty/superseded states + Editorial nav item + inbox See-all (Wave 4)
 - [x] 43-06-decision-log-component-mounts-PLAN.md — shared DecisionLog component + Approval-panel & Workspace-frame mounts (Wave 3)
-- [ ] 43-07-retrofit-reason-actions-shared-helper-PLAN.md — route hold/reopen/activate-override/keep-as-written through the shared helper (Wave 4)
+- [x] 43-07-retrofit-reason-actions-shared-helper-PLAN.md — route hold/reopen/activate-override/keep-as-written through the shared helper (Wave 4)
 - [ ] 43-08-do-not-use-reason-capture-PLAN.md — net-new Do-not-use reason enforcement + audit emission + registry reason UI (Wave 5)
 - [ ] 43-09-integration-gate-PLAN.md — full suite + strict build + Convex deploy + pipeline pytest + live-session UAT (Wave 6)
 **UI hint**: yes

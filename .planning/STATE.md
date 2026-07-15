@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 43-05-my-tasks-screen-nav-handoff-PLAN.md
-last_updated: "2026-07-15T17:11:57.938Z"
+stopped_at: Completed 43-07-retrofit-reason-actions-shared-helper-PLAN.md
+last_updated: "2026-07-15T17:22:38.342Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 43 (my-tasks-decision-log) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 
 ## Performance Metrics
 
@@ -303,6 +303,7 @@ Plan: 7 of 9
 | Phase 43 P04 | 5 | 2 tasks | 2 files |
 | Phase 43 P06 | 15 | 3 tasks | 4 files |
 | Phase 43 P05 | 35min | 3 tasks | 5 files |
+| Phase 43 P07 | 20min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -786,6 +787,8 @@ Recent decisions affecting current work:
 - [Phase 43-05]: Reroll hrefs generically point at Draft since audit_log resourceId carries no per-agent stage
 - [Phase 43-05]: taskSection(task) = task.where verbatim -- computeSessionStates owns the QA/claim vocab bridge
 - [Phase 43-05]: AwaitingYouInbox's See all link is a pure addition -- its existing item derivation is untouched
+- [Phase 43]: issues.reopen synthesizes its structured reason from the prior heldReason rather than adding a new caller-supplied arg (no API_CONTRACTS §40.2 signature change)
+- [Phase 43]: factcheck.py keep-as-written passes reason+run_id into _emit_audit but omits issue_number (not resolvable from claim_checks without new out-of-scope query surface)
 
 ### Pending Todos
 
@@ -876,6 +879,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T17:11:57.925Z
-Stopped at: Completed 43-05-my-tasks-screen-nav-handoff-PLAN.md
+Last session: 2026-07-15T17:22:38.330Z
+Stopped at: Completed 43-07-retrofit-reason-actions-shared-helper-PLAN.md
 Resume file: None
