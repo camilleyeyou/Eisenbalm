@@ -69,6 +69,14 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         # calls this to flip a touched claim back to 'pending' + set
         # changedSinceCheck — handler calls requirePipelineSecret.
         "claimChecks:markChanged",
+        # Phase 42 (§42.3/§42.4, FCT-05/FCT-06): api/factcheck.py's six claim
+        # actions + the evidence/apply step — handler calls
+        # requirePipelineSecret. (42-03 lesson: register alongside the
+        # Convex-side guard, or every real call 500s Unauthorized despite
+        # mocked unit tests passing.)
+        "claimChecks:updateClaim",
+        "claimChecks:keepAsWritten",
+        "claimChecks:remove",
         # Phase 33 (§33.1): pipeline-lane resolution flip for the findings
         # accept/dismiss/reopen endpoints — handler calls requirePipelineSecret.
         "qaCorrections:setResolution",

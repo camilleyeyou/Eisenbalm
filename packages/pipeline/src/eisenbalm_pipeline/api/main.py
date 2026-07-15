@@ -32,6 +32,7 @@ from eisenbalm_pipeline.api import (
     agents,
     content,
     control,
+    factcheck,
     findings,
     health,
     registry,
@@ -206,5 +207,6 @@ app.include_router(content.router)
 app.include_router(findings.router)
 app.include_router(registry.router)
 app.include_router(signoffs.router)
+app.include_router(factcheck.router)
 app.include_router(voice_pass.router)
 app.include_router(eval_api.router)
