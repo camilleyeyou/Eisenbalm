@@ -48,6 +48,20 @@ import SourceIndex from './SourceIndex'
 
 interface DecisionRailProps {
   runId: string
+  /**
+   * Phase 41 (Plan 41-09, D-13) — set when this rail is mounted as the
+   * Workspace's Stage 5 (Approval) canvas. Used only to compose the
+   * publish-preview title ("Issue {n} — {charityName}"). Optional so the
+   * component still works standalone (legacy `/review-desk/[runId]` route,
+   * tests) without an issue number.
+   */
+  issueNumber?: number
+  /**
+   * Phase 41 (Plan 41-09, D-15) — the issue's held state, read by the caller
+   * from `useWorkspaceState()` (never re-queried here — Pitfall 3). When
+   * `true`, Publish is additionally disabled regardless of blockers/sign-offs.
+   */
+  held?: boolean
 }
 
 /** Minimal shape needed from a live `qaCorrections` row (matches page.tsx). */
@@ -111,7 +125,7 @@ function formatAgo(ts: number): string {
 const MICRO_LABEL =
   'font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]'
 
-export default function DecisionRail({ runId }: DecisionRailProps) {
+export default function DecisionRail({ runId, issueNumber, held }: DecisionRailProps) {
   const { getToken } = useAuth()
 
   // ── Data ──────────────────────────────────────────────────────────────────
@@ -418,7 +432,7 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
         <h3 className={MICRO_LABEL}>Actions</h3>
         <button
           type="button"
-          disabled={blockers.length > 0 || !factsActive || !humanActive || busy}
+          disabled={blockers.length > 0 || !factsActive || !humanActive || !!held || busy}
           onClick={handlePublish}
           className="min-h-[44px] w-full bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-paper,#f4f2ec)] disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -429,6 +443,10 @@ export default function DecisionRail({ runId }: DecisionRailProps) {
         ) : (!factsActive || !humanActive) ? (
           <p className="text-[11px] text-[color:var(--color-vermilion)]">
             Both sign-offs required to publish.
+          </p>
+        ) : held ? (
+          <p className="text-[11px] text-[color:var(--color-vermilion)]">
+            This issue is held — release the hold to publish.
           </p>
         ) : null}
         <button
