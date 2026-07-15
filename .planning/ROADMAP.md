@@ -944,7 +944,16 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   4. When nothing needs the operator, My Tasks says so explicitly and points to Approval — silence is a designed state, not an empty list.
   5. A task whose underlying step was restarted shows as superseded with a link to the new step, rather than disappearing silently.
   6. Every reason-requiring action across the console (remove lead, override a recommendation, keep as written, hold, activate with regression, Do not use) writes to one Decision log component recording actor, action, time, reason, before/after, instruction version, issue, and run.
-**Plans**: TBD
+**Plans**: 9 plans (6 waves)
+- [ ] 43-01-contract-audit-decision-shape-PLAN.md — §43 contract: audit_log decision fields + shared decision-write helper + projection query + derivedState corrections (Wave 1)
+- [ ] 43-02-audit-decision-substrate-convex-PLAN.md — audit_log additive fields + writeDecision + listDecisions + users read query + Convex sync (Wave 2)
+- [ ] 43-03-derivetasks-age-deeplink-fix-PLAN.md — deriveTasks openedAt/age + claim→/fact-check & facts-signoff→/approval href fix (Wave 2)
+- [ ] 43-04-superseded-resolved-session-logic-PLAN.md — taskSupersession module: run.section_rerolled cross-ref + resolved session memory (Wave 3)
+- [ ] 43-05-my-tasks-screen-nav-handoff-PLAN.md — /my-tasks screen + empty/superseded states + Editorial nav item + inbox See-all (Wave 4)
+- [ ] 43-06-decision-log-component-mounts-PLAN.md — shared DecisionLog component + Approval-panel & Workspace-frame mounts (Wave 3)
+- [ ] 43-07-retrofit-reason-actions-shared-helper-PLAN.md — route hold/reopen/activate-override/keep-as-written through the shared helper (Wave 4)
+- [ ] 43-08-do-not-use-reason-capture-PLAN.md — net-new Do-not-use reason enforcement + audit emission + registry reason UI (Wave 5)
+- [ ] 43-09-integration-gate-PLAN.md — full suite + strict build + Convex deploy + pipeline pytest + live-session UAT (Wave 6)
 **UI hint**: yes
 
 ### Phase 44: Inspect How This Was Made
