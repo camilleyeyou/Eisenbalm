@@ -354,8 +354,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **WSP-02**: A persistent issue outline lists every section with its state (clean / review / must fix / changed since review / not generated) and jumps to it.
 - [x] **WSP-03**: A collapsible context panel renders stage-appropriate context (open items, claim detail, findings, decision log) and can be hidden.
 - [x] **WSP-04**: Stage 2 (Draft) renders the galley in publication typography — checked claims marigold-underlined with source on hover *and* keyboard focus; unchecked claims rust-tinted and clickable through to Fact Check.
-- [ ] **WSP-05**: Stage 5 (Approval) leads with blockers (Must fix / Review recommended / estimated review time, with jump links), then the readiness board, then the agent editor's recommendation labeled as agent judgment — "editor" unqualified is reserved for the human.
-- [ ] **WSP-06**: Publish is disabled until Must fix = 0 ∧ Fact Check complete ∧ Voice approved current, with the unlock condition written next to the control; publishing shows an exact preview (destination, title, time, consequences) and one confirmation click — no typed confirmation.
+- [x] **WSP-05**: Stage 5 (Approval) leads with blockers (Must fix / Review recommended / estimated review time, with jump links), then the readiness board, then the agent editor's recommendation labeled as agent judgment — "editor" unqualified is reserved for the human.
+- [x] **WSP-06**: Publish is disabled until Must fix = 0 ∧ Fact Check complete ∧ Voice approved current, with the unlock condition written next to the control; publishing shows an exact preview (destination, title, time, consequences) and one confirmation click — no typed confirmation.
 - [x] **WSP-07**: "Not generated" is a visible first-class state in canvas and outline (e.g. the Editor's note), never a blank.
 
 ### Fact Check Stage (FCT)

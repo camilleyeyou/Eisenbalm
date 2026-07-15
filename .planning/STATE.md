@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 41-08-stage2-draft-recomposition-PLAN.md
-last_updated: "2026-07-15T06:57:20.867Z"
+stopped_at: Completed 41-09-stage5-approval-publish-preview-PLAN.md
+last_updated: "2026-07-15T07:18:47.779Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 41 (issue-workspace-frame) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 
 ## Performance Metrics
 
@@ -285,6 +285,7 @@ Plan: 9 of 10
 | Phase 41 P06 | 22 | 3 tasks | 6 files |
 | Phase 41 P07 | 18min | 3 tasks | 5 files |
 | Phase 41 P08 | 9min | 2 tasks | 5 files |
+| Phase 41 P09 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -735,6 +736,7 @@ Recent decisions affecting current work:
 - [Phase 41]: FactCheckPlaceholder is a slimmed read-only clone of SourceIndex (grouping only, no Check/Skip mutation) so the interim Stage 3 surface never gains the real stage's write capability
 - [Phase 41]: Stage 1's SignalDeskScreen internal header stays as an accepted provisional-mount carryover this phase; Stage 4's Voice header is stripped now (D-07) because Voice is fully frame-owned today, while Story's redesign is deferred to Phase 47
 - [Phase 41]: Stage 2 Draft recomposed: /review renamed to /draft, DecisionRail moved off the canvas (Stage 5), unchecked-claim click-through wired to Fact Check, and a WSP-07 Not-generated Editor's-note block added to Galley.tsx in lockstep with draftSectionIdsFromDraft
+- [Phase 41]: Stage 5 mounts DecisionRail full-width with held read from useWorkspaceState() (no re-query); readiness board + 'Agent editor's recommendation' relabel + PublishPreviewDialog interstitial ship additively, publishIssue()/API_CONTRACTS.md unchanged
 
 ### Pending Todos
 
@@ -824,6 +826,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T06:57:20.854Z
-Stopped at: Completed 41-08-stage2-draft-recomposition-PLAN.md
+Last session: 2026-07-15T07:18:47.765Z
+Stopped at: Completed 41-09-stage5-approval-publish-preview-PLAN.md
 Resume file: None
