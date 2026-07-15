@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 44-04-missing-inputs-diff-and-divergence-PLAN.md
-last_updated: "2026-07-15T20:11:55.675Z"
+stopped_at: Completed 44-05-seven-tab-inspector-panel-PLAN.md
+last_updated: "2026-07-15T20:33:16.149Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 44 (inspect-how-this-was-made) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 
 ## Performance Metrics
 
@@ -310,6 +310,7 @@ Plan: 5 of 9
 | Phase 44 P02 | 6min | 2 tasks | 4 files |
 | Phase 44 P03 | 15min | 2 tasks | 2 files |
 | Phase 44 P04 | 9min | 2 tasks | 5 files |
+| Phase 44 P05 | 35min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -807,6 +808,9 @@ Recent decisions affecting current work:
 - [Phase 44]: Missing-inputs diff redefined onto DECLARED_STATE_INPUTS (ported from agent_wrapper.py::_INPUT_KEYS) instead of VARIABLE_REGISTRY — the two vocabularies never intersect, so the diff computes against the coarse DispatchState field-name vocabulary the payload actually captures
 - [Phase 44]: Truncated/absent input snapshots never yield a definitive 'missing' claim — uncertain keys are folded into the missing array with a truncated:true flag and approximate:true, satisfying the D-05 hard rule
 - [Phase 44]: Output-divergence predicate defaults to 'unknown' on silence (no completedAt/no change-audit signal) and only returns 'unchanged' given positive evidence (hasChangeAudit + no later change) — never a false 'unchanged' per D-11
+- [Phase 44]: InspectorArtifact/InspectorPanelProps types live in components/inspector/InspectorPanel.tsx (not a new lib/ module) — the 44-06 container imports both directly from the component
+- [Phase 44]: InspectorFooter.tsx built inside Task 2's commit (not deferred to Task 3) so Task 2's own pnpm build verification passes with no dangling import
+- [Phase 44]: Footer action components must never carry a custom aria-label that only reshapes the visible label text — it silently shadows the accessible name and can collide with unrelated elements in role-based test queries
 
 ### Pending Todos
 
@@ -897,6 +901,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T20:11:55.662Z
-Stopped at: Completed 44-04-missing-inputs-diff-and-divergence-PLAN.md
+Last session: 2026-07-15T20:33:16.135Z
+Stopped at: Completed 44-05-seven-tab-inspector-panel-PLAN.md
 Resume file: None
