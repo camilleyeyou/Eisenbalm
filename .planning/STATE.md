@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 40-06-routing-inversion-PLAN.md
-last_updated: "2026-07-15T00:46:18.600Z"
+stopped_at: Completed 40-07-issue-overview-hold-PLAN.md
+last_updated: "2026-07-15T00:59:24.634Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 40 (issue-entity-issues-home) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 
 ## Performance Metrics
 
@@ -274,6 +274,7 @@ Plan: 7 of 9
 | Phase 40 P04 | 15min | 3 tasks | 3 files |
 | Phase 40 P05 | 28min | 3 tasks | 12 files |
 | Phase 40 P06 | 11min | 3 tasks | 11 files |
+| Phase 40 P07 | 12min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -706,6 +707,7 @@ Recent decisions affecting current work:
 - [Phase 40]: Split ReviewDeskRunPage's default export into named+default ReviewDeskRunView so /issues/[n]/review can default-import it cleanly
 - [Phase 40]: Extended parseIssueNumber validation to the /issues/[n]/runs/[runId] wrapper too, for consistency with the review/voice wrappers
 - [Phase 40]: Fixed VoicePassScreen.test.tsx to import VoicePassScreen from the new co-located VoicePassRunView.tsx instead of the now-redirect-only page.tsx (Rule 1 regression fix)
+- [Phase 40]: requestCancel reached via lib/pipelineControlClient.ts cancelRun() (Clerk-guarded pipeline endpoint), never a direct useMutation call — runs:requestCancel is single-lane pipeline-secret-gated
 
 ### Pending Todos
 
@@ -795,6 +797,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T00:46:18.588Z
-Stopped at: Completed 40-06-routing-inversion-PLAN.md
+Last session: 2026-07-15T00:59:24.622Z
+Stopped at: Completed 40-07-issue-overview-hold-PLAN.md
 Resume file: None
