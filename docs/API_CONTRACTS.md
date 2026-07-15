@@ -4276,3 +4276,206 @@ new pipeline GET endpoint (`/registry/repetition-note`) + its dashboard client; 
 selector modules (`derivedState.ts`, `issueRouteResolver.ts`); a new issue-keyed route tree plus
 dynamic redirects from the old run-keyed routes; and a `NAV_GROUPS` restructure. No existing field is
 renamed or removed; Phase 21-39 shapes are unchanged.*
+
+---
+
+## §42 — Fact Check Stage (Phase 42)
+
+Stage 3 (Fact Check) replaces the Phase 41 first-class placeholder with the real
+claim-verification workspace: an affirmative summary, a filterable claim table, a claim-detail
+provenance card reused across Draft/Approval/the inspector, and six claim actions — including
+**Ask agent for better evidence**, which establishes the shared span-scoped agent-revision
+contract (claim-scoped first; Phase 45 generalizes the SAME endpoint). This contract is written
+BEFORE any schema/endpoint/UI code exists (CLAUDE.md contract-first hard rule, mirroring
+§31/§32/§34/§35/§36). Plan 42-01 onward implements these shapes verbatim — no field name,
+endpoint path, or row shape may be invented later.
+
+### §42.1 — `claim_checks` additive fields (amends §26.2/§35.4 in place)
+
+`claim_checks` (§26.2, amended §35.4) gains three additive optional fields:
+
+```typescript
+claim_checks: defineTable({
+  // ── existing (Phase 26/33/35, unchanged) ──
+  workspace_id: v.string(),
+  runId: v.string(),
+  claimIndex: v.number(),
+  text: v.string(),
+  claimType: v.string(),
+  context: v.string(),
+  status: v.string(),
+  checkedAt: v.optional(v.number()),
+  claimId: v.optional(v.string()),
+  sourceUrl: v.optional(v.string()),
+  retrievedAt: v.optional(v.number()),
+  sectionName: v.optional(v.string()),
+  blockIndexHint: v.optional(v.number()),
+  // ── NEW additive (Phase 42) ──
+  importance: v.optional(v.union(
+    v.literal('Load-bearing'), v.literal('Supporting'), v.literal('Incidental'),
+  )),
+  changedSinceCheck: v.optional(v.boolean()),
+  conflict: v.optional(v.boolean()),
+})
+  .index('by_runId', ['runId'])
+  .index('by_workspace', ['workspace_id'])
+```
+
+**Invariant:** `importance` absent => treated as `'Supporting'` for `mustFix` purposes (D-03) —
+NEVER rendered blank in the UI (D-08). Legacy rows (pre-Phase-42 runs) degrade honestly to
+`'Supporting'` with zero migration, mirroring the §35.4 legacy-degrade precedent exactly.
+
+### §42.2 — Researcher `ClaimOutput` gains `importance` (D-01/D-02)
+
+```python
+class ClaimOutput(BaseModel):
+    text: str = ""
+    sourceIndex: int | None = None
+    importance: Literal['Load-bearing', 'Supporting', 'Incidental'] = 'Supporting'  # NEW
+```
+
+The mapped claim (`state["research"]["claims"][i]`, §35.2) gains `importance` alongside
+`claimId`/`sourceUrl`/`retrievedAt`. The publisher's sourced-row construction (the
+`research_claims[claimId]` lookup, §35.5) carries `importance` through exactly like
+`sourceUrl`/`retrievedAt` today. Unsourced (regex catch-all, §35.3 exempt outputs included) rows
+default `importance = 'Supporting'` (D-03) — never silently `'Load-bearing'`, so a deterministic
+unsourced claim never fabricates a must-fix.
+
+### §42.3 — `claimChecks.ts` new/changed functions (amends §26.6/§35.5 in place)
+
+```typescript
+insertBatch: claims[] objects gain `importance: v.optional(v.union(v.literal('Load-bearing'), v.literal('Supporting'), v.literal('Incidental')))`
+  // pass-through only when present, mirrors §35.5 exactly — never persists a null
+
+byRunIdAndIndex({ runId, claimIndex }): Promise<Doc<'claim_checks'> | null>
+  // NEW, public read (no guard) — resolves via the by_runId index + claimIndex filter
+
+updateClaim({ runId, claimIndex, text?, sourceUrl?, retrievedAt?, pipelineSecret }): Promise<void>
+  // NEW, requirePipelineSecret — patches only the provided fields, stamps updatedAt
+
+markChanged({ runId, claimIndex, pipelineSecret }): Promise<void>
+  // NEW, requirePipelineSecret — sets status:'pending', changedSinceCheck:true (D-20)
+
+keepAsWritten({ runId, claimIndex, status?, pipelineSecret }): Promise<void>
+  // NEW, requirePipelineSecret — sets status (default 'checked'), changedSinceCheck:undefined,
+  // stamps checkedAt. Reuses `status:'checked'` (D-08's locked 5-value chip vocabulary has no
+  // separate "Kept" state) — the mandatory reason + audit_log row is the entire distinguishing
+  // record between Confirm and Keep-as-written, not a new stored status literal.
+
+remove({ runId, claimIndex, pipelineSecret }): Promise<void>
+  // NEW, requirePipelineSecret — sets status:'removed' (soft-delete). A removed row satisfies
+  // allSignedOff's `status !== 'pending'` gate with zero code change to that function.
+
+setStatus: UNCHANGED signature (Confirm keeps calling this directly, requireOperator-guarded) —
+  // but now ALSO clears `changedSinceCheck` (sets it undefined) whenever the new status is
+  // 'checked' or 'skipped' (D-20: cleared when the claim is next checked).
+```
+
+All five new functions resolve the target row via the `by_runId` index + `claimIndex` filter
+(mirroring `byRunIdAndIndex`'s own lookup) and throw if the row is not found — matching
+`setStatus`'s existing "Claim not found" error shape.
+
+### §42.4 — New pipeline endpoints (`api/factcheck.py`, mounted in `api/main.py`)
+
+A new router, structured like `api/findings.py`/`api/voice_pass.py` rather than appended to the
+already-811-line `api/content.py`:
+
+```
+POST   /issues/{run_id}/claims/{claim_index}/keep             body {reason: string}
+PATCH  /issues/{run_id}/claims/{claim_index}                  body {ifRevisionID?, text?, sourceUrl?, retrievedAt?}
+POST   /issues/{run_id}/claims/{claim_index}/replace-source   body {sourceUrl: string, retrievedAt?: number}
+DELETE /issues/{run_id}/claims/{claim_index}                  body {reason?: string}
+POST   /issues/{run_id}/claims/{claim_index}/evidence/preview body {} -> {sourceUrl, sourcePublisher, retrievedAt, rewrittenClaim}
+POST   /issues/{run_id}/claims/{claim_index}/evidence/apply   body {ifRevisionID, sourceUrl, retrievedAt, rewrittenClaim}
+```
+
+All routes are Clerk-JWT-guarded (`_require_clerk_jwt_control`, the same dependency used by
+`api/content.py`/`api/findings.py`/`api/voice_pass.py`). Write-boundary classification (D-14):
+
+| Route | Content-touching? | Convex effect |
+|---|---|---|
+| `keep` | No (claim record only) | `keepAsWritten` + reject-empty-reason (mirrors `dismiss_finding`) |
+| `PATCH` (claim edit) | Yes, only if `text` present (Sanity prose patch via `resolve_span` + `patch_issue_field`) | `updateClaim` |
+| `replace-source` | No (metadata only) | `updateClaim` (sourceUrl + code-stamped retrievedAt) |
+| `DELETE` (remove) | No | `remove` |
+| `evidence/preview` | No — read-only, mirrors `voice_pass.py::voice_rewrite`; NO mutation, NO audit row | — |
+| `evidence/apply` | Yes — atomic Sanity content patch + claim update | `updateClaim` (new sourceUrl/retrievedAt/text, status) |
+
+Content-touching routes (`PATCH` when `text` is present, `evidence/apply`) additionally call
+`_reset_touched_claims` (§42.5) then `_revoke_active_signoffs`, then `_emit_audit` — mirroring
+`api/content.py`'s `patch_section` shape exactly. Per 42-RESEARCH.md Pitfall 3, when an endpoint
+both content-patches a block AND sets a terminal status on the specific claim being acted on,
+`_reset_touched_claims` fires FIRST and the endpoint's own explicit terminal-status write on that
+claim happens LAST, so the explicit action always wins over the generic block-level reset.
+
+**§42.4a — the FCT-06 request/apply contract.** `evidence/preview` asks the Researcher-lane
+evidence agent (reusing `lib/search_client.py::web_search` + `lib/openrouter_client.py::acomplete`,
+the same index-selection discipline `researcher.py` already uses — never a raw LLM-emitted URL)
+for a replacement source AND a rewritten claim together, returning both for a comparison card —
+no mutation, no audit row. `evidence/apply` re-resolves the claim's phrase against CURRENT Sanity
+content via `claim_checks.text` + `lib/span_resolver.py::resolve_span` (never `claimSpans`, which
+is never forwarded to Sanity per §35.3), then atomically: (1) content-patches the claim's prose in
+Sanity through the existing `content.py` machinery, (2) updates the `claim_checks` row's
+`sourceUrl`/`retrievedAt`/`text`/`status`, and (3) records a decision-log entry — a truncated
+before/after `audit_log` row via `_emit_audit` (D-18; the formal Decision Log component is Phase
+43 — this phase writes to the SAME `audit_log` trail, no new store). `ifRevisionID` mismatch
+returns 409 exactly like `api/content.py`'s revision guard (§31.4). The request/response shape is
+designed to generalize to arbitrary passage revision so Phase 45 extends this SAME endpoint rather
+than forking a second one.
+
+### §42.5 — `_reset_touched_claims` hook (amends §31 `patch_section`/`patch_bonus` in place)
+
+`patch_section` (all 4 long-reads) and `patch_bonus` (specAd branch's `blocks` payload only —
+bigBudget/jingle `bonus.body` is a plain string, exempt per §35.3 D-06) each gain a call to
+`_reset_touched_claims(convex_http, run_id=, section_name=, touched=)` immediately alongside the
+existing `_revoke_active_signoffs` call (D-19). For any `claim_checks` row anchored to a touched
+block (`sectionName` + `blockIndexHint`), this sets `status = 'pending'` and `changedSinceCheck =
+true` — **even when the replacement text is itself sourced** (D-06/D-20: block-level
+touched-counter, not re-verification).
+
+Index-drift discipline (42-RESEARCH.md Pitfall 2 — `blockIndexHint` is a hint only, never
+authoritative, per §32.1): when the before/after section body arrays are the SAME length, a
+positional text diff finds the exact touched block indices; when the lengths DIFFER
+(insert/delete happened), positional diffing is unreliable and the WHOLE section is conservatively
+treated as touched (every `claim_checks` row for that `sectionName` resets, regardless of
+`blockIndexHint`). Over-resetting is safe; under-resetting silently leaves a stale "checked" state
+next to changed prose, which is the failure mode this hook exists to prevent.
+
+### §42.6 — Provenance card shape (D-09/D-10)
+
+One shared component (e.g. `apps/dispatch-control/components/provenance/ClaimProvenanceCard.tsx`)
+renders exactly this shape, consumed by Stage 3 Fact Check, Stage 2 Draft, Stage 5 Approval, and
+the Phase 44 inspector — do NOT fork three copies:
+
+```typescript
+{ text, importance, status, sourceUrl, sourcePublisher, supportingPassage, retrievedAt, agent, confidence }
+```
+
+Field sourcing (only `importance` is genuinely new — everything else derives, per
+DERIVED-STATE-CONTRACT §5): `text`/`status`/`sourceUrl`/`retrievedAt`/`sectionName` come straight
+from `claim_checks`; `sourcePublisher` = derived from `sourceUrl` host (new, tiny helper);
+`supportingPassage` = the existing `context` field (± `blockIndexHint` window); `agent` = derived
+from `sectionName` via `galleyIdToQaSection` + a 5-entry label map (new, tiny — `sectionName`
+absent => `agent = "—"`, never a guess); `confidence` = `"—"` always in this phase (no stored
+source for this yet — never invent a value, per D-08's "blank never means verified" extended to
+"never fabricate a value").
+
+### §42.7 — Reconciliation note: per-claim chip vocabulary (42-RESEARCH.md Pitfall 7)
+
+`Dispatch Control v3 - Annotations.md`'s "State model" section lists, for "Verification: fact
+summary + per claim": `Checked · Partly checked · Check not run · Failed check · Changed since
+checking`. This is superseded, for the per-claim chip and the summary line specifically, by
+CONTEXT.md's locked **D-08** vocabulary: `✓ Checked / ✕ Must fix / Unchecked / Review recommended /
+Changed`. The Annotations "State model" table is a cross-domain summary (Issue status / System
+activity / Verification / Attention as four parallel taxonomies); D-08 is the phase-specific
+locked decision that governs the actual Stage 3 UI and outranks it for this phase. This is a
+documented, deliberate reconciliation — a future reader should not "fix" the chip copy back to the
+Annotations wording.
+
+*All Phase 42 changes are additive: `claim_checks` gains three optional fields
+(`importance`/`changedSinceCheck`/`conflict`); `ClaimOutput`/`ResearchOutputModel` gain one
+`importance` field; `claimChecks.ts` gains five new pipeline-lane functions plus an `insertBatch`
+pass-through and a `setStatus` clear-on-check amendment; `api/content.py` gains one
+`_reset_touched_claims` hook call in `patch_section`/`patch_bonus`; one new pipeline router
+(`api/factcheck.py`) and one new shared component (`ClaimProvenanceCard.tsx`) are introduced. No
+existing field is renamed or removed; Phase 26/31/32/33/34/35/36 shapes are unchanged.*
