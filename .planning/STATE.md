@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 41-03-galley-claim-focus-clickthrough-PLAN.md
-last_updated: "2026-07-15T05:50:17.752Z"
+stopped_at: Completed 41-04-signal-desk-issue-keying-PLAN.md
+last_updated: "2026-07-15T05:57:00.643Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 41 (issue-workspace-frame) — EXECUTING
-Plan: 4 of 10
+Plan: 5 of 10
 
 ## Performance Metrics
 
@@ -280,6 +280,7 @@ Plan: 4 of 10
 | Phase 41 P01 | 12min | 2 tasks | 4 files |
 | Phase 41 P02 | 8min | 2 tasks | 2 files |
 | Phase 41 P03 | 6min | 2 tasks | 5 files |
+| Phase 41-issue-workspace-frame P04 | 8min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -722,6 +723,7 @@ Recent decisions affecting current work:
 - [Phase 41]: setLastVisitedStage placed on the operator-only lane (mirrors hold/reopen), not the dual pipeline/operator lane — a stage visit is a human editorial action
 - [Phase 41]: ClaimMark focusOpen kept as an independent state from open, not merged, so a click-opened popover survives an unrelated blur
 - [Phase 41]: onUnsourcedClaimClick click-through gates on value.status === 'pending' (not !isChecked) to read directly against the plan's stated condition
+- [Phase 41-issue-workspace-frame]: SignalDeskScreen: api.runs.latest is skipped ('skip') entirely whenever a runId prop is passed, rather than queried-then-ignored, guaranteeing the latest run can never silently override a passed issue-keyed run.
 
 ### Pending Todos
 
@@ -811,6 +813,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T05:50:17.739Z
-Stopped at: Completed 41-03-galley-claim-focus-clickthrough-PLAN.md
+Last session: 2026-07-15T05:57:00.630Z
+Stopped at: Completed 41-04-signal-desk-issue-keying-PLAN.md
 Resume file: None
