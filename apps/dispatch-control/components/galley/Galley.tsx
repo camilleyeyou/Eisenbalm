@@ -38,6 +38,15 @@
  * forwarded, unmodified, into every `GallerySection`/`AnnotationMark` this
  * Galley mounts — the voice-tell label variant. Undefined (Review Desk's
  * default) leaves today's Accept fix / Edit inline / Dismiss labels intact.
+ *
+ * Phase 41 (WSP-07, Plan 41-08 Task 2) — a long-read (or specAd bonus)
+ * section whose `blocks` array is empty/absent renders a first-class
+ * "Not generated" Editor's-note block INSIDE its `galley-{id}` anchor (so
+ * the outline jump still lands somewhere) instead of a blank section. The
+ * presence check — `(section?.blocks ?? []).length === 0` — is
+ * BYTE-IDENTICAL to `draftSectionIdsFromDraft` (lib/derivedState.ts, Plan
+ * 41-01), the shared source the workspace outline reads. Keep the two in
+ * lockstep: if this predicate ever changes, change it there too.
  */
 import { useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
@@ -127,6 +136,20 @@ const LONG_READ_SECTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'founderBio', label: 'Founder Bio' },
   { id: 'caseStudy', label: 'Case Study' },
 ]
+
+/**
+ * WSP-07 "Not generated" Editor's-note — styled per `_PlaceholderScreen`
+ * conventions (1c ink-soft italic body text, no literal Tailwind gray).
+ * Rendered INSIDE the section's own `galley-{id}` anchor so the outline
+ * jump still lands on the section even before it has content.
+ */
+function NotGeneratedBlock({ label }: { label: string }) {
+  return (
+    <p className="galley-body italic text-[color:var(--color-ink-soft)]">
+      — Not generated. The {label} will appear here once the agents write it.
+    </p>
+  )
+}
 
 export default function Galley({
   runId,
@@ -252,9 +275,19 @@ export default function Galley({
 
   return (
     <div ref={containerRef} className="galley-root">
-      {LONG_READ_SECTIONS.map(({ id }) => {
+      {LONG_READ_SECTIONS.map(({ id, label }) => {
         const section = draft.sections[id]
         const rows = section?.blocks ?? []
+        // WSP-07 lockstep check — byte-identical to draftSectionIdsFromDraft's
+        // long-read predicate (lib/derivedState.ts, Plan 41-01).
+        if (rows.length === 0) {
+          return (
+            <section key={id} id={`galley-${id}`} className="galley-section">
+              <h2 className="galley-headline">{section?.headline ?? label}</h2>
+              <NotGeneratedBlock label={label} />
+            </section>
+          )
+        }
         const { resolved, unresolved } = resolveFor(id, rows)
         const claimResolved = resolveClaimsFor(id, rows)
         return (
@@ -279,7 +312,14 @@ export default function Galley({
 
       <GalleryGameSlot game={draft.game ?? {}} />
 
-      {draft.bonusType === 'specAd' && bonusResolution && (
+      {draft.bonusType === 'specAd' && bonusRows.length === 0 && (
+        <section id="galley-bonus" className="galley-section">
+          <h2 className="galley-headline">{draft.bonus?.headline ?? 'Bonus'}</h2>
+          <NotGeneratedBlock label="Bonus" />
+        </section>
+      )}
+
+      {draft.bonusType === 'specAd' && bonusRows.length > 0 && bonusResolution && (
         <GallerySection
           sectionId="bonus"
           headline={draft.bonus?.headline}
