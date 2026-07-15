@@ -345,13 +345,21 @@ export const activate = mutation({
     if (overridden && override) {
       // "Nothing silent" — logged ALONGSIDE (not instead of) the normal
       // activated row below, per §38.3.
-      await ctx.runMutation(internal.auditLog.write, {
+      //
+      // Phase 43 §43.7 (D-11/D-13): routed through the ONE shared
+      // decision-write helper — the override reason is promoted from
+      // after-JSON into the structured `reason` field, alongside
+      // `instructionVersion`, so this row projects uniformly through
+      // auditLog.listDecisions.
+      await ctx.runMutation(internal.auditLog.writeDecision, {
         workspace_id,
         actorId: actor,
         action: 'prompt_version.activate_override',
         resourceType: 'prompt_version',
         resourceId: `${agentKey}:${version}`,
         after: JSON.stringify({ agentKey, version, reason: override.reason }),
+        reason: override.reason,
+        instructionVersion: String(version),
       })
     }
 

@@ -130,7 +130,12 @@ export const hold = mutation({
     // D-14: "also stop the run in progress" is a SEPARATE client-side call to
     // the existing runs:requestCancel mutation — hold does NOT touch
     // runs.cancelRequested. The two state systems stay distinct in the model.
-    await ctx.runMutation(internal.auditLog.write, {
+    //
+    // Phase 43 §43.7 (D-11/D-13): routed through the ONE shared decision-write
+    // helper — the reason is promoted from after-JSON into the structured
+    // `reason` field (alongside issueNumber) so this row projects uniformly
+    // through auditLog.listDecisions.
+    await ctx.runMutation(internal.auditLog.writeDecision, {
       workspace_id,
       actorId: actor,
       action: 'issue.held',
@@ -138,6 +143,8 @@ export const hold = mutation({
       resourceId: String(issueNumber),
       before: JSON.stringify({ held: false }),
       after: JSON.stringify({ held: true, heldReason: trimmedReason }),
+      reason: trimmedReason,
+      issueNumber,
     })
 
     return null
@@ -171,7 +178,16 @@ export const reopen = mutation({
 
     // D-17: status re-derives on its own — no "restore previous status"
     // bookkeeping.
-    await ctx.runMutation(internal.auditLog.write, {
+    //
+    // Phase 43 §43.7 (D-11/D-13): routed through the ONE shared decision-write
+    // helper. `reopen` itself takes no reason arg — the structured `reason`
+    // describes the reopen and carries the prior heldReason forward so the
+    // Decision Log row is self-explanatory without a join back to the held row.
+    const reopenReason = existing.heldReason
+      ? `Reopened (previously held: ${existing.heldReason})`
+      : 'Issue reopened'
+
+    await ctx.runMutation(internal.auditLog.writeDecision, {
       workspace_id,
       actorId: actor,
       action: 'issue.reopened',
@@ -179,6 +195,8 @@ export const reopen = mutation({
       resourceId: String(issueNumber),
       before: JSON.stringify({ held: true, heldReason: existing.heldReason }),
       after: JSON.stringify({ held: false }),
+      reason: reopenReason,
+      issueNumber,
     })
 
     return null

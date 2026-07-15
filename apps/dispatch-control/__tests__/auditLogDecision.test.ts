@@ -147,6 +147,80 @@ describe('auditLog: writeDecision + listDecisions', () => {
   })
 })
 
+describe('auditLog: writeDecision retrofit (§43.7, D-11/D-13)', () => {
+  it('issues.hold writes a decision row carrying structured reason + issueNumber, returned by listDecisions', async () => {
+    const t = convexTest({ schema, modules })
+    const asOperator = t.withIdentity({ subject: 'user_operator' })
+
+    await asOperator.mutation(api.issues.ensureByNumber, {
+      workspace_id: 'eisenbalm',
+      issueNumber: 42,
+    })
+    await asOperator.mutation(api.issues.hold, {
+      workspace_id: 'eisenbalm',
+      issueNumber: 42,
+      reason: 'Charity site is down — verifying before publishing.',
+    })
+
+    const rows = await t.query(api.auditLog.listDecisions, {
+      workspace_id: 'eisenbalm',
+    })
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0].action).toBe('issue.held')
+    expect(rows[0].reason).toBe('Charity site is down — verifying before publishing.')
+    expect(rows[0].issueNumber).toBe(42)
+  })
+
+  it('issues.reopen writes a decision row carrying a structured reason + issueNumber', async () => {
+    const t = convexTest({ schema, modules })
+    const asOperator = t.withIdentity({ subject: 'user_operator' })
+
+    await asOperator.mutation(api.issues.ensureByNumber, {
+      workspace_id: 'eisenbalm',
+      issueNumber: 42,
+    })
+    await asOperator.mutation(api.issues.hold, {
+      workspace_id: 'eisenbalm',
+      issueNumber: 42,
+      reason: 'Pausing to double-check a claim.',
+    })
+    await asOperator.mutation(api.issues.reopen, {
+      workspace_id: 'eisenbalm',
+      issueNumber: 42,
+    })
+
+    const rows = await t.query(api.auditLog.listDecisions, {
+      workspace_id: 'eisenbalm',
+      issueNumber: 42,
+    })
+
+    const reopened = rows.find(r => r.action === 'issue.reopened')
+    expect(reopened).toBeDefined()
+    expect(reopened?.reason).toContain('Pausing to double-check a claim.')
+    expect(reopened?.issueNumber).toBe(42)
+  })
+
+  it('charityCorrections.append writes a decision row carrying the correction text as reason', async () => {
+    const t = convexTest({ schema, modules })
+    const asOperator = t.withIdentity({ subject: 'user_operator' })
+
+    await asOperator.mutation(api.charityCorrections.append, {
+      workspace_id: 'eisenbalm',
+      charityKey: 'the quiet foundation|quietfoundation.org',
+      text: 'Founder left the org in 2024 — confirm before citing them.',
+    })
+
+    const rows = await t.query(api.auditLog.listDecisions, {
+      workspace_id: 'eisenbalm',
+    })
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0].action).toBe('charity_correction.added')
+    expect(rows[0].reason).toBe('Founder left the org in 2024 — confirm before citing them.')
+  })
+})
+
 describe('users: byClerkUserId', () => {
   it('resolves a users row for a known Clerk sub', async () => {
     const t = convexTest({ schema, modules })

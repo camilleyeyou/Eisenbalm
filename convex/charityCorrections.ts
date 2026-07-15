@@ -47,13 +47,18 @@ export const append = mutation({
       createdAt: Date.now(),
     })
 
-    await ctx.runMutation(internal.auditLog.write, {
+    // Phase 43 §43.7 (D-11/D-13): routed through the ONE shared
+    // decision-write helper — the correction text IS the reason for the
+    // registry change, promoted into the structured `reason` field so this
+    // row projects uniformly through auditLog.listDecisions.
+    await ctx.runMutation(internal.auditLog.writeDecision, {
       workspace_id,
       actorId: actor,
       action: 'charity_correction.added',
       resourceType: 'charity_correction',
       resourceId: charityKey,
       after: JSON.stringify({ text }),
+      reason: text,
     })
 
     return id
