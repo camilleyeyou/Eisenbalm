@@ -62,6 +62,8 @@ import { recordSignOff, SignOffApiError, type SignOffKind } from '@/lib/signOffC
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
+// Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector opener.
+import { useInspector } from '@/components/inspector/InspectorProvider'
 import ResolvedFindingsList from './ResolvedFindingsList'
 import SourceIndex from './SourceIndex'
 import PublishPreviewDialog from './PublishPreviewDialog'
@@ -147,6 +149,9 @@ const MICRO_LABEL =
 
 export default function DecisionRail({ runId, issueNumber, held }: DecisionRailProps) {
   const { getToken } = useAuth()
+  // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector
+  // opener, mounted once at the (dashboard) root layout.
+  const { openInspector } = useInspector()
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const rawFindings =
@@ -390,9 +395,21 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
       <section aria-label="Agent editor's recommendation">
         <h3 className={MICRO_LABEL}>Agent editor&rsquo;s recommendation</h3>
         {memo ? (
-          <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-[color:var(--color-ink)]">
-            {memo}
-          </p>
+          <>
+            <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-[color:var(--color-ink)]">
+              {memo}
+            </p>
+            {/* Phase 44 Plan 44-08 (INS-01) — resolves to editor_final
+                (§44.1: `rec` locator is always ''); only rendered when a
+                recommendation exists. */}
+            <button
+              type="button"
+              onClick={() => openInspector({ type: 'rec', runId, locator: '' })}
+              className="mt-2 min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+            >
+              Inspect how this was made
+            </button>
+          </>
         ) : (
           <p className="mt-1 text-[13px] italic text-[color:var(--color-ink-soft)]">
             No agent editor&rsquo;s recommendation for this run

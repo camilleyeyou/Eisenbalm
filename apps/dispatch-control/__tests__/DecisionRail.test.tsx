@@ -22,10 +22,20 @@
  *       confirm calls the SAME unchanged publishIssue(token, runId) — no
  *       typed confirmation anywhere (WSP-06)
  *
+ * Phase 44 (INS-01, Plan 44-08 Task 2): the rail now calls `useInspector()`
+ * (the "Agent editor's recommendation" Inspect affordance), so every render
+ * below goes through `renderRail`, which wraps `<DecisionRail>` in
+ * `<InspectorProvider>` — mirroring `InspectorProvider.test.tsx`'s own
+ * wrapping convention (also used by 44-07's FactCheckScreen.test.tsx /
+ * VoicePassScreen.test.tsx). `activeKey` stays `null` throughout (no test
+ * clicks Inspect), so no new Convex reads or panel renders are exercised.
+ *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vitest'
+import type { ReactElement } from 'react'
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
+import { InspectorProvider } from '@/components/inspector/InspectorProvider'
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
@@ -107,6 +117,13 @@ afterEach(() => {
   cleanup()
 })
 
+// Phase 44 Plan 44-08 — every render call site below wraps <DecisionRail>
+// in <InspectorProvider> (useInspector() throws outside one). activeKey
+// stays null in every test (no test clicks Inspect).
+function renderRail(ui: ReactElement) {
+  return render(<InspectorProvider>{ui}</InspectorProvider>)
+}
+
 // The setStatus spy used by the source-index (Task 2) check/skip controls.
 // Rebound in beforeEach so each test gets a clean spy.
 let setStatusSpy: Mock
@@ -187,7 +204,7 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
       findings: [errorFinding],
       editorFinal: [{ payload: JSON.stringify({ notes: 'Ship it — strong week.' }) }],
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const blocking = screen.getByText(/blocking items/i)
     const readiness = screen.getByText(/readiness board/i)
@@ -203,7 +220,7 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
 
   it('never labels the agent recommendation block as just "Editor" (SC-4 — human reservation)', () => {
     mockQueries({ findings: [errorFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.queryByText(/^editor.s memo$/i)).toBeNull()
     expect(
       screen.getByRole('heading', { name: /agent editor.s recommendation/i }),
@@ -212,14 +229,14 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
 
   it('leads with a blocker/warning count summary line', () => {
     mockQueries({ findings: [errorFinding, warningFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/1 warning/i)).toBeDefined()
   })
 
   it('only counts OPEN findings — resolved errors are not blockers', () => {
     mockQueries({ findings: [resolvedError, warningFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(false)
   })
@@ -230,7 +247,7 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
 describe('DecisionRail publish gate (D-14/D-15)', () => {
   it('disables Publish with a visible reason when an open error finding exists', () => {
     mockQueries({ findings: [errorFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(true)
@@ -245,7 +262,7 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
 
   it('is additionally disabled when the issue is held, with "Not held" named in the unlock text (D-15)', () => {
     mockQueries({ findings: [] })
-    render(<DecisionRail runId="run-1" held={true} />)
+    renderRail(<DecisionRail runId="run-1" held={true} />)
 
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(true)
@@ -255,7 +272,7 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
 
   it('enables Publish when zero blockers/sign-offs/held remain, and opens the preview WITHOUT publishing yet', () => {
     mockQueries({ findings: [warningFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(false)
@@ -269,7 +286,7 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
 
   it('one confirm click in the preview dialog calls publishIssue(token, runId) — no typed confirmation', async () => {
     mockQueries({ findings: [warningFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
     const dialog = screen.getByRole('dialog', { name: /publish preview/i })
@@ -283,7 +300,7 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
 
   it('Cancel in the preview dialog closes it without publishing', () => {
     mockQueries({ findings: [warningFinding] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
     expect(screen.getByRole('dialog', { name: /publish preview/i })).toBeDefined()
@@ -299,7 +316,7 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
     ;(publishIssue as unknown as Mock).mockRejectedValueOnce(
       new ReviewApiError(409, 'open_error_findings', 'Resolve all error findings first.'),
     )
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
     fireEvent.click(screen.getByRole('button', { name: /publish now/i }))
@@ -319,14 +336,14 @@ describe('DecisionRail verification block (D-13)', () => {
         { claimIndex: 1, status: 'pending' },
       ],
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/1\/2 claims checked/i)).toBeDefined()
     expect(screen.getByText(/checked \d+m ago/i)).toBeDefined()
   })
 
   it('shows "No claims extracted yet" when the claims list is empty — never blank', () => {
     mockQueries({ claims: [] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/no claims extracted yet/i)).toBeDefined()
   })
 
@@ -334,7 +351,7 @@ describe('DecisionRail verification block (D-13)', () => {
     mockQueries({
       claims: [{ claimIndex: 0, status: 'checked' }],
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/not yet checked/i)).toBeDefined()
   })
 
@@ -345,7 +362,7 @@ describe('DecisionRail verification block (D-13)', () => {
       if (query === 'pitchLog:selectedByRunId') return null
       return []
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getAllByText(/loading/i).length).toBeGreaterThan(0)
   })
 })
@@ -360,19 +377,19 @@ describe("DecisionRail agent editor's recommendation (D-16/SC-4 §33.6)", () => 
     mockQueries({
       editorFinal: [{ payload: JSON.stringify({ notes: 'Ship it — strong week.' }) }],
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText('Ship it — strong week.')).toBeDefined()
   })
 
   it('falls back gracefully when the payload is malformed JSON', () => {
     mockQueries({ editorFinal: [{ payload: 'not-json{{' }] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/no agent editor.s recommendation for this run/i)).toBeDefined()
   })
 
   it('falls back when there is no editor-final event at all', () => {
     mockQueries({ editorFinal: [] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/no agent editor.s recommendation for this run/i)).toBeDefined()
   })
 })
@@ -387,7 +404,7 @@ describe('DecisionRail readiness board (WSP-05)', () => {
       signoffs: { 'sounds-human': { actorId: 'andrew', signedAt: Date.now() } },
       findings: [errorFinding],
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const board = screen.getByText(/readiness board/i).closest('section')!
     expect(board.textContent).toMatch(/fact check/i)
@@ -403,7 +420,7 @@ describe('DecisionRail readiness board (WSP-05)', () => {
 
   it('never renders a blank readiness row — absent data sources render an honest state, not a blank', () => {
     mockQueries({ claims: [], pitch: null, signoffs: {}, findings: [] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const board = screen.getByText(/readiness board/i).closest('section')!
     expect(board.textContent).toMatch(/no claims yet/i)
@@ -424,20 +441,20 @@ describe('DecisionRail hook card (D-12) and rail foot (D-04)', () => {
         scoutSummary: 'A tiny archive preserving rural oral histories.',
       },
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText('The Quiet Foundation')).toBeDefined()
     expect(screen.getByText('A tiny archive preserving rural oral histories.')).toBeDefined()
   })
 
   it('renders an honest "No charity selected yet" when no pitch is selected', () => {
     mockQueries({ pitch: null })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/no charity selected yet/i)).toBeDefined()
   })
 
   it('mounts the ResolvedFindingsList at the rail foot', () => {
     mockQueries()
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByTestId('resolved-findings-list')).toBeDefined()
   })
 })
@@ -447,14 +464,14 @@ describe('DecisionRail hook card (D-12) and rail foot (D-04)', () => {
 describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
   it('renders both sign-off controls when neither is active', () => {
     mockQueries({ signoffs: {} })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByRole('button', { name: /sign: facts cleared/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /sign: sounds human/i })).toBeDefined()
   })
 
   it('records a facts-cleared sign-off via recordSignOff(token, runId, kind) on click', async () => {
     mockQueries({ signoffs: {}, findings: [] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     fireEvent.click(screen.getByRole('button', { name: /sign: facts cleared/i }))
     await waitFor(() => {
       expect(recordSignOff).toHaveBeenCalledWith('tok-clerk', 'run-1', 'facts-cleared')
@@ -467,7 +484,7 @@ describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
         'facts-cleared': { actorId: 'andrew', signedAt: Date.now() - 2 * 60_000 },
       },
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/facts cleared — signed \d+m ago/i)).toBeDefined()
     expect(screen.getByRole('button', { name: /sign: sounds human/i })).toBeDefined()
   })
@@ -477,7 +494,7 @@ describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
       findings: [],
       signoffs: { 'facts-cleared': { actorId: 'andrew', signedAt: Date.now() } },
     })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(true)
     expect(screen.getByText(/both sign-offs required to publish/i)).toBeDefined()
@@ -485,7 +502,7 @@ describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
 
   it('disables the Facts-cleared control while an open error blocker exists (D-01)', () => {
     mockQueries({ findings: [errorFinding], signoffs: {} })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
     const facts = screen.getByRole('button', {
       name: /sign: facts cleared/i,
     }) as HTMLButtonElement
@@ -543,7 +560,7 @@ const legacyRow = {
 describe('DecisionRail source index (Phase 35, PRV-04)', () => {
   it('renders the unsourced group ABOVE the sourced group', () => {
     mockQueries({ claims: [sourcedCaseStudy, sourcedOriginStory, unsourcedProblem] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const unsourcedHeader = screen.getByText(/^unsourced$/i)
     const sourcedRowText = screen.getByText(sourcedCaseStudy.text)
@@ -558,7 +575,7 @@ describe('DecisionRail source index (Phase 35, PRV-04)', () => {
     // Deliberately out of reading order in the fixture array (caseStudy before
     // originStory) to prove the component re-sorts, not just echoes input order.
     mockQueries({ claims: [sourcedCaseStudy, sourcedOriginStory] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const originText = screen.getByText(sourcedOriginStory.text)
     const caseStudyText = screen.getByText(sourcedCaseStudy.text)
@@ -575,7 +592,7 @@ describe('DecisionRail source index (Phase 35, PRV-04)', () => {
 
   it('exposes a check control per row that calls claimChecks.setStatus with the claimIndex', async () => {
     mockQueries({ claims: [unsourcedProblem] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     fireEvent.click(
       screen.getByRole('button', { name: new RegExp(`check claim ${unsourcedProblem.claimIndex}`, 'i') }),
@@ -591,7 +608,7 @@ describe('DecisionRail source index (Phase 35, PRV-04)', () => {
 
   it('exposes a skip control per row that calls claimChecks.setStatus with the claimIndex', async () => {
     mockQueries({ claims: [sourcedOriginStory] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     fireEvent.click(
       screen.getByRole('button', { name: new RegExp(`skip claim ${sourcedOriginStory.claimIndex}`, 'i') }),
@@ -607,7 +624,7 @@ describe('DecisionRail source index (Phase 35, PRV-04)', () => {
 
   it('renders a legacy row (no claimId, no sectionName) as unsourced with no jump link, and does not crash', () => {
     mockQueries({ claims: [sourcedCaseStudy, legacyRow] })
-    expect(() => render(<DecisionRail runId="run-1" />)).not.toThrow()
+    expect(() => renderRail(<DecisionRail runId="run-1" />)).not.toThrow()
 
     // The legacy row's text still renders (never hidden).
     expect(screen.getByText(legacyRow.text)).toBeDefined()
@@ -650,7 +667,7 @@ const precisionError = {
 describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
   it('only counts the factual-axis error as a blocker — a machine-tell error does not block Facts cleared', () => {
     mockQueries({ findings: [machineTellError, precisionError] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
     // The voice finding's own reason never appears in the blocking-items list.
@@ -660,7 +677,7 @@ describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
 
   it('enables "Sign: Facts cleared" when the ONLY open error is a voice/machine-tell finding', () => {
     mockQueries({ findings: [machineTellError], signoffs: {} })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const facts = screen.getByRole('button', {
       name: /sign: facts cleared/i,
@@ -670,7 +687,7 @@ describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
 
   it('the blocking-items jump-link list contains only FACTUAL_AXES findings', () => {
     mockQueries({ findings: [machineTellError, precisionError] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     const blockingSection = screen.getByText(/blocking items/i).closest('section')!
     expect(blockingSection.textContent).toMatch(/vague causal claim/i)
@@ -686,7 +703,7 @@ describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
       reason: 'Pre-Phase-36 row with no axis field.',
     }
     mockQueries({ findings: [legacyNoAxis] })
-    render(<DecisionRail runId="run-1" />)
+    renderRail(<DecisionRail runId="run-1" />)
 
     expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/pre-phase-36 row with no axis field/i)).toBeDefined()

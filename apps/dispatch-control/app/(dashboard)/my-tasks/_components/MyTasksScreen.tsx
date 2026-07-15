@@ -47,6 +47,8 @@ import {
 } from '@/lib/derivedState'
 import { computeSessionStates, type DisplayTask, type RerollSignal } from '@/lib/taskSupersession'
 import { issueApprovalHref, issueDraftHref } from '@/lib/issueRouteResolver'
+// Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector opener.
+import { useInspector } from '@/components/inspector/InspectorProvider'
 
 // ── Severity label + icon (D-19, State & Icon Contract §Attention) ─────────
 // NEVER color alone — every row pairs the label with a lucide icon.
@@ -85,9 +87,16 @@ const ROW_TITLE_LINE_THROUGH = 'line-through'
 export function MyTasksList({
   tasks,
   approvalHref,
+  // Phase 44 Plan 44-08 (INS-01) — `useInspector().openInspector`, supplied
+  // by the default-export wrapper below. Optional + defaulted to a no-op so
+  // this stays the pure, Convex-free render half MyTasksScreen.test.tsx
+  // exercises directly (every fixture there has `insp` unset, so the
+  // disabled branch renders and the no-op is never invoked).
+  openInspector = () => {},
 }: {
   tasks: DisplayTask[]
   approvalHref: string
+  openInspector?: (key: string) => void
 }) {
   if (tasks.length === 0) {
     return (
@@ -173,14 +182,29 @@ export function MyTasksList({
               >
                 {task.primary.label}
               </Link>
-              <button
-                type="button"
-                disabled
-                title="Inspect panel arrives in a future phase — this entry point is reserved (D-16)."
-                className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Inspect context
-              </button>
+              {task.insp ? (
+                // Phase 44 Plan 44-08 (INS-01) — qa/claim tasks carry a
+                // populated `insp` key (§44.1); the button is live.
+                <button
+                  type="button"
+                  onClick={() => openInspector(task.insp!)}
+                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+                >
+                  Inspect context
+                </button>
+              ) : (
+                // Sign-off tasks (signoff-facts/signoff-voice) have no
+                // single natural artifact — the button stays reserved for
+                // just those two rows (44-RESEARCH Open Question 1).
+                <button
+                  type="button"
+                  disabled
+                  title="No single artifact anchors this sign-off gate — the inspector is reserved for this row."
+                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Inspect context
+                </button>
+              )}
             </div>
           </li>
         )
@@ -202,6 +226,9 @@ function taskSection(t: DerivedTask): string | undefined {
 }
 
 export default function MyTasksScreen() {
+  // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector
+  // opener, mounted once at the (dashboard) root layout.
+  const { openInspector } = useInspector()
   const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
   const pipelineRun = useQuery(
     api.pipelineRuns.byRunId,
@@ -295,7 +322,7 @@ export default function MyTasksScreen() {
           came from.
         </p>
       </div>
-      <MyTasksList tasks={display} approvalHref={approvalHref} />
+      <MyTasksList tasks={display} approvalHref={approvalHref} openInspector={openInspector} />
     </div>
   )
 }
