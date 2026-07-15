@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 43-07-retrofit-reason-actions-shared-helper-PLAN.md
-last_updated: "2026-07-15T17:22:38.342Z"
+stopped_at: Completed 43-08-do-not-use-reason-capture-PLAN.md
+last_updated: "2026-07-15T17:30:40.294Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 43 (my-tasks-decision-log) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 
 ## Performance Metrics
 
@@ -304,6 +304,7 @@ Plan: 8 of 9
 | Phase 43 P06 | 15 | 3 tasks | 4 files |
 | Phase 43 P05 | 35min | 3 tasks | 5 files |
 | Phase 43 P07 | 20min | 2 tasks | 8 files |
+| Phase 43 P08 | 6min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -789,6 +790,7 @@ Recent decisions affecting current work:
 - [Phase 43-05]: AwaitingYouInbox's See all link is a pure addition -- its existing item derivation is untouched
 - [Phase 43]: issues.reopen synthesizes its structured reason from the prior heldReason rather than adding a new caller-supplied arg (no API_CONTRACTS §40.2 signature change)
 - [Phase 43]: factcheck.py keep-as-written passes reason+run_id into _emit_audit but omits issue_number (not resolvable from claim_checks without new out-of-scope query surface)
+- [Phase 43]: Amended charities.setStatus in place with an optional reason arg (required only for the 'blocklisted' target) + a writeDecision emission, rather than adding a dedicated markDoNotUse mutation
 
 ### Pending Todos
 
@@ -879,6 +881,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T17:22:38.330Z
-Stopped at: Completed 43-07-retrofit-reason-actions-shared-helper-PLAN.md
+Last session: 2026-07-15T17:30:40.281Z
+Stopped at: Completed 43-08-do-not-use-reason-capture-PLAN.md
 Resume file: None
