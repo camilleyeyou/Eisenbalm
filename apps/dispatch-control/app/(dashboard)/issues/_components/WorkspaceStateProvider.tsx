@@ -136,6 +136,17 @@ export function WorkspaceStateProvider({
     sourceUrl: row.sourceUrl,
     sectionName: row.sectionName,
     claimText: row.text,
+    // Phase 42 Plan 42-05 (FCT-02, D-16) — severity/summary fields so My
+    // Tasks + the stage badges read the SAME data as the Stage 3 screen.
+    // Deliberately NOT claimType/context — those are full-row-only, read
+    // directly by the Stage 3 screen + Approval SourceIndex (see 42-06
+    // Task 3, 42-CONTEXT SCOPE NOTE).
+    claimIndex: row.claimIndex,
+    claimId: row.claimId,
+    importance: row.importance,
+    changedSinceCheck: row.changedSinceCheck,
+    conflict: row.conflict,
+    checkedAt: row.checkedAt,
   }))
 
   const derivationInputs: DerivationInputs = {
