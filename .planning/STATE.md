@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 42-02-researcher-publisher-importance-PLAN.md
-last_updated: "2026-07-15T12:11:47.749Z"
+stopped_at: Completed 42-03-reset-touched-claims-PLAN.md
+last_updated: "2026-07-15T12:25:56.963Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 42 (fact-check-stage) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 
 ## Performance Metrics
 
@@ -291,6 +291,7 @@ Plan: 3 of 8
 | Phase 41 P12 | 25min | 3 tasks | 15 files |
 | Phase 42 P01 | 15min | 2 tasks | 5 files |
 | Phase 42-fact-check-stage P02 | 20min | 2 tasks | 4 files |
+| Phase 42 P03 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -750,6 +751,9 @@ Recent decisions affecting current work:
 - [Phase 42]: importance/changedSinceCheck/conflict added as additive-optional claim_checks fields; Keep-as-written reuses status:'checked' (no new status literal, D-08 chip vocabulary); Remove is soft-delete via status:'removed' (zero code change to allSignedOff/listByRunId)
 - [Phase 42-fact-check-stage]: Extracted researcher.py's mapped_claims loop into a pure _map_claims() helper so importance-default behavior is unit-testable without a network/LLM call
 - [Phase 42-fact-check-stage]: Publisher importance tests exercise the real publisher() node with the Sanity/Convex network boundary monkeypatched (both agents.publisher and agents._wrapper convex_mutation_safe bindings), proving the actual merge code path rather than a reimplemented snippet
+- [Phase 42]: _reset_touched_claims is fail-open (mirrors _revoke_active_signoffs) so a Convex hiccup never blocks a content save
+- [Phase 42]: patch_bonus specAd reset gated on body.blocks is not None to avoid referencing an undefined blocks variable on headline-only saves
+- [Phase 42]: Registered claimChecks:markChanged in convex_client.py's _PIPELINE_SECRET_GUARDED_PATHS, closing a Plan 42-01 gap
 
 ### Pending Todos
 
@@ -839,6 +843,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T12:11:47.736Z
-Stopped at: Completed 42-02-researcher-publisher-importance-PLAN.md
+Last session: 2026-07-15T12:25:46.047Z
+Stopped at: Completed 42-03-reset-touched-claims-PLAN.md
 Resume file: None
