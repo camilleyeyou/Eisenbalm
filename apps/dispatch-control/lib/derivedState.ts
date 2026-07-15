@@ -23,6 +23,12 @@ import {
 } from './issueRouteResolver'
 import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
 import type { DraftResponse } from './contentPatchClient'
+// Phase 44 Plan 44-08 (INS-01, §44.1) — the string-encoded artifact-key
+// form `DerivedTask.insp` carries. Populated ONLY for qa-finding and claim
+// tasks below (each anchors to exactly one artifact); sign-off tasks
+// deliberately leave `insp` unset (44-RESEARCH Open Question 1 — a sign-off
+// gate has no single natural artifact).
+import { encodeArtifactKey } from './inspectorArtifact'
 
 // ── Types (§40.6, verbatim) ──────────────────────────────────────────────────
 
@@ -406,6 +412,12 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
       why: row.reason,
       rec: row.suggestedFix,
       primary: { label: 'Review', href },
+      // §44.1/§44.3 — a QA finding (factual or voice-axis) anchors to the
+      // writer that produced the section: `type: 'founder'` with the qa
+      // sectionName as locator (the resolver normalizes snake_case section
+      // names via KNOWN_RUN_KEYS/galleyIdToQaSection, degrading honestly if
+      // unresolvable).
+      insp: encodeArtifactKey({ type: 'founder', runId: i.runId as string, locator: row.sectionName }),
       stage,
       openedAt: row.timestamp,
     })
@@ -423,6 +435,9 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
       where: row.sectionName ?? '',
       why: 'Unverified claim requires human judgment',
       primary: { label: 'Review', href },
+      // §44.1/§44.3 — a claim anchors to `claim` with the claimId as locator
+      // (resolves to `researcher`, per §44.RECONCILIATION).
+      insp: encodeArtifactKey({ type: 'claim', runId: i.runId as string, locator: row._id }),
       stage: 3,
       openedAt: row.createdAt,
     })

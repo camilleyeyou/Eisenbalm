@@ -23,6 +23,7 @@ import {
   type FactCheckClaimRow,
 } from '../lib/derivedState'
 import type { DraftResponse } from '../lib/contentPatchClient'
+import { parseArtifactKey } from '../lib/inspectorArtifact'
 
 function baseInputs(overrides: Partial<DerivationInputs> = {}): DerivationInputs {
   return {
@@ -568,6 +569,99 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')
     expect(factsTask?.openedAt).toBe(1700000002000)
     expect(voiceTask?.openedAt).toBe(1700000002000)
+  })
+})
+
+describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)', () => {
+  it('a qa-finding task carries an `insp` key that decodes to a founder artifact anchored to the section', () => {
+    const qaFindings = [
+      {
+        _id: 'q1',
+        severity: 'error' as const,
+        axis: 'precision',
+        sectionName: 'founder_bio',
+        reason: 'unsourced number',
+      },
+    ]
+    const tasks = deriveTasks(
+      baseInputs({
+        runId: 'run-9',
+        runStatus: 'complete',
+        qaFindings,
+        signOffs: {
+          'facts-cleared': { actorId: 'a', signedAt: 1 },
+          'sounds-human': { actorId: 'a', signedAt: 1 },
+        },
+      }),
+    )
+    const task = tasks.find((t: DerivedTask) => t.id === 'qa-q1')
+    expect(task?.insp).toBeDefined()
+    expect(parseArtifactKey(task!.insp!)).toEqual({
+      type: 'founder',
+      runId: 'run-9',
+      locator: 'founder_bio',
+    })
+  })
+
+  it('a voice-axis qa-finding task ALSO anchors to `founder` (same writer produced the section)', () => {
+    const qaFindings = [
+      {
+        _id: 'q2',
+        severity: 'warning' as const,
+        axis: 'machine-tell',
+        sectionName: 'case_study',
+        reason: 'reads like a press release',
+      },
+    ]
+    const tasks = deriveTasks(
+      baseInputs({
+        runId: 'run-9',
+        runStatus: 'complete',
+        qaFindings,
+        signOffs: {
+          'facts-cleared': { actorId: 'a', signedAt: 1 },
+          'sounds-human': { actorId: 'a', signedAt: 1 },
+        },
+      }),
+    )
+    const task = tasks.find((t: DerivedTask) => t.id === 'qa-q2')
+    expect(parseArtifactKey(task!.insp!)).toEqual({
+      type: 'founder',
+      runId: 'run-9',
+      locator: 'case_study',
+    })
+  })
+
+  it('a claim task carries an `insp` key that decodes to a claim artifact anchored to the claimId', () => {
+    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'a claim without a source' }]
+    const tasks = deriveTasks(
+      baseInputs({
+        runId: 'run-9',
+        runStatus: 'complete',
+        claimRows,
+        signOffs: {
+          'facts-cleared': { actorId: 'a', signedAt: 1 },
+          'sounds-human': { actorId: 'a', signedAt: 1 },
+        },
+      }),
+    )
+    const task = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
+    expect(task?.insp).toBeDefined()
+    expect(parseArtifactKey(task!.insp!)).toEqual({
+      type: 'claim',
+      runId: 'run-9',
+      locator: 'c1',
+    })
+  })
+
+  it('the signoff-facts and signoff-voice tasks leave `insp` unset — no single natural artifact (Open Question 1)', () => {
+    const tasks = deriveTasks(
+      baseInputs({ runId: 'run-9', runStatus: 'complete', signOffs: {} }),
+    )
+    const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
+    const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')
+    expect(factsTask?.insp).toBeUndefined()
+    expect(voiceTask?.insp).toBeUndefined()
   })
 })
 
