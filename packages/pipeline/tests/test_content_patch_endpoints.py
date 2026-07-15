@@ -99,6 +99,61 @@ async def test_emit_audit_omits_before_after_when_not_supplied(monkeypatch):
     assert "after" not in captured["args"]
 
 
+# ── _emit_audit decision kwargs extension (§43.2, D-11) — REAL, PASSING ────
+
+
+async def test_emit_audit_forwards_decision_kwargs(monkeypatch):
+    """_emit_audit(reason=..., issue_number=..., run_id=..., instruction_version=...)
+    forwards each into the Convex mutation args dict under its camelCase key
+    — mirrors the existing before/after forwarding pattern (Phase 43 §43.2)."""
+    captured: dict = {}
+
+    async def _mock_convex_mutation(http, path, args):
+        captured["path"] = path
+        captured["args"] = args
+
+    monkeypatch.setattr(_cc, "convex_mutation", _mock_convex_mutation)
+
+    await _emit_audit(
+        None,
+        actor_id="a",
+        action="claim_kept",
+        reason="Editorial judgment: figure is intentionally atmospheric.",
+        issue_number=42,
+        run_id="run-abc",
+        instruction_version="v3",
+    )
+
+    assert captured["path"] == "auditLog:record"
+    assert captured["args"]["reason"] == "Editorial judgment: figure is intentionally atmospheric."
+    assert captured["args"]["issueNumber"] == 42
+    assert captured["args"]["runId"] == "run-abc"
+    assert captured["args"]["instructionVersion"] == "v3"
+
+
+async def test_emit_audit_omits_decision_kwargs_when_not_supplied(monkeypatch):
+    """_emit_audit called without the new decision kwargs omits all four keys
+    (back-compat with every existing caller across control.py / content.py /
+    review.py / factcheck.py / findings.py / signoffs.py / voice_pass.py)."""
+    captured: dict = {}
+
+    async def _mock_convex_mutation(http, path, args):
+        captured["args"] = args
+
+    monkeypatch.setattr(_cc, "convex_mutation", _mock_convex_mutation)
+
+    await _emit_audit(
+        None,
+        actor_id="a",
+        action="run.triggered",
+    )
+
+    assert "reason" not in captured["args"]
+    assert "issueNumber" not in captured["args"]
+    assert "runId" not in captured["args"]
+    assert "instructionVersion" not in captured["args"]
+
+
 # ── _touched_block_indices + _reset_touched_claims (FCT-07, D-19/D-20) ─────
 
 

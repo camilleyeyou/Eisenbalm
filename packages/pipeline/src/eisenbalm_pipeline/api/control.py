@@ -143,6 +143,11 @@ async def _emit_audit(
     resource_id: str | None = None,
     before: str | None = None,
     after: str | None = None,
+    # ── Phase 43 (§43.2, D-11) — additive decision kwargs ──
+    reason: str | None = None,
+    issue_number: int | None = None,
+    run_id: str | None = None,
+    instruction_version: str | None = None,
 ) -> None:
     """Write one audit_log row via the public auditLog:record Convex mutation.
 
@@ -152,6 +157,12 @@ async def _emit_audit(
     Phase 31 (D-09): `before` / `after` are optional truncated snapshot
     strings (content-patch endpoints pass these; every pre-existing caller
     omits them, so this extension is purely additive/back-compatible).
+
+    Phase 43 (§43.2, D-11): `reason` / `issue_number` / `run_id` /
+    `instruction_version` are additive-optional decision kwargs, forwarded
+    into the auditLog:record args dict only when non-None — mirrors the
+    before/after pattern above. Every pre-existing caller omits these, so
+    this extension is purely additive/back-compatible.
     """
     args: dict = {
         "workspace_id": WORKSPACE_ID,
@@ -166,6 +177,14 @@ async def _emit_audit(
         args["before"] = before
     if after is not None:
         args["after"] = after
+    if reason is not None:
+        args["reason"] = reason
+    if issue_number is not None:
+        args["issueNumber"] = issue_number
+    if run_id is not None:
+        args["runId"] = run_id
+    if instruction_version is not None:
+        args["instructionVersion"] = instruction_version
     try:
         await _cc.convex_mutation(http, "auditLog:record", args)
     except Exception:  # noqa: BLE001

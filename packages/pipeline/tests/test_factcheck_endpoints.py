@@ -185,6 +185,10 @@ def test_keep_happy_path_calls_keep_as_written_and_audits(monkeypatch):
     assert len(audits) == 1
     assert audits[0]["action"] == "claim_kept"
     assert "Editorial judgment" in audits[0]["after"]
+    # Phase 43 (§43.2, D-11/D-13): the operator's reason + run scope are ALSO
+    # forwarded as structured decision kwargs, alongside the legacy after-JSON.
+    assert audits[0]["reason"] == "Editorial judgment: this figure is intentionally atmospheric."
+    assert audits[0]["runId"] == "run-abc"
 
     # NO Sanity write on keep.
     assert patch_calls == []

@@ -37,3 +37,13 @@ caused). Not fixed here.
   auto-fix boundary.
   - `pnpm --filter dispatch-control test -- __tests__/taskSupersession.test.ts`
     is green (8/8) and is the plan's actual gating verification command.
+
+## 43-07 (retrofit-reason-actions-shared-helper)
+
+- `cd packages/pipeline && python -m pytest -k "audit or factcheck"` fails
+  COLLECTION (not this plan's tests) with `ModuleNotFoundError: No module
+  named 'respx'` from `tests/lib/test_vercel_client.py`. Pre-existing,
+  already logged under Phase 28-03's deferred-items.md — a missing dev
+  dependency unrelated to this plan's `control.py`/`factcheck.py` changes.
+  Ran with `--ignore=tests/lib/test_vercel_client.py` instead: 37 passed, 0
+  failed.

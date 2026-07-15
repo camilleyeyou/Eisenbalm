@@ -274,6 +274,10 @@ async def keep_claim(
         {"runId": run_id, "claimIndex": claim_index},
     )
 
+    # Phase 43 (§43.2, D-11/D-13): the operator's reason + run scope are
+    # threaded through the extended _emit_audit as structured decision
+    # kwargs (alongside the existing after-JSON reason) so this row projects
+    # through auditLog.listDecisions the same as the Convex-side decisions.
     await _emit_audit(
         convex_http,
         actor_id=actor,
@@ -282,6 +286,8 @@ async def keep_claim(
         resource_id=f"{run_id}:{claim_index}",
         before=_claim_snapshot(claim),
         after=_truncate(json.dumps({"status": "checked", "reason": reason}, default=str)),
+        reason=reason,
+        run_id=run_id,
     )
 
     return {"claimIndex": claim_index, "status": "checked"}
