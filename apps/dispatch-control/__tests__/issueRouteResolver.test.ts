@@ -10,6 +10,10 @@ import {
   issueHref,
   issueReviewHref,
   issueVoiceHref,
+  issueStoryHref,
+  issueDraftHref,
+  issueFactCheckHref,
+  issueApprovalHref,
   issueRunHref,
   legacyRedirectTarget,
 } from '../lib/issueRouteResolver'
@@ -45,6 +49,24 @@ describe('href builders (§40.7)', () => {
 
   it('issueRunHref URL-encodes the runId segment', () => {
     expect(issueRunHref(7, 'a b/c')).toBe('/issues/7/runs/a%20b%2Fc')
+  })
+})
+
+describe('Phase 41 stage hrefs (D-05/D-06)', () => {
+  it('issueStoryHref builds /issues/{n}/story', () => {
+    expect(issueStoryHref(7)).toBe('/issues/7/story')
+  })
+
+  it('issueDraftHref builds /issues/{n}/draft', () => {
+    expect(issueDraftHref(7)).toBe('/issues/7/draft')
+  })
+
+  it('issueFactCheckHref builds /issues/{n}/fact-check', () => {
+    expect(issueFactCheckHref(7)).toBe('/issues/7/fact-check')
+  })
+
+  it('issueApprovalHref builds /issues/{n}/approval', () => {
+    expect(issueApprovalHref(7)).toBe('/issues/7/approval')
   })
 })
 

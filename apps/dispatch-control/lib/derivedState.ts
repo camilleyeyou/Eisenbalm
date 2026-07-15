@@ -15,7 +15,7 @@
 import { isOpenFinding } from './galley/findingState'
 import { VOICE_AXES } from './galley/axisPartition'
 import { qaSectionToGalleyId } from './galley/sectionIdMap'
-import { issueReviewHref, issueVoiceHref } from './issueRouteResolver'
+import { issueDraftHref, issueVoiceHref } from './issueRouteResolver'
 import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
 import type { DraftResponse } from './contentPatchClient'
 
@@ -298,7 +298,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
     if (!isOpenFinding(row)) continue
     const voiceAxis = isVoiceAxisFinding(row)
     const stage = voiceAxis ? 4 : 2
-    const href = fallbackHref ?? (voiceAxis ? issueVoiceHref(n as number) : issueReviewHref(n as number))
+    const href = fallbackHref ?? (voiceAxis ? issueVoiceHref(n as number) : issueDraftHref(n as number))
     tasks.push({
       id: `qa-${row._id}`,
       sev: findingSeverityToTaskSeverity(row.severity),
@@ -314,7 +314,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   for (const row of i.claimRows ?? []) {
     if (row.status !== 'pending') continue
     const sev: TaskSeverity = row.sourceUrl ? 'review-recommended' : 'must-fix'
-    const href = fallbackHref ?? issueReviewHref(n as number)
+    const href = fallbackHref ?? issueDraftHref(n as number)
     tasks.push({
       id: `claim-${row._id}`,
       sev,
@@ -328,7 +328,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
 
   const runningOrDone = i.runId !== null && i.runStatus !== 'running'
   if (runningOrDone && i.signOffs !== undefined) {
-    const href = fallbackHref ?? issueReviewHref(n as number)
+    const href = fallbackHref ?? issueDraftHref(n as number)
     if (i.signOffs['facts-cleared'] === undefined) {
       tasks.push({
         id: 'signoff-facts',

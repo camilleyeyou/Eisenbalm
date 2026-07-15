@@ -295,8 +295,8 @@ describe('deriveSectionStates + draftSectionIdsFromDraft (Phase 41 Plan 41-01, W
       baseInputs({ qaFindings: [], claimRows: [] }),
       draftSectionIds,
     )
-    expect(result.originStory.state).toBe('clean')
-    expect(result.originStory.state).not.toBe('not-generated')
+    expect(result.originStory?.state).toBe('clean')
+    expect(result.originStory?.state).not.toBe('not-generated')
   })
 
   it('a section whose draft blocks are empty/absent is omitted by draftSectionIdsFromDraft, and deriveSectionStates reports "not-generated" (canvas parity)', () => {

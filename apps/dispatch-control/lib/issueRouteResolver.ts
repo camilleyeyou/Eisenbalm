@@ -36,6 +36,27 @@ export function issueVoiceHref(issueNumber: number): string {
   return `/issues/${issueNumber}/voice`
 }
 
+/**
+ * Phase 41 stage-tab hrefs (D-05/D-06). `issueReviewHref` above is KEPT for
+ * back-compat — `review/page.tsx` still imports it until Plan 41-06 guts it
+ * into a redirect; removing it now would break the Wave 1-2 build.
+ */
+export function issueStoryHref(issueNumber: number): string {
+  return `/issues/${issueNumber}/story`
+}
+
+export function issueDraftHref(issueNumber: number): string {
+  return `/issues/${issueNumber}/draft`
+}
+
+export function issueFactCheckHref(issueNumber: number): string {
+  return `/issues/${issueNumber}/fact-check`
+}
+
+export function issueApprovalHref(issueNumber: number): string {
+  return `/issues/${issueNumber}/approval`
+}
+
 export function issueRunHref(issueNumber: number, runId: string): string {
   return `/issues/${issueNumber}/runs/${encodeURIComponent(runId)}`
 }
