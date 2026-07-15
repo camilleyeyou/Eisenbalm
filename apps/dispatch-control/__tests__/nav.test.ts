@@ -1,11 +1,19 @@
 /**
  * nav.test.ts — NAV_GROUPS coverage gate (CHR-03, dc.html D-01/D-06).
+ * Updated Phase 40 Plan 40-08 (ISS-02 / D-31, §40.9) — the console became
+ * issue-keyed; the nav restructured into Editorial / System Workbench /
+ * Operations, and Review Desk / Signal Desk / Voice Pass left the nav (they
+ * are now issue sub-routes reachable from `/issues/[n]`).
  *
  * Asserts:
- *   1. The 3 group labels exist, in order (Workflow, Craft & memory, Operations).
- *   2. Review Desk is the first item in the Workflow group (home, D-04).
- *   3. Every nav href across all 3 groups, plus NAV_PINNED, has a corresponding
- *      real page file on disk (no dead links).
+ *   1. The 3 group labels exist, in order (Editorial, System Workbench, Operations).
+ *   2. Issues is the first (and only) item in the Editorial group (the new
+ *      editorial home, D-31).
+ *   3. None of the removed desk items (Review Desk, Signal Desk, Voice Pass)
+ *      appear anywhere in the nav.
+ *   4. Every nav href across all 3 groups, plus NAV_PINNED, has a corresponding
+ *      real page file on disk (no dead links) — this now requires
+ *      `/issues/page.tsx`, which Plan 40-05 created.
  *
  * If a nav item is added without a page, or a page is deleted without removing
  * the nav item, this test will fail — preventing dead-link regressions automatically.
@@ -15,7 +23,8 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { NAV_GROUPS, NAV_PINNED } from '../lib/nav'
 
-const EXPECTED_GROUP_LABELS = ['Workflow', 'Craft & memory', 'Operations']
+const EXPECTED_GROUP_LABELS = ['Editorial', 'System Workbench', 'Operations']
+const REMOVED_HREFS = ['/review-desk', '/signal-desk', '/voice-pass']
 
 function pagePathFor(appRoot: string, href: string): string {
   // e.g. "/run-monitor" → "app/(dashboard)/run-monitor/page.tsx"
@@ -28,11 +37,24 @@ describe('NAV_GROUPS', () => {
     expect(labels).toEqual(EXPECTED_GROUP_LABELS)
   })
 
-  it('has Review Desk as the first item of the Workflow group (home, D-04)', () => {
-    const workflow = NAV_GROUPS.find((g) => g.label === 'Workflow')
-    const first = workflow?.items[0]
-    expect(first?.label).toBe('Review Desk')
-    expect(first?.href).toBe('/review-desk')
+  it('has Issues as the first item of the Editorial group (the new editorial home, D-31)', () => {
+    const editorial = NAV_GROUPS.find((g) => g.label === 'Editorial')
+    const first = editorial?.items[0]
+    expect(first?.label).toBe('Issues')
+    expect(first?.href).toBe('/issues')
+  })
+
+  it('Run Monitor moved under System Workbench (D-08 — survives, but is no longer the editorial object)', () => {
+    const workbench = NAV_GROUPS.find((g) => g.label === 'System Workbench')
+    const labels = workbench?.items.map((i) => i.label) ?? []
+    expect(labels).toContain('Run Monitor')
+  })
+
+  it('none of Review Desk / Signal Desk / Voice Pass hrefs appear anywhere in the nav (they left the nav — now issue sub-routes)', () => {
+    const allHrefs = NAV_GROUPS.flatMap((group) => group.items.map((i) => i.href))
+    for (const removed of REMOVED_HREFS) {
+      expect(allHrefs).not.toContain(removed)
+    }
   })
 
   it('NAV_PINNED is "How to use" pointing at /how-to-use', () => {
