@@ -456,7 +456,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
-| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 5/10 | In Progress|  |
+| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 7/10 | In Progress|  |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
@@ -902,7 +902,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 41-04-signal-desk-issue-keying-PLAN.md — SignalDeskScreen additive runId? prop (Wave 1)
 - [x] 41-05-workspace-state-outline-panel-PLAN.md — WorkspaceStateProvider + section outline + context panel (Wave 2)
 - [x] 41-06-workspace-frame-layout-nav-PLAN.md — frame layout, stage tabs, persistent controls, redirect, nav (Wave 3)
-- [ ] 41-07-stage1-story-stage3-factcheck-PLAN.md — Stage 1 Signal Desk mount + Stage 3 Fact Check placeholder (Wave 4)
+- [x] 41-07-stage1-story-stage3-factcheck-PLAN.md — Stage 1 Signal Desk mount + Stage 3 Fact Check placeholder (Wave 4)
 - [ ] 41-08-stage2-draft-recomposition-PLAN.md — Stage 2 Draft galley: rail removed, click-through, not-generated (Wave 4)
 - [ ] 41-09-stage5-approval-publish-preview-PLAN.md — Stage 5 Approval readiness board + exact publish preview (Wave 4)
 - [ ] 41-10-integration-gate-PLAN.md — full suite + strict build + Convex live + demo-path UAT (Wave 5)
