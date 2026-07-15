@@ -22,3 +22,18 @@ caused). Not fixed here.
   - `pnpm --filter dispatch-control test -- __tests__/derivedState.test.ts`
     and the full unit suite are unaffected (vitest does not type-check these
     files the same way `tsc --noEmit` does).
+
+## 43-04 (superseded-resolved-session-logic)
+
+- `pnpm --filter dispatch-control typecheck` still exits non-zero — confirmed
+  via `git stash` that the full error set (now ~28 files, `error TS` count
+  210) is byte-identical with and without this plan's new
+  `lib/taskSupersession.ts` / `__tests__/taskSupersession.test.ts`. Neither
+  new file appears anywhere in the error output (`grep -c taskSupersession`
+  on the typecheck output returns 0). This is the same pre-existing,
+  repo-wide `noUncheckedIndexedAccess`/strictness drift noted under 43-03,
+  just visible across a wider file set than that plan's narrower check
+  surfaced — unrelated to Phase 43 and out of scope for this plan's Rule-1/2/3
+  auto-fix boundary.
+  - `pnpm --filter dispatch-control test -- __tests__/taskSupersession.test.ts`
+    is green (8/8) and is the plan's actual gating verification command.
