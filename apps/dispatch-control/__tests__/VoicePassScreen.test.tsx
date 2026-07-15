@@ -103,7 +103,7 @@ vi.mock('@/lib/voicePassClient', () => ({
 import { useQuery } from 'convex/react'
 import { getDraft } from '@/lib/contentPatchClient'
 import { recheck } from '@/lib/voicePassClient'
-import { VoicePassScreen } from '../app/(dashboard)/voice-pass/[runId]/page.tsx'
+import { VoicePassScreen } from '../app/(dashboard)/voice-pass/[runId]/VoicePassRunView'
 
 afterEach(() => {
   cleanup()
