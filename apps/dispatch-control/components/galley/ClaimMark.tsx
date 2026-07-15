@@ -29,6 +29,17 @@ interface ClaimMarkProps {
   value: ClaimSpanMarkDef
   children: React.ReactNode
   runId: string
+  /**
+   * Phase 41 (WSP-04, Plan 41-03) — optional click-through for an unchecked
+   * (pending) claim. When provided AND `value.status === 'pending'`, a click
+   * on the mark calls this with `value.claimIndex` INSTEAD OF toggling the
+   * popover (Stage 2 Draft routes this to the Fact Check tab, Plan 41-08).
+   * Undefined preserves today's toggle-popover-only behavior for every other
+   * caller (Review Desk, Voice Pass). A checked claim always toggles the
+   * popover regardless of this prop — click-through is unsourced/unchecked
+   * only.
+   */
+  onUnsourcedClaimClick?: (claimIndex: number) => void
 }
 
 const actionButtonStyle: React.CSSProperties = {
@@ -55,8 +66,17 @@ function formatRetrievedAt(ms?: number): string | null {
   return d.toISOString().slice(0, 10)
 }
 
-export default function ClaimMark({ value, children, runId }: ClaimMarkProps) {
+export default function ClaimMark({
+  value,
+  children,
+  runId,
+  onUnsourcedClaimClick,
+}: ClaimMarkProps) {
   const [open, setOpen] = useState(false)
+  // Phase 41 (WSP-04) — keyboard-focus reveal, independent of `open` so a
+  // click-opened popover is never force-closed by an unrelated blur (the
+  // popover renders on `open || focusOpen`, never collapsed into one state).
+  const [focusOpen, setFocusOpen] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
   const [busy, setBusy] = useState(false)
   const setStatus = useMutation(api.claimChecks.setStatus)
@@ -72,6 +92,14 @@ export default function ClaimMark({ value, children, runId }: ClaimMarkProps) {
 
   function toggle() {
     setOpen((prev) => !prev)
+  }
+
+  function handleClick() {
+    if (value.status === 'pending' && onUnsourcedClaimClick) {
+      onUnsourcedClaimClick(value.claimIndex)
+      return
+    }
+    toggle()
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLElement>) {
@@ -126,13 +154,15 @@ export default function ClaimMark({ value, children, runId }: ClaimMarkProps) {
         tabIndex={0}
         role="button"
         aria-label={`${value.provenance} claim`}
-        aria-expanded={open}
-        onClick={toggle}
+        aria-expanded={open || focusOpen}
+        onClick={handleClick}
         onKeyDown={handleKeyDown}
+        onFocus={() => setFocusOpen(true)}
+        onBlur={() => setFocusOpen(false)}
       >
         {children}
       </mark>
-      {open && (
+      {(open || focusOpen) && (
         <span className="galley-popover" role="dialog">
           <span className="galley-popover__severity" style={{ display: 'block' }}>
             {value.provenance}

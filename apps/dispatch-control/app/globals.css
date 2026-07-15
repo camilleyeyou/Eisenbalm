@@ -222,6 +222,15 @@ body {
 .galley-claim {
   position: relative;
 }
+/**
+ * Phase 41 (WSP-04, Plan 41-03) — keyboard-focus parity with `.galley-anno`:
+ * a claim mark's source popover must be reachable via Tab focus, not only
+ * hover/click.
+ */
+.galley-claim:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
 .galley-claim[data-provenance="sourced"] {
   background: linear-gradient(transparent 60%, rgba(242, 176, 30, 0.5) 60%);
 }
