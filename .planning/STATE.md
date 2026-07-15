@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 41-04-signal-desk-issue-keying-PLAN.md
-last_updated: "2026-07-15T05:57:00.643Z"
+stopped_at: Completed 41-05-workspace-state-outline-panel-PLAN.md
+last_updated: "2026-07-15T06:13:21.080Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 41 (issue-workspace-frame) — EXECUTING
-Plan: 5 of 10
+Plan: 6 of 10
 
 ## Performance Metrics
 
@@ -281,6 +281,7 @@ Plan: 5 of 10
 | Phase 41 P02 | 8min | 2 tasks | 2 files |
 | Phase 41 P03 | 6min | 2 tasks | 5 files |
 | Phase 41-issue-workspace-frame P04 | 8min | 1 tasks | 2 files |
+| Phase 41-issue-workspace-frame P05 | 14min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -724,6 +725,8 @@ Recent decisions affecting current work:
 - [Phase 41]: ClaimMark focusOpen kept as an independent state from open, not merged, so a click-opened popover survives an unrelated blur
 - [Phase 41]: onUnsourcedClaimClick click-through gates on value.status === 'pending' (not !isChecked) to read directly against the plan's stated condition
 - [Phase 41-issue-workspace-frame]: SignalDeskScreen: api.runs.latest is skipped ('skip') entirely whenever a runId prop is passed, rather than queried-then-ignored, guaranteeing the latest run can never silently override a passed issue-keyed run.
+- [Phase 41-issue-workspace-frame]: sectionStates is undefined (never an empty Record) while the draft is loading or the fetch failed; the outline renders a loading state rather than inferring 'not-generated' from absence
+- [Phase 41-issue-workspace-frame]: ContextPanel hidden-state persists to localStorage (dc.workspace.contextPanel.hidden), guarded for SSR with a post-hydration effect to avoid a hydration mismatch
 
 ### Pending Todos
 
@@ -813,6 +816,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T05:57:00.630Z
-Stopped at: Completed 41-04-signal-desk-issue-keying-PLAN.md
+Last session: 2026-07-15T06:13:21.067Z
+Stopped at: Completed 41-05-workspace-state-outline-panel-PLAN.md
 Resume file: None
