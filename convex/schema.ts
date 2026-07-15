@@ -367,6 +367,7 @@ export default defineSchema({
     agentKey: v.string(),
     inputSnapshot: v.optional(v.string()),   // JSON, truncated ~2000 chars
     outputSnapshot: v.optional(v.string()),  // JSON, truncated ~2000 chars
+    inputKeys: v.optional(v.array(v.string())),  // Phase 44 §44.5 — untruncated top-level input key list for the missing-inputs diff; legacy rows omit it
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId_agentKey', ['runId', 'agentKey']),

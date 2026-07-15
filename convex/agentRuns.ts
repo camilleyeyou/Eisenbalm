@@ -191,15 +191,17 @@ export const savePayload = internalMutation({
     agentKey: v.string(),
     inputSnapshot: v.optional(v.string()),
     outputSnapshot: v.optional(v.string()),
+    // Phase 44 §44.5 — untruncated top-level input key list; additive-optional.
+    inputKeys: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const { workspace_id, runId, agentKey, inputSnapshot, outputSnapshot } = args
+    const { workspace_id, runId, agentKey, inputSnapshot, outputSnapshot, inputKeys } = args
     const existing = await ctx.db
       .query('agent_run_payloads')
       .withIndex('by_runId_agentKey', q => q.eq('runId', runId).eq('agentKey', agentKey))
       .first()
     if (existing) {
-      await ctx.db.patch(existing._id, { inputSnapshot, outputSnapshot })
+      await ctx.db.patch(existing._id, { inputSnapshot, outputSnapshot, inputKeys })
     } else {
       await ctx.db.insert('agent_run_payloads', {
         workspace_id,
@@ -207,6 +209,7 @@ export const savePayload = internalMutation({
         agentKey,
         inputSnapshot,
         outputSnapshot,
+        inputKeys,
       })
     }
   },
