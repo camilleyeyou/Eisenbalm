@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 44-07-entry-points-draft-voice-factcheck-PLAN.md
-last_updated: "2026-07-15T21:12:37.907Z"
+stopped_at: Completed 44-08-entry-points-approval-mytasks-org-PLAN.md
+last_updated: "2026-07-15T21:33:55.156Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 44 (inspect-how-this-was-made) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 
 ## Performance Metrics
 
@@ -313,6 +313,7 @@ Plan: 8 of 9
 | Phase 44 P05 | 35min | 3 tasks | 5 files |
 | Phase 44 P06 | 25min | 3 tasks | 4 files |
 | Phase 44 P07 | 20min | 2 tasks | 11 files |
+| Phase 44 P08 | 20min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -816,6 +817,9 @@ Recent decisions affecting current work:
 - [Phase 44]: InspectorContainer built before InspectorProvider's commit (Provider imports Container); computeOutputDivergence passed only completedAt (no changedSinceCheck fetch, honest 'unknown'); artifact.output uses prettyJson not summarize; title/meta reuse displayNameForAgentKey
 - [Phase 44]: Wired ReviewDeskRunView.tsx/VoicePassRunView.tsx (the only two Galley-mounting screens) even though the plan's frontmatter files_modified list omitted them -- required by the plan's own Task 1 action text
 - [Phase 44]: Fact-check claim locator uses claimIndex (always present) not the optional Phase-35 claimId provenance field, to keep the new inspector callback consistent with every other claim action on the screen
+- [Phase 44]: deriveTasks anchors both factual and voice-axis qa findings to type:'founder' (same writer produced the section, no branching needed)
+- [Phase 44]: MyTasksList.openInspector is optional with a no-op default so its pure render-half tests stay unmodified; only the default-export wrapper supplies the live useInspector() callback
+- [Phase 44]: org Inspect affordance lives only on the winner card, not per-candidate -- resolveInspectorStep's org case always resolves to scout regardless of locator today
 
 ### Pending Todos
 
@@ -906,6 +910,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T21:12:37.894Z
-Stopped at: Completed 44-07-entry-points-draft-voice-factcheck-PLAN.md
+Last session: 2026-07-15T21:33:55.143Z
+Stopped at: Completed 44-08-entry-points-approval-mytasks-org-PLAN.md
 Resume file: None

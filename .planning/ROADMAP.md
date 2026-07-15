@@ -459,7 +459,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
-| 44. Inspect How This Was Made | 7/9 | In Progress|  |
+| 44. Inspect How This Was Made | 8/9 | In Progress|  |
 | 45. Agent Revision | 0/TBD | Not started | - |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
@@ -975,7 +975,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 44-05-seven-tab-inspector-panel-PLAN.md — shared summarize helpers + presentational 7-tab InspectorPanel + footer (live vs reserved) (Wave 3)
 - [x] 44-06-inspector-provider-container-mount-PLAN.md — InspectorProvider (one instance) + data-fetching container + mount at (dashboard) root (Wave 4)
 - [x] 44-07-entry-points-draft-voice-factcheck-PLAN.md — draft passage + voice finding (shared galley onInspect) + fact-check claim (ClaimProvenanceCard callback) (Wave 5)
-- [ ] 44-08-entry-points-approval-mytasks-org-PLAN.md — approval recommendation + My Tasks (enable + deriveTasks.insp) + brief org card (Wave 5)
+- [x] 44-08-entry-points-approval-mytasks-org-PLAN.md — approval recommendation + My Tasks (enable + deriveTasks.insp) + brief org card (Wave 5)
 - [ ] 44-09-integration-gate-PLAN.md — full suite + strict build + Convex sync + pipeline pytest + cross-surface live UAT (Wave 6)
 **UI hint**: yes
 
