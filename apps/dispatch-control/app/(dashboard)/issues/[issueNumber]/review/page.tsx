@@ -1,24 +1,14 @@
 /**
- * Phase 40 (ISS-02, D-07, D-09, Plan 40-06 Task 2) — issue-keyed thin
- * wrapper around the already-shipped Review Desk galley.
+ * Phase 41 (D-06, Plan 41-08 Task 1) — legacy `/review` URL redirect.
  *
- * Resolves `issueNumber` (route param) -> the most recent `runId` for that
- * issue via `api.pipelineRuns.byIssueNumber` (server-side Convex read, so
- * the redirect/render decision never depends on a client-side subscription
- * racing the first paint), then mounts `ReviewDeskRunView` — the SAME
- * Client Component `/review-desk/[runId]` used to render — unmodified.
- *
- * - `parseIssueNumber` fails -> redirect to `/issues` (unknown/garbage param).
- * - No run yet for a real issue -> redirect to the issue overview
- *   (`/issues/[n]`, D-09) rather than showing a broken editor.
+ * Stage 2 (Draft) now lives at `/issues/[issueNumber]/draft` (this file's
+ * sibling `draft/page.tsx`, D-06). This wrapper is retired to a pure
+ * redirect so old bookmarked/shared `/review` links keep working —
+ * `parseIssueNumber` failure falls back to `/issues` (never a run-keyed
+ * URL, which would redirect-loop).
  */
 import { redirect } from 'next/navigation'
-import { ConvexHttpClient } from 'convex/browser'
-import { api } from '@convex/_generated/api'
-import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
-import ReviewDeskRunView from '../../../review-desk/[runId]/ReviewDeskRunView'
-
-export const dynamic = 'force-dynamic'
+import { parseIssueNumber, issueDraftHref } from '@/lib/issueRouteResolver'
 
 interface IssueReviewPageProps {
   params: Promise<{ issueNumber: string }>
@@ -29,11 +19,5 @@ export default async function IssueReviewPage({ params }: IssueReviewPageProps) 
   const n = parseIssueNumber(rawIssueNumber)
   if (n === null) redirect('/issues')
 
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL
-  const run = url
-    ? await new ConvexHttpClient(url).query(api.pipelineRuns.byIssueNumber, { issueNumber: n })
-    : null
-  if (!run) redirect(issueHref(n))
-
-  return <ReviewDeskRunView params={Promise.resolve({ runId: run.runId })} />
+  redirect(issueDraftHref(n))
 }

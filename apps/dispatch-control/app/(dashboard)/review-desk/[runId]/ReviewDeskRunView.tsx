@@ -41,10 +41,21 @@
  * `/issues/[issueNumber]/review` (Task 2) mounts THIS file directly. Every
  * relative import below is unchanged — this file lives in the SAME
  * directory `page.tsx` used to occupy.
+ *
+ * Phase 41 (WSP-04, WSP-07, D-06/D-07/D-13, Plan 41-08 Task 1): this is now
+ * the Stage 2 (Draft) canvas mounted from `issues/[issueNumber]/draft/
+ * page.tsx`. The standalone page-level heading + the rerun-clobber advisory
+ * paragraph, and the decision-rail mount (moved to Stage 5, D-13, see the
+ * Approval stage's own rail import) were removed — the frame (`layout.tsx`)
+ * now supplies the page chrome, and the rail lives in the Approval stage
+ * instead. An optional `issueNumber` prop lets the galley's unchecked-claim
+ * click-through route to the Fact Check tab (D-12); it is undefined for any
+ * other caller of this component (none currently exist beyond the Draft
+ * mount).
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import SectionChipList, {
@@ -53,16 +64,18 @@ import SectionChipList, {
 } from './_components/SectionChipList'
 import SectionEditorPanel from './_components/SectionEditorPanel'
 import Galley from '@/components/galley/Galley'
-import DecisionRail from './_components/DecisionRail'
 import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
+import { issueFactCheckHref } from '@/lib/issueRouteResolver'
 
 interface ReviewDeskRunViewProps {
   params: Promise<{ runId: string }>
+  /** Phase 41 (D-12): lets the Draft mount route an unchecked-claim click to Fact Check. */
+  issueNumber?: number
 }
 
 type ViewMode = 'galley' | 'edit' | 'iframe'
@@ -130,11 +143,12 @@ function tallyForSection(
   return counts
 }
 
-export function ReviewDeskRunView({ params }: ReviewDeskRunViewProps) {
+export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProps) {
   const { runId: rawRunId } = use(params)
   const runId = decodeURIComponent(rawRunId)
 
   const { getToken } = useAuth()
+  const router = useRouter()
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -358,17 +372,6 @@ export function ReviewDeskRunView({ params }: ReviewDeskRunViewProps) {
 
   return (
     <div className="flex min-h-[70vh] flex-col gap-4">
-      {/* Header + rerun-clobber advisory (§31.9) */}
-      <div className="flex flex-col gap-1 border-b border-[color:var(--color-faint)] pb-3">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--color-ink)]">
-          Review Desk — Run {runId}
-        </h1>
-        <p className="text-xs text-[color:var(--color-ink-soft)]">
-          Re-roll a section before editing — re-rolling after an edit
-          overwrites console changes here.
-        </p>
-      </div>
-
       {loading && (
         <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
       )}
@@ -444,6 +447,9 @@ export function ReviewDeskRunView({ params }: ReviewDeskRunViewProps) {
                   onEditSection={handleEditSection}
                   showProvenance={showProvenance}
                   includeAxes={FACTUAL_AXES}
+                  onUnsourcedClaimClick={() => {
+                    if (issueNumber != null) router.push(issueFactCheckHref(issueNumber))
+                  }}
                 />
               ) : (
                 <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
@@ -480,16 +486,6 @@ export function ReviewDeskRunView({ params }: ReviewDeskRunViewProps) {
                 </div>
               ))}
           </div>
-
-          {/* FAR RIGHT — decision rail (GLY-04, D-17): the design's 336px
-              column, scoped to galley mode only — it belongs beside the
-              galley, not the editor or the iframe fallback. Stacks below
-              the galley on mobile via the existing flex-col lg:flex-row. */}
-          {viewMode === 'galley' && (
-            <div className="w-full shrink-0 lg:w-[336px]">
-              <DecisionRail runId={runId} />
-            </div>
-          )}
         </div>
       )}
     </div>
