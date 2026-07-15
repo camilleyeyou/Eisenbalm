@@ -17,10 +17,11 @@ must_haves:
   truths:
     - "docs/API_CONTRACTS.md contains a §44 section defining the InspectorArtifact shape, the resolver contract, the REDEFINED missing-inputs diff, and the openInspector contract — written BEFORE any implementation code (contract-first, D-13)."
     - "§44 documents the declared-state-inputs vocabulary redefinition (RESEARCH Pitfall 1) and marks fine-grained {token}-level gap detection as an explicit non-goal."
+    - "§44 defines the Instructions-tab 'shared rules referenced' data contract — `NON_EXTERNALIZED_SHARED_RULES` mapping the 4 narrative writers to `['VOICE_CONSTRAINTS','STRUCTURE_CONTRACT']` and `qa` to the fetchable `rubric` shared rule — AND the `promptVersion.version → instructionVersion` / `promptVersion.content → instructions` mapping for the 11 externalized agents, so the Instructions tab shows the active version AND the shared rules for every artifact type, never a dishonest blank/one-liner (INS-04, RESEARCH Pitfall 2, D-07/D-14)."
     - "Five Wave-0 test scaffold files exist under apps/dispatch-control/__tests__/, enumerating every VALIDATION.md test-map case as it.todo placeholders, and the full console suite stays green."
   artifacts:
     - path: "docs/API_CONTRACTS.md"
-      provides: "§44 inspector contract (shapes, resolver, diff redefinition, inputKeys field, artifact-key string encoding, footer live-vs-reserved table)"
+      provides: "§44 inspector contract (shapes, resolver, diff redefinition, inputKeys field, artifact-key string encoding, footer live-vs-reserved table, NON_EXTERNALIZED_SHARED_RULES shared-rules map + instruction-version mapping)"
       contains: "§44"
     - path: "apps/dispatch-control/__tests__/inspectorArtifact.test.ts"
       provides: "INS-01 resolver test scaffold (it.todo per case)"
@@ -29,7 +30,7 @@ must_haves:
     - path: "apps/dispatch-control/__tests__/outputDivergence.test.ts"
       provides: "INS-05 divergence test scaffold"
     - path: "apps/dispatch-control/__tests__/InspectorPanel.test.tsx"
-      provides: "INS-02/INS-04/INS-06 panel test scaffold"
+      provides: "INS-02/INS-04/INS-06 panel test scaffold (incl. shared-rules + externalized-instruction cases)"
     - path: "apps/dispatch-control/__tests__/InspectorProvider.test.tsx"
       provides: "INS-01 one-instance/openInspector test scaffold"
   key_links:
@@ -44,7 +45,9 @@ Lay the phase's contract and test scaffolds BEFORE any implementation — the es
 
 CRITICAL reconciliation this contract must encode (from 44-RESEARCH Pitfall 1): the CONTEXT D-04 literal diff (`VARIABLE_REGISTRY[agentKey]` − `inputSnapshot` top-level keys) is broken by construction — the two vocabularies (fine-grained `{token}` names vs coarse `DispatchState` field names) never intersect, so it would report EVERY declared token as missing for EVERY agent. §44 must redefine the diff onto a computable "declared state inputs" vocabulary (a ported `_INPUT_KEYS`-style per-agent constant that speaks the same `DispatchState` vocabulary as the input-payload keys) and document fine-grained token-gap detection as an explicit non-goal.
 
-Purpose: A different Claude instance can implement each later plan from §44 alone, with no guesswork about shapes, namespaces, the diff redefinition, or the artifact-key encoding.
+SECOND CRITICAL reconciliation (from 44-RESEARCH Pitfall 2): 5 of the pipeline's `agent_runs` keys — `origin_story`, `problem`, `founder_bio`, `case_study`, `qa` (likely the MOST commonly inspected artifact types) — have NO `prompt_versions` row at all, so `promptVersions.getActive` returns `null` for them BY DESIGN. Roadmap success criterion #4 still requires the Instructions tab show the active instruction version AND the shared rules referenced. §44 must therefore carry (a) the `NON_EXTERNALIZED_SHARED_RULES` map so the 5 non-externalized agents render their shared rules (never a bare one-liner), and (b) the explicit `promptVersion.version → instructionVersion` / `promptVersion.content → instructions` mapping so the 11 externalized agents render REAL active-version content (never a dishonest blank Instructions tab — the D-07/D-14 state we forbid).
+
+Purpose: A different Claude instance can implement each later plan from §44 alone, with no guesswork about shapes, namespaces, the diff redefinition, the artifact-key encoding, or the Instructions-tab shared-rules/version data contract.
 Output: `docs/API_CONTRACTS.md` §44 + five test scaffold files.
 </objective>
 
@@ -72,6 +75,7 @@ interface InspectorArtifact {
   inputs: string                       // Inputs tab — values actually supplied
   missing: string                      // THE HIGH-VALUE FIELD — the redefined diff
   instructionVersion, instructions, sectionGuidance   // Instructions tab
+  // + sharedRules: { label, content? }[]  — the shared rules referenced (§44.9, additive)
   output: string; outputNote: string   // + note when the issue text has since diverged
   sources: { title, mark, passage, retrievedAt }[]
   model, timing, cost, latency, validation            // Diagnostics tab
@@ -92,9 +96,10 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
   <read_first>
     - docs/API_CONTRACTS.md (read the tail — §42 at line ~4282, §43 at line ~4485 — to match the exact heading style `## §44 — Inspect How This Was Made (Phase 44)` and sub-section `### §44.n` convention)
     - docs/design/dispatch-control-v3/DERIVED-STATE-CONTRACT.md §8 (the InspectorArtifact interface + "missing = declared − supplied" text) and §7 (11 action-named steps + "Restart from this step / completed steps reused, not re-paid")
-    - .planning/phases/44-inspect-how-this-was-made/44-RESEARCH.md (Pitfall 1 vocabulary mismatch; the sectionIdMap reuse; the editor_gate_1/editor_gate1 split; the claim→researcher correction; the agent_runs "no model field" finding; Pitfall 6 resume endpoint is Gate-1-only)
+    - .planning/phases/44-inspect-how-this-was-made/44-RESEARCH.md (Pitfall 1 vocabulary mismatch; Pitfall 2 the 5 non-externalized agents + their shared rules VOICE_CONSTRAINTS/STRUCTURE_CONTRACT/rubric; the sectionIdMap reuse; the editor_gate_1/editor_gate1 split; the claim→researcher correction; the agent_runs "no model field" finding; Pitfall 6 resume endpoint is Gate-1-only)
     - convex/schema.ts lines 302-315 (prompt_versions), 345-372 (agent_runs, agent_run_payloads)
     - packages/pipeline/src/eisenbalm_pipeline/lib/agent_wrapper.py lines 33-82 (_INPUT_KEYS + _truncate + _snapshot_input)
+    - packages/pipeline/src/eisenbalm_pipeline/agents/{origin_story,problem,founder_bio,case_study}.py (STRUCTURE_CONTRACT const) + lib/voice.py (VOICE_CONSTRAINTS) + lib/config_loader.py (SINGLETON_ASSET_KEYS incl. `rubric`) — the source of truth for §44.9
     - apps/dispatch-control/lib/galley/sectionIdMap.ts (galleyIdToQaSection — the reused bridge)
   </read_first>
   <action>
@@ -107,6 +112,7 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
 
     ### §44.2 — `InspectorArtifact` shape
     - Reproduce the DERIVED-STATE-CONTRACT §8 `InspectorArtifact` interface VERBATIM (see the interfaces block in this plan's context) and mark it the canonical console-side type. Note it is ASSEMBLED in the panel container from Convex query results + the resolver + the diff — it is NOT a stored row.
+    - Instructions-tab fields note: `instructionVersion`/`instructions` are populated from the active `prompt_versions` row for the 11 externalized agents; `sharedRules` (the additive field defined in §44.9) carries the shared editorial rules the step references. See §44.9 for the exact mapping and the non-externalized-agent behavior.
 
     ### §44.3 — the pure resolver contract (`lib/inspectorArtifact.ts`)
     - `resolveInspectorStep(key: InspectorArtifactKey, opts?: { bonusType?: string }): ResolvedStep` where `interface ResolvedStep { agentKey: string; promptKey: string | null; degraded: boolean; sectionContext?: string }`.
@@ -132,10 +138,25 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
     ### §44.8 — Diagnostics "model" field (RESEARCH finding)
     - `agent_runs` has NO `model` field. The Diagnostics tab renders `model` as "not recorded" (label + icon, honesty rule) for Phase 44 — no schema change. Note the follow-up option (add `agent_runs.model`) as out-of-scope-for-now.
 
+    ### §44.9 — Instructions-tab "shared rules referenced" + instruction-version mapping (INS-04, RESEARCH Pitfall 2)
+    - The Instructions tab must show BOTH the active instruction version AND the shared rules the step references (roadmap success criterion #4). For the 5 non-externalized agents (`promptKey === null`: `origin_story`, `problem`, `founder_bio`, `case_study`, `qa`), `promptVersions.getActive` is `null` BY DESIGN — the tab must STILL render the shared rules, never just the one-line "code-defined" state.
+    - Define the constant `NON_EXTERNALIZED_SHARED_RULES: Record<string, string[]>` (name it exactly):
+      - `origin_story` → `['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT']`
+      - `problem`      → `['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT']`
+      - `founder_bio`  → `['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT']`
+      - `case_study`   → `['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT']`
+      - `qa`           → `['rubric']`
+      (Source of truth: the 4 narrative writers always receive `VOICE_CONSTRAINTS` + `STRUCTURE_CONTRACT` — confirmed `agents/{origin_story,problem,founder_bio,case_study}.py::STRUCTURE_CONTRACT` + `lib/voice.py::VOICE_CONSTRAINTS`; `qa` references `rubric` — a real `SINGLETON_ASSET_KEYS` entry in `config_loader.py`.)
+    - Resolution rule the container (44-06) follows:
+      - The 4 narrative writers' rules are code-defined constants — render as LABELS (`VOICE_CONSTRAINTS`, `STRUCTURE_CONTRACT`); they are not editable prompt-lab rows, so no content fetch.
+      - `qa`'s `rubric` is FETCHABLE — resolve its content via `promptVersions.getActive({ agentKey: 'rubric', workspace_id })` and render the active-version content (human-readable) when present, label-only when absent — never blank.
+    - Additive artifact field (augments the §44.2 Instructions-tab group without changing the verbatim shape): `sharedRules: { label: string; content?: string }[]` — `label` always present; `content` present only for fetchable rules (qa→rubric). The panel renders one row per entry under a "Shared rules referenced" heading (label + icon, D-14), the `content` human-readable when available.
+    - Instruction-version mapping for the 11 externalized agents (this closes the "fetched but never assembled" gap): the container maps the fetched active row into the Instructions-tab fields — `promptVersion.version → instructionVersion` and `promptVersion.content → instructions`. This is the EXACT data the Instructions tab reads when `instructionsExternalized === true`; a getActive row that is fetched but never mapped would leave the Instructions tab falsely blank for agents that DO have an active version (the D-07/D-14 dishonest-blank state — forbidden).
+
     Keep the section self-contained and skimmable; use `ts` fenced blocks for the interfaces.
   </action>
   <verify>
-    <automated>grep -q "## §44 — Inspect How This Was Made" docs/API_CONTRACTS.md && grep -q "DECLARED_STATE_INPUTS" docs/API_CONTRACTS.md && grep -q "runKeyToPromptKey" docs/API_CONTRACTS.md && grep -q "inputKeys" docs/API_CONTRACTS.md && echo OK</automated>
+    <automated>grep -q "## §44 — Inspect How This Was Made" docs/API_CONTRACTS.md && grep -q "DECLARED_STATE_INPUTS" docs/API_CONTRACTS.md && grep -q "runKeyToPromptKey" docs/API_CONTRACTS.md && grep -q "inputKeys" docs/API_CONTRACTS.md && grep -q "NON_EXTERNALIZED_SHARED_RULES" docs/API_CONTRACTS.md && echo OK</automated>
   </verify>
   <acceptance_criteria>
     - `grep -c "§44" docs/API_CONTRACTS.md` returns ≥ 1 and the section header `## §44 — Inspect How This Was Made (Phase 44)` is present.
@@ -143,8 +164,11 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
     - `grep -q "non-goal" docs/API_CONTRACTS.md` (case-insensitive OK) — the token-level diff is explicitly marked out of scope.
     - `grep -q "editor_gate1" docs/API_CONTRACTS.md && grep -q "editor_gate_1" docs/API_CONTRACTS.md` — both namespaces documented (the alias).
     - `grep -q "run/{id}/resume\|Restart from this step" docs/API_CONTRACTS.md` — the reserved resume decision is recorded.
+    - `grep -q "NON_EXTERNALIZED_SHARED_RULES" docs/API_CONTRACTS.md` exits 0 — the 5 non-externalized agents' shared-rules map is named (INS-04, Pitfall 2).
+    - `grep -q "VOICE_CONSTRAINTS" docs/API_CONTRACTS.md && grep -q "STRUCTURE_CONTRACT" docs/API_CONTRACTS.md && grep -q "rubric" docs/API_CONTRACTS.md` — the 4-writer + qa shared rules are all named.
+    - `grep -q "instructionVersion" docs/API_CONTRACTS.md && grep -q "promptVersion" docs/API_CONTRACTS.md` — §44.9 specifies the externalized active-version → instruction mapping the container implements.
   </acceptance_criteria>
-  <done>§44 exists with all eight sub-sections; the diff redefinition, the alias, the reserved footer actions, the inputKeys field, and the artifact-key encoding are all specified with concrete values.</done>
+  <done>§44 exists with all nine sub-sections; the diff redefinition, the alias, the reserved footer actions, the inputKeys field, the artifact-key encoding, the NON_EXTERNALIZED_SHARED_RULES shared-rules map, and the externalized instruction-version mapping are all specified with concrete values.</done>
 </task>
 
 <task type="auto">
@@ -183,6 +207,8 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
       - it.todo("default active tab is Summary; Technical is never the default")
       - it.todo("every non-Technical tab leads with human-readable content; raw JSON sits behind a 'Show raw JSON' toggle")
       - it.todo("Instructions tab renders 'not externalized — code-defined' for origin_story/problem/founder_bio/case_study/qa")
+      - it.todo("Instructions tab renders the shared rules referenced (VOICE_CONSTRAINTS + STRUCTURE_CONTRACT) for a non-externalized narrative writer, and the rubric shared rule for qa — never a bare one-liner")
+      - it.todo("Instructions tab renders REAL active-version content + version number when instructionsExternalized === true (externalized agent), never a blank tab")
       - it.todo("Diagnostics 'model' renders 'not recorded' with a label+icon, never blank")
       - it.todo("footer 'Restart from this step' is disabled with an explanatory title for all artifact types")
       - it.todo("footer 'Ask agent to revise' is disabled (reserved, Phase 45)")
@@ -201,9 +227,10 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
     - All five files exist: `ls apps/dispatch-control/__tests__/inspectorArtifact.test.ts apps/dispatch-control/__tests__/missingInputsDiff.test.ts apps/dispatch-control/__tests__/outputDivergence.test.ts apps/dispatch-control/__tests__/InspectorPanel.test.tsx apps/dispatch-control/__tests__/InspectorProvider.test.tsx` exits 0.
     - `pnpm --filter dispatch-control test` exits 0 (suite green — todos do not fail).
     - `grep -c "it.todo" apps/dispatch-control/__tests__/inspectorArtifact.test.ts` returns ≥ 8.
+    - `grep -c "it.todo" apps/dispatch-control/__tests__/InspectorPanel.test.tsx` returns ≥ 9 (incl. the shared-rules + externalized-instruction-content cases 44-05 fills).
     - No file imports a module under `lib/inspector*` or `components/inspector*` (grep returns nothing) so the suite cannot go red on missing modules.
   </acceptance_criteria>
-  <done>Five scaffold files enumerate every VALIDATION.md case as it.todo; the full console suite runs green.</done>
+  <done>Five scaffold files enumerate every VALIDATION.md case as it.todo (incl. the two new Instructions-tab cases); the full console suite runs green.</done>
 </task>
 
 </tasks>
@@ -215,10 +242,12 @@ prompt_versions: { agentKey, version, content, isActive }  // by_workspace_agent
 </verification>
 
 <success_criteria>
-- Contract §44 fully specifies the InspectorArtifact shape, the pure resolver + namespace alias, the REDEFINED missing-inputs diff (with the token-level diff marked non-goal), the additive inputKeys field, the openInspector one-instance contract, the footer live-vs-reserved table, and the artifact-key string encoding — enough that each later plan implements from §44 alone.
+- Contract §44 fully specifies the InspectorArtifact shape, the pure resolver + namespace alias, the REDEFINED missing-inputs diff (with the token-level diff marked non-goal), the additive inputKeys field, the openInspector one-instance contract, the footer live-vs-reserved table, the artifact-key string encoding, AND the Instructions-tab data contract (`NON_EXTERNALIZED_SHARED_RULES` shared-rules map + the `promptVersion.version/content → instructionVersion/instructions` mapping) — enough that each later plan implements from §44 alone.
 - Five Wave-0 test scaffolds exist and the suite stays green.
 </success_criteria>
 
 <output>
 After completion, create `.planning/phases/44-inspect-how-this-was-made/44-01-SUMMARY.md`.
 </output>
+</content>
+</invoke>

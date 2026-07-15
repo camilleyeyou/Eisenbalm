@@ -14,7 +14,7 @@ requirements: [INS-01, INS-02, INS-03, INS-04, INS-05, INS-06]
 must_haves:
   truths:
     - "A single inspector context exposes openInspector(key)/closeInspector via useInspector(); exactly ONE panel instance is mounted app-wide (at the (dashboard) root layout so it covers all six entry points including /my-tasks)."
-    - "The container resolves the artifact key via the pure resolver, fetches agent_runs + agent_run_payloads + prompt_versions on-demand (non-subscribed, like AgentIOPanel), computes the missing-inputs diff (using inputKeys) and the divergence, assembles the InspectorArtifact, and feeds InspectorPanel."
+    - "The container resolves the artifact key via the pure resolver, fetches agent_runs + agent_run_payloads + prompt_versions on-demand (non-subscribed, like AgentIOPanel), computes the missing-inputs diff (using inputKeys) and the divergence, maps the active prompt row into the Instructions fields (promptVersion.version → instructionVersion, promptVersion.content → instructions) so externalized agents render real content, assembles the InspectorArtifact including sharedRules (NON_EXTERNALIZED_SHARED_RULES for the 5 non-externalized agents; the fetched rubric active version for qa), and feeds InspectorPanel."
     - "The bonus variant promptKey is finalized in the container by reading outputSnapshot.bonusType before deep-linking Instructions/footer; the editor_gate_1/editor_gate1 alias is applied via the resolver."
     - "Degraded artifact types (signal/org with no step) render structurally with 'not recorded in this run' states, never a crash."
   artifacts:
@@ -22,7 +22,7 @@ must_haves:
       provides: "InspectorProvider + useInspector() context (openInspector/closeInspector, one active key)"
       exports: ["InspectorProvider", "useInspector"]
     - path: "apps/dispatch-control/components/inspector/InspectorContainer.tsx"
-      provides: "data-fetching container: resolver + Convex reads + diff + divergence -> InspectorArtifact -> InspectorPanel"
+      provides: "data-fetching container: resolver + Convex reads + diff + divergence + instruction-version mapping + sharedRules assembly -> InspectorArtifact -> InspectorPanel"
     - path: "apps/dispatch-control/app/(dashboard)/layout.tsx"
       provides: "the ONE mounted InspectorProvider + panel instance"
       contains: "InspectorProvider"
@@ -31,6 +31,10 @@ must_haves:
       to: "convex agentRuns.byRunId / agentRuns.payloadByRunIdAgentKey / promptVersions.getActive"
       via: "useQuery on-demand when a key is open"
       pattern: "payloadByRunIdAgentKey"
+    - from: "components/inspector/InspectorContainer.tsx"
+      to: "artifact.instructionVersion / artifact.instructions / artifact.sharedRules"
+      via: "map promptVersion.version/content into the Instructions fields; assemble sharedRules from NON_EXTERNALIZED_SHARED_RULES + the gated qa rubric fetch"
+      pattern: "sharedRules"
     - from: "app/(dashboard)/layout.tsx"
       to: "every entry point under (dashboard)"
       via: "InspectorProvider wraps the whole dashboard subtree; one panel instance"
@@ -38,11 +42,13 @@ must_haves:
 ---
 
 <objective>
-Wire the panel to real data and mount exactly ONE instance app-wide (INS-01, D-06). Build the inspector context (`openInspector`/`closeInspector`, one active artifact key), the data-fetching container that turns an `InspectorArtifactKey` into a fully-assembled `InspectorArtifact` (resolver → Convex reads → missing-inputs diff → divergence), and mount the provider + panel at the `(dashboard)` root layout so all six entry points — including `/my-tasks`, which is NOT under the issue-workspace frame — call the same opener and see the same single panel.
+Wire the panel to real data and mount exactly ONE instance app-wide (INS-01, D-06). Build the inspector context (`openInspector`/`closeInspector`, one active artifact key), the data-fetching container that turns an `InspectorArtifactKey` into a fully-assembled `InspectorArtifact` (resolver → Convex reads → missing-inputs diff → divergence → Instructions-tab assembly), and mount the provider + panel at the `(dashboard)` root layout so all six entry points — including `/my-tasks`, which is NOT under the issue-workspace frame — call the same opener and see the same single panel.
 
 This follows AgentIOPanel's on-demand (non-subscribed) read pattern (Phase 23 Pattern 4): payloads are queried when a key is open, not via a live subscription. It applies the resolver's namespace alias and finalizes the bonus variant from `outputSnapshot.bonusType`.
 
-Purpose: One panel, one opener, real data — the phase's defining constraint ("the same inspector opens from everywhere").
+CRITICAL for INS-04 (RESEARCH Pitfall 2, §44.9): the container is where the Instructions tab's data is assembled. It MUST (a) map the fetched active row into the Instructions fields — `promptVersion.version → artifact.instructionVersion`, `promptVersion.content → artifact.instructions` — so the 11 externalized agents render REAL content (a fetched-but-unmapped row leaves a falsely blank Instructions tab, the D-07/D-14 state we forbid); and (b) assemble `artifact.sharedRules` — the labels from `NON_EXTERNALIZED_SHARED_RULES` for the 5 non-externalized agents, plus the fetched `rubric` active-version content for `qa` — so those agents render their shared rules, never a bare one-liner.
+
+Purpose: One panel, one opener, real data — the phase's defining constraint ("the same inspector opens from everywhere"), with an Instructions tab that is honest for all six artifact types.
 Output: provider + container + mount + the filled InspectorProvider.test.tsx.
 </objective>
 
@@ -61,6 +67,7 @@ Output: provider + container + mount + the filled InspectorProvider.test.tsx.
 api.agentRuns.byRunId({ runId })                       // agent_runs rows for the run
 api.agentRuns.payloadByRunIdAgentKey({ runId, agentKey })  // { inputSnapshot?, outputSnapshot?, inputKeys? } — inputKeys added by 44-02
 api.promptVersions.getActive({ agentKey, workspace_id }) // active prompt_versions row or null
+api.promptVersions.getActive({ agentKey: 'rubric', workspace_id }) // qa's shared-rule ('rubric') active content for the Instructions tab (§44.9)
 
 <!-- Modules to compose (built in 44-03/44-04/44-05) -->
 import { resolveInspectorStep, runKeyToPromptKey, parseArtifactKey } from '@/lib/inspectorArtifact'
@@ -68,6 +75,9 @@ import { computeMissingInputs } from '@/lib/inspector/missingInputsDiff'
 import { computeOutputDivergence } from '@/lib/inspector/outputDivergence'
 import { summarize } from '@/lib/inspector/summarize'
 import { InspectorPanel } from '@/components/inspector/InspectorPanel'
+
+<!-- NON_EXTERNALIZED_SHARED_RULES (§44.9): define locally in this container (or import if 44-03 exported it).
+  origin_story|problem|founder_bio|case_study -> ['VOICE_CONSTRAINTS','STRUCTURE_CONTRACT']; qa -> ['rubric'] -->
 
 <!-- Mount point: app/(dashboard)/layout.tsx wraps <main>{children}</main>; /issues/* AND /my-tasks both live under it. -->
 </interfaces>
@@ -109,18 +119,20 @@ import { InspectorPanel } from '@/components/inspector/InspectorPanel'
     - apps/dispatch-control/app/(dashboard)/run-monitor/graph/_components/AgentIOPanel.tsx (the on-demand useQuery(payloadByRunIdAgentKey) pattern to mirror; the metrics fields)
     - convex/agentRuns.ts (byRunId + payloadByRunIdAgentKey return shapes; payload now includes inputKeys after 44-02) and convex/promptVersions.ts (getActive)
     - apps/dispatch-control/lib/inspectorArtifact.ts, lib/inspector/missingInputsDiff.ts, lib/inspector/outputDivergence.ts, lib/inspector/summarize.ts, components/inspector/InspectorPanel.tsx (the pieces to compose)
-    - docs/API_CONTRACTS.md §44.2/§44.3/§44.4 (artifact assembly + resolver + diff)
+    - docs/API_CONTRACTS.md §44.2/§44.3/§44.4 (artifact assembly + resolver + diff) and §44.9 (the NON_EXTERNALIZED_SHARED_RULES map + the sharedRules field + the promptVersion.version/content → instructionVersion/instructions mapping this container performs)
     - apps/dispatch-control/lib/workspace.ts (DEFAULT_WORKSPACE_ID for the promptVersions.getActive arg)
   </read_first>
   <action>
     Create `apps/dispatch-control/components/inspector/InspectorContainer.tsx` (`'use client'`) taking `{ artifactKey: InspectorArtifactKey; onClose: () => void }`:
     1. `const step = resolveInspectorStep(artifactKey)`.
-    2. On-demand reads (non-subscribed pattern): `useQuery(api.agentRuns.byRunId, { runId })` (pick the row where `agentKey === step.agentKey`), `useQuery(api.agentRuns.payloadByRunIdAgentKey, { runId, agentKey: step.agentKey })`, and — only when `step.promptKey` is non-null — `useQuery(api.promptVersions.getActive, { agentKey: step.promptKey, workspace_id: DEFAULT_WORKSPACE_ID })`.
+    2. On-demand reads (non-subscribed pattern): `useQuery(api.agentRuns.byRunId, { runId })` (pick the row where `agentKey === step.agentKey`), `useQuery(api.agentRuns.payloadByRunIdAgentKey, { runId, agentKey: step.agentKey })`, and — only when `step.promptKey` is non-null — `useQuery(api.promptVersions.getActive, { agentKey: step.promptKey, workspace_id: DEFAULT_WORKSPACE_ID })`. Additionally — only when `step.agentKey === 'qa'` — `useQuery(api.promptVersions.getActive, { agentKey: 'rubric', workspace_id: DEFAULT_WORKSPACE_ID })` to source the qa Instructions tab's `rubric` shared-rule content (§44.9). (Gate the query so it is skipped for non-qa steps.)
     3. Finalize the bonus variant: if `step.agentKey === 'bonus'`, parse `payload.outputSnapshot` for `bonusType` and recompute `promptKey = runKeyToPromptKey('bonus', bonusType)`; re-run getActive with that promptKey (or gate a second query). For all other agents use `step.promptKey`.
     4. `const missing = computeMissingInputs(step.agentKey, payload?.inputKeys, payload?.inputSnapshot)`.
     5. `const divergence = computeOutputDivergence({ completedAt: agentRun?.completedAt, /* changedSinceCheck / lastChangeAt from the section/claim signal when available, else omit -> 'unknown' */ })`. For founder/claim artifacts, source the changed-since signal from the same machinery Phases 42/43 use (read the relevant claim/section signal if trivially in scope; otherwise pass nothing → honest 'unknown', per D-11).
     6. `instructionsExternalized = step.promptKey !== null && promptVersion != null` — but distinguish "code-defined" (promptKey null → NOT externalized) from "not seeded yet" (promptKey non-null but getActive returned null). Pass `instructionsExternalized = step.promptKey !== null` to the panel; pass the active version row through so the panel can render "no active version yet" for the seeded-but-empty case.
-    7. Assemble the `InspectorArtifact` (§44.2) from the rows using `summarize()` for human-readable fields: `title`/`meta` from agentKey + version + runId; `asked`/`result` from input/output summaries; `upstream`/`downstream` from PIPELINE_EDGES (reuse the AgentIOPanel filter logic); `inputs` = the supplied-keys summary; `output` = the human-readable outputSnapshot (truncation noted); `sources` from the payload/provenance where present; Diagnostics fields from the agentRun row with `model` left as "not recorded"; `json` = prettyJson of the payload.
+    7. Assemble the `InspectorArtifact` (§44.2) from the rows using `summarize()` for human-readable fields: `title`/`meta` from agentKey + version + runId; `asked`/`result` from input/output summaries; `upstream`/`downstream` from PIPELINE_EDGES (reuse the AgentIOPanel filter logic); `inputs` = the supplied-keys summary; `output` = the human-readable outputSnapshot (truncation noted); `sources` from the payload/provenance where present; Diagnostics fields from the agentRun row with `model` left as "not recorded"; `json` = prettyJson of the payload. PLUS the two Instructions-tab assemblies (§44.9, INS-04):
+       - **Map the active prompt row into the Instructions fields:** `artifact.instructionVersion = promptVersion?.version` and `artifact.instructions = promptVersion?.content` — the EXACT data InspectorPanel renders for the 11 externalized agents when `instructionsExternalized === true`. Do NOT leave these unset when getActive returned a row (a fetched-but-unmapped row = a falsely blank Instructions tab = the D-07/D-14 dishonest-blank state, forbidden).
+       - **Assemble `artifact.sharedRules`:** when `step.promptKey === null` (the 5 non-externalized agents), build it from `NON_EXTERNALIZED_SHARED_RULES[step.agentKey]` — one `{ label }` per rule (labels `VOICE_CONSTRAINTS` + `STRUCTURE_CONTRACT` for the 4 narrative writers), and for `qa` a single `{ label: 'rubric', content: rubricActive?.content }` entry (content from the gated rubric query in step 2). Otherwise `[]`. This is the data the panel's "Shared rules referenced" block renders.
     8. Render `<InspectorPanel artifact={artifact} agentKey={step.agentKey} promptKey={finalPromptKey} runId={runId} missing={missing} instructionsExternalized={step.promptKey !== null} divergence={divergence} onClose={onClose} />`.
     9. Degrade gracefully: if `step.degraded` or the agentRun/payload rows are absent, still render the panel with "not recorded in this run" fields (the panel already handles undefined artifact fields) — never throw.
   </action>
@@ -131,9 +143,11 @@ import { InspectorPanel } from '@/components/inspector/InspectorPanel'
     - `components/inspector/InspectorContainer.tsx` imports `resolveInspectorStep`, `computeMissingInputs`, `computeOutputDivergence`, and `InspectorPanel` (`grep` shows all four imports).
     - It calls `api.agentRuns.payloadByRunIdAgentKey` and `api.promptVersions.getActive` via `useQuery` (`grep -q "payloadByRunIdAgentKey" && grep -q "getActive"`).
     - It passes `missing={` computed via `computeMissingInputs` and finalizes the bonus promptKey from `outputSnapshot.bonusType` (`grep -q "bonusType"`).
+    - It maps the active version into the Instructions fields: `grep -q "instructionVersion" apps/dispatch-control/components/inspector/InspectorContainer.tsx` AND references the active-version content (`grep -q "instructions" apps/dispatch-control/components/inspector/InspectorContainer.tsx`).
+    - It assembles the shared rules and fetches the qa rubric: `grep -q "NON_EXTERNALIZED_SHARED_RULES\|sharedRules" apps/dispatch-control/components/inspector/InspectorContainer.tsx && grep -q "rubric" apps/dispatch-control/components/inspector/InspectorContainer.tsx`.
     - `pnpm --filter dispatch-control build` exits 0.
   </acceptance_criteria>
-  <done>The container assembles a real InspectorArtifact from Convex + the pure modules and feeds InspectorPanel, degrading gracefully.</done>
+  <done>The container assembles a real InspectorArtifact from Convex + the pure modules — including the mapped active-version Instructions content and the sharedRules (with the qa rubric fetched) — and feeds InspectorPanel, degrading gracefully.</done>
 </task>
 
 <task type="auto">
@@ -164,9 +178,10 @@ import { InspectorPanel } from '@/components/inspector/InspectorPanel'
 </verification>
 
 <success_criteria>
-- One context, one opener, one mounted panel at the dashboard root; the container assembles a real InspectorArtifact from existing Convex reads + the pure resolver/diff/divergence modules, applies the namespace alias and bonus-variant selection, and degrades gracefully — ready for the six entry points to call openInspector.
+- One context, one opener, one mounted panel at the dashboard root; the container assembles a real InspectorArtifact from existing Convex reads + the pure resolver/diff/divergence modules, maps the active prompt row into the Instructions fields, assembles the sharedRules (incl. the qa rubric fetch), applies the namespace alias and bonus-variant selection, and degrades gracefully — ready for the six entry points to call openInspector.
 </success_criteria>
 
 <output>
 After completion, create `.planning/phases/44-inspect-how-this-was-made/44-06-SUMMARY.md`.
 </output>
+</content>
