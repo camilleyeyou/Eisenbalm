@@ -457,3 +457,67 @@ export default function ClaimProvenanceCard({ claim, actions, busy }: ClaimProve
     </div>
   )
 }
+
+// ── ClaimProvenanceRow (D-09, Plan 42-07 Task 2) ────────────────────────────
+//
+// Stage 5 Approval's SourceIndex lists every claim in a run at once — a full
+// six-action card per row would be far too heavy for that list, and Approval
+// doesn't expose the Fact Check six-action set anyway (only check/skip,
+// D-12/D-14). This compact row reuses the SAME field-sourcing helpers/
+// constants the full card above uses (deriveSourcePublisher, deriveClaimAgent,
+// deriveClaimChipState, CHIP_META, formatRetrievedAt) — it is a lighter
+// LAYOUT over the identical field mapping, never a forked derivation (D-16).
+// The caller (SourceIndex) supplies its own action controls (Open source /
+// Jump to section / Check / Skip) via `children`, rendered below the fields.
+
+export interface ClaimProvenanceRowProps {
+  claim: ClaimProvenanceView
+  children?: React.ReactNode
+}
+
+export function ClaimProvenanceRow({ claim, children }: ClaimProvenanceRowProps) {
+  const chip = deriveClaimChipState(claim)
+  const chipMeta = CHIP_META[chip]
+  // D-03 fallback — never blank.
+  const importanceLabel = claim.importance ?? 'Supporting'
+  const sourcePublisher = deriveSourcePublisher(claim.sourceUrl)
+  const agent = deriveClaimAgent(claim.sectionName)
+  const retrievedLabel = formatRetrievedAt(claim.retrievedAt)
+
+  return (
+    <div className="flex flex-col gap-1.5" data-testid="claim-provenance-row">
+      <p className="text-[13px] leading-snug text-[color:var(--color-ink)]">{claim.text}</p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className={`${FIELD_LABEL} text-[color:var(--color-ink)]`}>
+          <span aria-hidden="true">{chipMeta.icon}</span> {chipMeta.label}
+        </span>
+        <span className={FIELD_LABEL}>
+          <span className="normal-case font-normal">{importanceLabel}</span>
+        </span>
+        {/*
+         * Omitted entirely (rather than showing "Unsourced") when there is
+         * no sourceUrl — SourceIndex already groups unsourced claims under
+         * their own "Unsourced" heading (D-14), so repeating the same exact
+         * text per row would both be redundant AND (in tests) collide with
+         * `getByText(/^unsourced$/i)` matching the group header. The full
+         * ClaimProvenanceCard (Stage 3/Draft, no such heading) still shows
+         * "Unsourced" honestly (D-08) — this is a lighter LAYOUT choice, not
+         * a change to `deriveSourcePublisher` itself.
+         */}
+        {claim.sourceUrl && (
+          <span className="text-[12px] text-[color:var(--color-ink-soft)]">
+            {sourcePublisher}
+            {retrievedLabel !== '—' ? ` · retrieved ${retrievedLabel}` : null}
+          </span>
+        )}
+        <span className="text-[12px] text-[color:var(--color-ink-soft)]">{agent}</span>
+      </div>
+      {claim.supportingPassage && (
+        <p className="text-[12px] italic text-[color:var(--color-ink-soft)]">
+          {claim.supportingPassage}
+        </p>
+      )}
+      {children}
+    </div>
+  )
+}

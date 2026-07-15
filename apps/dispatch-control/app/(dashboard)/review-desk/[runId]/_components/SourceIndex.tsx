@@ -20,15 +20,28 @@
  * Legacy rows (pre-Phase-35, all five provenance fields absent) degrade
  * honestly: no `claimId` => rendered in the Unsourced group; no
  * `sectionName` => no jump link. Never hidden, never crashes (D-03).
+ *
+ * Phase 42 (FCT-04, D-09, Plan 42-07 Task 2) — each row's field display
+ * (status chip label+icon, importance, source + derived publisher,
+ * supporting passage, agent) is rendered via the shared
+ * `ClaimProvenanceRow` (`components/provenance/ClaimProvenanceCard.tsx`),
+ * reusing the SAME `deriveSourcePublisher`/`deriveClaimAgent`/
+ * `deriveClaimChipState` field-mapping helpers Stage 3 Fact Check and
+ * Stage 2 Draft consume — no forked mapping (D-16). The Approval-specific
+ * check/skip/jump/open-source CONTROLS below are unchanged.
  */
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import {
+  ClaimProvenanceRow,
+  type ClaimProvenanceView,
+} from '@/components/provenance/ClaimProvenanceCard'
 
 interface SourceIndexProps {
   runId: string
 }
 
-/** Minimal shape needed from a live `claim_checks` row (§35.4). */
+/** Minimal shape needed from a live `claim_checks` row (§35.4 + Phase 42 importance/context). */
 interface ClaimCheckRow {
   claimIndex: number
   text: string
@@ -38,6 +51,8 @@ interface ClaimCheckRow {
   sourceUrl?: string
   retrievedAt?: number
   sectionName?: string
+  importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  context?: string
 }
 
 const MICRO_LABEL =
@@ -71,12 +86,6 @@ const SECTION_LABELS: Record<string, string> = {
 function galleyAnchorId(sectionName: string | undefined): string | null {
   if (!sectionName || !(sectionName in SECTION_LABELS)) return null
   return `galley-${sectionName}`
-}
-
-function statusLabel(status: string): string {
-  if (status === 'checked') return 'Checked'
-  if (status === 'skipped') return 'Skipped'
-  return 'Pending'
 }
 
 export default function SourceIndex({ runId }: SourceIndexProps) {
@@ -124,64 +133,65 @@ export default function SourceIndex({ runId }: SourceIndexProps) {
 
   function renderRow(row: ClaimCheckRow) {
     const anchor = galleyAnchorId(row.sectionName)
+    // Phase 42 (FCT-04) — the SAME §42.6 claim shape Stage 3/Draft feed the
+    // shared card's field mapping.
+    const claimView: ClaimProvenanceView = {
+      text: row.text,
+      importance: row.importance,
+      status: row.status,
+      sourceUrl: row.sourceUrl,
+      supportingPassage: row.context,
+      retrievedAt: row.retrievedAt,
+      sectionName: row.sectionName,
+    }
     return (
       <li
         key={row.claimIndex}
         data-testid={`source-index-row-${row.claimIndex}`}
         className="border border-[color:var(--color-faint)] bg-white p-2"
       >
-        <p className="text-[13px] leading-snug text-[color:var(--color-ink)]">{row.text}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span
-            className={`${MICRO_LABEL} ${
-              row.status === 'checked'
-                ? 'text-[color:var(--color-green,#148a52)]'
-                : row.status === 'skipped'
-                  ? 'text-[color:var(--color-ink-soft)]'
-                  : 'text-[color:var(--color-vermilion)]'
-            }`}
-          >
-            {statusLabel(row.status)}
-          </span>
-          {row.sourceUrl && (
-            <a
-              href={row.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[12px] font-medium text-[color:var(--color-marigold-text)] underline"
-            >
-              Open source
-            </a>
-          )}
-          {anchor && (
+        <ClaimProvenanceRow claim={claimView}>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {row.sourceUrl && (
+              <a
+                href={row.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12px] font-medium text-[color:var(--color-marigold-text)] underline"
+              >
+                Open source
+              </a>
+            )}
+            {anchor && (
+              <button
+                type="button"
+                aria-label={`Jump to claim ${row.claimIndex}`}
+                onClick={() => handleJump(row.sectionName)}
+                className="min-h-[44px] px-1 text-[12px] font-medium text-[color:var(--color-cobalt,#253ad4)] hover:underline"
+              >
+                Jump to section
+              </button>
+            )}
             <button
               type="button"
-              aria-label={`Jump to claim ${row.claimIndex}`}
-              onClick={() => handleJump(row.sectionName)}
-              className="min-h-[44px] px-1 text-[12px] font-medium text-[color:var(--color-cobalt,#253ad4)] hover:underline"
+              aria-label={`Check claim ${row.claimIndex}`}
+              disabled={row.status === 'checked'}
+              onClick={() => handleSetStatus(row.claimIndex, 'checked')}
+              className="min-h-[44px] min-w-[44px] border border-[color:var(--color-faint)] bg-white px-2 text-[12px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Jump to section
+              Check
             </button>
-          )}
-          <button
-            type="button"
-            aria-label={`Check claim ${row.claimIndex}`}
-            disabled={row.status === 'checked'}
-            onClick={() => handleSetStatus(row.claimIndex, 'checked')}
-            className="min-h-[44px] min-w-[44px] border border-[color:var(--color-faint)] bg-white px-2 text-[12px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Check
-          </button>
-          <button
-            type="button"
-            aria-label={`Skip claim ${row.claimIndex}`}
-            disabled={row.status === 'skipped'}
-            onClick={() => handleSetStatus(row.claimIndex, 'skipped')}
-            className="min-h-[44px] min-w-[44px] border border-[color:var(--color-faint)] bg-white px-2 text-[12px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Skip
-          </button>
-        </div>
+            <button
+              type="button"
+              aria-label={`Skip claim ${row.claimIndex}`}
+              disabled={row.status === 'skipped'}
+              onClick={() => handleSetStatus(row.claimIndex, 'skipped')}
+              className="min-h-[44px] min-w-[44px] border border-[color:var(--color-faint)] bg-white px-2 text-[12px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Skip
+            </button>
+          </div>
+        </ClaimProvenanceRow>
       </li>
     )
   }
