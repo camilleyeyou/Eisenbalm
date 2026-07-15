@@ -205,7 +205,11 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
           {STAGE_TABS.map((tab, i) => {
             const href = tab.hrefFor(n)
             const isActive = pathname === href || pathname.startsWith(href + '/')
-            const stageResult = stages[i]
+            // `stages` is a fixed 5-tuple in exact lockstep with STAGE_TABS'
+            // 5 entries (both ordered Story/Draft/Fact Check/Voice/Approval);
+            // the fallback below only satisfies noUncheckedIndexedAccess —
+            // it is never actually reached.
+            const stageResult = stages[i] ?? { state: 'not-generated' as const, openCount: 0 }
             const stateLabel = STAGE_STATE_LABELS[stageResult.state]
             const suffix =
               stageResult.state === 'needs-you' && stageResult.openCount > 0
