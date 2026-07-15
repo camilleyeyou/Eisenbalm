@@ -218,3 +218,41 @@ export const markPublished = mutation({
     return null
   },
 })
+
+// ── setLastVisitedStage (operator-only) ─────────────────────────────────────
+// Phase 41 — WSP-01: the SOLE writer of `issues.lastVisitedStage` (41-RESEARCH
+// Pitfall 6 — the schema field existed with no mutation writing it). Backs the
+// frame's bare `/issues/[n]` redirect (D-03) and the per-stage "remember where
+// I was" behavior (D-04). A stage visit is a human action, not a pipeline
+// event, so this mirrors the `hold`/`reopen` OPERATOR-ONLY lane — NOT the dual
+// lane `ensureByNumber`/`markPublished` use.
+//
+// Strict patch-only NO-OP when the row is absent: a stray visit must never
+// create/resurrect an issue row — that stays `ensureByNumber`'s guarded job.
+export const setLastVisitedStage = mutation({
+  args: {
+    workspace_id: v.string(),
+    issueNumber: v.number(),
+    stage: v.union(
+      v.literal('story'),
+      v.literal('draft'),
+      v.literal('fact-check'),
+      v.literal('voice'),
+      v.literal('approval'),
+    ),
+  },
+  handler: async (ctx, { workspace_id, issueNumber, stage }) => {
+    await requireOperator(ctx)
+
+    const existing = await ctx.db
+      .query('issues')
+      .withIndex('by_workspace_issueNumber', q =>
+        q.eq('workspace_id', workspace_id).eq('issueNumber', issueNumber),
+      )
+      .first()
+    if (!existing) return null // no row yet — nothing to remember; never create here
+
+    await ctx.db.patch(existing._id, { lastVisitedStage: stage })
+    return null
+  },
+})
