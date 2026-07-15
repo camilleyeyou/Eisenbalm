@@ -7,8 +7,13 @@
  * Usage from dispatch-control (after sign-in):
  *   const upsert = useMutation(api.users.upsertCurrentUser)
  *   await upsert({ email: user.primaryEmailAddress, displayName: user.fullName })
+ *
+ * Phase 43 — TSK-06/D-12 (docs/API_CONTRACTS.md §43.4): `byClerkUserId` is
+ * the FIRST read query on `users`. The `DecisionLog` component resolves each
+ * decision row's stored `actorId` (a Clerk sub, unchanged/never rewritten) to
+ * a display name at render time via this query — `displayName ?? email`.
  */
-import { mutation } from './_generated/server'
+import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 
 // DEFAULT_WORKSPACE_ID: the only allowed control-plane occurrence of the
@@ -47,5 +52,29 @@ export const upsertCurrentUser = mutation({
       createdAt: Date.now(),
       lastSeenAt: Date.now(),
     })
+  },
+})
+
+// ── byClerkUserId (public query — actor-name resolution, Phase 43 D-12) ─────
+
+/**
+ * Resolves a Clerk `sub` to its `users` row, or `null` when no row exists
+ * (e.g. a system/agent actorId like "pipeline", "cron", or an agent key —
+ * those resolve via a small static display-name map local to the
+ * `DecisionLog` component instead, per §43.4).
+ */
+export const byClerkUserId = query({
+  args: {
+    workspace_id: v.string(),
+    clerkUserId: v.string(),
+  },
+  handler: async (ctx, { workspace_id, clerkUserId }) => {
+    const row = await ctx.db
+      .query('users')
+      .withIndex('by_clerkUserId', q => q.eq('clerkUserId', clerkUserId))
+      .first()
+
+    if (!row || row.workspace_id !== workspace_id) return null
+    return row
   },
 })

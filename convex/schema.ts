@@ -272,6 +272,13 @@ export default defineSchema({
     before: v.optional(v.string()),  // JSON snapshot
     after: v.optional(v.string()),   // JSON snapshot
     timestamp: v.number(),
+    // ── NEW additive decision fields (Phase 43 §43.1, TSK-06) ─────────────────
+    // Legacy rows omit all four and render tolerantly — see auditLog.ts
+    // isDecisionRow / listDecisions for the reason-in-`after`-JSON fallback.
+    reason: v.optional(v.string()),
+    issueNumber: v.optional(v.number()),
+    runId: v.optional(v.string()),
+    instructionVersion: v.optional(v.string()),
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_workspace_timestamp', ['workspace_id', 'timestamp']),
