@@ -359,13 +359,13 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **WSP-07**: "Not generated" is a visible first-class state in canvas and outline (e.g. the Editor's note), never a blank.
 
 ### Fact Check Stage (FCT)
-- [ ] **FCT-01**: The Researcher emits an `importance` tier (Load-bearing / Supporting / Incidental) on every claim.
-- [ ] **FCT-02**: Stage 3 shows an affirmative summary — claims checked X of Y, must fix, conflicting sources, checks not run, changed since check, last verified — so that blank never means verified.
-- [ ] **FCT-03**: Operator can filter claims by must fix, unchecked, changed, numbers & dates, people & titles, organization claims, and weak source.
-- [ ] **FCT-04**: Selecting a claim opens a provenance card (exact claim, importance, status, source + publisher, supporting passage, URL, retrieval date, agent, confidence) — the same component reused in Draft, Approval, and the inspector.
-- [ ] **FCT-05**: Operator can Confirm, Edit claim, Replace source, Remove claim, or Keep as written with a required reason; each action updates the counters, My Tasks, Approval readiness, and header status.
-- [ ] **FCT-06**: "Ask agent for better evidence" returns a replacement source **and** a rewritten claim; confirming applies both as a content patch + claim update and records a decision-log entry.
-- [ ] **FCT-07**: A revision touching a claim's block returns that claim to unchecked and increments the "changed since check" counter.
+- [x] **FCT-01**: The Researcher emits an `importance` tier (Load-bearing / Supporting / Incidental) on every claim.
+- [x] **FCT-02**: Stage 3 shows an affirmative summary — claims checked X of Y, must fix, conflicting sources, checks not run, changed since check, last verified — so that blank never means verified.
+- [x] **FCT-03**: Operator can filter claims by must fix, unchecked, changed, numbers & dates, people & titles, organization claims, and weak source.
+- [x] **FCT-04**: Selecting a claim opens a provenance card (exact claim, importance, status, source + publisher, supporting passage, URL, retrieval date, agent, confidence) — the same component reused in Draft, Approval, and the inspector.
+- [x] **FCT-05**: Operator can Confirm, Edit claim, Replace source, Remove claim, or Keep as written with a required reason; each action updates the counters, My Tasks, Approval readiness, and header status.
+- [x] **FCT-06**: "Ask agent for better evidence" returns a replacement source **and** a rewritten claim; confirming applies both as a content patch + claim update and records a decision-log entry.
+- [x] **FCT-07**: A revision touching a claim's block returns that claim to unchecked and increments the "changed since check" counter.
 
 ### My Tasks & Decision Log (TSK)
 - [ ] **TSK-01**: My Tasks lists everything awaiting human judgment as a *derived projection* over open claims, open findings, and missing sign-offs — no separate task store.

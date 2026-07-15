@@ -49,7 +49,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 - [x] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems (completed 2026-07-15)
 - [x] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5 (all 12 plans executed 2026-07-15, including the WSP-03 gap closure: the context panel now feeds real, stage-specific content on all 5 stages) (completed 2026-07-15)
-- [ ] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card
+- [x] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card (completed 2026-07-15)
 - [ ] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide
 - [ ] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic
 - [ ] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard
@@ -457,7 +457,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
-| 42. Fact Check Stage | 7/8 | In Progress|  |
+| 42. Fact Check Stage | 8/8 | Complete   | 2026-07-15 |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
 | 45. Agent Revision | 0/TBD | Not started | - |
@@ -930,7 +930,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 42-05-derived-selectors-workspace-provider-PLAN.md — deriveFactCheckSummary + isMustFix + provider claimRows extension (Wave 2, FCT-02)
 - [x] 42-06-provenance-card-stage3-screen-PLAN.md — shared ClaimProvenanceCard + Stage 3 screen: summary/filters/table/actions (Wave 4, FCT-02/03/04/05/06)
 - [x] 42-07-draft-approval-card-reuse-PLAN.md — Draft ClaimMark + Approval SourceIndex consume the shared card (Wave 5, FCT-04)
-- [ ] 42-08-integration-gate-PLAN.md — full suites + strict build + Convex dev sync + demo-leg UAT (Wave 6)
+- [x] 42-08-integration-gate-PLAN.md — full suites + strict build + Convex dev sync + demo-leg UAT (Wave 6)
 **UI hint**: yes
 
 ### Phase 43: My Tasks & Decision Log

@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 42-07-draft-approval-card-reuse-PLAN.md
-last_updated: "2026-07-15T13:43:35.415Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 42-08-integration-gate-PLAN.md
+last_updated: "2026-07-15T13:53:22.522Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -296,6 +296,7 @@ Plan: 8 of 8
 | Phase 42 P04 | 20min | 2 tasks | 4 files |
 | Phase 42 P06 | 35min | 3 tasks | 8 files |
 | Phase 42 P07 | 20min | 2 tasks | 7 files |
+| Phase 42 P08 | 25min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -766,6 +767,9 @@ Recent decisions affecting current work:
 - [Phase 42]: Reason/text/URL-collecting card actions reveal inline forms (mirrors UnresolvedFindingCard.tsx) instead of window.prompt, keeping every control visible and independently testable for Phase 49's later role-gating wrap
 - [Phase 42]: FCT-04 Draft/Approval reuse: ClaimMark popover + SourceIndex now consume the ONE shared ClaimProvenanceCard; Draft fields (text/importance/context) ride the ResolvedClaim/ClaimSpanMarkDef/resolveClaimsFor chain Phase 35 built (no new matcher/subscription)
 - [Phase 42]: One card, two layouts: full ClaimProvenanceCard (six actions) for Stage 3/Draft, compact ClaimProvenanceRow (caller controls via children) for Approval's list — both share deriveSourcePublisher/deriveClaimAgent/deriveClaimChipState (D-16, no forked derivation)
+- [Phase 42]: [Phase 42-08]: Ran the Convex dev sync (dev:once) and verified it two ways (sync success output + independent check:convex-parity guard: 53/53 called functions present) to close the committed-but-unsynced gap flagged by 42-01/42-04/42-06
+- [Phase 42]: [Phase 42-08]: The no-Sanity-write tripwire was run both inside the full vitest suite and in isolation, per the plan's explicit instruction to assert it explicitly
+- [Phase 42]: [Phase 42-08]: The manual 8-step demo-leg UAT (Task 2) was NOT self-approved — recorded as a pending human-verification item in 42-08-SUMMARY.md and 42-VERIFICATION.md rather than fabricated as passed
 
 ### Pending Todos
 
@@ -779,6 +783,7 @@ None yet.
 - [PARTIAL 2026-05-18] [Phase 5] First real-mode end-to-end pipeline run succeeded on issue 999 (runId 96ab834e96214671859322044a4b4683, duration 155s, status='awaiting-review', Sanity content approved by Andrew). Cost tracking returned $0 across all agents because langchain-openai's `with_structured_output` does NOT expose `usage_metadata` to the wrapper — known TODO from Plan 05-03 SUMMARY. PIPELINE_COST_CAP_USD stays at $10 placeholder; actual baseline measurement deferred to Phase 6 once cost tracking is fixed (either via `include_raw=True` or a sidechannel usage capture).
 - [Phase 6 carryover] Fix langchain-openai cost-metadata capture so PIPELINE_COST_CAP_USD can actually enforce. Currently all per-agent USD readings are $0 in production because structured-output calls don't surface token counts through the wrapper.
 - [Phase 8] Legal pages at `apps/web/app/legal/privacy/page.tsx` and `apps/web/app/legal/terms/page.tsx` contain TODO(Andrew) placeholder copy. The pages exist with no 404 (CMR-07 + CMR-08 satisfied for code-completeness), but the prose has not been reviewed by counsel. Andrew must replace with reviewed copy covering: (privacy) data collected/shared/retained, EU/UK/CA subject rights, contact email; (terms) refund/return policy, IP notice, limitation of liability, governing law. Tracked at `.planning/phases/08-stripe-commerce/08-07-thank-you-and-legal-pages-SUMMARY.md`.
+- [Phase 42] Manual demo-leg UAT (8-step live walkthrough: My Tasks -> Fact Check claim detail -> Ask agent for better evidence -> Confirm -> live counters/header/My-Tasks/Approval update, plus FCT-07 changed-since-check flip and Draft/Approval card parity) pending human verification before Phase 42 is fully signed off — see 42-08-SUMMARY.md 'Deferred Item'
 
 ### Quick Tasks Completed
 
@@ -855,6 +860,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T13:43:21.949Z
-Stopped at: Completed 42-07-draft-approval-card-reuse-PLAN.md
+Last session: 2026-07-15T13:53:22.509Z
+Stopped at: Completed 42-08-integration-gate-PLAN.md
 Resume file: None
