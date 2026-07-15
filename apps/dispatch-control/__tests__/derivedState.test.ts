@@ -13,10 +13,13 @@ import {
   deriveSectionStates,
   draftSectionIdsFromDraft,
   estimateWorkMinutes,
+  isMustFix,
+  deriveFactCheckSummary,
   SEVERITY_MINUTES,
   type DerivationInputs,
   type DerivedTask,
   type SectionState,
+  type FactCheckClaimRow,
 } from '../lib/derivedState'
 import type { DraftResponse } from '../lib/contentPatchClient'
 
@@ -423,12 +426,13 @@ describe('deriveTasks (§40.6, D-21)', () => {
     expect(tasks).toHaveLength(6)
   })
 
-  it('a pending claim with no sourceUrl is must-fix; with a sourceUrl it is review-recommended', () => {
+  it('an unsourced Load-bearing pending claim is must-fix; a sourced Load-bearing claim is review-recommended', () => {
     const claimRows = [
-      { _id: 'c1', status: 'pending', claimText: 'no source claim' },
+      { _id: 'c1', status: 'pending', importance: 'Load-bearing' as const, claimText: 'no source claim' },
       {
         _id: 'c2',
         status: 'pending',
+        importance: 'Load-bearing' as const,
         sourceUrl: 'https://example.org',
         claimText: 'has source claim',
       },
@@ -447,6 +451,154 @@ describe('deriveTasks (§40.6, D-21)', () => {
     const withSource = tasks.find((t: DerivedTask) => t.title.includes('has source claim'))
     expect(withoutSource?.sev).toBe('must-fix')
     expect(withSource?.sev).toBe('review-recommended')
+  })
+
+  it('42-RESEARCH REQUIRED CORRECTION (D-05): an unsourced Incidental pending claim is review-recommended, NOT must-fix — severity is importance-aware, not sourceUrl-presence-alone', () => {
+    const claimRows = [
+      { _id: 'c1', status: 'pending', importance: 'Incidental' as const, claimText: 'unsourced atmospheric detail' },
+    ]
+    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    const task = tasks.find((t: DerivedTask) => t.title.includes('unsourced atmospheric detail'))
+    expect(task?.sev).toBe('review-recommended')
+    expect(task?.sev).not.toBe('must-fix')
+  })
+
+  it('a legacy unsourced pending claim with NO importance field defaults to Supporting and is review-recommended, not must-fix', () => {
+    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'legacy unsourced claim' }]
+    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    const task = tasks.find((t: DerivedTask) => t.title.includes('legacy unsourced claim'))
+    expect(task?.sev).toBe('review-recommended')
+  })
+})
+
+describe('isMustFix + deriveFactCheckSummary (Phase 42 Plan 42-05, FCT-02, D-04..D-08)', () => {
+  function claimRow(overrides: Partial<FactCheckClaimRow> = {}): FactCheckClaimRow {
+    return { status: 'pending', ...overrides }
+  }
+
+  describe('isMustFix', () => {
+    it('true for a pending, unsourced, Load-bearing claim', () => {
+      expect(isMustFix(claimRow({ importance: 'Load-bearing' }))).toBe(true)
+    })
+
+    it('false for a pending, unsourced, Incidental claim', () => {
+      expect(isMustFix(claimRow({ importance: 'Incidental' }))).toBe(false)
+    })
+
+    it('false for a pending, unsourced, Supporting claim', () => {
+      expect(isMustFix(claimRow({ importance: 'Supporting' }))).toBe(false)
+    })
+
+    it('false for a pending, unsourced claim with NO importance field (defaults to Supporting, D-03)', () => {
+      expect(isMustFix(claimRow({}))).toBe(false)
+    })
+
+    it('false for a Load-bearing claim that HAS a sourceUrl', () => {
+      expect(isMustFix(claimRow({ importance: 'Load-bearing', sourceUrl: 'https://example.org' }))).toBe(
+        false,
+      )
+    })
+
+    it('false for any non-pending row, even Load-bearing and unsourced', () => {
+      expect(isMustFix(claimRow({ importance: 'Load-bearing', status: 'checked' }))).toBe(false)
+    })
+
+    it('false for a "removed" (soft-deleted) row, even Load-bearing and unsourced', () => {
+      expect(isMustFix(claimRow({ importance: 'Load-bearing', status: 'removed' }))).toBe(false)
+    })
+  })
+
+  describe('deriveFactCheckSummary', () => {
+    it('every counter is defined (never omitted) for an empty row set', () => {
+      const summary = deriveFactCheckSummary([])
+      expect(summary).toEqual({
+        factCoverage: '0 of 0',
+        total: 0,
+        checked: 0,
+        mustFixCount: 0,
+        changedCount: 0,
+        uncheckedCount: 0,
+        conflictsCount: 0,
+        checksNotRunCount: 0,
+        lastVerifiedAt: null,
+      })
+    })
+
+    it('factCoverage is "checked of total" using status !== "pending" as the checked predicate', () => {
+      const rows = [
+        claimRow({ status: 'checked' }),
+        claimRow({ status: 'pending' }),
+        claimRow({ status: 'pending' }),
+      ]
+      expect(deriveFactCheckSummary(rows).factCoverage).toBe('1 of 3')
+    })
+
+    it('mustFixCount counts only unsourced pending Load-bearing rows', () => {
+      const rows = [
+        claimRow({ importance: 'Load-bearing' }), // must-fix
+        claimRow({ importance: 'Load-bearing', sourceUrl: 'https://x.org' }), // sourced, not must-fix
+        claimRow({ importance: 'Incidental' }), // not must-fix
+        claimRow({ importance: 'Load-bearing', status: 'checked' }), // not pending
+      ]
+      expect(deriveFactCheckSummary(rows).mustFixCount).toBe(1)
+    })
+
+    it('changedCount counts rows with changedSinceCheck:true regardless of status', () => {
+      const rows = [
+        claimRow({ changedSinceCheck: true }),
+        claimRow({ changedSinceCheck: true, status: 'checked' }),
+        claimRow({ changedSinceCheck: false }),
+        claimRow({}),
+      ]
+      expect(deriveFactCheckSummary(rows).changedCount).toBe(2)
+    })
+
+    it('uncheckedCount counts pending rows only', () => {
+      const rows = [claimRow({ status: 'pending' }), claimRow({ status: 'checked' }), claimRow({ status: 'removed' })]
+      expect(deriveFactCheckSummary(rows).uncheckedCount).toBe(1)
+    })
+
+    it('conflictsCount counts rows with an explicit conflict:true marker, 0 until set', () => {
+      expect(deriveFactCheckSummary([claimRow({}), claimRow({})]).conflictsCount).toBe(0)
+      expect(deriveFactCheckSummary([claimRow({ conflict: true }), claimRow({})]).conflictsCount).toBe(1)
+    })
+
+    it('checksNotRunCount counts pending, unsourced, not-yet-changed rows', () => {
+      const rows = [
+        claimRow({}), // pending, no sourceUrl, no changedSinceCheck -> counted
+        claimRow({ sourceUrl: 'https://x.org' }), // sourced -> not counted
+        claimRow({ changedSinceCheck: true }), // changed -> not counted
+        claimRow({ status: 'checked' }), // not pending -> not counted
+      ]
+      expect(deriveFactCheckSummary(rows).checksNotRunCount).toBe(1)
+    })
+
+    it('lastVerifiedAt is the max checkedAt across rows, or null when none have been checked', () => {
+      expect(deriveFactCheckSummary([claimRow({}), claimRow({})]).lastVerifiedAt).toBeNull()
+      const rows = [
+        claimRow({ status: 'checked', checkedAt: 100 }),
+        claimRow({ status: 'checked', checkedAt: 300 }),
+        claimRow({ status: 'checked', checkedAt: 200 }),
+      ]
+      expect(deriveFactCheckSummary(rows).lastVerifiedAt).toBe(300)
+    })
+
+    it('REGRESSION INVARIANT: when every row status !== "pending" (the allSignedOff-true condition), mustFixCount is always 0', () => {
+      const rows = [
+        claimRow({ importance: 'Load-bearing', status: 'checked' }),
+        claimRow({ importance: 'Load-bearing', status: 'removed' }),
+        claimRow({ importance: 'Load-bearing', status: 'skipped' }),
+      ]
+      expect(rows.every((r) => r.status !== 'pending')).toBe(true)
+      expect(deriveFactCheckSummary(rows).mustFixCount).toBe(0)
+    })
+
+    it('a "removed" status row is excluded from mustFix and does not inflate uncheckedCount', () => {
+      const rows = [claimRow({ importance: 'Load-bearing', status: 'removed' })]
+      const summary = deriveFactCheckSummary(rows)
+      expect(summary.mustFixCount).toBe(0)
+      expect(summary.uncheckedCount).toBe(0)
+    })
   })
 })
 

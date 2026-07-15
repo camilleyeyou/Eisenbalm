@@ -67,6 +67,16 @@ export interface DerivationInputs {
         sectionName?: string
         claimText?: string
         _id: string
+        // Phase 42 Plan 42-05 (FCT-02, D-04..D-08) — additive fact-check
+        // severity/summary fields. Optional: legacy rows and non-fact-check
+        // consumers may omit them; `isMustFix`/`deriveFactCheckSummary`
+        // below treat an absent `importance` as 'Supporting' (D-03).
+        claimIndex?: number
+        claimId?: string
+        importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+        changedSinceCheck?: boolean
+        conflict?: boolean
+        checkedAt?: number
       }>
     | undefined
   qaFindings:
@@ -272,6 +282,73 @@ export function draftSectionIdsFromDraft(draft: DraftResponse): ReadonlySet<stri
   return ids
 }
 
+// ── isMustFix + deriveFactCheckSummary (Phase 42 Plan 42-05, FCT-02, D-04..D-08) ─
+//
+// The pure derived-selector pair for Stage 3 Fact Check. `isMustFix` is the
+// SAME severity predicate `deriveTasks`'s claim loop uses below — sharing
+// this one function is what keeps My Tasks, the stage badge, and the Stage
+// 3 screen's own summary from silently disagreeing (42-CONTEXT D-16,
+// 42-RESEARCH Pitfall 1 / Anti-Pattern). Severity is editorial, not
+// statistical: an unsourced Load-bearing claim is Must-fix; an unsourced
+// Incidental/Supporting claim — or a legacy row with no `importance` at
+// all, which defaults to 'Supporting' per D-03 — is Review-recommended.
+// "Blank never means verified" (D-08): every counter below is always
+// present in the returned object, even when zero.
+
+export type ClaimImportance = 'Load-bearing' | 'Supporting' | 'Incidental'
+
+export interface FactCheckClaimRow {
+  status: string
+  importance?: string
+  sourceUrl?: string
+  changedSinceCheck?: boolean
+  conflict?: boolean
+  checkedAt?: number
+}
+
+export interface FactCheckSummary {
+  factCoverage: string
+  total: number
+  checked: number
+  mustFixCount: number
+  changedCount: number
+  uncheckedCount: number
+  conflictsCount: number
+  checksNotRunCount: number
+  lastVerifiedAt: number | null
+}
+
+export function isMustFix(row: FactCheckClaimRow): boolean {
+  return (
+    row.status === 'pending' && (row.importance ?? 'Supporting') === 'Load-bearing' && !row.sourceUrl
+  )
+}
+
+export function deriveFactCheckSummary(rows: FactCheckClaimRow[]): FactCheckSummary {
+  const total = rows.length
+  const checked = rows.filter((r) => r.status !== 'pending').length
+  const mustFixCount = rows.filter(isMustFix).length
+  const changedCount = rows.filter((r) => r.changedSinceCheck).length
+  const uncheckedCount = rows.filter((r) => r.status === 'pending').length
+  const conflictsCount = rows.filter((r) => r.conflict).length
+  const checksNotRunCount = rows.filter(
+    (r) => r.status === 'pending' && !r.sourceUrl && !r.changedSinceCheck,
+  ).length
+  const checkedAts = rows.map((r) => r.checkedAt ?? 0).filter((t) => t > 0)
+  const lastVerifiedAt = checkedAts.length > 0 ? Math.max(...checkedAts) : null
+  return {
+    factCoverage: `${checked} of ${total}`,
+    total,
+    checked,
+    mustFixCount,
+    changedCount,
+    uncheckedCount,
+    conflictsCount,
+    checksNotRunCount,
+    lastVerifiedAt,
+  }
+}
+
 // ── deriveTasks (D-21 — the REAL projection Phase 43 renders as a screen) ───
 
 const SEVERITY_ORDER: Record<TaskSeverity, number> = {
@@ -313,7 +390,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
 
   for (const row of i.claimRows ?? []) {
     if (row.status !== 'pending') continue
-    const sev: TaskSeverity = row.sourceUrl ? 'review-recommended' : 'must-fix'
+    const sev: TaskSeverity = isMustFix(row) ? 'must-fix' : 'review-recommended'
     const href = fallbackHref ?? issueDraftHref(n as number)
     tasks.push({
       id: `claim-${row._id}`,
