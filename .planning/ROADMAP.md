@@ -456,7 +456,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
-| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete   | 2026-07-15 |
+| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
