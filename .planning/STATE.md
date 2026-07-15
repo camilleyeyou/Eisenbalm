@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 44 context gathered
-last_updated: "2026-07-15T18:11:36.042Z"
+status: Ready to execute
+stopped_at: Completed 44-01-contract-and-wave0-test-stubs-PLAN.md
+last_updated: "2026-07-15T19:41:59.881Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 43 — my-tasks-decision-log
+**Current focus:** Phase 44 — inspect-how-this-was-made
 
 ## Current Position
 
-Phase: 43
-Plan: Not started
+Phase: 44 (inspect-how-this-was-made) — EXECUTING
+Plan: 2 of 9
 
 ## Performance Metrics
 
@@ -306,6 +306,7 @@ Plan: Not started
 | Phase 43 P07 | 20min | 2 tasks | 8 files |
 | Phase 43 P08 | 6min | 3 tasks | 4 files |
 | Phase 43 P09 | 6min | 2 tasks | 3 files |
+| Phase 44 P01 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -793,6 +794,9 @@ Recent decisions affecting current work:
 - [Phase 43]: factcheck.py keep-as-written passes reason+run_id into _emit_audit but omits issue_number (not resolvable from claim_checks without new out-of-scope query surface)
 - [Phase 43]: Amended charities.setStatus in place with an optional reason arg (required only for the 'blocklisted' target) + a writeDecision emission, rather than adding a dedicated markDoNotUse mutation
 - [Phase 43]: 43-09: Task 2 human-verify checkpoint resolved as auto-approved under --auto chain; the two manual-only live-session behaviors persisted as 43-HUMAN-UAT.md (status: partial) instead of blocking phase close-out
+- [Phase 44]: Redefined missing-inputs diff onto DECLARED_STATE_INPUTS (ported agent_wrapper.py _INPUT_KEYS) instead of the broken literal VARIABLE_REGISTRY-vs-inputSnapshot diff; token-level diff marked explicit non-goal
+- [Phase 44]: NON_EXTERNALIZED_SHARED_RULES map ships so Instructions tab never renders blank for the 5 agents with no prompt_versions row (4 writers -> VOICE_CONSTRAINTS+STRUCTURE_CONTRACT, qa -> fetchable rubric)
+- [Phase 44]: Restart from this step renders reserved for all six artifact types — resume endpoint is hardcoded to the Gate-1 interrupt shape and cannot serve generic step-restart
 
 ### Pending Todos
 
@@ -883,6 +887,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T18:11:36.029Z
-Stopped at: Phase 44 context gathered
-Resume file: .planning/phases/44-inspect-how-this-was-made/44-CONTEXT.md
+Last session: 2026-07-15T19:41:59.868Z
+Stopped at: Completed 44-01-contract-and-wave0-test-stubs-PLAN.md
+Resume file: None

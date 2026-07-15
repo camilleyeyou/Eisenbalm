@@ -376,12 +376,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **TSK-06**: Every reason-requiring action (remove lead, override a recommendation, keep as written, hold, activate with regression, Do not use) writes to one Decision log component recording actor, action, time, reason, before/after, instruction version, issue and run.
 
 ### Inspect How This Was Made (INS)
-- [ ] **INS-01**: One "Inspect how this was made" panel is reachable from the brief organization card, the draft passage toolbar, the fact-check claim detail, a voice finding, the approval recommendation, and My Tasks.
-- [ ] **INS-02**: The panel has seven tabs (Summary, Inputs, Instructions, Output, Sources, Diagnostics, Technical), human-readable content first; raw JSON is never the default anywhere.
-- [ ] **INS-03**: The Inputs tab lists the values actually supplied and explicitly calls out **missing expected inputs** — computed as declared template variables minus keys present in the run's input payload.
-- [ ] **INS-04**: The Instructions tab shows the exact active instruction version, the shared rules referenced, and links through to Agent Instructions ("Improve this agent →").
-- [ ] **INS-05**: The Output tab shows the full human-readable output and notes when the issue text has since diverged from it.
-- [ ] **INS-06**: The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps.
+- [x] **INS-01**: One "Inspect how this was made" panel is reachable from the brief organization card, the draft passage toolbar, the fact-check claim detail, a voice finding, the approval recommendation, and My Tasks.
+- [x] **INS-02**: The panel has seven tabs (Summary, Inputs, Instructions, Output, Sources, Diagnostics, Technical), human-readable content first; raw JSON is never the default anywhere.
+- [x] **INS-03**: The Inputs tab lists the values actually supplied and explicitly calls out **missing expected inputs** — computed as declared template variables minus keys present in the run's input payload.
+- [x] **INS-04**: The Instructions tab shows the exact active instruction version, the shared rules referenced, and links through to Agent Instructions ("Improve this agent →").
+- [x] **INS-05**: The Output tab shows the full human-readable output and notes when the issue text has since diverged from it.
+- [x] **INS-06**: The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps.
 
 ### Agent Revision (REV)
 - [ ] **REV-01**: Selecting a passage offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
