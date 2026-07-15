@@ -1,15 +1,26 @@
 /**
  * Phase 33 (GLY-04, Plan 33-05 Task 1) — DecisionRail tests.
+ * Phase 41 (WSP-05/WSP-06, Plan 41-09) — Stage 5 readiness board, the
+ * "Agent editor's recommendation" relabel, the held-aware publish gate, and
+ * the PublishPreviewDialog one-click flow.
  *
- * The blockers-first decision rail (D-10..D-17):
- *   (a) Blocking-items checklist renders BEFORE the editor memo (D-17)
+ * The blockers-first decision rail (D-10..D-17, extended by WSP-05/WSP-06):
+ *   (a) Blocking-items checklist renders BEFORE the readiness board, which
+ *       renders BEFORE "Agent editor's recommendation" (D-17, WSP-05)
  *   (b) Publish is disabled with a visible reason while open error-severity
- *       findings exist, enabled at zero blockers (D-14 client half)
+ *       findings exist, missing sign-offs exist, or the issue is held,
+ *       enabled otherwise (D-14/D-15 client half); the unlock condition is
+ *       written next to the control (WSP-06)
  *   (c) Verification block always renders an affirmative state — "checked Nm
  *       ago" when a checkedAt exists, "No claims extracted yet" when empty,
  *       "not yet checked" for legacy rows without checkedAt (D-13, never blank)
- *   (d) Editor memo reads JSON.parse(payload).notes (§33.6) and falls back
- *       gracefully on malformed payloads (D-16)
+ *   (d) "Agent editor's recommendation" reads JSON.parse(payload).notes
+ *       (§33.6) and falls back gracefully on malformed payloads (D-16) —
+ *       relabeled from "Editor's memo" (SC-4: "editor" unqualified stays the
+ *       human)
+ *   (e) Publish opens PublishPreviewDialog (does not publish yet); its single
+ *       confirm calls the SAME unchanged publishIssue(token, runId) — no
+ *       typed confirmation anywhere (WSP-06)
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
@@ -170,8 +181,8 @@ function mockQueries(state: QueryState = {}) {
 
 // ── (a) Blockers-first ordering (D-17) ──────────────────────────────────────
 
-describe('DecisionRail ordering (D-17)', () => {
-  it('renders the Blocking-items checklist BEFORE the editor memo in the DOM', () => {
+describe('DecisionRail ordering (D-17, WSP-05)', () => {
+  it('renders blockers -> readiness board -> "Agent editor\'s recommendation" in DOM order', () => {
     mockQueries({
       findings: [errorFinding],
       editorFinal: [{ payload: JSON.stringify({ notes: 'Ship it — strong week.' }) }],
@@ -179,11 +190,24 @@ describe('DecisionRail ordering (D-17)', () => {
     render(<DecisionRail runId="run-1" />)
 
     const blocking = screen.getByText(/blocking items/i)
-    const memo = screen.getByText(/editor.s memo/i)
-    // DOCUMENT_POSITION_FOLLOWING: memo comes after the blocking checklist.
+    const readiness = screen.getByText(/readiness board/i)
+    const recommendation = screen.getByText(/agent editor.s recommendation/i)
+    // DOCUMENT_POSITION_FOLLOWING: each element comes after the previous one.
     expect(
-      blocking.compareDocumentPosition(memo) & Node.DOCUMENT_POSITION_FOLLOWING,
+      blocking.compareDocumentPosition(readiness) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
+    expect(
+      readiness.compareDocumentPosition(recommendation) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('never labels the agent recommendation block as just "Editor" (SC-4 — human reservation)', () => {
+    mockQueries({ findings: [errorFinding] })
+    render(<DecisionRail runId="run-1" />)
+    expect(screen.queryByText(/^editor.s memo$/i)).toBeNull()
+    expect(
+      screen.getByRole('heading', { name: /agent editor.s recommendation/i }),
+    ).toBeDefined()
   })
 
   it('leads with a blocker/warning count summary line', () => {
@@ -201,9 +225,9 @@ describe('DecisionRail ordering (D-17)', () => {
   })
 })
 
-// ── (b) Publish gate (D-14 client) ──────────────────────────────────────────
+// ── (b) Publish gate (D-14/D-15 client, WSP-06 preview flow) ────────────────
 
-describe('DecisionRail publish gate (D-14)', () => {
+describe('DecisionRail publish gate (D-14/D-15)', () => {
   it('disables Publish with a visible reason when an open error finding exists', () => {
     mockQueries({ findings: [errorFinding] })
     render(<DecisionRail runId="run-1" />)
@@ -212,19 +236,61 @@ describe('DecisionRail publish gate (D-14)', () => {
     expect(publish.disabled).toBe(true)
     // Reason text is visible near the button (also in the headline).
     expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
+    // WSP-06: the unlock condition is written next to the control.
+    expect(screen.getByText(/unlocks when/i)).toBeDefined()
+    expect(screen.getByText(/must fix = 0/i)).toBeDefined()
+    expect(screen.getByText(/fact check complete/i)).toBeDefined()
+    expect(screen.getByText(/voice approved current/i)).toBeDefined()
   })
 
-  it('enables Publish when zero blockers remain and calls publishIssue(token, runId)', async () => {
+  it('is additionally disabled when the issue is held, with "Not held" named in the unlock text (D-15)', () => {
+    mockQueries({ findings: [] })
+    render(<DecisionRail runId="run-1" held={true} />)
+
+    const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
+    expect(publish.disabled).toBe(true)
+    expect(screen.getByText(/release the hold to publish/i)).toBeDefined()
+    expect(screen.getByText(/not held/i)).toBeDefined()
+  })
+
+  it('enables Publish when zero blockers/sign-offs/held remain, and opens the preview WITHOUT publishing yet', () => {
     mockQueries({ findings: [warningFinding] })
     render(<DecisionRail runId="run-1" />)
 
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(false)
+    // No unlock text once every gate condition is satisfied.
+    expect(screen.queryByText(/unlocks when/i)).toBeNull()
 
     fireEvent.click(publish)
+    expect(publishIssue).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: /publish preview/i })).toBeDefined()
+  })
+
+  it('one confirm click in the preview dialog calls publishIssue(token, runId) — no typed confirmation', async () => {
+    mockQueries({ findings: [warningFinding] })
+    render(<DecisionRail runId="run-1" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
+    const dialog = screen.getByRole('dialog', { name: /publish preview/i })
+    expect(dialog.querySelector('input')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /publish now/i }))
     await waitFor(() => {
       expect(publishIssue).toHaveBeenCalledWith('tok-clerk', 'run-1')
     })
+  })
+
+  it('Cancel in the preview dialog closes it without publishing', () => {
+    mockQueries({ findings: [warningFinding] })
+    render(<DecisionRail runId="run-1" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
+    expect(screen.getByRole('dialog', { name: /publish preview/i })).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
+    expect(screen.queryByRole('dialog', { name: /publish preview/i })).toBeNull()
+    expect(publishIssue).not.toHaveBeenCalled()
   })
 
   it('surfaces the server 409 open_error_findings message (belt-and-suspenders)', async () => {
@@ -236,6 +302,7 @@ describe('DecisionRail publish gate (D-14)', () => {
     render(<DecisionRail runId="run-1" />)
 
     fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /publish now/i }))
     await waitFor(() => {
       expect(screen.getByText('Resolve all error findings first.')).toBeDefined()
     })
@@ -283,9 +350,12 @@ describe('DecisionRail verification block (D-13)', () => {
   })
 })
 
-// ── (d) Editor memo (D-16, §33.6) ────────────────────────────────────────────
+// ── (d) Agent editor's recommendation (D-16/SC-4, §33.6) ────────────────────
+// Relabeled from "Editor's memo" — same editor-final `notes` data source,
+// but explicitly labeled as the AGENT's judgment (WSP-05); "editor"
+// unqualified stays reserved for the human.
 
-describe('DecisionRail editor memo (D-16 §33.6)', () => {
+describe("DecisionRail agent editor's recommendation (D-16/SC-4 §33.6)", () => {
   it('reads JSON.parse(payload).notes from the editor-final event', () => {
     mockQueries({
       editorFinal: [{ payload: JSON.stringify({ notes: 'Ship it — strong week.' }) }],
@@ -297,13 +367,50 @@ describe('DecisionRail editor memo (D-16 §33.6)', () => {
   it('falls back gracefully when the payload is malformed JSON', () => {
     mockQueries({ editorFinal: [{ payload: 'not-json{{' }] })
     render(<DecisionRail runId="run-1" />)
-    expect(screen.getByText(/no editor memo for this run/i)).toBeDefined()
+    expect(screen.getByText(/no agent editor.s recommendation for this run/i)).toBeDefined()
   })
 
   it('falls back when there is no editor-final event at all', () => {
     mockQueries({ editorFinal: [] })
     render(<DecisionRail runId="run-1" />)
-    expect(screen.getByText(/no editor memo for this run/i)).toBeDefined()
+    expect(screen.getByText(/no agent editor.s recommendation for this run/i)).toBeDefined()
+  })
+})
+
+// ── Readiness board (WSP-05, Plan 41-09) ─────────────────────────────────────
+
+describe('DecisionRail readiness board (WSP-05)', () => {
+  it('renders Fact check / Voice / Hook & peg / Organization verification / Open decisions, each with a non-blank state', () => {
+    mockQueries({
+      claims: [{ claimIndex: 0, status: 'checked', checkedAt: Date.now() }],
+      pitch: { charityName: 'The Quiet Foundation', scoutSummary: 'Archive.' },
+      signoffs: { 'sounds-human': { actorId: 'andrew', signedAt: Date.now() } },
+      findings: [errorFinding],
+    })
+    render(<DecisionRail runId="run-1" />)
+
+    const board = screen.getByText(/readiness board/i).closest('section')!
+    expect(board.textContent).toMatch(/fact check/i)
+    expect(board.textContent).toMatch(/1\/1 checked/i)
+    expect(board.textContent).toMatch(/sounds human — signed/i)
+    expect(board.textContent).toMatch(/hook/i)
+    expect(board.textContent).toMatch(/selected/i)
+    expect(board.textContent).toMatch(/organization verification/i)
+    expect(board.textContent).toMatch(/not tracked yet/i)
+    expect(board.textContent).toMatch(/open decisions/i)
+    expect(board.textContent).toMatch(/1 blocker/i)
+  })
+
+  it('never renders a blank readiness row — absent data sources render an honest state, not a blank', () => {
+    mockQueries({ claims: [], pitch: null, signoffs: {}, findings: [] })
+    render(<DecisionRail runId="run-1" />)
+
+    const board = screen.getByText(/readiness board/i).closest('section')!
+    expect(board.textContent).toMatch(/no claims yet/i)
+    expect(board.textContent).toMatch(/not signed yet/i)
+    expect(board.textContent).toMatch(/none selected yet/i)
+    expect(board.textContent).toMatch(/not tracked yet/i)
+    expect(board.textContent).toMatch(/0 blockers/i)
   })
 })
 

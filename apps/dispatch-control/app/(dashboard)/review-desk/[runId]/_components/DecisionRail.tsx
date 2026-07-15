@@ -1,29 +1,48 @@
 'use client'
 /**
  * Phase 33 (GLY-04, Plan 33-05 Task 1) — the blockers-first decision rail.
+ * Phase 41 (WSP-05/WSP-06, Plan 41-09) — Stage 5 (Approval) IS this rail;
+ * see the updated section order and the publish-preview interstitial below.
  *
- * The design's 336px right column (bg `--color-rail` #f1f0ea) beside the
- * galley: the operator's "is anything unaccounted for" answer and the single
- * place the publish decision happens. Section order per the design (D-17):
+ * Mounted full-width as the Workspace's Stage 5 canvas (previously the
+ * design's 336px right column beside the galley): the operator's "is
+ * anything unaccounted for" answer and the single place the publish
+ * decision happens. Section order (D-14/D-17, blockers-first, WSP-05
+ * "blockers -> readiness board -> agent recommendation"):
  *
  *   1. Headline count line ("N blocker(s) to clear · M warning(s)")
  *   2. Blocking items — one jump-link row per OPEN error-severity finding
  *      (isOpenFinding, Pitfall 9 — same predicate as the galley/chips)
- *   3. Editor's memo — editor-final deliberationEvents payload; the memo key
- *      is `notes` (§33.6 — NOT editor_final_notes)
- *   4. Hook card — the run's selected pitch (D-12; Phase 37 upgrades in place)
- *   5. Verification — claims progress with an affirmative timestamp state
+ *   3. Readiness board (WSP-05, net-new) — a scannable label+state summary:
+ *      Fact check / Voice / Hook & peg / Organization verification (not
+ *      tracked yet this phase) / Open decisions. Never blank, never
+ *      color-alone.
+ *   4. Agent editor's recommendation — editor-final deliberationEvents
+ *      payload; the memo key is `notes` (§33.6 — NOT editor_final_notes).
+ *      Relabeled from "Editor's memo" (D-16/SC-4 — "editor" unqualified is
+ *      reserved for the human; this is explicitly the agent's judgment).
+ *   5. Hook card — the run's selected pitch (D-12; Phase 37 upgrades in place)
+ *   6. Verification — claims progress with an affirmative timestamp state
  *      (D-13: "checked Nm ago" / "not yet checked" / "No claims extracted
  *      yet" — never blank), plus the Phase 35 (PRV-04) source index:
  *      unsourced claims pinned on top, sourced claims grouped by galley
  *      section below — see `SourceIndex.tsx`
- *   6. Actions — Publish (gated, D-14 client half; the server 409 shipped in
- *      33-03), Hold, Re-run section ▾, Transcript (D-15)
- *   7. ResolvedFindingsList — the collapsed D-04 reopen surface (Task 2)
+ *   7. Actions — Publish (gated, D-14 client half + D-15 `held` term; the
+ *      server 409 shipped in 33-03), Hold, Re-run section ▾, Transcript
+ *   8. ResolvedFindingsList — the collapsed D-04 reopen surface (Task 2)
  *
- * Publish is disabled with a visible reason while blockers remain; if the
+ * Publish is disabled with a visible reason while blockers remain, either
+ * sign-off is missing, or the issue is held (D-15); the unlock condition is
+ * also written out next to the control ("Unlocks when: ..."). If the
  * server still 409s `open_error_findings`, the message is surfaced
  * (belt-and-suspenders with the D-14 server gate).
+ *
+ * WSP-06 (D-15): clicking Publish (when enabled) opens `PublishPreviewDialog`
+ * — an exact preview (destination/title/time/consequences) + one
+ * confirmation click — rather than calling `handlePublish` directly. There
+ * is NO typed-confirmation step anywhere in this flow (41-RESEARCH Pitfall 1
+ * — this is net-new UI, not a removal); the dialog's confirm calls the SAME
+ * unchanged `handlePublish`/`publishIssue(token, runId)`.
  *
  * Phase 36 (§36.3/§36.7, Plan 36-04 Task 4): the blockers/warnings/infos
  * counts, the blocking-items jump-link list, and the "Facts cleared" gate
@@ -45,6 +64,7 @@ import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 import ResolvedFindingsList from './ResolvedFindingsList'
 import SourceIndex from './SourceIndex'
+import PublishPreviewDialog from './PublishPreviewDialog'
 
 interface DecisionRailProps {
   runId: string
@@ -192,6 +212,10 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [rerunKey, setRerunKey] = useState<string>(RERUN_AGENT_KEYS[0])
   const [signOffBusy, setSignOffBusy] = useState<SignOffKind | null>(null)
+  // WSP-06 (D-15): the exact-preview interstitial — Publish opens this
+  // instead of calling handlePublish directly; its confirm calls the SAME
+  // unchanged handlePublish below.
+  const [showPreview, setShowPreview] = useState(false)
 
   async function handlePublish() {
     setBusy(true)
@@ -321,21 +345,62 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         )}
       </section>
 
-      {/* 3 — Editor's memo (D-16, §33.6 key `notes`) */}
-      <section aria-label="Editor's memo">
-        <h3 className={MICRO_LABEL}>Editor&rsquo;s memo</h3>
+      {/* 3 — Readiness board (WSP-05, net-new): a scannable label+state
+          summary rendered BEFORE the recommendation, per D-14's
+          blockers -> readiness board -> recommendation order. Every row is
+          label + state, never blank, never color-alone; a signal with no
+          data source this phase (organization verification) still renders
+          an explicit "Not tracked yet" — never a blank or a fake green. */}
+      <section aria-label="Readiness board">
+        <h3 className={MICRO_LABEL}>Readiness board</h3>
+        <dl className="mt-1 grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-[13px] text-[color:var(--color-ink)]">
+          <dt className="text-[color:var(--color-ink-soft)]">Fact check</dt>
+          <dd>
+            {claims === undefined
+              ? 'Loading…'
+              : totalClaims === 0
+                ? 'No claims yet'
+                : `${done.length}/${totalClaims} checked`}
+          </dd>
+          <dt className="text-[color:var(--color-ink-soft)]">Voice</dt>
+          <dd className={humanActive ? 'text-[color:var(--color-green,#148a52)]' : undefined}>
+            {humanActive ? 'Sounds human — signed' : 'Not signed yet'}
+          </dd>
+          <dt className="text-[color:var(--color-ink-soft)]">Hook &amp; peg</dt>
+          <dd>
+            {pitch === undefined
+              ? 'Loading…'
+              : pitch === null
+                ? 'None selected yet'
+                : 'Selected'}
+          </dd>
+          <dt className="text-[color:var(--color-ink-soft)]">Organization verification</dt>
+          <dd className="italic text-[color:var(--color-ink-soft)]">Not tracked yet</dd>
+          <dt className="text-[color:var(--color-ink-soft)]">Open decisions</dt>
+          <dd>
+            {blockers.length} blocker{blockers.length === 1 ? '' : 's'}
+          </dd>
+        </dl>
+      </section>
+
+      {/* 4 — Agent editor's recommendation (D-16/SC-4, §33.6 key `notes`) —
+          relabeled from "Editor's memo": same editor-final data source, but
+          explicitly labeled as the AGENT's judgment. "Editor" unqualified
+          stays reserved for the human. */}
+      <section aria-label="Agent editor's recommendation">
+        <h3 className={MICRO_LABEL}>Agent editor&rsquo;s recommendation</h3>
         {memo ? (
           <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-[color:var(--color-ink)]">
             {memo}
           </p>
         ) : (
           <p className="mt-1 text-[13px] italic text-[color:var(--color-ink-soft)]">
-            No editor memo for this run
+            No agent editor&rsquo;s recommendation for this run
           </p>
         )}
       </section>
 
-      {/* 4 — Hook card (D-12: selected pitch stands in until Phase 37) */}
+      {/* 5 — Hook card (D-12: selected pitch stands in until Phase 37) */}
       <section aria-label="Hook">
         <h3 className={MICRO_LABEL}>Hook</h3>
         {pitch === undefined ? (
@@ -356,7 +421,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         )}
       </section>
 
-      {/* 5 — Verification block (D-13 — affirmative state, never blank) */}
+      {/* 6 — Verification block (D-13 — affirmative state, never blank) */}
       <section aria-label="Verification">
         <h3 className={MICRO_LABEL}>Verification</h3>
         {claims === undefined ? (
@@ -391,7 +456,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         <SourceIndex runId={runId} />
       </section>
 
-      {/* 5b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,
+      {/* 6b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,
           both required to publish (PUB-01). Affirmative state, never blank. */}
       <section aria-label="Sign-offs">
         <h3 className={MICRO_LABEL}>Sign-offs</h3>
@@ -427,28 +492,57 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         </div>
       </section>
 
-      {/* 6 — Actions (D-15: all four wired to existing backends) */}
+      {/* 7 — Actions (D-15: all four wired to existing backends) */}
       <section aria-label="Actions" className="flex flex-col gap-2">
         <h3 className={MICRO_LABEL}>Actions</h3>
-        <button
-          type="button"
-          disabled={blockers.length > 0 || !factsActive || !humanActive || !!held || busy}
-          onClick={handlePublish}
-          className="min-h-[44px] w-full bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-paper,#f4f2ec)] disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Publish
-        </button>
-        {blockers.length > 0 ? (
-          <p className="text-[11px] text-[color:var(--color-vermilion)]">{blockerReason}</p>
-        ) : (!factsActive || !humanActive) ? (
-          <p className="text-[11px] text-[color:var(--color-vermilion)]">
-            Both sign-offs required to publish.
-          </p>
-        ) : held ? (
-          <p className="text-[11px] text-[color:var(--color-vermilion)]">
-            This issue is held — release the hold to publish.
-          </p>
-        ) : null}
+        {(() => {
+          const publishDisabled =
+            blockers.length > 0 || !factsActive || !humanActive || !!held || busy
+          return (
+            <>
+              <button
+                type="button"
+                disabled={publishDisabled}
+                onClick={() => setShowPreview(true)}
+                className="min-h-[44px] w-full bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-paper,#f4f2ec)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Publish
+              </button>
+              {blockers.length > 0 ? (
+                <p className="text-[11px] text-[color:var(--color-vermilion)]">{blockerReason}</p>
+              ) : (!factsActive || !humanActive) ? (
+                <p className="text-[11px] text-[color:var(--color-vermilion)]">
+                  Both sign-offs required to publish.
+                </p>
+              ) : held ? (
+                <p className="text-[11px] text-[color:var(--color-vermilion)]">
+                  This issue is held — release the hold to publish.
+                </p>
+              ) : null}
+              {/* WSP-06 (D-15): the unlock condition written next to the
+                  control — shown whenever Publish is disabled for any of
+                  the three (or four, with held) gating reasons. */}
+              {publishDisabled && !busy && (
+                <p className="text-[11px] text-[color:var(--color-ink-soft)]">
+                  Unlocks when: Must fix = 0 · Fact Check complete · Voice approved current
+                  {held ? ' · Not held' : ''}
+                </p>
+              )}
+              {showPreview && (
+                <PublishPreviewDialog
+                  issueNumber={issueNumber}
+                  charityName={pitch?.charityName}
+                  busy={busy}
+                  onConfirm={() => {
+                    setShowPreview(false)
+                    void handlePublish()
+                  }}
+                  onCancel={() => setShowPreview(false)}
+                />
+              )}
+            </>
+          )
+        })()}
         <button
           type="button"
           disabled={busy}
@@ -496,7 +590,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         )}
       </section>
 
-      {/* 7 — Resolved findings (D-04: the only surface where they reappear) */}
+      {/* 8 — Resolved findings (D-04: the only surface where they reappear) */}
       <ResolvedFindingsList runId={runId} />
     </aside>
   )
