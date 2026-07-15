@@ -33,12 +33,22 @@
  * header status) read derived selectors over the same Convex data, no
  * explicit cross-surface update wiring is needed here — a mutation from any
  * action below propagates everywhere via Convex reactivity.
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 2): supplies `ClaimProvenanceCard`'s
+ * already-present-but-inert `actions.onInspect` callback
+ * (`components/provenance/ClaimProvenanceCard.tsx`, Phase 42) — this flips
+ * its Inspect button from disabled to live with ZERO changes to that file
+ * (Phase 42 D-09 three-copies ban). Locator is the claim's stable
+ * `claimIndex` (always present, unlike the Phase 35-only `claimId`
+ * provenance field) — the same identifier every other claim action on this
+ * screen already keys off (`selectedClaimIndex`).
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { useWorkspaceState } from '../../_components/WorkspaceStateProvider'
+import { useInspector } from '@/components/inspector/InspectorProvider'
 import { buildFactCheckPanelContent } from './FactCheckPanelContent'
 import { deriveFactCheckSummary, type FactCheckClaimRow } from '@/lib/derivedState'
 import { FACT_CHECK_FILTERS, applyFilters, type FactCheckFilterRow } from '@/lib/factCheckFilters'
@@ -155,6 +165,7 @@ function EvidenceComparisonCard({
 export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
   const { getToken } = useAuth()
   const { setPanelContent, claimRows: leanClaimRows } = useWorkspaceState()
+  const { openInspector } = useInspector()
   const setStatus = useMutation(api.claimChecks.setStatus)
 
   // Checker Warning 2 (MANDATED) — full rows, not the provider's lean
@@ -316,6 +327,11 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
             onAskAgent: handleAskAgent,
             onRemove: handleRemove,
             onKeep: handleKeep,
+            // Phase 44 (INS-01) — flips ClaimProvenanceCard's already-present
+            // Inspect button from disabled to live. Locator is the claim's
+            // stable claimIndex (see file header comment above).
+            onInspect: () =>
+              openInspector({ type: 'claim', runId, locator: String(selectedRow.claimIndex) }),
           }}
         />
         {actionError && (
@@ -339,7 +355,7 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
       setPanelContent(buildFactCheckPanelContent(leanClaimRows))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRow, busy, actionError, evidence, leanClaimRows, setPanelContent])
+  }, [selectedRow, busy, actionError, evidence, leanClaimRows, setPanelContent, openInspector])
 
   const summary = rows ? deriveFactCheckSummary(rows) : null
   const filteredRows = rows ? applyFilters(rows, activeFilters) : []

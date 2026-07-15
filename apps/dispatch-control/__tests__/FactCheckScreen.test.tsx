@@ -9,10 +9,18 @@
  * verified/complete state and never an omitted counter.
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
+ *
+ * Phase 44 (INS-01, Plan 44-07 Task 2): the screen now calls `useInspector()`
+ * (to supply `ClaimProvenanceCard`'s `onInspect`), so every render below is
+ * wrapped in `<InspectorProvider>` — mirroring `InspectorProvider.test.tsx`'s
+ * own wrapping convention. `activeKey` stays null throughout (no test here
+ * clicks Inspect), so the provider renders no panel and adds no new Convex
+ * reads.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, within } from '@testing-library/react'
 import { useQuery } from 'convex/react'
+import { InspectorProvider } from '../components/inspector/InspectorProvider'
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
@@ -40,11 +48,19 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+function renderScreen() {
+  return render(
+    <InspectorProvider>
+      <FactCheckScreen runId="run-1" />
+    </InspectorProvider>,
+  )
+}
+
 describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactCheckPlaceholder)', () => {
   it('renders a loading state (never a fake verified state) while rows have not loaded', () => {
     ;(useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
 
-    render(<FactCheckScreen runId="run-1" />)
+    renderScreen()
 
     const summary = within(screen.getByRole('region', { name: 'Fact check summary' }))
     expect(summary.getByText(/loading/i)).toBeDefined()
@@ -55,7 +71,7 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
   it('renders "No claims extracted yet" (never blank, never fake-verified) for zero rows', () => {
     ;(useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue([])
 
-    render(<FactCheckScreen runId="run-1" />)
+    renderScreen()
 
     const summary = within(screen.getByRole('region', { name: 'Fact check summary' }))
     expect(summary.getByText(/no claims extracted yet/i)).toBeDefined()
@@ -77,7 +93,7 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
       },
     ])
 
-    render(<FactCheckScreen runId="run-1" />)
+    renderScreen()
 
     expect(screen.getByText(/checked 1 of 1/i)).toBeDefined()
     expect(screen.getByText(/0 must fix/i)).toBeDefined()
@@ -99,7 +115,7 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
       },
     ])
 
-    render(<FactCheckScreen runId="run-1" />)
+    renderScreen()
 
     expect(screen.getByText(/not yet verified/i)).toBeDefined()
   })
@@ -117,7 +133,7 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
       },
     ])
 
-    render(<FactCheckScreen runId="run-1" />)
+    renderScreen()
 
     expect(screen.getByRole('button', { name: 'Must fix' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Unchecked' })).toBeDefined()
