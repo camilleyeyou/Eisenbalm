@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 44-01-contract-and-wave0-test-stubs-PLAN.md
-last_updated: "2026-07-15T19:41:59.881Z"
+stopped_at: Completed 44-02-inputkeys-schema-pipeline-substrate-PLAN.md
+last_updated: "2026-07-15T19:50:02.991Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 44 (inspect-how-this-was-made) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 
 ## Performance Metrics
 
@@ -307,6 +307,7 @@ Plan: 2 of 9
 | Phase 43 P08 | 6min | 3 tasks | 4 files |
 | Phase 43 P09 | 6min | 2 tasks | 3 files |
 | Phase 44 P01 | 20min | 2 tasks | 6 files |
+| Phase 44 P02 | 6min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -797,6 +798,8 @@ Recent decisions affecting current work:
 - [Phase 44]: Redefined missing-inputs diff onto DECLARED_STATE_INPUTS (ported agent_wrapper.py _INPUT_KEYS) instead of the broken literal VARIABLE_REGISTRY-vs-inputSnapshot diff; token-level diff marked explicit non-goal
 - [Phase 44]: NON_EXTERNALIZED_SHARED_RULES map ships so Instructions tab never renders blank for the 5 agents with no prompt_versions row (4 writers -> VOICE_CONSTRAINTS+STRUCTURE_CONTRACT, qa -> fetchable rubric)
 - [Phase 44]: Restart from this step renders reserved for all six artifact types — resume endpoint is hardcoded to the Gate-1 interrupt shape and cannot serve generic step-restart
+- [Phase 44]: inputKeys derived independently of the truncated inputSnapshot string (from the same _INPUT_KEYS whitelist), so truncation can never drop a key from the missing-inputs diff's supplied set
+- [Phase 44]: No backfill/migration for legacy agent_run_payloads rows lacking inputKeys — 44-04's diff falls back to a truncation-approximate note, per contract
 
 ### Pending Todos
 
@@ -887,6 +890,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T19:41:59.868Z
-Stopped at: Completed 44-01-contract-and-wave0-test-stubs-PLAN.md
+Last session: 2026-07-15T19:50:02.977Z
+Stopped at: Completed 44-02-inputkeys-schema-pipeline-substrate-PLAN.md
 Resume file: None

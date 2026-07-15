@@ -459,7 +459,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
-| 44. Inspect How This Was Made | 1/9 | In Progress|  |
+| 44. Inspect How This Was Made | 2/9 | In Progress|  |
 | 45. Agent Revision | 0/TBD | Not started | - |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
@@ -969,7 +969,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   6. The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps on every artifact type.
 **Plans**: 9 plans (6 waves)
 - [x] 44-01-contract-and-wave0-test-stubs-PLAN.md — API_CONTRACTS §44 (InspectorArtifact, resolver, redefined missing-inputs diff, inputKeys field, openInspector) + 5 Wave-0 test stubs (Wave 1)
-- [ ] 44-02-inputkeys-schema-pipeline-substrate-PLAN.md — additive agent_run_payloads.inputKeys + savePayload + pipeline untruncated emit + pytest (Wave 2)
+- [x] 44-02-inputkeys-schema-pipeline-substrate-PLAN.md — additive agent_run_payloads.inputKeys + savePayload + pipeline untruncated emit + pytest (Wave 2)
 - [ ] 44-03-pure-artifact-step-resolver-PLAN.md — lib/inspectorArtifact.ts: 6 artifact types → agentKey/promptKey, editor_gate_1/editor_gate1 alias, bonus variant, artifact-key encoding (Wave 2)
 - [ ] 44-04-missing-inputs-diff-and-divergence-PLAN.md — declaredStateInputs + truncation-honest missing diff (RESEARCH Pitfall 1 redefinition) + output-divergence predicate (Wave 2)
 - [ ] 44-05-seven-tab-inspector-panel-PLAN.md — shared summarize helpers + presentational 7-tab InspectorPanel + footer (live vs reserved) (Wave 3)
