@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 44-03-pure-artifact-step-resolver-PLAN.md
-last_updated: "2026-07-15T20:00:32.508Z"
+stopped_at: Completed 44-04-missing-inputs-diff-and-divergence-PLAN.md
+last_updated: "2026-07-15T20:11:55.675Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 44 (inspect-how-this-was-made) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 
 ## Performance Metrics
 
@@ -309,6 +309,7 @@ Plan: 4 of 9
 | Phase 44 P01 | 20min | 2 tasks | 6 files |
 | Phase 44 P02 | 6min | 2 tasks | 4 files |
 | Phase 44 P03 | 15min | 2 tasks | 2 files |
+| Phase 44 P04 | 9min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -803,6 +804,9 @@ Recent decisions affecting current work:
 - [Phase 44]: No backfill/migration for legacy agent_run_payloads rows lacking inputKeys — 44-04's diff falls back to a truncation-approximate note, per contract
 - [Phase 44]: parseArtifactKey returns null on malformed input (never throws) per API_CONTRACTS.md §44.1, overriding PLAN.md's throw-on-unknown-type prose
 - [Phase 44]: org resolves to agentKey 'scout' with degraded:false; only signal is unconditionally degraded (Scout runs on every issue today, unlike Signal Editor)
+- [Phase 44]: Missing-inputs diff redefined onto DECLARED_STATE_INPUTS (ported from agent_wrapper.py::_INPUT_KEYS) instead of VARIABLE_REGISTRY — the two vocabularies never intersect, so the diff computes against the coarse DispatchState field-name vocabulary the payload actually captures
+- [Phase 44]: Truncated/absent input snapshots never yield a definitive 'missing' claim — uncertain keys are folded into the missing array with a truncated:true flag and approximate:true, satisfying the D-05 hard rule
+- [Phase 44]: Output-divergence predicate defaults to 'unknown' on silence (no completedAt/no change-audit signal) and only returns 'unchanged' given positive evidence (hasChangeAudit + no later change) — never a false 'unchanged' per D-11
 
 ### Pending Todos
 
@@ -893,6 +897,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T20:00:32.494Z
-Stopped at: Completed 44-03-pure-artifact-step-resolver-PLAN.md
+Last session: 2026-07-15T20:11:55.662Z
+Stopped at: Completed 44-04-missing-inputs-diff-and-divergence-PLAN.md
 Resume file: None
