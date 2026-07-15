@@ -4479,3 +4479,283 @@ pass-through and a `setStatus` clear-on-check amendment; `api/content.py` gains 
 `_reset_touched_claims` hook call in `patch_section`/`patch_bonus`; one new pipeline router
 (`api/factcheck.py`) and one new shared component (`ClaimProvenanceCard.tsx`) are introduced. No
 existing field is renamed or removed; Phase 26/31/32/33/34/35/36 shapes are unchanged.*
+
+---
+
+## §43 — My Tasks & Decision Log (Phase 43)
+
+Two read-side projections over substrate that already exists — no new stores. **My Tasks**
+renders the Phase 40 `deriveTasks()` selector as a real screen (D-01); **Decision Log** is a new,
+human-readable component that projects the reason-bearing subset of the existing `audit_log`
+trail (D-08/D-09). This contract is written BEFORE any schema/helper/query/UI code exists
+(CLAUDE.md contract-first hard rule / D-17, mirroring §31/§35/§40/§42). Plan 43-02 onward
+implements these shapes verbatim — no field name, function name, or predicate may be invented
+later. Two research-confirmed corrections (43-RESEARCH.md Pitfalls 1 and 3) OVERRIDE CONTEXT.md's
+more optimistic characterization of the retrofit surface; they are called out explicitly in §43.5
+and §43.7 below.
+
+### §43.1 — `audit_log` additive-optional decision fields (amends §21/§23 `convex/schema.ts` in place)
+
+`audit_log` (schema.ts:266-277) gains four additive-optional structured decision fields. Legacy
+rows omit all four and render tolerantly (§43.3's projection predicate handles this):
+
+```typescript
+audit_log: defineTable({
+  // ── existing (Phase 21/23/25/31, unchanged) ──
+  workspace_id: v.string(),
+  actorId: v.string(),
+  action: v.string(),
+  resourceType: v.optional(v.string()),
+  resourceId: v.optional(v.string()),
+  before: v.optional(v.string()),
+  after: v.optional(v.string()),
+  timestamp: v.number(),
+  // ── NEW additive (Phase 43) ──
+  reason: v.optional(v.string()),
+  issueNumber: v.optional(v.number()),
+  runId: v.optional(v.string()),
+  instructionVersion: v.optional(v.string()),
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_workspace_timestamp', ['workspace_id', 'timestamp'])
+```
+
+**Actor display name is NOT stored.** Per Open Question 3's locked recommendation, only
+write-time facts land in the row (`reason`/`issueNumber`/`runId`/`instructionVersion` — none of
+which drift after the fact). No `actorName`/`actorKind` column is added; actor identity is
+resolved at READ time (§43.4) from the unchanged `actorId`. **No new index is required** —
+decisions are read via the existing `by_workspace_timestamp` newest-first order, then filtered by
+the §43.3 predicate and optionally scoped by the new `runId`/`issueNumber` fields.
+
+### §43.2 — Shared decision-write helper (D-11 — the ONE helper, two writer paths)
+
+Today there is no shared Convex-side wrapper: `issues.ts::hold`, `issues.ts::reopen`,
+`promptVersions.ts::activate` (×2 call sites), and `charityCorrections.ts::append` each construct
+their own inline `ctx.runMutation(internal.auditLog.write, {...})` object. D-11 ends this
+duplication with a genuinely new function, not a rewrite of `write`/`record`'s existing signature:
+
+**Convex-side — `convex/auditLog.ts`:**
+
+```typescript
+// `write` (internal) and `record` (public, pipeline HTTP) both gain the four
+// optional decision-field args, additively, forwarded into the insert only
+// when provided — mirrors the existing before/after optional-arg pattern.
+write(args: { ...existing, reason?, issueNumber?, runId?, instructionVersion? }): Promise<void>
+record(args: { ...existing, reason?, issueNumber?, runId?, instructionVersion?, pipelineSecret? }): Promise<void>
+
+// NEW — internalMutation. The one shared decision-write helper D-11 mandates.
+// Wraps `write`; every reason-requiring DASHBOARD (status-only) mutation calls
+// this directly instead of hand-rolling ctx.runMutation(internal.auditLog.write, {...}).
+writeDecision(args: {
+  workspace_id: string
+  actorId: string
+  action: string
+  resourceType?: string
+  resourceId?: string
+  before?: string
+  after?: string
+  reason: string                 // REQUIRED — a decision always has a reason
+  issueNumber?: number
+  runId?: string
+  instructionVersion?: string
+}): Promise<void>
+```
+
+**Pipeline-side — `packages/pipeline/src/eisenbalm_pipeline/api/control.py::_emit_audit`:**
+
+```python
+async def _emit_audit(
+    http: Any,
+    *,
+    actor_id: str,
+    action: str,
+    resource_type: str | None = None,
+    resource_id: str | None = None,
+    before: str | None = None,
+    after: str | None = None,
+    # ── NEW additive kwargs (Phase 43) ──
+    reason: str | None = None,
+    issue_number: int | None = None,
+    run_id: str | None = None,
+    instruction_version: str | None = None,
+) -> None:
+    ...
+    # each new kwarg forwarded into the auditLog:record args dict only when
+    # non-None — mirrors the existing before/after optional-kwarg pattern (§31.8)
+```
+
+**Write-boundary discipline (EDT-05, unchanged):** content-touching actions keep the
+dashboard → pipeline API → Convex/Sanity → `audit_log` boundary — they call the extended
+`_emit_audit`, not `writeDecision` directly. Status-only dashboard actions (no Sanity content
+mutation — e.g. Hold, Do-not-use) call `internal.auditLog.writeDecision` directly from an
+`requireOperator`-guarded Convex mutation. Both paths converge on the SAME `audit_log` row shape.
+
+### §43.3 — Decision projection query (D-09 — a projection, NOT a new store)
+
+```typescript
+// NEW public query, convex/auditLog.ts
+listDecisions(args: {
+  workspace_id: string
+  runId?: string
+  issueNumber?: number
+  limit?: number
+}): Promise<Doc<'audit_log'>[]>   // newest-first, decision rows only
+```
+
+**The "is a decision" predicate** (applied server-side after the `by_workspace_timestamp` scan):
+a row qualifies as a decision if EITHER (a) it carries the new structured `reason` field, OR (b)
+its `after` string parses as JSON to an object containing a reason-like key (`reason` or
+`heldReason`) — this second branch is what makes legacy reason-in-`after` rows (Hold, the
+`promptVersions.activate` override) project as decisions BOTH before and after their §43.7
+retrofit lands, with zero backfill/migration required. Non-reason rows (`run.triggered`,
+`run.section_rerolled`, `workspace.seeded`) are excluded — they carry no reason under either
+branch. When `runId` or `issueNumber` is passed, scope to rows whose matching NEW field equals it;
+legacy rows that predate the new fields (and therefore can never match a scoped query) fall back
+to being visible only in the unscoped, workspace-wide call — a scoped call is a stricter subset,
+never a superset, of the unscoped call. **`AuditLogViewer.tsx` and `listForWorkspace` are
+UNCHANGED** — `listDecisions` is a new sibling query, not a modification of the raw viewer's
+substrate (D-08).
+
+### §43.4 — Actor-name resolution (D-12 — read-time, `users` gains its first read query)
+
+`convex/users.ts` today has only `upsertCurrentUser` (a mutation) — no read query exists. NEW:
+
+```typescript
+// NEW public query, convex/users.ts
+byClerkUserId(args: { workspace_id: string; clerkUserId: string }): Promise<Doc<'users'> | null>
+```
+
+The `DecisionLog` component resolves each row's stored `actorId` (unchanged, never rewritten) to a
+display name at render time: a human `actorId` (a Clerk `sub`) is looked up via
+`users.byClerkUserId` → `displayName ?? email`; a system/agent id (`"pipeline"`, `"cron"`, an
+agent key such as `"origin_story"`, or any `"system:*"` prefix) resolves via a small static
+display-name map local to the component — NOT a Convex query, since no such row exists in `users`.
+No shipped reason-requiring action is agent-initiated today (43-RESEARCH.md Pattern 3), so every
+row this phase's retrofit (§43.7) actually produces resolves through the human branch; the
+system/agent branch is forward-looking scaffolding for Stage 1 (Phases 46-47).
+
+### §43.5 — `lib/derivedState.ts` amendments (amends §40.6 in place)
+
+**§43.5a — additive `openedAt` (D-02, TSK-02):**
+
+```typescript
+export interface DerivedTask {            // §40.6 shape, ONE additive field
+  id: string
+  sev: TaskSeverity
+  title: string
+  where: string
+  why: string
+  rec?: string
+  primary: { label: string; href: string }
+  insp?: string
+  stage: 1 | 2 | 3 | 4 | 5
+  openedAt?: number                       // NEW (Phase 43) — raw ms timestamp; absent => age unknown
+}
+```
+
+`DerivationInputs`'s `qaFindings`/`claimRows` row shapes gain passthrough timestamp fields
+(`timestamp` for `qaFindings` — already selected wholesale, no mapper change needed;
+`createdAt`/`_creationTime` passthrough added to the `claimRows` mapper in `Masthead.tsx` and
+`WorkspaceStateProvider.tsx`, which today explicitly picks fields and drops it). Per-task-type
+`openedAt` source:
+- QA-finding tasks: the row's `timestamp` (already the finding's creation time, Phase 5).
+- Claim tasks: the row's `_creationTime` (mapped through as `createdAt`).
+- Missing sign-off tasks: the run's `startedAt` (already queried for `DerivationInputs`) — "since
+  run start," per CONTEXT.md's own guidance; there is no per-sign-off "became eligible at"
+  timestamp stored anywhere.
+
+Relative-age rendering (`"2h ago"`) is a PURE function `formatTaskAge(openedAt: number | undefined,
+now: number): string`, called by the screen — NOT inside `deriveTasks` itself, keeping the
+selector free of wall-clock dependence (a re-render five minutes later must not change what
+`deriveTasks` returns, only what `formatTaskAge` renders from the same `openedAt`).
+
+**§43.5b — HREF CORRECTIONS (43-RESEARCH.md Pitfall 1 — an in-place bug fix, not new scope):**
+
+`deriveTasks` today resolves the claim-row task's `primary.href` and the `signoff-facts` task's
+`primary.href` to `issueDraftHref(n)` — both a mis-wiring left over from the `14103b4` mechanical
+retarget-to-`/draft` commit, which predates Fact Check (Phase 42) and Approval's live sign-off
+wiring. Both `issueFactCheckHref`/`issueApprovalHref` already exist in `issueRouteResolver.ts`
+(§40.7) and route to fully-functional screens today. §43 corrects both, same-shape return value,
+no signature change:
+- claim-row task `primary.href`: `issueDraftHref(n)` → **`issueFactCheckHref(n)`**
+- `signoff-facts` (`'Clear the facts'`) task `primary.href`: `issueDraftHref(n)` →
+  **`issueApprovalHref(n)`**
+- `signoff-voice` (`'Approve the voice'`) task `primary.href` is verified against
+  `issueVoiceHref(n)` — already correct per §40.6's existing rule (stage-4 findings already route
+  there) — no change.
+
+### §43.6 — Superseded predicate (D-06/D-07, TSK-05 — client-side, NO pipeline change)
+
+43-RESEARCH.md Pitfall 2 confirms `rerun_agent` (`api/control.py:470-594`, the only in-scope
+restart mechanism per D-04) does NOT clear or invalidate `qaCorrections`/`claim_checks` rows for
+the re-rolled section — DERIVED-STATE-CONTRACT §2's "a restarted step simply re-derives" premise
+does not hold for this restart type. §43 does NOT patch `rerun_agent` (that is pipeline-side scope
+beyond a screen+component phase, per Open Question 2's locked recommendation); the predicate is
+built entirely client-side against the existing `audit_log` trail:
+
+```typescript
+// screen-local type — NEVER added to derivedState.ts / TaskSeverity (Pitfall 4)
+type DisplayTask = DerivedTask & {
+  sessionState: 'active' | 'resolved' | 'superseded'
+  supersededBy?: string
+}
+```
+
+**`superseded`:** a task is superseded when an `audit_log` row with `action: "run.section_rerolled"`
+and `resourceId: "{runId}:{agentKey}"` (emitted by `_emit_audit` inside `rerun_agent`,
+`control.py:583-589`) has a `timestamp` strictly newer than the task's own `openedAt` (§43.5a).
+Section-vocabulary reconciliation required when matching: `qaCorrections.sectionName` is
+snake_case and equals `agentKey` directly (e.g. `origin_story`); `claim_checks.sectionName` is
+camelCase (e.g. `originStory`) and must be converted via `qaSectionToGalleyId(agentKey)`
+(`lib/galley/sectionIdMap.ts`) before comparing. When superseded, the task renders struck-through
+with a link to the new step/stage (`supersededBy`) instead of a normal open task, even though the
+underlying `qaCorrections`/`claim_checks` row is technically still `open`/`pending`.
+
+**`resolved`:** a task whose id vanished from the current `deriveTasks()` output relative to the
+screen's last-rendered in-session snapshot, WITHOUT a matching `run.section_rerolled` row per the
+predicate above, is resolved (the artifact reached a terminal state — claim checked, finding
+resolved, sign-off signed). Renders struck-through ("resolved just now") for the session, then
+falls out on the next snapshot.
+
+**Type-safety guard (Pitfall 4):** `resolved`/`superseded`/`'Done'` are NEVER added as
+`TaskSeverity` union members — `TaskSeverity`/`SEVERITY_MINUTES`/`SEVERITY_ORDER` (§40.6) stay
+exactly `'must-fix' | 'review-recommended' | 'information'`. `sessionState` is a screen-local
+wrapper field computed by a small pure module (e.g. `lib/taskSupersession.ts`), never inside
+`derivedState.ts`.
+
+### §43.7 — Do-not-use retrofit is NET-NEW, not a promotion (43-RESEARCH.md Pitfall 3)
+
+CONTEXT.md D-13 characterizes Do-not-use as an action that "already writes a reason somewhere"
+needing only promotion from `after`-JSON into the structured `reason` field, alongside Hold and
+Activate-override. 43-RESEARCH.md's direct read of `charities.ts::setStatus` (lines 167-189) and
+`RegistryTable.tsx::handleBlocklist` (lines 84-95) confirms this is FALSE for Do-not-use
+specifically: `setStatus` has NO `reason` parameter and calls ONLY `ctx.db.patch(charityId,
+{ status })` — it never calls `internal.auditLog.write`. Querying `audit_log` for any
+`charity.blocklisted`-shaped row today returns zero results. §43 therefore specifies this as
+net-new reason-capture work:
+
+- a required `reason: v.string()` parameter added to the blocklist transition (either an amended
+  `setStatus` guarded to require `reason` only when the target status is `'blocklisted'`, or a new
+  dedicated `charities.markDoNotUse` mutation — implementation plan's discretion, contract-fixed
+  requirement is: the blocklist transition cannot commit without a reason)
+- a `writeDecision` emission (§43.2) with `action: 'charity.blocklisted'`, `resourceType:
+  'charity'`, `resourceId: charityId`, `reason`, `before`/`after` snapshotting the status change
+- reason-capture UI added to `RegistryTable.tsx`'s blocklist confirmation flow (today a bare inline
+  confirm popover with no text input)
+
+This is NOT a promotion of an existing reason (there is none to promote) — it is the same shape
+Hold/Activate-override already have, built from scratch for this one action.
+
+---
+
+*All Phase 43 changes are additive — `audit_log` gains four optional fields
+(`reason`/`issueNumber`/`runId`/`instructionVersion`); `convex/auditLog.ts` gains `writeDecision` +
+`listDecisions` + additive arg extensions to `write`/`record`; `convex/users.ts` gains its first
+read query (`byClerkUserId`); `_emit_audit` gains four optional kwargs
+(`reason`/`issue_number`/`run_id`/`instruction_version`); `lib/derivedState.ts` gains an additive
+`openedAt` field on `DerivedTask` plus two in-place href corrections (claim task →
+`issueFactCheckHref`, `signoff-facts` task → `issueApprovalHref`); a new My Tasks screen, a new
+`DecisionLog` component, and a new `lib/taskSupersession.ts` module are introduced; `charities.ts`
+gains a required-reason blocklist path + its first `audit_log` emission. No existing field is
+renamed or removed; the Settings `AuditLogViewer.tsx` and `auditLog.listForWorkspace` are
+unchanged; `TaskSeverity` stays exactly `'must-fix' | 'review-recommended' | 'information'`.*
