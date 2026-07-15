@@ -11,14 +11,36 @@
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import type { Doc } from '@convex/_generated/dataModel'
-import { buildStoryPanelContent } from '../app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent'
-import { buildDraftPanelContent } from '../app/(dashboard)/issues/[issueNumber]/draft/DraftPanelContent'
-import { buildFactCheckPanelContent } from '../app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckPanelContent'
-import { buildVoicePanelContent } from '../app/(dashboard)/issues/[issueNumber]/voice/VoicePanelContent'
+import StoryPanelPublisher, {
+  buildStoryPanelContent,
+} from '../app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent'
+import DraftPanelPublisher, {
+  buildDraftPanelContent,
+} from '../app/(dashboard)/issues/[issueNumber]/draft/DraftPanelContent'
+import FactCheckPanelPublisher, {
+  buildFactCheckPanelContent,
+} from '../app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckPanelContent'
+import VoicePanelPublisher, {
+  buildVoicePanelContent,
+} from '../app/(dashboard)/issues/[issueNumber]/voice/VoicePanelContent'
+import ApprovalPanelPublisher, {
+  buildApprovalPanelContent,
+} from '../app/(dashboard)/issues/[issueNumber]/approval/ApprovalPanelContent'
 import type { WorkspaceStateValue } from '../app/(dashboard)/issues/_components/WorkspaceStateProvider'
+
+// ── Plumbing-block mock (Task 3): a mutable fixture the mocked
+// useWorkspaceState reads, so each of the 5 REAL publisher components can be
+// rendered standalone (no real WorkspaceStateProvider/Convex/Clerk needed)
+// and proven to call setPanelContent on mount. vi.hoisted keeps the same
+// reference available inside the (hoisted) vi.mock factory below.
+const stateRef = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
+
+vi.mock('../app/(dashboard)/issues/_components/WorkspaceStateProvider', () => ({
+  useWorkspaceState: () => stateRef.current,
+}))
 
 afterEach(() => {
   cleanup()
@@ -171,5 +193,139 @@ describe('Stage 4 Voice panel', () => {
   it('renders a loading state while qaFindings has not loaded', () => {
     render(<>{buildVoicePanelContent(undefined)}</>)
     expect(screen.getByText(/loading/i)).toBeDefined()
+  })
+})
+
+describe('Stage 5 Approval panel', () => {
+  it('renders readiness detail when populated', () => {
+    const content = buildApprovalPanelContent({
+      signOffs: { 'facts-cleared': { actorId: 'op-1', signedAt: Date.now() } },
+      claimRows: [
+        { _id: 'cc1', status: 'checked' },
+        { _id: 'cc2', status: 'pending' },
+      ],
+      tasks: [
+        {
+          id: 't1',
+          sev: 'must-fix',
+          title: 'Unsupported statistic',
+          where: 'originStory',
+          why: 'needs a source',
+          primary: { label: 'Fix', href: '#' },
+          stage: 2,
+        },
+        {
+          id: 't2',
+          sev: 'must-fix',
+          title: 'Unsourced claim',
+          where: 'caseStudy',
+          why: 'needs a source',
+          primary: { label: 'Fix', href: '#' },
+          stage: 3,
+        },
+      ],
+      held: false,
+    })
+
+    render(<>{content}</>)
+
+    expect(screen.getByText('signed')).toBeDefined()
+    expect(screen.getByText('2 must-fix')).toBeDefined()
+    expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
+  })
+
+  it('renders a loading state while signOffs has not loaded', () => {
+    render(
+      <>
+        {buildApprovalPanelContent({
+          signOffs: undefined,
+          claimRows: undefined,
+          tasks: [],
+          held: false,
+        })}
+      </>,
+    )
+    expect(screen.getByText(/loading readiness/i)).toBeDefined()
+  })
+
+  it('never-blank: renders explicit readiness lines when nothing is signed, claimed, or blocking', () => {
+    render(
+      <>
+        {buildApprovalPanelContent({ signOffs: {}, claimRows: [], tasks: [], held: false })}
+      </>,
+    )
+    expect(screen.getByText('not signed')).toBeDefined()
+    expect(screen.getByText('no claims yet')).toBeDefined()
+    expect(screen.getByText('none')).toBeDefined()
+    expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
+  })
+})
+
+describe('Stage panel publishers reach the ContextPanel slot', () => {
+  it('Story publisher calls setPanelContent on mount with a defined node', () => {
+    const setPanelContent = vi.fn()
+    stateRef.current = {
+      pitchRows: [
+        {
+          _id: 'pl1',
+          charityName: 'Acme Foundation',
+          charityLocation: 'Duluth, MN',
+          scoutSummary: 'Overlooked but well-run.',
+          selected: true,
+        },
+      ],
+      setPanelContent,
+    }
+
+    render(<StoryPanelPublisher />)
+
+    expect(setPanelContent).toHaveBeenCalled()
+    expect(setPanelContent.mock.calls[0][0]).toBeDefined()
+  })
+
+  it('Draft publisher calls setPanelContent on mount with a defined node', () => {
+    const setPanelContent = vi.fn()
+    stateRef.current = { qaFindings: [], setPanelContent }
+
+    render(<DraftPanelPublisher />)
+
+    expect(setPanelContent).toHaveBeenCalled()
+    expect(setPanelContent.mock.calls[0][0]).toBeDefined()
+  })
+
+  it('Fact Check publisher calls setPanelContent on mount with a defined node', () => {
+    const setPanelContent = vi.fn()
+    stateRef.current = { claimRows: [], setPanelContent }
+
+    render(<FactCheckPanelPublisher />)
+
+    expect(setPanelContent).toHaveBeenCalled()
+    expect(setPanelContent.mock.calls[0][0]).toBeDefined()
+  })
+
+  it('Voice publisher calls setPanelContent on mount with a defined node', () => {
+    const setPanelContent = vi.fn()
+    stateRef.current = { qaFindings: [], setPanelContent }
+
+    render(<VoicePanelPublisher />)
+
+    expect(setPanelContent).toHaveBeenCalled()
+    expect(setPanelContent.mock.calls[0][0]).toBeDefined()
+  })
+
+  it('Approval publisher calls setPanelContent on mount with a defined node', () => {
+    const setPanelContent = vi.fn()
+    stateRef.current = {
+      signOffs: {},
+      claimRows: [],
+      tasks: [],
+      held: false,
+      setPanelContent,
+    }
+
+    render(<ApprovalPanelPublisher />)
+
+    expect(setPanelContent).toHaveBeenCalled()
+    expect(setPanelContent.mock.calls[0][0]).toBeDefined()
   })
 })

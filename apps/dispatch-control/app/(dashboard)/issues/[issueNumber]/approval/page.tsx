@@ -22,6 +22,7 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
 import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
 import ApprovalStage from './ApprovalStage'
+import ApprovalPanelPublisher from './ApprovalPanelContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,5 +41,10 @@ export default async function IssueApprovalPage({ params }: IssueApprovalPagePro
     : null
   if (!run) redirect(issueHref(n))
 
-  return <ApprovalStage runId={run.runId} issueNumber={n} />
+  return (
+    <>
+      <ApprovalPanelPublisher />
+      <ApprovalStage runId={run.runId} issueNumber={n} />
+    </>
+  )
 }
