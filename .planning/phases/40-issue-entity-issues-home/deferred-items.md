@@ -42,6 +42,20 @@ which returns only the pre-existing 40-01 RED scaffold reference to
 Not fixed here (out of scope per the executor's scope boundary — none of
 these files were touched by this plan). Flagged for a future cleanup pass.
 
+## 40-06 — same pre-existing `tsc --noEmit` error surface, confirmed unrelated to the routing-inversion files
+
+`pnpm --filter dispatch-control exec tsc --noEmit -p tsconfig.json` reports the
+same 194 pre-existing errors documented under 40-05 above (all in test files:
+`spanResolver.test.ts`, `syntheticPortableText.test.ts`, `voicePassAxis.test.ts`,
+`VoicePassScreen.test.tsx`, `WriterExpansion.test.tsx`, plus the widespread
+`import.meta.glob`/`ImportMeta` gap in `convex-test`-backed suites). Confirmed
+the error count is IDENTICAL (194) with and without this plan's new files
+present (`git stash` / `stash pop` A-B comparison) — none of this plan's Task
+1/2/3 files (`ReviewDeskRunView.tsx`, `VoicePassRunView.tsx`, the three
+`issues/[issueNumber]/**/page.tsx` wrappers, or the five redirect/index files)
+introduce any new type error. Not fixed here (out of scope). Flagged for the
+same future cleanup pass as 40-04/40-05.
+
 ## 40-05 — Blocking-issue fix (Rule 3): `convex codegen` failed on an unrelated script
 
 `convex codegen`/`convex dev` bundles every file under `convex/` as a
