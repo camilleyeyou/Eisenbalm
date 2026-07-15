@@ -48,6 +48,12 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Editorial',
     items: [
       { label: 'Issues', href: '/issues' },
+      // Phase 41 (WSP-01, D-22) — the single "Issue Workspace" entry that
+      // completes WSP-01's "replace the three desks" (Review/Signal/Voice
+      // already left the nav in Phase 40 D-31). Links to /issues; the bare
+      // /issues/[n] route redirects onward to the last-visited stage (D-03).
+      // "Issues" is the home/list; "Issue Workspace" is the current-issue entry.
+      { label: 'Issue Workspace', href: '/issues' },
     ],
   },
   {

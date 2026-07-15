@@ -25,6 +25,10 @@ import { NAV_GROUPS, NAV_PINNED } from '../lib/nav'
 
 const EXPECTED_GROUP_LABELS = ['Editorial', 'System Workbench', 'Operations']
 const REMOVED_HREFS = ['/review-desk', '/signal-desk', '/voice-pass']
+// Phase 41 (WSP-01) — the three collapsed desks must not reappear as nav
+// LABELS either (they left as hrefs in Phase 40; WSP-01 replaces them with the
+// single "Issue Workspace" item).
+const REMOVED_LABELS = ['Review Desk', 'Signal Desk', 'Voice Pass']
 
 function pagePathFor(appRoot: string, href: string): string {
   // e.g. "/run-monitor" → "app/(dashboard)/run-monitor/page.tsx"
@@ -54,6 +58,24 @@ describe('NAV_GROUPS', () => {
     const allHrefs = NAV_GROUPS.flatMap((group) => group.items.map((i) => i.href))
     for (const removed of REMOVED_HREFS) {
       expect(allHrefs).not.toContain(removed)
+    }
+  })
+
+  it('has exactly one "Issue Workspace" item, in the Editorial group (WSP-01, D-22)', () => {
+    const allItems = NAV_GROUPS.flatMap((group) => group.items)
+    const workspaceItems = allItems.filter((i) => i.label === 'Issue Workspace')
+    expect(workspaceItems).toHaveLength(1)
+    expect(workspaceItems[0]?.href).toBe('/issues')
+
+    const editorial = NAV_GROUPS.find((g) => g.label === 'Editorial')
+    const editorialLabels = editorial?.items.map((i) => i.label) ?? []
+    expect(editorialLabels).toContain('Issue Workspace')
+  })
+
+  it('none of Review Desk / Signal Desk / Voice Pass LABELS appear anywhere in the nav (WSP-01 — replaced by Issue Workspace)', () => {
+    const allLabels = NAV_GROUPS.flatMap((group) => group.items.map((i) => i.label))
+    for (const removed of REMOVED_LABELS) {
+      expect(allLabels).not.toContain(removed)
     }
   })
 
