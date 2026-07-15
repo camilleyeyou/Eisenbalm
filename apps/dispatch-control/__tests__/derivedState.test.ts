@@ -15,6 +15,7 @@ import {
   estimateWorkMinutes,
   isMustFix,
   deriveFactCheckSummary,
+  formatTaskAge,
   SEVERITY_MINUTES,
   type DerivationInputs,
   type DerivedTask,
@@ -468,6 +469,121 @@ describe('deriveTasks (§40.6, D-21)', () => {
     const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
     const task = tasks.find((t: DerivedTask) => t.title.includes('legacy unsourced claim'))
     expect(task?.sev).toBe('review-recommended')
+  })
+})
+
+describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/02/03)', () => {
+  it('TSK-01 regression: over one open finding + one pending claim + no sign-offs on a non-running run, returns exactly (open findings) + (pending claims) + (missing sign-offs) — no new source, no dropped source', () => {
+    const qaFindings = [
+      {
+        _id: 'q1',
+        severity: 'error' as const,
+        axis: 'precision',
+        sectionName: 'Origin',
+        reason: 'unsourced number',
+      },
+    ]
+    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'a claim without a source' }]
+    const tasks = deriveTasks(
+      baseInputs({
+        runStatus: 'complete',
+        qaFindings,
+        claimRows,
+        signOffs: {},
+      }),
+    )
+    // 1 open finding + 1 pending claim + 2 missing sign-offs (facts-cleared, sounds-human) = 4
+    expect(tasks).toHaveLength(4)
+    expect(tasks.some((t: DerivedTask) => t.id === 'qa-q1')).toBe(true)
+    expect(tasks.some((t: DerivedTask) => t.id === 'claim-c1')).toBe(true)
+    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-facts')).toBe(true)
+    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-voice')).toBe(true)
+  })
+
+  it('TSK-03 (Pitfall 1 fix): a pending-claim task deep-links to /issues/7/fact-check, not /draft', () => {
+    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'a claim' }]
+    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    const claimTask = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
+    expect(claimTask?.primary.href).toBe('/issues/7/fact-check')
+  })
+
+  it('TSK-03 (Pitfall 1 fix): the signoff-facts task deep-links to /issues/7/approval, not /draft', () => {
+    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', signOffs: {} }))
+    const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
+    expect(factsTask?.primary.href).toBe('/issues/7/approval')
+  })
+
+  it('signoff-voice href is unchanged: still resolves via issueVoiceHref, not /draft or /approval', () => {
+    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', signOffs: {} }))
+    const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')
+    expect(voiceTask?.primary.href).toBe('/issues/7/voice')
+  })
+
+  it('TSK-02: a QA-finding task carries openedAt from the row timestamp', () => {
+    const qaFindings = [
+      {
+        _id: 'q1',
+        severity: 'error' as const,
+        axis: 'precision',
+        sectionName: 'Origin',
+        reason: 'x',
+        timestamp: 1700000000000,
+      },
+    ]
+    const tasks = deriveTasks(
+      baseInputs({
+        runStatus: 'complete',
+        qaFindings,
+        signOffs: {
+          'facts-cleared': { actorId: 'a', signedAt: 1 },
+          'sounds-human': { actorId: 'a', signedAt: 1 },
+        },
+      }),
+    )
+    const task = tasks.find((t: DerivedTask) => t.id === 'qa-q1')
+    expect(task?.openedAt).toBe(1700000000000)
+  })
+
+  it('TSK-02: a claim task carries openedAt from the row createdAt', () => {
+    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'x', createdAt: 1700000001000 }]
+    const tasks = deriveTasks(
+      baseInputs({
+        runStatus: 'complete',
+        claimRows,
+        signOffs: {
+          'facts-cleared': { actorId: 'a', signedAt: 1 },
+          'sounds-human': { actorId: 'a', signedAt: 1 },
+        },
+      }),
+    )
+    const task = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
+    expect(task?.openedAt).toBe(1700000001000)
+  })
+
+  it('TSK-02: the signoff-facts and signoff-voice tasks carry openedAt from the run-level runStartedAt', () => {
+    const tasks = deriveTasks(
+      baseInputs({ runStatus: 'complete', signOffs: {}, runStartedAt: 1700000002000 }),
+    )
+    const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
+    const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')
+    expect(factsTask?.openedAt).toBe(1700000002000)
+    expect(voiceTask?.openedAt).toBe(1700000002000)
+  })
+})
+
+describe('formatTaskAge (§43.5a)', () => {
+  it('renders a non-blank relative age string for a 2-hour-old timestamp', () => {
+    const now = 1700000000000
+    const twoHoursAgo = now - 2 * 60 * 60 * 1000
+    const result = formatTaskAge(twoHoursAgo, now)
+    expect(result).toBeTruthy()
+    expect(result).toContain('h')
+  })
+
+  it('returns an explicit non-blank fallback ("unknown") when openedAt is undefined — never blank', () => {
+    const result = formatTaskAge(undefined, Date.now())
+    expect(result).toBe('unknown')
+    expect(result).not.toBe('')
   })
 })
 
