@@ -54,6 +54,11 @@ export const NAV_GROUPS: NavGroup[] = [
       // /issues/[n] route redirects onward to the last-visited stage (D-03).
       // "Issues" is the home/list; "Issue Workspace" is the current-issue entry.
       { label: 'Issue Workspace', href: '/issues' },
+      // Phase 43 Plan 43-05 (TSK-01) — the reserved slot this comment
+      // predicted: the nav-level, cross-stage task list the Masthead's
+      // count-only "My Tasks · N" readout (Phase 40 Plan 40-08) and the
+      // AwaitingYouInbox "See all" link both point at.
+      { label: 'My Tasks', href: '/my-tasks' },
     ],
   },
   {

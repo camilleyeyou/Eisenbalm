@@ -155,6 +155,20 @@ export default function AwaitingYouInbox({ open, onClose }: AwaitingYouInboxProp
           ))}
         </ul>
       )}
+
+      {/* Phase 43 Plan 43-05 (D-15) — the handoff to the full My Tasks
+          screen. An ADDITION: this inbox's own item derivation above is
+          UNCHANGED — a separate, narrower projection than /my-tasks'
+          deriveTasks(...) cross-stage list. */}
+      <div className="border-t border-[color:var(--color-ink)]/[.1] px-4 py-3">
+        <Link
+          href="/my-tasks"
+          onClick={onClose}
+          className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:text-[color:var(--color-vermilion)]"
+        >
+          See all →
+        </Link>
+      </div>
     </div>
   )
 }
