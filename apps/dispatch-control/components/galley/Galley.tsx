@@ -110,6 +110,14 @@ interface GalleyProps {
     dismiss?: string
     dismissReasonDefault?: string
   }
+  /**
+   * Phase 41 (WSP-04, Plan 41-03) — optional click-through for an unchecked
+   * claim, forwarded unmodified to every GallerySection this Galley mounts.
+   * Undefined (Review Desk/Voice Pass default) leaves today's
+   * toggle-popover-only behavior intact; Draft (Stage 2, Plan 41-08) wires
+   * it to route into the Fact Check tab (D-12).
+   */
+  onUnsourcedClaimClick?: (claimIndex: number) => void
 }
 
 // D-05 reader order for the four long-read sections.
@@ -129,6 +137,7 @@ export default function Galley({
   showProvenance = true,
   includeAxes,
   labels,
+  onUnsourcedClaimClick,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -263,6 +272,7 @@ export default function Galley({
             reloadDraft={reloadDraft}
             onEditSection={onEditSection}
             labels={labels}
+            onUnsourcedClaimClick={onUnsourcedClaimClick}
           />
         )
       })}
@@ -283,6 +293,7 @@ export default function Galley({
           reloadDraft={reloadDraft}
           onEditSection={onEditSection}
           labels={labels}
+          onUnsourcedClaimClick={onUnsourcedClaimClick}
         />
       )}
 

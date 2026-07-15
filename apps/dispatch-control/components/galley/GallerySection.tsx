@@ -69,6 +69,10 @@ interface GallerySectionProps {
     dismiss?: string
     dismissReasonDefault?: string
   }
+  // Phase 41 (WSP-04, Plan 41-03) — optional click-through for an unchecked
+  // claim, forwarded unmodified into every ClaimMark this section mounts.
+  // Undefined leaves today's toggle-popover-only behavior intact.
+  onUnsourcedClaimClick?: (claimIndex: number) => void
 }
 
 export default function GallerySection({
@@ -85,6 +89,7 @@ export default function GallerySection({
   claimResolved = [],
   showProvenance = true,
   labels,
+  onUnsourcedClaimClick,
 }: GallerySectionProps) {
   // toSyntheticBlocks groups `resolved`/`claimResolved` by blockIndex
   // internally (it filters the flat lists per-row), so the flat arrays are
@@ -124,13 +129,17 @@ export default function GallerySection({
           </AnnotationMark>
         ),
         claimSpan: ({ value, children }) => (
-          <ClaimMark value={value as ClaimSpanMarkDef} runId={runId}>
+          <ClaimMark
+            value={value as ClaimSpanMarkDef}
+            runId={runId}
+            onUnsourcedClaimClick={onUnsourcedClaimClick}
+          >
             {children}
           </ClaimMark>
         ),
       },
     }),
-    [runId, sectionId, revisionId, reloadDraft, onEditSection, labels],
+    [runId, sectionId, revisionId, reloadDraft, onEditSection, labels, onUnsourcedClaimClick],
   )
 
   return (
