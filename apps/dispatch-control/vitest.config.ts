@@ -48,6 +48,8 @@ export default defineConfig({
       ['__tests__/claimChecksFactcheck.test.ts', 'edge-runtime'],
       // Phase 43 Plan 43-02 audit_log decision substrate convex-test file
       ['__tests__/auditLogDecision.test.ts', 'edge-runtime'],
+      // Phase 43 Plan 43-08 Do-not-use reason-capture convex-test file
+      ['__tests__/charitiesDoNotUse.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],
