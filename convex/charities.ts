@@ -15,6 +15,7 @@
  * Mirrors the existing scout.py:104-110 `_candidate_keys()` logic.
  */
 import { mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import { requireOperator, requireOperatorOrPipeline, requirePipelineSecret } from './lib/auth'
 
@@ -163,16 +164,25 @@ export const upsertFeatured = mutation({
 /**
  * Operator manually sets candidate/featured/blocklisted from the registry UI.
  * Validates status before patching; throws on invalid value.
+ *
+ * Phase 43 §43.7 (TSK-06, 43-RESEARCH.md Pitfall 3) — NET-NEW, not a
+ * promotion: the blocklist ('blocklisted') transition specifically requires
+ * a non-empty `reason` and emits a structured decision row via the ONE
+ * shared `writeDecision` helper (action 'charity.blocklisted'). This closes
+ * the pre-existing Phase 26 gap where `setStatus` wrote zero audit_log rows.
+ * Non-blocklist transitions (candidate/featured, including unblocklist back
+ * to 'candidate') stay reason-free and emit nothing — unchanged behavior.
  */
 export const setStatus = mutation({
   args: {
     workspace_id: v.string(),
     charityId: v.id('charities'),
     status: v.string(),
+    reason: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, charityId, status }) => {
+  handler: async (ctx, { workspace_id, charityId, status, reason }) => {
     // Phase 29 D-1: dashboard-only mutation — Clerk identity required.
-    await requireOperator(ctx)
+    const actor = await requireOperator(ctx)
 
     const validStatuses = ['candidate', 'featured', 'blocklisted']
     if (!validStatuses.includes(status)) {
@@ -184,7 +194,26 @@ export const setStatus = mutation({
     if (!charity || charity.workspace_id !== workspace_id) {
       throw new Error(`Charity not found: ${charityId}`)
     }
+
+    const trimmedReason = reason?.trim() ?? ''
+    if (status === 'blocklisted' && trimmedReason === '') {
+      throw new Error('A reason is required to mark a charity Do not use.')
+    }
+
     await ctx.db.patch(charityId, { status })
+
+    if (status === 'blocklisted') {
+      await ctx.runMutation(internal.auditLog.writeDecision, {
+        workspace_id,
+        actorId: actor,
+        action: 'charity.blocklisted',
+        resourceType: 'charity',
+        resourceId: charityId,
+        before: JSON.stringify({ status: charity.status }),
+        after: JSON.stringify({ status: 'blocklisted' }),
+        reason: trimmedReason,
+      })
+    }
   },
 })
 
