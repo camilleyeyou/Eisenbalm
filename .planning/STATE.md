@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 42 context gathered
-last_updated: "2026-07-15T10:35:32.480Z"
+status: Ready to execute
+stopped_at: Completed 42-01-contract-schema-convex-PLAN.md
+last_updated: "2026-07-15T11:56:59.678Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 41 — issue-workspace-frame
+**Current focus:** Phase 42 — fact-check-stage
 
 ## Current Position
 
-Phase: 41
-Plan: Not started
+Phase: 42 (fact-check-stage) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -289,6 +289,7 @@ Plan: Not started
 | Phase 41 P10 | 15min | 2 tasks | 1 files |
 | Phase 41 P11 | 12min | 2 tasks | 3 files |
 | Phase 41 P12 | 25min | 3 tasks | 15 files |
+| Phase 42 P01 | 15min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -745,6 +746,7 @@ Recent decisions affecting current work:
 - [Phase 41]: Each panel builder accepts the raw provider field (not pre-filtered) so the loading vs empty distinction lives in one place per stage
 - [Phase 41]: Approval's readiness board is an intentional read-only duplicate of the Stage 5 rail's readiness summary, never imported
 - [Phase 41]: 5-publisher plumbing test mocks useWorkspaceState via one vi.hoisted fixture ref, since Vitest matches mocks by resolved file path not import specifier
+- [Phase 42]: importance/changedSinceCheck/conflict added as additive-optional claim_checks fields; Keep-as-written reuses status:'checked' (no new status literal, D-08 chip vocabulary); Remove is soft-delete via status:'removed' (zero code change to allSignedOff/listByRunId)
 
 ### Pending Todos
 
@@ -834,6 +836,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T10:35:32.467Z
-Stopped at: Phase 42 context gathered
-Resume file: .planning/phases/42-fact-check-stage/42-CONTEXT.md
+Last session: 2026-07-15T11:56:59.665Z
+Stopped at: Completed 42-01-contract-schema-convex-PLAN.md
+Resume file: None
