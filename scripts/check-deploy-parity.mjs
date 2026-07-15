@@ -25,6 +25,15 @@
 //   1 -> at least one called path is missing (real parity failure)
 //   2 -> could not reach / parse the deployment, or the pipeline source
 //        directory is missing (SKIP - "couldn't check", NOT "all clear")
+//
+// Phase 40 Plan 40-05 (Rule 3 auto-fix): moved from convex/scripts/ to
+// repo-root scripts/ — living inside convex/ made Convex's function
+// bundler try to bundle this file as a Convex function on every
+// `convex codegen`/`convex dev`, which fails because it uses Node
+// built-ins (`node:child_process`, `node:fs`, etc.) without a "use node"
+// directive. This script was never meant to be a Convex function (it
+// shells out to the Convex CLI itself) — it belongs outside convex/.
+// Path derivation below updated accordingly; behavior is unchanged.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -32,8 +41,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const convexDir = path.dirname(scriptDir);
-const repoRoot = path.dirname(convexDir);
+const repoRoot = path.dirname(scriptDir);
+const convexDir = path.join(repoRoot, 'convex');
 const pipelineSrc = path.join(repoRoot, 'packages/pipeline/src');
 
 const DEPLOYMENT_NAME = 'dev:modest-magpie-797';

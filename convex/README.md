@@ -31,7 +31,7 @@ Do not modify `schema.ts` field names without checking [`docs/API_CONTRACTS.md`]
 
 This bit us on **2026-07-10**: `charities:listRecentFeatured` was committed to git but never synced to `dev:modest-magpie-797`. `GET /registry/coverage-strip` on the Railway pipeline threw `Could not find public function for 'charities:listRecentFeatured'` in production, with no local signal that anything was wrong.
 
-**What the guard does:** `pnpm check:convex-parity` runs [`convex/scripts/check-deploy-parity.mjs`](./scripts/check-deploy-parity.mjs). It reads the DEPLOYED `convex function-spec` for `dev:modest-magpie-797` and diffs it against every `module:function` string literal called anywhere in `packages/pipeline/src/**/*.py`. It is **report-only** — it never deploys or mutates anything. Exit codes:
+**What the guard does:** `pnpm check:convex-parity` runs [`scripts/check-deploy-parity.mjs`](../scripts/check-deploy-parity.mjs) (repo-root `scripts/`, not `convex/` — living inside `convex/` made Convex's function bundler try to bundle it as a Convex function on every `codegen`/`dev`, which fails since it uses Node built-ins without a `"use node"` directive; Phase 40 Plan 40-05 moved it out). It reads the DEPLOYED `convex function-spec` for `dev:modest-magpie-797` and diffs it against every `module:function` string literal called anywhere in `packages/pipeline/src/**/*.py`. It is **report-only** — it never deploys or mutates anything. Exit codes:
 
 - `0` — every called function is present on the deployment
 - `1` — at least one called function is missing (real drift; the offending path + `file:line` references are printed)
