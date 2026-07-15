@@ -151,6 +151,12 @@ async def publisher(state: DispatchState) -> DispatchState:
                 retrieved_at = rc.get("retrievedAt") if rc else None
                 if retrieved_at is not None:
                     row["retrievedAt"] = retrieved_at
+                # FCT-01 (Phase 42, D-02/D-03): carry the Researcher-emitted
+                # importance tier through via the claimId lookup; a claimId
+                # that doesn't resolve in research_claims (rc is None) never
+                # silently fabricates Load-bearing — it falls back to
+                # Supporting, same as the Researcher's own default.
+                row["importance"] = rc.get("importance", "Supporting") if rc else "Supporting"
                 sourced_rows.append(row)
                 covered.setdefault((galley_id, bih), set()).add(
                     _normalise(as_written)
@@ -163,6 +169,7 @@ async def publisher(state: DispatchState) -> DispatchState:
             bucket = (row["sectionName"], row["blockIndexHint"])
             if _normalise(row["text"]) in covered.get(bucket, set()):
                 continue
+            row["importance"] = "Supporting"  # D-03 fallback: unsourced never silently Load-bearing
             unsourced_rows.append(row)
 
         # Merge: iterate sections in canonical order, then blocks in
