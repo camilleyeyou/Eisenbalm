@@ -349,6 +349,8 @@ async def patch_section(
         after=_truncate(json.dumps(blocks, default=str)),
     )
     await _revoke_active_signoffs(convex_http, run_id=run_id, reason="section edited")
+    touched = _touched_block_indices(before.get("blocks", []), blocks)
+    await _reset_touched_claims(convex_http, run_id=run_id, section_name=section_name, touched=touched)
     return {"revisionId": new_rev, "warnings": warnings}
 
 
@@ -633,6 +635,9 @@ async def patch_bonus(
         after=_truncate(json.dumps(fields, default=str)),
     )
     await _revoke_active_signoffs(convex_http, run_id=run_id, reason="bonus edited")
+    if body.variant == "specAd" and body.blocks is not None:
+        touched = _touched_block_indices(before.get("body", []), blocks)
+        await _reset_touched_claims(convex_http, run_id=run_id, section_name="bonus", touched=touched)
     return {"revisionId": new_rev, "warnings": warnings}
 
 

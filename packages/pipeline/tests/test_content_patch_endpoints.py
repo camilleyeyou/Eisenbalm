@@ -410,12 +410,22 @@ async def test_theme_patch_revokes_signoffs(monkeypatch: pytest.MonkeyPatch):
     assert audit_calls[0]["args"]["action"] == "content.theme_patched"
 
 
+def _mock_convex_query_by_path(**by_path):
+    """Path-routed convex_query mock: returns by_path[path] if present, else
+    falls back to {"sanityIssueId": "issue-42"} (the _resolve_sanity_id
+    lookup every content-patch test needs)."""
+
+    async def mock(http, path, args):
+        if path in by_path:
+            return by_path[path]
+        return {"sanityIssueId": "issue-42"}
+
+    return mock
+
+
 async def test_structural_floor_warns_not_blocks(monkeypatch: pytest.MonkeyPatch):
     """A long-read section-body patch with 0 h2/blockquote returns 200 with
     a non-empty warnings list — it never 4xxs (D-08)."""
-
-    async def mock_convex_query(http, path, args):
-        return {"sanityIssueId": "issue-42"}
 
     async def mock_get_issue_draft(http, issue_id):
         return _empty_draft(
@@ -429,7 +439,10 @@ async def test_structural_floor_warns_not_blocks(monkeypatch: pytest.MonkeyPatch
     async def mock_emit_audit(http, **kwargs):
         pass
 
-    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(
+        f"{_C}._cc.convex_query",
+        _mock_convex_query_by_path(**{"claimChecks:listByRunId": []}),
+    )
     monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
     monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
     monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
@@ -445,6 +458,69 @@ async def test_structural_floor_warns_not_blocks(monkeypatch: pytest.MonkeyPatch
     data = response.json()
     assert data["revisionId"] == "rev-2"
     assert len(data["warnings"]) == 2  # 0/2 sub-headers + 0/1 blockquote
+
+
+async def test_patch_section_resets_only_touched_block_claims(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """FCT-07/D-19: a same-length section-body patch that only changes block
+    1's text calls claimChecks:markChanged for the claim anchored to block 1
+    (and any null-anchor claim in the section), but NOT for block 0's claim."""
+
+    async def mock_get_issue_draft(http, issue_id):
+        return _empty_draft(
+            sections={
+                "originStory": {
+                    "headline": "Old",
+                    "blocks": [
+                        {"type": "paragraph", "text": "Block zero."},
+                        {"type": "paragraph", "text": "Block one, original."},
+                    ],
+                    "lossy": False,
+                }
+            }
+        )
+
+    async def mock_patch_issue_field(http, *, issue_id, field_path, value, if_revision_id):
+        return "rev-2"
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    claim_rows = [
+        {"sectionName": "originStory", "blockIndexHint": 0, "claimIndex": 0},
+        {"sectionName": "originStory", "blockIndexHint": 1, "claimIndex": 1},
+        {"sectionName": "caseStudy", "blockIndexHint": 1, "claimIndex": 2},
+    ]
+
+    monkeypatch.setattr(
+        f"{_C}._cc.convex_query",
+        _mock_convex_query_by_path(**{"claimChecks:listByRunId": claim_rows}),
+    )
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft)
+    monkeypatch.setattr(f"{_C}.patch_issue_field", mock_patch_issue_field)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    changed_calls: list[dict] = []
+
+    async def mock_convex_mutation(http, path, args):
+        if path == "claimChecks:markChanged":
+            changed_calls.append(args)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_mutation", mock_convex_mutation)
+
+    response = _content_client.patch(
+        "/issues/run-abc/sections/originStory",
+        json={
+            "ifRevisionID": "rev-1",
+            "blocks": [
+                {"type": "paragraph", "text": "Block zero."},
+                {"type": "paragraph", "text": "Block one, REVISED."},
+            ],
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert [c["claimIndex"] for c in changed_calls] == [1]
 
 
 def _make_asset_handler(captured: dict, *, asset_id: str = "image-abc"):
@@ -811,9 +887,6 @@ async def test_bonus_patch_variant_shaped(monkeypatch: pytest.MonkeyPatch):
     variant mismatch -> 409 {reason:'wrong_bonus_variant'}; specAd -> bonus.body
     via compose_section_body; jingle -> bonus.lyrics + bonus.sunoPrompt."""
 
-    async def mock_convex_query(http, path, args):
-        return {"sanityIssueId": "issue-42"}
-
     async def mock_get_issue_draft_specad(http, issue_id):
         return _empty_draft(bonusType="specAd", bonus={"headline": "H"})
 
@@ -827,7 +900,10 @@ async def test_bonus_patch_variant_shaped(monkeypatch: pytest.MonkeyPatch):
     async def mock_emit_audit(http, **kwargs):
         pass
 
-    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(
+        f"{_C}._cc.convex_query",
+        _mock_convex_query_by_path(**{"claimChecks:listByRunId": []}),
+    )
     monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_specad)
     monkeypatch.setattr(f"{_C}._patch_fields", mock_patch_fields)
     monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
@@ -884,6 +960,118 @@ async def test_bonus_patch_variant_shaped(monkeypatch: pytest.MonkeyPatch):
     assert jingle_ok.status_code == 200, jingle_ok.text
     assert captured_fields["bonus.lyrics"] == "La la la"
     assert captured_fields["bonus.sunoPrompt"] == "Upbeat"
+
+
+async def test_patch_bonus_specad_resets_only_touched_block_claims(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """FCT-07/D-19: patch_bonus's specAd branch reads the before-state block
+    array under the "body" key (NOT "blocks") — a same-length edit touching
+    only block 1 resets only the claim anchored to block 1."""
+
+    async def mock_get_issue_draft_specad(http, issue_id):
+        return _empty_draft(
+            bonusType="specAd",
+            bonus={
+                "headline": "H",
+                "body": [
+                    {"type": "paragraph", "text": "Bonus block zero."},
+                    {"type": "paragraph", "text": "Bonus block one, original."},
+                ],
+            },
+        )
+
+    async def mock_patch_fields(http, *, issue_id, fields, if_revision_id):
+        return "rev-2"
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    claim_rows = [
+        {"sectionName": "bonus", "blockIndexHint": 0, "claimIndex": 0},
+        {"sectionName": "bonus", "blockIndexHint": 1, "claimIndex": 1},
+    ]
+
+    monkeypatch.setattr(
+        f"{_C}._cc.convex_query",
+        _mock_convex_query_by_path(**{"claimChecks:listByRunId": claim_rows}),
+    )
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_specad)
+    monkeypatch.setattr(f"{_C}._patch_fields", mock_patch_fields)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+
+    changed_calls: list[dict] = []
+
+    async def mock_convex_mutation(http, path, args):
+        if path == "claimChecks:markChanged":
+            changed_calls.append(args)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_mutation", mock_convex_mutation)
+
+    response = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={
+            "ifRevisionID": "rev-1",
+            "variant": "specAd",
+            "blocks": [
+                {"type": "paragraph", "text": "Bonus block zero."},
+                {"type": "paragraph", "text": "Bonus block one, REVISED."},
+            ],
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert [c["claimIndex"] for c in changed_calls] == [1]
+
+
+async def test_patch_bonus_bigbudget_never_resets_claims(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """FCT-07/D-19: the bigBudget/jingle branches of patch_bonus never call
+    _reset_touched_claims — bonus.body is a plain string for those variants
+    (exempt per §35.3 D-06), so zero markChanged calls happen even though
+    claim_checks rows exist for the bonus section."""
+
+    async def mock_get_issue_draft_bigbudget(http, issue_id):
+        return _empty_draft(
+            bonusType="bigBudget",
+            bonus={"headline": "H", "body": "Old plain-string body."},
+        )
+
+    async def mock_patch_fields(http, *, issue_id, fields, if_revision_id):
+        return "rev-2"
+
+    async def mock_emit_audit(http, **kwargs):
+        pass
+
+    claim_rows = [
+        {"sectionName": "bonus", "blockIndexHint": 0, "claimIndex": 0},
+    ]
+
+    mutation_calls: list[dict] = []
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append({"path": path, "args": args})
+
+    monkeypatch.setattr(
+        f"{_C}._cc.convex_query",
+        _mock_convex_query_by_path(**{"claimChecks:listByRunId": claim_rows}),
+    )
+    monkeypatch.setattr(f"{_C}.get_issue_draft", mock_get_issue_draft_bigbudget)
+    monkeypatch.setattr(f"{_C}._patch_fields", mock_patch_fields)
+    monkeypatch.setattr(f"{_C}._emit_audit", mock_emit_audit)
+    monkeypatch.setattr(f"{_C}._cc.convex_mutation", mock_convex_mutation)
+
+    response = _content_client.patch(
+        "/issues/run-abc/bonus",
+        json={
+            "ifRevisionID": "rev-1",
+            "variant": "bigBudget",
+            "headline": "H",
+            "body": "New plain-string body.",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert [c for c in mutation_calls if c["path"] == "claimChecks:markChanged"] == []
 
 
 def _pt_block(style: str, text: str, *, mark_defs=None, extra_children=None) -> dict:
