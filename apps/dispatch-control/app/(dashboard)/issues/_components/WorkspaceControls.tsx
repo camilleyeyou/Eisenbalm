@@ -19,16 +19,25 @@
  * Consumes `held`, `issue`, `history`, `runId` from `useWorkspaceState()`
  * rather than re-subscribing to the same Convex queries the frame's
  * provider already owns (41-RESEARCH Pitfall 3).
+ *
+ * Phase 43 Plan 43-06 (TSK-06, D-08) — adds a persistent "Decision log"
+ * disclosure control alongside Hold issue / Run history (the Phase 41 frame
+ * already lists "Decision log" as a persistent control the workspace owes).
+ * Collapsed by default: `<DecisionLog>` (and its `useQuery` subscriptions)
+ * only mounts once expanded, so `WorkspaceLayout.test.tsx`'s full-layout
+ * render — whose mocked `api` object has no `auditLog`/`users` entries —
+ * is unaffected.
  */
 import { useState } from 'react'
 import Link from 'next/link'
 import { useMutation } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
-import { PauseCircle } from 'lucide-react'
+import { PauseCircle, ScrollText, ChevronDown, ChevronUp } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { issueRunHref } from '@/lib/issueRouteResolver'
 import { cancelRun } from '@/lib/pipelineControlClient'
+import DecisionLog from '@/components/decision-log/DecisionLog'
 import { useWorkspaceState } from './WorkspaceStateProvider'
 import HoldDialog from './HoldDialog'
 import { relativeTime } from './HeldIssueRow'
@@ -46,6 +55,7 @@ export default function WorkspaceControls({ issueNumber: n }: WorkspaceControlsP
   const [showHoldDialog, setShowHoldDialog] = useState(false)
   const [holdBusy, setHoldBusy] = useState(false)
   const [holdError, setHoldError] = useState<string | null>(null)
+  const [showDecisionLog, setShowDecisionLog] = useState(false)
 
   async function handleHold({ reason, stopRun }: { reason: string; stopRun: boolean }) {
     setHoldBusy(true)
@@ -151,6 +161,28 @@ export default function WorkspaceControls({ issueNumber: n }: WorkspaceControlsP
               Run {r.runId} · {new Date(r.startedAt).toLocaleString()}
             </Link>
           ))
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-[color:var(--color-ink)]/[.08] pt-4">
+        <button
+          type="button"
+          onClick={() => setShowDecisionLog(prev => !prev)}
+          aria-expanded={showDecisionLog}
+          className="flex min-h-[44px] items-center justify-between gap-2 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.08em] text-[color:var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
+        >
+          <span className="flex items-center gap-1.5">
+            <ScrollText size={13} aria-hidden="true" />
+            Decision log
+          </span>
+          {showDecisionLog ? (
+            <ChevronUp size={14} aria-hidden="true" />
+          ) : (
+            <ChevronDown size={14} aria-hidden="true" />
+          )}
+        </button>
+        {showDecisionLog && (
+          <DecisionLog runId={runId ?? undefined} issueNumber={n} />
         )}
       </div>
     </div>
