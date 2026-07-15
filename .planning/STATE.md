@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 40-05-issues-home-screen-PLAN.md
-last_updated: "2026-07-15T00:31:18.918Z"
+stopped_at: Completed 40-06-routing-inversion-PLAN.md
+last_updated: "2026-07-15T00:46:18.600Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 40 (issue-entity-issues-home) — EXECUTING
-Plan: 6 of 9
+Plan: 7 of 9
 
 ## Performance Metrics
 
@@ -273,6 +273,7 @@ Plan: 6 of 9
 | Phase 40-issue-entity-issues-home P03 | 20min | 3 tasks | 5 files |
 | Phase 40 P04 | 15min | 3 tasks | 3 files |
 | Phase 40 P05 | 28min | 3 tasks | 12 files |
+| Phase 40 P06 | 11min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -702,6 +703,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Cobalt is link-style-only per UI-SPEC; CreatePanel's primary CTA uses the existing ink-filled-button convention, not a cobalt background
 - [Phase 40]: page.tsx normalizes skip-produced undefined signOffs into {} once a run-lookup resolves to no-run, so ISS-06's undefined-guard doesn't show 'State unknown' forever for a fresh draft issue
 - [Phase 40]: Moved convex/scripts/check-deploy-parity.mjs to repo-root scripts/ — it broke convex codegen's bundler by using Node builtins without a use-node directive, blocking local api.d.ts regeneration for the new issues module
+- [Phase 40]: Split ReviewDeskRunPage's default export into named+default ReviewDeskRunView so /issues/[n]/review can default-import it cleanly
+- [Phase 40]: Extended parseIssueNumber validation to the /issues/[n]/runs/[runId] wrapper too, for consistency with the review/voice wrappers
+- [Phase 40]: Fixed VoicePassScreen.test.tsx to import VoicePassScreen from the new co-located VoicePassRunView.tsx instead of the now-redirect-only page.tsx (Rule 1 regression fix)
 
 ### Pending Todos
 
@@ -791,6 +795,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T00:31:18.905Z
-Stopped at: Completed 40-05-issues-home-screen-PLAN.md
+Last session: 2026-07-15T00:46:18.588Z
+Stopped at: Completed 40-06-routing-inversion-PLAN.md
 Resume file: None
