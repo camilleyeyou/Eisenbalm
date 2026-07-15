@@ -39,6 +39,8 @@ must_haves:
 Build the new `api/factcheck.py` router owning the six claim actions and the two-step "Ask agent for better evidence" flow (FCT-05, FCT-06), cloning the already-shipped `findings.py::accept_finding` (apply) + `voice_pass.py::voice_rewrite` (preview) templates. This ESTABLISHES the span-scoped agent-revision contract claim-scoped first — Phase 45 generalizes the SAME endpoint.
 
 Purpose: These are the operator verbs of Stage 3. Status-only actions (Confirm) stay direct Convex; content-touching actions (Edit-claim-with-text, evidence-apply) must flow through the pipeline write boundary so every mutation gets an audit row and the no-direct-Sanity-write tripwire stays green (EDT-05, D-14).
+
+RATIONALE — Keep-as-written is pipeline-side ON PURPOSE (checker Warning 4): even though "Keep as written" mutates no Sanity content, it must write a D-18 decision-log/audit_log entry, and `convex/auditLog.ts::record` is `requirePipelineSecret`-guarded (convex/auditLog.ts:64-76) — so a decision-log write is ONLY reachable from the pipeline layer. Therefore Keep-as-written routes through the Clerk-guarded `POST .../keep` endpoint → `requirePipelineSecret`-guarded `keepAsWritten` + `_emit_audit`, NOT a bare dashboard Convex mutation. Do not "simplify" it to a direct dashboard mutation — that would silently drop the decision-log entry FCT-05/D-18 requires.
 Output: factcheck.py with 6 routes, mounted in main.py; pytest coverage mirroring test_content_patch_endpoints.py / test_findings_endpoints.py.
 </objective>
 
@@ -70,6 +72,7 @@ api/voice_pass.py::voice_rewrite (~line 150) — the PREVIEW template:
 
 api/content.py (Plan 42-03): _reset_touched_claims, _touched_block_indices, _revoke_active_signoffs — importable helpers.
 lib/search_client.py::web_search(query, *, max_results=5) -> numbered Tavily results (each .url).
+convex/auditLog.ts::record — requirePipelineSecret-guarded (so _emit_audit/decision-log writes are pipeline-only).
 Convex (Plan 42-01): claimChecks:byRunIdAndIndex, updateClaim, keepAsWritten, remove (all requirePipelineSecret except byRunIdAndIndex).
 api/main.py mounts routers (~lines 199-208): app.include_router(signoffs.router) is the last one today.
 </interfaces>
@@ -84,11 +87,12 @@ api/main.py mounts routers (~lines 199-208): app.include_router(signoffs.router)
     - packages/pipeline/src/eisenbalm_pipeline/api/findings.py (accept_finding + dismiss_finding — the router scaffold, 409 guards, _emit_audit call, empty-reason rejection to clone)
     - packages/pipeline/src/eisenbalm_pipeline/api/content.py (_reset_touched_claims, _revoke_active_signoffs, _resolve_sanity_id, the get_issue_draft/patch_issue_field usage pattern, _require_clerk_jwt_control import)
     - packages/pipeline/src/eisenbalm_pipeline/api/main.py (router mount block ~lines 199-208)
+    - convex/auditLog.ts (record is requirePipelineSecret-guarded — the reason Keep-as-written is pipeline-side, per this plan's objective RATIONALE)
     - docs/API_CONTRACTS.md §42.4 (the endpoint paths/bodies/guards just written in Plan 42-01)
     - packages/pipeline/tests/test_findings_endpoints.py (the pytest monkeypatch style for these endpoints)
   </read_first>
   <behavior>
-    - POST /issues/{run_id}/claims/{claim_index}/keep with empty/whitespace reason => 400/422 (rejected, mirrors dismiss_finding); with a reason => claimChecks:keepAsWritten(status='checked') + one _emit_audit row (action, before/after, reason).
+    - POST /issues/{run_id}/claims/{claim_index}/keep with empty/whitespace reason => 400/422 (rejected, mirrors dismiss_finding); with a reason => claimChecks:keepAsWritten(status='checked') + one _emit_audit row (action, before/after, reason). No Sanity write, but pipeline-side because the audit/decision-log write requires the pipeline secret.
     - PATCH /issues/{run_id}/claims/{claim_index} with only sourceUrl/retrievedAt (no text) => claimChecks:updateClaim, no Sanity patch, one audit row.
     - PATCH with `text` present => get_issue_draft -> resolve_span(current_blocks, claim_row.text, claim_row.blockIndexHint) (None => 409 span_not_resolved) -> patch_issue_field (stale rev => 409 revision_mismatch) -> _reset_touched_claims (BEFORE) -> claimChecks:updateClaim(text=...) + terminal status set LAST (Pitfall 3 ordering) -> _revoke_active_signoffs -> _emit_audit.
     - POST .../replace-source {sourceUrl, retrievedAt?} => claimChecks:updateClaim(sourceUrl, retrievedAt=body.retrievedAt or now-ms code-stamped), audit row, no Sanity write.
@@ -97,7 +101,7 @@ api/main.py mounts routers (~lines 199-208): app.include_router(signoffs.router)
   </behavior>
   <action>
 Create api/factcheck.py with `router = APIRouter()` and four routes, cloning findings.py's structure (imports, Depends(_require_clerk_jwt_control), Pydantic request bodies, 409/400 error shapes, _emit_audit calls). Resolve the target claim via claimChecks:byRunIdAndIndex(runId, claimIndex) (404 if absent). Use the exact paths from §42.4:
-  - POST `/issues/{run_id}/claims/{claim_index}/keep` body `_KeepBody{reason: str}` — reject empty reason exactly like dismiss_finding; call claimChecks:keepAsWritten with pipelineSecret; _emit_audit(action="claim_kept", before=claim_row, after={status:'checked'}, reason=body.reason).
+  - POST `/issues/{run_id}/claims/{claim_index}/keep` body `_KeepBody{reason: str}` — reject empty reason exactly like dismiss_finding; call claimChecks:keepAsWritten with pipelineSecret; _emit_audit(action="claim_kept", before=claim_row, after={status:'checked'}, reason=body.reason). (Pipeline-side because the audit/decision-log write is requirePipelineSecret-guarded — see objective RATIONALE.)
   - PATCH `/issues/{run_id}/claims/{claim_index}` body `_PatchClaimBody{ifRevisionID: str | None, text: str | None, sourceUrl: str | None, retrievedAt: int | None}`. If text is None: just claimChecks:updateClaim(sourceUrl?, retrievedAt?) + audit. If text present: the full content-patch path above, calling `_reset_touched_claims` FIRST then setting the acted claim's terminal status LAST (Pitfall 3 self-reset ordering), and clearing the acted claim's changedSinceCheck via keepAsWritten/updateClaim so the explicit action wins.
   - POST `/issues/{run_id}/claims/{claim_index}/replace-source` body `_ReplaceSourceBody{sourceUrl: str, retrievedAt: int | None}` — claimChecks:updateClaim(sourceUrl, retrievedAt = body.retrievedAt or int(time.time()*1000)); audit.
   - DELETE `/issues/{run_id}/claims/{claim_index}` body `_RemoveBody{reason: str | None}` — claimChecks:remove; audit(action="claim_removed", reason).
@@ -116,7 +120,7 @@ Write packages/pipeline/tests/test_factcheck_endpoints.py covering the <behavior
     - factcheck.py contains `_reset_touched_claims`, `_emit_audit`, and `claimChecks:keepAsWritten` / `claimChecks:remove` / `claimChecks:updateClaim` references
     - `cd packages/pipeline && uv run pytest tests/test_factcheck_endpoints.py -x -q` exits 0
   </acceptance_criteria>
-  <done>The four non-evidence claim actions exist behind the Clerk-guarded pipeline boundary, each auditable; Keep rejects empty reasons; content-touching PATCH resolves against current Sanity blocks and orders reset-before-terminal-status; the router is mounted.</done>
+  <done>The four non-evidence claim actions exist behind the Clerk-guarded pipeline boundary, each auditable; Keep rejects empty reasons and stays pipeline-side so its decision-log entry is writable; content-touching PATCH resolves against current Sanity blocks and orders reset-before-terminal-status; the router is mounted.</done>
 </task>
 
 <task type="auto" tdd="true">
@@ -160,7 +164,7 @@ Extend test_factcheck_endpoints.py: monkeypatch web_search + acomplete to return
 
 <verification>
 - `cd packages/pipeline && uv run pytest tests/test_factcheck_endpoints.py -x -q` green.
-- Router mounted; all routes Clerk-guarded; content-touching routes audit + reset; preview is side-effect-free.
+- Router mounted; all routes Clerk-guarded; content-touching routes audit + reset; preview is side-effect-free; Keep-as-written stays pipeline-side for its decision-log write.
 - The console still has no direct Sanity write path — these are all pipeline-side (verified holistically in Plan 42-08's no-sanity-write tripwire).
 </verification>
 

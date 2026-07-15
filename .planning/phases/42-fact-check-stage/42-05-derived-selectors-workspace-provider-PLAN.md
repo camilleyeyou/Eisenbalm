@@ -34,6 +34,8 @@ must_haves:
 Add the pure fact-check summary selector and importance-aware severity to lib/derivedState.ts (FCT-02, D-04/D-05/D-06/D-07/D-08), and widen the WorkspaceStateProvider claimRows mapping so My Tasks, the stage badges, and the new Stage 3 screen all derive from the same rows. This is the RESEARCH-flagged required correction: deriveTasks currently computes claim severity from sourceUrl presence alone.
 
 Purpose: All four surfaces (counters, My Tasks, Approval readiness, header status) are derived selectors over the same Convex data, so a single mutation propagates to all four via reactivity (D-16) — but ONLY if they share the same importance-aware logic and the provider actually carries importance. Otherwise the stage badge and the Stage 3 screen visibly disagree.
+
+SCOPE NOTE (checker Warning 2): this plan adds `importance`/`changedSinceCheck` (severity/summary inputs) to the provider's `claimRows` — NOT `claimType`/`context`. That is deliberate: My Tasks + stage badges never need `claimType` (filter facet) or `context` (supporting passage). The Stage 3 `FactCheckScreen` and Approval `SourceIndex`, which DO need those, subscribe to the FULL `claim_checks` rows via `useQuery(api.claimChecks.listByRunId,{runId})` (mandated in Plan 42-06 Task 3), where `claimType`/`context` are already present. So the provider mapping stays lean and the full-row consumers get everything.
 Output: isMustFix + deriveFactCheckSummary + corrected deriveTasks; widened claimRows type + mapping.
 </objective>
 
@@ -105,7 +107,7 @@ Extend apps/dispatch-control/__tests__/derivedState.test.ts with a `deriveFactCh
 </task>
 
 <task type="auto">
-  <name>Task 2: Extend WorkspaceStateProvider claimRows mapping to carry the new fields</name>
+  <name>Task 2: Extend WorkspaceStateProvider claimRows mapping to carry the new severity/summary fields</name>
   <files>apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx</files>
   <read_first>
     - apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx (claimRowsRaw useQuery line 121; claimRows mapping lines 133-139; the DerivationInputs assembly lines 141-155)
@@ -120,7 +122,8 @@ In WorkspaceStateProvider.tsx, extend the `claimRows = claimRowsRaw?.map(row => 
   `changedSinceCheck: row.changedSinceCheck,`
   `conflict: row.conflict,`
   `checkedAt: row.checkedAt,`
-Keep the existing `_id, status, sourceUrl, sectionName, claimText: row.text` fields. Do NOT add a new useQuery — `claimChecks:listByRunId` already returns full rows (it just wasn't projecting these). No other change to the provider.
+Keep the existing `_id, status, sourceUrl, sectionName, claimText: row.text` fields. Do NOT add a new useQuery — `claimChecks:listByRunId` already returns full rows (it just wasn't projecting these).
+Deliberately do NOT add `claimType`/`context` here (checker Warning 2): My Tasks/stage badges (the provider's consumers) never use them; the Stage 3 screen + Approval SourceIndex read the full untouched rows via their own `useQuery(api.claimChecks.listByRunId,{runId})` where `claimType`/`context` are present. Keep the provider mapping lean. No other change to the provider.
   </action>
   <verify>
     <automated>pnpm --filter dispatch-control build</automated>
@@ -131,7 +134,7 @@ Keep the existing `_id, status, sourceUrl, sectionName, claimText: row.text` fie
     - `grep -n "claimIndex: row.claimIndex" apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx` matches
     - `pnpm --filter dispatch-control build` exits 0 (strict type-check — the mapping satisfies the widened type; vitest alone would not catch this)
   </acceptance_criteria>
-  <done>My Tasks + stage badges now read importance/changedSinceCheck from the same rows the Stage 3 screen will read; the strict build confirms the widened type is satisfied everywhere.</done>
+  <done>My Tasks + stage badges now read importance/changedSinceCheck from the same rows the Stage 3 screen will read; the strict build confirms the widened type is satisfied everywhere; claimType/context are intentionally left to the full-row consumers.</done>
 </task>
 
 </tasks>
@@ -142,7 +145,7 @@ Keep the existing `_id, status, sourceUrl, sectionName, claimText: row.text` fie
 </verification>
 
 <success_criteria>
-FCT-02 selector layer complete: the affirmative summary is a pure derived function; severity is importance-aware everywhere; the provider carries the fields so all four surfaces agree; blank never stands for verified (every counter defined at zero).
+FCT-02 selector layer complete: the affirmative summary is a pure derived function; severity is importance-aware everywhere; the provider carries the severity/summary fields so all four surfaces agree; blank never stands for verified (every counter defined at zero).
 </success_criteria>
 
 <output>

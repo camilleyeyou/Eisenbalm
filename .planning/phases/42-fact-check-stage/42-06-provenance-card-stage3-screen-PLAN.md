@@ -76,7 +76,8 @@ lib/derivedState.ts (Plan 42-05): deriveFactCheckSummary(rows), isMustFix(row).
 lib/galley/sectionIdMap.ts: galleyIdToQaSection(galleyId) -> qa/module key ('problemStatement'->'problem', etc.) — reuse for the `agent` label (title-case + " Writer"); sectionName absent => agent "—".
 components/galley/ClaimMark.tsx — the current claim popover ("Open source", Mark checked/Skip via claimChecks:setStatus). The card supersedes this content in Plan 42-07.
 lib/findingsClient.ts / lib/voicePassClient.ts — the client shape to mirror (getToken() from useAuth, POST to NEXT_PUBLIC_PIPELINE_URL + /issues/{runId}/... with Bearer token).
-Convex: useMutation(api.claimChecks.setStatus) for Confirm (operator-guarded, direct).
+getDraft(runId, token) — the draft-read helper ReviewDeskRunView uses to obtain a current draft + its revision id (the ifRevisionID source for content-touching applies); FactCheckScreen calls it the same way.
+Convex: useMutation(api.claimChecks.setStatus) for Confirm (operator-guarded, direct); useQuery(api.claimChecks.listByRunId,{runId}) returns FULL rows incl. claimType + context.
 claimType vocabulary on rows today: "number" | "date" | "proper_noun" (D-13: derive person/org split client-side; do NOT expand stored vocabulary).
 Per-claim chip vocabulary (D-08, authoritative — supersedes Annotations "State model", 42-RESEARCH Pitfall 7): ✓ Checked / ✕ Must fix / Unchecked / Review recommended / Changed. Every state = label + icon, never color alone (D-23).
 </interfaces>
@@ -104,9 +105,9 @@ Per-claim chip vocabulary (D-08, authoritative — supersedes Annotations "State
   <action>
 Create components/provenance/ClaimProvenanceCard.tsx as a presentational client component:
   - Props: `{ claim: ClaimProvenanceView; actions?: ClaimCardActions; busy?: boolean }` where ClaimProvenanceView = `{ text; importance?; status; sourceUrl?; supportingPassage?; retrievedAt?; sectionName?; confidence?: number }` and ClaimCardActions holds optional callbacks: onConfirm, onEdit, onReplaceSource, onAskAgent, onRemove, onKeep, onOpenSource, onInspect.
-  - Derive sourcePublisher from sourceUrl host and agent from sectionName (galleyIdToQaSection + a 5-entry label map: problem->"Problem Writer", origin_story->"Origin Story Writer", founder_bio->"Founder Bio Writer", case_study->"Case Study Writer", bonus->"Bonus Writer"; else "—"). Export these two as pure helpers (`deriveSourcePublisher`, `deriveClaimAgent`) so they are unit-testable.
+  - Derive sourcePublisher from sourceUrl host and agent from sectionName (galleyIdToQaSection + a 5-entry label map: problem->"Problem Writer", origin_story->"Origin Story Writer", founder_bio->"Founder Bio Writer", case_study->"Case Study Writer", bonus->"Bonus Writer"; else "—"). Export these two as pure helpers (`deriveSourcePublisher`, `deriveClaimAgent`) so they are unit-testable AND reusable by Plan 42-07's ClaimMark/SourceIndex.
   - Render the 9 fields with the D-08 status chip (label + icon) and D-23 (never color alone). Render the action controls as discrete buttons wired to the optional callbacks; structure each so a Phase 49 wrapper can replace it with a locked-with-explanation render (e.g. a small `<CardAction>` slot per action). Do NOT hide any control.
-Create lib/factCheckClient.ts mirroring findingsClient.ts/voicePassClient.ts (getToken from useAuth-provided token passed in, or a token param like the other clients use): export async `keepClaim(runId, claimIndex, reason, token)`, `patchClaim(runId, claimIndex, body, token)`, `replaceSource(runId, claimIndex, {sourceUrl, retrievedAt?}, token)`, `removeClaim(runId, claimIndex, reason, token)`, `evidencePreview(runId, claimIndex, token)`, `evidenceApply(runId, claimIndex, body, token)` — each fetches `${NEXT_PUBLIC_PIPELINE_URL}/issues/{runId}/claims/{claimIndex}/...` with the Bearer token and returns the parsed JSON, matching the §42.4 paths/bodies. This client has NO Sanity import (EDT-05).
+Create lib/factCheckClient.ts mirroring findingsClient.ts/voicePassClient.ts (token passed in, as the other clients accept): export async `keepClaim(runId, claimIndex, reason, token)`, `patchClaim(runId, claimIndex, body, token)`, `replaceSource(runId, claimIndex, {sourceUrl, retrievedAt?}, token)`, `removeClaim(runId, claimIndex, reason, token)`, `evidencePreview(runId, claimIndex, token)`, `evidenceApply(runId, claimIndex, body, token)` — each fetches `${NEXT_PUBLIC_PIPELINE_URL}/issues/{runId}/claims/{claimIndex}/...` with the Bearer token and returns the parsed JSON, matching the §42.4 paths/bodies. This client has NO Sanity import (EDT-05).
 Write __tests__/ClaimProvenanceCard.test.tsx (jsdom/testing-library) asserting the <behavior> list, especially the never-blank guarantees and the deriveSourcePublisher/deriveClaimAgent pure functions.
   </action>
   <verify>
@@ -114,12 +115,12 @@ Write __tests__/ClaimProvenanceCard.test.tsx (jsdom/testing-library) asserting t
   </verify>
   <acceptance_criteria>
     - `grep -n "export function ClaimProvenanceCard\|export const ClaimProvenanceCard\|export default function ClaimProvenanceCard" apps/dispatch-control/components/provenance/ClaimProvenanceCard.tsx` matches
-    - ClaimProvenanceCard.tsx contains `deriveSourcePublisher` and `deriveClaimAgent`
-    - `grep -nE "export (async function|function) (keepClaim|patchClaim|replaceSource|removeClaim|evidencePreview|evidenceApply)" apps/dispatch-control/lib/factCheckClient.ts` shows all six
+    - ClaimProvenanceCard.tsx contains `deriveSourcePublisher` and `deriveClaimAgent` (exported for 42-07 reuse)
+    - `grep -nE "export (async function|function|const) (keepClaim|patchClaim|replaceSource|removeClaim|evidencePreview|evidenceApply)" apps/dispatch-control/lib/factCheckClient.ts` shows all six
     - `grep -c "@sanity\|sanityClient\|next-sanity" apps/dispatch-control/lib/factCheckClient.ts` returns 0 (no direct Sanity path)
     - `pnpm --filter dispatch-control test:unit -- __tests__/ClaimProvenanceCard.test.tsx` exits 0
   </acceptance_criteria>
-  <done>One shared provenance card renders all 9 fields honestly with all six actions as isolated controls; the pipeline-endpoint client exists with no Sanity path.</done>
+  <done>One shared provenance card renders all 9 fields honestly with all six actions as isolated controls; the pipeline-endpoint client exists with no Sanity path; the field-sourcing helpers are exported for Plan 42-07's Draft/Approval reuse.</done>
 </task>
 
 <task type="auto" tdd="true">
@@ -142,7 +143,7 @@ Write __tests__/ClaimProvenanceCard.test.tsx (jsdom/testing-library) asserting t
     - A 'removed'-status row is excluded from all filter result sets (tombstoned rows are not editable claims).
   </behavior>
   <action>
-Create lib/factCheckFilters.ts exporting `FACT_CHECK_FILTERS` (an ordered array of `{ id, label, predicate }` for the 7 chips) and `applyFilters(rows, activeIds)`. Import `isMustFix` from derivedState.ts for the must-fix predicate (single source of truth). Implement the org-suffix regex and the weak-source heuristic as small documented pure helpers (`isOrgClaim`, `isWeakSource`) with a code comment citing D-13 (heuristic, refinement deferred; do not expand stored claimType vocabulary). Filter out `status === 'removed'` rows at the top of applyFilters. Document the multi-select semantics (OR union recommended) in a header comment.
+Create lib/factCheckFilters.ts exporting `FACT_CHECK_FILTERS` (an ordered array of `{ id, label, predicate }` for the 7 chips) and `applyFilters(rows, activeIds)`. The row type it operates on carries `claimType` and `context` (present on the FULL claim_checks rows FactCheckScreen subscribes to). Import `isMustFix` from derivedState.ts for the must-fix predicate (single source of truth). Implement the org-suffix regex and the weak-source heuristic as small documented pure helpers (`isOrgClaim`, `isWeakSource`) with a code comment citing D-13 (heuristic, refinement deferred; do not expand stored claimType vocabulary). Filter out `status === 'removed'` rows at the top of applyFilters. Document the multi-select semantics (OR union recommended) in a header comment.
 Write __tests__/factCheckFilters.test.ts covering every predicate in the <behavior> list plus a mixed fixture exercising applyFilters with 2+ active chips.
   </action>
   <verify>
@@ -164,17 +165,25 @@ Write __tests__/factCheckFilters.test.ts covering every predicate in the <behavi
     - apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/page.tsx (the current mount: FactCheckPanelPublisher + FactCheckPlaceholder(runId))
     - apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckPlaceholder.tsx (the never-blank coverage ladder + status vocabulary to carry forward, then delete)
     - apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckPanelContent.tsx (setPanelContent publish pattern to reuse for pushing the card into the context panel)
-    - apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx (useWorkspaceState: claimRows, setPanelContent, runId)
+    - apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx (useWorkspaceState: setPanelContent, runId — NOTE: its claimRows are the LEAN projection without claimType/context; FactCheckScreen must NOT rely on them for filters/passage)
+    - the ReviewDeskRunView reloadDraft/getDraft pattern (getDraft(runId, token) → current draft + revisionId — the ifRevisionID source)
     - apps/dispatch-control/lib/derivedState.ts (deriveFactCheckSummary), lib/factCheckFilters.ts (Task 2), components/provenance/ClaimProvenanceCard.tsx (Task 1), lib/factCheckClient.ts (Task 1)
   </read_first>
   <action>
 Create FactCheckScreen.tsx ('use client'), taking `{ runId }`. It:
-1. Reads claim rows from useWorkspaceState().claimRows (already subscribed — zero new Convex query) OR useQuery(api.claimChecks.listByRunId, {runId}) if it needs full untouched rows; prefer the provider to stay consistent with My Tasks.
-2. Renders the affirmative summary from `deriveFactCheckSummary(rows)` — every counter (checked X of Y, must fix, conflicting sources, checks not run, changed since check, last verified) rendered even at zero, carrying forward FactCheckPlaceholder's never-blank ladder (D-08). Loading (rows undefined) and empty (rows length 0) states are explicit, never a fake verified state.
+1. Subscribes to the FULL claim rows via `useQuery(api.claimChecks.listByRunId, { runId })` (checker Warning 2 — MANDATED; do NOT read the provider's lean claimRows, which lack `claimType`/`context` needed by the filters and the card's supporting passage). Handle undefined (loading) and empty ([]) explicitly.
+2. Renders the affirmative summary from `deriveFactCheckSummary(rows)` — every counter (checked X of Y, must fix, conflicting sources, checks not run, changed since check, last verified) rendered even at zero, carrying forward FactCheckPlaceholder's never-blank ladder (D-08). Loading and empty states are explicit, never a fake verified state.
 3. Renders the filter chips from FACT_CHECK_FILTERS with multi-select state and pipes rows through applyFilters.
-4. Renders the filtered claim table; each row shows the D-08 status chip (label+icon) + claim text + importance + source presence. Selecting a row sets local selectedClaimIndex AND publishes `<ClaimProvenanceCard claim={...} actions={...}/>` into the context panel via setPanelContent (mirror FactCheckPanelPublisher's useEffect publish + cleanup).
-5. Wires the six actions to the card's callbacks: Confirm => useMutation(api.claimChecks.setStatus)({runId, claimIndex, status:'checked'}) (direct Convex); Keep as written => prompt required reason then factCheckClient.keepClaim; Edit claim => factCheckClient.patchClaim; Replace source => factCheckClient.replaceSource; Remove claim => factCheckClient.removeClaim; Ask agent for better evidence => factCheckClient.evidencePreview -> render a comparison card (as-written claim + source vs proposed rewrittenClaim + new source/publisher) -> on Confirm replacement call factCheckClient.evidenceApply with the ifRevisionID (obtained from the current draft revision the workspace already tracks). Use getToken() (useAuth) for all pipeline calls. Show a required-reason input for Keep-as-written and reject empty (client-side + the endpoint also rejects).
-6. Because all four surfaces read derived selectors (D-16), NO explicit cross-surface update wiring is needed — Convex reactivity propagates each mutation to counters/My Tasks/Approval/header.
+4. Renders the filtered claim table; each row shows the D-08 status chip (label+icon) + claim text + importance + source presence. Selecting a row sets local selectedClaimIndex AND publishes `<ClaimProvenanceCard claim={{text,importance,status,sourceUrl,supportingPassage:row.context,retrievedAt,sectionName,confidence}} actions={...}/>` into the context panel via `useWorkspaceState().setPanelContent` (mirror FactCheckPanelPublisher's useEffect publish + cleanup).
+5. Wires the six actions to the card's callbacks; obtain the Clerk token via `useAuth().getToken()`:
+   - Confirm => useMutation(api.claimChecks.setStatus)({runId, claimIndex, status:'checked'}) (direct Convex).
+   - Keep as written => require a reason input (reject empty client-side) then factCheckClient.keepClaim(runId, claimIndex, reason, token).
+   - Edit claim => factCheckClient.patchClaim (obtain a fresh ifRevisionID first — see below).
+   - Replace source => factCheckClient.replaceSource.
+   - Remove claim => factCheckClient.removeClaim.
+   - Ask agent for better evidence => factCheckClient.evidencePreview -> render a comparison card (as-written claim + source vs proposed rewrittenClaim + new source/publisher) -> on Confirm replacement call factCheckClient.evidenceApply.
+6. ifRevisionID source (checker Warning 3): `useWorkspaceState()` does NOT expose draft/revisionId. For any content-touching apply (Edit claim with text, evidence/apply), FactCheckScreen obtains a CURRENT `ifRevisionID` by calling `getDraft(runId, token)` itself (mirroring ReviewDeskRunView's reloadDraft) immediately before the apply, and passes the returned revision id as `ifRevisionID`. Do NOT read a non-existent `revisionId` off the workspace value.
+7. Because all four surfaces read derived selectors (D-16), NO explicit cross-surface update wiring is needed — Convex reactivity propagates each mutation to counters/My Tasks/Approval/header.
 
 In page.tsx: replace `import FactCheckPlaceholder from './FactCheckPlaceholder'` + `<FactCheckPlaceholder runId={run.runId}/>` with `import FactCheckScreen from './FactCheckScreen'` + `<FactCheckScreen runId={run.runId}/>`. Keep `<FactCheckPanelPublisher/>` as the default panel content when no claim is selected (the screen overrides it on selection, restores it on deselect/cleanup).
 Delete FactCheckPlaceholder.tsx.
@@ -187,11 +196,11 @@ Note: FactCheckPlaceholder.test.tsx currently tests the deleted component — up
     - `test -f apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckScreen.tsx` succeeds
     - `test ! -f apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckPlaceholder.tsx` succeeds (deleted)
     - `grep -n "FactCheckScreen" apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/page.tsx` matches; `grep -c "FactCheckPlaceholder" apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/page.tsx` returns 0
-    - FactCheckScreen.tsx references `deriveFactCheckSummary`, `applyFilters`, `ClaimProvenanceCard`, `setPanelContent`, and `evidenceApply`
+    - FactCheckScreen.tsx references `listByRunId` (full-row useQuery — not the provider's lean claimRows), `deriveFactCheckSummary`, `applyFilters`, `ClaimProvenanceCard`, `setPanelContent`, `getDraft`, and `evidenceApply`
     - `pnpm --filter dispatch-control test:unit` exits 0 (no lingering FactCheckPlaceholder test failure)
     - `pnpm --filter dispatch-control build` exits 0 (strict type-check)
   </acceptance_criteria>
-  <done>Stage 3 is live: affirmative summary, 7 filters, the shared card on selection, and all six actions wired to the correct write boundary; the placeholder is gone; the strict build is clean.</done>
+  <done>Stage 3 is live: affirmative summary, 7 filters over full rows, the shared card on selection (fed context as supporting passage), and all six actions wired to the correct write boundary with a freshly-fetched ifRevisionID; the placeholder is gone; the strict build is clean.</done>
 </task>
 
 </tasks>
@@ -203,7 +212,7 @@ Note: FactCheckPlaceholder.test.tsx currently tests the deleted component — up
 </verification>
 
 <success_criteria>
-FCT-02/03/04/05/06 land as a usable Stage 3 surface: the affirmative summary, the 7-filter table, the ONE shared provenance card on selection, the six actions at their correct boundaries, and the two-step evidence comparison → atomic apply. The load-bearing demo leg (My Tasks → claim detail → Ask agent for better evidence → Confirm) is exercisable.
+FCT-02/03/04/05/06 land as a usable Stage 3 surface: the affirmative summary, the 7-filter table over full rows, the ONE shared provenance card on selection, the six actions at their correct boundaries with a real ifRevisionID, and the two-step evidence comparison → atomic apply. The load-bearing demo leg (My Tasks → claim detail → Ask agent for better evidence → Confirm) is exercisable.
 </success_criteria>
 
 <output>
