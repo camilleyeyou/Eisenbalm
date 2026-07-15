@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 41 context gathered
-last_updated: "2026-07-15T04:10:40.022Z"
+status: Ready to execute
+stopped_at: Completed 41-01-selectors-route-helpers-PLAN.md
+last_updated: "2026-07-15T05:35:06.057Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 40 — issue-entity-issues-home
+**Current focus:** Phase 41 — issue-workspace-frame
 
 ## Current Position
 
-Phase: 40
-Plan: Not started
+Phase: 41 (issue-workspace-frame) — EXECUTING
+Plan: 2 of 10
 
 ## Performance Metrics
 
@@ -277,6 +277,7 @@ Plan: Not started
 | Phase 40 P07 | 12min | 2 tasks | 2 files |
 | Phase 40 P08 | 11min | 2 tasks | 4 files |
 | Phase 40 P09 | 35min | 2 tasks | 2 files |
+| Phase 41 P01 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -714,6 +715,8 @@ Recent decisions affecting current work:
 - [Phase 40]: AwaitingYouTrigger renamed to MyTasksTrigger, dropping the filled-vermilion-button treatment for the label+icon convention shared by all four header readouts
 - [Phase 40]: [Phase 40-09]: Fixed backfill_issues.py's SANITY_PROJECT_ID env var name, int/float issueNumber coercion (Convex HTTP query API round-trips whole numbers as Python float), and orphan-skip handling for Sanity-published issues with no pipelineRuns row — all surfaced by actually running the backfill against the live dev:modest-magpie-797 deployment
 - [Phase 40]: [Phase 40-09]: Auto-approved the Task 3 human-verify checkpoint per auto-mode instructions — all automated gates passed (Convex deploy, full vitest+pytest suites, strict next build, live backfill); the two manual-only items (ISS-02 live 307 redirect, ISS-05 greyscale legibility) are structurally proven via passing unit tests and were confirmed to genuinely require a real browser session (Clerk dev-browser cookie), not just automation laziness
+- [Phase 41]: deriveSectionStates takes draftSectionIds as an explicit param (not internally derived) so it stays testable in isolation while draftSectionIdsFromDraft supplies canvas-parity fixtures
+- [Phase 41]: changed-since-review is kept in the SectionState union per plan spec but asserted, via an invariant test, to never be produced by deriveSectionStates in Phase 41 (no data source yet)
 
 ### Pending Todos
 
@@ -803,6 +806,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T04:10:40.009Z
-Stopped at: Phase 41 context gathered
-Resume file: .planning/phases/41-issue-workspace-frame/41-CONTEXT.md
+Last session: 2026-07-15T05:35:06.044Z
+Stopped at: Completed 41-01-selectors-route-helpers-PLAN.md
+Resume file: None

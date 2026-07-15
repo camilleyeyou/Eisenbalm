@@ -350,13 +350,13 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **ISS-06**: When issue status cannot load, the card reads "State unknown — refresh" rather than a silently stale "ready".
 
 ### Issue Workspace Frame (WSP)
-- [ ] **WSP-01**: One Issue Workspace replaces the Review Desk, Signal Desk, and Voice Pass nav items, with stage tabs 1–5 carrying live status marks.
-- [ ] **WSP-02**: A persistent issue outline lists every section with its state (clean / review / must fix / changed since review / not generated) and jumps to it.
+- [x] **WSP-01**: One Issue Workspace replaces the Review Desk, Signal Desk, and Voice Pass nav items, with stage tabs 1–5 carrying live status marks.
+- [x] **WSP-02**: A persistent issue outline lists every section with its state (clean / review / must fix / changed since review / not generated) and jumps to it.
 - [ ] **WSP-03**: A collapsible context panel renders stage-appropriate context (open items, claim detail, findings, decision log) and can be hidden.
 - [ ] **WSP-04**: Stage 2 (Draft) renders the galley in publication typography — checked claims marigold-underlined with source on hover *and* keyboard focus; unchecked claims rust-tinted and clickable through to Fact Check.
 - [ ] **WSP-05**: Stage 5 (Approval) leads with blockers (Must fix / Review recommended / estimated review time, with jump links), then the readiness board, then the agent editor's recommendation labeled as agent judgment — "editor" unqualified is reserved for the human.
 - [ ] **WSP-06**: Publish is disabled until Must fix = 0 ∧ Fact Check complete ∧ Voice approved current, with the unlock condition written next to the control; publishing shows an exact preview (destination, title, time, consequences) and one confirmation click — no typed confirmation.
-- [ ] **WSP-07**: "Not generated" is a visible first-class state in canvas and outline (e.g. the Editor's note), never a blank.
+- [x] **WSP-07**: "Not generated" is a visible first-class state in canvas and outline (e.g. the Editor's note), never a blank.
 
 ### Fact Check Stage (FCT)
 - [ ] **FCT-01**: The Researcher emits an `importance` tier (Load-bearing / Supporting / Incidental) on every claim.
