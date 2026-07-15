@@ -179,25 +179,14 @@ export function VoicePassScreen({ runId }: { runId: string }) {
 
   return (
     <div className="flex min-h-[70vh] flex-col gap-4">
-      <div className="flex flex-col gap-1 border-b border-[color:var(--color-faint)] pb-3">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--color-ink)]">
-            Voice Pass — Run {runId}
-          </h1>
-          <span
-            aria-label="Tell count"
-            className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink)]"
-          >
-            {tellCount} tell{tellCount === 1 ? '' : 's'}
-          </span>
-        </div>
-        <p className="text-xs text-[color:var(--color-ink-soft)]">
-          De-slop it: machine-tells and voice violations lit inline over the
-          draft prose.
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2">
+      {/* Phase 41 (D-07, Plan 41-07 Task 3): the standalone "Voice Pass —
+          Run {runId}" header + advisory paragraph were removed here — the
+          Issue Workspace frame's Voice tab + status mark is now the single
+          chrome for this stage (mirrors the Stage-2 strip). The tellCount
+          badge is an in-canvas content signal, not page chrome, so it is
+          preserved below, relocated into the retained controls/toolbar
+          row. No capability lost. */}
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           disabled={checking}
@@ -206,6 +195,12 @@ export function VoicePassScreen({ runId }: { runId: string }) {
         >
           {checking ? 'Running deep check…' : 'Run deep check'}
         </button>
+        <span
+          aria-label="Tell count"
+          className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink)]"
+        >
+          {tellCount} tell{tellCount === 1 ? '' : 's'}
+        </span>
         {checkMessage && (
           <p role="status" className="text-[12px] text-[color:var(--color-ink)]">
             {checkMessage}
