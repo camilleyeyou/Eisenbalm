@@ -458,7 +458,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
-| 43. My Tasks & Decision Log | 1/9 | In Progress|  |
+| 43. My Tasks & Decision Log | 2/9 | In Progress|  |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
 | 45. Agent Revision | 0/TBD | Not started | - |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
@@ -946,7 +946,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   6. Every reason-requiring action across the console (remove lead, override a recommendation, keep as written, hold, activate with regression, Do not use) writes to one Decision log component recording actor, action, time, reason, before/after, instruction version, issue, and run.
 **Plans**: 9 plans (6 waves)
 - [x] 43-01-contract-audit-decision-shape-PLAN.md — §43 contract: audit_log decision fields + shared decision-write helper + projection query + derivedState corrections (Wave 1)
-- [ ] 43-02-audit-decision-substrate-convex-PLAN.md — audit_log additive fields + writeDecision + listDecisions + users read query + Convex sync (Wave 2)
+- [x] 43-02-audit-decision-substrate-convex-PLAN.md — audit_log additive fields + writeDecision + listDecisions + users read query + Convex sync (Wave 2)
 - [ ] 43-03-derivetasks-age-deeplink-fix-PLAN.md — deriveTasks openedAt/age + claim→/fact-check & facts-signoff→/approval href fix (Wave 2)
 - [ ] 43-04-superseded-resolved-session-logic-PLAN.md — taskSupersession module: run.section_rerolled cross-ref + resolved session memory (Wave 3)
 - [ ] 43-05-my-tasks-screen-nav-handoff-PLAN.md — /my-tasks screen + empty/superseded states + Editorial nav item + inbox See-all (Wave 4)

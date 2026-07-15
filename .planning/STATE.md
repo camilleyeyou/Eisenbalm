@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 43-01-contract-audit-decision-shape-PLAN.md
-last_updated: "2026-07-15T16:13:00.624Z"
+stopped_at: Completed 43-02-audit-decision-substrate-convex-PLAN.md
+last_updated: "2026-07-15T16:21:40.040Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 43 (my-tasks-decision-log) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 
 ## Performance Metrics
 
@@ -298,6 +298,7 @@ Plan: 2 of 9
 | Phase 42 P07 | 20min | 2 tasks | 7 files |
 | Phase 42 P08 | 25min | 1 tasks | 1 files |
 | Phase 43 P01 | 15min | 1 tasks | 1 files |
+| Phase 43 P02 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -774,6 +775,7 @@ Recent decisions affecting current work:
 - [Phase 43]: Store only write-time-stable audit_log decision fields (reason/issueNumber/runId/instructionVersion); resolve actor display name at read time via users.byClerkUserId + a static system/agent label map
 - [Phase 43]: Corrected two research-confirmed contract errors: claim/facts-signoff task hrefs retarget to issueFactCheckHref/issueApprovalHref; Do-not-use retrofit is net-new reason-capture work, not a promotion of an existing reason
 - [Phase 43]: Superseded task detection is a client-side audit_log cross-reference (run.section_rerolled newer than openedAt) — no pipeline change to rerun_agent; resolved/superseded never added to the closed TaskSeverity union
+- [Phase 43]: 43-02: writeDecision/listDecisions/byClerkUserId implemented verbatim per API_CONTRACTS.md §43.1-§43.4; decisions are a filtered projection over audit_log, no new store
 
 ### Pending Todos
 
@@ -864,6 +866,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T16:13:00.610Z
-Stopped at: Completed 43-01-contract-audit-decision-shape-PLAN.md
+Last session: 2026-07-15T16:21:40.027Z
+Stopped at: Completed 43-02-audit-decision-substrate-convex-PLAN.md
 Resume file: None
