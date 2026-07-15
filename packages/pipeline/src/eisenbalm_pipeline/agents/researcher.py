@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -56,6 +56,12 @@ class ClaimOutput(BaseModel):
 
     text: str = ""
     sourceIndex: int | None = None
+    # FCT-01 (Phase 42, D-01/D-02): the Researcher tags every claim it
+    # surfaces with an importance tier. Defaults to 'Supporting' when the
+    # model omits the field (stub mode's model_construct() and any
+    # under-specified real response both land here safely) — never
+    # silently 'Load-bearing' (D-03).
+    importance: Literal['Load-bearing', 'Supporting', 'Incidental'] = 'Supporting'
 
 
 class ResearchOutputModel(BaseModel):
@@ -93,6 +99,39 @@ def _build_queries(charity: dict) -> list[str]:
         f"{name} program participant case study",
         f"{name} key statistics impact",
     ]
+
+
+def _map_claims(
+    raw_claims: list[Any],
+    tavily_results: list[SearchResult],
+    retrieved_at_by_index: list[int],
+    run_id: str,
+) -> list[dict[str, Any]]:
+    """§35.2 (PRV-01) + FCT-01 (Phase 42, D-02): map each LLM-emitted
+    sourceIndex to the real Tavily URL at that position + the code-stamped
+    retrievedAt, and carry the LLM-emitted importance tier through (default
+    'Supporting' when the model omits it — D-03). Out-of-range/absent
+    sourceIndex -> sourceUrl=None, retrievedAt=None (honestly unsourced —
+    never a fabricated or best-guess URL). Pure, synchronous — extracted so
+    it is independently unit-testable without a network call.
+    """
+    mapped_claims: list[dict[str, Any]] = []
+    for i, claim in enumerate(raw_claims):
+        claim_dict = claim if isinstance(claim, dict) else dict(claim)
+        source_index = claim_dict.get("sourceIndex")
+        source_url: str | None = None
+        retrieved_at: int | None = None
+        if isinstance(source_index, int) and 0 <= source_index < len(tavily_results):
+            source_url = tavily_results[source_index].url
+            retrieved_at = retrieved_at_by_index[source_index]
+        mapped_claims.append({
+            "claimId": f"{run_id[:8]}-{i}",
+            "text": claim_dict.get("text", ""),
+            "sourceUrl": source_url,
+            "retrievedAt": retrieved_at,
+            "importance": claim_dict.get("importance", "Supporting"),
+        })
+    return mapped_claims
 
 
 def _build_corrections_block(corrections: list[dict] | None) -> str:
@@ -221,26 +260,10 @@ async def researcher(state: DispatchState) -> DispatchState:
     else:
         research_dict = {}
 
-    # §35.2 (PRV-01): map each LLM-emitted sourceIndex to the real Tavily URL
-    # at that position + the code-stamped retrievedAt. Out-of-range/absent
-    # sourceIndex -> sourceUrl=None, retrievedAt=None (honestly unsourced —
-    # never a fabricated or best-guess URL). Pure, synchronous, no new node.
+    # §35.2 (PRV-01) + FCT-01 (Phase 42): map each LLM-emitted sourceIndex to
+    # the real Tavily URL/retrievedAt and carry the importance tier through.
     raw_claims = research_dict.get("claims") or []
-    mapped_claims: list[dict[str, Any]] = []
-    for i, claim in enumerate(raw_claims):
-        claim_dict = claim if isinstance(claim, dict) else dict(claim)
-        source_index = claim_dict.get("sourceIndex")
-        source_url: str | None = None
-        retrieved_at: int | None = None
-        if isinstance(source_index, int) and 0 <= source_index < len(tavily_results):
-            source_url = tavily_results[source_index].url
-            retrieved_at = retrieved_at_by_index[source_index]
-        mapped_claims.append({
-            "claimId": f"{run_id[:8]}-{i}",
-            "text": claim_dict.get("text", ""),
-            "sourceUrl": source_url,
-            "retrievedAt": retrieved_at,
-        })
+    mapped_claims = _map_claims(raw_claims, tavily_results, retrieved_at_by_index, run_id)
     research_dict["claims"] = mapped_claims
 
     # AGT-17: record resolved model.
