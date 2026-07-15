@@ -456,7 +456,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
-| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 10/10 | Gaps found (6/7) | -          |
+| 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 11/12 | In Progress|  |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
@@ -906,7 +906,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 41-08-stage2-draft-recomposition-PLAN.md — Stage 2 Draft galley: rail removed, click-through, not-generated (Wave 4)
 - [x] 41-09-stage5-approval-publish-preview-PLAN.md — Stage 5 Approval readiness board + exact publish preview (Wave 4)
 - [x] 41-10-integration-gate-PLAN.md — full suite + strict build + Convex live + demo-path UAT (Wave 5)
-- [ ] 41-11-context-panel-slot-mechanism-PLAN.md — WSP-03 gap: ContextPanel per-stage content slot (setPanelContent) + expose provider data (Gap Wave 1)
+- [x] 41-11-context-panel-slot-mechanism-PLAN.md — WSP-03 gap: ContextPanel per-stage content slot (setPanelContent) + expose provider data (Gap Wave 1)
 - [ ] 41-12-per-stage-context-panel-content-PLAN.md — WSP-03 gap: 5 stage panel publishers (lead/QA/claims/voice/readiness) + regression tests (Gap Wave 2)
 **UI hint**: yes
 
