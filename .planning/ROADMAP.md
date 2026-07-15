@@ -901,7 +901,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 41-03-galley-claim-focus-clickthrough-PLAN.md — claim focus-parity + unchecked click-through prop chain (Wave 1)
 - [x] 41-04-signal-desk-issue-keying-PLAN.md — SignalDeskScreen additive runId? prop (Wave 1)
 - [x] 41-05-workspace-state-outline-panel-PLAN.md — WorkspaceStateProvider + section outline + context panel (Wave 2)
-- [ ] 41-06-workspace-frame-layout-nav-PLAN.md — frame layout, stage tabs, persistent controls, redirect, nav (Wave 3)
+- [x] 41-06-workspace-frame-layout-nav-PLAN.md — frame layout, stage tabs, persistent controls, redirect, nav (Wave 3)
 - [ ] 41-07-stage1-story-stage3-factcheck-PLAN.md — Stage 1 Signal Desk mount + Stage 3 Fact Check placeholder (Wave 4)
 - [ ] 41-08-stage2-draft-recomposition-PLAN.md — Stage 2 Draft galley: rail removed, click-through, not-generated (Wave 4)
 - [ ] 41-09-stage5-approval-publish-preview-PLAN.md — Stage 5 Approval readiness board + exact publish preview (Wave 4)
