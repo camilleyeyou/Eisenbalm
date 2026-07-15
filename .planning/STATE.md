@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 44-08-entry-points-approval-mytasks-org-PLAN.md
-last_updated: "2026-07-15T21:33:55.156Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 44-09-integration-gate-PLAN.md
+last_updated: "2026-07-15T21:44:11.016Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -314,6 +314,7 @@ Plan: 9 of 9
 | Phase 44 P06 | 25min | 3 tasks | 4 files |
 | Phase 44 P07 | 20min | 2 tasks | 11 files |
 | Phase 44 P08 | 20min | 3 tasks | 7 files |
+| Phase 44 P09 | 9min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -820,6 +821,8 @@ Recent decisions affecting current work:
 - [Phase 44]: deriveTasks anchors both factual and voice-axis qa findings to type:'founder' (same writer produced the section, no branching needed)
 - [Phase 44]: MyTasksList.openInspector is optional with a no-op default so its pure render-half tests stay unmodified; only the default-export wrapper supplies the live useInspector() callback
 - [Phase 44]: org Inspect affordance lives only on the winner card, not per-candidate -- resolveInspectorStep's org case always resolves to scout regardless of locator today
+- [Phase 44]: Task 2 human-verify checkpoint auto-approved under active --auto chain; four manual-only cross-surface behaviors persisted as pending UAT (44-UAT.md) rather than blocking or silently marking pass
+- [Phase 44]: Pipeline pytest run via packages/pipeline/.venv/bin/python (uv-managed venv) since bare pytest resolved to a Python without eisenbalm_pipeline installed
 
 ### Pending Todos
 
@@ -910,6 +913,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T21:33:55.143Z
-Stopped at: Completed 44-08-entry-points-approval-mytasks-org-PLAN.md
+Last session: 2026-07-15T21:44:11.002Z
+Stopped at: Completed 44-09-integration-gate-PLAN.md
 Resume file: None
