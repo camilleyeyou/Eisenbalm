@@ -14,6 +14,7 @@
  * (allSignedOff === true) — only enable approve when both conditions are met.
  */
 import { mutation, query } from './_generated/server'
+import type { MutationCtx } from './_generated/server'
 import { v } from 'convex/values'
 import { requireOperator, requirePipelineSecret } from './lib/auth'
 
@@ -42,6 +43,11 @@ export const insertBatch = mutation({
         retrievedAt: v.optional(v.number()),
         sectionName: v.optional(v.string()),
         blockIndexHint: v.optional(v.number()),
+        // Phase 42 (FCT-01) — additive; absent => 'Supporting' fallback applied by
+        // consumers (D-03), never persisted as a fabricated value here. §42.1/§42.3
+        importance: v.optional(v.union(
+          v.literal('Load-bearing'), v.literal('Supporting'), v.literal('Incidental'),
+        )),
       }),
     ),
     // Phase 29 D-1: pipeline-lane secret (injected centrally by
@@ -75,6 +81,7 @@ export const insertBatch = mutation({
           retrievedAt: claim.retrievedAt,
           sectionName: claim.sectionName,
           blockIndexHint: claim.blockIndexHint,
+          importance: claim.importance,
         }),
       ),
     )
@@ -117,9 +124,141 @@ export const setStatus = mutation({
     // Phase 33 D-13 (§33.2): stamp checkedAt only when the claim flips to a
     // completed state. A re-open back to 'pending' must NOT falsely record a
     // check time.
-    const patch: { status: string; checkedAt?: number } = { status }
-    if (status === 'checked' || status === 'skipped') patch.checkedAt = Date.now()
+    const patch: { status: string; checkedAt?: number; changedSinceCheck?: boolean } = { status }
+    if (status === 'checked' || status === 'skipped') {
+      patch.checkedAt = Date.now()
+      // Phase 42 D-20 (§42.3): a fresh check clears the "changed since check"
+      // marker — `undefined` removes the optional field via ctx.db.patch.
+      patch.changedSinceCheck = undefined
+    }
     await ctx.db.patch(row._id, patch)
+  },
+})
+
+// ── byRunIdAndIndex ─────────────────────────────────────────────────────────
+
+/**
+ * Phase 42 §42.3 — single-claim public read by (runId, claimIndex). Used by
+ * the pipeline-lane mutations below and by api/factcheck.py to resolve a
+ * claim's current row before acting on it.
+ */
+export const byRunIdAndIndex = query({
+  args: { runId: v.string(), claimIndex: v.number() },
+  handler: async (ctx, { runId, claimIndex }) => {
+    const rows = await ctx.db
+      .query('claim_checks')
+      .withIndex('by_runId', q => q.eq('runId', runId))
+      .collect()
+    return rows.find(r => r.claimIndex === claimIndex) ?? null
+  },
+})
+
+async function _findRowOrThrow(ctx: MutationCtx, runId: string, claimIndex: number) {
+  const rows = await ctx.db
+    .query('claim_checks')
+    .withIndex('by_runId', q => q.eq('runId', runId))
+    .collect()
+  const row = rows.find(r => r.claimIndex === claimIndex)
+  if (!row) {
+    throw new Error(`Claim not found: runId=${runId}, claimIndex=${claimIndex}`)
+  }
+  return row
+}
+
+// ── updateClaim ─────────────────────────────────────────────────────────────
+
+/**
+ * Phase 42 §42.3 — pipeline-lane claim-record patch (Edit claim / Replace
+ * source). Guarded by requirePipelineSecret — reachable ONLY through
+ * api/factcheck.py, so every write gets a real _emit_audit row (Pattern 3,
+ * mirrors qaCorrections.ts::setResolution).
+ */
+export const updateClaim = mutation({
+  args: {
+    runId: v.string(),
+    claimIndex: v.number(),
+    text: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    retrievedAt: v.optional(v.number()),
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, claimIndex, text, sourceUrl, retrievedAt, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+    const row = await _findRowOrThrow(ctx, runId, claimIndex)
+
+    const patch: { text?: string; sourceUrl?: string; retrievedAt?: number } = {}
+    if (text !== undefined) patch.text = text
+    if (sourceUrl !== undefined) patch.sourceUrl = sourceUrl
+    if (retrievedAt !== undefined) patch.retrievedAt = retrievedAt
+    await ctx.db.patch(row._id, patch)
+  },
+})
+
+// ── markChanged ──────────────────────────────────────────────────────────────
+
+/**
+ * Phase 42 §42.3/§42.5 (D-19/D-20) — returns a claim to unchecked and sets the
+ * "changed since check" marker. Called by api/content.py's
+ * `_reset_touched_claims` hook whenever a content patch touches the claim's
+ * anchored block, even when the replacement text is itself sourced.
+ */
+export const markChanged = mutation({
+  args: {
+    runId: v.string(),
+    claimIndex: v.number(),
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, claimIndex, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+    const row = await _findRowOrThrow(ctx, runId, claimIndex)
+    await ctx.db.patch(row._id, { status: 'pending', changedSinceCheck: true })
+  },
+})
+
+// ── keepAsWritten ────────────────────────────────────────────────────────────
+
+/**
+ * Phase 42 §42.3 (D-14/D-18) — pipeline-lane "Keep as written" terminal
+ * status. Reuses `status: 'checked'` by default (D-08's locked chip
+ * vocabulary has no separate "Kept" state); the mandatory-reason + audit_log
+ * row (written by api/factcheck.py) is the distinguishing record, not a new
+ * stored status literal.
+ */
+export const keepAsWritten = mutation({
+  args: {
+    runId: v.string(),
+    claimIndex: v.number(),
+    status: v.optional(v.string()),
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, claimIndex, status, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+    const row = await _findRowOrThrow(ctx, runId, claimIndex)
+    await ctx.db.patch(row._id, {
+      status: status ?? 'checked',
+      changedSinceCheck: undefined,
+      checkedAt: Date.now(),
+    })
+  },
+})
+
+// ── remove ───────────────────────────────────────────────────────────────────
+
+/**
+ * Phase 42 §42.3 (D-14/D-15, 42-RESEARCH.md Pitfall 4) — soft-delete via a
+ * terminal 'removed' status. Satisfies allSignedOff's `status !== 'pending'`
+ * gate with zero code change to that function or to listByRunId.
+ */
+export const remove = mutation({
+  args: {
+    runId: v.string(),
+    claimIndex: v.number(),
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, claimIndex, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+    const row = await _findRowOrThrow(ctx, runId, claimIndex)
+    await ctx.db.patch(row._id, { status: 'removed' })
   },
 })
 

@@ -44,6 +44,8 @@ export default defineConfig({
       ['__tests__/charityCorrections.test.ts', 'edge-runtime'],
       // Phase 40 Plan 40-01 issues-table convex-test file
       ['__tests__/issues.test.ts', 'edge-runtime'],
+      // Phase 42 Plan 42-01 claimChecks fact-check-stage convex-test file
+      ['__tests__/claimChecksFactcheck.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],

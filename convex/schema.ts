@@ -447,6 +447,13 @@ export default defineSchema({
     retrievedAt: v.optional(v.number()),    // Unix ms, code-stamped at Tavily query time
     sectionName: v.optional(v.string()),    // galley section this claim occurs in (all new rows)
     blockIndexHint: v.optional(v.number()), // hint-only anchor, mirrors qaCorrections
+    // ── Phase 42 Fact Check Stage (FCT-01/07) — additive optional; legacy rows omit all three ──
+    // API_CONTRACTS §42.1
+    importance: v.optional(v.union(         // Researcher-emitted tier; absent => 'Supporting' (D-03)
+      v.literal('Load-bearing'), v.literal('Supporting'), v.literal('Incidental'),
+    )),
+    changedSinceCheck: v.optional(v.boolean()), // set by markChanged/_reset_touched_claims (D-20)
+    conflict: v.optional(v.boolean()),          // set only by Replace-source/Ask-agent flows (D-07)
   })
     .index('by_runId', ['runId'])
     .index('by_workspace', ['workspace_id']),
