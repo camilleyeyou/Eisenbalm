@@ -22,9 +22,11 @@ Requires:
     - NEXT_PUBLIC_CONVEX_URL — Convex HTTP API base URL
     - CONVEX_DEPLOY_KEY      — Convex deploy key (read-write)
     - SANITY_API_TOKEN       — Sanity read token (read-only is sufficient)
+    - NEXT_PUBLIC_SANITY_PROJECT_ID — required whenever SANITY_API_TOKEN is
+      set (same env var name used throughout the pipeline, e.g.
+      lib/sanity_client.py, api/runs.py)
 
 Optional:
-    - SANITY_PROJECT_ID      — defaults to env var or config (from sanity_client.py)
     - NEXT_PUBLIC_SANITY_DATASET — defaults to "production"
 
 Source: docs/API_CONTRACTS.md §40.2; 40-RESEARCH.md "Backfill script pattern
@@ -62,16 +64,19 @@ def _build_convex_client() -> AsyncClient:
 
 
 def _sanity_project_id() -> str:
-    """Retrieve project ID from environment (SANITY_PROJECT_ID)."""
-    pid = os.environ.get("SANITY_PROJECT_ID", "")
+    """Retrieve project ID from environment (NEXT_PUBLIC_SANITY_PROJECT_ID —
+    matches the env var name used everywhere else in the pipeline, e.g.
+    lib/sanity_client.py and api/runs.py; NOT the bare `SANITY_PROJECT_ID`
+    this function used before the 40-09 integration-gate fix)."""
+    pid = os.environ.get("NEXT_PUBLIC_SANITY_PROJECT_ID", "")
     if not pid:
-        raise RuntimeError("SANITY_PROJECT_ID is not set")
+        raise RuntimeError("NEXT_PUBLIC_SANITY_PROJECT_ID is not set")
     return pid
 
 
 def _build_sanity_client() -> AsyncClient:
     """Construct a standalone Sanity HTTP client."""
-    project_id = os.environ.get("SANITY_PROJECT_ID") or _sanity_project_id()
+    project_id = _sanity_project_id()
     base_url = f"https://{project_id}.api.sanity.io"
     return AsyncClient(base_url=base_url, timeout=30.0)
 
@@ -96,8 +101,14 @@ async def _fetch_distinct_issue_numbers(convex_http: AsyncClient) -> list[int]:
         if not run_id:
             continue
         pr = await convex_query(convex_http, "pipelineRuns:byRunId", {"runId": run_id})
-        if pr and isinstance(pr.get("issueNumber"), int):
-            numbers.add(pr["issueNumber"])
+        issue_number = pr.get("issueNumber") if pr else None
+        # Convex's `v.number()` is a JS float64; the HTTP API's JSON envelope
+        # round-trips a whole number like 999606 as the Python float 999606.0
+        # (isinstance(..., int) was False for every real row — bool is
+        # deliberately excluded since bool is an int subclass in Python but
+        # is never a valid issueNumber).
+        if isinstance(issue_number, (int, float)) and not isinstance(issue_number, bool):
+            numbers.add(int(issue_number))
     return sorted(numbers)
 
 
@@ -129,8 +140,12 @@ async def _fetch_published_issue_numbers(sanity_http: AsyncClient) -> dict[int, 
     for row in rows:
         n = row.get("issueNumber")
         sanity_id = row.get("sanityId")
-        if isinstance(n, int) and sanity_id:
-            result[n] = sanity_id
+        # Same int/float leniency as _fetch_distinct_issue_numbers — Sanity's
+        # GROQ JSON response can also serialize a whole number without a
+        # decimal point (parses as Python int) OR with one (parses as float),
+        # depending on how the field was authored; accept both.
+        if isinstance(n, (int, float)) and not isinstance(n, bool) and sanity_id:
+            result[int(n)] = sanity_id
     return result
 
 
@@ -155,6 +170,7 @@ async def main() -> None:
 
     numbers: list[int] = []
     published: dict[int, str] = {}
+    skipped_orphans: list[int] = []
 
     convex_http = _build_convex_client()
     try:
@@ -181,7 +197,24 @@ async def main() -> None:
         finally:
             await sanity_http.aclose()
 
+        known_numbers = set(numbers)
         for n, sanity_id in published.items():
+            # D-05 scopes this backfill to "one issues row per distinct
+            # EXISTING issueNumber" (existing = has a pipelineRuns row from
+            # step 1); markPublished patches an existing row and throws
+            # "Issue not found" otherwise. A published Sanity weeklyIssue with
+            # no pipelineRuns row (pre-Convex-tracking demo/seed content, e.g.
+            # early-phase fixture issues) is out of this backfill's scope —
+            # skip with a warning instead of aborting the whole run on one
+            # orphan (each markPublished call is independently idempotent;
+            # there's no reason a single miss should block the rest).
+            if n not in known_numbers:
+                skipped_orphans.append(n)
+                print(
+                    f"        WARN: issue #{n} is published in Sanity but has "
+                    "no pipelineRuns row — skipping (out of D-05 backfill scope)"
+                )
+                continue
             await convex_mutation(
                 convex_http,
                 "issues:markPublished",
@@ -191,12 +224,16 @@ async def main() -> None:
                     "sanityIssueId": sanity_id,
                 },
             )
+        if skipped_orphans:
+            print(f"        Skipped {len(skipped_orphans)} orphan(s): {sorted(skipped_orphans)}")
     finally:
         await convex_http.aclose()
 
+    marked_count = len(published) - len(skipped_orphans)
     print(
         f"\n[DONE] backfill_issues: ensured {len(numbers)} issues, "
-        f"marked {len(published)} published"
+        f"marked {marked_count} published"
+        + (f", skipped {len(skipped_orphans)} orphan(s)" if skipped_orphans else "")
     )
     print("       Re-run is safe — both mutations are idempotent.")
     print("=" * 60)
