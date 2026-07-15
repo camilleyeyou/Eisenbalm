@@ -65,6 +65,9 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
   // Track which charity has an open blocklist confirm popover
   const [confirmingBlocklistId, setConfirmingBlocklistId] = useState<string | null>(null)
+  // Phase 43 (TSK-06): required reason text for the Do-not-use decision, reset
+  // whenever the confirm popover opens/closes for a different (or no) row.
+  const [blocklistReason, setBlocklistReason] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   // Phase 39 (MEM-02): which charity row has its corrections detail expanded
@@ -82,11 +85,14 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
       : charities.filter(c => c.status === activeFilter)
 
   async function handleBlocklist(charityId: Id<'charities'>) {
+    const reason = blocklistReason.trim()
+    if (reason === '') return
     setPendingAction(charityId)
     setActionError(null)
     try {
-      await setStatus({ workspace_id, charityId, status: 'blocklisted' })
+      await setStatus({ workspace_id, charityId, status: 'blocklisted', reason })
       setConfirmingBlocklistId(null)
+      setBlocklistReason('')
     } catch {
       setActionError('Could not update the registry. Try again.')
     } finally {
@@ -218,11 +224,27 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                               <span className="font-medium">{charity.name}</span> in all
                               future runs.
                             </p>
+                            <label
+                              htmlFor={`blocklist-reason-${charity._id}`}
+                              className="block text-xs font-medium text-neutral-700"
+                            >
+                              Why mark Do not use?
+                            </label>
+                            <textarea
+                              id={`blocklist-reason-${charity._id}`}
+                              value={blocklistReason}
+                              onChange={e => setBlocklistReason(e.target.value)}
+                              disabled={isPendingThisAction}
+                              required
+                              rows={2}
+                              placeholder="Required — this reason is recorded in the Decision Log."
+                              className="w-full min-h-[44px] rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                            />
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleBlocklist(charity._id)}
-                                disabled={isPendingThisAction}
+                                disabled={isPendingThisAction || blocklistReason.trim() === ''}
                                 aria-busy={isPendingThisAction}
                                 className="min-h-[44px] rounded bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
                               >
@@ -230,7 +252,10 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setConfirmingBlocklistId(null)}
+                                onClick={() => {
+                                  setConfirmingBlocklistId(null)
+                                  setBlocklistReason('')
+                                }}
                                 disabled={isPendingThisAction}
                                 className="min-h-[44px] rounded border border-neutral-300 px-3 text-sm text-neutral-700 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
                               >
@@ -242,7 +267,10 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                           /* Blocklist trigger — opens inline confirm */
                           <button
                             type="button"
-                            onClick={() => setConfirmingBlocklistId(charity._id)}
+                            onClick={() => {
+                              setConfirmingBlocklistId(charity._id)
+                              setBlocklistReason('')
+                            }}
                             className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
                           >
                             Blocklist Charity
