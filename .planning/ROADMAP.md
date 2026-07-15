@@ -967,7 +967,16 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   4. The Instructions tab shows the exact active instruction version and the shared rules referenced, and links through to Agent Instructions via "Improve this agent."
   5. The Output tab shows the full human-readable output and notes when the issue text has since diverged from it.
   6. The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps on every artifact type.
-**Plans**: TBD
+**Plans**: 9 plans (6 waves)
+- [ ] 44-01-contract-and-wave0-test-stubs-PLAN.md — API_CONTRACTS §44 (InspectorArtifact, resolver, redefined missing-inputs diff, inputKeys field, openInspector) + 5 Wave-0 test stubs (Wave 1)
+- [ ] 44-02-inputkeys-schema-pipeline-substrate-PLAN.md — additive agent_run_payloads.inputKeys + savePayload + pipeline untruncated emit + pytest (Wave 2)
+- [ ] 44-03-pure-artifact-step-resolver-PLAN.md — lib/inspectorArtifact.ts: 6 artifact types → agentKey/promptKey, editor_gate_1/editor_gate1 alias, bonus variant, artifact-key encoding (Wave 2)
+- [ ] 44-04-missing-inputs-diff-and-divergence-PLAN.md — declaredStateInputs + truncation-honest missing diff (RESEARCH Pitfall 1 redefinition) + output-divergence predicate (Wave 2)
+- [ ] 44-05-seven-tab-inspector-panel-PLAN.md — shared summarize helpers + presentational 7-tab InspectorPanel + footer (live vs reserved) (Wave 3)
+- [ ] 44-06-inspector-provider-container-mount-PLAN.md — InspectorProvider (one instance) + data-fetching container + mount at (dashboard) root (Wave 4)
+- [ ] 44-07-entry-points-draft-voice-factcheck-PLAN.md — draft passage + voice finding (shared galley onInspect) + fact-check claim (ClaimProvenanceCard callback) (Wave 5)
+- [ ] 44-08-entry-points-approval-mytasks-org-PLAN.md — approval recommendation + My Tasks (enable + deriveTasks.insp) + brief org card (Wave 5)
+- [ ] 44-09-integration-gate-PLAN.md — full suite + strict build + Convex sync + pipeline pytest + cross-surface live UAT (Wave 6)
 **UI hint**: yes
 
 ### Phase 45: Agent Revision
