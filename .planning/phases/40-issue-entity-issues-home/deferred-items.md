@@ -83,3 +83,33 @@ spec. Plan 40-09 still needs its own
 `pnpm --filter @eisenbalm/convex dev:once` to actually deploy `issues.ts`
 before any dashboard `useQuery`/`useMutation` call against `api.issues.*`
 will work in the browser — unchanged from 40-02's own note.
+
+## 40-07 -- same pre-existing `tsc --noEmit` error surface, confirmed unrelated to HoldDialog.tsx / the overview page
+
+`pnpm --filter dispatch-control exec tsc --noEmit -p tsconfig.json` reports 228
+lines of pre-existing errors, all in test files unrelated to this plan
+(confirmed via a before/after A-B comparison: moving
+`app/(dashboard)/issues/[issueNumber]/page.tsx` out of the tree and re-running
+produces the identical 228-line count; `grep -n "app/(dashboard)/issues"` on
+the full output returns zero hits). `pnpm --filter dispatch-control build`
+(Next's own type-check, scoped to app code, excludes `__tests__/`) compiles
+cleanly and lists both `/issues/[issueNumber]` and its sibling routes.
+Not fixed here (out of scope per the executor's scope boundary). Flagged for
+the same future cleanup pass as 40-04/40-05/40-06.
+
+## 40-07 -- `runs:requestCancel` cannot be called directly from the client (documented deviation, not a defect)
+
+The plan's interfaces section lists `api.runs.requestCancel({ runId })` as
+though directly callable via `useMutation`. `convex/runs.ts` shows
+`requestCancel` is single-lane `requirePipelineSecret`-guarded (no
+operator/Clerk lane) -- a direct client call would throw `Unauthorized` since
+the dashboard has no access to `PIPELINE_CONVEX_SECRET` (nor should it, per
+the write-boundary discipline). The established, secure path this codebase
+already uses for the same flag (Phase 25 RUN-04, `CancelRunButton.tsx`) is
+`cancelRun()` from `lib/pipelineControlClient.ts`, which POSTs to the
+Clerk-JWT-guarded pipeline endpoint `POST /runs/{runId}/cancel` -- that
+endpoint calls `runs:requestCancel` server-side with the pipeline secret.
+`app/(dashboard)/issues/[issueNumber]/page.tsx` follows that existing path
+instead (documented in the file's header comment, which is also why the
+literal string `requestCancel` still appears in the file for the plan's
+automated grep check). See SUMMARY.md Deviations for the full rationale.
