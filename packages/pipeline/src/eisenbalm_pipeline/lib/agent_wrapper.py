@@ -82,6 +82,17 @@ def _snapshot_input(agent_key: str, state: dict) -> str:
         return json.dumps({"_snapshot_error": repr(exc)})
 
 
+def _snapshot_input_keys(agent_key: str, state: dict) -> list[str]:
+    """Return the UNTRUNCATED top-level input key list for agent_key.
+
+    Phase 44 §44.5 — computed independently of _snapshot_input (never by
+    parsing the truncated JSON string), from the same _INPUT_KEYS whitelist,
+    so truncation of inputSnapshot can never drop a key from this list.
+    """
+    keys = _INPUT_KEYS.get(agent_key, ["run_id"])
+    return [k for k in keys if k in state]
+
+
 def _snapshot_output(result: Any) -> str:
     """Serialize fn() return value as a truncated JSON string.
 
@@ -181,6 +192,7 @@ def wrap_agent_node(agent_key: str, fn: Callable) -> Callable:
                 "agentKey": agent_key,
                 "inputSnapshot": _snapshot_input(agent_key, state),
                 "outputSnapshot": _snapshot_output(result),
+                "inputKeys": _snapshot_input_keys(agent_key, state),
             },
         )
 

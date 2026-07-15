@@ -209,3 +209,73 @@ async def test_completed_carries_recorded_retries_as_retry_count(monkeypatch: py
 
     completed_args = recorder.args_for("agentRuns:completed")
     assert completed_args["retryCount"] == 1
+
+
+# ── Test (e): inputKeys emission (Phase 44 §44.5, INS-03) ────────────────────
+
+@pytest.mark.anyio
+async def test_savepayload_carries_expected_input_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """savePayload's inputKeys equals the expected _INPUT_KEYS slice for the agent."""
+    run_id = "test-run-inputkeys-001"
+    agent_key = "founder_bio"
+
+    begin_run(run_id)
+
+    recorder = _MutationRecorder()
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.agent_wrapper.convex_mutation_safe",
+        recorder,
+    )
+
+    from eisenbalm_pipeline.lib.agent_wrapper import wrap_agent_node
+
+    state = _make_state(run_id)
+    state["research"] = {"summary": "some research"}
+    state["winning_charity"] = {"name": "Test Charity"}
+    state["style_brief"] = {"voice": "dry"}
+
+    async def fn(_state: dict) -> dict:
+        return {"ok": 1}
+
+    wrapped = wrap_agent_node(agent_key, fn)
+    await wrapped(state)
+
+    payload_args = recorder.args_for("agentRuns:savePayload")
+    assert payload_args["inputKeys"] == ["research", "winning_charity", "style_brief"]
+
+
+# ── Test (f): inputKeys survives truncation intact (Phase 44 §44.5, INS-03) ──
+
+@pytest.mark.anyio
+async def test_input_keys_complete_even_when_snapshot_truncated(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A >2000-char state value truncates inputSnapshot but never drops a key
+    from inputKeys — the load-bearing truncation-honesty guarantee (D-05).
+    """
+    run_id = "test-run-truncation-001"
+    agent_key = "founder_bio"
+
+    begin_run(run_id)
+
+    recorder = _MutationRecorder()
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.lib.agent_wrapper.convex_mutation_safe",
+        recorder,
+    )
+
+    from eisenbalm_pipeline.lib.agent_wrapper import wrap_agent_node
+
+    state = _make_state(run_id)
+    # One slice value alone exceeds the 2000-char truncation cap.
+    state["research"] = {"summary": "x" * 5000}
+    state["winning_charity"] = {"name": "Test Charity"}
+    state["style_brief"] = {"voice": "dry"}
+
+    async def fn(_state: dict) -> dict:
+        return {"ok": 1}
+
+    wrapped = wrap_agent_node(agent_key, fn)
+    await wrapped(state)
+
+    payload_args = recorder.args_for("agentRuns:savePayload")
+    assert "...[truncated]" in payload_args["inputSnapshot"]
+    assert payload_args["inputKeys"] == ["research", "winning_charity", "style_brief"]
