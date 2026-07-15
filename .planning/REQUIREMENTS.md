@@ -810,13 +810,13 @@ Added 2026-07-14 during v4.0 roadmap creation. All 62 v4.0 requirements mapped t
 | WSP-05 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Complete |
 | WSP-06 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Complete |
 | WSP-07 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Complete |
-| FCT-01 | Phase 42: Fact Check Stage | Planned |
-| FCT-02 | Phase 42: Fact Check Stage | Planned |
-| FCT-03 | Phase 42: Fact Check Stage | Planned |
-| FCT-04 | Phase 42: Fact Check Stage | Planned |
-| FCT-05 | Phase 42: Fact Check Stage | Planned |
-| FCT-06 | Phase 42: Fact Check Stage | Planned |
-| FCT-07 | Phase 42: Fact Check Stage | Planned |
+| FCT-01 | Phase 42: Fact Check Stage | Complete |
+| FCT-02 | Phase 42: Fact Check Stage | Complete |
+| FCT-03 | Phase 42: Fact Check Stage | Complete |
+| FCT-04 | Phase 42: Fact Check Stage | Complete |
+| FCT-05 | Phase 42: Fact Check Stage | Complete |
+| FCT-06 | Phase 42: Fact Check Stage | Complete |
+| FCT-07 | Phase 42: Fact Check Stage | Complete |
 | TSK-01 | Phase 43: My Tasks & Decision Log | Planned |
 | TSK-02 | Phase 43: My Tasks & Decision Log | Planned |
 | TSK-03 | Phase 43: My Tasks & Decision Log | Planned |
