@@ -15,7 +15,12 @@
 import { isOpenFinding } from './galley/findingState'
 import { VOICE_AXES } from './galley/axisPartition'
 import { qaSectionToGalleyId } from './galley/sectionIdMap'
-import { issueDraftHref, issueVoiceHref } from './issueRouteResolver'
+import {
+  issueDraftHref,
+  issueVoiceHref,
+  issueFactCheckHref,
+  issueApprovalHref,
+} from './issueRouteResolver'
 import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
 import type { DraftResponse } from './contentPatchClient'
 
@@ -41,6 +46,10 @@ export interface DerivedTask {
   primary: { label: string; href: string }
   insp?: string // inspector target (Phase 44 consumes; may be omitted)
   stage: 1 | 2 | 3 | 4 | 5
+  // Phase 43 Plan 43-03 (§43.5a, TSK-02) — additive. Raw ms timestamp; absent
+  // => age unknown. Rendered by the pure `formatTaskAge` below, NOT computed
+  // inside `deriveTasks` (keeps the selector free of wall-clock dependence).
+  openedAt?: number
 }
 
 // D-22 — tunable in ONE place.
@@ -77,6 +86,10 @@ export interface DerivationInputs {
         changedSinceCheck?: boolean
         conflict?: boolean
         checkedAt?: number
+        // Phase 43 Plan 43-03 (§43.5a, TSK-02) — additive passthrough of the
+        // row's creation time (mapped from Convex's implicit `_creationTime`
+        // by callers), used as the claim task's `openedAt`.
+        createdAt?: number
       }>
     | undefined
   qaFindings:
@@ -89,10 +102,19 @@ export interface DerivationInputs {
         suggestedFix?: string
         accepted?: boolean
         resolution?: 'accepted' | 'dismissed' | null
+        // Phase 43 Plan 43-03 (§43.5a, TSK-02) — additive. Already the
+        // finding's creation time (Phase 5's `qaCorrections.timestamp`);
+        // used as the QA-finding task's `openedAt`.
+        timestamp?: number
       }>
     | undefined
   pitchRows: Array<{ selected: boolean }> | undefined
   runStatus: string | undefined // runs.latest.status
+  // Phase 43 Plan 43-03 (§43.5a, TSK-02) — additive. The run's `startedAt`
+  // (already queried by every `DerivationInputs` caller); used as the
+  // "since run start" `openedAt` anchor for missing-sign-off tasks, since
+  // there is no per-sign-off "became eligible at" timestamp stored anywhere.
+  runStartedAt?: number
 }
 
 // ── deriveIssueStatus (D-18 + ISS-06) ────────────────────────────────────────
@@ -385,13 +407,15 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
       rec: row.suggestedFix,
       primary: { label: 'Review', href },
       stage,
+      openedAt: row.timestamp,
     })
   }
 
   for (const row of i.claimRows ?? []) {
     if (row.status !== 'pending') continue
     const sev: TaskSeverity = isMustFix(row) ? 'must-fix' : 'review-recommended'
-    const href = fallbackHref ?? issueDraftHref(n as number)
+    // §43.5b (Pitfall 1 fix) — claim tasks deep-link to Fact Check, not Draft.
+    const href = fallbackHref ?? issueFactCheckHref(n as number)
     tasks.push({
       id: `claim-${row._id}`,
       sev,
@@ -400,12 +424,16 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
       why: 'Unverified claim requires human judgment',
       primary: { label: 'Review', href },
       stage: 3,
+      openedAt: row.createdAt,
     })
   }
 
   const runningOrDone = i.runId !== null && i.runStatus !== 'running'
   if (runningOrDone && i.signOffs !== undefined) {
-    const href = fallbackHref ?? issueDraftHref(n as number)
+    // §43.5b (Pitfall 1 fix) — the facts sign-off task deep-links to
+    // Approval, not Draft. signoff-voice's href is unchanged (already
+    // correct per §40.6 — verified against issueVoiceHref, §43.5b).
+    const href = fallbackHref ?? issueApprovalHref(n as number)
     if (i.signOffs['facts-cleared'] === undefined) {
       tasks.push({
         id: 'signoff-facts',
@@ -415,6 +443,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
         why: 'Facts sign-off is required before publish',
         primary: { label: 'Review', href },
         stage: 5,
+        openedAt: i.runStartedAt,
       })
     }
     if (i.signOffs['sounds-human'] === undefined) {
@@ -427,6 +456,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
         why: 'Voice sign-off is required before publish',
         primary: { label: 'Review', href: voiceHref },
         stage: 5,
+        openedAt: i.runStartedAt,
       })
     }
   }
@@ -438,6 +468,27 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   })
 
   return tasks
+}
+
+// ── formatTaskAge (Phase 43 Plan 43-03, §43.5a, TSK-02) ─────────────────────
+//
+// Pure, wall-clock-dependent by DESIGN (unlike `deriveTasks` itself) — called
+// by the screen at render time, never from inside `deriveTasks`. Mirrors
+// RegistryTable.tsx's `formatRelativeTime` granularity, extended with
+// minute/hour buckets since tasks are typically much more recent than
+// registry "last featured" dates. `openedAt: undefined` (row has no known
+// creation time) renders an explicit 'unknown' — never a blank string.
+
+export function formatTaskAge(openedAt: number | undefined, now: number = Date.now()): string {
+  if (openedAt === undefined) return 'unknown'
+  const diffMs = now - openedAt
+  if (diffMs < 60_000) return 'just now'
+  const minutes = Math.floor(diffMs / 60_000)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
 
 // ── estimateWorkMinutes (D-22) ───────────────────────────────────────────────
