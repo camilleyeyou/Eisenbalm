@@ -47,7 +47,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v3.0 complete (shipped 2026-07-10). v4.0: Dispatch Control v3 — The Editorial Workspace (Phases 40–50)**
 
-- [ ] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems
+- [x] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems (completed 2026-07-15)
 - [ ] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5
 - [ ] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card
 - [ ] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide
@@ -455,7 +455,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 37. Run Monitor v2 + Signal Desk | 5/5 | Complete    | 2026-07-09 |
 | 38. Prompt Lab Evals + Eval Center | 6/6 | Complete   | 2026-07-09 |
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
-| 40. Issue Entity & Issues Home | 8/9 | In Progress|  |
+| 40. Issue Entity & Issues Home | 9/9 | Complete   | 2026-07-15 |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 0/TBD | Not started | - |
 | 42. Fact Check Stage | 0/TBD | Not started | - |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
@@ -880,7 +880,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 40-06-routing-inversion-PLAN.md — issue-keyed route wrappers + legacy redirects + dashboard index
 - [x] 40-07-issue-overview-hold-PLAN.md — /issues/[n] overview + HoldDialog + hold/reopen wiring (ISS-04)
 - [x] 40-08-masthead-nav-chrome-PLAN.md — four-readout header (ISS-05) + nav restructure (ISS-02/D-31)
-- [ ] 40-09-integration-gate-PLAN.md — Convex deploy + full suite + strict build + backfill + human verify
+- [x] 40-09-integration-gate-PLAN.md — Convex deploy + full suite + strict build + backfill + human verify
 **UI hint**: yes
 
 ### Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval

@@ -797,12 +797,12 @@ Added 2026-07-14 during v4.0 roadmap creation. All 62 v4.0 requirements mapped t
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ISS-01 | Phase 40: Issue Entity & Issues Home | Planned |
-| ISS-02 | Phase 40: Issue Entity & Issues Home | Planned |
-| ISS-03 | Phase 40: Issue Entity & Issues Home | Planned |
-| ISS-04 | Phase 40: Issue Entity & Issues Home | Planned |
-| ISS-05 | Phase 40: Issue Entity & Issues Home | Planned |
-| ISS-06 | Phase 40: Issue Entity & Issues Home | Planned |
+| ISS-01 | Phase 40: Issue Entity & Issues Home | Complete |
+| ISS-02 | Phase 40: Issue Entity & Issues Home | Complete |
+| ISS-03 | Phase 40: Issue Entity & Issues Home | Complete |
+| ISS-04 | Phase 40: Issue Entity & Issues Home | Complete |
+| ISS-05 | Phase 40: Issue Entity & Issues Home | Complete |
+| ISS-06 | Phase 40: Issue Entity & Issues Home | Complete |
 | WSP-01 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
 | WSP-02 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |
 | WSP-03 | Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval | Planned |

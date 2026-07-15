@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 40-08-masthead-nav-chrome-PLAN.md
-last_updated: "2026-07-15T01:12:06.781Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 40-09-integration-gate-PLAN.md
+last_updated: "2026-07-15T01:32:11.569Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -276,6 +276,7 @@ Plan: 9 of 9
 | Phase 40 P06 | 11min | 3 tasks | 11 files |
 | Phase 40 P07 | 12min | 2 tasks | 2 files |
 | Phase 40 P08 | 11min | 2 tasks | 4 files |
+| Phase 40 P09 | 35min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -711,6 +712,8 @@ Recent decisions affecting current work:
 - [Phase 40]: requestCancel reached via lib/pipelineControlClient.ts cancelRun() (Clerk-guarded pipeline endpoint), never a direct useMutation call — runs:requestCancel is single-lane pipeline-secret-gated
 - [Phase 40]: Masthead Issue-status readout is scoped to runs.latest (not the full issues-list scan), matching the plan's explicit reuse-existing-wiring interface note
 - [Phase 40]: AwaitingYouTrigger renamed to MyTasksTrigger, dropping the filled-vermilion-button treatment for the label+icon convention shared by all four header readouts
+- [Phase 40]: [Phase 40-09]: Fixed backfill_issues.py's SANITY_PROJECT_ID env var name, int/float issueNumber coercion (Convex HTTP query API round-trips whole numbers as Python float), and orphan-skip handling for Sanity-published issues with no pipelineRuns row — all surfaced by actually running the backfill against the live dev:modest-magpie-797 deployment
+- [Phase 40]: [Phase 40-09]: Auto-approved the Task 3 human-verify checkpoint per auto-mode instructions — all automated gates passed (Convex deploy, full vitest+pytest suites, strict next build, live backfill); the two manual-only items (ISS-02 live 307 redirect, ISS-05 greyscale legibility) are structurally proven via passing unit tests and were confirmed to genuinely require a real browser session (Clerk dev-browser cookie), not just automation laziness
 
 ### Pending Todos
 
@@ -800,6 +803,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T01:12:06.770Z
-Stopped at: Completed 40-08-masthead-nav-chrome-PLAN.md
+Last session: 2026-07-15T01:32:11.557Z
+Stopped at: Completed 40-09-integration-gate-PLAN.md
 Resume file: None
