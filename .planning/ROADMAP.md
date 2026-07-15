@@ -50,7 +50,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems (completed 2026-07-15)
 - [x] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5 (all 12 plans executed 2026-07-15, including the WSP-03 gap closure: the context panel now feeds real, stage-specific content on all 5 stages) (completed 2026-07-15)
 - [x] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card (completed 2026-07-15)
-- [ ] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide
+- [x] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide (completed 2026-07-15)
 - [ ] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic
 - [ ] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard
 - [ ] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection
@@ -458,7 +458,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
-| 43. My Tasks & Decision Log | 8/9 | In Progress|  |
+| 43. My Tasks & Decision Log | 9/9 | Complete   | 2026-07-15 |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
 | 45. Agent Revision | 0/TBD | Not started | - |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
@@ -953,7 +953,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 43-06-decision-log-component-mounts-PLAN.md — shared DecisionLog component + Approval-panel & Workspace-frame mounts (Wave 3)
 - [x] 43-07-retrofit-reason-actions-shared-helper-PLAN.md — route hold/reopen/activate-override/keep-as-written through the shared helper (Wave 4)
 - [x] 43-08-do-not-use-reason-capture-PLAN.md — net-new Do-not-use reason enforcement + audit emission + registry reason UI (Wave 5)
-- [ ] 43-09-integration-gate-PLAN.md — full suite + strict build + Convex deploy + pipeline pytest + live-session UAT (Wave 6)
+- [x] 43-09-integration-gate-PLAN.md — full suite + strict build + Convex deploy + pipeline pytest + live-session UAT (Wave 6)
 **UI hint**: yes
 
 ### Phase 44: Inspect How This Was Made

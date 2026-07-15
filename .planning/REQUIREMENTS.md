@@ -817,12 +817,12 @@ Added 2026-07-14 during v4.0 roadmap creation. All 62 v4.0 requirements mapped t
 | FCT-05 | Phase 42: Fact Check Stage | Complete |
 | FCT-06 | Phase 42: Fact Check Stage | Complete |
 | FCT-07 | Phase 42: Fact Check Stage | Complete |
-| TSK-01 | Phase 43: My Tasks & Decision Log | Planned |
-| TSK-02 | Phase 43: My Tasks & Decision Log | Planned |
-| TSK-03 | Phase 43: My Tasks & Decision Log | Planned |
-| TSK-04 | Phase 43: My Tasks & Decision Log | Planned |
-| TSK-05 | Phase 43: My Tasks & Decision Log | Planned |
-| TSK-06 | Phase 43: My Tasks & Decision Log | Planned |
+| TSK-01 | Phase 43: My Tasks & Decision Log | Complete |
+| TSK-02 | Phase 43: My Tasks & Decision Log | Complete |
+| TSK-03 | Phase 43: My Tasks & Decision Log | Complete |
+| TSK-04 | Phase 43: My Tasks & Decision Log | Complete |
+| TSK-05 | Phase 43: My Tasks & Decision Log | Complete |
+| TSK-06 | Phase 43: My Tasks & Decision Log | Complete |
 | INS-01 | Phase 44: Inspect How This Was Made | Planned |
 | INS-02 | Phase 44: Inspect How This Was Made | Planned |
 | INS-03 | Phase 44: Inspect How This Was Made | Planned |

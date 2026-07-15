@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: 43-09 Task 1 (integration gate) complete + committed (fddc368); paused at Task 2 human-verify checkpoint (Decision Log actor-as-name + superseded-on-reroll) — awaiting operator verification
-last_updated: "2026-07-15T17:37:25.557Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 43-my-tasks-decision-log/43-09-integration-gate-PLAN.md (all 9 plans of Phase 43 complete)
+last_updated: "2026-07-15T17:45:38.232Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 
 ## Current Position
 
-Phase: 43 (my-tasks-decision-log) — EXECUTING
+Phase: 43 (my-tasks-decision-log) — COMPLETE (all 9 plans; 2 manual UAT items pending, see 43-HUMAN-UAT.md)
 Plan: 9 of 9
 
 ## Performance Metrics
@@ -305,6 +305,7 @@ Plan: 9 of 9
 | Phase 43 P05 | 35min | 3 tasks | 5 files |
 | Phase 43 P07 | 20min | 2 tasks | 8 files |
 | Phase 43 P08 | 6min | 3 tasks | 4 files |
+| Phase 43 P09 | 6min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -791,6 +792,7 @@ Recent decisions affecting current work:
 - [Phase 43]: issues.reopen synthesizes its structured reason from the prior heldReason rather than adding a new caller-supplied arg (no API_CONTRACTS §40.2 signature change)
 - [Phase 43]: factcheck.py keep-as-written passes reason+run_id into _emit_audit but omits issue_number (not resolvable from claim_checks without new out-of-scope query surface)
 - [Phase 43]: Amended charities.setStatus in place with an optional reason arg (required only for the 'blocklisted' target) + a writeDecision emission, rather than adding a dedicated markDoNotUse mutation
+- [Phase 43]: 43-09: Task 2 human-verify checkpoint resolved as auto-approved under --auto chain; the two manual-only live-session behaviors persisted as 43-HUMAN-UAT.md (status: partial) instead of blocking phase close-out
 
 ### Pending Todos
 
@@ -881,6 +883,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T17:37:25.541Z
-Stopped at: 43-09 Task 1 (integration gate) complete + committed (fddc368); paused at Task 2 human-verify checkpoint (Decision Log actor-as-name + superseded-on-reroll) — awaiting operator verification
+Last session: 2026-07-15T17:45:16.125Z
+Stopped at: Completed 43-my-tasks-decision-log/43-09-integration-gate-PLAN.md (all 9 plans of Phase 43 complete)
 Resume file: None
