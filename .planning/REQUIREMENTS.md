@@ -371,7 +371,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **TSK-01**: My Tasks lists everything awaiting human judgment as a *derived projection* over open claims, open findings, and missing sign-offs — no separate task store.
 - [x] **TSK-02**: Every task shows a plain-language title, the issue/area affected, why human judgment is required, severity (Must fix / Review recommended / Information), stage, age, and the agent's recommendation when one exists.
 - [x] **TSK-03**: Each task's primary action deep-links to the exact claim, passage, or decision; "Inspect context" opens the inspector on that artifact.
-- [ ] **TSK-04**: When nothing needs the operator, My Tasks says so explicitly and points to Approval — silence is a designed state, not an empty list.
+- [x] **TSK-04**: When nothing needs the operator, My Tasks says so explicitly and points to Approval — silence is a designed state, not an empty list.
 - [x] **TSK-05**: A task whose underlying step was restarted shows as superseded with a link to the new step, never disappearing silently.
 - [x] **TSK-06**: Every reason-requiring action (remove lead, override a recommendation, keep as written, hold, activate with regression, Do not use) writes to one Decision log component recording actor, action, time, reason, before/after, instruction version, issue and run.
 
