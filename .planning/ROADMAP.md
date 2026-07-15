@@ -457,7 +457,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 39. Registry Coverage-Memory Strip | 5/5 | Complete    | 2026-07-10 |
 | 40. Issue Entity & Issues Home | 9/9 | Complete    | 2026-07-15 |
 | 41. Issue Workspace Frame — Draft, Voice Pass & Approval | 12/12 | Complete    | 2026-07-15 |
-| 42. Fact Check Stage | 4/8 | In Progress|  |
+| 42. Fact Check Stage | 5/8 | In Progress|  |
 | 43. My Tasks & Decision Log | 0/TBD | Not started | - |
 | 44. Inspect How This Was Made | 0/TBD | Not started | - |
 | 45. Agent Revision | 0/TBD | Not started | - |
@@ -926,7 +926,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 42-01-contract-schema-convex-PLAN.md — §42 contract + claim_checks importance/changedSinceCheck/conflict + pipeline-lane claimChecks functions (Wave 1)
 - [x] 42-02-researcher-publisher-importance-PLAN.md — Researcher emits importance; publisher merges onto sourced+unsourced rows (Wave 2, FCT-01)
 - [x] 42-03-reset-touched-claims-PLAN.md — content.py _reset_touched_claims returns touched claims to unchecked + changed marker (Wave 2, FCT-07)
-- [ ] 42-04-factcheck-endpoints-PLAN.md — api/factcheck.py six actions + two-step evidence preview/apply (Wave 3, FCT-05/06)
+- [x] 42-04-factcheck-endpoints-PLAN.md — api/factcheck.py six actions + two-step evidence preview/apply (Wave 3, FCT-05/06)
 - [x] 42-05-derived-selectors-workspace-provider-PLAN.md — deriveFactCheckSummary + isMustFix + provider claimRows extension (Wave 2, FCT-02)
 - [ ] 42-06-provenance-card-stage3-screen-PLAN.md — shared ClaimProvenanceCard + Stage 3 screen: summary/filters/table/actions (Wave 4, FCT-02/03/04/05/06)
 - [ ] 42-07-draft-approval-card-reuse-PLAN.md — Draft ClaimMark + Approval SourceIndex consume the shared card (Wave 5, FCT-04)
