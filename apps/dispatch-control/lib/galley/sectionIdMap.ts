@@ -38,3 +38,21 @@ const GALLEY_TO_QA: Record<string, string> = Object.fromEntries(
 export function galleyIdToQaSection(galleyId: string): string | null {
   return GALLEY_TO_QA[galleyId] ?? null
 }
+
+/**
+ * Maps a section id to its galley DOM anchor id (Phase 41 Plan 41-05,
+ * WSP-02 — de-duplicated on its third use, per 41-RESEARCH "Don't Hand-
+ * Roll"). `theme` has no galley anchor (D-04: theme is applied globally,
+ * not rendered as its own section) and `deliberation-conversation` renders
+ * under the shorter `galley-deliberation` id (see `Galley.tsx`) — both
+ * intentional exceptions to the otherwise-uniform `galley-{id}` pattern.
+ *
+ * `ReviewDeskRunView.tsx` and `DecisionRail.tsx` each keep their own private
+ * copy of this exact function (out of scope to rewire per the 41-05 plan) —
+ * this shared export is for `WorkspaceOutline` and any future third caller.
+ */
+export function galleyAnchorFor(sectionId: string): string | null {
+  if (sectionId === 'theme') return null
+  if (sectionId === 'deliberation-conversation') return 'galley-deliberation'
+  return `galley-${sectionId}`
+}
