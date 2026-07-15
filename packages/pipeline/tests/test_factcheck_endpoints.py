@@ -1,16 +1,16 @@
 """Phase 42 (Plan 42-04) — Fact Check claim action endpoint matrix.
 
-Tests for the FastAPI routes defined in docs/API_CONTRACTS.md §42.4:
+Tests for the six FastAPI routes defined in docs/API_CONTRACTS.md §42.4:
   POST   /issues/{run_id}/claims/{claim_index}/keep
   PATCH  /issues/{run_id}/claims/{claim_index}
   POST   /issues/{run_id}/claims/{claim_index}/replace-source
   DELETE /issues/{run_id}/claims/{claim_index}
-
-(Task 2 of this plan adds evidence/preview + evidence/apply coverage below.)
+  POST   /issues/{run_id}/claims/{claim_index}/evidence/preview
+  POST   /issues/{run_id}/claims/{claim_index}/evidence/apply
 
 Harness mirrors test_content_patch_endpoints.py / test_findings_endpoints.py:
-Convex queries/mutations and the Sanity draft/patch helpers are all
-monkeypatched — no network.
+Convex queries/mutations, the Sanity draft/patch helpers, web_search, and
+acomplete are all monkeypatched — no network.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from eisenbalm_pipeline.api.factcheck import router as factcheck_router
+from eisenbalm_pipeline.lib.search_client import SearchResult
 
 pytestmark = pytest.mark.anyio
 
@@ -100,14 +101,17 @@ def _wire(
     claim: dict | None,
     draft: dict | None = None,
     patch_raises: Exception | None = None,
+    charity_rows: list[dict] | None = None,
 ):
     """Standard wiring: mocks convex query/mutation + Sanity draft/patch.
 
-    Returns (query_calls, mutation_calls, patch_calls) recorder lists.
+    Returns (query_calls, mutation_calls, patch_calls, groq_calls) recorder
+    lists.
     """
     query_calls: list[tuple[str, dict]] = []
     mutation_calls: list[tuple[str, dict]] = []
     patch_calls: list[dict] = []
+    groq_calls: list[tuple[str, dict]] = []
 
     async def mock_convex_query(http, path, args):
         query_calls.append((path, args))
@@ -132,11 +136,18 @@ def _wire(
         patch_calls.append(kwargs)
         return "rev-2"
 
+    async def mock_groq(http, query, params=None):
+        groq_calls.append((query, params or {}))
+        return charity_rows if charity_rows is not None else [
+            {"charityName": "The Quiet Foundation", "charityWebsite": "https://example.org"}
+        ]
+
     monkeypatch.setattr(f"{_FC}._cc.convex_query", mock_convex_query)
     monkeypatch.setattr(f"{_FC}._cc.convex_mutation", mock_convex_mutation)
     monkeypatch.setattr(f"{_FC}.get_issue_draft", mock_get_issue_draft)
     monkeypatch.setattr(f"{_FC}.patch_issue_field", mock_patch_issue_field)
-    return query_calls, mutation_calls, patch_calls
+    monkeypatch.setattr(f"{_FC}._sc._groq", mock_groq)
+    return query_calls, mutation_calls, patch_calls, groq_calls
 
 
 def _reason(response) -> str | None:
@@ -156,7 +167,7 @@ def test_keep_422_on_empty_reason(monkeypatch):
 
 
 def test_keep_happy_path_calls_keep_as_written_and_audits(monkeypatch):
-    _q, mutation_calls, patch_calls = _wire(monkeypatch, claim=_claim())
+    _q, mutation_calls, patch_calls, _g = _wire(monkeypatch, claim=_claim())
 
     response = _client.post(
         "/issues/run-abc/claims/2/keep",
@@ -191,7 +202,7 @@ def test_keep_404_claim_missing(monkeypatch):
 
 
 def test_patch_without_text_updates_metadata_no_sanity_write(monkeypatch):
-    _q, mutation_calls, patch_calls = _wire(monkeypatch, claim=_claim())
+    _q, mutation_calls, patch_calls, _g = _wire(monkeypatch, claim=_claim())
 
     response = _client.patch(
         "/issues/run-abc/claims/2",
@@ -232,7 +243,7 @@ def test_patch_with_text_ordering_reset_before_terminal_status(monkeypatch):
     """The content-patch path calls _reset_touched_claims BEFORE the acted
     claim's own terminal-status write (claimChecks:keepAsWritten) — the
     explicit edit must win over the generic block-level reset (Pitfall 3)."""
-    _q, mutation_calls, patch_calls = _wire(monkeypatch, claim=_claim())
+    _q, mutation_calls, patch_calls, _g = _wire(monkeypatch, claim=_claim())
 
     response = _client.patch(
         "/issues/run-abc/claims/2",
@@ -310,7 +321,7 @@ def test_patch_with_text_409_revision_mismatch_propagated(monkeypatch):
 
 
 def test_patch_bonus_claim_uses_bonus_body_path(monkeypatch):
-    _q, _m, patch_calls = _wire(
+    _q, _m, patch_calls, _g = _wire(
         monkeypatch,
         claim=_claim(
             sectionName="bonus",
@@ -352,7 +363,7 @@ def test_patch_404_claim_missing(monkeypatch):
 
 
 def test_replace_source_updates_claim_no_sanity_write(monkeypatch):
-    _q, mutation_calls, patch_calls = _wire(monkeypatch, claim=_claim())
+    _q, mutation_calls, patch_calls, _g = _wire(monkeypatch, claim=_claim())
 
     response = _client.post(
         "/issues/run-abc/claims/2/replace-source",
@@ -377,7 +388,7 @@ def test_replace_source_updates_claim_no_sanity_write(monkeypatch):
 
 
 def test_replace_source_code_stamps_retrieved_at_when_omitted(monkeypatch):
-    _q, mutation_calls, _p = _wire(monkeypatch, claim=_claim())
+    _q, mutation_calls, _p, _g = _wire(monkeypatch, claim=_claim())
 
     response = _client.post(
         "/issues/run-abc/claims/2/replace-source",
@@ -401,7 +412,7 @@ def test_replace_source_404_claim_missing(monkeypatch):
 
 
 def test_remove_soft_deletes_no_sanity_write(monkeypatch):
-    _q, mutation_calls, patch_calls = _wire(monkeypatch, claim=_claim())
+    _q, mutation_calls, patch_calls, _g = _wire(monkeypatch, claim=_claim())
 
     response = _client.request(
         "DELETE", "/issues/run-abc/claims/2", json={"reason": "duplicate of claim 3"}
@@ -434,6 +445,188 @@ def test_remove_404_claim_missing(monkeypatch):
     assert response.status_code == 404
 
 
+# ── Evidence preview — read-only, zero mutations ────────────────────────
+
+
+def test_evidence_preview_returns_source_and_rewritten_claim_no_mutations(monkeypatch):
+    _q, mutation_calls, patch_calls, groq_calls = _wire(monkeypatch, claim=_claim())
+
+    tavily_batch = [
+        SearchResult(
+            url="https://postandcourier.example/story",
+            title="Installations lag demand",
+            content="Demand for installations outpaces supply roughly four to one.",
+            score=0.9,
+        ),
+        SearchResult(
+            url="https://example.org/other",
+            title="Other",
+            content="Unrelated.",
+            score=0.4,
+        ),
+    ]
+
+    async def mock_web_search(query, *, max_results=5):
+        return tavily_batch
+
+    class _Pick:
+        sourceIndex = 0
+        rewrittenClaim = "demand outpaces installations roughly four to one"
+
+    async def mock_acomplete(*, agent_id, run_id, messages, response_format=None):
+        return _Pick(), {"tokens_in": 0, "tokens_out": 0, "usd": 0.0}
+
+    monkeypatch.setattr(f"{_FC}.web_search", mock_web_search)
+    monkeypatch.setattr(f"{_FC}.acomplete", mock_acomplete)
+
+    response = _client.post("/issues/run-abc/claims/2/evidence/preview", json={})
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["sourceUrl"] == "https://postandcourier.example/story"
+    assert data["sourcePublisher"] == "postandcourier.example"
+    assert data["rewrittenClaim"] == "demand outpaces installations roughly four to one"
+    assert isinstance(data["retrievedAt"], int)
+
+    # Charity-context GROQ projection fired (Pitfall 6).
+    assert len(groq_calls) == 1
+    assert "charity->name" in groq_calls[0][0]
+
+    # ZERO mutating calls of any kind during preview.
+    assert mutation_calls == []
+    assert patch_calls == []
+
+
+def test_evidence_preview_falls_back_to_top_result_on_bad_index(monkeypatch):
+    _wire(monkeypatch, claim=_claim())
+
+    tavily_batch = [
+        SearchResult(url="https://top.example/a", title="A", content="c", score=0.9),
+    ]
+
+    async def mock_web_search(query, *, max_results=5):
+        return tavily_batch
+
+    class _Pick:
+        sourceIndex = 99  # out of range — never a raw LLM URL, never a crash
+        rewrittenClaim = "rewritten"
+
+    async def mock_acomplete(*, agent_id, run_id, messages, response_format=None):
+        return _Pick(), {"tokens_in": 0, "tokens_out": 0, "usd": 0.0}
+
+    monkeypatch.setattr(f"{_FC}.web_search", mock_web_search)
+    monkeypatch.setattr(f"{_FC}.acomplete", mock_acomplete)
+
+    response = _client.post("/issues/run-abc/claims/2/evidence/preview", json={})
+    assert response.status_code == 200, response.text
+    assert response.json()["sourceUrl"] == "https://top.example/a"
+
+
+def test_evidence_preview_404_claim_missing(monkeypatch):
+    _wire(monkeypatch, claim=None)
+    response = _client.post("/issues/run-abc/claims/2/evidence/preview", json={})
+    assert response.status_code == 404
+
+
+# ── Evidence apply — atomic content patch + claim update + audit ────────
+
+
+def test_evidence_apply_happy_path_patches_updates_and_audits(monkeypatch):
+    _q, mutation_calls, patch_calls, _g = _wire(monkeypatch, claim=_claim())
+
+    response = _client.post(
+        "/issues/run-abc/claims/2/evidence/apply",
+        json={
+            "ifRevisionID": "rev-1",
+            "sourceUrl": "https://postandcourier.example/story",
+            "retrievedAt": 555,
+            "rewrittenClaim": "demand outpaces installations roughly four to one",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {
+        "revisionId": "rev-2",
+        "claimIndex": 2,
+        "resolution": "evidence_applied",
+    }
+
+    assert len(patch_calls) == 1
+    assert patch_calls[0]["field_path"] == "problemStatement.body"
+    pt_texts = [
+        child["text"]
+        for blk in patch_calls[0]["value"]
+        for child in blk.get("children", [])
+    ]
+    assert any("outpaces installations" in t for t in pt_texts)
+
+    updates = [args for path, args in mutation_calls if path == "claimChecks:updateClaim"]
+    assert updates[0]["text"] == "demand outpaces installations roughly four to one"
+    assert updates[0]["sourceUrl"] == "https://postandcourier.example/story"
+    assert updates[0]["retrievedAt"] == 555
+
+    all_paths = [path for path, _args in mutation_calls]
+    assert all_paths.index("claimChecks:markChanged") < all_paths.index(
+        "claimChecks:keepAsWritten"
+    )
+
+    revokes = [args for path, args in mutation_calls if path == "signOffs:revokeAll"]
+    assert len(revokes) == 1
+
+    audits = [args for path, args in mutation_calls if path == "auditLog:record"]
+    assert len(audits) == 1
+    assert audits[0]["action"] == "claim_evidence_applied"
+
+
+def test_evidence_apply_409_span_not_resolved(monkeypatch):
+    _wire(monkeypatch, claim=_claim(text="never appears anywhere"))
+    response = _client.post(
+        "/issues/run-abc/claims/2/evidence/apply",
+        json={
+            "ifRevisionID": "rev-1",
+            "sourceUrl": "https://x",
+            "retrievedAt": 1,
+            "rewrittenClaim": "y",
+        },
+    )
+    assert response.status_code == 409
+    assert _reason(response) == "span_not_resolved"
+
+
+def test_evidence_apply_409_revision_mismatch_propagated(monkeypatch):
+    _wire(
+        monkeypatch,
+        claim=_claim(),
+        patch_raises=HTTPException(
+            status_code=409,
+            detail={"reason": "revision_mismatch", "message": "stale"},
+        ),
+    )
+    response = _client.post(
+        "/issues/run-abc/claims/2/evidence/apply",
+        json={
+            "ifRevisionID": "stale-rev",
+            "sourceUrl": "https://x",
+            "retrievedAt": 1,
+            "rewrittenClaim": "y",
+        },
+    )
+    assert response.status_code == 409
+    assert _reason(response) == "revision_mismatch"
+
+
+def test_evidence_apply_404_claim_missing(monkeypatch):
+    _wire(monkeypatch, claim=None)
+    response = _client.post(
+        "/issues/run-abc/claims/2/evidence/apply",
+        json={
+            "ifRevisionID": "rev-1",
+            "sourceUrl": "https://x",
+            "retrievedAt": 1,
+            "rewrittenClaim": "y",
+        },
+    )
+    assert response.status_code == 404
+
+
 # ── Wiring invariants ─────────────────────────────────────────────────────
 
 
@@ -455,3 +648,5 @@ def test_factcheck_router_registered_on_app():
     assert "/issues/{run_id}/claims/{claim_index}/keep" in paths
     assert "/issues/{run_id}/claims/{claim_index}" in paths
     assert "/issues/{run_id}/claims/{claim_index}/replace-source" in paths
+    assert "/issues/{run_id}/claims/{claim_index}/evidence/preview" in paths
+    assert "/issues/{run_id}/claims/{claim_index}/evidence/apply" in paths
