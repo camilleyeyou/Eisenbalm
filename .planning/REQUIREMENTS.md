@@ -368,7 +368,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **FCT-07**: A revision touching a claim's block returns that claim to unchecked and increments the "changed since check" counter.
 
 ### My Tasks & Decision Log (TSK)
-- [ ] **TSK-01**: My Tasks lists everything awaiting human judgment as a *derived projection* over open claims, open findings, and missing sign-offs — no separate task store.
+- [x] **TSK-01**: My Tasks lists everything awaiting human judgment as a *derived projection* over open claims, open findings, and missing sign-offs — no separate task store.
 - [x] **TSK-02**: Every task shows a plain-language title, the issue/area affected, why human judgment is required, severity (Must fix / Review recommended / Information), stage, age, and the agent's recommendation when one exists.
 - [x] **TSK-03**: Each task's primary action deep-links to the exact claim, passage, or decision; "Inspect context" opens the inspector on that artifact.
 - [ ] **TSK-04**: When nothing needs the operator, My Tasks says so explicitly and points to Approval — silence is a designed state, not an empty list.
