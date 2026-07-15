@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 42-01-contract-schema-convex-PLAN.md
-last_updated: "2026-07-15T11:56:59.678Z"
+stopped_at: Completed 42-02-researcher-publisher-importance-PLAN.md
+last_updated: "2026-07-15T12:11:47.749Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 42 (fact-check-stage) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 
 ## Performance Metrics
 
@@ -290,6 +290,7 @@ Plan: 2 of 8
 | Phase 41 P11 | 12min | 2 tasks | 3 files |
 | Phase 41 P12 | 25min | 3 tasks | 15 files |
 | Phase 42 P01 | 15min | 2 tasks | 5 files |
+| Phase 42-fact-check-stage P02 | 20min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -747,6 +748,8 @@ Recent decisions affecting current work:
 - [Phase 41]: Approval's readiness board is an intentional read-only duplicate of the Stage 5 rail's readiness summary, never imported
 - [Phase 41]: 5-publisher plumbing test mocks useWorkspaceState via one vi.hoisted fixture ref, since Vitest matches mocks by resolved file path not import specifier
 - [Phase 42]: importance/changedSinceCheck/conflict added as additive-optional claim_checks fields; Keep-as-written reuses status:'checked' (no new status literal, D-08 chip vocabulary); Remove is soft-delete via status:'removed' (zero code change to allSignedOff/listByRunId)
+- [Phase 42-fact-check-stage]: Extracted researcher.py's mapped_claims loop into a pure _map_claims() helper so importance-default behavior is unit-testable without a network/LLM call
+- [Phase 42-fact-check-stage]: Publisher importance tests exercise the real publisher() node with the Sanity/Convex network boundary monkeypatched (both agents.publisher and agents._wrapper convex_mutation_safe bindings), proving the actual merge code path rather than a reimplemented snippet
 
 ### Pending Todos
 
@@ -836,6 +839,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T11:56:59.665Z
-Stopped at: Completed 42-01-contract-schema-convex-PLAN.md
+Last session: 2026-07-15T12:11:47.736Z
+Stopped at: Completed 42-02-researcher-publisher-importance-PLAN.md
 Resume file: None
