@@ -65,6 +65,10 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         "pitchLog:insert",
         "pitchLog:markSelected",
         "claimChecks:insertBatch",
+        # Phase 42 (§42.3, D-19/D-20): api/content.py's `_reset_touched_claims`
+        # calls this to flip a touched claim back to 'pending' + set
+        # changedSinceCheck — handler calls requirePipelineSecret.
+        "claimChecks:markChanged",
         # Phase 33 (§33.1): pipeline-lane resolution flip for the findings
         # accept/dismiss/reopen endpoints — handler calls requirePipelineSecret.
         "qaCorrections:setResolution",

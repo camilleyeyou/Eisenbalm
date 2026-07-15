@@ -24,6 +24,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import eisenbalm_pipeline.lib.convex_client as _cc
+from eisenbalm_pipeline.api.content import (
+    _reset_touched_claims,
+    _touched_block_indices,
+)
 from eisenbalm_pipeline.api.content import router as content_router
 from eisenbalm_pipeline.api.control import _emit_audit
 from eisenbalm_pipeline.lib.sanity_client import (
@@ -93,6 +97,120 @@ async def test_emit_audit_omits_before_after_when_not_supplied(monkeypatch):
 
     assert "before" not in captured["args"]
     assert "after" not in captured["args"]
+
+
+# ── _touched_block_indices + _reset_touched_claims (FCT-07, D-19/D-20) ─────
+
+
+def test_touched_block_indices_same_length_diff():
+    """Same-length edit that changes only block 1's text returns {1}."""
+    before = [
+        {"type": "paragraph", "text": "A"},
+        {"type": "paragraph", "text": "B"},
+        {"type": "paragraph", "text": "C"},
+    ]
+    after = [
+        {"type": "paragraph", "text": "A"},
+        {"type": "paragraph", "text": "B2"},
+        {"type": "paragraph", "text": "C"},
+    ]
+    assert _touched_block_indices(before, after) == {1}
+
+
+def test_touched_block_indices_no_change_returns_empty_set():
+    """Identical before/after (same length) returns an empty set, not None."""
+    before = [{"type": "paragraph", "text": "A"}]
+    after = [{"type": "paragraph", "text": "A"}]
+    assert _touched_block_indices(before, after) == set()
+
+
+def test_touched_block_indices_length_changed_returns_none():
+    """An insert/delete (length changed) returns None — 'whole section
+    touched' — rather than attempting unreliable positional diffing."""
+    before = [{"type": "paragraph", "text": "A"}]
+    after = [
+        {"type": "paragraph", "text": "A"},
+        {"type": "paragraph", "text": "B"},
+    ]
+    assert _touched_block_indices(before, after) is None
+
+
+async def test_reset_touched_claims_precise_reset(monkeypatch: pytest.MonkeyPatch):
+    """A same-length edit touching only block 1 resets the claim anchored to
+    block 1 AND any null-anchor claim in the same section, but NOT the claim
+    anchored to block 0, and NOT claims in other sections."""
+    rows = [
+        {"sectionName": "originStory", "blockIndexHint": 0, "claimIndex": 0},
+        {"sectionName": "originStory", "blockIndexHint": 1, "claimIndex": 1},
+        {"sectionName": "originStory", "blockIndexHint": None, "claimIndex": 2},
+        {"sectionName": "caseStudy", "blockIndexHint": 1, "claimIndex": 3},
+    ]
+
+    async def mock_convex_query(http, path, args):
+        assert path == "claimChecks:listByRunId"
+        assert args == {"runId": "run-abc"}
+        return rows
+
+    changed_calls: list[dict] = []
+
+    async def mock_convex_mutation(http, path, args):
+        assert path == "claimChecks:markChanged"
+        changed_calls.append(args)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}._cc.convex_mutation", mock_convex_mutation)
+
+    await _reset_touched_claims(
+        None, run_id="run-abc", section_name="originStory", touched={1}
+    )
+
+    assert [c["claimIndex"] for c in changed_calls] == [1, 2]
+
+
+async def test_reset_touched_claims_whole_section_on_length_drift(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """touched=None (a length-changed edit) resets EVERY claim in the section
+    regardless of blockIndexHint; claims in other sections stay untouched."""
+    rows = [
+        {"sectionName": "originStory", "blockIndexHint": 0, "claimIndex": 0},
+        {"sectionName": "originStory", "blockIndexHint": 1, "claimIndex": 1},
+        {"sectionName": "caseStudy", "blockIndexHint": 0, "claimIndex": 2},
+    ]
+
+    async def mock_convex_query(http, path, args):
+        return rows
+
+    changed_calls: list[dict] = []
+
+    async def mock_convex_mutation(http, path, args):
+        changed_calls.append(args)
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr(f"{_C}._cc.convex_mutation", mock_convex_mutation)
+
+    await _reset_touched_claims(
+        None, run_id="run-abc", section_name="originStory", touched=None
+    )
+
+    assert [c["claimIndex"] for c in changed_calls] == [0, 1]
+
+
+async def test_reset_touched_claims_fails_open_on_convex_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A Convex hiccup during the reset must not raise — it mirrors
+    _revoke_active_signoffs's fail-open, non-blocking behavior so a claim
+    reset failure never blocks the operator's content save."""
+
+    async def mock_convex_query(http, path, args):
+        raise RuntimeError("convex is down")
+
+    monkeypatch.setattr(f"{_C}._cc.convex_query", mock_convex_query)
+
+    await _reset_touched_claims(
+        None, run_id="run-abc", section_name="originStory", touched={0}
+    )  # must not raise
 
 
 # ── Wave 2/3 placeholders — SKIPPED (filled in by Plan 31-02/03) ───────────

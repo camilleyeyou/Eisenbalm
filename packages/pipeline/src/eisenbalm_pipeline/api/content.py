@@ -154,6 +154,79 @@ async def _patch_fields(
     return await _sc._fetch_issue_rev(sanity_http, issue_id)
 
 
+# ── Touched-claim reset (FCT-07, D-19/D-20) ────────────────────────────────
+
+
+def _touched_block_indices(
+    before_blocks: list[dict], after_blocks: list[dict]
+) -> Optional[set[int]]:
+    """Positional block-text diff used by ``_reset_touched_claims``.
+
+    Returns ``None`` when the block count changed (an insert/delete) —
+    index-position diffing is unreliable under length drift (42-RESEARCH.md
+    Pitfall 2), so callers must treat the WHOLE section as touched rather
+    than attempt a positional match. Otherwise returns the set of indices
+    whose ``text`` differs between the before/after block arrays.
+    """
+    if len(before_blocks) != len(after_blocks):
+        return None
+    return {
+        i
+        for i, (b, a) in enumerate(zip(before_blocks, after_blocks))
+        if (b or {}).get("text") != (a or {}).get("text")
+    }
+
+
+async def _reset_touched_claims(
+    convex_http: Any,
+    *,
+    run_id: str,
+    section_name: str,
+    touched: Optional[set[int]],
+) -> None:
+    """Return any claim anchored to a touched block back to unchecked and set
+    its "changed since check" marker (FCT-07, D-19/D-20) — even when the
+    replacement text is itself sourced (this is a block-level touched
+    counter, not a re-verification).
+
+    ``touched is None`` means the whole section is treated as touched (a
+    length-changed edit — see ``_touched_block_indices``). A claim whose
+    ``blockIndexHint`` never resolved (``None``) is reset conservatively
+    rather than silently skipped, per the same "over-reset, never
+    under-reset" rule.
+
+    Fail-open (mirrors ``_revoke_active_signoffs``): a reset failure must NOT
+    block the content save the operator is actively doing.
+    """
+    try:
+        rows = (
+            await _cc.convex_query(
+                convex_http, "claimChecks:listByRunId", {"runId": run_id}
+            )
+            or []
+        )
+        for row in rows:
+            if row.get("sectionName") != section_name:
+                continue
+            block_index_hint = row.get("blockIndexHint")
+            if (
+                touched is None
+                or block_index_hint is None
+                or block_index_hint in touched
+            ):
+                await _cc.convex_mutation(
+                    convex_http,
+                    "claimChecks:markChanged",
+                    {"runId": run_id, "claimIndex": row["claimIndex"]},
+                )
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "_reset_touched_claims failed for run=%s section=%s (non-blocking)",
+            run_id,
+            section_name,
+        )
+
+
 # ── Request body models ────────────────────────────────────────────────────
 
 
