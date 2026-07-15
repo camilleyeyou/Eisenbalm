@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 44-06-inspector-provider-container-mount-PLAN.md
-last_updated: "2026-07-15T20:47:44.270Z"
+stopped_at: Completed 44-07-entry-points-draft-voice-factcheck-PLAN.md
+last_updated: "2026-07-15T21:12:37.907Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 44 (inspect-how-this-was-made) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 
 ## Performance Metrics
 
@@ -312,6 +312,7 @@ Plan: 7 of 9
 | Phase 44 P04 | 9min | 2 tasks | 5 files |
 | Phase 44 P05 | 35min | 3 tasks | 5 files |
 | Phase 44 P06 | 25min | 3 tasks | 4 files |
+| Phase 44 P07 | 20min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -813,6 +814,8 @@ Recent decisions affecting current work:
 - [Phase 44]: InspectorFooter.tsx built inside Task 2's commit (not deferred to Task 3) so Task 2's own pnpm build verification passes with no dangling import
 - [Phase 44]: Footer action components must never carry a custom aria-label that only reshapes the visible label text — it silently shadows the accessible name and can collide with unrelated elements in role-based test queries
 - [Phase 44]: InspectorContainer built before InspectorProvider's commit (Provider imports Container); computeOutputDivergence passed only completedAt (no changedSinceCheck fetch, honest 'unknown'); artifact.output uses prettyJson not summarize; title/meta reuse displayNameForAgentKey
+- [Phase 44]: Wired ReviewDeskRunView.tsx/VoicePassRunView.tsx (the only two Galley-mounting screens) even though the plan's frontmatter files_modified list omitted them -- required by the plan's own Task 1 action text
+- [Phase 44]: Fact-check claim locator uses claimIndex (always present) not the optional Phase-35 claimId provenance field, to keep the new inspector callback consistent with every other claim action on the screen
 
 ### Pending Todos
 
@@ -903,6 +906,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T20:47:44.257Z
-Stopped at: Completed 44-06-inspector-provider-container-mount-PLAN.md
+Last session: 2026-07-15T21:12:37.894Z
+Stopped at: Completed 44-07-entry-points-draft-voice-factcheck-PLAN.md
 Resume file: None
