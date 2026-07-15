@@ -4759,3 +4759,406 @@ read query (`byClerkUserId`); `_emit_audit` gains four optional kwargs
 gains a required-reason blocklist path + its first `audit_log` emission. No existing field is
 renamed or removed; the Settings `AuditLogViewer.tsx` and `auditLog.listForWorkspace` are
 unchanged; `TaskSeverity` stays exactly `'must-fix' | 'review-recommended' | 'information'`.*
+
+---
+
+## §44 — Inspect How This Was Made (Phase 44)
+
+One universal 7-tab "Inspect how this was made" side panel, reachable from six editorial
+surfaces (brief org card, draft passage toolbar, fact-check claim detail, voice finding, approval
+recommendation, My Tasks), that resolves an `InspectorArtifact` (DERIVED-STATE-CONTRACT §8) from
+substrate that already exists — `agent_runs` (Phase 23), `agent_run_payloads` (Phase 23 OBS-05),
+`prompt_versions` (Phase 24), `PIPELINE_EDGES` (Phase 37), `VARIABLE_REGISTRY`/`VARIABLE_DESCRIPTIONS`
+(Phase 24/28). This is a read-side projection + entry-point-wiring phase — no new pipeline
+behavior, no new stores beyond one additive-optional field (§44.5). This contract is written
+BEFORE any resolver/panel/schema code exists (CLAUDE.md contract-first hard rule, mirroring
+§31/§35/§40/§42/§43). Plan 44-02 onward implements these shapes verbatim — no field name, function
+name, or predicate may be invented later.
+
+Two research-confirmed corrections OVERRIDE CONTEXT.md's more optimistic characterization of the
+missing-inputs diff and the Instructions tab, and are the load-bearing reconciliations this
+contract encodes (44-RESEARCH.md Pitfalls 1 and 2 — see §44.4 and §44.9 below).
+
+### §44.1 — `InspectorArtifactKey` and its string encoding
+
+Six artifact types (DERIVED-STATE-CONTRACT §8):
+
+```typescript
+type InspectorArtifactType = 'founder' | 'claim' | 'rec' | 'org' | 'signal' | 'qa'
+
+interface InspectorArtifactKey {
+  type: InspectorArtifactType
+  runId: string
+  locator: string
+}
+```
+
+`locator` meaning per type:
+
+| Type | `locator` |
+|---|---|
+| `founder` | galley sectionId (e.g. `founderBio`) OR qa sectionName (e.g. `founder_bio`) — the resolver normalizes either form (§44.3) |
+| `claim` | `claimId` |
+| `rec` | `''` (always resolves to `editor_final` for the run — no sub-locator needed) |
+| `qa` | qa sectionName (e.g. `founder_bio`) or `''` for the whole-run QA artifact |
+| `org` | candidateId, or `''` for the run's winning-organization artifact |
+| `signal` | leadId, or `''` when the run has no signal step (degrades, §44.3) |
+
+**String encoding** — the form carried on `DerivedTask.insp` (§43.5a) and passed to
+`openInspector` (§44.6):
+
+```
+`${type}:${runId}:${locator}`
+```
+
+`runId` never contains `:` (a uuid-like id, generated server-side). `locator` MAY contain `:` (e.g.
+a claimId), so parsing splits on the first two colons only — everything after the second colon is
+the locator, verbatim, even if it contains further colons. An empty locator renders as a trailing
+colon (`rec:abc123:`).
+
+```typescript
+function encodeArtifactKey(k: InspectorArtifactKey): string
+// `${k.type}:${k.runId}:${k.locator}`
+
+function parseArtifactKey(s: string): InspectorArtifactKey | null
+// split into at most 3 parts via the first two colons; null on malformed input
+// (missing colon, unknown type). Round-trips encodeArtifactKey exactly, including
+// an empty locator and a locator containing ':'.
+```
+
+### §44.2 — `InspectorArtifact` shape
+
+Reproduced VERBATIM from DERIVED-STATE-CONTRACT §8 — this is the canonical console-side type. It
+is ASSEMBLED in the panel container (Plan 44-06) from Convex query results + the resolver (§44.3)
++ the diff (§44.4) — it is NOT a stored row, NOT a Convex document.
+
+```typescript
+interface InspectorArtifact {
+  title: string; meta: string          // "step: … · agent: … · instructions v4 · run #7"
+  asked: string; result: string        // Summary tab — human-readable, never JSON
+  confidence: string; warning: string
+  upstream: string; downstream: string
+  inputs: string                       // Inputs tab — values actually supplied
+  missing: string                      // THE HIGH-VALUE FIELD — the redefined diff, §44.4
+  instructionVersion: string; instructions: string; sectionGuidance: string  // Instructions tab
+  sharedRules: { label: string; content?: string }[]  // Instructions tab — additive, §44.9
+  output: string; outputNote: string   // + note when the issue text has since diverged
+  sources: { title: string; mark: string; passage: string; retrievedAt: string }[]
+  model: string; timing: string; cost: string; latency: string; validation: string  // Diagnostics
+  json: string                         // Technical tab — never the default anywhere
+}
+```
+
+**Instructions-tab fields note:** `instructionVersion`/`instructions` are populated from the
+active `prompt_versions` row for the 11 externalized agents (§44.9's instruction-version mapping);
+`sharedRules` carries the shared editorial rules the step references, for EVERY artifact type
+(§44.9) — never omitted, never a bare one-liner.
+
+### §44.3 — the pure resolver contract (`lib/inspectorArtifact.ts`)
+
+```typescript
+interface ResolvedStep {
+  agentKey: string          // agent_runs / agent_run_payloads namespace key
+  promptKey: string | null  // prompt_versions / VARIABLE_REGISTRY / prompt-lab namespace key,
+                             // or null when the agent is not externalized (§44.9)
+  degraded: boolean         // true when the run has no such step (signal/org until Phase 46/47)
+  sectionContext?: string   // optional "appears in: Founder Bio" label (claim artifacts)
+}
+
+function resolveInspectorStep(
+  key: InspectorArtifactKey,
+  opts?: { bonusType?: string },
+): ResolvedStep
+```
+
+**`agentKey` resolution table** (per artifact type):
+
+| Type | `agentKey` resolution |
+|---|---|
+| `founder` | `galleyIdToQaSection(locator) ?? (KNOWN_RUN_KEYS.has(locator) ? locator : null)`, where `KNOWN_RUN_KEYS = new Set(['origin_story','problem','founder_bio','case_study','game','bonus'])`. Tolerates either the galley camelCase id (`founderBio`) or the qa snake_case name (`founder_bio`) as `locator`. Unresolvable locator → `degraded: true`. |
+| `claim` | `researcher` (NOT a `claim_checks.agent` field — that field does not exist, §44.RECONCILIATION below). `sectionContext` is derived from the claim's `sectionName` via `galleyIdToQaSection`, rendered as "appears in: {label}". |
+| `rec` | `editor_final` |
+| `qa` | `qa` |
+| `org` | `scout` (the pitch/candidate data itself). `editor_gate1`/`editor_gate_1` is reachable via the "why this one won" context on the same artifact, not as the primary `agentKey`. |
+| `signal` | `signal_editor`; `degraded: true` when the run has no such step (no Signal Editor exists until Phase 46) — never a crash. |
+
+**`bonus` variant selection (D-02 corollary):** the `agent_runs`/`agent_run_payloads` key is
+literally `"bonus"` (not the three variant keys). The resolver reads `agent_run_payloads` for
+`agentKey="bonus"` for Diagnostics/Inputs/Output tabs, and separately reads
+`outputSnapshot.bonusType` (`packages/pipeline/.../agents/bonus.py:317`,
+`out_dict["bonusType"] = bonus_type`) to pick the Instructions-tab `promptKey`
+(`bonus_big_budget`/`bonus_jingle`/`bonus_spec_ad`) only.
+
+**`promptKey = runKeyToPromptKey(agentKey, opts?.bonusType)`:**
+
+```typescript
+function runKeyToPromptKey(agentKey: string, bonusType?: string): string | null {
+  if (agentKey === 'editor_gate_1') return 'editor_gate1'          // the one hard alias, §44.RECONCILIATION
+  if (['origin_story', 'problem', 'founder_bio', 'case_study', 'qa'].includes(agentKey)) return null
+  // deliberately NOT externalized — no prompt_versions row exists (§44.9)
+  if (agentKey === 'bonus') {
+    if (!bonusType) return null
+    const map: Record<string, string> = {
+      bigBudget: 'bonus_big_budget',
+      jingle: 'bonus_jingle',
+      specAd: 'bonus_spec_ad',
+    }
+    return map[bonusType] ?? null
+  }
+  return agentKey  // identity for the remaining 10 externalized keys
+}
+```
+
+### §44.4 — the REDEFINED missing-inputs diff (INS-03 — the headline)
+
+**REJECTED literal recipe (CONTEXT D-04):** diffing `VARIABLE_REGISTRY[agentKey]` (the
+fine-grained `{token}` names substituted into a prompt string, e.g. `charity_name`,
+`VOICE_CONSTRAINTS`) against `agent_run_payloads.inputSnapshot`'s top-level keys (coarse
+`DispatchState` field names, e.g. `research`, `winning_charity`, `style_brief`) is broken by
+construction — the two vocabularies never intersect by name (44-RESEARCH.md Pitfall 1), so this
+recipe reports EVERY declared token as missing for EVERY agent, always, regardless of what was
+actually supplied. The prototype's canonical `characterization_examples` example does not exist
+anywhere in the real codebase (verified by grep across `packages/pipeline` and
+`apps/dispatch-control`) and MUST NOT be used as a test fixture.
+
+**Shipped diagnostic — redefined onto the "declared state inputs" vocabulary:**
+
+```typescript
+// lib/inspector/declaredStateInputs.ts — a TypeScript port of
+// packages/pipeline/src/eisenbalm_pipeline/lib/agent_wrapper.py::_INPUT_KEYS,
+// speaking the SAME DispatchState top-level field-name vocabulary as
+// agent_run_payloads.inputSnapshot's actual keys.
+const DECLARED_STATE_INPUTS: Record<string, string[]> = {
+  calibrator:          ['run_id'],
+  scout:                ['style_brief'],
+  advocate:            ['candidates'],
+  editor_gate_1:        ['candidates'],
+  chronicler:           ['candidates', 'winning_charity', 'editor_decision'],
+  researcher:           ['winning_charity'],
+  verify_research:      ['research'],
+  origin_story:         ['research', 'winning_charity', 'style_brief'],
+  problem:              ['research', 'winning_charity', 'style_brief'],
+  founder_bio:          ['research', 'winning_charity', 'style_brief'],
+  case_study:           ['research', 'winning_charity', 'style_brief'],
+  game:                 ['research', 'winning_charity', 'style_brief'],
+  bonus:                ['research', 'winning_charity', 'style_brief'],
+  design:               ['research', 'winning_charity', 'style_brief'],
+  validate_sections:    ['run_id'],
+  qa:                   ['origin_story', 'problem_statement', 'founder_bio', 'case_study', 'game', 'bonus'],
+  editor_final:         ['qa_corrections', 'winning_charity'],
+  publisher:            ['sanity_issue_id', 'winning_charity'],
+}
+```
+
+`declared = DECLARED_STATE_INPUTS[agentKey] ?? []` (empty/unknown agentKey degrades honestly — see
+below, never throws). `supplied` = the run's ACTUAL top-level input keys for `(runId, agentKey)`.
+
+```
+missing = declared.filter(key => !supplied.includes(key))
+```
+
+Each missing key is surfaced with a human gloss (e.g. `winning_charity — expected state input,
+absent from this run's captured input`).
+
+**`supplied` source + truncation honesty (D-05):**
+1. Prefer the additive-optional, untruncated `agent_run_payloads.inputKeys` (§44.5) when present —
+   this is the exact top-level key list, computed before truncation, so the diff against it is
+   exact, never approximate.
+2. When `inputKeys` is absent (legacy rows predating Plan 44-02), fall back to
+   `Object.keys(JSON.parse(inputSnapshot))` AND render an explicit note: **"snapshot was
+   truncated — this diff is approximate."**
+
+**HARD RULE:** the diff must never assert a key is `missing` when truncation could have hidden it.
+When `inputKeys` is absent, a declared key not found in the parsed (possibly-truncated)
+`inputSnapshot` renders **"not captured (snapshot truncated)"**, NEVER a definitive "missing" —
+that stronger claim is reserved for the case where `inputKeys` (the untruncated key list) is
+present and confirms the key's absence.
+
+**Explicit NON-GOAL (document, do not silently attempt):** fine-grained `{token}`-level
+substitution-gap detection (the prototype's literal `characterization_examples` framing) is OUT OF
+SCOPE for Phase 44. It requires capturing the resolved token→value map at prompt-build time (a
+bigger `agent_wrapper.py` change than this phase's additive-field budget) or a per-agent
+nested-path lookup table connecting each `VARIABLE_DESCRIPTIONS` entry to where in the captured
+state slice it is sourced from. The `DECLARED_STATE_INPUTS` diagnostic above is the coarser,
+actually-correct, immediately achievable substitute — it never produces a false "missing," which
+the token-level version would.
+
+### §44.5 — additive `agent_run_payloads.inputKeys` field (D-05, contract-first)
+
+```typescript
+agent_run_payloads: defineTable({
+  // ── existing (Phase 23, unchanged) ──
+  workspace_id: v.string(),
+  runId: v.string(),
+  agentKey: v.string(),
+  inputSnapshot: v.optional(v.string()),   // JSON, truncated ~2000 chars
+  outputSnapshot: v.optional(v.string()),  // JSON, truncated ~2000 chars
+  // ── NEW additive (Phase 44) ──
+  inputKeys: v.optional(v.array(v.string())),  // untruncated top-level key list of the
+                                                // input slice, computed BEFORE _truncate()
+})
+  .index('by_workspace', ['workspace_id'])
+  .index('by_runId_agentKey', ['runId', 'agentKey'])
+```
+
+Computed in `agent_wrapper.py::_snapshot_input()` as `list(slice_.keys())`, BEFORE the
+`_truncate(json.dumps(slice_, ...))` call, and emitted alongside `inputSnapshot`/`outputSnapshot`
+in the same `agentRuns:savePayload` mutation call. Legacy rows (pre-Plan-44-02 runs) omit it — the
+§44.4 fallback covers them. This is additive-optional exactly like every Phase 35/42/43 field; no
+migration, no backfill.
+
+### §44.6 — `openInspector(artifactKey)` opener contract (INS-01, D-06)
+
+```typescript
+function openInspector(key: string | InspectorArtifactKey): void
+function closeInspector(): void
+
+function useInspector(): {
+  openInspector: typeof openInspector
+  closeInspector: typeof closeInspector
+  activeKey: InspectorArtifactKey | null
+}
+```
+
+Exposed via a React context/provider. EXACTLY ONE `InspectorPanel` instance is mounted app-wide
+(recommended: the `(dashboard)` root layout, so it covers all six entry points including
+`/my-tasks`, which is NOT under the issue-workspace frame). All six entry points call the SAME
+`openInspector` — never a second panel instance, never a per-screen copy. `openInspector` accepts
+either the string-encoded form (parsed via `parseArtifactKey`, §44.1) or the structured
+`InspectorArtifactKey` directly.
+
+### §44.7 — footer actions: live deep-links vs reserved (INS-06, D-08)
+
+Six footer actions render on EVERY artifact type:
+
+| Action | State | Target |
+|---|---|---|
+| **Improve this agent →** | LIVE when `promptKey !== null`; RESERVED when `promptKey === null` | `/prompt-lab/${encodeURIComponent(promptKey)}` (uses the promptKey namespace — i.e. `editor_gate1`, never `editor_gate_1`) |
+| **Compare instruction versions** | LIVE when `promptKey !== null`; RESERVED when `promptKey === null` | same `/prompt-lab/${promptKey}` page (version history lives there, no separate route) |
+| **Related quality tests** | LIVE when `promptKey !== null`; RESERVED when `promptKey === null` | `/eval-center` (optionally `?agent=${promptKey}` if the page supports a filter — Plan 44-05's discretion, confirm against `ScenarioCard.tsx`'s `agentKey` prop) |
+| **Prior & downstream steps** | Always LIVE | resolved inline from `PIPELINE_EDGES` (Summary tab `upstream`/`downstream` fields), with an optional deep-link to `/run-monitor/graph` |
+| **Ask agent to revise** | Always RESERVED | disabled, `title="Arrives in Phase 45"` |
+| **Restart from this step** | Always RESERVED, for ALL artifact types | disabled, `title="Completed steps are reused, not re-paid — general step restart is not yet wired"` |
+
+**Restart-from-this-step rationale (44-RESEARCH.md Pitfall 6):** `POST /run/{run_id}/resume`
+(`packages/pipeline/src/eisenbalm_pipeline/api/runs.py:435-498`, `_resume_paused_run`) is
+hardcoded to `Command(resume={"editorSelection": charity_name})` — built exclusively for the
+Gate-1 `interrupt()` (the graph's one and only `interrupt()` call site). There is no generic
+"resume graph execution from node X" mechanism; wiring this footer action to that endpoint would
+either silently no-op or misfire a Gate-1-shaped payload at a non-Gate-1 step. Reserved for all six
+artifact types, no exception.
+
+**When `promptKey` is `null`** (the 5 non-externalized agents: `origin_story`, `problem`,
+`founder_bio`, `case_study`, `qa`), Improve/Compare/Related-tests all render RESERVED with title
+`"This agent's instructions are code-defined, not editable here."`
+
+### §44.8 — Diagnostics "model" field (RESEARCH finding)
+
+`agent_runs` (§44.RECONCILIATION substrate) has NO `model` field
+(`convex/schema.ts:346-361` confirmed — `status`/`costUsd`/`durationMs`/`tokensIn`/`tokensOut`/
+`error`/`retryCount` only). The resolved LLM model is written only into pipeline
+`state["model_versions"]`, which reaches Convex never and Sanity only as a JSON-stringified blob
+at publish time — no live per-run, per-agent, Convex-queryable "which model produced this" exists
+today. The Diagnostics tab renders `model` as **"not recorded"** (label + icon, D-14 honesty rule)
+for Phase 44 — zero schema change. Follow-up option (add `agent_runs.model: v.optional(v.string())`,
+populated in `agent_wrapper.py`'s `completed` mutation from `result.get("model_versions", {}).get(agent_key)`)
+is noted as a fast, low-risk future addition, explicitly OUT OF SCOPE for this phase — Phase 44's
+schema-change budget is spent on `inputKeys` (§44.5).
+
+### §44.9 — Instructions-tab "shared rules referenced" + instruction-version mapping (INS-04, RESEARCH Pitfall 2)
+
+The Instructions tab must show BOTH the active instruction version AND the shared rules the step
+references (roadmap success criterion #4) — for EVERY artifact type, never just for the ones with
+a `prompt_versions` row.
+
+**The 5 non-externalized agents** (`promptKey === null` per §44.3's `runKeyToPromptKey`:
+`origin_story`, `problem`, `founder_bio`, `case_study`, `qa`) have `promptVersions.getActive`
+return `null` BY DESIGN — `config_loader.py`'s `SYSTEM_PROMPT_KEYS` (the 11-entry externalized
+tuple) explicitly excludes them; they build their prompts via direct Python f-string interpolation
+(`lib/voice.py::build_section_writer_prompt`), never an externalized `.replace()` template. This is
+the PERMANENT, EXPECTED state for these 5 keys — not a loading/error/not-yet-seeded state. The tab
+must STILL render the shared rules, never just a bare "code-defined" one-liner.
+
+```typescript
+// Exact name — the container (Plan 44-06) imports this constant directly.
+const NON_EXTERNALIZED_SHARED_RULES: Record<string, string[]> = {
+  origin_story: ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
+  problem:      ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
+  founder_bio:  ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
+  case_study:   ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
+  qa:           ['rubric'],
+}
+```
+
+Source of truth: the 4 narrative writers always receive `VOICE_CONSTRAINTS` (via
+`style_brief.get("voice") or VOICE_CONSTRAINTS`, `lib/voice.py`) and `STRUCTURE_CONTRACT`
+(module-level constant appended to each writer's guidance string —
+`agents/{origin_story,problem,founder_bio,case_study}.py`); `qa` references `rubric`, a real
+`SINGLETON_ASSET_KEYS` entry (`config_loader.py:155`) that IS fetchable via `prompt_versions`.
+
+**Resolution rule (the container, Plan 44-06, follows this exactly):**
+- The 4 narrative writers' rules (`VOICE_CONSTRAINTS`, `STRUCTURE_CONTRACT`) are code-defined
+  constants — render as LABEL-ONLY rows (no `content` fetch; they are not editable prompt-lab
+  rows).
+- `qa`'s `rubric` is FETCHABLE — resolve its content via
+  `promptVersions.getActive({ agentKey: 'rubric', workspace_id })` and render the active-version
+  content (human-readable) when present; label-only when `getActive` returns `null` for `rubric`
+  too (never blank either way).
+
+**Additive artifact field** (augments the §44.2 Instructions-tab group without changing the
+verbatim `InspectorArtifact` shape's other fields):
+
+```typescript
+sharedRules: { label: string; content?: string }[]
+```
+
+`label` always present (e.g. `"VOICE_CONSTRAINTS"`, `"STRUCTURE_CONTRACT"`, `"rubric"`); `content`
+present only for fetchable rules (`qa` → `rubric`, when its `getActive` row exists). The panel
+renders one row per entry under a "Shared rules referenced" heading (label + icon, D-14); `content`
+renders human-readable when available.
+
+**Instruction-version mapping for the 11 externalized agents** (this closes the "fetched but never
+assembled" gap): the container maps the fetched active `prompt_versions` row into the
+Instructions-tab fields —
+
+```
+promptVersion.version → instructionVersion   (e.g. "v4")
+promptVersion.content  → instructions         (the human-readable active prompt text)
+```
+
+This is the EXACT data the Instructions tab reads when `promptKey !== null` (i.e.
+`instructionsExternalized === true`, the client-side derived flag `promptKey !== null`). A
+`getActive` row that is fetched but never mapped into these two fields would leave the Instructions
+tab falsely blank for agents that DO have an active version — the dishonest-blank state D-07/D-14
+forbid. Every externalized artifact's Instructions tab renders REAL version content, never a blank
+tab, when its active row exists.
+
+### §44.RECONCILIATION — corrections to CONTEXT.md's D-02 characterization
+
+Two CONTEXT.md D-02 characterizations are corrected here by direct source inspection
+(44-RESEARCH.md Pitfalls 3 and 4) and are binding for all downstream 44-xx plans:
+
+- **`editor_gate_1` vs `editor_gate1`:** `agent_runs`/`agent_run_payloads`/`PIPELINE_EDGES`/
+  `PIPELINE_NODES`/the LangGraph node itself all use `editor_gate_1` (underscore before 1).
+  `prompt_versions`/`VARIABLE_REGISTRY`/`config_loader.py`'s `SYSTEM_PROMPT_KEYS`/
+  `agents/editor.py`'s `acomplete(agent_id="editor_gate1", ...)`/`AGENT_DISPLAY_NAMES`/eval-center's
+  `ScenarioCard.agentKey` all use `editor_gate1` (no underscore). No prior feature needed both
+  namespaces simultaneously; the resolver's `runKeyToPromptKey` (§44.3) is the one explicit alias —
+  do not assume the two strings are interchangeable anywhere else in new code.
+- **`claim_checks` has no `agent` field.** `convex/schema.ts:442-466` confirms `claim_checks`
+  carries `sectionName` but NOT an `agent` field — CONTEXT.md D-02's "recorded on the claim_checks
+  row" phrasing does not hold. `claim` artifacts resolve to `researcher` structurally (evidence
+  sourcing is a Researcher-owned operation, confirmed `api/factcheck.py:570`'s
+  `agent_id="researcher"`), with `sectionName` surfaced as contextual "appears in" metadata via
+  `galleyIdToQaSection`, never as the resolution key itself.
+
+---
+
+*All Phase 44 changes are additive — `agent_run_payloads` gains one optional field (`inputKeys`);
+`InspectorArtifact` gains one additive field beyond DERIVED-STATE-CONTRACT §8's verbatim shape
+(`sharedRules`); a new pure resolver module (`lib/inspectorArtifact.ts` +
+`lib/inspector/declaredStateInputs.ts`), a new `NON_EXTERNALIZED_SHARED_RULES` constant, a new
+7-tab panel component, a new inspector context/provider, and ~6 entry-point wiring changes are
+introduced. No existing field is renamed or removed; `agent_runs`/`prompt_versions`/
+`VARIABLE_REGISTRY`/`PIPELINE_EDGES`/`ClaimProvenanceCard` (§42.6) are all consumed read-only and
+unchanged.*
