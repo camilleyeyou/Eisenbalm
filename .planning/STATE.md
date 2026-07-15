@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 42-03-reset-touched-claims-PLAN.md
-last_updated: "2026-07-15T12:25:56.963Z"
+stopped_at: Completed 42-05-derived-selectors-workspace-provider-PLAN.md
+last_updated: "2026-07-15T12:33:57.820Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 42 (fact-check-stage) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 
 ## Performance Metrics
 
@@ -292,6 +292,7 @@ Plan: 4 of 8
 | Phase 42 P01 | 15min | 2 tasks | 5 files |
 | Phase 42-fact-check-stage P02 | 20min | 2 tasks | 4 files |
 | Phase 42 P03 | 12min | 2 tasks | 3 files |
+| Phase 42 P05 | 10 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -754,6 +755,8 @@ Recent decisions affecting current work:
 - [Phase 42]: _reset_touched_claims is fail-open (mirrors _revoke_active_signoffs) so a Convex hiccup never blocks a content save
 - [Phase 42]: patch_bonus specAd reset gated on body.blocks is not None to avoid referencing an undefined blocks variable on headline-only saves
 - [Phase 42]: Registered claimChecks:markChanged in convex_client.py's _PIPELINE_SECRET_GUARDED_PATHS, closing a Plan 42-01 gap
+- [Phase 42]: isMustFix/deriveFactCheckSummary transcribed verbatim from the 42-RESEARCH sketch; deriveTasks's claim-severity bug (sourceUrl-presence-alone) corrected to importance-aware, updating the pre-existing test that had locked in the wrong behavior
+- [Phase 42]: WorkspaceStateProvider claimRows mapping widened with claimIndex/claimId/importance/changedSinceCheck/conflict/checkedAt but NOT claimType/context, per the plan's scope note — those stay full-row-only for the Stage 3 screen and Approval SourceIndex
 
 ### Pending Todos
 
@@ -843,6 +846,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T12:25:46.047Z
-Stopped at: Completed 42-03-reset-touched-claims-PLAN.md
+Last session: 2026-07-15T12:33:57.807Z
+Stopped at: Completed 42-05-derived-selectors-workspace-provider-PLAN.md
 Resume file: None
