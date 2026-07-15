@@ -58,31 +58,28 @@ function FooterAction({
   label,
   href,
   disabledTitle,
-  ariaLabel,
 }: {
   icon: LucideIcon
   label: string
   /** Present => LIVE (rendered as a Link). Absent => RESERVED (disabled button). */
   href?: string
   disabledTitle?: string
-  ariaLabel?: string
 }) {
+  // No custom aria-label here — the visible label text is already a clear
+  // accessible name on its own, and a custom aria-label would silently
+  // shadow it (e.g. an "…'s instructions" suffix would falsely collide with
+  // the Instructions TAB button's accessible name in assistive-tech/testing
+  // queries — 44-05 caught this during test-writing).
   if (href) {
     return (
-      <Link href={href} className={LIVE_CLASSES} aria-label={ariaLabel}>
+      <Link href={href} className={LIVE_CLASSES}>
         <Icon size={13} aria-hidden="true" />
         {label}
       </Link>
     )
   }
   return (
-    <button
-      type="button"
-      disabled
-      title={disabledTitle}
-      aria-label={ariaLabel}
-      className={RESERVED_CLASSES}
-    >
+    <button type="button" disabled title={disabledTitle} className={RESERVED_CLASSES}>
       <Icon size={13} aria-hidden="true" />
       {label}
     </button>
@@ -107,7 +104,6 @@ export function InspectorFooter({ promptKey, agentKey, runId }: InspectorFooterP
         label="Improve this agent →"
         href={promptHref}
         disabledTitle={NOT_EXTERNALIZED_TITLE}
-        ariaLabel={`Improve ${agentKey}'s instructions`}
       />
       <FooterAction
         icon={GitCompare}
