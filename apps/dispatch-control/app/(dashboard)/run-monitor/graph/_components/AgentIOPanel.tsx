@@ -27,6 +27,7 @@ import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { PIPELINE_EDGES } from './pipelineTopology'
+import { summarize, prettyJson } from '@/lib/inspector/summarize'
 
 interface AgentRun {
   agentKey: string
@@ -43,40 +44,6 @@ interface AgentIOPanelProps {
   agentKey: string
   agentRun: AgentRun | undefined
   onClose: () => void
-}
-
-// ── shared helpers ───────────────────────────────────────────────────────────
-
-/** Pretty-print a JSON string for display (raw JSON, behind the toggle). */
-function prettyJson(raw: string | undefined): string {
-  if (!raw) return '—'
-  try {
-    return JSON.stringify(JSON.parse(raw), null, 2)
-  } catch {
-    return raw
-  }
-}
-
-/**
- * Compact, human-readable one-line summary of a snapshot: top-level key
- * highlights rather than the full structure (the full structure is the raw
- * JSON behind the toggle).
- */
-function summarize(raw: string | undefined): string {
-  if (!raw) return '—'
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const keys = Object.keys(parsed as Record<string, unknown>).slice(0, 6)
-      return keys.length > 0 ? keys.join(', ') : '(empty object)'
-    }
-    if (Array.isArray(parsed)) {
-      return `array (${parsed.length} items)`
-    }
-    return String(parsed).slice(0, 120)
-  } catch {
-    return raw.slice(0, 120)
-  }
 }
 
 // ── HandoffNode ──────────────────────────────────────────────────────────────
