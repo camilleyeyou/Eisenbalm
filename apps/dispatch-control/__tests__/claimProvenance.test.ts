@@ -17,12 +17,18 @@
  *
  * RED at authoring time: `toSyntheticBlocks`'s `claimAnnotations` param and
  * `ClaimSpanMarkDef`/`ResolvedClaim` do not exist yet. Turns GREEN in Task 2.
+ *
+ * Phase 42 (FCT-04, Plan 42-07 Task 1) extends `ResolvedClaim`/`ClaimSpanMarkDef`
+ * with `text`/`importance`/`context` (mirroring the provenance fields above)
+ * so the shared `ClaimProvenanceCard` reused by `ClaimMark` never renders
+ * blank. The `resolveClaims` fixture helper below is updated to thread them
+ * exactly like `Galley.tsx::resolveClaimsFor` now does.
  */
 import { describe, it, expect } from 'vitest'
 import { toSyntheticBlocks, type ResolvedClaim } from '../lib/galley/syntheticPortableText'
 import { resolveSectionFindings, type QaFinding } from '../lib/galley/spanResolver'
 
-/** Mirrors a live `claim_checks` row (Phase 35 additive fields). */
+/** Mirrors a live `claim_checks` row (Phase 35 additive fields + Phase 42 importance/context). */
 interface ClaimCheckRowFixture {
   claimIndex: number
   text: string
@@ -32,6 +38,8 @@ interface ClaimCheckRowFixture {
   retrievedAt?: number
   sectionName?: string
   blockIndexHint?: number
+  importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  context?: string
 }
 
 /**
@@ -64,6 +72,10 @@ function resolveClaims(
       sourceUrl: row?.sourceUrl,
       retrievedAt: row?.retrievedAt,
       status: row?.status ?? 'pending',
+      // Phase 42 (FCT-04) -- threaded exactly like Galley.tsx::resolveClaimsFor.
+      text: row?.text ?? '',
+      importance: row?.importance,
+      context: row?.context,
     }
   })
 }
@@ -83,6 +95,8 @@ describe('claim-resolution mapping', () => {
         retrievedAt: 1700000000000,
         sectionName: SECTION_ID,
         blockIndexHint: 0,
+        importance: 'Load-bearing',
+        context: 'The founder started in a garage in 1974.',
       },
     ]
 
@@ -92,6 +106,11 @@ describe('claim-resolution mapping', () => {
     expect(resolved[0]?.provenance).toBe('sourced')
     expect(resolved[0]?.sourceUrl).toBe('https://example.com/history')
     expect(resolved[0]?.claimIndex).toBe(0)
+    // Phase 42 (FCT-04) -- the fields the shared ClaimProvenanceCard needs
+    // reach the resolved claim, never blank.
+    expect(resolved[0]?.text).toBe('in a garage')
+    expect(resolved[0]?.importance).toBe('Load-bearing')
+    expect(resolved[0]?.context).toBe('The founder started in a garage in 1974.')
   })
 
   it('a claimId-absent row resolves to provenance "unsourced"', () => {
@@ -148,6 +167,7 @@ describe('toSyntheticBlocks -- claimSpan mark stacking', () => {
     const claims: ResolvedClaim[] = [
       {
         claimIndex: 0,
+        sectionId: 'originStory',
         blockIndex: 0,
         start: claimStart,
         end: claimEnd,
@@ -155,6 +175,9 @@ describe('toSyntheticBlocks -- claimSpan mark stacking', () => {
         sourceUrl: 'https://example.com',
         retrievedAt: 1700000000000,
         status: 'pending',
+        text: 'in a garage',
+        importance: 'Load-bearing',
+        context: text,
       },
     ]
 
@@ -176,6 +199,19 @@ describe('toSyntheticBlocks -- claimSpan mark stacking', () => {
     )
     expect(overlapMarkTypes).toContain('annotation')
     expect(overlapMarkTypes).toContain('claimSpan')
+
+    // Phase 42 (FCT-04) -- text/importance/context/sectionId are copied onto
+    // the claimSpan markDef, not dropped, so ClaimMark can feed the shared card.
+    const claimMarkDef = block.markDefs.find((m) => m._type === 'claimSpan') as {
+      text: string
+      importance?: string
+      context?: string
+      sectionId?: string
+    }
+    expect(claimMarkDef.text).toBe('in a garage')
+    expect(claimMarkDef.importance).toBe('Load-bearing')
+    expect(claimMarkDef.context).toBe(text)
+    expect(claimMarkDef.sectionId).toBe('originStory')
   })
 
   it('an unsourced claim carries markDef.provenance === "unsourced"', () => {
@@ -184,7 +220,15 @@ describe('toSyntheticBlocks -- claimSpan mark stacking', () => {
     const start = text.indexOf('the regional bank closed')
     const end = start + 'the regional bank closed'.length
     const claims: ResolvedClaim[] = [
-      { claimIndex: 5, blockIndex: 0, start, end, provenance: 'unsourced', status: 'pending' },
+      {
+        claimIndex: 5,
+        blockIndex: 0,
+        start,
+        end,
+        provenance: 'unsourced',
+        status: 'pending',
+        text: 'the regional bank closed',
+      },
     ]
 
     const blocks = toSyntheticBlocks(rows, [], 'problemStatement', claims)

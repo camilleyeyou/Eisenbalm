@@ -25,6 +25,14 @@
  * locally for the same zero-coupling reason. Passing an empty/omitted
  * `claimAnnotations` array keeps `toSyntheticBlocks`'s output byte-identical
  * to its pre-Phase-35 shape.
+ *
+ * Phase 42 (FCT-04, Plan 42-07) extends `ResolvedClaim`/`ClaimSpanMarkDef`
+ * with `text`/`importance`/`context` (mirroring exactly how Phase 35
+ * threaded `sourceUrl`/`retrievedAt`/`status`) so the Draft galley's
+ * `ClaimMark` popover can feed the SAME shared `ClaimProvenanceCard`
+ * (`components/provenance/ClaimProvenanceCard.tsx`) Stage 3 Fact Check and
+ * Stage 5 Approval already consume — without these fields the card would
+ * silently render `text: ''`/`importance: undefined` (D-09).
  */
 
 export interface ResolvedAnnotation {
@@ -40,6 +48,9 @@ export interface ResolvedAnnotation {
   quotedSpan?: string
 }
 
+/** Phase 42 (FCT-04) — the Researcher-emitted importance tier (D-03 fallback: absent => 'Supporting'). */
+export type ClaimImportance = 'Load-bearing' | 'Supporting' | 'Incidental'
+
 /** Phase 35 (PRV-03) — a claim_checks row resolved onto exact block offsets. */
 export interface ResolvedClaim {
   claimIndex: number
@@ -53,6 +64,15 @@ export interface ResolvedClaim {
   retrievedAt?: number
   /** claim_checks.status — "pending" | "checked" | "skipped". */
   status: string
+  /**
+   * Phase 42 (FCT-04, Plan 42-07) — the claim's own extracted text, threaded
+   * through so the shared `ClaimProvenanceCard` never renders blank.
+   */
+  text: string
+  /** Phase 42 — Researcher-emitted tier; absent => 'Supporting' (D-03). */
+  importance?: ClaimImportance
+  /** Phase 42 — the 60-char surrounding window (`claim_checks.context`); feeds the card's "Supporting passage". */
+  context?: string
 }
 
 export interface SyntheticRow {
@@ -87,6 +107,12 @@ export interface ClaimSpanMarkDef {
   sourceUrl?: string
   retrievedAt?: number
   status: string
+  /** Phase 42 (FCT-04, Plan 42-07) — threaded from ResolvedClaim so ClaimMark can feed the shared card. */
+  text: string
+  importance?: ClaimImportance
+  context?: string
+  /** Phase 42 — ResolvedClaim.sectionId, passed through so the card's `sectionName` prop resolves an agent label. */
+  sectionId?: string
 }
 
 export type SyntheticMarkDef = AnnotationMarkDef | ClaimSpanMarkDef
@@ -148,6 +174,10 @@ export function toSyntheticBlocks(
       sourceUrl: c.sourceUrl,
       retrievedAt: c.retrievedAt,
       status: c.status,
+      text: c.text,
+      importance: c.importance,
+      context: c.context,
+      sectionId: c.sectionId,
     }))
     const markDefs: SyntheticMarkDef[] = [...annMarkDefs, ...claimMarkDefs]
 

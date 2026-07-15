@@ -8,8 +8,16 @@
  * treatment (D-09) so it stacks cleanly under any QA `annotation` mark
  * (underline) on the same text without ever colliding. Hovering surfaces
  * the source URL + retrieval date (sourced) or "No source" (unsourced) via
- * a native tooltip; clicking opens a popover with an "Open source" link
- * plus Mark checked / Skip actions.
+ * a native tooltip; clicking opens a popover.
+ *
+ * Phase 42 (FCT-04, D-09, Plan 42-07 Task 1) — the popover CONTENT is the
+ * ONE shared `ClaimProvenanceCard` (`components/provenance/ClaimProvenanceCard.tsx`)
+ * that Stage 3 Fact Check and Stage 5 Approval also consume, fed the real
+ * `text`/`importance`/`context` fields `syntheticPortableText.ts`/`Galley.tsx`
+ * now thread onto `ClaimSpanMarkDef` — no forked copy, no blank fields. The
+ * card's own "Confirm" action is wired to the SAME `claimChecks:setStatus`
+ * mutation "Mark checked" always called; a separate "Skip" control (a
+ * Draft-only action the shared card has no slot for) is kept alongside it.
  *
  * Mark checked / Skip write DIRECTLY to `claim_checks` via
  * `claimChecks:setStatus` — the exact mutation `ClaimsChecklist` already
@@ -24,6 +32,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { ClaimSpanMarkDef } from '@/lib/galley/syntheticPortableText'
+import ClaimProvenanceCard, {
+  type ClaimProvenanceView,
+} from '@/components/provenance/ClaimProvenanceCard'
 
 interface ClaimMarkProps {
   value: ClaimSpanMarkDef
@@ -89,6 +100,19 @@ export default function ClaimMark({
           .filter(Boolean)
           .join(' · ') || 'Sourced claim'
       : 'No source'
+
+  // Phase 42 (FCT-04) — the SAME §42.6 claim shape Stage 3/Approval feed the
+  // shared card, sourced from the fields Galley.tsx/syntheticPortableText.ts
+  // now thread onto ClaimSpanMarkDef (never blank text/importance).
+  const claimView: ClaimProvenanceView = {
+    text: value.text,
+    importance: value.importance,
+    status: value.status,
+    sourceUrl: value.sourceUrl,
+    supportingPassage: value.context,
+    retrievedAt: value.retrievedAt,
+    sectionName: value.sectionId,
+  }
 
   function toggle() {
     setOpen((prev) => !prev)
@@ -164,39 +188,21 @@ export default function ClaimMark({
       </mark>
       {(open || focusOpen) && (
         <span className="galley-popover" role="dialog">
-          <span className="galley-popover__severity" style={{ display: 'block' }}>
-            {value.provenance}
-          </span>
-          <span className="galley-popover__reason" style={{ display: 'block' }}>
-            {value.provenance === 'sourced'
-              ? (value.sourceUrl ?? 'Source unavailable')
-              : 'No source found for this claim.'}
-          </span>
-          {retrievedLabel && (
-            <span className="galley-popover__fix" style={{ display: 'block' }}>
-              Retrieved {retrievedLabel}
-            </span>
-          )}
-
+          {/*
+           * Phase 42 (FCT-04, D-09) — the SAME ClaimProvenanceCard Stage 3
+           * Fact Check + Stage 5 Approval render, fed the real threaded
+           * text/importance/supporting-passage. Its own "Confirm" action is
+           * wired to the exact `claimChecks:setStatus('checked')` mutation
+           * "Mark checked" always called (no forked write path). The card
+           * has no "Skip" slot (a Draft-only action outside the shared
+           * six-action set), so a small Skip control is kept alongside it.
+           */}
+          <ClaimProvenanceCard
+            claim={claimView}
+            busy={busy}
+            actions={{ onConfirm: () => void handleSetStatus('checked') }}
+          />
           <span className="galley-popover__actions" style={{ display: 'block', marginTop: 8 }}>
-            {value.sourceUrl && (
-              <a
-                href={value.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ ...actionButtonStyle, display: 'inline-block', textDecoration: 'none' }}
-              >
-                Open source
-              </a>
-            )}
-            <button
-              type="button"
-              style={actionButtonStyle}
-              disabled={busy}
-              onClick={() => void handleSetStatus('checked')}
-            >
-              Mark checked
-            </button>
             <button
               type="button"
               style={actionButtonStyle}

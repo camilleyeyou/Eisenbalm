@@ -90,6 +90,13 @@ interface ClaimCheckRow {
   retrievedAt?: number
   sectionName?: string
   blockIndexHint?: number
+  /**
+   * Phase 42 (FCT-04, Plan 42-07) — threaded through resolveClaimsFor so the
+   * Draft galley's ClaimMark popover can feed the shared ClaimProvenanceCard
+   * real fields instead of blank ones.
+   */
+  importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  context?: string
 }
 
 interface GalleyProps {
@@ -263,6 +270,12 @@ export default function Galley({
         sourceUrl: row?.sourceUrl,
         retrievedAt: row?.retrievedAt,
         status: row?.status ?? 'pending',
+        // Phase 42 (FCT-04) — thread the fields the shared ClaimProvenanceCard
+        // needs (text/importance/context) exactly like the provenance fields
+        // above were threaded in Phase 35.
+        text: row?.text ?? '',
+        importance: row?.importance,
+        context: row?.context,
       }
     })
   }

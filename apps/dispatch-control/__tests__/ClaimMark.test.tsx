@@ -21,6 +21,11 @@
  *     even if the callback is provided — click-through is unsourced/unchecked
  *     only.
  *
+ * Phase 42 (FCT-04, Plan 42-07 Task 1) adds coverage for the popover's
+ * CONTENT: it must render the SAME shared `ClaimProvenanceCard` fed the real
+ * (non-empty) `text`/`importance` threaded onto `ClaimSpanMarkDef` — the
+ * checker-mandated guard against the "silently blank" failure mode.
+ *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
@@ -49,6 +54,7 @@ const pendingValue: ClaimSpanMarkDef = {
   claimIndex: 1,
   provenance: 'unsourced',
   status: 'pending',
+  text: 'demand outpaces supply four to one',
 }
 
 const checkedValue: ClaimSpanMarkDef = {
@@ -59,6 +65,10 @@ const checkedValue: ClaimSpanMarkDef = {
   sourceUrl: 'https://example.org/source',
   retrievedAt: 1700000000000,
   status: 'checked',
+  text: 'the founder started the charity in a garage in 1974',
+  importance: 'Load-bearing',
+  context: 'as documented by the founding trust records',
+  sectionId: 'originStory',
 }
 
 function renderMark(value: ClaimSpanMarkDef, onUnsourcedClaimClick?: (claimIndex: number) => void) {
@@ -136,5 +146,31 @@ describe('ClaimMark click-through (WSP-04)', () => {
 
     expect(onUnsourcedClaimClick).not.toHaveBeenCalled()
     expect(screen.getByRole('dialog')).toBeDefined()
+  })
+})
+
+describe('ClaimMark shared provenance card (FCT-04, Plan 42-07)', () => {
+  it('renders the SAME shared ClaimProvenanceCard, fed the real (non-empty) claim text and importance tier -- never blank', () => {
+    renderMark(checkedValue)
+    const mark = getMark()
+
+    fireEvent.click(mark)
+
+    // The shared card (components/provenance/ClaimProvenanceCard.tsx) renders,
+    // not a forked popover body.
+    expect(screen.getByTestId('claim-provenance-card')).toBeDefined()
+    // The checker-mandated guard: the exact threaded claim text and importance
+    // tier reach the card -- not `text: ''`/`importance: undefined`.
+    expect(screen.getByText(checkedValue.text)).toBeDefined()
+    expect(screen.getByText('Load-bearing')).toBeDefined()
+  })
+
+  it('still renders a Skip control alongside the shared card (a Draft-only action outside the card\'s six-action set)', () => {
+    renderMark(checkedValue)
+    const mark = getMark()
+
+    fireEvent.click(mark)
+
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeDefined()
   })
 })
