@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 43-04-superseded-resolved-session-logic-PLAN.md
-last_updated: "2026-07-15T16:39:07.271Z"
+stopped_at: Completed 43-06-decision-log-component-mounts-PLAN.md
+last_updated: "2026-07-15T16:56:34.376Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 43 (my-tasks-decision-log) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 
 ## Performance Metrics
 
@@ -301,6 +301,7 @@ Plan: 5 of 9
 | Phase 43 P02 | 4 | 2 tasks | 5 files |
 | Phase 43 P03 | 4 | 2 tasks | 2 files |
 | Phase 43 P04 | 5 | 2 tasks | 2 files |
+| Phase 43 P06 | 15 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -780,6 +781,7 @@ Recent decisions affecting current work:
 - [Phase 43]: 43-02: writeDecision/listDecisions/byClerkUserId implemented verbatim per API_CONTRACTS.md §43.1-§43.4; decisions are a filtered projection over audit_log, no new store
 - [Phase 43]: openedAt/formatTaskAge kept additive-only; signoff-voice href left unchanged per §43.5b (already correct)
 - [Phase 43]: computeSessionStates cross-references audit_log run.section_rerolled rows against DerivedTask.openedAt to discriminate active/superseded/resolved (resolved/superseded live only on a screen-local DisplayTask wrapper, never on TaskSeverity)
+- [Phase 43]: DecisionLog is a new component (not a generalization of AuditLogViewer); appended in ApprovalPanelPublisher (not the pure buildApprovalPanelContent builder) and behind a collapsed-by-default Workspace disclosure control, so existing Convex-free tests never need new mocks
 
 ### Pending Todos
 
@@ -870,6 +872,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T16:39:07.257Z
-Stopped at: Completed 43-04-superseded-resolved-session-logic-PLAN.md
+Last session: 2026-07-15T16:56:34.363Z
+Stopped at: Completed 43-06-decision-log-component-mounts-PLAN.md
 Resume file: None
