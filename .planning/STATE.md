@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 41-02-last-visited-stage-mutation-PLAN.md
-last_updated: "2026-07-15T05:42:51.748Z"
+stopped_at: Completed 41-03-galley-claim-focus-clickthrough-PLAN.md
+last_updated: "2026-07-15T05:50:17.752Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 41 (issue-workspace-frame) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 
 ## Performance Metrics
 
@@ -279,6 +279,7 @@ Plan: 3 of 10
 | Phase 40 P09 | 35min | 2 tasks | 2 files |
 | Phase 41 P01 | 12min | 2 tasks | 4 files |
 | Phase 41 P02 | 8min | 2 tasks | 2 files |
+| Phase 41 P03 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -719,6 +720,8 @@ Recent decisions affecting current work:
 - [Phase 41]: deriveSectionStates takes draftSectionIds as an explicit param (not internally derived) so it stays testable in isolation while draftSectionIdsFromDraft supplies canvas-parity fixtures
 - [Phase 41]: changed-since-review is kept in the SectionState union per plan spec but asserted, via an invariant test, to never be produced by deriveSectionStates in Phase 41 (no data source yet)
 - [Phase 41]: setLastVisitedStage placed on the operator-only lane (mirrors hold/reopen), not the dual pipeline/operator lane — a stage visit is a human editorial action
+- [Phase 41]: ClaimMark focusOpen kept as an independent state from open, not merged, so a click-opened popover survives an unrelated blur
+- [Phase 41]: onUnsourcedClaimClick click-through gates on value.status === 'pending' (not !isChecked) to read directly against the plan's stated condition
 
 ### Pending Todos
 
@@ -808,6 +811,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T05:42:51.735Z
-Stopped at: Completed 41-02-last-visited-stage-mutation-PLAN.md
+Last session: 2026-07-15T05:50:17.739Z
+Stopped at: Completed 41-03-galley-claim-focus-clickthrough-PLAN.md
 Resume file: None
