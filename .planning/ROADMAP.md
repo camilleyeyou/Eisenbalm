@@ -895,7 +895,17 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   5. Publish is disabled until Must fix = 0 AND Fact Check complete AND Voice approved current, with the unlock condition written next to the control; publishing shows an exact preview (destination, title, time, consequences) and completes on one confirmation click — no typed confirmation.
   6. "Not generated" renders as a visible first-class state in the canvas and outline (e.g. the Editor's note), never a blank.
   7. Stage 1 renders the existing candidate slate and Gate 1 adjudication, so a run that interrupts at charity selection can still be resolved from the Workspace — no capability is lost in the collapse.
-**Plans**: TBD
+**Plans**: 10 plans (5 waves)
+- [ ] 41-01-selectors-route-helpers-PLAN.md — deriveSectionStates selector + stage href builders (Wave 1)
+- [ ] 41-02-last-visited-stage-mutation-PLAN.md — issues.setLastVisitedStage Convex mutation + live sync (Wave 1)
+- [ ] 41-03-galley-claim-focus-clickthrough-PLAN.md — claim focus-parity + unchecked click-through prop chain (Wave 1)
+- [ ] 41-04-signal-desk-issue-keying-PLAN.md — SignalDeskScreen additive runId? prop (Wave 1)
+- [ ] 41-05-workspace-state-outline-panel-PLAN.md — WorkspaceStateProvider + section outline + context panel (Wave 2)
+- [ ] 41-06-workspace-frame-layout-nav-PLAN.md — frame layout, stage tabs, persistent controls, redirect, nav (Wave 3)
+- [ ] 41-07-stage1-story-stage3-factcheck-PLAN.md — Stage 1 Signal Desk mount + Stage 3 Fact Check placeholder (Wave 4)
+- [ ] 41-08-stage2-draft-recomposition-PLAN.md — Stage 2 Draft galley: rail removed, click-through, not-generated (Wave 4)
+- [ ] 41-09-stage5-approval-publish-preview-PLAN.md — Stage 5 Approval readiness board + exact publish preview (Wave 4)
+- [ ] 41-10-integration-gate-PLAN.md — full suite + strict build + Convex live + demo-path UAT (Wave 5)
 **UI hint**: yes
 
 ### Phase 42: Fact Check Stage
