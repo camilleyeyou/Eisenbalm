@@ -46,6 +46,15 @@ vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
 }))
 
+// Phase 49 (ROL-03, Plan 49-07): DecisionRail now resolves useRole() to
+// decide whether Publish is rendered locked. This suite exercises the
+// pre-existing (pre-Phase-49) editor behavior, so it stubs the role hook
+// directly to 'Editor-in-chief' rather than reaching through Clerk's
+// useUser() (which this file's '@clerk/nextjs' mock above doesn't
+// provide). The dedicated Collaborator-locked contract is covered by
+// DecisionRail.roleGate.test.tsx.
+vi.mock('@/lib/role', () => ({ useRole: () => 'Editor-in-chief' }))
+
 vi.mock('@convex/_generated/api', () => ({
   api: {
     qaCorrections: { byRunId: 'qaCorrections:byRunId' },

@@ -37,6 +37,14 @@ vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
 }))
 
+// Phase 49 (ROL-03, Plan 49-07): the mounted VoicePassRail now resolves
+// useRole() to decide whether the sign-off is rendered locked. This suite
+// exercises the pre-existing (pre-Phase-49) editor behavior, so it stubs
+// the role hook directly to 'Editor-in-chief' rather than reaching through
+// Clerk's useUser() (which this file's '@clerk/nextjs' mock above doesn't
+// provide).
+vi.mock('@/lib/role', () => ({ useRole: () => 'Editor-in-chief' }))
+
 vi.mock('@convex/_generated/api', () => ({
   api: {
     qaCorrections: { byRunId: 'qaCorrections:byRunId' },

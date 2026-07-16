@@ -18,7 +18,6 @@
  */
 import { useState } from 'react'
 import type { RevisePreviewResult, RevisionClaimDelta } from '@/lib/revisionClient'
-import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
 
 export interface RevisionComparisonCardProps {
@@ -29,6 +28,19 @@ export interface RevisionComparisonCardProps {
   onEdit: (editedText: string) => void
   onTryAnother: () => void
   onDiscard: () => void
+  /**
+   * ROL-03 (D-09) — presentation-only. This card is ALSO reused by
+   * `BriefFieldStrengthen.tsx` (Story Brief's "Ask agent to strengthen"),
+   * whose apply endpoint (`brief/{field}/strengthen/apply`) is NOT one of
+   * the six server-gated actions (D-07) — so the lock must be an explicit
+   * opt-in prop, never resolved internally via `useRole()`, or that
+   * unrelated/ungated screen would incorrectly show Apply as locked.
+   * `RevisionFlow.tsx` (the actual "Apply revision" entry point, D-06) is
+   * the only caller that passes this. Defaults to unlocked.
+   */
+  applyLocked?: boolean
+  /** Verbatim §6 text — only meaningful when `applyLocked` is true. */
+  applyLockedLabel?: string
 }
 
 const MICRO_LABEL =
@@ -80,19 +92,13 @@ export function RevisionComparisonCard({
   onEdit,
   onTryAnother,
   onDiscard,
+  applyLocked,
+  applyLockedLabel,
 }: RevisionComparisonCardProps) {
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(preview.proposedText)
 
   const disabled = Boolean(busy)
-  // ROL-03 (D-09): presentation-only client hint — the server
-  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
-  // Plan 49-07: the "Apply" button rendered below is the ACTUAL DOM
-  // location of RevisionFlow.tsx's applyRevision call site (this card is
-  // RevisionFlow's presentation sub-component) — wrapped here rather than
-  // in RevisionFlow.tsx, which only orchestrates state and never itself
-  // renders an interactive element for this action.
-  const isLocked = useRole() !== 'Editor-in-chief'
 
   return (
     <div
@@ -141,7 +147,7 @@ export function RevisionComparisonCard({
         </span>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <LockedControl isLocked={isLocked} lockedLabel="Apply revision 🔒 editor only">
+          <LockedControl isLocked={Boolean(applyLocked)} lockedLabel={applyLockedLabel ?? ''}>
             <button type="button" disabled={disabled} className={ACTION_BUTTON} onClick={onApply}>
               Apply
             </button>

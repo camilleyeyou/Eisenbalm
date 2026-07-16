@@ -12,6 +12,13 @@ vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
 }))
 
+// Phase 49 (ROL-03, Plan 49-07): RevisionFlow now resolves useRole() to
+// decide whether Apply is rendered locked. This suite exercises the
+// pre-existing (pre-Phase-49) editor behavior, so it stubs the role
+// hook directly to 'Editor-in-chief' rather than reaching through Clerk's
+// useUser() (which this file's '@clerk/nextjs' mock above doesn't provide).
+vi.mock('@/lib/role', () => ({ useRole: () => 'Editor-in-chief' }))
+
 // Class + mock fns are defined INSIDE the factory (vi.mock is hoisted above
 // module top-level const/class declarations — mirrors
 // DecisionRail.test.tsx's vi.mock('@/lib/signOffClient'/'@/lib/reviewClient')

@@ -36,6 +36,7 @@ import {
   type RevisePreviewResult,
 } from '@/lib/revisionClient'
 import { getDraft, ContentPatchError } from '@/lib/contentPatchClient'
+import { useRole } from '@/lib/role'
 
 export interface RevisionPassage {
   sectionName: string
@@ -57,6 +58,10 @@ interface CapInfo {
 
 export function RevisionFlow({ runId, passage, onApplied, onClose }: RevisionFlowProps) {
   const { getToken } = useAuth()
+  // ROL-03 (D-09): presentation-only client hint, resolved once here and
+  // threaded down to RevisionComparisonCard's Apply button — the server
+  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
+  const isApplyLocked = useRole() !== 'Editor-in-chief'
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -189,6 +194,8 @@ export function RevisionFlow({ runId, passage, onApplied, onClose }: RevisionFlo
           onEdit={handleEdit}
           onTryAnother={handleTryAnother}
           onDiscard={handleDiscard}
+          applyLocked={isApplyLocked}
+          applyLockedLabel="Apply revision 🔒 editor only"
         />
       )}
     </div>
