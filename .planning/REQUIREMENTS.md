@@ -398,12 +398,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **SGE-05**: The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and *surfaces* a repetition warning alongside the lead rather than silently suppressing it.
 
 ### Story & Brief Stage (BRF)
-- [ ] **BRF-01**: Stage 1 shows story leads as cards with peg + source, reader energy, angle, category, confidence, and any brand-risk warning shown in full — never truncated or tooltip-hidden.
-- [ ] **BRF-02**: Operator can Require a lead, or Remove it with a mandatory logged reason.
-- [ ] **BRF-03**: Organization options are grouped under the chosen lead, each showing mechanism, verification record with dates, agent case, confidence, prior-coverage warning, and its **main concern always visible**.
-- [ ] **BRF-04**: When agents cannot confidently choose, the stage enters a "Needs your decision" state with the top two options side by side (what each makes possible, evidence quality, risk, burden); the operator's choice requires a rationale and resumes the run via the existing interrupt/resume endpoint.
-- [ ] **BRF-05**: An editable Brief (premise, current peg, central claim, reader effect, known risks, voice intention) is generated after selection, and the section writers draft *from* it.
-- [ ] **BRF-06**: Operator can ask an agent to strengthen any single field of the brief.
+- [x] **BRF-01**: Stage 1 shows story leads as cards with peg + source, reader energy, angle, category, confidence, and any brand-risk warning shown in full — never truncated or tooltip-hidden.
+- [x] **BRF-02**: Operator can Require a lead, or Remove it with a mandatory logged reason.
+- [x] **BRF-03**: Organization options are grouped under the chosen lead, each showing mechanism, verification record with dates, agent case, confidence, prior-coverage warning, and its **main concern always visible**.
+- [x] **BRF-04**: When agents cannot confidently choose, the stage enters a "Needs your decision" state with the top two options side by side (what each makes possible, evidence quality, risk, burden); the operator's choice requires a rationale and resumes the run via the existing interrupt/resume endpoint.
+- [x] **BRF-05**: An editable Brief (premise, current peg, central claim, reader effect, known risks, voice intention) is generated after selection, and the section writers draft *from* it.
+- [x] **BRF-06**: Operator can ask an agent to strengthen any single field of the brief.
 
 ### Brief Entry Point (ENT)
 - [ ] **ENT-01**: Create issue offers two equal paths — "Find a story with agents" and "Start from my brief" — both landing in the Issue Workspace at Story & Brief.

@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 47-07-brief-field-table-and-strengthen-PLAN.md
-last_updated: "2026-07-16T12:14:18.832Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 47-08-story-brief-screen-mount-and-phase-gate-PLAN.md
+last_updated: "2026-07-16T13:00:18.220Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -336,6 +336,7 @@ Plan: 8 of 8
 | Phase 47 P03 | 5 | 2 tasks | 13 files |
 | Phase 47 P06 | 35min | 2 tasks | 4 files |
 | Phase 47 P07 | 12min | 3 tasks | 5 files |
+| Phase 47 P08 | 55 | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -884,6 +885,9 @@ Recent decisions affecting current work:
 - [Phase 47]: NeedsYourDecisionCard's evidence-quality/burden comparison rows derive from the real Phase-46 verification record (domainLive/registrationVerified/pressHits/obscurityVerdict), not fabricated copy; the header 'Paused for you' chip flip is left to Masthead's own independent subscription — no new coupling added
 - [Phase 47]: BriefFieldStrengthen reuses RevisionComparisonCard (not the RevisionFlow container, which is hardcoded to the Sanity passage-revision client) to avoid calling the wrong backend endpoints for a Brief field
 - [Phase 47]: BriefFieldTable Save surfaces an inline confirmation, not a Decision-log entry, since patch_brief's audit row intentionally omits reason= (a content edit, not a decision)
+- [Phase 47]: StoryBriefScreen composes the six shipped Stage-1 components (LeadCard/LeadActions, OrgOptionSlate, NeedsYourDecisionCard, BriefFieldTable/BriefFieldStrengthen); Stage 1 mounts at issues/[issueNumber]/story replacing the provisional SignalDeskScreen/StoryPanelContent.tsx (deleted)
+- [Phase 47]: deriveStoryStage tightened to gate 'needs-you' on the precise Gate-1-paused predicate (status==='awaiting-review' && completedAt==null) instead of 'leads exist, none selected' (Pitfall 3)
+- [Phase 47]: All six BRF-01..06 requirements marked complete: leads, Require/Remove, org options, Needs-your-decision resume, editable Brief, and per-field strengthen are all operator-reachable end-to-end for the first time
 
 ### Pending Todos
 
@@ -974,6 +978,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T12:14:18.818Z
-Stopped at: Completed 47-07-brief-field-table-and-strengthen-PLAN.md
+Last session: 2026-07-16T13:00:18.206Z
+Stopped at: Completed 47-08-story-brief-screen-mount-and-phase-gate-PLAN.md
 Resume file: None

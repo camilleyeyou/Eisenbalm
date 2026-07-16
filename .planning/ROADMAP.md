@@ -54,7 +54,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic (completed 2026-07-15)
 - [x] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard (completed 2026-07-16)
 - [x] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection (completed 2026-07-16)
-- [ ] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief
+- [x] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief (completed 2026-07-16)
 - [ ] **Phase 48: Brief Entry Point** - "Start from my brief" becomes a real second pipeline entry point that skips discovery and enters at the Researcher
 - [ ] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves
 - [ ] **Phase 50: Workbench & Nomenclature** - Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; nomenclature pass + failed-run recovery rail
@@ -462,7 +462,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
-| 47. Story & Brief Stage | 7/8 | In Progress|  |
+| 47. Story & Brief Stage | 8/8 | Complete   | 2026-07-16 |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
@@ -1037,7 +1037,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 47-05-workspace-subscriptions-lead-card-actions-PLAN.md — WorkspaceStateProvider storyLeads/verificationRecords/briefs subs + `requireLead`/`removeLead` clients + LeadCard (BRF-01, never-truncated) + LeadActions (BRF-02) (Wave 2)
 - [x] 47-06-org-options-and-needs-your-decision-PLAN.md — OrgOptionSlate (BRF-03, joinCandidates + verification dates + never-truncated concern) + NeedsYourDecisionCard (BRF-04, two-option + adjudicateGate1 resume) (Wave 3)
 - [x] 47-07-brief-field-table-and-strengthen-PLAN.md — briefClient + BriefFieldTable (BRF-05 editable) + BriefFieldStrengthen (BRF-06, field-scoped RevisionFlow) (Wave 3)
-- [ ] 47-08-story-brief-screen-mount-and-phase-gate-PLAN.md — StoryBriefScreen composition + empty/loading/error + deriveStoryStage tighten + mount replaces SignalDeskScreen + DELETE StoryPanelContent.tsx + strict build/full suites/Convex parity gate (Wave 4)
+- [x] 47-08-story-brief-screen-mount-and-phase-gate-PLAN.md — StoryBriefScreen composition + empty/loading/error + deriveStoryStage tighten + mount replaces SignalDeskScreen + DELETE StoryPanelContent.tsx + strict build/full suites/Convex parity gate (Wave 4)
 **UI hint**: yes
 
 ### Phase 48: Brief Entry Point
