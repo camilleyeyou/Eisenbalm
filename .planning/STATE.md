@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 47-05-workspace-subscriptions-lead-card-actions-PLAN.md
-last_updated: "2026-07-16T11:17:27.251Z"
+stopped_at: Completed 47-03-writer-brief-threading-PLAN.md
+last_updated: "2026-07-16T11:32:18.172Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 47 (story-brief-stage) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 
 ## Performance Metrics
 
@@ -333,6 +333,7 @@ Plan: 5 of 8
 | Phase 47-story-brief-stage P02 | 12min | 2 tasks | 3 files |
 | Phase 47 P04 | 13min | 2 tasks | 6 files |
 | Phase 47 P05 | 15min | 3 tasks | 9 files |
+| Phase 47 P03 | 5 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -876,6 +877,7 @@ Recent decisions affecting current work:
 - [Phase 47]: WorkspaceStateProvider centralizes storyLeads/verificationRecords/brief Convex subscriptions (runId-scoped, mirrors pitchRows) for every remaining Stage-1 component to reuse
 - [Phase 47]: LeadCard is a pure props-only component (no useQuery); LeadActions always mounts the shared DecisionLog beneath its Require/Remove controls, mirroring ApprovalPanelContent's precedent
 - [Phase 47]: requirements mark-complete deferred for BRF-01/BRF-02 in 47-05 (components built + tested but not yet mounted into a reachable route) — will flip in 47-08, consistent with 47-01/47-04 precedent
+- [Phase 47]: build_section_writer_prompt gains a keyword-only 5th brief param + shared build_brief_block formatter (lib/voice.py) reused by game/bonus/design's bespoke prompt builders — all 7 section writers thread state.get("brief"), None-safe
 
 ### Pending Todos
 
@@ -966,6 +968,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T11:17:27.237Z
-Stopped at: Completed 47-05-workspace-subscriptions-lead-card-actions-PLAN.md
+Last session: 2026-07-16T11:32:18.158Z
+Stopped at: Completed 47-03-writer-brief-threading-PLAN.md
 Resume file: None
