@@ -110,6 +110,15 @@ export interface WorkspaceStateValue {
   storyLeads: Doc<'story_leads'>[] | undefined
   verificationRecords: Doc<'verification_records'>[] | undefined
   brief: Doc<'briefs'> | null | undefined
+  /**
+   * Phase 48 Plan 48-06 (ENT-01/ENT-03, RESEARCH Pattern 4/Pitfall 3) — the
+   * run's entry mode, sourced from the ALREADY-subscribed `runRow` (no new
+   * `useQuery`). `undefined` while `runRow` is loading/skipped OR when the
+   * run predates Phase 48 and never wrote the field — both cases mean
+   * "treat as discovery" (mirrors the Convex schema default), never a
+   * silent crash for pre-Phase-48 runs.
+   */
+  entryMode: 'discovery' | 'brief' | undefined
 }
 
 const WorkspaceStateContext = createContext<WorkspaceStateValue | null>(null)
@@ -155,6 +164,12 @@ export function WorkspaceStateProvider({
     runId ? { runId } : 'skip',
   )
   const brief = useQuery(api.briefs.byRunId, runId ? { runId } : 'skip')
+
+  // Phase 48 Plan 48-06 (ENT-01/ENT-03) — derived from the ALREADY-subscribed
+  // runRow (L148 above), not a new subscription. Absent/undefined stays
+  // undefined here; StoryBriefScreen's `ws.entryMode === 'brief'` check
+  // treats undefined the same as 'discovery' (the Convex schema default).
+  const entryMode = (runRow?.entryMode as 'discovery' | 'brief' | undefined) ?? undefined
 
   // Phase 45 Plan 45-06 (REV-05, D-12/D-13/D-15) — the header cost-vs-budget
   // readout's subscriptions. `agentRunRows` sources spend from the durable
@@ -290,6 +305,7 @@ export function WorkspaceStateProvider({
     storyLeads,
     verificationRecords,
     brief,
+    entryMode,
   }
 
   return (
