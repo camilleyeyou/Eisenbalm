@@ -20,6 +20,7 @@
  * the verified Clerk JWT.
  */
 import type { MutationCtx } from '../_generated/server'
+import { ConvexError } from 'convex/values'
 
 /**
  * Constant-time string compare.
@@ -52,6 +53,21 @@ function constantTimeEqual(a: string, b: string): boolean {
 export async function requireOperator(ctx: MutationCtx): Promise<string> {
   const identity = await ctx.auth.getUserIdentity()
   if (!identity) throw new Error('Unauthorized')
+  return identity.subject
+}
+
+/**
+ * Editor-in-chief lane (Phase 49 ROL-01/ROL-02). Sibling to requireOperator,
+ * NOT a wrapper — both independently call getUserIdentity(). Fails CLOSED:
+ * no identity OR role !== 'Editor-in-chief' both reject (Convex has no
+ * local-dev sentinel; an absent/unmigrated role must never grant editor).
+ */
+export async function requireEditor(ctx: MutationCtx): Promise<string> {
+  const identity = await ctx.auth.getUserIdentity()
+  if (!identity) throw new ConvexError({ code: 'unauthorized', message: 'Not authenticated' })
+  if ((identity as { role?: string }).role !== 'Editor-in-chief') {
+    throw new ConvexError({ code: 'forbidden_role', message: 'Editor-in-chief only.' })
+  }
   return identity.subject
 }
 
