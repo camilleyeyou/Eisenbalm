@@ -40,6 +40,8 @@ import {
   deriveTasks,
   estimateWorkMinutes,
   draftSectionIdsFromDraft,
+  deriveRunCostUsd,
+  deriveRunCapUsd,
   type DerivationInputs,
   type IssueStatus,
   type SectionStateResult,
@@ -75,6 +77,16 @@ export interface WorkspaceStateValue {
    */
   panelContent: ReactNode
   setPanelContent: (content: ReactNode) => void
+  /**
+   * Phase 45 Plan 45-06 (REV-05, D-12/D-13/D-15) — the header cost-vs-budget
+   * readout's source values. `runCostUsd` is `undefined` while the durable
+   * `agentRuns:byRunId` rows are loading — consumers (`FrameChrome`) MUST
+   * render a refresh affordance in that case, NEVER a stale/fabricated `$0`
+   * (never-blank honesty). `capUsd` always has a value (defaults to 10.0
+   * until `pipelineConfig:getAll` resolves).
+   */
+  runCostUsd: number | undefined
+  capUsd: number
   /**
    * The four arrays below are the SAME already-subscribed Convex queries this
    * provider derives `stages`/`tasks`/`sectionStates` from (see the
@@ -122,6 +134,21 @@ export function WorkspaceStateProvider({
   const qaFindings = useQuery(api.qaCorrections.byRunId, runId ? { runId } : 'skip')
   const pitchRows = useQuery(api.pitchLog.byRunId, runId ? { runId } : 'skip')
   const runRow = useQuery(api.runs.byRunId, runId ? { runId } : 'skip')
+
+  // Phase 45 Plan 45-06 (REV-05, D-12/D-13/D-15) — the header cost-vs-budget
+  // readout's subscriptions. `agentRunRows` sources spend from the durable
+  // agent_runs table (never the pipeline's in-memory cost store, which is
+  // cleared before any human review stage begins — 45-RESEARCH Pitfall 1).
+  // `pipelineConfigRows` sources the cap (per_run_cap_usd, D-12: reuse the
+  // existing cost cap, do not invent a second budget system).
+  const agentRunRows = useQuery(api.agentRuns.byRunId, runId ? { runId } : 'skip')
+  const pipelineConfigRows = useQuery(api.pipelineConfig.getAll, {
+    workspace_id: DEFAULT_WORKSPACE_ID,
+  })
+  const runCostUsd = deriveRunCostUsd(agentRunRows as Array<{ costUsd?: number }> | undefined)
+  const capUsd = deriveRunCapUsd(
+    pipelineConfigRows as Array<{ key: string; value: string }> | undefined,
+  )
 
   // Same normalization as the overview page (Phase 40 Plan 40-07): once the
   // run lookup has genuinely resolved to "no run", `signOffs` becomes
@@ -228,6 +255,8 @@ export function WorkspaceStateProvider({
     issue,
     panelContent,
     setPanelContent,
+    runCostUsd,
+    capUsd,
     pitchRows,
     qaFindings,
     claimRows,

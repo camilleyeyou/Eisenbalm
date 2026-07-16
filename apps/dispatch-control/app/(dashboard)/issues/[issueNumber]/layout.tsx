@@ -156,9 +156,35 @@ function StatusReadout({ status }: { status: IssueStatus }) {
   )
 }
 
+// ── Cost-vs-budget readout (Phase 45 Plan 45-06, REV-05, D-12/D-13/D-15) ────
+// Net-new, mounted next to the tasks/minutes line. Never-blank: while
+// `runCostUsd` is loading (`undefined`) this renders a refresh affordance —
+// NEVER `$0` or a blank — mirroring `StatusReadout`'s 'unknown' pattern above.
+function CostBudgetReadout({ runCostUsd, capUsd }: { runCostUsd: number | undefined; capUsd: number }) {
+  if (runCostUsd === undefined) {
+    return (
+      <span
+        data-testid="cost-vs-budget"
+        className="font-[family-name:var(--font-mono)] text-[13px] text-[color:var(--color-ink-soft)]"
+      >
+        cost unknown — refresh
+      </span>
+    )
+  }
+  return (
+    <span
+      data-testid="cost-vs-budget"
+      className="font-[family-name:var(--font-mono)] text-[13px] text-[color:var(--color-ink)]"
+    >
+      ${runCostUsd.toFixed(2)} / ${capUsd.toFixed(2)}
+    </span>
+  )
+}
+
 function FrameChrome({ issueNumber: n, children }: { issueNumber: number; children: React.ReactNode }) {
   const pathname = usePathname()
-  const { status, stages, tasks, workMinutes, panelContent } = useWorkspaceState()
+  const { status, stages, tasks, workMinutes, panelContent, runCostUsd, capUsd } =
+    useWorkspaceState()
   const setLastVisitedStage = useMutation(api.issues.setLastVisitedStage)
 
   // Last-visited-stage writer (D-03/D-04) — best-effort, never blocks nav.
@@ -195,6 +221,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
             <span className="font-[family-name:var(--font-mono)] text-[13px] text-[color:var(--color-ink)]">
               {tasks.length} open · ~{workMinutes} min
             </span>
+            <CostBudgetReadout runCostUsd={runCostUsd} capUsd={capUsd} />
           </div>
         </div>
 

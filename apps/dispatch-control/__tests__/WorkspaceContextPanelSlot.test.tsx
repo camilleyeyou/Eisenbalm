@@ -64,6 +64,8 @@ vi.mock('@convex/_generated/api', () => ({
     qaCorrections: { byRunId: 'qaCorrections:byRunId' },
     pitchLog: { byRunId: 'pitchLog:byRunId' },
     runs: { byRunId: 'runs:byRunId' },
+    agentRuns: { byRunId: 'agentRuns:byRunId' },
+    pipelineConfig: { getAll: 'pipelineConfig:getAll' },
   },
 }))
 
