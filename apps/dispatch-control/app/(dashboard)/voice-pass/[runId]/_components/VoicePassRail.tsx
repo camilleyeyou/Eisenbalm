@@ -31,6 +31,8 @@ import { recordSignOff, SignOffApiError } from '@/lib/signOffClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { VOICE_AXES } from '@/lib/galley/axisPartition'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 
 interface VoicePassRailProps {
   runId: string
@@ -67,6 +69,9 @@ const MICRO_LABEL =
 
 export default function VoicePassRail({ runId }: VoicePassRailProps) {
   const { getToken } = useAuth()
+  // ROL-03 (D-09): presentation-only client hint — the server
+  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
+  const isLocked = useRole() !== 'Editor-in-chief'
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const rawFindings =
@@ -185,14 +190,16 @@ export default function VoicePassRail({ runId }: VoicePassRailProps) {
             </p>
           ) : (
             <>
-              <button
-                type="button"
-                disabled={voiceBlockers.length > 0 || busy}
-                onClick={() => void handleSignOff()}
-                className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Sign: Sounds human
-              </button>
+              <LockedControl isLocked={isLocked} lockedLabel="Voice approval 🔒 Editor-in-chief only">
+                <button
+                  type="button"
+                  disabled={voiceBlockers.length > 0 || busy}
+                  onClick={() => void handleSignOff()}
+                  className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Sign: Sounds human
+                </button>
+              </LockedControl>
               {reasonLine && (
                 <p className="text-[11px] text-[color:var(--color-vermilion)]">{reasonLine}</p>
               )}

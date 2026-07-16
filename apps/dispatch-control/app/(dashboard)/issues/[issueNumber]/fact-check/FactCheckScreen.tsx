@@ -49,6 +49,8 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { useWorkspaceState } from '../../_components/WorkspaceStateProvider'
 import { useInspector } from '@/components/inspector/InspectorProvider'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 import { buildFactCheckPanelContent } from './FactCheckPanelContent'
 import { deriveFactCheckSummary, type FactCheckClaimRow } from '@/lib/derivedState'
 import { FACT_CHECK_FILTERS, applyFilters, type FactCheckFilterRow } from '@/lib/factCheckFilters'
@@ -126,6 +128,10 @@ function EvidenceComparisonCard({
   onConfirm: () => void
   onDiscard: () => void
 }) {
+  // ROL-03 (D-09): "Confirm evidence replacement" shares the Apply-revision
+  // lock — no distinct label. Presentation-only (D-11); the server
+  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
+  const isLocked = useRole() !== 'Editor-in-chief'
   return (
     <div
       className="flex flex-col gap-2 border border-[color:var(--color-marigold)] bg-white p-3"
@@ -151,9 +157,11 @@ function EvidenceComparisonCard({
         {preview.sourcePublisher}
       </a>
       <div className="flex gap-2">
-        <button type="button" disabled={busy} className={ACTION_BUTTON} onClick={onConfirm}>
-          Confirm replacement
-        </button>
+        <LockedControl isLocked={isLocked} lockedLabel="Apply revision 🔒 editor only">
+          <button type="button" disabled={busy} className={ACTION_BUTTON} onClick={onConfirm}>
+            Confirm replacement
+          </button>
+        </LockedControl>
         <button type="button" disabled={busy} className={ACTION_BUTTON} onClick={onDiscard}>
           Discard
         </button>

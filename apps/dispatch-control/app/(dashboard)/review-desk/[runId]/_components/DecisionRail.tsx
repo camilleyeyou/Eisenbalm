@@ -67,6 +67,8 @@ import { useInspector } from '@/components/inspector/InspectorProvider'
 import ResolvedFindingsList from './ResolvedFindingsList'
 import SourceIndex from './SourceIndex'
 import PublishPreviewDialog from './PublishPreviewDialog'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 
 interface DecisionRailProps {
   runId: string
@@ -152,6 +154,9 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
   // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector
   // opener, mounted once at the (dashboard) root layout.
   const { openInspector } = useInspector()
+  // ROL-03 (D-09): presentation-only client hint — the server
+  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
+  const isLocked = useRole() !== 'Editor-in-chief'
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const rawFindings =
@@ -517,14 +522,19 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
             blockers.length > 0 || !factsActive || !humanActive || !!held || busy
           return (
             <>
-              <button
-                type="button"
-                disabled={publishDisabled}
-                onClick={() => setShowPreview(true)}
-                className="min-h-[44px] w-full bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-paper,#f4f2ec)] disabled:cursor-not-allowed disabled:opacity-40"
+              <LockedControl
+                isLocked={isLocked}
+                lockedLabel="Collaborators can review and comment, not publish."
               >
-                Publish
-              </button>
+                <button
+                  type="button"
+                  disabled={publishDisabled}
+                  onClick={() => setShowPreview(true)}
+                  className="min-h-[44px] w-full bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-paper,#f4f2ec)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Publish
+                </button>
+              </LockedControl>
               {blockers.length > 0 ? (
                 <p className="text-[11px] text-[color:var(--color-vermilion)]">{blockerReason}</p>
               ) : (!factsActive || !humanActive) ? (

@@ -18,6 +18,8 @@
  */
 import { useState } from 'react'
 import type { RevisePreviewResult, RevisionClaimDelta } from '@/lib/revisionClient'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 
 export interface RevisionComparisonCardProps {
   original: string
@@ -83,6 +85,14 @@ export function RevisionComparisonCard({
   const [editText, setEditText] = useState(preview.proposedText)
 
   const disabled = Boolean(busy)
+  // ROL-03 (D-09): presentation-only client hint — the server
+  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
+  // Plan 49-07: the "Apply" button rendered below is the ACTUAL DOM
+  // location of RevisionFlow.tsx's applyRevision call site (this card is
+  // RevisionFlow's presentation sub-component) — wrapped here rather than
+  // in RevisionFlow.tsx, which only orchestrates state and never itself
+  // renders an interactive element for this action.
+  const isLocked = useRole() !== 'Editor-in-chief'
 
   return (
     <div
@@ -131,9 +141,11 @@ export function RevisionComparisonCard({
         </span>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={disabled} className={ACTION_BUTTON} onClick={onApply}>
-            Apply
-          </button>
+          <LockedControl isLocked={isLocked} lockedLabel="Apply revision 🔒 editor only">
+            <button type="button" disabled={disabled} className={ACTION_BUTTON} onClick={onApply}>
+              Apply
+            </button>
+          </LockedControl>
           <button
             type="button"
             disabled={disabled}

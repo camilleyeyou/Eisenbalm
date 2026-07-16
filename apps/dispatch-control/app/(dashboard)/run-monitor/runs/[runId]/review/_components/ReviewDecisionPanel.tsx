@@ -25,6 +25,8 @@ import { api } from '@convex/_generated/api'
 import { publishIssue, scheduleIssue, rejectIssue, ReviewApiError } from '@/lib/reviewClient'
 import { rerollAgent } from '@/lib/pipelineControlClient'
 import SchedulePublishDialog from './SchedulePublishDialog'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const claimChecksApi = api as any
@@ -48,6 +50,11 @@ type ActiveModal = 'schedule' | 'reject' | 'reroll' | null
 
 export default function ReviewDecisionPanel({ runId }: ReviewDecisionPanelProps) {
   const { getToken } = useAuth()
+  // ROL-03 (D-09): presentation-only client hint — the server
+  // `_require_editor` dependency (Plan 49-03) is the authoritative gate.
+  // This is the legacy publish surface (D-06/D-07) — gated the same way as
+  // review-desk's DecisionRail.
+  const isLocked = useRole() !== 'Editor-in-chief'
 
   // Claims sign-off gate query. undefined = still loading (must stay disabled).
   const signoffQuery = useQuery(
@@ -171,16 +178,21 @@ export default function ReviewDecisionPanel({ runId }: ReviewDecisionPanelProps)
       {/* ── Primary CTAs ──────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
         {/* Approve and Publish */}
-        <button
-          type="button"
-          onClick={handleApprove}
-          disabled={!canApprove || loading}
-          aria-disabled={!canApprove}
-          title={!canApprove ? 'Sign off all factual claims before publishing.' : undefined}
-          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 transition-colors"
+        <LockedControl
+          isLocked={isLocked}
+          lockedLabel="Collaborators can review and comment, not publish."
         >
-          {loading && activeModal === null ? 'Publishing…' : 'Approve and Publish'}
-        </button>
+          <button
+            type="button"
+            onClick={handleApprove}
+            disabled={!canApprove || loading}
+            aria-disabled={!canApprove}
+            title={!canApprove ? 'Sign off all factual claims before publishing.' : undefined}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 transition-colors"
+          >
+            {loading && activeModal === null ? 'Publishing…' : 'Approve and Publish'}
+          </button>
+        </LockedControl>
 
         {/* Schedule for Later */}
         <button
