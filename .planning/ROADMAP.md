@@ -989,7 +989,14 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   3. A revision request returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) before anything is applied.
   4. Operator can Apply, Edit before applying, Try another approach, or Discard; Apply mutates the draft through the existing content-patch write boundary and logs to `audit_log`.
   5. Revision calls are bounded by a per-issue cost guard, visible against the header's cost-vs-budget readout.
-**Plans**: TBD
+**Plans**: 7 plans (4 waves)
+- [ ] 45-01-contract-and-wave0-test-stubs-PLAN.md — API_CONTRACTS §45 (passage-revision preview/apply shapes, 7 chip ids, claim-delta, cost-guard 409) + blockIndexFromKey helper + 6 Wave-0 test stubs (Wave 1)
+- [ ] 45-02-pipeline-shared-prose-patch-core-and-cost-primitives-PLAN.md — extract content.py::_patch_prose_span (one shared apply path, D-01) + budget.py::would_exceed_run_cap + 'revision' llm_config (Wave 2)
+- [ ] 45-03-pipeline-revision-endpoint-PLAN.md — api/revision.py revise/preview+apply (direction-chip prompt, claim delta, distinct-agentKey cost recording, cost-guard 409, sign-off revoke, one audit row) (Wave 3)
+- [ ] 45-04-frontend-revision-flow-kit-PLAN.md — revisionClient + DirectionChips + RevisionComparisonCard + RevisionFlow (chips→preview→card→apply, try-another/edit-before-applying) (Wave 2)
+- [ ] 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md — data-block-index stamping + PassageToolbar (6 actions, Compare/Restore reserved) + Draft/Voice wiring + InspectorFooter flipped live (Wave 3)
+- [ ] 45-06-frontend-cost-vs-budget-readout-PLAN.md — deriveRunCostUsd/deriveRunCapUsd + WorkspaceStateProvider agentRuns subscription + never-blank FrameChrome header readout (Wave 2)
+- [ ] 45-07-integration-gate-PLAN.md — full suite + strict build + Convex-sync confirm + Annotations demo-leg UAT (Wave 4)
 **UI hint**: yes
 
 ### Phase 46: Signal Editor & Candidate Verification
