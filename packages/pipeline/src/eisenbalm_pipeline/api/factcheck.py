@@ -53,6 +53,7 @@ from eisenbalm_pipeline.api.content import (
 from eisenbalm_pipeline.api.control import (
     _emit_audit,
     _require_clerk_jwt_control,
+    _require_editor,
     _revoke_active_signoffs,
 )
 from eisenbalm_pipeline.lib.agent_wrapper import _truncate
@@ -548,7 +549,7 @@ async def apply_claim_evidence(
     run_id: str,
     claim_index: int,
     body: _EvidenceApplyBody,
-    claims: dict = Depends(_require_clerk_jwt_control),
+    claims: dict = Depends(_require_editor),
 ) -> dict:
     """Ask agent for better evidence — STEP 2 (§42.4a, FCT-06).
 

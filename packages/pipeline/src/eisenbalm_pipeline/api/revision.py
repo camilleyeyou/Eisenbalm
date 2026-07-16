@@ -48,6 +48,7 @@ from eisenbalm_pipeline.api.content import _patch_prose_span, _resolve_sanity_id
 from eisenbalm_pipeline.api.control import (
     _emit_audit,
     _require_clerk_jwt_control,
+    _require_editor,
     _revoke_active_signoffs,
 )
 from eisenbalm_pipeline.lib.agent_wrapper import _truncate
@@ -356,7 +357,7 @@ async def apply_passage_revision(
     request: Request,
     run_id: str,
     body: _ReviseApplyBody,
-    claims: dict = Depends(_require_clerk_jwt_control),
+    claims: dict = Depends(_require_editor),
 ) -> dict:
     """Ask agent to revise — STEP 2 (§45.4).
 

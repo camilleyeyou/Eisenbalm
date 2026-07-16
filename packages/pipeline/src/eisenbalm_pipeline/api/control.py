@@ -132,6 +132,23 @@ async def _require_clerk_jwt_control(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
+# ── Role authorization dependency (Phase 49, ROL-01/ROL-02, §49.4) ────────
+
+
+async def _require_editor(claims: dict = Depends(_require_clerk_jwt_control)) -> dict:
+    """Authorization (not authentication) layered on _require_clerk_jwt_control.
+    Local-dev sentinel resolves to Editor-in-chief (D-04) so header-free tests pass.
+    A real deployed identity must carry role == 'Editor-in-chief'."""
+    if claims.get("sub") == "local-dev-operator":
+        return claims
+    if claims.get("role") != "Editor-in-chief":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"reason": "forbidden_role", "message": "Editor-in-chief only."},
+        )
+    return claims
+
+
 # ── Shared audit helper ────────────────────────────────────────────────────
 
 async def _emit_audit(

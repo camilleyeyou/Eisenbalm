@@ -136,6 +136,19 @@ async def record_sign_off(
                 },
             )
     elif body.kind == "sounds-human":
+        # Phase 49 (ROL-01/ROL-02, §49.4, D-06) — role gate, IN-HANDLER
+        # branch (not a route Depends swap, since this route also handles
+        # kind=="facts-cleared", which stays ungated — RESEARCH Open Q2).
+        # Local-dev sentinel still resolves to Editor-in-chief (D-04).
+        if (
+            claims.get("sub") != "local-dev-operator"
+            and claims.get("role") != "Editor-in-chief"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"reason": "forbidden_role", "message": "Editor-in-chief only."},
+            )
+
         # §36.7b: server-enforced prerequisite (D-12/D-14) — upgrades Phase
         # 34 D-06's interim ungated attestation now that voice IS
         # machine-checkable. Anchor-blind exactly like facts-cleared's
