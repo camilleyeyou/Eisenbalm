@@ -19,7 +19,7 @@ from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
+from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_brief_block
 
 
 # D-20: enumerate every forbidden construct verbatim. Phase 7's renderer
@@ -80,6 +80,13 @@ def _build_messages(state: DispatchState, charity: dict) -> list[dict[str, str]]
         .replace("{charity_name}", charity.get("name", ""))
         .replace("{mission_statement}", charity.get("missionStatement", ""))
     )
+    # Phase 47 (BRF-05): thread the Story Brief so this bespoke writer also
+    # drafts FROM it (game.py does not route through
+    # build_section_writer_prompt — see 47-RESEARCH Pattern 5). None-safe:
+    # build_brief_block("") when state.get("brief") is None on legacy runs.
+    brief_block = build_brief_block(state.get("brief"))
+    if brief_block:
+        user = f"{user}\n\n{brief_block.rstrip()}"
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},

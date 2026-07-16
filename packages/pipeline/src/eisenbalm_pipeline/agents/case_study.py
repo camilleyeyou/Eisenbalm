@@ -172,6 +172,10 @@ async def case_study(state: DispatchState) -> DispatchState:
         charity=state.get("winning_charity") or {},
         research=scrubbed_research,
         style_brief=style_brief,
+        # Phase 47 (BRF-05): thread the Story Brief so this writer drafts
+        # FROM it. state.get("brief") is None on legacy/no-brief runs —
+        # build_section_writer_prompt degrades gracefully in that case.
+        brief=state.get("brief"),
         # Phase 16 NRR-04 / Plan 16-05: forward narrator-aware voice.
         voice_constraints=style_brief.get("voice") or VOICE_CONSTRAINTS,
         claims=claims,

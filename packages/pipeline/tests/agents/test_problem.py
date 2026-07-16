@@ -125,9 +125,13 @@ async def test_problem_voice_isolation(sample_dispatch_state) -> None:
     # whitelisted kwarg so the calibrator-set narrator voice can propagate.
     # Phase 35 PRV-02: claims added as an 8th whitelisted kwarg (the run's
     # claims whitelist derived from state["research"]["claims"]).
+    # Phase 47 (BRF-05, Plan 47-03): brief added as a 9th whitelisted kwarg
+    # (the Story Brief the writer drafts from) — a deliberate 5th content
+    # block alongside charity/research/style_brief/claims.
     allowed = {
         "section_id", "section_title", "section_guidance",
         "charity", "research", "style_brief", "voice_constraints", "claims",
+        "brief",
     }
     assert set(captured.keys()).issubset(allowed)
 

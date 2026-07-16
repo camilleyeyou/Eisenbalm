@@ -129,6 +129,10 @@ async def origin_story(state: DispatchState) -> DispatchState:
         charity=state.get("winning_charity") or {},
         research=research,
         style_brief=style_brief,
+        # Phase 47 (BRF-05): thread the Story Brief so this writer drafts
+        # FROM it. state.get("brief") is None on legacy/no-brief runs —
+        # build_section_writer_prompt degrades gracefully in that case.
+        brief=state.get("brief"),
         # Phase 16 NRR-04 / Plan 16-05: forward the calibrator-set voice
         # (narrator-aware composition). When no narrator is set this is
         # byte-identical to VOICE_CONSTRAINTS — NRR-10 byte-equivalence.

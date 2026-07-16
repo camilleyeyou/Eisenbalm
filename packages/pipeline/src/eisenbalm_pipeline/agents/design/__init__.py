@@ -43,6 +43,7 @@ from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
+from eisenbalm_pipeline.lib.voice import build_brief_block
 from eisenbalm_pipeline.lib.wcag import SAFE_THEME, validate_theme
 
 log = logging.getLogger(__name__)
@@ -118,6 +119,14 @@ def _build_messages(
         .replace("{charity_name}", charity.get("name", ""))
         .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
+    # Phase 47 (BRF-05): thread the Story Brief — design/__init__.py is
+    # bespoke, does not route through build_section_writer_prompt
+    # (47-RESEARCH Pattern 5). None-safe: state.get("brief") is None on
+    # legacy/no-brief runs. voiceIntention in particular informs the
+    # theme's visual direction.
+    brief_block = build_brief_block(state.get("brief"))
+    if brief_block:
+        user = f"{user}\n\n{brief_block.rstrip()}"
     if retry_errors:
         user = "\n".join([
             user,

@@ -37,7 +37,11 @@ from eisenbalm_pipeline.graph.blocks import BodyBlock, ClaimSpanRef
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
-from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS, build_claims_block
+from eisenbalm_pipeline.lib.voice import (
+    VOICE_CONSTRAINTS,
+    build_brief_block,
+    build_claims_block,
+)
 
 
 # ── Pydantic shapes (D-19) ──────────────────────────────────────────────
@@ -149,6 +153,12 @@ def _build_big_budget_prompt(
         .replace("{mission_statement}", charity.get("missionStatement", ""))
         .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
+    # Phase 47 (BRF-05): thread the Story Brief — bonus.py is bespoke, does
+    # not route through build_section_writer_prompt (47-RESEARCH Pattern 5).
+    # None-safe: state.get("brief") is None on legacy/no-brief runs.
+    brief_block = build_brief_block(state.get("brief"))
+    if brief_block:
+        user = f"{user}\n\n{brief_block.rstrip()}"
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
@@ -177,6 +187,10 @@ def _build_jingle_prompt(
         .replace("{mission_statement}", charity.get("missionStatement", ""))
         .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
+    # Phase 47 (BRF-05): thread the Story Brief — see _build_big_budget_prompt.
+    brief_block = build_brief_block(state.get("brief"))
+    if brief_block:
+        user = f"{user}\n\n{brief_block.rstrip()}"
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
@@ -209,6 +223,10 @@ def _build_spec_ad_prompt(
         .replace("{mission_statement}", charity.get("missionStatement", ""))
         .replace("{visual_direction}", style_brief.get("visualDirection", ""))
     )
+    # Phase 47 (BRF-05): thread the Story Brief — see _build_big_budget_prompt.
+    brief_block = build_brief_block(state.get("brief"))
+    if brief_block:
+        user = f"{user}\n\n{brief_block.rstrip()}"
     # Phase 35 PRV-02/D-06: SpecAd is the one bonus branch that emits
     # claimSpans, but it does NOT route through build_section_writer_prompt
     # (it assembles its own system/user messages from on-disk templates
