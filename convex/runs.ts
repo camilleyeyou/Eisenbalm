@@ -25,11 +25,13 @@ export const create = mutation({
     runId: v.string(),
     triggerSource: v.string(),       // "manual" | "cron" | "webhook"
     triggeredBy: v.optional(v.string()),
+    // Phase 48 ENT-01/03 — absent = 'discovery'; only brief-triggered runs pass 'brief'.
+    entryMode: v.optional(v.union(v.literal('discovery'), v.literal('brief'))),
     // Phase 29 D-1: pipeline-lane secret (injected centrally by
     // convex_client.py::convex_mutation). Never persisted.
     pipelineSecret: v.optional(v.string()),
   },
-  handler: async (ctx, { workspace_id, runId, triggerSource, triggeredBy, pipelineSecret }) => {
+  handler: async (ctx, { workspace_id, runId, triggerSource, triggeredBy, entryMode, pipelineSecret }) => {
     requirePipelineSecret(pipelineSecret)
 
     // Idempotent guard: same runId as pipelineRuns.create (join key). If a runs
@@ -45,6 +47,7 @@ export const create = mutation({
       runId,
       triggerSource,
       triggeredBy,
+      entryMode,
       status: 'running', // server-side default — NOT an arg (mirrors pipelineRuns.create)
       startedAt: Date.now(), // server-side — NOT an arg; Python caller does not pass it
     })

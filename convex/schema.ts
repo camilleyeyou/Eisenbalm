@@ -258,6 +258,9 @@ export default defineSchema({
     durationMs: v.optional(v.number()),
     cancelRequested: v.optional(v.boolean()), // Phase 25 RUN-04 cooperative cancel flag the wrapper polls
     scheduledPublishAt: v.optional(v.number()), // Phase 26 RVW-03 / D-02: approve-and-schedule target time (Unix ms)
+    entryMode: v.optional(v.union(v.literal('discovery'), v.literal('brief'))),
+    // Phase 48 ENT-01/03 — absent = 'discovery'; set to 'brief' only by runs:create for a
+    // brief-started run. Read by the Stage-1 render variant.
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_runId', ['runId']),
