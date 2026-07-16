@@ -461,7 +461,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
-| 46. Signal Editor & Candidate Verification | 4/7 | In Progress|  |
+| 46. Signal Editor & Candidate Verification | 5/7 | In Progress|  |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
@@ -1014,7 +1014,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 46-02-dispatchstate-contract-and-repetition-helper-PLAN.md — state.py StoryLead/VerificationRecord TypedDicts + JSON-safe fields + lib/registry_repetition.compute_repetition_note extraction (Wave 2)
 - [x] 46-03-signal-editor-prompt-and-model-registration-PLAN.md — llm_config/config_loader signal_editor (Sonnet) registration + signal_editor.md/signal_editor_user.md prompts + seed script (Wave 1)
 - [x] 46-04-signal-editor-agent-PLAN.md — agents/signal_editor.py (@agent_node: 3-5 leads, brand-risk recommended=false Python gate, Editorial Memory repetition warning) + unit tests (Wave 3)
-- [ ] 46-05-verify-candidates-and-editor-recovery-PLAN.md — agents/verify_candidates.py deterministic check + editor_gate_1 all-killed recovery (D-14) + unit tests (Wave 3)
+- [x] 46-05-verify-candidates-and-editor-recovery-PLAN.md — agents/verify_candidates.py deterministic check + editor_gate_1 all-killed recovery (D-14) + unit tests (Wave 3)
 - [ ] 46-06-graph-wiring-and-consumer-sync-PLAN.md — builder.py 20-node rewire + api/runs.py agent_keys + agent_wrapper _INPUT_KEYS + test_builder_wiring/test_pipeline_real_mode updates (Wave 4)
 - [ ] 46-07-checkpoint-resume-and-integration-gate-PLAN.md — test_checkpoint_resume_phase46 (SGE-04) + full suite + Convex parity/live-sync gate (Wave 5)
 

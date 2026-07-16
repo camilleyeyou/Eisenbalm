@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 46-04-signal-editor-agent-PLAN.md
-last_updated: "2026-07-16T07:53:04.599Z"
+stopped_at: Completed 46-05-verify-candidates-and-editor-recovery-PLAN.md
+last_updated: "2026-07-16T08:04:36.950Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 46 (signal-editor-candidate-verification) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 
 ## Performance Metrics
 
@@ -326,6 +326,7 @@ Plan: 5 of 7
 | Phase 46 P03 | 8min | 3 tasks | 6 files |
 | Phase 46 P02 | 12min | 2 tasks | 4 files |
 | Phase 46 P04 | 8min | 2 tasks | 2 files |
+| Phase 46 P05 | 15 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -856,6 +857,8 @@ Recent decisions affecting current work:
 - [Phase 46]: StoryLead/VerificationRecord fields declared as plain required TypedDict keys (not NotRequired), matching the CharityCandidate precedent since API_CONTRACTS §46.1/§46.3 declares every field mandatory
 - [Phase 46]: signal_editor enforces SGE-02 brand-risk/recommended invariant in Python (not prompt-only): brandRiskFlag=True always forces recommended=False after the LLM call
 - [Phase 46]: signal_editor Editorial Memory read reuses lib.registry_repetition.compute_repetition_note verbatim (mirrors Scout's _load_registry_keys empty-fallback posture) — surfaces repetitionWarning without ever dropping a lead (SGE-05)
+- [Phase 46]: verify_candidates kills only on a DEFINITIVE failure (domain 4xx, no registration field present at all, or press-hit count >= OBSCURITY_FAIL_MIN_HITS); domainLive is coerced to a required bool per contract while the tri-state ambiguity is captured via status='unverified'
+- [Phase 46]: editor_gate_1's all-candidates-killed path (D-14) returns immediately with a synthetic winning_charity after interrupt()/resume, skipping the LLM call entirely rather than threading a fake candidate through the normal ranking path
 
 ### Pending Todos
 
@@ -946,6 +949,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T07:53:04.585Z
-Stopped at: Completed 46-04-signal-editor-agent-PLAN.md
+Last session: 2026-07-16T08:04:36.937Z
+Stopped at: Completed 46-05-verify-candidates-and-editor-recovery-PLAN.md
 Resume file: None
