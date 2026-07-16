@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 49-03-fastapi-editor-gate-PLAN.md
-last_updated: "2026-07-16T18:00:45.478Z"
+stopped_at: Completed 49-04-convex-editor-gate-PLAN.md
+last_updated: "2026-07-16T18:14:04.783Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 49 (roles-permissions) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 
 ## Performance Metrics
 
@@ -346,6 +346,7 @@ Plan: 3 of 9
 | Phase 48-brief-entry-point P07 | 9min | 2 tasks | 1 files |
 | Phase 49 P01 | 10min | 3 tasks | 2 files |
 | Phase 49 P03 | 20 | 3 tasks | 6 files |
+| Phase 49 P04 | 11min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -911,6 +912,8 @@ Recent decisions affecting current work:
 - [Phase 49]: New append-only comments Convex table (by_workspace_issueNumber, by_workspace indices) modeled on §39 charity_corrections precedent
 - [Phase 49]: Monkeypatch target for jwt in tests is sys.modules['jwt'], not the control module's jwt attribute (local import inside _require_clerk_jwt_control bypasses module-attribute patching)
 - [Phase 49]: signoffs.py gates kind==sounds-human in-handler (not a route Depends swap); facts-cleared stays ungated on the same endpoint
+- [Phase 49]: Scoped requireOperator->requireEditor swap to exactly activate + setStatus, per D-07 six-action inventory; other requireOperator call sites in promptVersions.ts left untouched despite a plan grep criterion suggesting otherwise
+- [Phase 49]: Fixed convexAuthLockdown.test.ts no-identity regex (Unauthorized -> unauthorized/i) to match requireEditor's ConvexError shape; auth still gates before role does
 
 ### Pending Todos
 
@@ -1001,6 +1004,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T18:00:45.464Z
-Stopped at: Completed 49-03-fastapi-editor-gate-PLAN.md
+Last session: 2026-07-16T18:14:04.769Z
+Stopped at: Completed 49-04-convex-editor-gate-PLAN.md
 Resume file: None
