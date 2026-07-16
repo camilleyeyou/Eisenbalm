@@ -1,0 +1,118 @@
+'use client'
+/**
+ * Phase 47 Plan 47-05 (BRF-02) — LeadActions: "Require this lead" /
+ * "Remove — add reason" for a single `story_leads` row.
+ *
+ * Require calls `requireLead(runId, leadId, token)` — no reason. Remove is
+ * disabled while its reason textarea is empty/whitespace; submitting with a
+ * non-empty reason calls `removeLead(runId, leadId, reason, token)`. Both
+ * clients (`lib/pipelineControlClient.ts`) POST to the Clerk-guarded
+ * `/issues/{run_id}/leads/{lead_id}/require`/`/remove` endpoints (§47.5),
+ * which write `storyLeads:setStatus` + (Remove only) a reason-carrying
+ * `audit_log` row — the removal surfaces in the shared Decision log
+ * (`components/decision-log/DecisionLog.tsx`) server-side; this component
+ * mounts `DecisionLog` below its controls (mirrors
+ * `ApprovalPanelContent.tsx`'s "always mounted, scoped to the run" idiom)
+ * and shows an optimistic pending/success message per the
+ * `AdjudicationPanel.tsx` idiom while Convex's live subscription catches up.
+ *
+ * The operator never handles the pipeline's server-to-server auth value —
+ * this component contains no reference to it whatsoever.
+ */
+import { useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
+import { requireLead, removeLead } from '@/lib/pipelineControlClient'
+import DecisionLog from '@/components/decision-log/DecisionLog'
+
+export interface LeadActionsProps {
+  runId: string
+  leadId: string
+}
+
+export function LeadActions({ runId, leadId }: LeadActionsProps) {
+  const { getToken } = useAuth()
+
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  const canRemove = reason.trim().length > 0 && !busy
+
+  async function handleRequire() {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const token = await getToken()
+      await requireLead(runId, leadId, token)
+      setMessage('Lead required.')
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Require failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRemove() {
+    if (reason.trim().length === 0) return
+    setBusy(true)
+    setMessage(null)
+    try {
+      const token = await getToken()
+      await removeLead(runId, leadId, reason, token)
+      setMessage(`Removed: ${reason}`)
+      setReason('')
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Remove failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section
+      aria-label="Lead actions"
+      className="mt-2 flex flex-col gap-3 border-t border-[color:var(--color-faint)] pt-2"
+    >
+      <button
+        type="button"
+        disabled={busy}
+        onClick={handleRequire}
+        className="min-h-[44px] w-fit bg-[color:var(--color-green)] px-4 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-white disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Require this lead
+      </button>
+
+      <div>
+        <label
+          className="block font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)]"
+          htmlFor={`remove-reason-${leadId}`}
+        >
+          Remove — add reason (required)
+        </label>
+        <textarea
+          id={`remove-reason-${leadId}`}
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          rows={2}
+          className="mt-1 w-full border border-[color:var(--color-faint)] bg-white p-2 text-[13px] text-[color:var(--color-ink)]"
+        />
+        <button
+          type="button"
+          disabled={!canRemove}
+          onClick={handleRemove}
+          className="mt-1.5 min-h-[44px] bg-[color:var(--color-vermilion)] px-4 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Remove
+        </button>
+      </div>
+
+      {message && (
+        <p role="status" className="text-[13px] text-[color:var(--color-ink)]">
+          {message}
+        </p>
+      )}
+
+      <DecisionLog runId={runId} />
+    </section>
+  )
+}
