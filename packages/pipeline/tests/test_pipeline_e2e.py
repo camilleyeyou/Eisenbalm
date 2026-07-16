@@ -184,6 +184,103 @@ async def test_cost_shape(client, convex_query_fn, sanity_cleanup):
         await sanity_cleanup(issue_number)
 
 
+def _brief_route_registered() -> bool:
+    """Local Wave 0 guard (Phase 48): additionally skip this specific
+    brief-mode e2e test until Plan 48-04 registers POST /pipeline/run/brief
+    — even in an environment where SUPABASE_POSTGRES_URL IS set (this
+    module's own env-var skipif above only guards the checkpointer
+    requirement, not the brief route's existence)."""
+    try:
+        from eisenbalm_pipeline.api.control import router as control_router
+    except ImportError:
+        return False
+    return any(getattr(r, "path", None) == "/pipeline/run/brief" for r in control_router.routes)
+
+
+BRIEF_BODY_TEMPLATE = {
+    "premise": "A quiet food bank quietly feeds a third of the county.",
+    "peg": "Their annual harvest drive starts next Tuesday.",
+    "organization": {
+        "name": "Quiet Harvest Food Bank (E2E)",
+        "website": "https://quiet-harvest-e2e.example.org",
+    },
+    "sourceMaterial": "Founded 2011; runs a weekly mobile pantry.",
+}
+
+
+@pytest.mark.skipif(
+    not _brief_route_registered(),
+    reason=(
+        "Wave 3 not yet wired: POST /pipeline/run/brief not yet registered "
+        "on api/control.py's router (Plan 48-04)."
+    ),
+)
+async def test_pipeline_e2e_brief_mode(
+    client, convex_query_fn, sanity_get_issue, sanity_cleanup
+):
+    """ENT-02 + ENT-03 + ENT-04: a brief-started run (stub-mode) reaches the
+    same terminal state and produces the same downstream artifacts as a
+    discovery run — MINUS deliberation (D-12, the one honest divergence,
+    outside ENT-03's enumerated artifact list of research/sections/QA/
+    claims/sign-offs)."""
+    issue_number = _unique_issue_number()
+    try:
+        r = await client.post(
+            "/pipeline/run/brief",
+            json={**BRIEF_BODY_TEMPLATE, "issueNumber": issue_number},
+        )
+        assert r.status_code == 200, r.text
+        run_id = r.json()["runId"]
+
+        final = await _poll_until_terminal(client, run_id)
+        # CONTEXT D-18 step 12 (mirrored for brief mode): stub Publisher
+        # leaves status='awaiting-review'.
+        assert final["status"] == "awaiting-review", final
+
+        # ENT-03: the Sanity draft exists with pipelineMetadata.runId == run_id
+        # — same shape as a discovery run, regardless of how winning_charity/
+        # brief were populated.
+        doc = await sanity_get_issue(issue_number)
+        assert doc is not None, f"Sanity draft issue-{issue_number} not found"
+        assert doc["pipelineMetadata"]["runId"] == run_id, (
+            f"Sanity pipelineMetadata.runId mismatch: "
+            f"{doc['pipelineMetadata'].get('runId')} != {run_id}"
+        )
+
+        # ENT-03: QA corrections ran (same downstream pipeline as discovery).
+        qa_rows = await convex_query_fn("qaCorrections:byRunId", {"runId": run_id})
+        assert isinstance(qa_rows, list), "qaCorrections:byRunId did not return a list"
+
+        # ENT-04: the human-supplied organization was still run through
+        # verify_candidates — the verification record is never absent.
+        verification_rows = await convex_query_fn(
+            "verificationRecords:byRunId", {"runId": run_id}
+        )
+        assert isinstance(verification_rows, list), (
+            "verificationRecords:byRunId did not return a list"
+        )
+        assert len(verification_rows) >= 1, (
+            "ENT-04: the human-supplied organization must still be run "
+            "through verify_candidates — the verification record is never "
+            "absent, even on a brief-started run."
+        )
+        for row in verification_rows:
+            assert row.get("runId") == run_id
+
+        # D-12: the one honest divergence — a brief run has NO deliberation
+        # events (no Scout finding, no Advocate argument, no Gate-1 editor
+        # decision; the chronicler is never reached on the brief path).
+        events = await convex_query_fn("deliberationEvents:byRunId", {"runId": run_id})
+        event_types = {e["eventType"] for e in events}
+        for absent_type in ("scout-finding", "advocate-argument", "editor-decision"):
+            assert absent_type not in event_types, (
+                f"D-12: brief runs must not emit {absent_type!r} — there was "
+                "no Scout/Advocate/Gate-1 debate to chronicle."
+            )
+    finally:
+        await sanity_cleanup(issue_number)
+
+
 async def test_duration_ms(client, convex_query_fn, sanity_cleanup):
     """PIP-12: pipelineRuns.durationMs is populated and > 0."""
     issue_number = _unique_issue_number()
