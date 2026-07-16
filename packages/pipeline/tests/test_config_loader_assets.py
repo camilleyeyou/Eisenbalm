@@ -41,7 +41,8 @@ def test_asset_registries_counts() -> None:
         USER_TEMPLATE_KEYS,
     )
 
-    assert len(USER_TEMPLATE_KEYS) == 11
+    # 11 Phase 24 originals + Phase 46's signal_editor_user (SGE-01/D-18).
+    assert len(USER_TEMPLATE_KEYS) == 12
     assert len(SECTION_GUIDANCE_KEYS) == 6
     assert len(SINGLETON_ASSET_KEYS) == 2
 
