@@ -66,3 +66,29 @@ caused by the LockedControl wiring, and `pnpm --filter dispatch-control build` (
 Task 4 gate) is green. Flagging the updated, larger count for whichever future phase/plan takes on
 `dispatch-control` test-file type hygiene as a dedicated task (likely worth a shared
 `import.meta.glob` type shim rather than per-file fixes).
+
+## Plan 49-08 (comments-affordance-mount) — Task 3
+
+### `pnpm --filter dispatch-control typecheck` (bare `tsc --noEmit`) — 4 new errors in the new test file, same pre-existing class
+
+Task 3's actual verify gate, `pnpm --filter dispatch-control build`, **passes cleanly (exit 0)**
+with `IssueComments.tsx` created and mounted in both `layout.tsx` and `MyTasksScreen.tsx` — this is
+the gate the plan specifies.
+
+As an extra safety check (mirroring 49-04's/49-07's practice), bare `pnpm --filter dispatch-control
+typecheck` was also run. `__tests__/IssueComments.test.tsx` contributes 4 of its errors:
+
+```
+__tests__/IssueComments.test.tsx(50,44): error TS2345: Argument of type 'Mock<Procedure>' is not
+  assignable to parameter of type 'ReactMutation<FunctionReference<"mutation">>'.
+(+3 more, same shape, lines 62/72/96)
+```
+
+This is the exact same error class `EvalDrawer.test.tsx` (and others) already contribute today —
+`vi.mocked(useMutation).mockReturnValue(...)`'s return type doesn't satisfy Convex's
+`ReactMutation<FunctionReference<"mutation">>` under bare `tsc --noEmit`, a mismatch vitest itself
+never surfaces (mocks are untyped at runtime) and Next's build type-checker doesn't reach (it only
+walks the app's real import graph, not `__tests__/**`). Not a new category of debt — adding to the
+existing count rather than deviating from the established `vi.mocked(useQuery/useMutation)` mocking
+idiom used by every other component test in this codebase. No fix applied, per the deviation-rules
+scope boundary and 49-04/49-07 precedent.
