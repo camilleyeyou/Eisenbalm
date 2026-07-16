@@ -5957,3 +5957,101 @@ new additive optional field on `runs` (`entryMode`, §48.4) with a matching `run
 existing field, table, or endpoint documented in §1-§47 is renamed or removed. The graph topology
 change is two `add_edge` → `add_conditional_edges` conversions (§48.1) — every other edge, and the
 entire discovery-mode execution order, is byte-unchanged.*
+
+---
+
+## §49 — Roles & Permissions (Phase 49)
+
+This contract is written BEFORE any enforcement code exists (CLAUDE.md contract-first hard rule,
+mirroring §39/§48). It declares the `users.role` value-vocabulary change (D-02), the new `comments`
+table (D-12), the `convex/comments.ts` function signatures, the six-action editor-gate inventory
+(ROL-02), and the verbatim §6 locked labels (D-09). Plans 49-03/49-04/49-05 implement these shapes
+verbatim — no field name, table shape, error envelope, or label string may be invented later.
+
+### §49.1 — `users.role` value-vocabulary change (D-02)
+
+The FIELD NAME `role` on the `users` table is UNCHANGED. Only the string VALUES change, from
+`"admin" | "operator"` to `"Editor-in-chief" | "Collaborator"`. The source of truth is Clerk
+`publicMetadata.role`, exposed as a JWT claim named `role` on BOTH the default/customized session
+token AND the named `"convex"` JWT template (see §49.4's enforcement mechanisms — the FastAPI side
+reads the claim off the default session token already passed to `_require_clerk_jwt_control`; the
+Convex side reads it off `ctx.auth.getUserIdentity()` via the named `"convex"` template). `users.role`
+remains an optional future mirror — the JIT upsert in `convex/users.ts` (`upsertCurrentUser`) is not
+live-wired into any app code path today, so `users.role` is NOT the live read path for either
+enforcement surface; it exists as a schema-level placeholder for a future DB-mirrored role.
+
+### §49.2 — `comments` Convex table (NEW)
+
+```typescript
+// convex/schema.ts
+comments: defineTable({
+  workspace_id: v.string(),
+  issueNumber: v.number(),           // PRIMARY target key (issue-keyed, §40)
+  stage: v.optional(v.string()),     // 'story'|'draft'|'fact-check'|'voice'|'approval'|undefined
+  anchorRef: v.optional(v.string()), // opaque free-form (claim index / section name) — screen-level granularity only, NOT re-anchored
+  text: v.string(),
+  authorId: v.string(),              // Clerk subject from ctx.auth.getUserIdentity() — NEVER client-supplied
+  createdAt: v.number(),
+})
+  .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber'])
+  .index('by_workspace', ['workspace_id']),
+```
+
+**APPEND-ONLY invariant for this phase:** `add` only — no `update`/`patch`/`remove`/`delete`
+function is ever defined against this table (mirrors §39.1's `charity_corrections` invariant). Flat
+comments only — no threading, no @mentions, no notifications (D-13).
+
+### §49.3 — `convex/comments.ts` functions (NEW)
+
+```typescript
+// Mutation — auth lane = ANY authenticated identity (inline ctx.auth.getUserIdentity(),
+// NOT requireOperator, NOT requireEditor — commenting is the one write BOTH roles may perform):
+add({ workspace_id, issueNumber, stage?, anchorRef?, text }): Promise<Id<'comments'>>
+  // const identity = await ctx.auth.getUserIdentity()
+  // if (!identity) throw new ConvexError({ code: 'unauthorized', message: 'Not authenticated' })
+  // authorId = identity.subject; createdAt = Date.now()
+
+// Query — UNGUARDED read (matches charity_corrections:listByCharityKey, §39.2):
+listByIssueNumber({ workspace_id, issueNumber, stage? }): Promise<Doc<'comments'>[]>
+  // by_workspace_issueNumber index, sorted createdAt ASC (chronological — oldest first);
+  // when `stage` is supplied, return only rows with that stage.
+```
+
+### §49.4 — Six-action editor gate (D-06, D-07)
+
+Exactly these six actions, no more, no fewer, are gated to Editor-in-chief:
+
+| Action | Surface | Handler | Mechanism |
+|---|---|---|---|
+| Apply revision | FastAPI | revision.py:355 apply_passage_revision | `Depends(_require_editor)` swap |
+| Confirm evidence replacement | FastAPI | factcheck.py:546 apply_claim_evidence | `Depends(_require_editor)` swap |
+| Approve the Voice Pass | FastAPI | signoffs.py:55 record_sign_off (kind=="sounds-human" ONLY) | in-handler branch, NOT route Depends |
+| Publish issue | FastAPI | review.py:67 publish_issue | `Depends(_require_editor)` swap |
+| Make instruction active | Convex | promptVersions.ts:267 activate | `requireEditor(ctx)` swap |
+| Mark Do not use | Convex | charities.ts:176 setStatus (status=='blocklisted') | `requireEditor(ctx)` swap |
+
+**Rejection shapes:**
+- FastAPI → `HTTPException(403, detail={"reason": "forbidden_role", "message": "Editor-in-chief only."})`
+- Convex → `throw new ConvexError({ code: 'forbidden_role', message: 'Editor-in-chief only.' })`
+
+The local-dev sentinel `{"sub":"local-dev-operator"}` (returned by `_require_clerk_jwt_control` when
+`CLERK_JWT_ISSUER_DOMAIN` is unset) resolves to Editor-in-chief on the FastAPI side (D-04). Convex
+has no equivalent sentinel and fails closed on an absent/undefined role.
+
+### §49.5 — Verbatim locked labels (from DERIVED-STATE-CONTRACT §6, D-09)
+
+Reproduced EXACTLY — do not paraphrase:
+
+- Apply revision → `Apply revision 🔒 editor only`
+- Confirm evidence replacement → (no distinct label; shares the Apply lock — server still gates per §49.4)
+- Approve the Voice Pass → `Voice approval 🔒 Editor-in-chief only`
+- Publish issue → `Collaborators can review and comment, not publish.`
+- Make instruction active → `Make active 🔒 Editor-in-chief only`
+- Mark Do not use → `🔒 editor only`
+
+*All Phase 49 changes documented above are additive: no field is renamed or removed; the `users.role`
+field name is untouched (only its string values are re-vocabularied, §49.1); `comments` is a wholly
+new additive table (§49.2/§49.3); the six gates (§49.4) are additive authorization layered on top of
+existing authentication — no existing auth dependency (`_require_clerk_jwt_control`, `requireOperator`)
+is removed or altered. No new `deliberationEvents.eventType` literal is added — denials are not
+audited per D-08, and comments are their own dedicated table, not a `deliberationEvents` concern.*
