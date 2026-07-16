@@ -463,7 +463,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
-| 48. Brief Entry Point | 4/7 | In Progress|  |
+| 48. Brief Entry Point | 5/7 | In Progress|  |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
 
@@ -1055,7 +1055,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 48-03-pipeline-entry-seam-PLAN.md — builder.py two conditional edges + route_by_entry_mode + _start_run entry_mode/seed/reduced-queue/briefs:insert + Researcher source_material threading (Wave 2)
 - [ ] 48-04-brief-trigger-endpoint-PLAN.md — api/control.py shared _enforce_start_gates helper + POST /pipeline/run/brief (BriefRunBody, 422/409 gates, reduced queue, entry_mode='brief', audit) (Wave 3)
 - [x] 48-05-create-panel-brief-path-PLAN.md — triggerBriefRun client + CreatePanel second peer card + inline brief-intake form (ensureByNumber -> triggerBriefRun -> issueHref) (Wave 2)
-- [ ] 48-06-stage1-brief-mode-render-PLAN.md — WorkspaceStateProvider entryMode + new BriefOrgCard (single verified human org, concern never truncated) + StoryBriefScreen brief-mode branch (Wave 2)
+- [x] 48-06-stage1-brief-mode-render-PLAN.md — WorkspaceStateProvider entryMode + new BriefOrgCard (single verified human org, concern never truncated) + StoryBriefScreen brief-mode branch (Wave 2)
 - [ ] 48-07-integration-gate-PLAN.md — activate brief-mode e2e (same artifacts minus deliberation) + full suites + strict next build + Convex live-sync gate (Wave 4)
 **UI hint**: yes
 
