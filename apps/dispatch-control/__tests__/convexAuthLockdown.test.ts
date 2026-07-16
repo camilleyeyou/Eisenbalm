@@ -52,6 +52,10 @@ describe('Convex auth lockdown (Phase 29 D-1)', () => {
       const t = convexTest({ schema, modules })
       await seedOneVersion(t)
 
+      // Phase 49 (49-04): activate is now gated by requireEditor, which throws
+      // a ConvexError({code:'unauthorized', ...}) rather than requireOperator's
+      // plain Error('Unauthorized') — authentication still gates before role
+      // does; only the rejection shape changed.
       await expect(
         t.mutation(api.promptVersions.activate, {
           workspace_id: WS,
@@ -59,22 +63,21 @@ describe('Convex auth lockdown (Phase 29 D-1)', () => {
           version: 1,
           actorId: 'user_spoofed',
         }),
-      ).rejects.toThrow(/Unauthorized/)
+      ).rejects.toThrow(/unauthorized/i)
     })
 
     it('succeeds with a Clerk identity', async () => {
       const t = convexTest({ schema, modules })
       await seedOneVersion(t)
 
-      const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
-        api.promptVersions.activate,
-        {
+      const result = await t
+        .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+        .mutation(api.promptVersions.activate, {
           workspace_id: WS,
           agentKey: 'scout',
           version: 1,
           actorId: 'user_operator',
-        },
-      )
+        })
 
       expect(result.blocked).toBe(false)
     })

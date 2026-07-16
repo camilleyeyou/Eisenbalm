@@ -59,15 +59,14 @@ describe('promptVersions.activate (PRM-04, D-02 in-progress guard)', () => {
       })
     })
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
-      api.promptVersions.activate,
-      {
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(api.promptVersions.activate, {
         workspace_id: WS,
         agentKey: AGENT,
         version: 2,
         actorId: 'user_operator',
-      },
-    )
+      })
 
     expect(result.blocked).toBe(true)
 
@@ -106,15 +105,14 @@ describe('promptVersions.activate (PRM-04, D-02 in-progress guard)', () => {
       })
     })
 
-    await t.withIdentity({ subject: 'user_operator' }).mutation(
-      api.promptVersions.activate,
-      {
+    await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(api.promptVersions.activate, {
         workspace_id: WS,
         agentKey: AGENT,
         version: 2,
         actorId: 'user_operator',
-      },
-    )
+      })
 
     const rows = await t.run(async (ctx) =>
       ctx.db
@@ -136,6 +134,35 @@ describe('promptVersions.activate (PRM-04, D-02 in-progress guard)', () => {
         .collect(),
     )
     expect(audit.some((r) => r.action === 'prompt_version.activated')).toBe(true)
+  })
+
+  it('rejects a Collaborator-role identity with forbidden_role (Phase 49 ROL-01/ROL-02)', async () => {
+    const t = convexTest({ schema, modules })
+    await seedTwoVersions(t)
+
+    await expect(
+      t.withIdentity({ subject: 'user_collab', role: 'Collaborator' }).mutation(
+        api.promptVersions.activate,
+        {
+          workspace_id: WS,
+          agentKey: AGENT,
+          version: 2,
+          actorId: 'user_collab',
+        },
+      ),
+    ).rejects.toThrow(/forbidden_role|Editor-in-chief/)
+
+    // No isActive flip occurred on rejection.
+    const rows = await t.run(async (ctx) =>
+      ctx.db
+        .query('prompt_versions')
+        .withIndex('by_workspace_agentKey', (q) =>
+          q.eq('workspace_id', WS).eq('agentKey', AGENT),
+        )
+        .collect(),
+    )
+    expect(rows.find((r) => r.version === 1)!.isActive).toBe(true)
+    expect(rows.find((r) => r.version === 2)!.isActive).toBe(false)
   })
 })
 

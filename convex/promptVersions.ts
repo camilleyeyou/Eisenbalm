@@ -17,7 +17,7 @@ import { query, mutation } from './_generated/server'
 import type { MutationCtx } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
-import { requireOperator } from './lib/auth'
+import { requireOperator, requireEditor } from './lib/auth'
 
 // ── Phase 38 §38.3 (EVL-03): commit gate tolerance ───────────────────────────
 // 0-10 scale. Absorbs LLM-judge scoring non-determinism (Research Pitfall 7) —
@@ -273,11 +273,12 @@ export const activate = mutation({
     override: v.optional(v.object({ reason: v.string() })),
   },
   handler: async (ctx, { workspace_id, agentKey, version, actorId: _actorId, override }) => {
-    // Phase 29 D-1: dashboard-only mutation — Clerk identity required. The
-    // audit row uses the VERIFIED actor from the JWT; the caller-supplied
-    // `actorId` arg is intentionally ignored (never trust an incoming arg
-    // for identity/attribution) but stays in the signature for compatibility.
-    const actor = await requireOperator(ctx)
+    // Phase 49 §49.4 (ROL-01/ROL-02): dashboard-only mutation gated to
+    // Editor-in-chief. The audit row uses the VERIFIED actor from the JWT;
+    // the caller-supplied `actorId` arg is intentionally ignored (never
+    // trust an incoming arg for identity/attribution) but stays in the
+    // signature for compatibility.
+    const actor = await requireEditor(ctx)
 
     // D-02: block activation while a run is in progress. This guard always
     // wins — it is checked BEFORE the eval gate and is never bypassed by

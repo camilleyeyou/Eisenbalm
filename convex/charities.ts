@@ -17,7 +17,12 @@
 import { mutation, query } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
-import { requireOperator, requireOperatorOrPipeline, requirePipelineSecret } from './lib/auth'
+import {
+  requireOperator,
+  requireEditor,
+  requireOperatorOrPipeline,
+  requirePipelineSecret,
+} from './lib/auth'
 
 // ── Local helper: bare domain normalization ─────────────────────────────────
 // Mirrors scout.py:96 `_domain_of()`: strip scheme, take host, lowercase,
@@ -181,8 +186,10 @@ export const setStatus = mutation({
     reason: v.optional(v.string()),
   },
   handler: async (ctx, { workspace_id, charityId, status, reason }) => {
-    // Phase 29 D-1: dashboard-only mutation — Clerk identity required.
-    const actor = await requireOperator(ctx)
+    // Phase 49 §49.4 (ROL-01/ROL-02): dashboard-only mutation gated to
+    // Editor-in-chief — gates ALL status transitions incl. 'blocklisted'
+    // (Mark Do not use).
+    const actor = await requireEditor(ctx)
 
     const validStatuses = ['candidate', 'featured', 'blocklisted']
     if (!validStatuses.includes(status)) {

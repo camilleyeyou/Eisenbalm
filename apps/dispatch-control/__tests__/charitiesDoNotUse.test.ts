@@ -41,7 +41,7 @@ async function seedCharity(t: ReturnType<typeof convexTest>, asOperator: ReturnT
 describe('charities.setStatus — Do-not-use reason capture (TSK-06)', () => {
   it('throws when blocklisting with an empty/missing reason', async () => {
     const t = convexTest({ schema, modules })
-    const asOperator = t.withIdentity({ subject: 'user_operator' })
+    const asOperator = t.withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
     const charity = await seedCharity(t, asOperator)
 
     await expect(
@@ -64,7 +64,7 @@ describe('charities.setStatus — Do-not-use reason capture (TSK-06)', () => {
 
   it('blocklisting with a reason patches status AND emits a charity.blocklisted decision row', async () => {
     const t = convexTest({ schema, modules })
-    const asOperator = t.withIdentity({ subject: 'user_operator' })
+    const asOperator = t.withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
     const charity = await seedCharity(t, asOperator)
 
     await asOperator.mutation(api.charities.setStatus, {
@@ -92,7 +92,7 @@ describe('charities.setStatus — Do-not-use reason capture (TSK-06)', () => {
 
   it('non-blocklist transitions (e.g. unblocklist back to candidate) do not require a reason', async () => {
     const t = convexTest({ schema, modules })
-    const asOperator = t.withIdentity({ subject: 'user_operator' })
+    const asOperator = t.withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
     const charity = await seedCharity(t, asOperator)
 
     await asOperator.mutation(api.charities.setStatus, {
@@ -114,5 +114,28 @@ describe('charities.setStatus — Do-not-use reason capture (TSK-06)', () => {
     })
     const updated = rows.find(r => r._id === charity._id)
     expect(updated?.status).toBe('candidate')
+  })
+
+  it('rejects a Collaborator-role identity with forbidden_role (Phase 49 ROL-01/ROL-02)', async () => {
+    const t = convexTest({ schema, modules })
+    const asOperator = t.withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+    const charity = await seedCharity(t, asOperator)
+
+    const asCollaborator = t.withIdentity({ subject: 'user_collab', role: 'Collaborator' })
+
+    await expect(
+      asCollaborator.mutation(api.charities.setStatus, {
+        workspace_id: WS,
+        charityId: charity._id,
+        status: 'blocklisted',
+        reason: 'Attempted by a non-editor identity.',
+      }),
+    ).rejects.toThrow(/forbidden_role|Editor-in-chief/)
+
+    const rows = await asOperator.query(api.charities.listByWorkspace, {
+      workspace_id: WS,
+    })
+    const unchanged = rows.find(r => r._id === charity._id)
+    expect(unchanged?.status).toBe('candidate')
   })
 })

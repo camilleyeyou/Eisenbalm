@@ -90,7 +90,9 @@ describe('promptVersions.activate eval gate + override (Phase 38 §38.3, EVL-03)
       ranAt: FAR_FUTURE,
     })
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(
       api.promptVersions.activate,
       { workspace_id: WS, agentKey: AGENT, version: 2, actorId: 'user_operator' },
     )
@@ -125,7 +127,9 @@ describe('promptVersions.activate eval gate + override (Phase 38 §38.3, EVL-03)
       ranAt: FAR_FUTURE,
     })
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(
       api.promptVersions.activate,
       { workspace_id: WS, agentKey: AGENT, version: 2, actorId: 'user_operator' },
     )
@@ -155,7 +159,9 @@ describe('promptVersions.activate eval gate + override (Phase 38 §38.3, EVL-03)
     })
     // No eval_scores rows at all for v2 — freshness gate must block.
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(
       api.promptVersions.activate,
       { workspace_id: WS, agentKey: AGENT, version: 2, actorId: 'user_operator' },
     )
@@ -190,7 +196,9 @@ describe('promptVersions.activate eval gate + override (Phase 38 §38.3, EVL-03)
       ranAt: FAR_FUTURE,
     })
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(
       api.promptVersions.activate,
       {
         workspace_id: WS,
@@ -240,7 +248,9 @@ describe('promptVersions.activate eval gate + override (Phase 38 §38.3, EVL-03)
       })
     })
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(
       api.promptVersions.activate,
       {
         workspace_id: WS,
@@ -279,7 +289,9 @@ describe('promptVersions.activate eval gate + override (Phase 38 §38.3, EVL-03)
       })
     })
 
-    const result = await t.withIdentity({ subject: 'user_operator' }).mutation(
+    const result = await t
+      .withIdentity({ subject: 'user_operator', role: 'Editor-in-chief' })
+      .mutation(
       api.promptVersions.activate,
       { workspace_id: WS, agentKey: AGENT, version: 1, actorId: 'user_operator' },
     )
