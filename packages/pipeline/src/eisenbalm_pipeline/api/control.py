@@ -302,6 +302,134 @@ async def pipeline_run(
     return {"runId": run_id}
 
 
+# ── POST /pipeline/run/brief (Phase 48, ENT-02/ENT-04, §48.2) ──────────────
+
+
+class OrganizationInput(BaseModel):
+    name: str
+    website: Optional[str] = None
+    charityNavigatorUrl: Optional[str] = None
+    guidestarUrl: Optional[str] = None
+
+
+class BriefRunBody(BaseModel):
+    issueNumber: Optional[int] = None
+    premise: str
+    peg: str
+    organization: OrganizationInput
+    sourceMaterial: Optional[str] = None
+
+
+@router.post("/pipeline/run/brief")
+async def pipeline_run_brief(
+    request: Request,
+    body: BriefRunBody,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Brief-entry trigger (ENT-02). Clerk JWT auth; records operator identity.
+
+    Operator supplies premise, peg, organization (+ optional source
+    material) instead of letting the pipeline discover a charity. The run
+    skips Signal Editor/Scout/Advocate/Gate 1 and enters at the Researcher
+    (graph fork, Plan 48-03); the human org is still run through
+    verify_candidates so its verification record is never absent (ENT-04).
+
+    Reuses the SAME one-at-a-time (D-12) + budget (RUN-06) start gates
+    /pipeline/run enforces, via the shared _enforce_start_gates helper
+    (D-15) — no independent copy of that logic.
+
+    422s when organization.name is empty/whitespace-only.
+
+    Returns:
+        {"runId": "<run_id>"}
+    """
+    if not body.organization.name.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="organization.name is required",
+        )
+
+    operator_id = claims.get("sub")
+    http = getattr(request.app.state, "convex_http", None)
+
+    await _enforce_start_gates(http)
+
+    # Human-supplied org as a synthetic CharityCandidate (D-04/D-05) — copies
+    # editor.py's D-14 all-candidates-killed synthetic-winner shape: every
+    # field present, empty/None where there is no scouted/scored data.
+    winning_charity: dict = {
+        "name": body.organization.name,
+        "location": "",
+        "website": body.organization.website or "",
+        "charityNavigatorUrl": body.organization.charityNavigatorUrl,
+        "guidestarUrl": body.organization.guidestarUrl,
+        "foundingYear": None,
+        "assetRange": "",
+        "focusArea": "",
+        "missionStatement": "",
+        "scoutSummary": "",
+        "whyOverlooked": "",
+        "advocateArgument": None,
+        "advocateScore": None,
+    }
+
+    # The 6-field Brief (D-06/D-08): premise/peg map directly; the remaining
+    # four fields start BLANK (voiceIntention included — calibrator hasn't
+    # run yet, so style_brief doesn't exist at request time, D-08). The
+    # operator fills/sharpens these via the shipped BRF-06 strengthen once
+    # Stage 1 loads.
+    brief: dict = {
+        "premise": body.premise,
+        "currentPeg": body.peg,
+        "centralClaim": "",
+        "readerEffect": "",
+        "knownRisks": "",
+        "voiceIntention": "",
+    }
+
+    # Reduced agentRuns:queueForRun set (D-16) — excludes signal_editor,
+    # scout, advocate, editor_gate_1, chronicler (the nodes the brief branch
+    # never executes).
+    BRIEF_AGENT_KEYS = [
+        "calibrator",
+        "verify_candidates",
+        "researcher",
+        "verify_research",
+        *SECTION_WRITERS,
+        "validate_sections",
+        "qa",
+        "editor_final",
+        "publisher",
+    ]
+
+    run_id = await _start_run(
+        request.app,
+        issue_number=body.issueNumber,
+        trigger_source="manual",
+        triggered_by=operator_id,
+        entry_mode="brief",
+        winning_charity=winning_charity,
+        brief=brief,
+        source_material=body.sourceMaterial,
+        agent_keys_override=BRIEF_AGENT_KEYS,
+    )
+
+    # Emit audit row (non-blocking on failure) — mirrors pipeline_run's
+    # run.triggered audit, marked with an entry_mode indicator.
+    await _emit_audit(
+        http,
+        actor_id=operator_id or "unknown",
+        action="run.triggered",
+        resource_type="run",
+        resource_id=run_id,
+        after=json.dumps(
+            {"entryMode": "brief", "organization": body.organization.name}
+        ),
+    )
+
+    return {"runId": run_id}
+
+
 # ── POST /pipeline/tick ────────────────────────────────────────────────────
 
 @router.post("/pipeline/tick")
