@@ -536,6 +536,9 @@ export default defineSchema({
     repetitionWarning: v.optional(v.string()),
     recommended: v.boolean(),
     timestamp: v.number(),
+    // Phase 47 (BRF-02, §47.2) — additive. Absent/'active' = default
+    // un-adjudicated state. Set only via storyLeads:setStatus, never at insert.
+    status: v.optional(v.union(v.literal('active'), v.literal('required'), v.literal('removed'))),
   })
     .index('by_runId', ['runId']),
 
@@ -559,4 +562,21 @@ export default defineSchema({
   })
     .index('by_runId', ['runId'])
     .index('by_runId_and_candidate', ['runId', 'candidateId']),
+
+  // ── briefs: the Story & Brief stage's editable Brief (Phase 47, BRF-05) ────
+  // Single-row-per-run, patch-based (NOT append-per-edit like story_leads/
+  // verification_records) — briefs:byRunId must resolve to exactly ONE current
+  // Brief. Generated once by editor_gate_1 (§47.3), refined via console edits
+  // (§47.4/§47.5). API_CONTRACTS §47.1.
+  briefs: defineTable({
+    runId: v.string(),
+    premise: v.string(),
+    currentPeg: v.string(),
+    centralClaim: v.string(),
+    readerEffect: v.string(),
+    knownRisks: v.string(),
+    voiceIntention: v.string(),
+    updatedAt: v.number(),
+  })
+    .index('by_runId', ['runId']),
 })

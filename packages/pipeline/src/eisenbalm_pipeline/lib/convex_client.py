@@ -101,6 +101,12 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         # passing (42-03 lesson).
         "storyLeads:insert",
         "verificationRecords:insert",
+        # Phase 47 (§47.6) — the Brief entity (BRF-05/BRF-06) + lead Require/
+        # Remove (BRF-02). handler calls requirePipelineSecret; register
+        # alongside the Convex-side guard (42-03 lesson).
+        "briefs:insert",
+        "briefs:patch",
+        "storyLeads:setStatus",
     }
 )
 

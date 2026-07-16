@@ -42,3 +42,21 @@ export const insert = mutation({
     })
   },
 })
+
+// Phase 47 (BRF-02, §47.2/§47.4) — additive. Require this lead / Remove — add
+// reason both call this after their own FastAPI-side guard (§47.5); the
+// status field itself is set here, never at insert time.
+export const setStatus = mutation({
+  args: {
+    leadId: v.id('story_leads'),
+    status: v.union(v.literal('active'), v.literal('required'), v.literal('removed')),
+    // Phase 29 D-1: pipeline-lane secret (injected centrally by
+    // convex_client.py::convex_mutation). Never persisted.
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { leadId, status, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+
+    return await ctx.db.patch(leadId, { status })
+  },
+})
