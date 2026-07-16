@@ -34,4 +34,6 @@ note: >
 _(log — appended as checks are performed)_
 
 - 2026-07-16 — Locked-control rendering (ROL-03): **PASS** — as `Collaborator`, Prompt Lab **Make active** renders present-but-locked (not hidden) and is refused server-side. Verified on the prompt-lab control; the remaining five controls' locked rendering is covered by automated tests (`RevisionFlow.roleGate.test.tsx`, `DecisionRail.roleGate.test.tsx`) + the `roleGateInventory.test.ts` source-scan.
-- Comment affordance (ROL-04): _pending human observation_.
+- 2026-07-16 — Comment affordance (ROL-04): **PASS** — as `Collaborator`, the Comments box renders on `/my-tasks` and a submitted comment appears. Confirms the positive "read-everything-and-comment" capability is reachable and functional (not editor-gated).
+
+**Task 3 verdict:** Collaborator UX **signed off** — locked-with-explanation control rendering (ROL-03) + reachable/functional comment affordance (ROL-04), with the empirical claim-propagation gate (ROL-01) on record above.
