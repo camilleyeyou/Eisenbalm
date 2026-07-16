@@ -280,6 +280,9 @@ def _expected_and_substituted(agent_key: str) -> tuple[str, str]:
         # Phase 39 (MEM-03): _build_messages also substitutes {corrections};
         # with no corrections passed (the default), it resolves to "" — mirror
         # that empty-string substitution here too.
+        # Phase 48 (D-10): _build_messages also substitutes {source_material};
+        # with no source_material in _STATE (the default), it resolves to ""
+        # too — mirror that empty-string substitution here as well.
         results_block = "\n\n---\n\n".join(
             f"[S{i}] URL: {r.url}\nTitle: {r.title}\nContent: {r.content[:1200]}"
             for i, r in enumerate(_TAVILY)
@@ -294,6 +297,7 @@ def _expected_and_substituted(agent_key: str) -> tuple[str, str]:
             .replace("{charity}", f"{_CHARITY}")
             .replace("{results_block}", results_block)
             .replace("{corrections}", "")
+            .replace("{source_material}", "")
         )
         return expected, sub
 
