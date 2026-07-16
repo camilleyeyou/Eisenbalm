@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 49 context gathered
-last_updated: "2026-07-16T16:39:24.746Z"
+status: Ready to execute
+stopped_at: Completed 49-01-contract-first-role-comments-PLAN.md
+last_updated: "2026-07-16T17:41:09.425Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 48 — brief-entry-point
+**Current focus:** Phase 49 — roles-permissions
 
 ## Current Position
 
-Phase: 48
-Plan: Not started
+Phase: 49 (roles-permissions) — EXECUTING
+Plan: 2 of 9
 
 ## Performance Metrics
 
@@ -344,6 +344,7 @@ Plan: Not started
 | Phase 48 P06 | 7min | 3 tasks | 3 files |
 | Phase 48 P04 | 6min | 2 tasks | 1 files |
 | Phase 48-brief-entry-point P07 | 9min | 2 tasks | 1 files |
+| Phase 49 P01 | 10min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -905,6 +906,8 @@ Recent decisions affecting current work:
 - [Phase 48]: _enforce_start_gates helper extracted from pipeline_run so POST /pipeline/run/brief reuses the exact one-at-a-time + budget 409 gates (no drifting duplicate copy)
 - [Phase 48]: Human-supplied org for a brief run is mapped onto editor.py's existing D-14 synthetic-CharityCandidate shape rather than a new partial schema; voiceIntention and the other 3 unmapped Brief fields seed blank since calibrator/style_brief haven't run yet at request time
 - [Phase 48-brief-entry-point]: 48-07: Activated brief-mode e2e test with 7-section-field + factual-claims assertions (verified against real Sanity/Convex write shapes); phase gate green (679 pipeline tests, 939 dispatch-control tests, strict build, Convex sync)
+- [Phase 49]: users.role vocabulary re-mapped to Editor-in-chief|Collaborator (field name unchanged); Clerk publicMetadata.role JWT claim is the live source, not users.role
+- [Phase 49]: New append-only comments Convex table (by_workspace_issueNumber, by_workspace indices) modeled on §39 charity_corrections precedent
 
 ### Pending Todos
 
@@ -995,6 +998,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T16:39:24.725Z
-Stopped at: Phase 49 context gathered
-Resume file: .planning/phases/49-roles-permissions/49-CONTEXT.md
+Last session: 2026-07-16T17:41:09.411Z
+Stopped at: Completed 49-01-contract-first-role-comments-PLAN.md
+Resume file: None
