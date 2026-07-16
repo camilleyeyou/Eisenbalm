@@ -17,6 +17,7 @@ import type * as charities from "../charities.js";
 import type * as charityCorrections from "../charityCorrections.js";
 import type * as charityLedger from "../charityLedger.js";
 import type * as claimChecks from "../claimChecks.js";
+import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
 import type * as deliberationEvents from "../deliberationEvents.js";
 import type * as emailActions from "../emailActions.js";
@@ -62,6 +63,7 @@ declare const fullApi: ApiFromModules<{
   charityCorrections: typeof charityCorrections;
   charityLedger: typeof charityLedger;
   claimChecks: typeof claimChecks;
+  comments: typeof comments;
   crons: typeof crons;
   deliberationEvents: typeof deliberationEvents;
   emailActions: typeof emailActions;
