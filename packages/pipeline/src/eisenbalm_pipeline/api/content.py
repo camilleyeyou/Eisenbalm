@@ -42,6 +42,7 @@ from eisenbalm_pipeline.lib.sanity_client import (
     patch_issue_field,
     upload_asset,
 )
+from eisenbalm_pipeline.lib.span_resolver import resolve_span
 from eisenbalm_pipeline.lib.structural_floor import structural_floor_warnings
 from eisenbalm_pipeline.lib.theme_validation import (
     validate_game_embed,
@@ -225,6 +226,129 @@ async def _reset_touched_claims(
             run_id,
             section_name,
         )
+
+
+# ── Shared prose-patch core (Phase 45, §45.2/D-01/D-20) ────────────────────
+#
+# Extracted from factcheck.py's _patch_claim_prose (Phase 42) so the claim
+# path AND the passage-revision path (Plan 45-03's api/revision.py) share
+# ONE apply implementation rather than forking a second one. Reuses the
+# module-level _LONG_READ_SECTIONS above (was duplicated in factcheck.py).
+
+
+def _section_blocks(draft: dict, section_name: str) -> tuple[list[dict], str]:
+    """Resolve (blocks, field_path) for a section name.
+
+    Relocated verbatim from factcheck.py's ``_claim_section_blocks`` (was
+    claim_checks-row-specific in name only — the body was already
+    section-name-generic). Raises 409 ``claim_edit_unavailable`` for a bonus
+    section on a non-specAd issue (no editable block body) or an
+    unrecognized section — the reason string is kept unchanged because the
+    client already branches on it.
+    """
+    if section_name in _LONG_READ_SECTIONS:
+        blocks = list(
+            (draft.get("sections", {}).get(section_name) or {}).get("blocks") or []
+        )
+        return blocks, f"{section_name}.body"
+    if section_name == "bonus":
+        if draft.get("bonusType") != "specAd":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "reason": "claim_edit_unavailable",
+                    "message": "Only spec-ad bonuses have an editable block body.",
+                },
+            )
+        blocks = list((draft.get("bonus") or {}).get("body") or [])
+        return blocks, "bonus.body"
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "reason": "claim_edit_unavailable",
+            "message": f"Section '{section_name}' has no editable block body.",
+        },
+    )
+
+
+async def _patch_prose_span(
+    convex_http: Any,
+    sanity_http: Any,
+    *,
+    sanity_id: str,
+    run_id: str,
+    section_name: str,
+    quoted_text: str,
+    block_index_hint: Optional[int],
+    new_text: str,
+    if_revision_id: str,
+    _get_issue_draft: Optional[Any] = None,
+    _patch_issue_field: Optional[Any] = None,
+) -> str:
+    """Shared apply path (§42.4a / §45.2, D-01): span-resolve -> patch ->
+    reset-touched-claims FIRST -> caller sets its own terminal state LAST
+    (42-RESEARCH.md Pitfall 3 ordering, preserved verbatim).
+
+    Re-resolves ``quoted_text`` against CURRENT Sanity content via
+    ``resolve_span`` — NEVER ``claimSpans`` (§35.3) — then scoped-patches it
+    and resets any claim anchored to the touched block(s) (§42.5/D-19/D-20).
+    Returns the new Sanity revisionId. Raises 409 ``span_not_resolved`` /
+    ``revision_mismatch`` / ``claim_edit_unavailable``.
+
+    This is the ONE implementation both ``factcheck.py::_patch_claim_prose``
+    (a thin wrapper) and Plan 45-03's ``api/revision.py`` call — do not fork
+    a second copy (D-01/D-20).
+
+    ``_get_issue_draft``/``_patch_issue_field`` are internal test/caller
+    seams only: they default to ``None`` and, when absent, resolve to THIS
+    module's own ``get_issue_draft``/``patch_issue_field`` bindings looked up
+    at CALL time (so ``content.py``'s own test suite patching
+    ``content.get_issue_draft`` still works). Callers whose own test suite
+    monkeypatches ITS module-local binding instead (e.g. ``factcheck.py``,
+    mirrored by Plan 45-03's ``revision.py``) pass their own current
+    reference through explicitly, so the single shared implementation still
+    honors each router's own patchable Sanity I/O seam without forking a
+    second copy of the apply logic itself.
+    """
+    fetch_draft = _get_issue_draft or get_issue_draft
+    do_patch_field = _patch_issue_field or patch_issue_field
+
+    draft = await fetch_draft(sanity_http, sanity_id)
+    blocks, field_path = _section_blocks(draft, section_name)
+
+    match = resolve_span(blocks, quoted_text, block_index_hint)
+    if match is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "reason": "span_not_resolved",
+                "message": "Couldn't locate this passage's text in the current draft.",
+            },
+        )
+
+    before_blocks = [dict(b) for b in blocks]
+    text = blocks[match.block_index]["text"]
+    blocks[match.block_index] = {
+        **blocks[match.block_index],
+        "text": text[: match.start] + new_text + text[match.end :],
+    }
+
+    new_rev = await do_patch_field(
+        sanity_http,
+        issue_id=sanity_id,
+        field_path=field_path,
+        value=compose_section_body(blocks),
+        if_revision_id=if_revision_id,
+    )
+
+    # §42.5/Pitfall 3: reset touched claims FIRST — the caller sets any
+    # terminal status on its own more-specific target AFTER this returns, so
+    # the explicit action always wins over this generic block-level reset.
+    touched = _touched_block_indices(before_blocks, blocks)
+    await _reset_touched_claims(
+        convex_http, run_id=run_id, section_name=section_name, touched=touched
+    )
+    return new_rev
 
 
 # ── Request body models ────────────────────────────────────────────────────

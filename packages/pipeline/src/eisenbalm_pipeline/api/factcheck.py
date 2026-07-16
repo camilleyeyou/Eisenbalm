@@ -46,9 +46,9 @@ from pydantic import BaseModel
 import eisenbalm_pipeline.lib.convex_client as _cc
 import eisenbalm_pipeline.lib.sanity_client as _sc
 from eisenbalm_pipeline.api.content import (
-    _reset_touched_claims,
+    _patch_prose_span,
     _resolve_sanity_id,
-    _touched_block_indices,
+    _section_blocks,
 )
 from eisenbalm_pipeline.api.control import (
     _emit_audit,
@@ -57,20 +57,11 @@ from eisenbalm_pipeline.api.control import (
 )
 from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
-from eisenbalm_pipeline.lib.portable_text import compose_section_body
 from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
 from eisenbalm_pipeline.lib.search_client import web_search
-from eisenbalm_pipeline.lib.span_resolver import resolve_span
 
 log = logging.getLogger(__name__)
 router = APIRouter()
-
-# claim_checks.sectionName is ALREADY galley vocabulary (lib/claims.py's
-# _SECTION_TO_GALLEY_ID) — unlike qaCorrections' snake_case vocabulary,
-# findings.py's _QA_SECTION_TO_DRAFT_KEY mapping is not needed here.
-_LONG_READ_SECTIONS = frozenset(
-    {"originStory", "problemStatement", "founderBio", "caseStudy"}
-)
 
 
 # ── Request body models ────────────────────────────────────────────────────
@@ -144,40 +135,6 @@ def _claim_snapshot(claim: dict) -> str:
     )
 
 
-def _claim_section_blocks(draft: dict, section_name: str) -> tuple[list[dict], str]:
-    """Resolve a claim's (blocks, field_path) from its ``sectionName``.
-
-    claim_checks rows only ever anchor to the 4 long-read sections or
-    "bonus" (lib/claims.py's ``_SECTION_TO_GALLEY_ID`` vocabulary) —
-    ``sectionName`` IS the draft key directly. Raises 409
-    ``claim_edit_unavailable`` for a bonus claim on a non-specAd issue (no
-    editable block body) or an unrecognized section.
-    """
-    if section_name in _LONG_READ_SECTIONS:
-        blocks = list(
-            (draft.get("sections", {}).get(section_name) or {}).get("blocks") or []
-        )
-        return blocks, f"{section_name}.body"
-    if section_name == "bonus":
-        if draft.get("bonusType") != "specAd":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "reason": "claim_edit_unavailable",
-                    "message": "Only spec-ad bonuses have an editable block body.",
-                },
-            )
-        blocks = list((draft.get("bonus") or {}).get("body") or [])
-        return blocks, "bonus.body"
-    raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail={
-            "reason": "claim_edit_unavailable",
-            "message": f"Section '{section_name}' has no editable block body.",
-        },
-    )
-
-
 async def _patch_claim_prose(
     convex_http: Any,
     sanity_http: Any,
@@ -190,50 +147,35 @@ async def _patch_claim_prose(
 ) -> str:
     """Shared apply path for PATCH(text) and evidence/apply (§42.4a).
 
-    Re-resolves the claim's CURRENT phrase against live Sanity content via
-    ``claim_checks.text`` + ``blockIndexHint`` — NEVER ``claimSpans``, which
-    is never forwarded to Sanity (§35.3, 42-RESEARCH.md Pitfall 5) — then
-    scoped-patches it and resets any claim anchored to the touched block(s)
-    (§42.5/D-19/D-20). Returns the new Sanity revisionId. Raises 409
-    ``span_not_resolved`` / ``revision_mismatch`` / ``claim_edit_unavailable``.
+    Thin wrapper (Phase 45, D-01/D-20): unpacks the claim dict's
+    ``sectionName``/``text``/``blockIndexHint`` and delegates to
+    ``content.py::_patch_prose_span`` — the claim-agnostic core BOTH this
+    claim path and Plan 45-03's passage-revision path share (one apply path,
+    not two). Re-resolves the claim's CURRENT phrase against live Sanity
+    content — NEVER ``claimSpans``, which is never forwarded to Sanity
+    (§35.3, 42-RESEARCH.md Pitfall 5). Returns the new Sanity revisionId.
+    Raises 409 ``span_not_resolved`` / ``revision_mismatch`` /
+    ``claim_edit_unavailable``.
+
+    Forwards THIS module's own ``get_issue_draft``/``patch_issue_field``
+    bindings into the shared core so this file's existing test suite (which
+    monkeypatches ``factcheck.get_issue_draft``/``factcheck.patch_issue_field``)
+    keeps exercising the same Sanity I/O seam it always has, even though the
+    span-resolve/patch logic itself now lives once in content.py.
     """
-    draft = await get_issue_draft(sanity_http, sanity_id)
-    section_name = claim.get("sectionName") or ""
-    blocks, field_path = _claim_section_blocks(draft, section_name)
-
-    match = resolve_span(blocks, claim.get("text", ""), claim.get("blockIndexHint"))
-    if match is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "reason": "span_not_resolved",
-                "message": "Couldn't locate this claim's text in the current draft.",
-            },
-        )
-
-    before_blocks = [dict(b) for b in blocks]
-    text = blocks[match.block_index]["text"]
-    blocks[match.block_index] = {
-        **blocks[match.block_index],
-        "text": text[: match.start] + new_text + text[match.end :],
-    }
-
-    new_rev = await patch_issue_field(
+    return await _patch_prose_span(
+        convex_http,
         sanity_http,
-        issue_id=sanity_id,
-        field_path=field_path,
-        value=compose_section_body(blocks),
+        sanity_id=sanity_id,
+        run_id=run_id,
+        section_name=claim.get("sectionName") or "",
+        quoted_text=claim.get("text", ""),
+        block_index_hint=claim.get("blockIndexHint"),
+        new_text=new_text,
         if_revision_id=if_revision_id,
+        _get_issue_draft=get_issue_draft,
+        _patch_issue_field=patch_issue_field,
     )
-
-    # §42.5/Pitfall 3: reset touched claims FIRST — the caller sets the acted
-    # claim's own terminal status AFTER this returns, so the explicit action
-    # always wins over this generic block-level reset.
-    touched = _touched_block_indices(before_blocks, blocks)
-    await _reset_touched_claims(
-        convex_http, run_id=run_id, section_name=section_name, touched=touched
-    )
-    return new_rev
 
 
 # ── POST /issues/{run_id}/claims/{claim_index}/keep — D-14/D-18 ────────────
