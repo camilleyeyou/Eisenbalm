@@ -49,6 +49,14 @@ import { computeSessionStates, type DisplayTask, type RerollSignal } from '@/lib
 import { issueApprovalHref, issueDraftHref } from '@/lib/issueRouteResolver'
 // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector opener.
 import { useInspector } from '@/components/inspector/InspectorProvider'
+// Phase 49 Plan 08 (ROL-04) — the same persistent comments affordance
+// FrameChrome mounts on the 5 stages + overview; My Tasks is a SIBLING route
+// (not nested under issues/[issueNumber]/layout.tsx), so it needs its own
+// placement (49-RESEARCH.md "Mount points"). My Tasks aggregates every open
+// item for the current issue only (never a mixed set of issues), so a single
+// reachable affordance keyed to that issueNumber is correct — no stage scope
+// (an issue-overview-level comment), matching the bare-overview route.
+import IssueComments from '@/app/(dashboard)/issues/[issueNumber]/_components/IssueComments'
 
 // ── Severity label + icon (D-19, State & Icon Contract §Attention) ─────────
 // NEVER color alone — every row pairs the label with a lucide icon.
@@ -323,6 +331,13 @@ export default function MyTasksScreen() {
         </p>
       </div>
       <MyTasksList tasks={display} approvalHref={approvalHref} openInspector={openInspector} />
+      {/*
+        Phase 49 Plan 08 (ROL-04) — persistent, reachable comments affordance
+        for the current issue. My Tasks has no "current issue" yet when no
+        run has ever started (issueNumber === null) — omitted rather than
+        rendered against a nonexistent issue.
+      */}
+      {issueNumber != null && <IssueComments issueNumber={issueNumber} />}
     </div>
   )
 }

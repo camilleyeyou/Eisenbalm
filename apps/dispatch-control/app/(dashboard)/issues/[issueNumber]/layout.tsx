@@ -33,9 +33,9 @@
  * Unknown segments (the bare index route's numeric segment, `/runs/[runId]`)
  * are silently ignored — they never match the 5-word stage-segment set.
  *
- * This file intentionally does NOT render a second `<main>` — the dashboard
- * root layout (`app/(dashboard)/layout.tsx`) already owns the single `<main>`
- * for the whole app; this frame's root is a plain `<div>`.
+ * This file intentionally does NOT render a second main landmark element —
+ * the dashboard root layout (`app/(dashboard)/layout.tsx`) already owns the
+ * single one for the whole app; this frame's root is a plain `<div>`.
  */
 import { useEffect } from 'react'
 import Link from 'next/link'
@@ -68,6 +68,7 @@ import { WorkspaceStateProvider, useWorkspaceState } from '../_components/Worksp
 import WorkspaceOutline from '../_components/WorkspaceOutline'
 import ContextPanel from '../_components/ContextPanel'
 import WorkspaceControls from '../_components/WorkspaceControls'
+import IssueComments from './_components/IssueComments'
 
 type StageSegment = 'story' | 'draft' | 'fact-check' | 'voice' | 'approval'
 
@@ -202,6 +203,15 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
     })
   }, [pathname, n, setLastVisitedStage])
 
+  // Phase 49 Plan 08 (ROL-04) — derives the same stage segment the effect
+  // above computes, for the persistent Comments affordance's `stage` scope.
+  // The bare overview route's last segment is the numeric issueNumber, which
+  // never matches a stage segment, so `currentStageSegment` is correctly
+  // `undefined` there (an issue-overview-level comment).
+  const pathSegments = pathname.split('/').filter(Boolean)
+  const lastPathSegment = pathSegments[pathSegments.length - 1]
+  const currentStageSegment = isStageSegment(lastPathSegment) ? lastPathSegment : undefined
+
   return (
     <div className="min-h-screen bg-[color:var(--color-rail)] px-6 py-8 lg:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6">
@@ -275,6 +285,15 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
           <div className="min-w-0">{children}</div>
           <ContextPanel title="Context">{panelContent}</ContextPanel>
         </div>
+
+        {/*
+          Phase 49 Plan 08 (ROL-04) — a PERSISTENT region, separate from
+          `ContextPanel` above (whose `panelContent` is replaced per-stage via
+          `setPanelContent` and would clobber anything mounted inside it).
+          Survives every stage switch because it lives in this shared frame,
+          not in `{children}`.
+        */}
+        <IssueComments issueNumber={n} stage={currentStageSegment} />
 
         <WorkspaceControls issueNumber={n} />
       </div>

@@ -72,6 +72,10 @@ vi.mock('@convex/_generated/api', () => ({
     storyLeads: { byRunId: 'storyLeads:byRunId' },
     verificationRecords: { byRunId: 'verificationRecords:byRunId' },
     briefs: { byRunId: 'briefs:byRunId' },
+    // Phase 49 Plan 08 (ROL-04) — the persistent Comments affordance FrameChrome
+    // now mounts; unmapped in fixtureFor() below so it resolves to the
+    // harmless `undefined` default (irrelevant to this file's assertions).
+    comments: { listByIssueNumber: 'comments:listByIssueNumber', add: 'comments:add' },
   },
 }))
 
