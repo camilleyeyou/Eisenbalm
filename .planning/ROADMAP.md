@@ -464,7 +464,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
-| 49. Roles & Permissions | 6/9 | In Progress|  |
+| 49. Roles & Permissions | 7/9 | In Progress|  |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
 
 ## Backlog
@@ -1077,7 +1077,7 @@ Plans:
 - [x] 49-05-comments-backend-PLAN.md — convex/comments.ts add/listByIssueNumber (both roles) + tests
 - [x] 49-06-role-hook-lockedcontrol-PLAN.md — useRole() hook + reusable LockedControl wrapper
 - [x] 49-07-wire-locked-controls-PLAN.md — wrap the six controls with verbatim §6 locked labels
-- [ ] 49-08-comments-affordance-mount-PLAN.md — IssueComments mounted in FrameChrome + My Tasks
+- [x] 49-08-comments-affordance-mount-PLAN.md — IssueComments mounted in FrameChrome + My Tasks
 - [ ] 49-09-integration-gate-PLAN.md — exactly-six source-scan + full suites + strict build + Convex sync (checkpoint)
 **UI hint**: yes
 
