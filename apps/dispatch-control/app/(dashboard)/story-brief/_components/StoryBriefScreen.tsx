@@ -58,6 +58,7 @@ import type { BriefField } from '@/lib/briefClient'
 import { LeadCard, type StoryLead } from './LeadCard'
 import { LeadActions } from './LeadActions'
 import { OrgOptionSlate } from './OrgOptionSlate'
+import { BriefOrgCard } from './BriefOrgCard'
 import { NeedsYourDecisionCard, type VerificationRecordRow } from './NeedsYourDecisionCard'
 import { BriefFieldTable } from './BriefFieldTable'
 import { BriefFieldStrengthen } from './BriefFieldStrengthen'
@@ -200,6 +201,13 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
   const isPausedAtGate1 = run?.status === 'awaiting-review' && run?.completedAt == null
   const stillDiscoveringMore = hasLeads && run?.status === 'running'
 
+  // Phase 48 Plan 48-06 (ENT-01/ENT-03, RESEARCH Pattern 4) — a brief-started
+  // run never populates story_leads/pitchLog (Signal Editor + Scout are
+  // skipped, D-01/D-02). isPausedAtGate1 is already correctly always-false
+  // for brief runs (editor_gate_1 is skipped too), so NeedsYourDecisionCard
+  // needs no change here.
+  const isBrief = ws.entryMode === 'brief'
+
   const storyLeadsTyped = (rawStoryLeads ?? []) as unknown as StoryLead[]
   const pitchRowsForNeeds = (ws.pitchRows ?? []) as PitchLogRow[]
   const verificationRecordsForNeeds = (ws.verificationRecords ?? []) as unknown as
@@ -229,7 +237,16 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
         {rawStoryLeads === undefined ? (
           <p className="text-[13px] text-[color:var(--color-ink-soft)]">Loading…</p>
         ) : storyLeadsTyped.length === 0 ? (
-          <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">No leads yet.</p>
+          isBrief ? (
+            <p
+              data-testid="story-brief-mode-no-leads"
+              className="text-[13px] italic text-[color:var(--color-ink-soft)]"
+            >
+              Started from a hand-authored brief — no story leads.
+            </p>
+          ) : (
+            <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">No leads yet.</p>
+          )
         ) : (
           <ul className="flex flex-col gap-4" data-testid="story-leads-list">
             {storyLeadsTyped.map(lead => (
@@ -242,7 +259,7 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
         )}
       </section>
 
-      <OrgOptionSlate />
+      {isBrief ? <BriefOrgCard /> : <OrgOptionSlate />}
 
       {isPausedAtGate1 && (
         <NeedsYourDecisionCard
