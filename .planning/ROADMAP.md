@@ -463,7 +463,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
-| 48. Brief Entry Point | 0/TBD | Not started | - |
+| 48. Brief Entry Point | 1/7 | In Progress|  |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
 
@@ -1050,7 +1050,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   3. A brief-started run produces the same downstream artifacts (research, sections, QA, claims, sign-offs) as an agent-discovered run and is indistinguishable from one at Stages 2-5.
   4. An organization supplied in a human brief is still put through `verify_candidates`, so its verification record is never absent.
 **Plans**: 7 plans (4 waves)
-- [ ] 48-01-contracts-convex-schema-dispatchstate-PLAN.md — API_CONTRACTS §7 (entry_mode + source_material) + new §48 + DispatchState fields + convex/schema.ts runs.entryMode + runs.ts create arg + Convex live-sync (Wave 1)
+- [x] 48-01-contracts-convex-schema-dispatchstate-PLAN.md — API_CONTRACTS §7 (entry_mode + source_material) + new §48 + DispatchState fields + convex/schema.ts runs.entryMode + runs.ts create arg + Convex live-sync (Wave 1)
 - [ ] 48-02-wave0-test-scaffolds-PLAN.md — failing/skip-guarded test scaffolds: builder-fork source-scan, _start_run seed, brief-run endpoint, verify_candidates advisory (green), e2e brief-mode, CreatePanel + StoryBriefScreen (Wave 1)
 - [ ] 48-03-pipeline-entry-seam-PLAN.md — builder.py two conditional edges + route_by_entry_mode + _start_run entry_mode/seed/reduced-queue/briefs:insert + Researcher source_material threading (Wave 2)
 - [ ] 48-04-brief-trigger-endpoint-PLAN.md — api/control.py shared _enforce_start_gates helper + POST /pipeline/run/brief (BriefRunBody, 422/409 gates, reduced queue, entry_mode='brief', audit) (Wave 3)

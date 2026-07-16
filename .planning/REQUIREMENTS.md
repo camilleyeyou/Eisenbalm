@@ -406,10 +406,10 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **BRF-06**: Operator can ask an agent to strengthen any single field of the brief.
 
 ### Brief Entry Point (ENT)
-- [ ] **ENT-01**: Create issue offers two equal paths — "Find a story with agents" and "Start from my brief" — both landing in the Issue Workspace at Story & Brief.
-- [ ] **ENT-02**: "Start from my brief" accepts a human-supplied premise, peg, organization, and optional source material, and starts a run that skips Signal Editor, Scout, Advocate, and Gate 1, entering at the Researcher.
-- [ ] **ENT-03**: A brief-started run produces the same downstream artifacts (research, sections, QA, claims, sign-offs) as an agent-discovered run and is indistinguishable at Stages 2–5.
-- [ ] **ENT-04**: An organization supplied in a human brief is still put through `verify_candidates`, so the verification record is never absent.
+- [x] **ENT-01**: Create issue offers two equal paths — "Find a story with agents" and "Start from my brief" — both landing in the Issue Workspace at Story & Brief.
+- [x] **ENT-02**: "Start from my brief" accepts a human-supplied premise, peg, organization, and optional source material, and starts a run that skips Signal Editor, Scout, Advocate, and Gate 1, entering at the Researcher.
+- [x] **ENT-03**: A brief-started run produces the same downstream artifacts (research, sections, QA, claims, sign-offs) as an agent-discovered run and is indistinguishable at Stages 2–5.
+- [x] **ENT-04**: An organization supplied in a human brief is still put through `verify_candidates`, so the verification record is never absent.
 
 ### Roles & Permissions (ROL)
 - [ ] **ROL-01**: A user carries a role of Editor-in-chief or Collaborator, enforced server-side — not only in the UI.

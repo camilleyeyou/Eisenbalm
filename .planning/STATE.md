@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 48 context gathered
-last_updated: "2026-07-16T13:34:49.383Z"
+status: Ready to execute
+stopped_at: Completed 48-01-contracts-convex-schema-dispatchstate-PLAN.md
+last_updated: "2026-07-16T14:30:12.787Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 47 — story-brief-stage
+**Current focus:** Phase 48 — brief-entry-point
 
 ## Current Position
 
-Phase: 47
-Plan: Not started
+Phase: 48 (brief-entry-point) — EXECUTING
+Plan: 2 of 7
 
 ## Performance Metrics
 
@@ -337,6 +337,7 @@ Plan: Not started
 | Phase 47 P06 | 35min | 2 tasks | 4 files |
 | Phase 47 P07 | 12min | 3 tasks | 5 files |
 | Phase 47 P08 | 55 | 3 tasks | 8 files |
+| Phase 48 P01 | 17min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -888,6 +889,7 @@ Recent decisions affecting current work:
 - [Phase 47]: StoryBriefScreen composes the six shipped Stage-1 components (LeadCard/LeadActions, OrgOptionSlate, NeedsYourDecisionCard, BriefFieldTable/BriefFieldStrengthen); Stage 1 mounts at issues/[issueNumber]/story replacing the provisional SignalDeskScreen/StoryPanelContent.tsx (deleted)
 - [Phase 47]: deriveStoryStage tightened to gate 'needs-you' on the precise Gate-1-paused predicate (status==='awaiting-review' && completedAt==null) instead of 'leads exist, none selected' (Pitfall 3)
 - [Phase 47]: All six BRF-01..06 requirements marked complete: leads, Require/Remove, org options, Needs-your-decision resume, editable Brief, and per-field strengthen are all operator-reachable end-to-end for the first time
+- [Phase 48]: 48-01: entry_mode/source_material placed alongside Phase 47's brief field in DispatchState (not the Identity block); §48.1 documents the graph fork as two add_conditional_edges conversions after calibrator and after verify_candidates (not a literal START-level branch), correcting CONTEXT D-01's literal wording per RESEARCH.md; briefs:insert documented as happening inside _start_run immediately after runs:create to avoid a partial-failure window.
 
 ### Pending Todos
 
@@ -978,6 +980,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T13:34:49.363Z
-Stopped at: Phase 48 context gathered
-Resume file: .planning/phases/48-brief-entry-point/48-CONTEXT.md
+Last session: 2026-07-16T14:30:12.773Z
+Stopped at: Completed 48-01-contracts-convex-schema-dispatchstate-PLAN.md
+Resume file: None
