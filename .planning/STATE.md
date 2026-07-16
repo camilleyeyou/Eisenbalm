@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 48-02-wave0-test-scaffolds-PLAN.md
-last_updated: "2026-07-16T14:52:34.523Z"
+stopped_at: Completed 48-03-pipeline-entry-seam-PLAN.md
+last_updated: "2026-07-16T15:11:54.742Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 48 (brief-entry-point) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 
 ## Performance Metrics
 
@@ -339,6 +339,7 @@ Plan: 3 of 7
 | Phase 47 P08 | 55 | 3 tasks | 8 files |
 | Phase 48 P01 | 17min | 2 tasks | 4 files |
 | Phase 48 P02 | 25min | 3 tasks | 7 files |
+| Phase 48 P03 | 15min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -892,6 +893,8 @@ Recent decisions affecting current work:
 - [Phase 47]: All six BRF-01..06 requirements marked complete: leads, Require/Remove, org options, Needs-your-decision resume, editable Brief, and per-field strengthen are all operator-reachable end-to-end for the first time
 - [Phase 48]: 48-01: entry_mode/source_material placed alongside Phase 47's brief field in DispatchState (not the Identity block); §48.1 documents the graph fork as two add_conditional_edges conversions after calibrator and after verify_candidates (not a literal START-level branch), correcting CONTEXT D-01's literal wording per RESEARCH.md; briefs:insert documented as happening inside _start_run immediately after runs:create to avoid a partial-failure window.
 - [Phase 48]: Wave 0 scaffolds authored: verify_candidates ENT-04 advisory characterization runs GREEN with no code change; graph-fork/_start_run/endpoint/CreatePanel/StoryBriefScreen scaffolds are skip-guarded red, ready for Plans 48-03..48-06
+- [Phase 48]: 48-03: initial_state['entry_mode'] always set explicitly (discovery included) per RESEARCH.md Pattern 2 + frozen Wave-0 test, overriding the plan's literal (inconsistent) task-2 prose
+- [Phase 48]: 48-03: two Phase 46 test_builder_wiring.py assertions updated to match the new conditional-edge form, replacing the now-removed static calibrator->signal_editor / verify_candidates->advocate edges
 
 ### Pending Todos
 
@@ -982,6 +985,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T14:52:34.509Z
-Stopped at: Completed 48-02-wave0-test-scaffolds-PLAN.md
+Last session: 2026-07-16T15:11:54.728Z
+Stopped at: Completed 48-03-pipeline-entry-seam-PLAN.md
 Resume file: None
