@@ -1009,7 +1009,14 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   3. A `verify_candidates` deterministic check runs after Scout and produces a verification record per organization (domain live, registration ID, obscurity/press scan), killing candidates that fail.
   4. The pipeline graph runs 20 nodes end-to-end — `signal_editor` before `scout`, `verify_candidates` between `scout` and `advocate` — and the Postgres checkpointer resumes correctly across a pause/resume cycle that spans the new nodes.
   5. The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and surfaces a repetition warning alongside a lead rather than silently suppressing it.
-**Plans**: TBD
+**Plans**: 7 plans (5 waves)
+- [ ] 46-01-contract-convex-store-and-wave0-tests-PLAN.md — API_CONTRACTS §46 (StoryLead + VerificationRecord + 2 DispatchState fields) + story_leads/verification_records Convex tables & functions + secret-guard + 3 Wave-0 test scaffolds (Wave 1)
+- [ ] 46-02-dispatchstate-contract-and-repetition-helper-PLAN.md — state.py StoryLead/VerificationRecord TypedDicts + JSON-safe fields + lib/registry_repetition.compute_repetition_note extraction (Wave 2)
+- [ ] 46-03-signal-editor-prompt-and-model-registration-PLAN.md — llm_config/config_loader signal_editor (Sonnet) registration + signal_editor.md/signal_editor_user.md prompts + seed script (Wave 1)
+- [ ] 46-04-signal-editor-agent-PLAN.md — agents/signal_editor.py (@agent_node: 3-5 leads, brand-risk recommended=false Python gate, Editorial Memory repetition warning) + unit tests (Wave 3)
+- [ ] 46-05-verify-candidates-and-editor-recovery-PLAN.md — agents/verify_candidates.py deterministic check + editor_gate_1 all-killed recovery (D-14) + unit tests (Wave 3)
+- [ ] 46-06-graph-wiring-and-consumer-sync-PLAN.md — builder.py 20-node rewire + api/runs.py agent_keys + agent_wrapper _INPUT_KEYS + test_builder_wiring/test_pipeline_real_mode updates (Wave 4)
+- [ ] 46-07-checkpoint-resume-and-integration-gate-PLAN.md — test_checkpoint_resume_phase46 (SGE-04) + full suite + Convex parity/live-sync gate (Wave 5)
 
 ### Phase 47: Story & Brief Stage
 **Goal**: Stage 1 is REPLACED, not built from nothing: the provisional Signal Desk that Phase 41 mounted as Stage 1 is swapped out for the full v3 design, built on the leads and verification records Phase 46 now produces — organization options, "Needs your decision" adjudication when agents can't confidently choose, and an editable Brief the writers draft from.

@@ -46,7 +46,7 @@ created: 2026-07-15
 | SGE-03 | `verify_candidates` produces a per-org record (domainLive, registrationId, obscurity); definitively-failing candidates killed, transient errors kept as `unverified` | unit (node) | `uv run pytest tests/agents/test_verify_candidates.py -q` | ⬜ pending |
 | SGE-04 | Graph has 20 nodes; edges `signal_editor→scout`, `scout→verify_candidates→advocate`; Postgres checkpointer resumes across a pause/resume spanning the new nodes | integration (graph + checkpoint) | `uv run pytest tests/test_builder_wiring.py tests/test_checkpoint_resume_phase46.py -q` | ⬜ pending |
 | SGE-05 | Signal Editor reads Editorial Memory (recent coverage + avoid-list) and attaches a `repetitionWarning` to an overlapping lead WITHOUT dropping it | unit (agent + reused repetition_note) | `uv run pytest tests/agents/test_signal_editor.py -k repetition -q` | ⬜ pending |
-| SGE-14 (D-14) | When all candidates are killed, run enters recoverable degraded/needs-human state — NOT a RuntimeError crash in editor_gate_1 | unit (editor) | `uv run pytest tests/agents/test_editor.py -k no_candidates -q` | ⬜ pending |
+| SGE-03 (D-14 sub-behavior) | When all candidates are killed, run enters recoverable degraded/needs-human state — NOT a RuntimeError crash in editor_gate_1 | unit (editor) | `uv run pytest tests/agents/test_editor.py -k no_candidates -q` | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
