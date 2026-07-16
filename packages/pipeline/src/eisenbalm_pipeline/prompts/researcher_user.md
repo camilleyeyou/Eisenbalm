@@ -1,10 +1,13 @@
 <!--
   Eisenbalm Dispatch — Researcher USER-message template
-  ⚠️  DO NOT DELETE the {charity} / {results_block} / {corrections} tokens —
-      the pipeline fills them with the winning-charity dict, formatted
-      Tavily research results, and (MEM-03) this charity's prior editorial
-      corrections log, if any. {corrections} may render as an empty string
-      when the charity has no corrections on file.
+  ⚠️  DO NOT DELETE the {charity} / {results_block} / {corrections} /
+      {source_material} tokens — the pipeline fills them with the
+      winning-charity dict, formatted Tavily research results, (MEM-03)
+      this charity's prior editorial corrections log if any, and (Phase 48
+      D-10) operator-supplied source material from a "Start from my brief"
+      entry, if any. {corrections} and {source_material} may both render as
+      an empty string when absent (a discovery run always has no source
+      material; most charities have no corrections on file).
   Edit only the prose between PROMPT START and PROMPT END.
 -->
 <!-- PROMPT START -->
@@ -12,6 +15,8 @@ WINNING CHARITY:
 {charity}
 
 {corrections}
+
+{source_material}
 
 TAVILY RESEARCH RESULTS:
 {results_block}

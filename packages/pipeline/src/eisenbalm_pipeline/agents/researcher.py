@@ -144,6 +144,20 @@ def _build_corrections_block(corrections: list[dict] | None) -> str:
     return f"PRIOR EDITORIAL CORRECTIONS (account for these):\n{bullets}"
 
 
+def _build_source_material_block(source_material: str | None) -> str:
+    """Phase 48 D-10: render operator-supplied source material (URLs + pasted
+    notes, collected on the "Start from my brief" entry form) as a labeled,
+    prioritized-seed-context block. Empty string when absent — byte-
+    equivalent messages for discovery runs, which never set
+    state['source_material']. Mirrors _build_corrections_block exactly."""
+    if not source_material:
+        return ""
+    return (
+        "OPERATOR-SUPPLIED SOURCE MATERIAL (prioritize these as seed "
+        f"context):\n{source_material}"
+    )
+
+
 def _build_messages(
     *,
     state: DispatchState,
@@ -175,11 +189,20 @@ def _build_messages(
         else load_prompt("researcher_user")
     )
     corrections_block = _build_corrections_block(corrections)
+    # Phase 48 D-10: threads state['source_material'] (brief-mode only; None/
+    # absent on discovery runs) as a prioritized-seed-context block. A
+    # prompt_versions row that is DB-active and predates this token silently
+    # drops it (.replace on a missing substring is a no-op) — an ACCEPTED,
+    # flagged degradation matching the existing missing-token tolerance
+    # elsewhere in the config system (RESEARCH.md Pitfall 5). The on-disk
+    # .md fallback (prompts/researcher_user.md) carries the token for every
+    # run not overridden by a stale active version.
     user = (
         user_tmpl
         .replace("{charity}", f"{charity}")
         .replace("{results_block}", results_block)
         .replace("{corrections}", corrections_block)
+        .replace("{source_material}", _build_source_material_block(state.get("source_material")))
     )
     return [
         {"role": "system", "content": system},

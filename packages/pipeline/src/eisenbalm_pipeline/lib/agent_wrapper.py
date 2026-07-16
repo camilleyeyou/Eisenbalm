@@ -38,7 +38,9 @@ _INPUT_KEYS: dict[str, list[str]] = {
     "advocate":      ["candidates"],
     "editor_gate_1": ["candidates"],
     "chronicler":    ["candidates", "winning_charity", "editor_decision"],
-    "researcher":    ["winning_charity"],
+    # Phase 48 D-10: source_material is brief-mode-only (absent on discovery
+    # runs) — included so the Phase 44 Inspect-Inputs tab reports it when set.
+    "researcher":    ["winning_charity", "source_material"],
     "verify_research": ["research"],
     "origin_story":  ["research", "winning_charity", "style_brief"],
     "problem":       ["research", "winning_charity", "style_brief"],
