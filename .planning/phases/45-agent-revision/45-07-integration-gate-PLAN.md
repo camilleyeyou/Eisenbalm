@@ -15,6 +15,7 @@ must_haves:
     - "The strict Next build (pnpm/npm build) for dispatch-control passes"
     - "Any Convex functions the phase touched are synced to the dev deployment (or confirmed unchanged)"
     - "The load-bearing Annotations demo leg is human-verified end to end"
+    - "Both revision entry surfaces are human-verified live: the galley selection toolbar AND the InspectorFooter 'Ask agent to revise' button open a REAL passage (D-18 — not a dead button)"
   artifacts:
     - path: ".planning/phases/45-agent-revision/45-VALIDATION.md"
       provides: "final per-task test map status + UAT capture"
@@ -95,7 +96,8 @@ Update `45-VALIDATION.md`: set every Per-Task Verification Map row to ✅ green 
   <requirements>REV-01, REV-02, REV-03, REV-04, REV-05</requirements>
   <files>.planning/phases/45-agent-revision/45-UAT.md</files>
   <what-built>
-The full passage-revision flow across Draft/Voice: the six-action selection toolbar, the seven
+The full passage-revision flow across Draft/Voice from BOTH entry surfaces — the six-action galley
+selection toolbar AND the Phase-44 InspectorFooter "Ask agent to revise" button (D-18) — the seven
 direction chips, the comparison card with an explicit claim delta, the atomic apply through the
 content-patch write boundary with sign-off revocation, and the header cost-vs-budget readout with a
 per-issue guard.
@@ -126,7 +128,12 @@ On a run that has reached review (Draft/Voice) in the dispatch-control app:
    Voice Pass returns to "Review needed" (the sign-off was revoked — Phase-34 wiring, not the
    prototype bug where voiceDone survives).
 6. Confirm the header cost-vs-budget readout incremented after the revision call (never blank/$0).
-7. (Optional) Exhaust the per-issue cap and confirm the chips render disabled-with-explanation
+7. Second entry surface (D-18): open "Inspect how this was made" for a drafted section, then click the
+   InspectorFooter "Ask agent to revise" button. Confirm it is LIVE (not reserved/greyed) and opens the
+   SAME revision flow scoped to a REAL passage — the direction chips appear and picking one returns a
+   comparison card (NOT a "span not resolved" error). This proves the inspector-footer surface is a real
+   entry point, not a dead button.
+8. (Optional) Exhaust the per-issue cap and confirm the chips render disabled-with-explanation
    (409 cost guard), never a silent failure.
   </how-to-verify>
   <verify>Human confirms per the how-to-verify steps; the per-step outcomes are written to 45-UAT.md.</verify>

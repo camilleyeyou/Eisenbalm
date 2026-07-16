@@ -12,6 +12,7 @@ files_modified:
   - apps/dispatch-control/app/(dashboard)/voice-pass/[runId]/VoicePassRunView.tsx
   - apps/dispatch-control/components/inspector/InspectorFooter.tsx
   - apps/dispatch-control/components/inspector/InspectorPanel.tsx
+  - apps/dispatch-control/lib/firstProseExcerpt.ts
   - apps/dispatch-control/__tests__/PassageToolbar.test.tsx
 autonomous: true
 requirements: [REV-01, REV-04]
@@ -20,7 +21,7 @@ must_haves:
     - "Selecting a passage in Draft (and Voice) surfaces a toolbar offering all six actions: Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, Inspect how this was made"
     - "Compare with previous and Restore previous render visible-but-reserved with an explanatory title (content version history is deferred, D-17)"
     - "Ask agent to revise opens the RevisionFlow scoped to the selected passage; on apply the draft reloads"
-    - "The InspectorFooter 'Ask agent to revise' button is LIVE — the ASK_TO_REVISE_TITLE reserved path is gone"
+    - "The InspectorFooter 'Ask agent to revise' button is LIVE and opens the RevisionFlow scoped to a REAL derived passage (non-empty quotedText) — the ASK_TO_REVISE_TITLE reserved path is gone, and it is a real entry point not a dead button (D-18)"
   artifacts:
     - path: "apps/dispatch-control/components/galley/PassageToolbar.tsx"
       provides: "6-action floating selection toolbar with block/section capture"
@@ -185,8 +186,10 @@ Do NOT change axis scoping (`FACTUAL_AXES` in Draft, `VOICE_AXES` in Voice) or a
     - InspectorFooter no longer renders the ASK_TO_REVISE_TITLE reserved/disabled path for "Ask agent to revise"
     - When onAskToRevise is provided, "Ask agent to revise" is a live (enabled) button that calls it
     - The other five footer actions are unchanged
+    - firstProseExcerpt(blocks) returns a non-empty, contiguous verbatim excerpt of the section's first prose block (never an empty string for a non-empty section)
+    - The inspector-footer onAskToRevise seeds setRevisePassage with a NON-EMPTY quotedText (the derived excerpt), so picking a chip previews rather than 409-ing span_not_resolved
   </behavior>
-  <files>apps/dispatch-control/components/inspector/InspectorFooter.tsx, apps/dispatch-control/components/inspector/InspectorPanel.tsx</files>
+  <files>apps/dispatch-control/components/inspector/InspectorFooter.tsx, apps/dispatch-control/components/inspector/InspectorPanel.tsx, apps/dispatch-control/lib/firstProseExcerpt.ts</files>
   <action>
 In `InspectorFooter.tsx`: add an optional `onAskToRevise?: () => void` to `InspectorFooterProps`.
 Support a live-onClick variant in `FooterAction` (accept an optional `onClick` that renders an
@@ -200,10 +203,17 @@ phase can wrap it.
 
 In `InspectorPanel.tsx` (or the footer's parent container): thread an `onAskToRevise` down to
 `<InspectorFooter>` that, when the artifact is a drafted section, opens the revision flow scoped to
-that artifact's section (the container may reuse the same `setRevisePassage(...)` state the surface
-owns, seeded with the artifact's `sectionName` and an empty `quotedText` so the operator then selects
-the passage). Keep the exact seeding a small, honest wiring — the requirement is that the button is
-LIVE and invokes the callback.
+that artifact's section by reusing the same `setRevisePassage(...)` state the surface owns. FIX for the
+checker's WARNING 2 — take **option (a): derive a real `quotedText`** (NOT an empty string). Add
+`apps/dispatch-control/lib/firstProseExcerpt.ts` exporting `firstProseExcerpt(blocks): string`, which
+returns the leading verbatim excerpt (first sentence, capped ~140 chars) of the inspected section's
+FIRST prose block — a contiguous, UNMODIFIED substring of the current section prose so server-side
+`resolve_span` resolves it. (An empty `quotedText` would 409 `span_not_resolved` the moment any chip is
+picked, because `RevisionFlow` has no passage-picker step.) Seed
+`setRevisePassage({ sectionName, quotedText: firstProseExcerpt(sectionBlocks), blockIndexHint: 0 })`
+from the SAME draft data the inspector already reads (no new subscription). This makes the InspectorFooter
+a REAL second entry point (D-18 — a live surface scoped to a real passage, not a dead button), consistent
+with the galley path.
 
 Update `InspectorFooter`'s existing test (or the panel test) so the "Ask agent to revise" button is
 asserted LIVE (enabled, calls the callback) and the `ASK_TO_REVISE_TITLE` reserved path is gone.
@@ -214,9 +224,11 @@ asserted LIVE (enabled, calls the callback) and the `ASK_TO_REVISE_TITLE` reserv
   <acceptance_criteria>
     - `components/inspector/InspectorFooter.tsx` no longer contains `ASK_TO_REVISE_TITLE` (the reserved disabled path for revise is removed).
     - `InspectorFooter` accepts `onAskToRevise` and renders "Ask agent to revise" as a live button calling it.
-    - Full console vitest (`npm run test`) stays green; the inspector footer/panel test asserts the live button.
+    - `apps/dispatch-control/lib/firstProseExcerpt.ts` exports `firstProseExcerpt`; the inspector-footer `onAskToRevise` seeds `setRevisePassage` with a NON-EMPTY `quotedText` from it (`grep -q "firstProseExcerpt" apps/dispatch-control/components/inspector/InspectorPanel.tsx`, and NO `quotedText: ''` / `quotedText: ""` seeding remains for the inspector path).
+    - The inspector footer/panel test asserts (i) the live button calls `onAskToRevise` and (ii) the seeded passage's `quotedText` is non-empty (automated guard against the empty-span 409 regression).
+    - Full console vitest (`npm run test`) stays green.
   </acceptance_criteria>
-  <done>The inspector footer's "Ask agent to revise" is live and opens the revision flow; the reserved ASK_TO_REVISE_TITLE path is gone; "Restart from this step" stays reserved.</done>
+  <done>The inspector footer's "Ask agent to revise" is live and opens the revision flow scoped to a REAL derived passage (non-empty quotedText via firstProseExcerpt, not a dead button); the reserved ASK_TO_REVISE_TITLE path is gone; "Restart from this step" stays reserved.</done>
 </task>
 
 </tasks>

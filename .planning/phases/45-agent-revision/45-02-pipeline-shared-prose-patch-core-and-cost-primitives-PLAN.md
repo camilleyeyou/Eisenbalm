@@ -9,6 +9,7 @@ files_modified:
   - packages/pipeline/src/eisenbalm_pipeline/api/factcheck.py
   - packages/pipeline/src/eisenbalm_pipeline/lib/budget.py
   - packages/pipeline/src/eisenbalm_pipeline/lib/llm_config.py
+  - packages/pipeline/tests/test_budget.py
 autonomous: true
 requirements: [REV-04, REV-05]
 must_haves:

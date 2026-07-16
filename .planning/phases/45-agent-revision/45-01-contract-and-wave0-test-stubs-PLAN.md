@@ -11,6 +11,7 @@ files_modified:
   - apps/dispatch-control/__tests__/PassageToolbar.test.tsx
   - apps/dispatch-control/__tests__/DirectionChips.test.tsx
   - apps/dispatch-control/__tests__/RevisionComparisonCard.test.tsx
+  - apps/dispatch-control/__tests__/RevisionFlow.test.tsx
   - apps/dispatch-control/__tests__/FrameChromeCostReadout.test.tsx
   - packages/pipeline/tests/test_revision_endpoints.py
   - packages/pipeline/tests/test_budget.py
@@ -219,7 +220,7 @@ every case in `<behavior>` (mirror the plain-vitest style of `factCheckFilters.t
     - packages/pipeline/tests/test_budget_gate.py — the existing budget test conventions to mirror in the new `test_budget.py`.
     - apps/dispatch-control/__tests__/FactCheckScreen.test.tsx:1-30 — the vitest render/it convention; scaffold the console files as `it.todo(...)` (the 44-01 Wave-0 precedent) so no missing-module import breaks collection.
   </read_first>
-  <files>packages/pipeline/tests/test_revision_endpoints.py, packages/pipeline/tests/test_budget.py, apps/dispatch-control/__tests__/PassageToolbar.test.tsx, apps/dispatch-control/__tests__/DirectionChips.test.tsx, apps/dispatch-control/__tests__/RevisionComparisonCard.test.tsx, apps/dispatch-control/__tests__/FrameChromeCostReadout.test.tsx</files>
+  <files>packages/pipeline/tests/test_revision_endpoints.py, packages/pipeline/tests/test_budget.py, apps/dispatch-control/__tests__/PassageToolbar.test.tsx, apps/dispatch-control/__tests__/DirectionChips.test.tsx, apps/dispatch-control/__tests__/RevisionComparisonCard.test.tsx, apps/dispatch-control/__tests__/RevisionFlow.test.tsx, apps/dispatch-control/__tests__/FrameChromeCostReadout.test.tsx</files>
   <action>
 Create the five scaffold test files enumerated in 45-VALIDATION.md's Wave-0 list, authored so the
 FULL suite stays green today and each activates when its implementation lands:
@@ -242,23 +243,27 @@ FULL suite stays green today and each activates when its implementation lands:
    Write `test_would_exceed_run_cap_sums_agent_runs`, `test_would_exceed_run_cap_over_cap_true`,
    `test_would_exceed_run_cap_disabled_when_cap_le_zero` (all named to match `-k run_cap`), monkeypatching
    `_cc.convex_query` to return fake `agent_runs` rows with `costUsd`.
-3-6. `PassageToolbar.test.tsx`, `DirectionChips.test.tsx`, `RevisionComparisonCard.test.tsx`,
-   `FrameChromeCostReadout.test.tsx` — each a vitest file with `describe(...)` + `it.todo(...)`
+3-7. `PassageToolbar.test.tsx`, `DirectionChips.test.tsx`, `RevisionComparisonCard.test.tsx`,
+   `RevisionFlow.test.tsx`, `FrameChromeCostReadout.test.tsx` — each a vitest file with
+   `describe(...)` + `it.todo(...)`
    entries naming every 45-VALIDATION case (e.g. PassageToolbar: "renders six actions",
    "Compare/Restore reserved-with-title", "Ask agent to revise fires onRevise"; DirectionChips:
    "renders 7 fixed-copy chips", "never renders Regenerate", "disabled-with-title when cost-capped";
    RevisionComparisonCard: "shows original/proposed/what-changed/claim-delta", "Apply/Edit/Try-another/
-   Discard present"; FrameChromeCostReadout: "loading → refresh affordance not zero", "$spent / $cap
-   when known"). Import NOTHING that does not yet exist (the `it.todo` bodies are title-only). Plans
-   45-04/45-05/45-06 convert their `it.todo`s into real assertions.
+   Discard present"; RevisionFlow: "fetches a fresh ifRevisionID immediately before apply",
+   "priorProposals accumulates across Try another approach", "edit-before-applying sends the edited
+   newText", "cost_cap_exceeded 409 disables the chips"; FrameChromeCostReadout: "loading → refresh
+   affordance not zero", "$spent / $cap when known"). Import NOTHING that does not yet exist (the
+   `it.todo` bodies are title-only). Plans 45-04/45-05/45-06 convert their `it.todo`s into real
+   assertions.
   </action>
   <verify>
-    <automated>cd packages/pipeline && python -m pytest tests/test_revision_endpoints.py tests/test_budget.py -q && cd ../../apps/dispatch-control && npx vitest run __tests__/PassageToolbar.test.tsx __tests__/DirectionChips.test.tsx __tests__/RevisionComparisonCard.test.tsx __tests__/FrameChromeCostReadout.test.tsx</automated>
+    <automated>cd packages/pipeline && python -m pytest tests/test_revision_endpoints.py tests/test_budget.py -q && cd ../../apps/dispatch-control && npx vitest run __tests__/PassageToolbar.test.tsx __tests__/DirectionChips.test.tsx __tests__/RevisionComparisonCard.test.tsx __tests__/RevisionFlow.test.tsx __tests__/FrameChromeCostReadout.test.tsx</automated>
   </verify>
   <acceptance_criteria>
-    - All six files exist at the paths in `<files>`.
+    - All seven files exist at the paths in `<files>`.
     - `cd packages/pipeline && python -m pytest tests/test_revision_endpoints.py tests/test_budget.py -q` exits 0 (both modules SKIP cleanly — no collection error, no failure).
-    - `cd apps/dispatch-control && npx vitest run __tests__/PassageToolbar.test.tsx __tests__/DirectionChips.test.tsx __tests__/RevisionComparisonCard.test.tsx __tests__/FrameChromeCostReadout.test.tsx` exits 0 (todo entries reported, zero failures).
+    - `cd apps/dispatch-control && npx vitest run __tests__/PassageToolbar.test.tsx __tests__/DirectionChips.test.tsx __tests__/RevisionComparisonCard.test.tsx __tests__/RevisionFlow.test.tsx __tests__/FrameChromeCostReadout.test.tsx` exits 0 (todo entries reported, zero failures).
     - `grep -q "importorskip" packages/pipeline/tests/test_revision_endpoints.py` and `grep -q "would_exceed_run_cap" packages/pipeline/tests/test_budget.py`.
     - Running the FULL suites (`cd packages/pipeline && python -m pytest` and `cd apps/dispatch-control && npm run test`) both stay green.
   </acceptance_criteria>

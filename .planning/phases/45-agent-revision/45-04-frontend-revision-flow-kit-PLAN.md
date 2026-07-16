@@ -11,6 +11,7 @@ files_modified:
   - apps/dispatch-control/components/revision/RevisionFlow.tsx
   - apps/dispatch-control/__tests__/DirectionChips.test.tsx
   - apps/dispatch-control/__tests__/RevisionComparisonCard.test.tsx
+  - apps/dispatch-control/__tests__/RevisionFlow.test.tsx
 autonomous: true
 requirements: [REV-02, REV-03, REV-04]
 must_haves:
@@ -149,15 +150,23 @@ render conventions; no Convex/network needed — these are presentational).
   <done>The chips render fixed copy (never Regenerate) with a cost-capped disabled state; the card shows original/proposed/what-changed/claim-delta and the four actions; both component tests are green.</done>
 </task>
 
-<task type="auto">
+<task type="auto" tdd="true">
   <name>Task 3: RevisionFlow container (chips → preview → card → apply)</name>
   <requirements>REV-04</requirements>
   <read_first>
     - apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/fact-check/FactCheckScreen.tsx:210-300 — the state machine to mirror: preview into local state, obtain a FRESH `ifRevisionID` via `getDraft(runId, token)` immediately before apply, error branching.
     - apps/dispatch-control/lib/contentPatchClient.ts::getDraft — the fresh-revision source.
     - lib/revisionClient.ts (Task 1) + components/revision/DirectionChips.tsx + RevisionComparisonCard.tsx (Task 2).
+    - apps/dispatch-control/__tests__/RevisionFlow.test.tsx — the Wave-0 `it.todo` stub to convert into real orchestration assertions.
+    - apps/dispatch-control/__tests__/FactCheckScreen.test.tsx — the `vi.mock` convention for stubbing the pipeline client (previewRevision/applyRevision) + `getDraft` in a container test.
   </read_first>
-  <files>apps/dispatch-control/components/revision/RevisionFlow.tsx</files>
+  <behavior>
+    - Apply fetches a FRESH ifRevisionID via `getDraft(runId, token)` immediately before `applyRevision`, and passes it as `ifRevisionID`
+    - `priorProposals` accumulates across repeated "Try another approach" (each `previewRevision` call carries the growing array as avoid-context)
+    - "Edit before applying" sends the operator-edited `newText` to `applyRevision` (not the original `proposedText`)
+    - A `previewRevision` rejection with `RevisionError` `reason==='cost_cap_exceeded'` drives `DirectionChips` into the disabled/cost-capped state
+  </behavior>
+  <files>apps/dispatch-control/components/revision/RevisionFlow.tsx, apps/dispatch-control/__tests__/RevisionFlow.test.tsx</files>
   <action>
 Export `RevisionFlow({ runId, passage, onApplied, onClose }: { runId:string; passage:{sectionName:string; quotedText:string; blockIndexHint?:number}; onApplied:()=>void|Promise<void>; onClose:()=>void })`. Use `useAuth().getToken()` for the bearer token. State machine:
 1. Initial: render `<DirectionChips onSelect={handleSelect} costCapped={capped} capInfo={capInfo} />`.
@@ -167,22 +176,33 @@ Export `RevisionFlow({ runId, passage, onApplied, onClose }: { runId:string; pas
 5. Card `onTryAnother`: re-call `previewRevision` with the SAME direction and the accumulated `priorProposals` as avoid-context (D-05), replacing the shown card.
 6. Card `onDiscard`: clear `preview`, return to chips (keep `priorProposals` so a later Try-another still diverges).
 This container is surface-agnostic — it receives a `passage` and reports `onApplied`; 45-05 supplies both.
+
+Then convert the Wave-0 `__tests__/RevisionFlow.test.tsx` `it.todo` entries into real assertions. Mock
+`previewRevision`/`applyRevision` (from `revisionClient`) and `getDraft` (from `contentPatchClient`) with
+`vi.mock`, and cover every `<behavior>` case: (a) on Apply, assert `getDraft` is called and its returned
+`revisionId` is passed as `applyRevision`'s `ifRevisionID` (fresh at apply); (b) drive "Try another
+approach" twice and assert the second `previewRevision` call receives the accumulated `priorProposals`;
+(c) use "Edit before applying" and assert `applyRevision` receives the edited `newText`, not
+`preview.proposedText`; (d) make `previewRevision` reject with `new RevisionError(409,'cost_cap_exceeded',...)`
+and assert the chips render disabled (cost-capped). No live network — all pipeline calls are mocked.
   </action>
   <verify>
-    <automated>cd apps/dispatch-control && npx vitest run __tests__/RevisionComparisonCard.test.tsx __tests__/DirectionChips.test.tsx && npx eslint components/revision/RevisionFlow.tsx</automated>
+    <automated>cd apps/dispatch-control && npx vitest run __tests__/RevisionFlow.test.tsx __tests__/RevisionComparisonCard.test.tsx __tests__/DirectionChips.test.tsx && npx eslint components/revision/RevisionFlow.tsx</automated>
   </verify>
   <acceptance_criteria>
     - `components/revision/RevisionFlow.tsx` exports `RevisionFlow`, imports `previewRevision`+`applyRevision` from `revisionClient`, and imports `getDraft` from `contentPatchClient` (fresh ifRevisionID at apply).
     - The apply branch passes `newText` (proposed OR edited) and a freshly-fetched `ifRevisionID`; the try-another branch forwards `priorProposals` (`grep -q "priorProposals" components/revision/RevisionFlow.tsx`).
-    - `npx eslint components/revision/RevisionFlow.tsx` passes; the two component test files stay green.
+    - `__tests__/RevisionFlow.test.tsx` is real (no remaining `it.todo`) and asserts all four `<behavior>` cases — fresh-ifRevisionID-before-apply, `priorProposals` accumulation, edited-`newText` on Edit-before-applying, and the `cost_cap_exceeded` 409 disabled-chips branch — with `previewRevision`/`applyRevision`/`getDraft` mocked.
+    - `cd apps/dispatch-control && npx vitest run __tests__/RevisionFlow.test.tsx` exits 0.
+    - `npx eslint components/revision/RevisionFlow.tsx` passes; the component test files stay green.
   </acceptance_criteria>
-  <done>RevisionFlow drives chips→preview→card→apply with try-another avoid-context, edit-before-applying, and a fresh ifRevisionID at apply — a self-contained kit ready to mount.</done>
+  <done>RevisionFlow drives chips→preview→card→apply with try-another avoid-context, edit-before-applying, and a fresh ifRevisionID at apply, with its orchestration covered by a dedicated RevisionFlow.test.tsx — a self-contained kit ready to mount.</done>
 </task>
 
 </tasks>
 
 <verification>
-- `npx vitest run __tests__/DirectionChips.test.tsx __tests__/RevisionComparisonCard.test.tsx` green.
+- `npx vitest run __tests__/DirectionChips.test.tsx __tests__/RevisionComparisonCard.test.tsx __tests__/RevisionFlow.test.tsx` green.
 - `npx vitest run __tests__/dispatch-control-no-sanity-write.test.ts` green.
 - `npx eslint components/revision lib/revisionClient.ts` clean.
 </verification>
