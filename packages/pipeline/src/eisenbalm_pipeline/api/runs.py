@@ -317,8 +317,13 @@ async def _start_run(
     await _cc.convex_mutation(http, "runs:create", runs_create_args)
 
     # Step 5: Pre-populate agent_runs rows as "queued" (OBS-03).
+    # Phase 46 D-01: signal_editor before scout, verify_candidates after scout
+    # (mirrors graph/builder.py's calibrator->signal_editor->scout->
+    # verify_candidates->advocate chain) so the live-progress rail shows all
+    # 20 steps upfront.
     agent_keys = [
-        "calibrator", "scout", "advocate", "editor_gate_1", "chronicler",
+        "calibrator", "signal_editor", "scout", "verify_candidates", "advocate",
+        "editor_gate_1", "chronicler",
         "researcher", "verify_research",
         *SECTION_WRITERS,
         "validate_sections", "qa", "editor_final", "publisher",

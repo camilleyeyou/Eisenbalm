@@ -59,8 +59,10 @@ from eisenbalm_pipeline.agents.publisher import publisher
 from eisenbalm_pipeline.agents.qa import qa
 from eisenbalm_pipeline.agents.researcher import researcher
 from eisenbalm_pipeline.agents.scout import scout
+from eisenbalm_pipeline.agents.signal_editor import signal_editor
 from eisenbalm_pipeline.agents.validate import validate_sections
 from eisenbalm_pipeline.agents.verify import verify_research
+from eisenbalm_pipeline.agents.verify_candidates import verify_candidates
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.agent_wrapper import wrap_agent_node
 
@@ -100,7 +102,17 @@ def build_graph(checkpointer: Any) -> Any:
 
     # Sequential pre-fan-out agents.
     builder.add_node("calibrator", wrap_agent_node("calibrator", calibrator))
+
+    # Phase 46 D-01/D-02: signal_editor is an LLM @agent_node inserted between
+    # calibrator and scout (Stage 1 "Find story leads").
+    builder.add_node("signal_editor", wrap_agent_node("signal_editor", signal_editor))
+
     builder.add_node("scout", wrap_agent_node("scout", scout))
+
+    # Phase 46 D-01/D-02: verify_candidates is a bare non-LLM bottleneck
+    # inserted between scout and advocate, mirroring verify_research below.
+    builder.add_node("verify_candidates", wrap_agent_node("verify_candidates", verify_candidates))
+
     builder.add_node("advocate", wrap_agent_node("advocate", advocate))
     builder.add_node("editor_gate_1", wrap_agent_node("editor_gate_1", editor_gate_1))
     builder.add_node("chronicler", wrap_agent_node("chronicler", chronicler))
@@ -129,8 +141,14 @@ def build_graph(checkpointer: Any) -> Any:
 
     # Sequential pre-fan-out edges.
     builder.add_edge(START, "calibrator")
-    builder.add_edge("calibrator", "scout")
-    builder.add_edge("scout", "advocate")
+
+    # Phase 46 D-01: calibrator -> signal_editor -> scout -> verify_candidates
+    # -> advocate. Replaces the old calibrator->scout and scout->advocate edges.
+    builder.add_edge("calibrator", "signal_editor")
+    builder.add_edge("signal_editor", "scout")
+    builder.add_edge("scout", "verify_candidates")
+    builder.add_edge("verify_candidates", "advocate")
+
     builder.add_edge("advocate", "editor_gate_1")
     builder.add_edge("editor_gate_1", "chronicler")
     builder.add_edge("chronicler", "researcher")

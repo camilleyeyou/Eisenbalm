@@ -32,7 +32,9 @@ log = logging.getLogger(__name__)
 # DispatchState fields that the named agent actually consumes as input.
 _INPUT_KEYS: dict[str, list[str]] = {
     "calibrator":    ["run_id"],
+    "signal_editor": ["style_brief"],
     "scout":         ["style_brief"],
+    "verify_candidates": ["candidates"],
     "advocate":      ["candidates"],
     "editor_gate_1": ["candidates"],
     "chronicler":    ["candidates", "winning_charity", "editor_decision"],
