@@ -1029,7 +1029,15 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   4. When agents cannot confidently choose, the stage enters a "Needs your decision" state with the top two options side by side (what each makes possible, evidence quality, risk, burden); the operator's choice requires a rationale and resumes the run via the existing interrupt/resume endpoint.
   5. An editable Brief (premise, current peg, central claim, reader effect, known risks, voice intention) is generated after selection, and the section writers draft from it.
   6. Operator can ask an agent to strengthen any single field of the Brief.
-**Plans**: TBD
+**Plans**: 8 plans (4 waves)
+- [ ] 47-01-contracts-convex-store-wave0-tests-PLAN.md — API_CONTRACTS §7 Brief + new §47 (briefs table, story_leads.status, leads + brief endpoints) + `briefs` Convex table/functions + `storyLeads.setStatus` + guarded-path registration + live-sync/parity + 6 Wave-0 test scaffolds (Wave 1)
+- [ ] 47-02-dispatchstate-brief-and-editor-gate1-generation-PLAN.md — state.py Brief TypedDict + deterministic Brief assembly in `editor_gate_1` (no new node/LLM) + `briefs:insert` (Wave 2)
+- [ ] 47-03-writer-brief-threading-PLAN.md — `build_section_writer_prompt` 5th `brief` param + thread `state.get("brief")` into all 7 section writers (Wave 3)
+- [ ] 47-04-leads-and-brief-fastapi-endpoints-PLAN.md — `api/leads.py` Require/Remove (reason-gated) + `api/brief.py` PATCH + field-strengthen preview/apply + wire `_fetch_brief_context` to `briefs:byRunId` (Wave 2)
+- [ ] 47-05-workspace-subscriptions-lead-card-actions-PLAN.md — WorkspaceStateProvider storyLeads/verificationRecords/briefs subs + `requireLead`/`removeLead` clients + LeadCard (BRF-01, never-truncated) + LeadActions (BRF-02) (Wave 2)
+- [ ] 47-06-org-options-and-needs-your-decision-PLAN.md — OrgOptionSlate (BRF-03, joinCandidates + verification dates + never-truncated concern) + NeedsYourDecisionCard (BRF-04, two-option + adjudicateGate1 resume) (Wave 3)
+- [ ] 47-07-brief-field-table-and-strengthen-PLAN.md — briefClient + BriefFieldTable (BRF-05 editable) + BriefFieldStrengthen (BRF-06, field-scoped RevisionFlow) (Wave 3)
+- [ ] 47-08-story-brief-screen-mount-and-phase-gate-PLAN.md — StoryBriefScreen composition + empty/loading/error + deriveStoryStage tighten + mount replaces SignalDeskScreen + DELETE StoryPanelContent.tsx + strict build/full suites/Convex parity gate (Wave 4)
 **UI hint**: yes
 
 ### Phase 48: Brief Entry Point
