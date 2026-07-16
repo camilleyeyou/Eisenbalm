@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 48-04-brief-trigger-endpoint-PLAN.md
-last_updated: "2026-07-16T15:43:07.201Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 48-07-integration-gate-PLAN.md
+last_updated: "2026-07-16T15:54:40.381Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -343,6 +343,7 @@ Plan: 7 of 7
 | Phase 48 P05 | 18min | 2 tasks | 2 files |
 | Phase 48 P06 | 7min | 3 tasks | 3 files |
 | Phase 48 P04 | 6min | 2 tasks | 1 files |
+| Phase 48-brief-entry-point P07 | 9min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -903,6 +904,7 @@ Recent decisions affecting current work:
 - [Phase 48]: BriefOrgCard is a wholly separate component, not a branch inside OrgOptionSlate, per 48-RESEARCH Open Question 3
 - [Phase 48]: _enforce_start_gates helper extracted from pipeline_run so POST /pipeline/run/brief reuses the exact one-at-a-time + budget 409 gates (no drifting duplicate copy)
 - [Phase 48]: Human-supplied org for a brief run is mapped onto editor.py's existing D-14 synthetic-CharityCandidate shape rather than a new partial schema; voiceIntention and the other 3 unmapped Brief fields seed blank since calibrator/style_brief haven't run yet at request time
+- [Phase 48-brief-entry-point]: 48-07: Activated brief-mode e2e test with 7-section-field + factual-claims assertions (verified against real Sanity/Convex write shapes); phase gate green (679 pipeline tests, 939 dispatch-control tests, strict build, Convex sync)
 
 ### Pending Todos
 
@@ -993,6 +995,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T15:43:07.186Z
-Stopped at: Completed 48-04-brief-trigger-endpoint-PLAN.md
+Last session: 2026-07-16T15:54:40.362Z
+Stopped at: Completed 48-07-integration-gate-PLAN.md
 Resume file: None
