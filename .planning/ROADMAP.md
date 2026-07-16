@@ -461,7 +461,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
-| 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
+| 46. Signal Editor & Candidate Verification | 1/7 | In Progress|  |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
@@ -1010,7 +1010,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   4. The pipeline graph runs 20 nodes end-to-end — `signal_editor` before `scout`, `verify_candidates` between `scout` and `advocate` — and the Postgres checkpointer resumes correctly across a pause/resume cycle that spans the new nodes.
   5. The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and surfaces a repetition warning alongside a lead rather than silently suppressing it.
 **Plans**: 7 plans (5 waves)
-- [ ] 46-01-contract-convex-store-and-wave0-tests-PLAN.md — API_CONTRACTS §46 (StoryLead + VerificationRecord + 2 DispatchState fields) + story_leads/verification_records Convex tables & functions + secret-guard + 3 Wave-0 test scaffolds (Wave 1)
+- [x] 46-01-contract-convex-store-and-wave0-tests-PLAN.md — API_CONTRACTS §46 (StoryLead + VerificationRecord + 2 DispatchState fields) + story_leads/verification_records Convex tables & functions + secret-guard + 3 Wave-0 test scaffolds (Wave 1)
 - [ ] 46-02-dispatchstate-contract-and-repetition-helper-PLAN.md — state.py StoryLead/VerificationRecord TypedDicts + JSON-safe fields + lib/registry_repetition.compute_repetition_note extraction (Wave 2)
 - [ ] 46-03-signal-editor-prompt-and-model-registration-PLAN.md — llm_config/config_loader signal_editor (Sonnet) registration + signal_editor.md/signal_editor_user.md prompts + seed script (Wave 1)
 - [ ] 46-04-signal-editor-agent-PLAN.md — agents/signal_editor.py (@agent_node: 3-5 leads, brand-risk recommended=false Python gate, Editorial Memory repetition warning) + unit tests (Wave 3)
