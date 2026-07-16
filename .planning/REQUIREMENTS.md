@@ -384,7 +384,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **INS-06**: The panel footer offers Ask agent to revise, Restart from this step, Improve this agent, Compare instruction versions, Related quality tests, and Prior & downstream steps.
 
 ### Agent Revision (REV)
-- [ ] **REV-01**: Selecting a passage offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
+- [x] **REV-01**: Selecting a passage offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
 - [x] **REV-02**: "Ask agent to revise" offers direction chips (Make clearer / Make more specific / Tighten / Match the brief / Reduce repetition / Try another approach / Custom) — never a bare "Regenerate".
 - [x] **REV-03**: A revision returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) *before* anything is applied.
 - [x] **REV-04**: Operator can Apply, Edit before applying, Try another approach, or Discard; applying mutates the draft through the existing content-patch write boundary and logs to `audit_log`.

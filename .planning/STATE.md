@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 45-03-pipeline-revision-endpoint-PLAN.md
-last_updated: "2026-07-16T02:12:04.401Z"
+stopped_at: Completed 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md
+last_updated: "2026-07-16T05:53:31.367Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 45 (agent-revision) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 
 ## Performance Metrics
 
@@ -320,6 +320,7 @@ Plan: 6 of 7
 | Phase 45 P04 | 15min | 3 tasks | 7 files |
 | Phase 45-agent-revision P06 | 8min | 2 tasks | 6 files |
 | Phase 45 P03 | 25min | 2 tasks | 2 files |
+| Phase 45 P05 | 200min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -838,6 +839,8 @@ Recent decisions affecting current work:
 - [Phase 45-agent-revision]: capUsd defaults to 10.0 until pipelineConfig:getAll resolves or per_run_cap_usd is absent, matching BudgetCapsPanel's existing default
 - [Phase 45]: revision.py's Match-the-brief context sources theme.visualDirection + charity missionStatement/focusArea/scoutNotes (best-effort, never crashes) since style_brief has no other persisted Sanity/Convex counterpart at review time
 - [Phase 45]: revision.py forwards its own get_issue_draft/patch_issue_field bindings into content.py's shared _patch_prose_span apply core (45-02's caller-forwarded I/O seam), mirroring factcheck.py's wrapper exactly
+- [Phase 45]: InspectorFooter Ask agent to revise flips LIVE only when firstProseExcerpt derives a real non-empty quotedText; RevisionFlow stays mounted by the Draft/Voice surface, never by the inspector, via a shared requestRevision channel on InspectorProvider
+- [Phase 45]: Extended InspectorContainer.tsx (beyond 45-05's declared file list) to wire real sectionBlocks/sectionName/onRequestRevision from agent_run_payloads.outputSnapshot, so the inspector footer entry point is a real revision surface, not a dead button (D-18)
 
 ### Pending Todos
 
@@ -928,6 +931,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T02:12:04.389Z
-Stopped at: Completed 45-03-pipeline-revision-endpoint-PLAN.md
+Last session: 2026-07-16T05:53:31.353Z
+Stopped at: Completed 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md
 Resume file: None
