@@ -2,8 +2,8 @@
 /**
  * Phase 47 Plan 47-08 (BRF-01..06, D-01/D-14/D-15) — StoryBriefScreen: the
  * full Stage-1 composition shell, replacing the provisional `SignalDeskScreen`
- * mount at `issues/[issueNumber]/story` (`StoryPanelContent.tsx`, DELETED by
- * this plan).
+ * mount at `issues/[issueNumber]/story` (its 131-line placeholder sibling
+ * file was DELETED by this plan, not extended).
  *
  * Composition order (Annotations §Stage 1, L48-55): Leads (BRF-01/BRF-02,
  * `LeadCard`+`LeadActions`) -> Organization options grouped under the chosen

@@ -11,20 +11,16 @@
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  *
- * Phase 44 (INS-01, Plan 44-08 Task 3): `StoryPanelPublisher` now calls
- * `useInspector()` (for the winner card's "Inspect how this was made"
- * affordance), so its plumbing-block render below is wrapped in
- * `<InspectorProvider>` — mirroring 44-07's FactCheckScreen/VoicePassScreen
- * wrapping convention. `buildStoryPanelContent`'s own tests are unaffected
- * (its new `onInspect` param is optional).
+ * Phase 47 Plan 47-08 (D-01): the Stage 1 Story context-panel publisher
+ * sibling file was DELETED — Stage 1 is now the full `StoryBriefScreen`
+ * (composed of the six BRF-01..06 components), which renders its own detail
+ * directly in the main canvas rather than publishing a summary into the
+ * shared ContextPanel. Its describe blocks below were removed accordingly;
+ * Stages 2-5's context panels are unaffected.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
-import type { Doc } from '@convex/_generated/dataModel'
-import { InspectorProvider } from '../components/inspector/InspectorProvider'
-import StoryPanelPublisher, {
-  buildStoryPanelContent,
-} from '../app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent'
+import type { WorkspaceStateValue } from '../app/(dashboard)/issues/_components/WorkspaceStateProvider'
 import DraftPanelPublisher, {
   buildDraftPanelContent,
 } from '../app/(dashboard)/issues/[issueNumber]/draft/DraftPanelContent'
@@ -37,7 +33,6 @@ import VoicePanelPublisher, {
 import ApprovalPanelPublisher, {
   buildApprovalPanelContent,
 } from '../app/(dashboard)/issues/[issueNumber]/approval/ApprovalPanelContent'
-import type { WorkspaceStateValue } from '../app/(dashboard)/issues/_components/WorkspaceStateProvider'
 
 // ── Plumbing-block mock (Task 3): a mutable fixture the mocked
 // useWorkspaceState reads, so each of the 5 REAL publisher components can be
@@ -52,49 +47,6 @@ vi.mock('../app/(dashboard)/issues/_components/WorkspaceStateProvider', () => ({
 
 afterEach(() => {
   cleanup()
-})
-
-describe('Stage 1 Story panel', () => {
-  it('renders the selected charity lead detail when populated', () => {
-    const pitchRows = [
-      {
-        _id: 'pl1',
-        _creationTime: 0,
-        runId: 'run-1',
-        charityName: 'Acme Foundation',
-        charityLocation: 'Duluth, MN',
-        focusArea: 'Youth literacy',
-        scoutSummary: 'Overlooked but well-run local literacy nonprofit.',
-        selected: true,
-        timestamp: Date.now(),
-      },
-      {
-        _id: 'pl2',
-        _creationTime: 0,
-        runId: 'run-1',
-        charityName: 'Beacon Trust',
-        charityLocation: 'Reno, NV',
-        scoutSummary: 'Runner-up candidate.',
-        selected: false,
-        timestamp: Date.now(),
-      },
-    ] as unknown as Doc<'pitchLog'>[]
-
-    render(<>{buildStoryPanelContent(pitchRows)}</>)
-
-    expect(screen.getByText('Acme Foundation')).toBeDefined()
-    expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
-  })
-
-  it('renders an honest empty state when no candidates exist', () => {
-    render(<>{buildStoryPanelContent([])}</>)
-    expect(screen.getByText(/no charity selected yet/i)).toBeDefined()
-  })
-
-  it('renders a loading state while pitchRows has not loaded', () => {
-    render(<>{buildStoryPanelContent(undefined)}</>)
-    expect(screen.getByText(/loading/i)).toBeDefined()
-  })
 })
 
 describe('Stage 2 Draft panel', () => {
@@ -270,31 +222,6 @@ describe('Stage 5 Approval panel', () => {
 })
 
 describe('Stage panel publishers reach the ContextPanel slot', () => {
-  it('Story publisher calls setPanelContent on mount with a defined node', () => {
-    const setPanelContent = vi.fn()
-    stateRef.current = {
-      pitchRows: [
-        {
-          _id: 'pl1',
-          charityName: 'Acme Foundation',
-          charityLocation: 'Duluth, MN',
-          scoutSummary: 'Overlooked but well-run.',
-          selected: true,
-        },
-      ],
-      setPanelContent,
-    }
-
-    render(
-      <InspectorProvider>
-        <StoryPanelPublisher />
-      </InspectorProvider>,
-    )
-
-    expect(setPanelContent).toHaveBeenCalled()
-    expect(setPanelContent.mock.calls[0][0]).toBeDefined()
-  })
-
   it('Draft publisher calls setPanelContent on mount with a defined node', () => {
     const setPanelContent = vi.fn()
     stateRef.current = { qaFindings: [], setPanelContent }
