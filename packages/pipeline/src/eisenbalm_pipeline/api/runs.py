@@ -243,6 +243,15 @@ async def _start_run(
     force_no_winner: bool = False,
     force_fail_agent: Optional[str] = None,
     narrator_slug: Optional[str] = None,
+    # ── Phase 48 additions (§48.3, ENT-02/ENT-04) ───────────────────────────
+    # All five are additive-defaulted so every existing caller (run_weekly,
+    # control.py::pipeline_run, control.py::pipeline_tick) stays byte-
+    # equivalent — none of them pass these params today.
+    entry_mode: str = "discovery",
+    winning_charity: Optional[dict] = None,
+    brief: Optional[dict] = None,
+    source_material: Optional[str] = None,
+    agent_keys_override: Optional[list[str]] = None,
 ) -> str:
     """Shared pipeline run launcher. Returns run_id.
 
@@ -255,6 +264,21 @@ async def _start_run(
         force_no_winner:    Dev toggle — bypasses winner selection (D-36).
         force_fail_agent:   Dev toggle — forces a named agent to fail (D-37).
         narrator_slug:  Optional narrator override (Phase 16 NRR-05).
+        entry_mode:     "discovery" | "brief" (Phase 48 D-01). Always seeded
+                        into initial_state; only affects runs:create /
+                        agentRuns:queueForRun / briefs:insert when "brief".
+        winning_charity: CharityCandidate dict (D-04/D-05) — brief mode only.
+                        Seeds initial_state['winning_charity'] AND
+                        initial_state['candidates'] = [winning_charity] so
+                        verify_candidates has its single-org input.
+        brief:          Brief dict (D-04/D-06) — brief mode only. Seeds
+                        initial_state['brief'] AND triggers a briefs:insert
+                        write (Step 4b) once runId exists.
+        source_material: Optional free-text (D-10) — brief mode only. Seeds
+                        initial_state['source_material'] when truthy.
+        agent_keys_override: Reduced agentRuns:queueForRun list (D-16) — when
+                        None, the full 20-step discovery list is used
+                        unchanged.
 
     Returns:
         The new run_id string.
@@ -264,6 +288,7 @@ async def _start_run(
         2. new_run_id / begin_run
         3. convex_mutation pipelineRuns:create
         4. convex_mutation runs:create (with triggeredBy)
+        4b. convex_mutation briefs:insert (Phase 48 §48.3 — brief is not None)
         5. convex_mutation agentRuns:queueForRun
         6. load_run_config + snapshot_config   ← BEFORE asyncio.create_task
         7. asyncio.create_task(_execute_run)
@@ -314,14 +339,33 @@ async def _start_run(
     }
     if triggered_by is not None:
         runs_create_args["triggeredBy"] = triggered_by
+    # Phase 48 §48.3/Pitfall 3: only carry entryMode for brief runs — every
+    # existing discovery caller's runs:create payload stays byte-identical
+    # (no entryMode key at all). Stage-1 treats an absent field as 'discovery'
+    # per the additive-optional convex/schema.ts field (Plan 48-01).
+    if entry_mode != "discovery":
+        runs_create_args["entryMode"] = entry_mode
     await _cc.convex_mutation(http, "runs:create", runs_create_args)
+
+    # Step 4b (Phase 48 §48.3, D-06): write the briefs row immediately after
+    # runs:create, now that run_id exists — the ONLY placement that avoids a
+    # partial-failure window (a run that starts but never gets its Brief
+    # row). briefs:insert is already in _PIPELINE_SECRET_GUARDED_PATHS — no
+    # new registration needed. Gated on `brief is not None`, NOT on
+    # entry_mode alone (a brief-mode caller may still omit brief).
+    if brief is not None:
+        await _cc.convex_mutation(http, "briefs:insert", {"runId": run_id, **brief})
 
     # Step 5: Pre-populate agent_runs rows as "queued" (OBS-03).
     # Phase 46 D-01: signal_editor before scout, verify_candidates after scout
     # (mirrors graph/builder.py's calibrator->signal_editor->scout->
     # verify_candidates->advocate chain) so the live-progress rail shows all
     # 20 steps upfront.
-    agent_keys = [
+    # Phase 48 D-16: agent_keys_override lets a brief run pass the reduced
+    # node set (calibrator, verify_candidates, researcher, ... — no
+    # signal_editor/scout/advocate/editor_gate_1/chronicler); every existing
+    # caller passes no override, so the full 20-step list below is unchanged.
+    agent_keys = agent_keys_override or [
         "calibrator", "signal_editor", "scout", "verify_candidates", "advocate",
         "editor_gate_1", "chronicler",
         "researcher", "verify_research",
@@ -361,6 +405,21 @@ async def _start_run(
     }
     if narrator_slug is not None:
         initial_state["narrator_slug"] = narrator_slug
+
+    # Phase 48 §48.3/D-04/D-05/D-10: entry_mode is ALWAYS seeded explicitly
+    # (matches RESEARCH.md Pattern 2 and the frozen Wave-0 scaffold — every
+    # caller, including existing discovery ones, gets an explicit
+    # entry_mode='discovery' rather than relying solely on
+    # route_by_entry_mode's `or "discovery"` fallback). The brief-mode-only
+    # fields are seeded only when entry_mode == "brief".
+    initial_state["entry_mode"] = entry_mode
+    if entry_mode == "brief":
+        initial_state["winning_charity"] = winning_charity
+        initial_state["candidates"] = [winning_charity] if winning_charity else []
+        initial_state["brief"] = brief
+        if source_material:
+            initial_state["source_material"] = source_material
+
     config = {"configurable": {"thread_id": run_id}}
 
     # Step 7: Strong-ref'd background task (research Pattern 3).
