@@ -54,6 +54,26 @@ class StyleBrief(TypedDict):
     previousBonusTypes: list[str]       # to avoid repeating
 
 
+class Brief(TypedDict):
+    """Phase 47 (BRF-05): the one genuinely new cross-boundary artifact of
+    the Story & Brief stage. Field names mirror docs/API_CONTRACTS.md §7
+    verbatim — do not rename without amending the contract first (CLAUDE.md
+    hard rule). Convex's ``briefs`` table (§47.1) is the editable source of
+    truth; this TypedDict is the pipeline-side read/write shape threaded
+    into ``DispatchState['brief']`` and consumed by the 7 section writers
+    via ``build_section_writer_prompt``'s ``brief=`` kwarg (Plan 47-03).
+    Deterministically ASSEMBLED inside ``editor_gate_1`` immediately after
+    ``winning_charity`` resolves (§47.3) — no new graph node, no new LLM
+    call.
+    """
+    premise: str                        # the story angle, one or two sentences
+    currentPeg: str                     # what makes this current/timely right now
+    centralClaim: str                   # the thesis this issue argues
+    readerEffect: str                   # what a reader should feel/understand/do
+    knownRisks: str                     # brand-risk/repetition/sensitivity notes to keep in mind while drafting
+    voiceIntention: str                 # the aesthetic/voice direction for this issue
+
+
 class CharityCandidate(TypedDict):
     name: str
     location: str
@@ -225,6 +245,16 @@ class DispatchState(TypedDict):
     # Postgres checkpointer resumes across signal_editor→scout→verify_candidates
     # (SGE-04). See docs/API_CONTRACTS.md §46.
     verification_records: Optional[list[VerificationRecord]]
+
+    # ── Phase 47: editable Brief (Story & Brief stage, BRF-05) ────────────────
+    # JSON-serializable dict — mirrors the story_leads/verification_records
+    # checkpoint-safety precedent (Postgres checkpointer resumability).
+    # Deterministically assembled inside editor_gate_1 right after
+    # winning_charity resolves (§47.3, docs/API_CONTRACTS.md §7); the
+    # console's briefs Convex table is the editable source of truth the
+    # pipeline reads back on later runs/revisions. Threaded to the 7
+    # section writers via build_section_writer_prompt's brief= kwarg.
+    brief: Optional[Brief]
     winning_charity: Optional[CharityCandidate]
     winning_charity_sanity_id: Optional[str]    # set after Sanity write
     deliberation_transcript: Optional[str]      # full Scout+Advocate+Editor text
