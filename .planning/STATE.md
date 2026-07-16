@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 46-01-contract-convex-store-and-wave0-tests-PLAN.md
-last_updated: "2026-07-16T07:27:20.033Z"
+stopped_at: Completed 46-03-signal-editor-prompt-and-model-registration-PLAN.md
+last_updated: "2026-07-16T07:37:01.013Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 46 (signal-editor-candidate-verification) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 
 ## Performance Metrics
 
@@ -323,6 +323,7 @@ Plan: 2 of 7
 | Phase 45 P05 | 200min | 3 tasks | 11 files |
 | Phase 45 P07 | 8min | 2 tasks | 3 files |
 | Phase 46 P01 | 25 | 3 tasks | 9 files |
+| Phase 46 P03 | 8min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -847,6 +848,8 @@ Recent decisions affecting current work:
 - [Phase 45]: Persisted the 8-step Annotations demo-leg human-verify checkpoint as pending 45-UAT.md items (status: partial) rather than blocking the auto chain on an unavailable live browser/Clerk session, mirroring the 43-09/44-09 precedent.
 - [Phase 46]: Dedicated story_leads/verification_records Convex tables instead of a new deliberationEvents literal (§37.3 FROZEN + Phase 47 needs patchable rows)
 - [Phase 46]: obscurity {pressHits, verdict} flattened into two Convex columns; pipeline VerificationRecord dict re-nests it
+- [Phase 46]: signal_editor model tier = Sonnet (Researcher analog), not Haiku/Opus — RESEARCH Pitfall 5 correction of CONTEXT's 'Advocate/Editor class' framing
+- [Phase 46]: signal_editor NOT added to frozen 11-entry SYSTEM_PROMPT_KEYS; registered only in AGENT_KEY_TO_PROMPT_FILE superset + USER_TEMPLATE_KEYS
 
 ### Pending Todos
 
@@ -937,6 +940,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T07:27:20.019Z
-Stopped at: Completed 46-01-contract-convex-store-and-wave0-tests-PLAN.md
+Last session: 2026-07-16T07:37:00.999Z
+Stopped at: Completed 46-03-signal-editor-prompt-and-model-registration-PLAN.md
 Resume file: None
