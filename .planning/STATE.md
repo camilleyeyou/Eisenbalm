@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 47-02-dispatchstate-brief-and-editor-gate1-generation-PLAN.md
-last_updated: "2026-07-16T10:43:21.944Z"
+stopped_at: Completed 47-04-leads-and-brief-fastapi-endpoints-PLAN.md
+last_updated: "2026-07-16T10:58:38.360Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 47 (story-brief-stage) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 
 ## Performance Metrics
 
@@ -331,6 +331,7 @@ Plan: 3 of 8
 | Phase 46 P07 | ~20min | 2 tasks | 2 files |
 | Phase 47 P01 | 32min | 3 tasks | 12 files |
 | Phase 47-story-brief-stage P02 | 12min | 2 tasks | 3 files |
+| Phase 47 P04 | 13min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -869,6 +870,8 @@ Recent decisions affecting current work:
 - [Phase 47]: briefs Convex table is runId-scoped, single-row-per-run, upsert-safe insert + separate patch mutation (not append-per-edit like story_leads)
 - [Phase 47]: Brief generation is a deterministic zero-new-node assembly inside editor_gate_1; writers draft from the auto-generated Brief on the first pass, human edits refine later revision passes + seed Phase 48
 - [Phase 47-story-brief-stage]: Brief generation stays a deterministic in-editor_gate_1 assembly (zero new graph node/LLM call) on BOTH winner-resolution paths (auto-select/resume + the D-14 synthetic-winner path), matching data already in scope (matched StoryLead + VerificationRecord via candidateId join, editorReasoning, style_brief)
+- [Phase 47]: Require-a-lead is FastAPI-routed for consistency with Remove but stays out of the shared Decision log (no reason= kwarg); Remove passes reason=/run_id= so it projects into it
+- [Phase 47]: Brief field-strengthen preview issues zero Convex writes (no cost-recording mutation, per plan's explicit 'NO Convex write' instruction); apply passes a synthesized reason= so accepting a strengthened field surfaces in the Decision log
 
 ### Pending Todos
 
@@ -959,6 +962,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T10:43:21.930Z
-Stopped at: Completed 47-02-dispatchstate-brief-and-editor-gate1-generation-PLAN.md
+Last session: 2026-07-16T10:58:38.346Z
+Stopped at: Completed 47-04-leads-and-brief-fastapi-endpoints-PLAN.md
 Resume file: None
