@@ -414,7 +414,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Roles & Permissions (ROL)
 - [x] **ROL-01**: A user carries a role of Editor-in-chief or Collaborator, enforced server-side — not only in the UI.
 - [x] **ROL-02**: Exactly six actions are gated to Editor-in-chief: apply revision, confirm evidence replacement, approve the Voice Pass, publish, make an instruction active, mark an organization Do not use.
-- [ ] **ROL-03**: A Collaborator sees every gated control rendered and locked *with an explanation of why*, never hidden.
+- [x] **ROL-03**: A Collaborator sees every gated control rendered and locked *with an explanation of why*, never hidden.
 - [x] **ROL-04**: A Collaborator can read everything and comment.
 
 ### Workbench & Nomenclature (WBN)

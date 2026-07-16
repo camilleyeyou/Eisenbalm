@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 49-05-comments-backend-PLAN.md
-last_updated: "2026-07-16T18:22:34.867Z"
+stopped_at: Completed 49-06-role-hook-lockedcontrol-PLAN.md
+last_updated: "2026-07-16T18:31:56.163Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 49 (roles-permissions) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 
 ## Performance Metrics
 
@@ -348,6 +348,7 @@ Plan: 5 of 9
 | Phase 49 P03 | 20 | 3 tasks | 6 files |
 | Phase 49 P04 | 11min | 3 tasks | 8 files |
 | Phase 49 P05 | 4min | 3 tasks | 3 files |
+| Phase 49 P06 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -916,6 +917,8 @@ Recent decisions affecting current work:
 - [Phase 49]: Scoped requireOperator->requireEditor swap to exactly activate + setStatus, per D-07 six-action inventory; other requireOperator call sites in promptVersions.ts left untouched despite a plan grep criterion suggesting otherwise
 - [Phase 49]: Fixed convexAuthLockdown.test.ts no-identity regex (Unauthorized -> unauthorized/i) to match requireEditor's ConvexError shape; auth still gates before role does
 - [Phase 49]: comments.add uses a THIRD Convex auth lane (inline getUserIdentity, mirrors upsertCurrentUser) — neither requireOperator nor requireEditor fits 'any authenticated identity, no role check'
+- [Phase 49]: useRole() returns undefined while Clerk is loading (never defaults to Collaborator) to avoid a locked-flash-then-unlock flicker for editors
+- [Phase 49]: LockedControl force-disables the real interactive child via React.cloneElement (not a pointer-events-none overlay); label is always a caller-supplied prop, never hard-coded
 
 ### Pending Todos
 
@@ -1006,6 +1009,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T18:22:34.853Z
-Stopped at: Completed 49-05-comments-backend-PLAN.md
+Last session: 2026-07-16T18:31:56.148Z
+Stopped at: Completed 49-06-role-hook-lockedcontrol-PLAN.md
 Resume file: None
