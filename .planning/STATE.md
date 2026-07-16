@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 47 context gathered
-last_updated: "2026-07-16T08:58:08.326Z"
+status: Ready to execute
+stopped_at: Completed 47-01-contracts-convex-store-wave0-tests-PLAN.md
+last_updated: "2026-07-16T10:27:07.640Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 46 — signal-editor-candidate-verification (complete, ready for verification)
+**Current focus:** Phase 47 — story-brief-stage
 
 ## Current Position
 
-Phase: 46
-Plan: Not started
+Phase: 47 (story-brief-stage) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -329,6 +329,7 @@ Plan: Not started
 | Phase 46 P05 | 15 | 2 tasks | 4 files |
 | Phase 46 P06 | 12min | 2 tasks | 5 files |
 | Phase 46 P07 | ~20min | 2 tasks | 2 files |
+| Phase 47 P01 | 32min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -864,6 +865,8 @@ Recent decisions affecting current work:
 - [Phase 46]: Rewired builder.py to the D-01 chain (calibrator->signal_editor->scout->verify_candidates->advocate); graph compiles to exactly 20 nodes
 - [Phase 46]: Mocked verify_candidates._check_registration in the e2e wiring test (beyond the plan's literal patch list) since the Scout fixture carries no charityNavigatorUrl/guidestarUrl, which would otherwise trip the definitive-kill rule and divert every wiring-smoke run into the all-candidates-killed recovery path
 - [Phase 46]: SGE-04 checkpoint resume test proves pre/post-resume state via Convex storyLeads:byRunId/verificationRecords:byRunId row-count parity (HTTP resume harness has no raw-checkpoint-state read path); the pre-existing _force_no_winner/forceNoWinner dead-toggle gap in editor_gate_1 was discovered and logged to deferred-items.md rather than fixed (out of scope).
+- [Phase 47]: briefs Convex table is runId-scoped, single-row-per-run, upsert-safe insert + separate patch mutation (not append-per-edit like story_leads)
+- [Phase 47]: Brief generation is a deterministic zero-new-node assembly inside editor_gate_1; writers draft from the auto-generated Brief on the first pass, human edits refine later revision passes + seed Phase 48
 
 ### Pending Todos
 
@@ -954,6 +957,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T08:58:08.312Z
-Stopped at: Phase 47 context gathered
-Resume file: .planning/phases/47-story-brief-stage/47-CONTEXT.md
+Last session: 2026-07-16T10:27:07.626Z
+Stopped at: Completed 47-01-contracts-convex-store-wave0-tests-PLAN.md
+Resume file: None

@@ -462,7 +462,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
-| 47. Story & Brief Stage | 0/TBD | Not started | - |
+| 47. Story & Brief Stage | 1/8 | In Progress|  |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
@@ -1030,7 +1030,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   5. An editable Brief (premise, current peg, central claim, reader effect, known risks, voice intention) is generated after selection, and the section writers draft from it.
   6. Operator can ask an agent to strengthen any single field of the Brief.
 **Plans**: 8 plans (4 waves)
-- [ ] 47-01-contracts-convex-store-wave0-tests-PLAN.md — API_CONTRACTS §7 Brief + new §47 (briefs table, story_leads.status, leads + brief endpoints) + `briefs` Convex table/functions + `storyLeads.setStatus` + guarded-path registration + live-sync/parity + 6 Wave-0 test scaffolds (Wave 1)
+- [x] 47-01-contracts-convex-store-wave0-tests-PLAN.md — API_CONTRACTS §7 Brief + new §47 (briefs table, story_leads.status, leads + brief endpoints) + `briefs` Convex table/functions + `storyLeads.setStatus` + guarded-path registration + live-sync/parity + 6 Wave-0 test scaffolds (Wave 1)
 - [ ] 47-02-dispatchstate-brief-and-editor-gate1-generation-PLAN.md — state.py Brief TypedDict + deterministic Brief assembly in `editor_gate_1` (no new node/LLM) + `briefs:insert` (Wave 2)
 - [ ] 47-03-writer-brief-threading-PLAN.md — `build_section_writer_prompt` 5th `brief` param + thread `state.get("brief")` into all 7 section writers (Wave 3)
 - [ ] 47-04-leads-and-brief-fastapi-endpoints-PLAN.md — `api/leads.py` Require/Remove (reason-gated) + `api/brief.py` PATCH + field-strengthen preview/apply + wire `_fetch_brief_context` to `briefs:byRunId` (Wave 2)
