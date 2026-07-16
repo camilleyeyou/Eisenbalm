@@ -1,10 +1,11 @@
 ---
 phase: 45
 slug: agent-revision
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-15
+gate_completed: 2026-07-16
 ---
 
 # Phase 45 — Validation Strategy
@@ -39,31 +40,31 @@ created: 2026-07-15
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 1 | REV-01 | component | `npx vitest run __tests__/PassageToolbar.test.tsx` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-01 | unit | `npx vitest run __tests__/blockIndexFromKey.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-02 | component | `npx vitest run __tests__/DirectionChips.test.tsx` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-02 | unit (pytest) | `python -m pytest tests/test_revision_endpoints.py -k directive -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-03 | integration (pytest) | `python -m pytest tests/test_revision_endpoints.py -k preview -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-04 | integration (pytest) | `python -m pytest tests/test_revision_endpoints.py -k apply -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-04 | source-scan tripwire | `npx vitest run __tests__/dispatch-control-no-sanity-write.test.ts` | ✅ existing | ⬜ pending |
-| TBD | TBD | 1 | REV-05 | unit (pytest) | `python -m pytest tests/test_budget.py -k run_cap -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-05 | integration (pytest) | `python -m pytest tests/test_revision_endpoints.py -k cost_attribution -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-05 | component | `npx vitest run __tests__/FrameChromeCostReadout.test.tsx` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | REV-03 | component | `npx vitest run __tests__/RevisionComparisonCard.test.tsx` | ❌ W0 | ⬜ pending |
+| 45-05 T1 | 45-05 | 2 | REV-01 | component | `npx vitest run __tests__/PassageToolbar.test.tsx` | ✅ | ✅ green |
+| 45-01 T2 | 45-01 | 0 | REV-01 | unit | `npx vitest run __tests__/blockIndexFromKey.test.ts` | ✅ | ✅ green |
+| 45-04 T2 | 45-04 | 2 | REV-02 | component | `npx vitest run __tests__/DirectionChips.test.tsx` | ✅ | ✅ green |
+| 45-03 T1 | 45-03 | 2 | REV-02 | unit (pytest) | `python -m pytest tests/test_revision_endpoints.py -k directive -x` | ✅ | ✅ green |
+| 45-03 T1 | 45-03 | 2 | REV-03 | integration (pytest) | `python -m pytest tests/test_revision_endpoints.py -k preview -x` | ✅ | ✅ green |
+| 45-03 T2 | 45-03 | 2 | REV-04 | integration (pytest) | `python -m pytest tests/test_revision_endpoints.py -k apply -x` | ✅ | ✅ green |
+| 45-02/45-03 | 45-02 | 2 | REV-04 | source-scan tripwire | `npx vitest run __tests__/dispatch-control-no-sanity-write.test.ts` | ✅ existing | ✅ green |
+| 45-02 T2 | 45-02 | 1 | REV-05 | unit (pytest) | `python -m pytest tests/test_budget.py -k run_cap -x` | ✅ | ✅ green |
+| 45-03 T1 | 45-03 | 2 | REV-05 | integration (pytest) | `python -m pytest tests/test_revision_endpoints.py -k cost_attribution -x` | ✅ | ✅ green |
+| 45-06 T2 | 45-06 | 3 | REV-05 | component | `npx vitest run __tests__/FrameChromeCostReadout.test.tsx` | ✅ | ✅ green |
+| 45-04 T2 | 45-04 | 2 | REV-03 | component | `npx vitest run __tests__/RevisionComparisonCard.test.tsx` | ✅ | ✅ green |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky. Task IDs assigned by the planner once PLAN.md files exist.*
+*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky. Confirmed green as part of the 45-07 integration gate (full pipeline pytest 585 passed/0 failed excl. the pre-existing respx gap; full console vitest 884 passed/0 failed, incl. `dispatch-control-no-sanity-write.test.ts`).*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `packages/pipeline/tests/test_revision_endpoints.py` — new pytest file, mirrors `tests/test_factcheck_endpoints.py` (monkeypatched `_cc.convex_query`/`convex_mutation`, `_sc._groq`, `patch_issue_field`) — covers REV-02 directive, REV-03 preview, REV-04 apply, REV-05 cost-attribution
-- [ ] `packages/pipeline/tests/test_budget.py` — extend if it exists (verify presence in Wave 0; Phase 25 RUN-06 shipped `would_exceed_monthly_cap`), else create — covers REV-05 `would_exceed_run_cap` predicate against durable `agent_runs` summation
-- [ ] `apps/dispatch-control/__tests__/PassageToolbar.test.tsx` — REV-01 six-action toolbar; Compare/Restore reserved-with-title
-- [ ] `apps/dispatch-control/__tests__/DirectionChips.test.tsx` — REV-02 fixed chip copy, never "Regenerate", disabled-with-title when cost-capped
-- [ ] `apps/dispatch-control/__tests__/RevisionComparisonCard.test.tsx` — REV-03 original/proposed/what-changed/claim-delta + Apply/Edit/Try-another/Discard
-- [ ] `apps/dispatch-control/__tests__/FrameChromeCostReadout.test.tsx` — REV-05 never-blank header readout
-- [ ] `apps/dispatch-control/lib/blockIndexFromKey.ts` + `__tests__/blockIndexFromKey.test.ts` — REV-01 pure helper (parse `row-{sectionId}-{blockIndex}` → block index), independently testable outside DOM selection
+- [x] `packages/pipeline/tests/test_revision_endpoints.py` — new pytest file, mirrors `tests/test_factcheck_endpoints.py` (monkeypatched `_cc.convex_query`/`convex_mutation`, `_sc._groq`, `patch_issue_field`) — covers REV-02 directive, REV-03 preview, REV-04 apply, REV-05 cost-attribution — landed 45-01 (scaffold), activated 45-03
+- [x] `packages/pipeline/tests/test_budget.py` — extend if it exists (verify presence in Wave 0; Phase 25 RUN-06 shipped `would_exceed_monthly_cap`), else create — covers REV-05 `would_exceed_run_cap` predicate against durable `agent_runs` summation — landed 45-01 (scaffold), activated 45-02
+- [x] `apps/dispatch-control/__tests__/PassageToolbar.test.tsx` — REV-01 six-action toolbar; Compare/Restore reserved-with-title — landed 45-01 (scaffold), activated 45-05
+- [x] `apps/dispatch-control/__tests__/DirectionChips.test.tsx` — REV-02 fixed chip copy, never "Regenerate", disabled-with-title when cost-capped — landed 45-01 (scaffold), activated 45-04
+- [x] `apps/dispatch-control/__tests__/RevisionComparisonCard.test.tsx` — REV-03 original/proposed/what-changed/claim-delta + Apply/Edit/Try-another/Discard — landed 45-01 (scaffold), activated 45-04
+- [x] `apps/dispatch-control/__tests__/FrameChromeCostReadout.test.tsx` — REV-05 never-blank header readout — landed 45-01 (scaffold), activated 45-06
+- [x] `apps/dispatch-control/lib/blockIndexFromKey.ts` + `__tests__/blockIndexFromKey.test.ts` — REV-01 pure helper (parse `row-{sectionId}-{blockIndex}` → block index), independently testable outside DOM selection — landed 45-01, real from the start
 - Framework install: none — pytest and vitest are already configured
 
 ---
@@ -78,11 +79,11 @@ created: 2026-07-15
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (test_revision_endpoints.py, test_budget.py, 4 console test files, blockIndexFromKey helper+test)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (test_revision_endpoints.py, test_budget.py, 4 console test files, blockIndexFromKey helper+test)
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved — 45-07 integration gate, 2026-07-16. Full pipeline pytest (585 passed / 36 skipped / 0 failed, `--ignore=tests/lib/test_vercel_client.py` for the pre-existing unrelated `respx` collection error), full console vitest (884 passed / 2 todo / 0 failed, incl. `dispatch-control-no-sanity-write.test.ts`), and the strict `npm run build` (dispatch-control) all green. Convex confirmed unchanged this phase (no `convex/*.ts` diff since 45-01's first commit `4e4156e`).
