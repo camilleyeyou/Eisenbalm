@@ -460,7 +460,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
-| 45. Agent Revision | 2/7 | In Progress|  |
+| 45. Agent Revision | 3/7 | In Progress|  |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
@@ -993,7 +993,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 45-01-contract-and-wave0-test-stubs-PLAN.md — API_CONTRACTS §45 (passage-revision preview/apply shapes, 7 chip ids, claim-delta, cost-guard 409) + blockIndexFromKey helper + 6 Wave-0 test stubs (Wave 1)
 - [x] 45-02-pipeline-shared-prose-patch-core-and-cost-primitives-PLAN.md — extract content.py::_patch_prose_span (one shared apply path, D-01) + budget.py::would_exceed_run_cap + 'revision' llm_config (Wave 2)
 - [ ] 45-03-pipeline-revision-endpoint-PLAN.md — api/revision.py revise/preview+apply (direction-chip prompt, claim delta, distinct-agentKey cost recording, cost-guard 409, sign-off revoke, one audit row) (Wave 3)
-- [ ] 45-04-frontend-revision-flow-kit-PLAN.md — revisionClient + DirectionChips + RevisionComparisonCard + RevisionFlow (chips→preview→card→apply, try-another/edit-before-applying) (Wave 2)
+- [x] 45-04-frontend-revision-flow-kit-PLAN.md — revisionClient + DirectionChips + RevisionComparisonCard + RevisionFlow (chips→preview→card→apply, try-another/edit-before-applying) (Wave 2)
 - [ ] 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md — data-block-index stamping + PassageToolbar (6 actions, Compare/Restore reserved) + Draft/Voice wiring + InspectorFooter flipped live (Wave 3)
 - [ ] 45-06-frontend-cost-vs-budget-readout-PLAN.md — deriveRunCostUsd/deriveRunCapUsd + WorkspaceStateProvider agentRuns subscription + never-blank FrameChrome header readout (Wave 2)
 - [ ] 45-07-integration-gate-PLAN.md — full suite + strict build + Convex-sync confirm + Annotations demo-leg UAT (Wave 4)

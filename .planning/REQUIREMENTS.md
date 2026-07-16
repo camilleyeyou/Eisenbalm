@@ -385,8 +385,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Agent Revision (REV)
 - [ ] **REV-01**: Selecting a passage offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
-- [ ] **REV-02**: "Ask agent to revise" offers direction chips (Make clearer / Make more specific / Tighten / Match the brief / Reduce repetition / Try another approach / Custom) — never a bare "Regenerate".
-- [ ] **REV-03**: A revision returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) *before* anything is applied.
+- [x] **REV-02**: "Ask agent to revise" offers direction chips (Make clearer / Make more specific / Tighten / Match the brief / Reduce repetition / Try another approach / Custom) — never a bare "Regenerate".
+- [x] **REV-03**: A revision returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) *before* anything is applied.
 - [x] **REV-04**: Operator can Apply, Edit before applying, Try another approach, or Discard; applying mutates the draft through the existing content-patch write boundary and logs to `audit_log`.
 - [x] **REV-05**: Agent revision calls are bounded by a per-issue cost guard, surfaced against the header's cost-vs-budget.
 

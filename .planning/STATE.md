@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 45-02-pipeline-shared-prose-patch-core-and-cost-primitives-PLAN.md
-last_updated: "2026-07-16T01:24:56.535Z"
+stopped_at: Completed 45-04-frontend-revision-flow-kit-PLAN.md
+last_updated: "2026-07-16T01:43:51.131Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 45 (agent-revision) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 
 ## Performance Metrics
 
@@ -317,6 +317,7 @@ Plan: 3 of 7
 | Phase 44 P09 | 9min | 2 tasks | 3 files |
 | Phase 45 P01 | 12min | 3 tasks | 10 files |
 | Phase 45 P02 | 25min | 2 tasks | 6 files |
+| Phase 45 P04 | 15min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -828,6 +829,9 @@ Recent decisions affecting current work:
 - [Phase 45]: §45 locks the 7 DirectionChip identifiers (make_clearer/make_more_specific/tighten/match_brief/reduce_repetition/try_another_approach/custom) and the revise/preview+apply contract before any endpoint/UI code
 - [Phase 45]: test_revision_endpoints.py uses importorskip (whole module missing); test_budget.py uses skipif (one function missing) — two Wave-0 skip idioms matched to each module's actual state
 - [Phase 45]: 45-02: _patch_prose_span accepts caller-forwarded get_issue_draft/patch_issue_field seams so per-router test suites keep monkeypatching their own module-local Sanity I/O bindings without forking the shared apply-path implementation
+- [Phase 45]: DirectionChips/RevisionComparisonCard/RevisionFlow use named exports (InspectorFooter.tsx precedent), not default exports
+- [Phase 45]: RevisionFlow keeps priorProposals on Discard so a later Try-another-approach still diverges from every proposal already seen
+- [Phase 45]: A cost_cap_exceeded 409 during any preview call returns RevisionFlow to the disabled chip view rather than leaving a stale card visible
 
 ### Pending Todos
 
@@ -918,6 +922,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T01:24:47.636Z
-Stopped at: Completed 45-02-pipeline-shared-prose-patch-core-and-cost-primitives-PLAN.md
+Last session: 2026-07-16T01:43:51.118Z
+Stopped at: Completed 45-04-frontend-revision-flow-kit-PLAN.md
 Resume file: None
