@@ -146,17 +146,50 @@ class _ReviseApplyBody(BaseModel):
 # ── Best-effort "Match the brief" context (D-07, Pitfall 5) ─────────────────
 
 
-async def _fetch_brief_context(sanity_http: Any, sanity_id: str) -> str:
-    """Best-effort degraded "Match the brief" context (§45.1, D-07).
+async def _fetch_brief_context(
+    convex_http: Any, sanity_http: Any, *, run_id: str, sanity_id: str
+) -> str:
+    """Best-effort "Match the brief" context (§45.1/§47.3, D-07).
 
-    ``style_brief`` itself is an ephemeral LangGraph-only value with no
-    durable Sanity/Convex row to read back at review time EXCEPT the one
-    field the DesignAgent carries forward verbatim onto
-    ``theme.visualDirection``. This combines that with the winning charity's
-    ``missionStatement``/``focusArea``/``scoutNotes`` (the closest existing
-    proxy for "why this charity is overlooked" — no Phase 47 Brief entity
-    exists yet). NEVER crashes: any failure degrades to "".
+    Phase 47 (BRF-05, §47.1) landed a real, console-editable Brief. Prefer
+    reading its six fields from ``briefs:byRunId`` — the operator-edited
+    source of truth — over the pre-Phase-47 degraded Sanity-proxy fallback
+    this function used before the Brief entity existed. Falls back to that
+    proxy (charity ``missionStatement``/``focusArea``/``scoutNotes`` +
+    ``theme.visualDirection``) for legacy runs that predate the Brief, or on
+    any Convex read failure/empty row. NEVER crashes: any failure degrades
+    to "".
     """
+    try:
+        brief = await _cc.convex_query(
+            convex_http, "briefs:byRunId", {"runId": run_id}
+        )
+    except Exception:  # noqa: BLE001 — best-effort only, never blocks preview
+        log.warning(
+            "_fetch_brief_context: briefs:byRunId failed for run_id=%s "
+            "(falling back to the legacy Sanity proxy)",
+            run_id,
+        )
+        brief = None
+
+    if brief:
+        parts: list[str] = []
+        if brief.get("premise"):
+            parts.append(f"premise: {brief['premise']}")
+        if brief.get("centralClaim"):
+            parts.append(f"central claim: {brief['centralClaim']}")
+        if brief.get("readerEffect"):
+            parts.append(f"reader effect: {brief['readerEffect']}")
+        if brief.get("currentPeg"):
+            parts.append(f"current peg: {brief['currentPeg']}")
+        if brief.get("knownRisks"):
+            parts.append(f"known risks: {brief['knownRisks']}")
+        if brief.get("voiceIntention"):
+            parts.append(f"voice intention: {brief['voiceIntention']}")
+        if parts:
+            return "; ".join(parts)
+
+    # ── Legacy degraded fallback (pre-Phase-47 runs / empty Brief row) ─────
     try:
         rows = await _sc._groq(
             sanity_http,
@@ -176,16 +209,16 @@ async def _fetch_brief_context(sanity_http: Any, sanity_id: str) -> str:
         )
         row = {}
 
-    parts: list[str] = []
+    fallback_parts: list[str] = []
     if row.get("visualDirection"):
-        parts.append(f"visual direction: {row['visualDirection']}")
+        fallback_parts.append(f"visual direction: {row['visualDirection']}")
     if row.get("missionStatement"):
-        parts.append(f"charity mission: {row['missionStatement']}")
+        fallback_parts.append(f"charity mission: {row['missionStatement']}")
     if row.get("whyOverlooked"):
-        parts.append(f"why this charity is overlooked: {row['whyOverlooked']}")
+        fallback_parts.append(f"why this charity is overlooked: {row['whyOverlooked']}")
     if row.get("focusArea"):
-        parts.append(f"focus area: {row['focusArea']}")
-    return "; ".join(parts)
+        fallback_parts.append(f"focus area: {row['focusArea']}")
+    return "; ".join(fallback_parts)
 
 
 # ── POST /issues/{run_id}/revise/preview — §45.2/§45.3 ──────────────────────
@@ -231,7 +264,9 @@ async def preview_passage_revision(
             },
         )
 
-    brief_context = await _fetch_brief_context(sanity_http, sanity_id)
+    brief_context = await _fetch_brief_context(
+        convex_http, sanity_http, run_id=run_id, sanity_id=sanity_id
+    )
     directive = _build_directive(
         body.direction,
         custom_direction=body.customDirection,

@@ -30,6 +30,7 @@ from httpx import AsyncClient
 
 from eisenbalm_pipeline.api import (
     agents,
+    brief,
     content,
     control,
     factcheck,
@@ -211,6 +212,7 @@ app.include_router(registry.router)
 app.include_router(signoffs.router)
 app.include_router(factcheck.router)
 app.include_router(leads.router)
+app.include_router(brief.router)
 app.include_router(revision.router)
 app.include_router(voice_pass.router)
 app.include_router(eval_api.router)
