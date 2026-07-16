@@ -1068,7 +1068,17 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   2. Exactly six actions are gated to Editor-in-chief: apply revision, confirm evidence replacement, approve the Voice Pass, publish, make an instruction active, mark an organization Do not use.
   3. A Collaborator sees every gated control rendered and locked with an explanation of why, never hidden from view.
   4. A Collaborator can read every screen and leave comments.
-**Plans**: TBD
+**Plans**: 9 plans
+Plans:
+- [ ] 49-01-contract-first-role-comments-PLAN.md — API_CONTRACTS §49 (role vocab + comments table) + schema shapes
+- [ ] 49-02-clerk-claim-empirical-gate-PLAN.md — Clerk role claim on both token surfaces + empirical propagation gate (checkpoint)
+- [ ] 49-03-fastapi-editor-gate-PLAN.md — _require_editor + gate the 4 FastAPI actions + test_role_gate.py
+- [ ] 49-04-convex-editor-gate-PLAN.md — requireEditor + gate activate/setStatus + update convex-test identities
+- [ ] 49-05-comments-backend-PLAN.md — convex/comments.ts add/listByIssueNumber (both roles) + tests
+- [ ] 49-06-role-hook-lockedcontrol-PLAN.md — useRole() hook + reusable LockedControl wrapper
+- [ ] 49-07-wire-locked-controls-PLAN.md — wrap the six controls with verbatim §6 locked labels
+- [ ] 49-08-comments-affordance-mount-PLAN.md — IssueComments mounted in FrameChrome + My Tasks
+- [ ] 49-09-integration-gate-PLAN.md — exactly-six source-scan + full suites + strict build + Convex sync (checkpoint)
 **UI hint**: yes
 
 ### Phase 50: Workbench & Nomenclature
