@@ -198,6 +198,54 @@ describe('deriveStageStates (§40.6, D-19)', () => {
   })
 })
 
+describe('deriveStoryStage (Phase 47 Plan 47-08, Pitfall 3 — precise Gate-1-paused gate)', () => {
+  it('leads present, none selected, but the run is NOT paused at Gate 1 (still "running") — "in-progress", never "needs-you"', () => {
+    const result = deriveStageStates(
+      baseInputs({
+        pitchRows: [{ selected: false }, { selected: false }],
+        runStatus: 'running',
+        runCompletedAt: undefined,
+      }),
+    )
+    expect(result[0]).toEqual({ state: 'in-progress', openCount: 0 })
+    expect(result[0].state).not.toBe('needs-you')
+  })
+
+  it('leads present, none selected, run genuinely paused at Gate 1 (awaiting-review, completedAt undefined) — "needs-you"', () => {
+    const result = deriveStageStates(
+      baseInputs({
+        pitchRows: [{ selected: false }, { selected: false }],
+        runStatus: 'awaiting-review',
+        runCompletedAt: undefined,
+      }),
+    )
+    expect(result[0]).toEqual({ state: 'needs-you', openCount: 1 })
+  })
+
+  it('status is "awaiting-review" but completedAt is SET (the finished-run Review Desk flow, §37.4(c)) — never "needs-you"', () => {
+    const result = deriveStageStates(
+      baseInputs({
+        pitchRows: [{ selected: false }, { selected: false }],
+        runStatus: 'awaiting-review',
+        runCompletedAt: 1_700_000_000_000,
+      }),
+    )
+    expect(result[0].state).not.toBe('needs-you')
+    expect(result[0]).toEqual({ state: 'in-progress', openCount: 0 })
+  })
+
+  it('a candidate already selected returns "clean" regardless of run status', () => {
+    const result = deriveStageStates(
+      baseInputs({
+        pitchRows: [{ selected: true }],
+        runStatus: 'awaiting-review',
+        runCompletedAt: undefined,
+      }),
+    )
+    expect(result[0]).toEqual({ state: 'clean', openCount: 0 })
+  })
+})
+
 describe('deriveSectionStates + draftSectionIdsFromDraft (Phase 41 Plan 41-01, WSP-02/WSP-07)', () => {
   function baseDraft(overrides: Partial<DraftResponse> = {}): DraftResponse {
     return {

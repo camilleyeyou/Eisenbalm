@@ -121,6 +121,13 @@ export interface DerivationInputs {
   // "since run start" `openedAt` anchor for missing-sign-off tasks, since
   // there is no per-sign-off "became eligible at" timestamp stored anywhere.
   runStartedAt?: number
+  // Phase 47 Plan 47-08 (Pitfall 3) — additive. The run's `completedAt`
+  // (mirrors `runStartedAt`'s optional-passthrough shape). Together with
+  // `runStatus`, this is what lets `deriveStoryStage` gate 'needs-you' on
+  // the PRECISE Gate-1-paused predicate (`status === 'awaiting-review' &&
+  // completedAt == null`, API_CONTRACTS §37.4(c)) instead of merely "leads
+  // exist and none is selected yet."
+  runCompletedAt?: number
 }
 
 // ── deriveIssueStatus (D-18 + ISS-06) ────────────────────────────────────────
@@ -153,7 +160,13 @@ function deriveStoryStage(i: DerivationInputs): StageStateResult {
   if (i.runId === null) return { state: 'not-generated', openCount: 0 }
   if (i.pitchRows === undefined) return { state: 'in-progress', openCount: 0 }
   if (i.pitchRows.some((p) => p.selected)) return { state: 'clean', openCount: 0 }
-  if (i.pitchRows.length > 0) return { state: 'needs-you', openCount: 1 } // Gate 1 unresolved
+  // Phase 47 Plan 47-08 (Pitfall 3): gate 'needs-you' on the PRECISE Gate-1
+  // paused predicate — status==='awaiting-review' && completedAt==null — not
+  // merely "leads exist and none is selected yet," which would flash "Needs
+  // you" for a mid-flight run (Scout/Advocate still working, Gate 1 not
+  // reached). Mirrors SignalDeskScreen's isPausedAtGate1 exactly.
+  const pausedAtGate1 = i.runStatus === 'awaiting-review' && i.runCompletedAt == null
+  if (pausedAtGate1) return { state: 'needs-you', openCount: 1 }
   return { state: 'in-progress', openCount: 0 }
 }
 

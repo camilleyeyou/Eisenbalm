@@ -211,6 +211,11 @@ export function WorkspaceStateProvider({
     qaFindings,
     pitchRows,
     runStatus: runRow?.status,
+    // Phase 47 Plan 47-08 (Pitfall 3) — threads the run's completedAt so
+    // deriveStoryStage can gate its 'needs-you' state on the precise
+    // Gate-1-paused predicate (status==='awaiting-review' && completedAt==
+    // null) rather than "leads exist and none is selected."
+    runCompletedAt: runRow?.completedAt,
   }
 
   const status = deriveIssueStatus(derivationInputs)
