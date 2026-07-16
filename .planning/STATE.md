@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Milestone complete
-stopped_at: Completed 46-07-checkpoint-resume-and-integration-gate-PLAN.md (Phase 46 complete)
-last_updated: "2026-07-16T08:43:38.593Z"
+stopped_at: Phase 47 context gathered
+last_updated: "2026-07-16T08:58:08.326Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -954,6 +954,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T08:30:04.015Z
-Stopped at: Completed 46-07-checkpoint-resume-and-integration-gate-PLAN.md (Phase 46 complete)
-Resume file: None
+Last session: 2026-07-16T08:58:08.312Z
+Stopped at: Phase 47 context gathered
+Resume file: .planning/phases/47-story-brief-stage/47-CONTEXT.md
