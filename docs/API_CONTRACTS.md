@@ -5162,3 +5162,142 @@ Two CONTEXT.md D-02 characterizations are corrected here by direct source inspec
 introduced. No existing field is renamed or removed; `agent_runs`/`prompt_versions`/
 `VARIABLE_REGISTRY`/`PIPELINE_EDGES`/`ClaimProvenanceCard` (§42.6) are all consumed read-only and
 unchanged.*
+
+---
+
+## §45 — Agent Revision (Phase 45)
+
+**"Ask agent to revise" becomes a real editing verb available wherever a passage is selected.**
+This contract is written BEFORE any endpoint/UI code exists (CLAUDE.md contract-first hard rule,
+mirroring §31/§35/§42/§44). It generalizes §42.4a's FCT-06 preview/apply pair — built by Phase 42
+explicitly to be claim-agnostic — to arbitrary passage revision. Plan 45-03 onward implements the
+endpoint shapes verbatim; Plan 45-04 onward implements the client verbatim. No field name, path,
+or identifier below may be invented later.
+
+### §45.1 — Direction-chip identifiers (locks 45-RESEARCH Open Question #2)
+
+The seven `DirectionChip` literal identifiers and their REV-02-locked display copy:
+
+| Identifier | Display copy |
+|---|---|
+| `make_clearer` | "Make clearer" |
+| `make_more_specific` | "Make more specific" |
+| `tighten` | "Tighten" |
+| `match_brief` | "Match the brief" |
+| `reduce_repetition` | "Reduce repetition" |
+| `try_another_approach` | "Try another approach" |
+| `custom` | "Custom" |
+
+The chip set never renders a bare "Regenerate" (REV-02). `custom` carries a free-text
+`customDirection` field passed verbatim as the directive clause. `try_another_approach` carries a
+`priorProposals` array of prior proposal text as avoid-context (D-05) so the revision agent
+diverges rather than repeats. `match_brief` degrades gracefully to `style_brief.voice` /
+`style_brief.visualDirection` plus the winning charity's `missionStatement` / `whyOverlooked` /
+`focusArea` fields today — the closest existing proxy for "premise/peg" — and is forward-compatible
+with the Phase 47 Brief entity (D-07); it must never hard-depend on a Brief that does not exist yet.
+
+### §45.2 — New pipeline endpoints (`api/revision.py`, mounted in `api/main.py`)
+
+Two Clerk-JWT-guarded routes (`_require_clerk_jwt_control`, same dependency as
+`content.py`/`factcheck.py`/`voice_pass.py`) generalizing §42.4a's SAME preview/apply pair to
+arbitrary passages (D-01 — this is NOT a second revision endpoint):
+
+```
+POST /issues/{run_id}/revise/preview
+  body {sectionName, quotedText, blockIndexHint?, direction, customDirection?, priorProposals?[]}
+  -> 200 {proposedText, whatChanged, claimDelta:{added[],removed[],altered[]}}
+  -> 409 {reason:"cost_cap_exceeded", message, spentUsd, projectedUsd, capUsd}   (REV-05)
+
+POST /issues/{run_id}/revise/apply
+  body {ifRevisionID, sectionName, quotedText, blockIndexHint?, newText}
+  -> 200 {revisionId, resolution:"revision_applied"}
+  -> 409 {reason:"revision_mismatch"|"span_not_resolved"|"claim_edit_unavailable", message}
+```
+
+**Deliberate shape divergence from §42.4a (45-RESEARCH State-of-the-Art table):** the apply body
+carries the original passage text (`quotedText`) explicitly, because passages — unlike claims —
+have NO stored Convex row to source the original text from server-side (45-RESEARCH Pitfall 3).
+This is deliberate, not an oversight to "fix" back to `evidence/apply`'s leaner body.
+
+### §45.3 — Preview = read-only (D-02)
+
+`revise/preview` performs NO Convex mutation, NO Sanity write, and writes NO `audit_log` row —
+mirrors `voice_pass.py::voice_rewrite` and `evidence/preview` exactly. It DOES record the revision
+LLM call's cost (§45.5) — recording cost is not a mutation of issue content. The revision agent's
+structured LLM output is `{proposedText, whatChanged, claimDelta}`; `claimDelta` (`added`/`removed`/
+`altered`, each a list of short strings) is ADVISORY narrative for the comparison card's "What
+changed" line only (D-09) — it is never the enforced state change (see §45.4).
+
+### §45.4 — Apply = atomic + audited (D-02)
+
+`revise/apply` executes, in this exact order (42-RESEARCH Pitfall 3 ordering, reused verbatim):
+
+1. Resolve `run_id` → `sanityIssueId` (existing `_resolve_sanity_id`).
+2. `_patch_prose_span` — span-resolve `quotedText` against **CURRENT** Sanity content via
+   `lib/span_resolver.py::resolve_span` (never `claimSpans`, §35.3) → content-patch the prose in
+   Sanity → run `_reset_touched_claims` FIRST (block-level touched-counter, §42.5 — increments even
+   when the replacement text is itself sourced, D-10/D-11).
+3. `_revoke_active_signoffs` — Phase-34 sign-off revocation IS revoked on applied revision (port
+   the sentence, not the prototype's "voiceDone survives" bug, per DERIVED-STATE-CONTRACT §10 and
+   PROJECT.md's locked decision).
+4. `_emit_audit` exactly ONE row: `action: "passage_revised"`, `resource_type: "passage"`,
+   `resource_id: f"{run_id}:{sectionName}"`.
+
+`ifRevisionID` mismatch → 409 `{"reason": "revision_mismatch", ...}` exactly like `content.py`'s
+revision guard (§31.4). An unresolved span → 409 `{"reason": "span_not_resolved", ...}`. "Edit
+before applying" reuses this SAME apply route with the operator-edited `newText` in place of the
+agent's `proposedText` — the card's advisory `claimDelta` is NOT recomputed on manual edit; the
+deterministic `_reset_touched_claims` at apply time is always correct regardless of a stale
+advisory delta (D-11).
+
+### §45.5 — Cost guard (REV-05, D-12/D-13/D-14)
+
+The per-issue denominator is the EXISTING per-run cost cap (`pipeline_config.per_run_cap_usd`,
+config `cost_cap_usd`, default 10.0) — no second budget system is invented (D-12). Spend is the SUM
+of durable `agentRuns:byRunId({runId})` rows' `costUsd` — NEVER `lib/cost.py`'s in-memory `_store`,
+which the Publisher node's `end_run()` clears before any human review stage (Draft/Fact-Check/
+Voice) even begins (45-RESEARCH Pitfall 1); relying on `_store`/`_run_caps` here would silently
+undercount or reset the true per-issue total.
+
+Each revision LLM call records its cost under the issue's REAL `run_id` (never a
+`evidence-preview-{run_id}` pseudo-id — that pre-existing `evidence/preview` pattern is a known,
+documented, NOT-fixed-by-this-phase gap, per 45-RESEARCH Open Question #1 — D-13) via the existing
+`agentRuns:completed` mutation, with a FRESH, distinct `agentKey` per call:
+`f"revision-{uuid.uuid4().hex[:12]}"`. Never reuse an existing pipeline `agentKey` (e.g. `"qa"`,
+`"researcher"`) — `agentRuns:completed` is an upsert-by-`(runId, agentKey)`, so reuse would silently
+overwrite that agent's real historical cost/timing/token row (45-RESEARCH Pitfall 2).
+
+`revise/preview` calls a `would_exceed_run_cap` predicate (mirrors `budget.py::would_exceed_monthly_cap`'s
+shape) BEFORE issuing its LLM call. When the projected next revision call would exceed the cap, the
+endpoint returns 409 `{"reason": "cost_cap_exceeded", "message", "spentUsd", "projectedUsd",
+"capUsd"}` (D-14) and the chip UI renders disabled-with-explanation — never a silent failure,
+consistent with the milestone's locked-render philosophy (§6).
+
+### §45.6 — Toolbar + entry points (REV-01, D-16/D-17/D-18)
+
+The shared galley selection toolbar (mounted once, used by both Draft/Stage 2 and Voice/Stage 4 —
+the same component instance, D-18) offers all six actions: **Edit text** (existing `BlockEditor`
+flow), **Ask agent to revise** (this section's new flow), **Compare with previous** and **Restore
+previous** (render visible-but-reserved with an explanatory `title` — no shipped content-version
+endpoint exists; general passage version history is DEFERRED, D-17), **Related facts & sources**
+(shared `ClaimProvenanceCard`, §42.6), and **Inspect how this was made** (Phase 44 `onInspect`,
+already threaded by the galley).
+
+The same revision flow additionally mounts from the Phase-44 `InspectorFooter`, whose "Ask agent to
+revise" button flips from RESERVED (§44.7, `title="Arrives in Phase 45"`) to LIVE (D-18). The
+revision flow is one component + one endpoint pair regardless of which surface invokes it.
+
+The EDT-05 no-direct-Sanity-write tripwire (`dispatch-control-no-sanity-write.test.ts`) needs ZERO
+edits for this phase: the new `revisionClient.ts` only ever calls `NEXT_PUBLIC_PIPELINE_URL`,
+exactly like `factCheckClient.ts` (45-RESEARCH Pitfall 7) — the test passes automatically, by
+construction.
+
+*All Phase 45 changes are additive: one new pipeline router (`api/revision.py`) exposing
+`revise/preview`/`revise/apply`; a claim-agnostic `_patch_prose_span` extracted from
+`factcheck.py::_patch_claim_prose` into `content.py` (both the existing claim path and the new
+passage path call the SAME implementation); one new `would_exceed_run_cap` predicate in
+`budget.py`; new frontend components (`PassageToolbar`, `DirectionChips`,
+`RevisionComparisonCard`) and a `revisionClient.ts`; the Phase-44 `InspectorFooter`'s "Ask agent to
+revise" button flips from RESERVED to LIVE. No existing field is renamed or removed; §31/§35/§42/
+§44 shapes are unchanged; `revise/preview`+`revise/apply` GENERALIZE §42.4a's `evidence/preview`+
+`evidence/apply` rather than forking a second endpoint pair.*
