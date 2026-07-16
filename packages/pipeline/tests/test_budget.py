@@ -1,11 +1,8 @@
-"""Phase 45 (Plan 45-01 Wave 0 scaffold; Plan 45-02 implements) — REV-05
-per-issue cost-guard predicate (`would_exceed_run_cap`).
+"""Phase 45 (Plan 45-02) — REV-05 per-issue cost-guard predicate
+(`would_exceed_run_cap`).
 
-Guarded by a module-level `skipif` so the whole module SKIPS cleanly (not a
-collection error) until Plan 45-02 lands `would_exceed_run_cap` in
-`eisenbalm_pipeline.lib.budget`. Mirrors `would_exceed_monthly_cap`'s
-existing shape (docs/API_CONTRACTS.md §45.5) and `test_budget_gate.py`'s
-conventions.
+Mirrors `would_exceed_monthly_cap`'s existing shape (docs/API_CONTRACTS.md
+§45.5) and `test_budget_gate.py`'s conventions.
 
 Select via: -k run_cap
 """
@@ -15,13 +12,7 @@ import pytest
 
 import eisenbalm_pipeline.lib.budget as budget_mod
 
-pytestmark = [
-    pytest.mark.anyio,
-    pytest.mark.skipif(
-        not hasattr(budget_mod, "would_exceed_run_cap"),
-        reason="45-02 not landed",
-    ),
-]
+pytestmark = [pytest.mark.anyio]
 
 
 class _FakeHttp:

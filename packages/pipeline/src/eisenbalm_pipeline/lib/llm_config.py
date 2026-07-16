@@ -26,6 +26,9 @@ MODEL_BY_AGENT: dict[str, str] = {
     "editor_gate1": MODEL_PIN_VOICE_CRITICAL,
     "editor_final": MODEL_PIN_VOICE_CRITICAL,
     "qa":           MODEL_PIN_VOICE_CRITICAL,
+    # Phase 45 (REV-04/D-08): single generic "Ask agent to revise" identity —
+    # voice-critical pin, mirrors "qa" (voice_rewrite's precedent).
+    "revision":     MODEL_PIN_VOICE_CRITICAL,
     # Section writers (Sonnet, latest-stable alias).
     "researcher":   "anthropic/claude-sonnet-4-6",
     "origin_story": "anthropic/claude-sonnet-4-6",
@@ -51,6 +54,9 @@ SAMPLING_BY_AGENT: dict[str, dict] = {
     "editor_gate1": {"temperature": 0.2, "top_p": 1.0},
     "editor_final": {"temperature": 0.2, "top_p": 1.0},
     "qa":           {"temperature": 0.2, "top_p": 1.0},
+    # Phase 45 (REV-04/D-08): mirrors "qa"'s sampling (low-temperature,
+    # voice-critical revision output).
+    "revision":     {"temperature": 0.3, "top_p": 1.0},
     "researcher":   {"temperature": 0.3, "top_p": 1.0},
     "scout":        {"temperature": 0.3},
     "advocate":     {"temperature": 0.3},

@@ -96,3 +96,56 @@ async def would_exceed_monthly_cap(
         "projected": proj,
         "cap": monthly_cap_usd,
     }
+
+
+# ── Phase 45 (REV-05, §45.5) — per-issue run-cost guard ────────────────────
+
+_DEFAULT_REVISION_COST_ESTIMATE_USD = 0.05
+
+
+async def would_exceed_run_cap(
+    http: Any,
+    *,
+    run_id: str,
+    per_run_cap_usd: float,
+    prior_revision_costs: list[float],
+) -> tuple[bool, dict]:
+    """Pre-call guard for REV-05 (§45.5). Mirrors ``would_exceed_monthly_cap``'s
+    shape, but sums the DURABLE ``agentRuns:byRunId`` rows for this run_id —
+    NEVER the pipeline's in-memory run-cost bookkeeping module, which the
+    Publisher node clears at end-of-run before any human review stage
+    (Draft/Fact-Check/Voice) even begins (45-RESEARCH Pitfall 1). READ-ONLY:
+    no cost writes here.
+
+    Args:
+        http:                  httpx AsyncClient for Convex HTTP calls.
+        run_id:                the issue's real run_id (never a prefixed
+                                pseudo-id, D-13).
+        per_run_cap_usd:       the SAME per-run cost cap this issue's run
+                                started with (``pipeline_config.per_run_cap_usd``,
+                                D-12) — 0/negative disables the guard.
+        prior_revision_costs:  costs of prior revision calls THIS session has
+                                made (for the trailing-average projection);
+                                empty when no prior revision call exists yet
+                                for this run, in which case a conservative
+                                flat estimate is used.
+
+    Returns:
+        ``(False, {"reason": "cap_disabled", "spentUsd": 0.0})`` when the cap
+        is disabled.
+        ``(over, {"spentUsd", "projectedUsd", "capUsd"})`` otherwise, where
+        ``over`` is True when spent + projected would exceed the cap.
+    """
+    if per_run_cap_usd <= 0:
+        return False, {"reason": "cap_disabled", "spentUsd": 0.0}
+
+    rows = await _cc.convex_query(http, "agentRuns:byRunId", {"runId": run_id}) or []
+    spent_usd = sum(float(r.get("costUsd") or 0.0) for r in rows)
+    projected = trailing_average(prior_revision_costs) or _DEFAULT_REVISION_COST_ESTIMATE_USD
+
+    over = (spent_usd + projected) > per_run_cap_usd
+    return over, {
+        "spentUsd": spent_usd,
+        "projectedUsd": projected,
+        "capUsd": per_run_cap_usd,
+    }
