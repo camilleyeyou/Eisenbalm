@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 46-02-dispatchstate-contract-and-repetition-helper-PLAN.md
-last_updated: "2026-07-16T07:44:07.135Z"
+stopped_at: Completed 46-04-signal-editor-agent-PLAN.md
+last_updated: "2026-07-16T07:53:04.599Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 46 (signal-editor-candidate-verification) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Performance Metrics
 
@@ -325,6 +325,7 @@ Plan: 4 of 7
 | Phase 46 P01 | 25 | 3 tasks | 9 files |
 | Phase 46 P03 | 8min | 3 tasks | 6 files |
 | Phase 46 P02 | 12min | 2 tasks | 4 files |
+| Phase 46 P04 | 8min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -853,6 +854,8 @@ Recent decisions affecting current work:
 - [Phase 46]: signal_editor NOT added to frozen 11-entry SYSTEM_PROMPT_KEYS; registered only in AGENT_KEY_TO_PROMPT_FILE superset + USER_TEMPLATE_KEYS
 - [Phase 46]: compute_repetition_note's own sampleSize is len(sanity_rows); api/registry.py overrides it with the pre-join Convex row count via dict-spread to keep the shipped endpoint contract byte-stable
 - [Phase 46]: StoryLead/VerificationRecord fields declared as plain required TypedDict keys (not NotRequired), matching the CharityCandidate precedent since API_CONTRACTS §46.1/§46.3 declares every field mandatory
+- [Phase 46]: signal_editor enforces SGE-02 brand-risk/recommended invariant in Python (not prompt-only): brandRiskFlag=True always forces recommended=False after the LLM call
+- [Phase 46]: signal_editor Editorial Memory read reuses lib.registry_repetition.compute_repetition_note verbatim (mirrors Scout's _load_registry_keys empty-fallback posture) — surfaces repetitionWarning without ever dropping a lead (SGE-05)
 
 ### Pending Todos
 
@@ -943,6 +946,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T07:44:07.121Z
-Stopped at: Completed 46-02-dispatchstate-contract-and-repetition-helper-PLAN.md
+Last session: 2026-07-16T07:53:04.585Z
+Stopped at: Completed 46-04-signal-editor-agent-PLAN.md
 Resume file: None
