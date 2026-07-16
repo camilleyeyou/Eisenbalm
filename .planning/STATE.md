@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 45-04-frontend-revision-flow-kit-PLAN.md
-last_updated: "2026-07-16T01:43:51.131Z"
+stopped_at: Completed 45-06-frontend-cost-vs-budget-readout-PLAN.md
+last_updated: "2026-07-16T01:53:16.859Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 45 (agent-revision) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Performance Metrics
 
@@ -318,6 +318,7 @@ Plan: 4 of 7
 | Phase 45 P01 | 12min | 3 tasks | 10 files |
 | Phase 45 P02 | 25min | 2 tasks | 6 files |
 | Phase 45 P04 | 15min | 3 tasks | 7 files |
+| Phase 45-agent-revision P06 | 8min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -832,6 +833,8 @@ Recent decisions affecting current work:
 - [Phase 45]: DirectionChips/RevisionComparisonCard/RevisionFlow use named exports (InspectorFooter.tsx precedent), not default exports
 - [Phase 45]: RevisionFlow keeps priorProposals on Discard so a later Try-another-approach still diverges from every proposal already seen
 - [Phase 45]: A cost_cap_exceeded 409 during any preview call returns RevisionFlow to the disabled chip view rather than leaving a stale card visible
+- [Phase 45-agent-revision]: runCostUsd stays undefined (never coerced to 0) while agentRuns:byRunId is loading — header shows a refresh affordance, matching the existing StatusReadout 'unknown' pattern
+- [Phase 45-agent-revision]: capUsd defaults to 10.0 until pipelineConfig:getAll resolves or per_run_cap_usd is absent, matching BudgetCapsPanel's existing default
 
 ### Pending Todos
 
@@ -922,6 +925,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T01:43:51.118Z
-Stopped at: Completed 45-04-frontend-revision-flow-kit-PLAN.md
+Last session: 2026-07-16T01:53:09.056Z
+Stopped at: Completed 45-06-frontend-cost-vs-budget-readout-PLAN.md
 Resume file: None
