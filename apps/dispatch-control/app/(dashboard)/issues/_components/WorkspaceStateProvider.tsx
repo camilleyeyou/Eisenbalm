@@ -98,6 +98,18 @@ export interface WorkspaceStateValue {
   qaFindings: DerivationInputs['qaFindings']
   claimRows: DerivationInputs['claimRows']
   signOffs: DerivationInputs['signOffs']
+  /**
+   * Phase 47 Plan 47-05 (BRF-01/02/03/05) — the Story & Brief stage's three
+   * subscriptions, centralized here per the 41-04 single-subscription
+   * discipline (no per-component `useQuery`). `storyLeads`/
+   * `verificationRecords` are `undefined` while loading/skipped (no `runId`
+   * yet); `brief` is `undefined` while loading/skipped and `null` once
+   * loaded when `editor_gate_1` hasn't generated one yet (e.g. Gate 1 not
+   * resolved) — never inferred from an empty array.
+   */
+  storyLeads: Doc<'story_leads'>[] | undefined
+  verificationRecords: Doc<'verification_records'>[] | undefined
+  brief: Doc<'briefs'> | null | undefined
 }
 
 const WorkspaceStateContext = createContext<WorkspaceStateValue | null>(null)
@@ -134,6 +146,15 @@ export function WorkspaceStateProvider({
   const qaFindings = useQuery(api.qaCorrections.byRunId, runId ? { runId } : 'skip')
   const pitchRows = useQuery(api.pitchLog.byRunId, runId ? { runId } : 'skip')
   const runRow = useQuery(api.runs.byRunId, runId ? { runId } : 'skip')
+
+  // Phase 47 Plan 47-05 (BRF-01/02/03/05) — Story & Brief stage subscriptions,
+  // runId-scoped/'skip'-guarded exactly like pitchRows above.
+  const storyLeads = useQuery(api.storyLeads.byRunId, runId ? { runId } : 'skip')
+  const verificationRecords = useQuery(
+    api.verificationRecords.byRunId,
+    runId ? { runId } : 'skip',
+  )
+  const brief = useQuery(api.briefs.byRunId, runId ? { runId } : 'skip')
 
   // Phase 45 Plan 45-06 (REV-05, D-12/D-13/D-15) — the header cost-vs-budget
   // readout's subscriptions. `agentRunRows` sources spend from the durable
@@ -261,6 +282,9 @@ export function WorkspaceStateProvider({
     qaFindings,
     claimRows,
     signOffs,
+    storyLeads,
+    verificationRecords,
+    brief,
   }
 
   return (

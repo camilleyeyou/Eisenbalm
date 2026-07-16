@@ -209,3 +209,87 @@ export async function adjudicateGate1(
 
   return (await res.json()) as AdjudicateGate1Result
 }
+
+export interface RequireLeadResult {
+  leadId: string
+  status: 'required'
+}
+
+export interface RemoveLeadResult {
+  leadId: string
+  status: 'removed'
+}
+
+/**
+ * Require this lead (BRF-02, §47.5) — no reason. Clerk-guarded
+ * `POST /issues/{run_id}/leads/{lead_id}/require`. Mirrors `adjudicateGate1`'s
+ * fetch/throw shape exactly.
+ *
+ * @param runId    the run's runId string
+ * @param leadId   the `story_leads` row's Convex `_id`
+ * @param token    a Clerk session JWT (from useAuth().getToken())
+ */
+export async function requireLead(
+  runId: string,
+  leadId: string,
+  token: string | null,
+): Promise<RequireLeadResult> {
+  const res = await fetch(
+    `${pipelineBaseUrl()}/issues/${encodeURIComponent(runId)}/leads/${encodeURIComponent(leadId)}/require`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({}),
+    },
+  )
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(
+      `require-lead failed (${res.status})${detail ? `: ${detail}` : ''}`,
+    )
+  }
+
+  return (await res.json()) as RequireLeadResult
+}
+
+/**
+ * Remove — add reason (BRF-02, §47.5): `reason` is mandatory (the server
+ * 422s on empty), written to `audit_log` + the shared Decision log. Clerk-
+ * guarded `POST /issues/{run_id}/leads/{lead_id}/remove`.
+ *
+ * @param runId    the run's runId string
+ * @param leadId   the `story_leads` row's Convex `_id`
+ * @param reason   a non-empty, operator-supplied reason
+ * @param token    a Clerk session JWT (from useAuth().getToken())
+ */
+export async function removeLead(
+  runId: string,
+  leadId: string,
+  reason: string,
+  token: string | null,
+): Promise<RemoveLeadResult> {
+  const res = await fetch(
+    `${pipelineBaseUrl()}/issues/${encodeURIComponent(runId)}/leads/${encodeURIComponent(leadId)}/remove`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ reason }),
+    },
+  )
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(
+      `remove-lead failed (${res.status})${detail ? `: ${detail}` : ''}`,
+    )
+  }
+
+  return (await res.json()) as RemoveLeadResult
+}

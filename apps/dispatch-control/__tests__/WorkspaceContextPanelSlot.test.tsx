@@ -66,6 +66,12 @@ vi.mock('@convex/_generated/api', () => ({
     runs: { byRunId: 'runs:byRunId' },
     agentRuns: { byRunId: 'agentRuns:byRunId' },
     pipelineConfig: { getAll: 'pipelineConfig:getAll' },
+    // Phase 47 Plan 47-05 (BRF-01/02/03/05) — Story & Brief stage subscriptions
+    // WorkspaceStateProvider now also fires; unmapped in fixtureFor() below so
+    // they resolve to the harmless `undefined` default (irrelevant to this test).
+    storyLeads: { byRunId: 'storyLeads:byRunId' },
+    verificationRecords: { byRunId: 'verificationRecords:byRunId' },
+    briefs: { byRunId: 'briefs:byRunId' },
   },
 }))
 
