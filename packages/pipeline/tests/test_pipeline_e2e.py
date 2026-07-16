@@ -184,19 +184,6 @@ async def test_cost_shape(client, convex_query_fn, sanity_cleanup):
         await sanity_cleanup(issue_number)
 
 
-def _brief_route_registered() -> bool:
-    """Local Wave 0 guard (Phase 48): additionally skip this specific
-    brief-mode e2e test until Plan 48-04 registers POST /pipeline/run/brief
-    — even in an environment where SUPABASE_POSTGRES_URL IS set (this
-    module's own env-var skipif above only guards the checkpointer
-    requirement, not the brief route's existence)."""
-    try:
-        from eisenbalm_pipeline.api.control import router as control_router
-    except ImportError:
-        return False
-    return any(getattr(r, "path", None) == "/pipeline/run/brief" for r in control_router.routes)
-
-
 BRIEF_BODY_TEMPLATE = {
     "premise": "A quiet food bank quietly feeds a third of the county.",
     "peg": "Their annual harvest drive starts next Tuesday.",
@@ -208,13 +195,6 @@ BRIEF_BODY_TEMPLATE = {
 }
 
 
-@pytest.mark.skipif(
-    not _brief_route_registered(),
-    reason=(
-        "Wave 3 not yet wired: POST /pipeline/run/brief not yet registered "
-        "on api/control.py's router (Plan 48-04)."
-    ),
-)
 async def test_pipeline_e2e_brief_mode(
     client, convex_query_fn, sanity_get_issue, sanity_cleanup
 ):
@@ -222,7 +202,12 @@ async def test_pipeline_e2e_brief_mode(
     same terminal state and produces the same downstream artifacts as a
     discovery run — MINUS deliberation (D-12, the one honest divergence,
     outside ENT-03's enumerated artifact list of research/sections/QA/
-    claims/sign-offs)."""
+    claims/sign-offs).
+
+    Wave 0's local "route not registered" skip-guard was removed here —
+    Plan 48-04 registered POST /pipeline/run/brief on api/control.py's
+    router, so only the module-level SUPABASE_POSTGRES_URL skipif above
+    (shared by every e2e test in this file) still applies."""
     issue_number = _unique_issue_number()
     try:
         r = await client.post(
@@ -247,9 +232,54 @@ async def test_pipeline_e2e_brief_mode(
             f"{doc['pipelineMetadata'].get('runId')} != {run_id}"
         )
 
-        # ENT-03: QA corrections ran (same downstream pipeline as discovery).
+        # ENT-03: all 7 section fields are present with real (stub) content —
+        # a brief run produces the SAME downstream artifacts as a discovery
+        # run (lib/sanity_client.py::write_issue_draft's shape is identical
+        # regardless of how winning_charity/brief were seeded).
+        for headline_field in (
+            "originStory",
+            "problemStatement",
+            "founderBio",
+            "caseStudy",
+            "game",
+            "bonus",
+        ):
+            section = doc.get(headline_field)
+            assert isinstance(section, dict) and section, (
+                f"ENT-03: Sanity draft missing/empty section {headline_field!r} "
+                f"on a brief-started run: {section!r}"
+            )
+            assert section.get("headline"), (
+                f"ENT-03: Sanity draft section {headline_field!r} has no "
+                f"headline on a brief-started run: {section!r}"
+            )
+        theme = doc.get("theme")
+        assert isinstance(theme, dict) and theme.get("primaryColor"), (
+            f"ENT-03: Sanity draft missing/empty theme on a brief-started "
+            f"run: {theme!r}"
+        )
+
+        # ENT-03: QA corrections ran (same downstream pipeline as discovery;
+        # stub mode returns an empty list — CONTEXT D-37 — so this asserts
+        # shape, not non-emptiness, mirroring the discovery e2e precedent).
         qa_rows = await convex_query_fn("qaCorrections:byRunId", {"runId": run_id})
         assert isinstance(qa_rows, list), "qaCorrections:byRunId did not return a list"
+
+        # ENT-03: factual claims were extracted from the section prose —
+        # same deterministic lib/claims.py extraction the discovery pipeline
+        # runs (Publisher step, before status flips to awaiting-review).
+        claim_rows = await convex_query_fn(
+            "claimChecks:listByRunId", {"runId": run_id}
+        )
+        assert isinstance(claim_rows, list), (
+            "claimChecks:listByRunId did not return a list"
+        )
+        assert len(claim_rows) >= 1, (
+            "ENT-03: a brief-started run must still extract factual claims "
+            "from its (stub) section content, same as a discovery run."
+        )
+        for row in claim_rows:
+            assert row.get("runId") == run_id
 
         # ENT-04: the human-supplied organization was still run through
         # verify_candidates — the verification record is never absent.
