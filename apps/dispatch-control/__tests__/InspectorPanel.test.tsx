@@ -10,7 +10,7 @@
  *
  * Runs in jsdom (environmentMatchGlobs '__tests__/*.test.tsx' -> jsdom).
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import {
   InspectorPanel,
@@ -182,12 +182,53 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
     expect(button.getAttribute('title')).toMatch(/not yet wired/i)
   })
 
-  it("footer 'Ask agent to revise' is disabled (reserved, Phase 45)", () => {
+  it("footer 'Ask agent to revise' is reserved when no revisable passage is derivable (no sectionBlocks/sectionName/onRequestRevision, Phase 45 D-18)", () => {
     render(<InspectorPanel {...makeProps()} />)
 
     const button = screen.getByRole('button', { name: /Ask agent to revise/i })
     expect(button.hasAttribute('disabled')).toBe(true)
-    expect(button.getAttribute('title')).toMatch(/Phase 45/i)
+    expect(button.getAttribute('title')).toMatch(/no revisable passage/i)
+  })
+
+  it("footer 'Ask agent to revise' goes LIVE and calls onRequestRevision with a REAL, non-empty quotedText when sectionBlocks/sectionName/onRequestRevision are all derivable (Phase 45, D-18 — never a dead button)", () => {
+    const onRequestRevision = vi.fn()
+    render(
+      <InspectorPanel
+        {...makeProps({
+          sectionBlocks: [{ text: 'A former county clerk built this organization from nothing.' }],
+          sectionName: 'founderBio',
+          onRequestRevision,
+        })}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: /Ask agent to revise/i })
+    expect(button.hasAttribute('disabled')).toBe(false)
+
+    fireEvent.click(button)
+    expect(onRequestRevision).toHaveBeenCalledTimes(1)
+    const passage = onRequestRevision.mock.calls[0]![0]
+    expect(passage.sectionName).toBe('founderBio')
+    expect(typeof passage.quotedText).toBe('string')
+    expect(passage.quotedText.length).toBeGreaterThan(0)
+  })
+
+  it("footer 'Ask agent to revise' stays reserved when sectionBlocks derive an empty excerpt, even with sectionName + onRequestRevision provided (never seeds quotedText: '')", () => {
+    const onRequestRevision = vi.fn()
+    render(
+      <InspectorPanel
+        {...makeProps({
+          sectionBlocks: [{ text: '' }],
+          sectionName: 'founderBio',
+          onRequestRevision,
+        })}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: /Ask agent to revise/i })
+    expect(button.hasAttribute('disabled')).toBe(true)
+    fireEvent.click(button)
+    expect(onRequestRevision).not.toHaveBeenCalled()
   })
 
   it('live footer actions deep-link using the promptKey namespace (editor_gate1, not editor_gate_1)', () => {

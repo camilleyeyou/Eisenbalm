@@ -32,7 +32,10 @@ import { summarize, prettyJson } from '@/lib/inspector/summarize'
 import { PIPELINE_EDGES } from '@/app/(dashboard)/run-monitor/graph/_components/pipelineTopology'
 import { displayNameForAgentKey } from '@/app/(dashboard)/prompt-lab/_components/agentList'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
+import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
+import type { ProseBlockLike } from '@/lib/firstProseExcerpt'
 import { InspectorPanel, type InspectorArtifact } from './InspectorPanel'
+import { useInspector } from './InspectorProvider'
 
 /**
  * §44.9 — the 5 agentKeys deliberately NOT externalized to prompt-lab
@@ -81,8 +84,61 @@ function extractBonusType(outputSnapshot: string | undefined): string | undefine
   return undefined
 }
 
+/**
+ * Phase 45 (REV-01, D-18) — maps a drafted-section agentKey (the
+ * `agent_runs`/`agent_run_payloads` run-key vocabulary) to the top-level key
+ * its own outputSnapshot nests its result under. Identical to the agentKey
+ * for every writer EXCEPT `problem`, whose result nests under
+ * `problem_statement` (packages/pipeline/.../agents/problem.py:210-212 —
+ * the exact same run-key/section-id mismatch `lib/galley/sectionIdMap.ts`
+ * already documents for `problem` vs `problemStatement`).
+ */
+const RUN_KEY_TO_OUTPUT_KEY: Record<string, string> = {
+  origin_story: 'origin_story',
+  problem: 'problem_statement',
+  founder_bio: 'founder_bio',
+  case_study: 'case_study',
+  game: 'game',
+  bonus: 'bonus',
+}
+
+/**
+ * Best-effort extraction of a drafted section's raw prose `body` blocks from
+ * its agentKey's `outputSnapshot` — mirrors `extractBonusType`'s defensive
+ * JSON.parse (never throws). The ~2000-char truncation cap (§44.5) can cut
+ * the JSON off mid-object; that failure mode, and any non-drafted-section
+ * agentKey, both fall through to `undefined` here — the exact honest-degrade
+ * input `firstProseExcerpt` already expects (undefined/empty blocks -> ''),
+ * which in turn leaves the inspector footer's "Ask agent to revise" reserved
+ * rather than guessing at a passage.
+ */
+function extractSectionBlocks(
+  outputSnapshot: string | undefined,
+  agentKey: string,
+): ProseBlockLike[] | undefined {
+  const outputKey = RUN_KEY_TO_OUTPUT_KEY[agentKey]
+  if (!outputSnapshot || !outputKey) return undefined
+  try {
+    const parsed: unknown = JSON.parse(outputSnapshot)
+    if (!parsed || typeof parsed !== 'object') return undefined
+    const section = (parsed as Record<string, unknown>)[outputKey]
+    if (!section || typeof section !== 'object') return undefined
+    const body = (section as Record<string, unknown>).body
+    return Array.isArray(body) ? (body as ProseBlockLike[]) : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export function InspectorContainer({ artifactKey, onClose }: InspectorContainerProps) {
   const { runId } = artifactKey
+
+  // Phase 45 (REV-01, D-18) — the shared revise-request channel. The galley
+  // toolbar (Plan 45-05 Task 2, ReviewDeskRunView/VoicePassRunView) and this
+  // footer both call the SAME `requestRevision`, so either entry point opens
+  // the SAME `RevisionFlow` instance (mounted by whichever surface owns
+  // `reloadDraft` — never mounted here, InspectorProvider's own doc-comment).
+  const { requestRevision } = useInspector()
 
   // 1. Pure resolution (44-03) — no data dependency. `step.promptKey` is
   // already correct for every artifact type except `bonus`, whose variant
@@ -169,6 +225,15 @@ export function InspectorContainer({ artifactKey, onClose }: InspectorContainerP
   const rawTechnicalJson =
     agentRun || payload ? JSON.stringify({ agentRun, payload }) : undefined
 
+  // Phase 45 (REV-01, D-18) — the SAME `payload.outputSnapshot` already read
+  // above (no new subscription), best-effort-parsed for the section's raw
+  // prose `body` blocks + its galley/draft section id. Both are `undefined`
+  // for any non-drafted-section artifact (claim/rec/org/signal/qa) or when
+  // extraction fails — `InspectorPanel` treats that as "no revisable
+  // passage" and leaves the footer honestly reserved.
+  const sectionBlocks = extractSectionBlocks(payload?.outputSnapshot, step.agentKey)
+  const sectionName = qaSectionToGalleyId(step.agentKey) ?? undefined
+
   const artifact: InspectorArtifact | undefined = stillLoading
     ? undefined
     : {
@@ -221,6 +286,9 @@ export function InspectorContainer({ artifactKey, onClose }: InspectorContainerP
       instructionsExternalized={instructionsExternalized}
       divergence={divergence}
       onClose={onClose}
+      sectionBlocks={sectionBlocks}
+      sectionName={sectionName}
+      onRequestRevision={requestRevision}
     />
   )
 }

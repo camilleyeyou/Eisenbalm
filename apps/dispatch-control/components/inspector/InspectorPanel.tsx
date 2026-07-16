@@ -31,6 +31,18 @@
  * Every state renders label + icon, never color alone (D-14) — tab states,
  * the missing-input flags, the divergence/truncation notes, and every
  * degraded "not recorded" field all follow it.
+ *
+ * Phase 45 (REV-01, D-18, Plan 45-05 Task 3): flips the footer's "Ask agent
+ * to revise" from Always RESERVED to conditionally LIVE. This panel derives
+ * a REAL, non-empty `quotedText` via `firstProseExcerpt` (`lib/
+ * firstProseExcerpt.ts`) from `sectionBlocks` — the SAME draft/output data
+ * `InspectorContainer` already reads (no new subscription) — and only
+ * passes `onAskToRevise` down to `InspectorFooter` when both a `sectionName`
+ * (this artifact maps to a drafted galley section) AND a non-empty excerpt
+ * are available. An empty excerpt (e.g. a claim/rec/org/signal/qa artifact,
+ * or an empty section) leaves the footer honestly reserved — an empty
+ * `quotedText` would otherwise 409 `span_not_resolved` the moment a
+ * direction chip is picked, since `RevisionFlow` has no passage-picker step.
  */
 import { useState } from 'react'
 import {
@@ -55,7 +67,15 @@ import { cn } from '@/lib/utils'
 import { prettyJson } from '@/lib/inspector/summarize'
 import type { MissingInputsResult } from '@/lib/inspector/missingInputsDiff'
 import type { OutputDivergence } from '@/lib/inspector/outputDivergence'
+import { firstProseExcerpt, type ProseBlockLike } from '@/lib/firstProseExcerpt'
 import { InspectorFooter } from './InspectorFooter'
+
+/** The exact shape `RevisionFlow`'s `passage` prop expects (45-04). */
+export interface InspectorRevisionPassage {
+  sectionName: string
+  quotedText: string
+  blockIndexHint?: number
+}
 
 // ── the InspectorArtifact shape (docs/API_CONTRACTS.md §44.2, reproduced
 // verbatim from DERIVED-STATE-CONTRACT §8 + the additive `sharedRules`
@@ -99,6 +119,24 @@ export interface InspectorPanelProps {
   instructionsExternalized: boolean
   divergence: OutputDivergence
   onClose: () => void
+  /**
+   * Phase 45 (REV-01, D-18) — this artifact's raw prose blocks, when it maps
+   * to a drafted galley section (undefined for claim/rec/org/signal/qa
+   * artifacts, or when the container's queries haven't resolved yet). Used
+   * ONLY to derive a real, non-empty `quotedText` via `firstProseExcerpt` —
+   * no new subscription, the SAME data `InspectorContainer` already reads.
+   */
+  sectionBlocks?: ProseBlockLike[]
+  /** Phase 45 (D-18) — the galley/camelCase section id (e.g. "founderBio") `sectionBlocks` belongs to. */
+  sectionName?: string
+  /**
+   * Phase 45 (D-18) — opens the shared `RevisionFlow` scoped to a passage
+   * in this artifact's section (owned by whichever surface — Draft/Voice —
+   * mounted the inspector). Called ONLY when this panel derived a
+   * non-empty excerpt; omitted/unused otherwise, so "Ask agent to revise"
+   * renders honestly reserved rather than a false-live dead button.
+   */
+  onRequestRevision?: (passage: InspectorRevisionPassage) => void
 }
 
 const TABS = [
@@ -453,10 +491,26 @@ export function InspectorPanel({
   instructionsExternalized,
   divergence,
   onClose,
+  sectionBlocks,
+  sectionName,
+  onRequestRevision,
 }: InspectorPanelProps) {
   // Seven tabs are client state; Summary is the default. Technical (raw
   // JSON) is NEVER the initial value anywhere (INS-02, D-07).
   const [active, setActive] = useState<Tab>('Summary')
+
+  // Phase 45 (REV-01, D-18) — derive a REAL, non-empty excerpt before "Ask
+  // agent to revise" is allowed to go live. `firstProseExcerpt` returns ''
+  // for an artifact with no prose blocks (claim/rec/org/signal/qa, an empty
+  // section, or the container's queries still resolving) — that '' must
+  // NEVER be seeded as `quotedText` (span_not_resolved 409, no passage-
+  // picker step in `RevisionFlow` to recover from it), so `onAskToRevise`
+  // stays undefined and the footer renders honestly reserved instead.
+  const quotedText = firstProseExcerpt(sectionBlocks)
+  const onAskToRevise =
+    sectionName && quotedText && onRequestRevision
+      ? () => onRequestRevision({ sectionName, quotedText, blockIndexHint: 0 })
+      : undefined
 
   return (
     <div
@@ -533,7 +587,12 @@ export function InspectorPanel({
         )}
       </div>
 
-      <InspectorFooter promptKey={promptKey} agentKey={agentKey} runId={runId} />
+      <InspectorFooter
+        promptKey={promptKey}
+        agentKey={agentKey}
+        runId={runId}
+        onAskToRevise={onAskToRevise}
+      />
     </div>
   )
 }
