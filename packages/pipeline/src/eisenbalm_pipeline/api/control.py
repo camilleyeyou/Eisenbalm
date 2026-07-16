@@ -207,29 +207,21 @@ async def _revoke_active_signoffs(http: Any, *, run_id: str, reason: str) -> Non
         log.warning("signOffs:revokeAll failed for run=%s (non-blocking)", run_id)
 
 
-# ── POST /pipeline/run ─────────────────────────────────────────────────────
+# ── Shared start-gate helper (D-15) ────────────────────────────────────────
+#
+# Extracted from pipeline_run's inline gate block so /pipeline/run and the
+# new /pipeline/run/brief endpoint (Plan 48-04) share ONE copy of the
+# one-at-a-time + budget start-gate logic — no drift between two
+# independently-maintained 409 checks. Byte-equivalent to the block it
+# replaces: same checks, same 409 detail strings, same order.
+# pipeline_tick is NOT refactored to use this helper — it has an extra
+# scheduled-publish sweep + skip-not-raise semantics (see pipeline_tick's own
+# docstring), so its inline gates are intentionally left as-is.
 
-@router.post("/pipeline/run")
-async def pipeline_run(
-    request: Request,
-    body: RunWeeklyBody,
-    claims: dict = Depends(_require_clerk_jwt_control),
-) -> dict:
-    """Operator manual trigger. Clerk JWT auth; records operator identity.
 
-    One-at-a-time gate (D-12): rejects with 409 if a run is already in
-    progress. The operator must wait for the current run to complete or cancel
-    it via POST /runs/{run_id}/cancel (Plan 03).
-
-    Budget start-gate (RUN-06): rejects with 409 when the trailing-average
-    projection would exceed the monthly cap.
-
-    Returns:
-        {"runId": "<run_id>"}
-    """
-    operator_id = claims.get("sub")
-    http = getattr(request.app.state, "convex_http", None)
-
+async def _enforce_start_gates(http: Any) -> None:
+    """One-at-a-time (D-12) + budget (RUN-06) start gates. Raises 409 on
+    either violation; returns None (no side effect) when both pass."""
     # One-at-a-time gate (D-12): check for an in-progress run.
     latest = await _cc.convex_query(http, "runs:latest", {"workspace_id": WORKSPACE_ID})
     if latest and latest.get("status") == "running":
@@ -261,6 +253,32 @@ async def pipeline_run(
                 f" > ${info['cap']:.2f} cap). Raise the cap or wait until next month."
             ),
         )
+
+
+# ── POST /pipeline/run ─────────────────────────────────────────────────────
+
+@router.post("/pipeline/run")
+async def pipeline_run(
+    request: Request,
+    body: RunWeeklyBody,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Operator manual trigger. Clerk JWT auth; records operator identity.
+
+    One-at-a-time gate (D-12): rejects with 409 if a run is already in
+    progress. The operator must wait for the current run to complete or cancel
+    it via POST /runs/{run_id}/cancel (Plan 03).
+
+    Budget start-gate (RUN-06): rejects with 409 when the trailing-average
+    projection would exceed the monthly cap.
+
+    Returns:
+        {"runId": "<run_id>"}
+    """
+    operator_id = claims.get("sub")
+    http = getattr(request.app.state, "convex_http", None)
+
+    await _enforce_start_gates(http)
 
     run_id = await _start_run(
         request.app,
