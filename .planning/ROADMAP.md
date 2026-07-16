@@ -1049,7 +1049,14 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   2. Operator can submit a human-supplied premise, peg, organization, and optional source material, starting a run that skips Signal Editor, Scout, Advocate, and Gate 1, and enters directly at the Researcher.
   3. A brief-started run produces the same downstream artifacts (research, sections, QA, claims, sign-offs) as an agent-discovered run and is indistinguishable from one at Stages 2-5.
   4. An organization supplied in a human brief is still put through `verify_candidates`, so its verification record is never absent.
-**Plans**: TBD
+**Plans**: 7 plans (4 waves)
+- [ ] 48-01-contracts-convex-schema-dispatchstate-PLAN.md — API_CONTRACTS §7 (entry_mode + source_material) + new §48 + DispatchState fields + convex/schema.ts runs.entryMode + runs.ts create arg + Convex live-sync (Wave 1)
+- [ ] 48-02-wave0-test-scaffolds-PLAN.md — failing/skip-guarded test scaffolds: builder-fork source-scan, _start_run seed, brief-run endpoint, verify_candidates advisory (green), e2e brief-mode, CreatePanel + StoryBriefScreen (Wave 1)
+- [ ] 48-03-pipeline-entry-seam-PLAN.md — builder.py two conditional edges + route_by_entry_mode + _start_run entry_mode/seed/reduced-queue/briefs:insert + Researcher source_material threading (Wave 2)
+- [ ] 48-04-brief-trigger-endpoint-PLAN.md — api/control.py shared _enforce_start_gates helper + POST /pipeline/run/brief (BriefRunBody, 422/409 gates, reduced queue, entry_mode='brief', audit) (Wave 3)
+- [ ] 48-05-create-panel-brief-path-PLAN.md — triggerBriefRun client + CreatePanel second peer card + inline brief-intake form (ensureByNumber -> triggerBriefRun -> issueHref) (Wave 2)
+- [ ] 48-06-stage1-brief-mode-render-PLAN.md — WorkspaceStateProvider entryMode + new BriefOrgCard (single verified human org, concern never truncated) + StoryBriefScreen brief-mode branch (Wave 2)
+- [ ] 48-07-integration-gate-PLAN.md — activate brief-mode e2e (same artifacts minus deliberation) + full suites + strict next build + Convex live-sync gate (Wave 4)
 **UI hint**: yes
 
 ### Phase 49: Roles & Permissions
