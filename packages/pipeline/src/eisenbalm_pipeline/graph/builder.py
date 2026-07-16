@@ -89,6 +89,34 @@ SECTION_WRITERS: tuple[str, ...] = (
 )
 
 
+# Phase 48 D-01 / RESEARCH Pattern 1 (§48.1): the brief-entry fork.
+#
+# CONTEXT D-01's prose says "conditional edge at START", but both discovery
+# and brief runs begin identically at calibrator (D-02 — calibrator still
+# sets style_brief + resolves the narrator in brief mode). A conditional
+# edge literally at START would map every entry_mode to the same node, a
+# no-op branch. The REAL fork is TWO add_conditional_edges calls sharing
+# this one router, placed AFTER calibrator and AFTER verify_candidates:
+#   - calibrator -> {discovery: signal_editor, brief: verify_candidates}
+#   - verify_candidates -> {discovery: advocate, brief: researcher}
+# `add_edge(START, "calibrator")` stays a single UNCONDITIONAL edge — do not
+# touch it. Discovery's execution ORDER is byte-identical to before; only
+# the edge-declaration mechanism for these two hops changes from add_edge to
+# add_conditional_edges. Every other edge in the discovery chain (
+# signal_editor->scout, scout->verify_candidates, advocate->editor_gate_1,
+# editor_gate_1->chronicler, chronicler->researcher, the fan-out/fan-in) is
+# untouched. verify_candidates.py itself is NOT edited by this fork — it is
+# already advisory-safe (D-11): it persists every VerificationRecord before
+# any kill decision, and it never touches state['winning_charity'], so an
+# emptied/killed `candidates` list on the brief path has zero effect on
+# `researcher` (which reads only `winning_charity`, never `candidates`).
+def route_by_entry_mode(state: DispatchState) -> str:
+    """Route on DispatchState['entry_mode']. Absent/None -> 'discovery' —
+    back-compat with every pre-Phase-48 DispatchState test fixture and every
+    existing _start_run caller, which never sets entry_mode explicitly."""
+    return state.get("entry_mode") or "discovery"
+
+
 def build_graph(checkpointer: Any) -> Any:
     """Compile the StateGraph with the given checkpointer (Plan 09 calls this).
 
@@ -140,14 +168,24 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_node("publisher", wrap_agent_node("publisher", publisher))
 
     # Sequential pre-fan-out edges.
-    builder.add_edge(START, "calibrator")
+    builder.add_edge(START, "calibrator")  # unconditional in both modes (D-02)
 
     # Phase 46 D-01: calibrator -> signal_editor -> scout -> verify_candidates
-    # -> advocate. Replaces the old calibrator->scout and scout->advocate edges.
-    builder.add_edge("calibrator", "signal_editor")
+    # -> advocate (discovery chain, byte-identical to before Phase 48).
+    #
+    # Phase 48 D-01/§48.1: the calibrator->signal_editor and
+    # verify_candidates->advocate static edges are REPLACED by two
+    # conditional edges sharing route_by_entry_mode, so a brief run instead
+    # routes calibrator -> verify_candidates -> researcher (skipping
+    # signal_editor/scout/advocate/editor_gate_1/chronicler).
+    builder.add_conditional_edges("calibrator", route_by_entry_mode, {
+        "discovery": "signal_editor", "brief": "verify_candidates",
+    })
     builder.add_edge("signal_editor", "scout")
     builder.add_edge("scout", "verify_candidates")
-    builder.add_edge("verify_candidates", "advocate")
+    builder.add_conditional_edges("verify_candidates", route_by_entry_mode, {
+        "discovery": "advocate", "brief": "researcher",
+    })
 
     builder.add_edge("advocate", "editor_gate_1")
     builder.add_edge("editor_gate_1", "chronicler")

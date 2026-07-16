@@ -102,9 +102,16 @@ def test_verify_candidates_node_registered() -> None:
 
 
 def test_calibrator_to_signal_editor_edge() -> None:
-    """calibrator → signal_editor edge must be present (D-01)."""
+    """calibrator → signal_editor edge must be present (D-01).
+
+    Phase 48 §48.1 replaced the static add_edge with a conditional edge
+    (add_conditional_edges("calibrator", route_by_entry_mode, {...})) keyed
+    on entry_mode, routing discovery runs to signal_editor (brief runs skip
+    it — see test_builder_entry_mode_wiring.py for the full fork contract).
+    """
     src = _builder_src()
-    assert 'builder.add_edge("calibrator", "signal_editor")' in src
+    assert 'builder.add_conditional_edges("calibrator"' in src
+    assert '"discovery": "signal_editor"' in src
 
 
 def test_signal_editor_to_scout_edge() -> None:
@@ -120,9 +127,16 @@ def test_scout_to_verify_candidates_edge() -> None:
 
 
 def test_verify_candidates_to_advocate_edge() -> None:
-    """verify_candidates → advocate edge must be present (D-01)."""
+    """verify_candidates → advocate edge must be present (D-01).
+
+    Phase 48 §48.1 replaced the static add_edge with a conditional edge
+    (add_conditional_edges("verify_candidates", route_by_entry_mode, {...}))
+    keyed on entry_mode, routing discovery runs to advocate (brief runs
+    route to researcher instead — see test_builder_entry_mode_wiring.py).
+    """
     src = _builder_src()
-    assert 'builder.add_edge("verify_candidates", "advocate")' in src
+    assert 'builder.add_conditional_edges("verify_candidates"' in src
+    assert '"discovery": "advocate"' in src
 
 
 def test_old_calibrator_to_scout_edge_removed() -> None:
