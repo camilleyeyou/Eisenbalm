@@ -1984,6 +1984,26 @@ class DispatchState(TypedDict):
                                                  # Threaded to the 7 section writers via
                                                  # build_section_writer_prompt's new brief= kwarg.
 
+    # ── Phase 48: Brief Entry Point (ENT-01..04, see §48) ───────────────────────
+    entry_mode: NotRequired[Optional[Literal['discovery', 'brief']]]
+                                                 # Routes the two conditional edges
+                                                 # (calibrator->{signal_editor|verify_candidates},
+                                                 # verify_candidates->{advocate|researcher}).
+                                                 # Absent/None -> 'discovery' via the router fn's
+                                                 # `state.get("entry_mode") or "discovery"` default
+                                                 # (back-compat with every pre-Phase-48 DispatchState
+                                                 # test fixture — NotRequired mirrors the existing
+                                                 # `config` field precedent for the identical reason).
+    source_material: NotRequired[Optional[str]]
+                                                 # D-10: optional free-text (URLs + pasted notes),
+                                                 # threaded into the Researcher's user prompt as
+                                                 # prioritized seed context. Only ever set on
+                                                 # brief-mode runs (via _start_run); None/absent on
+                                                 # discovery runs -> the {source_material} template
+                                                 # token renders as "" (byte-equivalent prompt,
+                                                 # mirrors the existing {corrections} empty-string
+                                                 # precedent).
+
     # ── Phase 2: Content (populated in parallel) ───────────────────────────────
     research: Optional[ResearchOutput]
     origin_story: Optional[SectionContent]
@@ -5743,3 +5763,197 @@ DispatchState field (`brief`) and one new TypedDict (`Brief`, §7); three new gu
 paths; five new FastAPI endpoints (implemented in 47-02/47-04, declared here first per contract-first
 discipline). No existing field, table, or endpoint is renamed or removed; §7/§26/§37/§39/§42/§44/§45/
 §46 shapes are otherwise unchanged.*
+
+---
+
+## §48 — Brief Entry Point (Phase 48)
+
+"Start from my brief" becomes a REAL second pipeline entry point — not the stub the prototype ships
+(`DERIVED-STATE-CONTRACT.md` §10). A human supplies premise, peg, organization, and optional source
+material; the run **skips Signal Editor, Scout, Advocate, and Gate 1** and **enters at the
+Researcher**. `verify_candidates` still runs on the human-supplied organization so its verification
+record is never absent (ENT-04). This contract is written BEFORE any consuming code exists
+(CLAUDE.md contract-first hard rule, mirroring §39/§42/§46/§47). All Phase 48 changes are
+**ADDITIVE** — no existing field, table, or endpoint documented in §1-§47 is renamed or removed. The
+DispatchState fields this section governs (`entry_mode`, `source_material`) are declared in §7 (see
+above) — this section documents the endpoint, the seed shape, and the `runs.entryMode` Convex field.
+
+### §48.1 — Graph topology: two conditional edges keyed on `entry_mode` (NOT a literal edge at START)
+
+Both discovery and brief runs begin identically — `START → calibrator` stays a single UNCONDITIONAL
+edge (the calibrator sets `style_brief` + resolves the narrator in both modes, D-02). The fork
+happens at the two points where the two chains diverge:
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/graph/builder.py
+builder.add_edge(START, "calibrator")   # unconditional — unchanged in both modes
+
+def route_by_entry_mode(state: DispatchState) -> str:
+    """Back-compat default: absent/None entry_mode -> 'discovery' (every
+    pre-Phase-48 DispatchState fixture never sets this key)."""
+    return state.get("entry_mode") or "discovery"
+
+# REPLACES the existing static edge calibrator -> signal_editor:
+builder.add_conditional_edges(
+    "calibrator",
+    route_by_entry_mode,
+    {"discovery": "signal_editor", "brief": "verify_candidates"},
+)
+
+# REPLACES the existing static edge verify_candidates -> advocate:
+builder.add_conditional_edges(
+    "verify_candidates",
+    route_by_entry_mode,
+    {"discovery": "advocate", "brief": "researcher"},
+)
+```
+
+Discovery chain (byte-unchanged execution order): `START → calibrator → signal_editor → scout →
+verify_candidates → advocate → editor_gate_1 → chronicler → researcher → verify_research → 7
+writers → validate_sections → qa → editor_final → publisher`.
+
+Brief chain (skips Signal Editor, Scout, Advocate, Gate 1, Chronicler): `START → calibrator →
+verify_candidates → researcher → verify_research → 7 writers → validate_sections → qa →
+editor_final → publisher`.
+
+One compiled graph, one checkpointer. Every other edge is untouched. `verify_candidates` runs on
+the brief path exactly as it does today (D-03) — no logic change; it persists a `VerificationRecord`
+for the human-supplied organization unconditionally, and (per D-11) a definitive-fail check does NOT
+remove the organization or halt the run on a brief-mode run (there is exactly one candidate, no
+slate to re-resolve from). The chronicler is never reached on the brief path (D-12) —
+`deliberation_transcript`/`deliberation_conversation` stay `None`, which every downstream consumer
+already handles as an absent/optional value.
+
+### §48.2 — `POST /pipeline/run/brief` (NEW endpoint, `api/control.py`)
+
+Clerk-guarded (`_require_clerk_jwt_control`), sibling of `POST /pipeline/run` / `POST
+/pipeline/tick` (NOT added to `api/brief.py`, which is the run-scoped content-edit family operating
+on an *existing* run's Brief row — this endpoint creates the run). Reuses `_start_run` (§48.3) so
+every shared run-launch discipline is preserved: the one-at-a-time gate (409 if a run is already
+running), the RUN-06 budget start-gate (409 if over budget), the config load+snapshot, and the
+`agentRuns:queueForRun` pre-population.
+
+```python
+class OrganizationInput(BaseModel):
+    name: str
+    website: Optional[str] = None
+    charityNavigatorUrl: Optional[str] = None
+    guidestarUrl: Optional[str] = None
+
+class BriefRunBody(BaseModel):
+    issueNumber: Optional[int] = None
+    premise: str
+    peg: str
+    organization: OrganizationInput
+    sourceMaterial: Optional[str] = None
+
+POST /pipeline/run/brief
+  body: BriefRunBody
+  -> 200 {"runId": str}
+  -> 422 if organization.name is empty/whitespace-only
+  -> 409 if a run is already running (one-at-a-time gate, reused from /pipeline/run)
+  -> 409 if the month-to-date budget gate rejects a new run (RUN-06, reused from /pipeline/run)
+```
+
+On success, emits a `run.triggered` audit row (mirrors `control.py::pipeline_run`'s existing
+`_emit_audit` idiom) carrying `{"entryMode": "brief", "organization": <organization.name>}` in its
+`after` payload — "nothing silent."
+
+### §48.3 — `_start_run` extension (brief-mode seed) — `api/runs.py`
+
+`_start_run` (the single authoritative run-launch body, Phase 25) gains four new OPTIONAL
+parameters. Every existing caller (`/run/weekly`, `/pipeline/run`, `/pipeline/tick`) is unaffected —
+all four default to values that reproduce today's exact behavior:
+
+```python
+async def _start_run(
+    app: Any,
+    *,
+    issue_number: Optional[int],
+    trigger_source: str,
+    triggered_by: Optional[str] = None,
+    # ...existing params unchanged...
+    # ── Phase 48 additions ──────────────────────────────────────────────
+    entry_mode: str = "discovery",
+    winning_charity: Optional[dict] = None,          # CharityCandidate shape (§7)
+    brief: Optional[dict] = None,                     # Brief shape (§7)
+    source_material: Optional[str] = None,
+    agent_keys_override: Optional[list[str]] = None,
+) -> str: ...
+```
+
+**The brief-run seed** (only applied when `entry_mode == "brief"`):
+- `initial_state["entry_mode"] = "brief"` (always set, both modes — discovery runs get
+  `"discovery"` explicitly rather than relying on the router's `or "discovery"` fallback alone).
+- `initial_state["winning_charity"]` — a `CharityCandidate` built from the human-supplied
+  `organization`, with every unscouted field defaulted `""`/`None`, mirroring the EXISTING
+  `agents/editor.py` D-14 "all-candidates-killed" synthetic-winner precedent (a human-name-only
+  `CharityCandidate` dict is not a new shape — it is the identical problem already solved once in
+  this codebase):
+  ```python
+  {
+      "name": organization.name, "location": "", "website": organization.website or "",
+      "charityNavigatorUrl": organization.charityNavigatorUrl, "guidestarUrl": organization.guidestarUrl,
+      "foundingYear": None, "assetRange": "", "focusArea": "", "missionStatement": "",
+      "scoutSummary": "", "whyOverlooked": "", "advocateArgument": None, "advocateScore": None,
+  }
+  ```
+- `initial_state["candidates"] = [winning_charity]` — so `verify_candidates` (which iterates
+  `state["candidates"]`) has its input (D-05). `researcher` never reads `state["candidates"]`, only
+  `state["winning_charity"]` — an emptied/killed single-candidate list has zero effect on run
+  continuation (Pitfall 2).
+- `initial_state["brief"]` — the 6-field `Brief` (§7), mapped directly from the human input, NOT an
+  `_assemble_brief` re-projection (D-06/D-08): `premise → premise`, `peg → currentPeg`,
+  `centralClaim`/`readerEffect`/`knownRisks`/`voiceIntention` start blank (the operator fills them
+  via the shipped BRF-06 strengthen once Stage 1 loads — `style_brief` does not exist yet at request
+  time, so `voiceIntention` cannot be defaulted from it without blocking the HTTP response on
+  `calibrator`'s LLM call).
+- `initial_state["source_material"] = source_material` when non-empty (D-10).
+
+**`briefs:insert` is called INSIDE `_start_run`**, immediately after `runs:create`, whenever `brief
+is not None` — never console-side, never a separate endpoint call. `_start_run` mints the `run_id`
+internally, so this is the only place the write can happen without either duplicating the run-id
+minting logic or leaving a partial-failure window (a run that starts but never gets its Brief row).
+This mirrors §47.3's own `briefs:insert` write, just for a run that never reaches `editor_gate_1`.
+
+**The reduced brief-run `agentRuns:queueForRun` set** (`agent_keys_override`, D-16) — reflects the
+REAL brief path, not phantom skipped steps:
+
+```python
+BRIEF_AGENT_KEYS = [
+    "calibrator", "verify_candidates", "researcher", "verify_research",
+    *SECTION_WRITERS,
+    "validate_sections", "qa", "editor_final", "publisher",
+]
+# NO signal_editor, scout, advocate, editor_gate_1, chronicler.
+```
+
+The full 20-step list remains the default (`agent_keys_override=None`) for every existing caller —
+byte-unchanged behavior.
+
+### §48.4 — `runs.entryMode` Convex field (additive)
+
+```typescript
+// convex/schema.ts — runs table, additive field
+entryMode: v.optional(v.union(v.literal('discovery'), v.literal('brief'))),
+// absent = 'discovery' (mirrors story_leads.status's "absent = default" precedent, §47.2).
+// Set to 'brief' only by runs:create for a brief-started run (§48.3). Read by the Stage-1
+// rendering variant (BriefOrgCard / the entryMode branch in StoryBriefScreen.tsx) to
+// distinguish a brief-started run from a discovery-started run at the console layer —
+// DispatchState['entry_mode'] (pipeline-internal) is invisible to the console; only
+// Convex-persisted fields are (Pitfall 3).
+```
+
+`convex/runs.ts::create` gains a matching optional `entryMode` arg, destructured and passed through
+to the `ctx.db.insert('runs', {...})` call. The existing idempotent `by_runId` guard and every other
+arg (`workspace_id`, `runId`, `triggerSource`, `triggeredBy`, `pipelineSecret`) are byte-unchanged.
+
+### §48.5 — Additive-only summary
+
+*All Phase 48 changes are additive: two new DispatchState fields (`entry_mode`, `source_material`,
+§7); one new FastAPI endpoint (`POST /pipeline/run/brief`, §48.2); four new optional `_start_run`
+parameters (§48.3) with defaults that reproduce every existing caller's exact current behavior; one
+new additive optional field on `runs` (`entryMode`, §48.4) with a matching `runs:create` arg. No
+existing field, table, or endpoint documented in §1-§47 is renamed or removed. The graph topology
+change is two `add_edge` → `add_conditional_edges` conversions (§48.1) — every other edge, and the
+entire discovery-mode execution order, is byte-unchanged.*

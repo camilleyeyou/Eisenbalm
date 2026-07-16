@@ -255,6 +255,23 @@ class DispatchState(TypedDict):
     # pipeline reads back on later runs/revisions. Threaded to the 7
     # section writers via build_section_writer_prompt's brief= kwarg.
     brief: Optional[Brief]
+
+    # ── Phase 48: Brief Entry Point (ENT-01..04) ──────────────────────────────
+    # Routes the two conditional edges (calibrator->{signal_editor|verify_candidates},
+    # verify_candidates->{advocate|researcher}). Absent/None -> 'discovery' via the
+    # router fn's `state.get("entry_mode") or "discovery"` default (back-compat with
+    # every pre-Phase-48 DispatchState test fixture — NotRequired mirrors the
+    # existing `config` field precedent for the identical reason). See
+    # docs/API_CONTRACTS.md §7 / §48.
+    entry_mode: NotRequired[Optional[Literal['discovery', 'brief']]]
+    # D-10: optional free-text (URLs + pasted notes), threaded into the
+    # Researcher's user prompt as prioritized seed context. Only ever set on
+    # brief-mode runs (via _start_run); None/absent on discovery runs -> the
+    # {source_material} template token renders as "" (byte-equivalent prompt,
+    # mirrors the existing {corrections} empty-string precedent). See
+    # docs/API_CONTRACTS.md §7 / §48.
+    source_material: NotRequired[Optional[str]]
+
     winning_charity: Optional[CharityCandidate]
     winning_charity_sanity_id: Optional[str]    # set after Sanity write
     deliberation_transcript: Optional[str]      # full Scout+Advocate+Editor text
