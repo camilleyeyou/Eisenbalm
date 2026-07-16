@@ -247,6 +247,39 @@ def build_claims_block(claims: list[dict[str, Any]] | None) -> str:
     return "\n".join(lines) + "\n\n"
 
 
+def build_brief_block(brief: dict[str, Any] | None) -> str:
+    """Phase 47 (BRF-05) — render the six-field Story Brief into a
+    prompt-ready block for a section writer's USER message.
+
+    Returns ``""`` when ``brief`` is falsy (``None`` or an empty dict) so
+    callers can concatenate unconditionally — the writer's prompt degrades
+    to its pre-Phase-47 shape (byte-identical) when no Brief has been
+    assembled for this run (e.g. legacy runs, or the field simply absent).
+
+    Shared by ``build_section_writer_prompt`` (the 4 helper-routed
+    narrative writers — origin_story, problem, founder_bio, case_study)
+    AND the 3 bespoke prompt builders (game, bonus, design) so all 7
+    section writers draft FROM the same Brief text, one formatting source
+    of truth.
+
+    Never injected into a system message — the Brief is content, not a
+    voice/persona rule, so it stays in the USER message only (mirrors the
+    claims-block voice-isolation discipline, D-05).
+    """
+    if not brief:
+        return ""
+    lines = [
+        "STORY BRIEF (draft from this):",
+        f"Premise: {brief.get('premise', '')}",
+        f"Current peg: {brief.get('currentPeg', '')}",
+        f"Central claim: {brief.get('centralClaim', '')}",
+        f"Reader effect: {brief.get('readerEffect', '')}",
+        f"Known risks: {brief.get('knownRisks', '')}",
+        f"Voice intention: {brief.get('voiceIntention', '')}",
+    ]
+    return "\n".join(lines) + "\n\n"
+
+
 def build_section_writer_prompt(
     *,
     section_id: str,
@@ -255,16 +288,18 @@ def build_section_writer_prompt(
     charity: dict[str, Any],
     research: dict[str, Any],
     style_brief: dict[str, Any],
+    brief: dict[str, Any] | None = None,
     voice_constraints: str = VOICE_CONSTRAINTS,
     claims: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, str]]:
     """Assemble a section-writer message list with structural voice isolation.
 
     Critical invariant (AGT-09): this function accepts ONLY the four content
-    blocks below. It does NOT accept ``state`` or any other section's
-    output. Section writers that try to inject other section content into
-    the prompt must do so OUTSIDE this helper — which would be flagged in
-    code review.
+    blocks below (charity/research/style_brief/claims), plus the Phase 47
+    ``brief`` addition documented below. It does NOT accept ``state`` or any
+    other section's output. Section writers that try to inject other section
+    content into the prompt must do so OUTSIDE this helper — which would be
+    flagged in code review.
 
     Args:
         section_id: agent_id (e.g. "origin_story", "founder_bio"). Used in
@@ -281,6 +316,14 @@ def build_section_writer_prompt(
             founderNameVerified is False (RESEARCH Pitfall 5).
         style_brief: dict-shaped from StyleBrief TypedDict. Used fields:
             bonusType, visualDirection.
+        brief: Phase 47 (BRF-05) — the deliberate 5th content block. The
+            six-field Story Brief dict (premise, currentPeg, centralClaim,
+            readerEffect, knownRisks, voiceIntention), typically
+            ``state.get("brief")``. ``None`` (the default) emits no Brief
+            block at all — byte-identical to the pre-Phase-47 user message.
+            Rendered into the USER message only, alongside
+            ``research``/``style_brief`` — never the system message (voice
+            isolation is unaffected by the Brief's content).
         voice_constraints: defaults to VOICE_CONSTRAINTS. Phase 16: writers
             override this with ``style_brief.get("voice", VOICE_CONSTRAINTS)``
             so the narrator voice propagates through Calibrator → writers
@@ -321,6 +364,7 @@ def build_section_writer_prompt(
         f"FOCUS AREA: {charity.get('focusArea', '')}\n"
         f"MISSION: {charity.get('missionStatement', '')}\n\n"
         f"RESEARCH:\n" + "\n".join(research_lines) + "\n\n"
+        + build_brief_block(brief) +
         f"GUIDANCE:\n{section_guidance}\n\n"
         + build_claims_block(claims) +
         f"Return valid JSON matching the schema for the {section_id} section."
