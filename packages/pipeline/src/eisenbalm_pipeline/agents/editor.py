@@ -36,13 +36,14 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any
+from typing import Any, Optional
 
 from langgraph.types import interrupt
 from pydantic import BaseModel, Field
+from slugify import slugify
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
-from eisenbalm_pipeline.graph.state import DispatchState
+from eisenbalm_pipeline.graph.state import Brief, DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
@@ -168,6 +169,118 @@ def _format_deliberation_transcript(
     lines.append(f"**Runner-up notes:** {runner_up_notes}\n")
 
     return "".join(lines)
+
+
+# ── Phase 47 (BRF-05, §47.3): deterministic Brief assembly ───────────────
+# Zero new graph node, zero new LLM call — a pure re-projection of data
+# editor_gate_1 already has in scope. Called from BOTH winner-resolution
+# return paths (the normal auto-select/human-resume path AND the Phase 46
+# D-14 all-candidates-killed synthetic-winner path) immediately after
+# winning_charity resolves.
+
+
+def _match_lead_for_winner(
+    story_leads: list[dict], winning_charity: dict
+) -> Optional[dict]:
+    """Resolve the "active" StoryLead for this run.
+
+    RESEARCH Pitfall 1 (47-RESEARCH.md): Scout does NOT consume
+    ``state['story_leads']`` — there is no real join key between a
+    StoryLead and a CharityCandidate. Treat the relationship as
+    one-active-lead-per-run (a single Scout pass per run today): prefer
+    whichever lead is ``recommended``, else fall back to the first lead in
+    the list, else ``None`` when there are no leads at all (legacy runs,
+    or tests that omit story_leads). Never raises.
+    """
+    if not story_leads:
+        return None
+    for lead in story_leads:
+        if lead.get("recommended"):
+            return lead
+    return story_leads[0]
+
+
+def _match_verification_record(
+    verification_records: list[dict], winning_charity: dict
+) -> Optional[dict]:
+    """Match the winning charity's VerificationRecord on candidateId.
+
+    ``candidateId == f"charity-{slugify(name)}"`` — the SAME deterministic
+    join key already used across Sanity ``_id`` / ``pitchLog.charityId`` /
+    ``agentVotes.charityId`` (agents/advocate.py::_charity_id_for,
+    agents/verify_candidates.py::_charity_id_for). Never raises.
+    """
+    name = winning_charity.get("name") or ""
+    if not name or not verification_records:
+        return None
+    target_id = f"charity-{slugify(name)}"
+    for record in verification_records:
+        if record.get("candidateId") == target_id:
+            return record
+    return None
+
+
+def _assemble_known_risks(
+    winning_lead: Optional[dict], verification: Optional[dict]
+) -> str:
+    """Join brandRiskReason + repetitionWarning + verification killReason/
+    obscurity notes into a single knownRisks string (§47.3 mapping). Never
+    raises — missing inputs degrade to an empty joined string.
+    """
+    parts: list[str] = []
+    if winning_lead:
+        brand_risk_reason = winning_lead.get("brandRiskReason")
+        if brand_risk_reason:
+            parts.append(brand_risk_reason)
+        repetition_warning = winning_lead.get("repetitionWarning")
+        if repetition_warning:
+            parts.append(repetition_warning)
+    if verification:
+        kill_reason = verification.get("killReason")
+        if kill_reason:
+            parts.append(kill_reason)
+        obscurity = verification.get("obscurity") or {}
+        verdict = obscurity.get("verdict")
+        if verdict and verdict not in ("obscure", "unknown"):
+            parts.append(f"obscurity verdict: {verdict}")
+    return " · ".join(parts)
+
+
+def _assemble_brief(
+    *,
+    state: DispatchState,
+    winning_charity: dict,
+    central_claim: str,
+) -> Brief:
+    """Deterministic, zero-new-node, zero-new-LLM-call Brief assembly
+    (§47.3, BRF-05, D-11). A pure re-projection of data already in scope:
+    the matched StoryLead, the matched VerificationRecord,
+    ``central_claim`` (the resolved editorReasoning text on whichever
+    winner-resolution path called this), and ``style_brief``. Never raises
+    — missing lead/verification/style_brief data degrades to "" per field.
+    """
+    story_leads = state.get("story_leads") or []
+    verification_records = state.get("verification_records") or []
+    winning_lead = _match_lead_for_winner(story_leads, winning_charity)
+    verification = _match_verification_record(verification_records, winning_charity)
+    style_brief = state.get("style_brief") or {}
+
+    brief: Brief = {
+        "premise": (
+            (winning_lead.get("premise", "") if winning_lead else "")
+            or winning_charity.get("scoutSummary", "")
+            or ""
+        ),
+        "currentPeg": (winning_lead.get("datedPeg", "") if winning_lead else "") or "",
+        "centralClaim": central_claim or "",
+        "readerEffect": (
+            winning_lead.get("readerEnergy", "") if winning_lead else ""
+        )
+        or "",
+        "knownRisks": _assemble_known_risks(winning_lead, verification),
+        "voiceIntention": style_brief.get("visualDirection", "") or "",
+    }
+    return brief
 
 
 def _build_messages(
@@ -330,19 +443,33 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
             "to recover the run.\n\n"
             f"**Winner:** {human_name}\n"
         )
+        editor_decision_text = (
+            "Degraded recovery path (D-14): verify_candidates killed "
+            "every candidate, so no deterministic ranking or LLM call "
+            "was made. A human supplied a charity directly via the "
+            "all-candidates-killed interrupt."
+        )
+
+        # Phase 47 (BRF-05, §47.3): deterministic Brief assembly + persist —
+        # zero new graph node, zero new LLM call — on the D-14 synthetic-
+        # winner path too, so the writers see a Brief even on this
+        # degraded-recovery run.
+        brief = _assemble_brief(
+            state=state,
+            winning_charity=winning_charity,
+            central_claim=editor_decision_text,
+        )
+        await convex_mutation_safe("briefs:insert", {"runId": run_id, **brief})
+
         return {
             **state,
             "winning_charity": winning_charity,
-            "editor_decision": (
-                "Degraded recovery path (D-14): verify_candidates killed "
-                "every candidate, so no deterministic ranking or LLM call "
-                "was made. A human supplied a charity directly via the "
-                "all-candidates-killed interrupt."
-            ),
+            "editor_decision": editor_decision_text,
             "runner_up_notes": "",
             "editor_confidence": None,
             "deliberation_transcript": transcript,
             "model_versions": dict(state.get("model_versions") or {}),
+            "brief": brief,
         }
 
     # Deterministic ranking (D-18).
@@ -485,6 +612,18 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
     model_versions = dict(state.get("model_versions") or {})
     model_versions["editor_gate1"] = usage.get("resolved_model", "")
 
+    # Phase 47 (BRF-05, §47.3): deterministic Brief assembly + persist —
+    # zero new graph node, zero new LLM call. Covers BOTH the auto-select
+    # case (no pause) and the human-adjudication resume case (this is the
+    # single return path after the conditional gate-1-pause block above),
+    # since winning_charity is resolved identically either way.
+    brief = _assemble_brief(
+        state=state,
+        winning_charity=winning_charity,
+        central_claim=decision.editorReasoning,
+    )
+    await convex_mutation_safe("briefs:insert", {"runId": run_id, **brief})
+
     return {
         **state,
         "winning_charity": winning_charity,
@@ -493,6 +632,7 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
         "editor_confidence": decision.confidence,
         "deliberation_transcript": transcript,
         "model_versions": model_versions,
+        "brief": brief,
     }
 
 

@@ -14,8 +14,12 @@ from eisenbalm_pipeline.agents.editor import (
     EDITOR_CONFIDENCE_THRESHOLD,
     EDITOR_INTERRUPT_THRESHOLD,
     EditorDecision,
+    _assemble_brief,
+    _assemble_known_risks,
     _editor_decision_payload,
     _format_deliberation_transcript,
+    _match_lead_for_winner,
+    _match_verification_record,
     _score_gap,
     _sort_candidates_by_score,
     editor_gate_1,
@@ -55,6 +59,53 @@ def _make_state_with_scored_candidates(scores: list[tuple[str, int]]) -> dict:
         "candidates": candidates,
         "model_versions": {},
     }
+
+
+BRIEF_FIELDS = (
+    "premise",
+    "currentPeg",
+    "centralClaim",
+    "readerEffect",
+    "knownRisks",
+    "voiceIntention",
+)
+
+
+def _make_story_lead(**overrides: object) -> dict:
+    """Phase 46 StoryLead-shaped dict (docs/API_CONTRACTS.md §46.1)."""
+    lead = {
+        "premise": "A dated peg story about HighOrg's overlooked mission.",
+        "datedPeg": "HighOrg's annual report just dropped this week.",
+        "pegSourceUrl": "https://example.com/highorg-report",
+        "readerEnergy": "Readers will feel surprised this org is still obscure.",
+        "charitableAngle": "Direct relief tie-in.",
+        "category": "housing",
+        "confidence": "high",
+        "brandRiskFlag": False,
+        "brandRiskReason": None,
+        "repetitionWarning": None,
+        "recommended": True,
+    }
+    lead.update(overrides)
+    return lead
+
+
+def _make_verification_record(**overrides: object) -> dict:
+    """Phase 46 VerificationRecord-shaped dict (docs/API_CONTRACTS.md §46.3)."""
+    record = {
+        "candidateId": "charity-highorg",
+        "candidateName": "HighOrg",
+        "domainLive": True,
+        "registrationId": "https://example.com/registration",
+        "registrationVerified": True,
+        "obscurity": {"pressHits": 1, "verdict": "obscure"},
+        "status": "pass",
+        "killed": False,
+        "killReason": None,
+        "checkedAt": 1_700_000_000_000,
+    }
+    record.update(overrides)
+    return record
 
 
 # ── Pure helpers ──────────────────────────────────────────────────────────
@@ -128,6 +179,114 @@ def test_transcript_format() -> None:
     assert "## Editor Reasoning" in transcript
     assert "## Decision" in transcript
     assert "**Winner:** Foo" in transcript
+
+
+# ── Phase 47 (BRF-05): Brief assembly pure helpers ─────────────────────────
+
+
+def test_match_lead_for_winner_prefers_recommended() -> None:
+    """RESEARCH Pitfall 1: one-active-lead-per-run — prefer recommended=True."""
+    not_recommended = _make_story_lead(premise="Not this one.", recommended=False)
+    recommended = _make_story_lead(premise="This one.", recommended=True)
+    result = _match_lead_for_winner(
+        [not_recommended, recommended], {"name": "HighOrg"}
+    )
+    assert result is not None
+    assert result["premise"] == "This one."
+
+
+def test_match_lead_for_winner_falls_back_to_first_when_none_recommended() -> None:
+    leads = [
+        _make_story_lead(premise="First lead.", recommended=False),
+        _make_story_lead(premise="Second lead.", recommended=False),
+    ]
+    result = _match_lead_for_winner(leads, {"name": "HighOrg"})
+    assert result is not None
+    assert result["premise"] == "First lead."
+
+
+def test_match_lead_for_winner_none_when_no_leads() -> None:
+    assert _match_lead_for_winner([], {"name": "HighOrg"}) is None
+
+
+def test_match_verification_record_matches_on_slugified_candidate_id() -> None:
+    record = _make_verification_record(candidateId="charity-high-org-inc")
+    result = _match_verification_record(
+        [record], {"name": "High Org, Inc."}
+    )
+    assert result is not None
+    assert result["candidateId"] == "charity-high-org-inc"
+
+
+def test_match_verification_record_none_when_no_match() -> None:
+    record = _make_verification_record(candidateId="charity-someone-else")
+    assert (
+        _match_verification_record([record], {"name": "HighOrg"}) is None
+    )
+    assert _match_verification_record([], {"name": "HighOrg"}) is None
+
+
+def test_assemble_known_risks_joins_brand_risk_repetition_and_kill_reason() -> None:
+    lead = _make_story_lead(
+        brandRiskFlag=True,
+        brandRiskReason="Sensitive ongoing litigation.",
+        repetitionWarning="avoid US-SE · avoid weather",
+        recommended=False,
+    )
+    record = _make_verification_record(
+        killed=True, killReason="domain does not resolve"
+    )
+    risks = _assemble_known_risks(lead, record)
+    assert "Sensitive ongoing litigation." in risks
+    assert "avoid US-SE · avoid weather" in risks
+    assert "domain does not resolve" in risks
+
+
+def test_assemble_known_risks_empty_when_nothing_to_report() -> None:
+    lead = _make_story_lead(brandRiskReason=None, repetitionWarning=None)
+    record = _make_verification_record(killed=False, killReason=None)
+    assert _assemble_known_risks(lead, record) == ""
+    assert _assemble_known_risks(None, None) == ""
+
+
+def test_assemble_brief_populates_all_six_fields_from_lead_and_verification() -> None:
+    lead = _make_story_lead()
+    record = _make_verification_record()
+    state = {
+        "story_leads": [lead],
+        "verification_records": [record],
+        "style_brief": {"visualDirection": "Muted, dry, deadpan."},
+    }
+    brief = _assemble_brief(
+        state=state,
+        winning_charity={"name": "HighOrg", "scoutSummary": "Scout summary fallback."},
+        central_claim="HighOrg wins on operational rigor.",
+    )
+    assert set(brief.keys()) == set(BRIEF_FIELDS)
+    assert brief["premise"] == lead["premise"]
+    assert brief["currentPeg"] == lead["datedPeg"]
+    assert brief["centralClaim"] == "HighOrg wins on operational rigor."
+    assert brief["readerEffect"] == lead["readerEnergy"]
+    assert brief["voiceIntention"] == "Muted, dry, deadpan."
+    for value in brief.values():
+        assert isinstance(value, str)
+
+
+def test_assemble_brief_degrades_gracefully_with_no_leads_or_verification() -> None:
+    """Never raises — missing lead/verification data degrades to documented fallbacks."""
+    state: dict = {}
+    brief = _assemble_brief(
+        state=state,
+        winning_charity={"name": "Human Picked Org", "scoutSummary": ""},
+        central_claim="Degraded recovery path.",
+    )
+    assert set(brief.keys()) == set(BRIEF_FIELDS)
+    assert brief["premise"] == ""
+    assert brief["currentPeg"] == ""
+    assert brief["centralClaim"] == "Degraded recovery path."
+    assert brief["readerEffect"] == ""
+    assert brief["knownRisks"] == ""
+    assert brief["voiceIntention"] == ""
 
 
 # ── Live gate-1 async tests ──────────────────────────────────────────────
@@ -416,3 +575,105 @@ async def test_top_score_overrides_llm_winner() -> None:
 
     # Top-score wins, NOT the LLM's pick
     assert result["winning_charity"]["name"] == "HighOrg"
+
+
+# ── Phase 47 (BRF-05): Brief generation on both winner-resolution paths ────
+
+
+@pytest.mark.asyncio
+async def test_brief_assembled_and_persisted_on_auto_select_path() -> None:
+    """§47.3: state['brief'] is a six-field dict populated from the matched
+    lead/verification/editorReasoning/style_brief on the normal (no-pause)
+    winner-resolution path, and briefs:insert is called with {runId, ...brief}.
+    """
+    state = _make_state_with_scored_candidates([("LowOrg", 5), ("HighOrg", 9)])
+    state["story_leads"] = [_make_story_lead()]
+    state["verification_records"] = [
+        _make_verification_record(candidateId="charity-highorg", candidateName="HighOrg")
+    ]
+    state["style_brief"] = {"visualDirection": "Muted, dry, deadpan."}
+    decision = EditorDecision(
+        winnerName="HighOrg",
+        confidence=0.9,
+        requiresHumanInput=False,
+        editorReasoning="HighOrg wins on operational rigor.",
+        runnerUpNotes="LowOrg was a fine candidate.",
+        deliberationTranscript="ignored — Python overrides",
+    )
+    mock_convex = AsyncMock()
+    with patch(
+        "eisenbalm_pipeline.agents.editor.acomplete",
+        AsyncMock(
+            return_value=(
+                decision,
+                {
+                    "tokens_in": 100,
+                    "tokens_out": 50,
+                    "usd": 0.01,
+                    "resolved_model": "anthropic/claude-opus-4-7-20251101",
+                },
+            )
+        ),
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
+    ):
+        result = await editor_gate_1(state)
+
+    brief = result["brief"]
+    assert set(brief.keys()) == set(BRIEF_FIELDS)
+    assert brief["centralClaim"] == "HighOrg wins on operational rigor."
+    assert brief["voiceIntention"] == "Muted, dry, deadpan."
+
+    insert_calls = [
+        c
+        for c in mock_convex.call_args_list
+        if c.args and c.args[0] == "briefs:insert"
+    ]
+    assert len(insert_calls) == 1
+    insert_args = insert_calls[0].args[1]
+    assert insert_args["runId"] == state["run_id"]
+    for field in BRIEF_FIELDS:
+        assert insert_args[field] == brief[field]
+
+
+@pytest.mark.asyncio
+async def test_brief_assembled_and_persisted_on_no_candidates_resume_path() -> None:
+    """§47.3: the Phase 46 D-14 all-candidates-killed synthetic-winner path
+    ALSO assembles + persists a six-field Brief — identically to the
+    auto-select path — with graceful "" fallbacks (no leads/verification
+    exist for a synthetic winner).
+    """
+    state = {
+        "run_id": "run-test-no-candidates-brief-0001",
+        "issue_number": 42,
+        "candidates": [],
+        "model_versions": {"scout": "anthropic/claude-haiku-4-5"},
+    }
+    mock_convex = AsyncMock()
+    mock_acomplete = AsyncMock()
+    with patch(
+        "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.interrupt",
+        return_value={"winnerName": "Human Picked Org"},
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.acomplete", mock_acomplete,
+    ):
+        result = await editor_gate_1(state)
+
+    brief = result["brief"]
+    assert set(brief.keys()) == set(BRIEF_FIELDS)
+    assert brief["premise"] == ""
+    assert brief["centralClaim"] != ""  # the degraded-recovery editor_decision text
+    mock_acomplete.assert_not_awaited()
+
+    insert_calls = [
+        c
+        for c in mock_convex.call_args_list
+        if c.args and c.args[0] == "briefs:insert"
+    ]
+    assert len(insert_calls) == 1
+    insert_args = insert_calls[0].args[1]
+    assert insert_args["runId"] == state["run_id"]
+    for field in BRIEF_FIELDS:
+        assert insert_args[field] == brief[field]
