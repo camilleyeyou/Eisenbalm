@@ -237,7 +237,7 @@ export default defineSchema({
     clerkUserId: v.string(),     // Clerk "sub" claim — primary lookup key
     email: v.string(),
     displayName: v.optional(v.string()),
-    role: v.optional(v.string()),  // "admin" | "operator" — RBAC deferred to Phase 28
+    role: v.optional(v.string()),  // "Editor-in-chief" | "Collaborator" (Phase 49, §49.1) — live source is the Clerk JWT 'role' claim; this field is an optional future mirror
     createdAt: v.number(),
     lastSeenAt: v.number(),
   })
@@ -582,4 +582,17 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_runId', ['runId']),
+
+  // ── comments: flat read+comment capability (Phase 49 ROL-04, §49.2) ──────────
+  comments: defineTable({
+    workspace_id: v.string(),
+    issueNumber: v.number(),
+    stage: v.optional(v.string()),
+    anchorRef: v.optional(v.string()),
+    text: v.string(),
+    authorId: v.string(),      // Clerk subject — NEVER client-supplied
+    createdAt: v.number(),
+  })
+    .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber'])
+    .index('by_workspace', ['workspace_id']),
 })
