@@ -395,7 +395,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **SGE-02**: The Signal Editor never self-selects a brand-risk-flagged lead — it routes the decision to the human.
 - [x] **SGE-03**: A `verify_candidates` deterministic check runs after Scout and produces a verification record per organization (domain live, registration ID, obscurity/press scan), killing candidates that fail.
 - [x] **SGE-04**: The pipeline graph runs 20 nodes with `signal_editor` before `scout` and `verify_candidates` between `scout` and `advocate`, and the Postgres checkpointer resumes correctly across the new nodes.
-- [ ] **SGE-05**: The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and *surfaces* a repetition warning alongside the lead rather than silently suppressing it.
+- [x] **SGE-05**: The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and *surfaces* a repetition warning alongside the lead rather than silently suppressing it.
 
 ### Story & Brief Stage (BRF)
 - [ ] **BRF-01**: Stage 1 shows story leads as cards with peg + source, reader energy, angle, category, confidence, and any brand-risk warning shown in full — never truncated or tooltip-hidden.
