@@ -17,6 +17,9 @@ import {
   deriveFactCheckSummary,
   formatTaskAge,
   SEVERITY_MINUTES,
+  deriveRunCostUsd,
+  deriveRunCapUsd,
+  DEFAULT_RUN_CAP_USD,
   type DerivationInputs,
   type DerivedTask,
   type SectionState,
@@ -850,5 +853,36 @@ describe('estimateWorkMinutes + SEVERITY_MINUTES (§40.6, D-22)', () => {
     expect(Object.keys(SEVERITY_MINUTES).sort()).toEqual(
       ['information', 'must-fix', 'review-recommended'].sort(),
     )
+  })
+})
+
+describe('deriveRunCostUsd + deriveRunCapUsd (Phase 45 Plan 45-06, REV-05, D-12/D-13/D-15)', () => {
+  describe('deriveRunCostUsd', () => {
+    it('returns undefined when rows are undefined — loading, never a fabricated zero', () => {
+      expect(deriveRunCostUsd(undefined)).toBeUndefined()
+    })
+
+    it('returns 0 for an empty (loaded) row set', () => {
+      expect(deriveRunCostUsd([])).toBe(0)
+    })
+
+    it('sums costUsd across rows, treating a missing costUsd as 0', () => {
+      expect(deriveRunCostUsd([{ costUsd: 1.2 }, { costUsd: 0.3 }, {}])).toBe(1.5)
+    })
+  })
+
+  describe('deriveRunCapUsd', () => {
+    it('defaults to 10.0 when pipelineConfigRows is undefined (not yet loaded)', () => {
+      expect(deriveRunCapUsd(undefined)).toBe(10.0)
+      expect(deriveRunCapUsd(undefined)).toBe(DEFAULT_RUN_CAP_USD)
+    })
+
+    it('parses per_run_cap_usd from the matching row', () => {
+      expect(deriveRunCapUsd([{ key: 'per_run_cap_usd', value: '25' }])).toBe(25)
+    })
+
+    it('defaults to 10.0 when the per_run_cap_usd key is absent', () => {
+      expect(deriveRunCapUsd([{ key: 'schedule_enabled', value: 'true' }])).toBe(10.0)
+    })
   })
 })

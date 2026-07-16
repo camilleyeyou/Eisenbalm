@@ -511,3 +511,36 @@ export function formatTaskAge(openedAt: number | undefined, now: number = Date.n
 export function estimateWorkMinutes(tasks: DerivedTask[]): number {
   return tasks.reduce((sum, t) => sum + SEVERITY_MINUTES[t.sev], 0)
 }
+
+// ── deriveRunCostUsd + deriveRunCapUsd (Phase 45 Plan 45-06, REV-05, D-12/D-13/D-15) ─
+//
+// The header cost-vs-budget readout's pure derivation pair. Spend is summed
+// from the durable `agentRuns:byRunId` rows (never the pipeline's in-memory
+// `lib/cost.py` `_store`, which is cleared before an operator ever reaches
+// review — 45-RESEARCH Pitfall 1). The cap mirrors `per_run_cap_usd` from
+// `pipelineConfig:getAll`, defaulting to 10.0 (the same default
+// `api/control.py` uses server-side). Never-blank (D-15): `deriveRunCostUsd`
+// returns `undefined` while loading — it must NOT be coerced to 0.
+
+export const DEFAULT_RUN_CAP_USD = 10.0
+
+export function deriveRunCostUsd(
+  rows: Array<{ costUsd?: number }> | undefined,
+): number | undefined {
+  if (rows === undefined) return undefined // never-blank: loading, not zero
+  return rows.reduce((sum, r) => sum + (r.costUsd ?? 0), 0)
+}
+
+export function deriveRunCapUsd(
+  pipelineConfigRows: Array<{ key: string; value: string }> | undefined,
+): number {
+  if (pipelineConfigRows === undefined) return DEFAULT_RUN_CAP_USD
+  const row = pipelineConfigRows.find((r) => r.key === 'per_run_cap_usd')
+  if (!row) return DEFAULT_RUN_CAP_USD
+  try {
+    const v = JSON.parse(row.value)
+    return typeof v === 'number' ? v : Number(v) || DEFAULT_RUN_CAP_USD
+  } catch {
+    return Number(row.value) || DEFAULT_RUN_CAP_USD
+  }
+}
