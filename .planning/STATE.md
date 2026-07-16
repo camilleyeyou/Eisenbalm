@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 47-04-leads-and-brief-fastapi-endpoints-PLAN.md
-last_updated: "2026-07-16T10:58:38.360Z"
+stopped_at: Completed 47-05-workspace-subscriptions-lead-card-actions-PLAN.md
+last_updated: "2026-07-16T11:17:27.251Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 47 (story-brief-stage) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 
 ## Performance Metrics
 
@@ -332,6 +332,7 @@ Plan: 4 of 8
 | Phase 47 P01 | 32min | 3 tasks | 12 files |
 | Phase 47-story-brief-stage P02 | 12min | 2 tasks | 3 files |
 | Phase 47 P04 | 13min | 2 tasks | 6 files |
+| Phase 47 P05 | 15min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -872,6 +873,9 @@ Recent decisions affecting current work:
 - [Phase 47-story-brief-stage]: Brief generation stays a deterministic in-editor_gate_1 assembly (zero new graph node/LLM call) on BOTH winner-resolution paths (auto-select/resume + the D-14 synthetic-winner path), matching data already in scope (matched StoryLead + VerificationRecord via candidateId join, editorReasoning, style_brief)
 - [Phase 47]: Require-a-lead is FastAPI-routed for consistency with Remove but stays out of the shared Decision log (no reason= kwarg); Remove passes reason=/run_id= so it projects into it
 - [Phase 47]: Brief field-strengthen preview issues zero Convex writes (no cost-recording mutation, per plan's explicit 'NO Convex write' instruction); apply passes a synthesized reason= so accepting a strengthened field surfaces in the Decision log
+- [Phase 47]: WorkspaceStateProvider centralizes storyLeads/verificationRecords/brief Convex subscriptions (runId-scoped, mirrors pitchRows) for every remaining Stage-1 component to reuse
+- [Phase 47]: LeadCard is a pure props-only component (no useQuery); LeadActions always mounts the shared DecisionLog beneath its Require/Remove controls, mirroring ApprovalPanelContent's precedent
+- [Phase 47]: requirements mark-complete deferred for BRF-01/BRF-02 in 47-05 (components built + tested but not yet mounted into a reachable route) — will flip in 47-08, consistent with 47-01/47-04 precedent
 
 ### Pending Todos
 
@@ -962,6 +966,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T10:58:38.346Z
-Stopped at: Completed 47-04-leads-and-brief-fastapi-endpoints-PLAN.md
+Last session: 2026-07-16T11:17:27.237Z
+Stopped at: Completed 47-05-workspace-subscriptions-lead-card-actions-PLAN.md
 Resume file: None
