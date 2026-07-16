@@ -4880,7 +4880,7 @@ function resolveInspectorStep(
 | `rec` | `editor_final` |
 | `qa` | `qa` |
 | `org` | `scout` (the pitch/candidate data itself). `editor_gate1`/`editor_gate_1` is reachable via the "why this one won" context on the same artifact, not as the primary `agentKey`. |
-| `signal` | `signal_editor`; `degraded: true` when the run has no such step (no Signal Editor exists until Phase 46) — never a crash. |
+| `signal` | `signal_editor` — the story leads emitted by the `signal_editor` step (§46.1/§46.2). `degraded: true` only when a legacy run predates Phase 46 (no `signal_editor` `agent_runs` row exists for that `runId`) — never a crash. |
 
 **`bonus` variant selection (D-02 corollary):** the `agent_runs`/`agent_run_payloads` key is
 literally `"bonus"` (not the three variant keys). The resolver reads `agent_run_payloads` for
@@ -5301,3 +5301,215 @@ passage path call the SAME implementation); one new `would_exceed_run_cap` predi
 revise" button flips from RESERVED to LIVE. No existing field is renamed or removed; §31/§35/§42/
 §44 shapes are unchanged; `revise/preview`+`revise/apply` GENERALIZE §42.4a's `evidence/preview`+
 `evidence/apply` rather than forking a second endpoint pair.*
+
+---
+
+## §46 — Signal Editor & Candidate Verification (Phase 46)
+
+The v3.0 deferral (V3-DEF-02) comes due: the pipeline grows from 18 to 20 nodes so Stage 1
+(Phases 47-48) has real leads and verification records to render. A **Signal Editor** LLM agent
+runs *before* Scout and emits 3-5 dated story leads (SGE-01); it never self-selects a
+brand-risk-flagged lead — that routes to the human (SGE-02). A **`verify_candidates`** deterministic
+(non-LLM) node runs *after* Scout and produces a verification record per organization, killing
+only definitive failures (SGE-03). This contract is written BEFORE any `state.py`/agent/Convex code
+exists (CLAUDE.md contract-first hard rule, mirroring §39/§42). Plan 46-01 implements these shapes
+verbatim — no field name, table name, or match-key scheme may be invented later.
+
+### §46.1 — `StoryLead` TypedDict (NEW)
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/graph/state.py
+class StoryLead(TypedDict):
+    premise: str                        # the story angle, one or two sentences
+    datedPeg: str                       # what makes this current/timely right now
+    pegSourceUrl: str                   # a REAL, sourced URL for the dated peg — never invented (D-19)
+    readerEnergy: str                   # why a reader would care
+    charitableAngle: str                # how this connects to a charitable response
+    category: str                       # e.g. "disaster relief", "housing", "food security"
+    confidence: str                     # 'low' | 'medium' | 'high' — constrained at the Pydantic boundary
+    brandRiskFlag: bool                 # true when the lead carries reputational/sensitivity risk
+    brandRiskReason: Optional[str]      # populated ONLY when brandRiskFlag is true; else None
+    repetitionWarning: Optional[str]    # SGE-05 advisory, e.g. "avoid US-SE · avoid weather"; never suppresses the lead
+    recommended: bool                   # SGE-02 gate — MUST be False whenever brandRiskFlag is True
+```
+
+A Pydantic model (`SignalEditorOutput` / a per-lead `StoryLeadModel`) enforces this shape at the
+`signal_editor` agent boundary — the `body: list[BodyBlock]` / `claims: list[dict]` (§18, §35)
+structured-output precedent. **Invariant (D-08, enforced in Python, not only prompted):** a lead
+with `brandRiskFlag: true` MUST have `recommended: false`. The Signal Editor's own code flips
+`recommended` to `false` after the LLM call for any flagged lead, exactly like Scout's dedup filter
+and Advocate's positional-alignment fallback enforce their own invariants in Python.
+
+### §46.2 — `story_leads` DispatchState field (NEW)
+
+```python
+class DispatchState(TypedDict):
+    # ── Phase 46: Signal Editor leads ──────────────────────────────────────────
+    story_leads: Optional[list[StoryLead]]   # JSON-serializable list[dict] — mirrors the
+                                              # featured_charity_keys ("list NOT set") and
+                                              # claims: list[dict] precedents so it survives
+                                              # the Postgres checkpoint across signal_editor →
+                                              # scout → verify_candidates (SGE-04).
+```
+
+### §46.3 — `VerificationRecord` TypedDict (NEW)
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/graph/state.py
+class VerificationRecord(TypedDict):
+    candidateId: str                    # f"charity-{slugify(name)}" — the SAME join key already
+                                         # used across Sanity _id / pitchLog.charityId /
+                                         # agentVotes.charityId (agents/advocate.py::_charity_id_for)
+    candidateName: str
+    domainLive: bool                    # httpx-resolved: DNS-resolves + 2xx/3xx after redirects
+    registrationId: Optional[str]       # reachable charityNavigatorUrl/guidestarUrl identifier, if any
+    registrationVerified: bool
+    obscurity: dict                     # {"pressHits": int, "verdict": str} — bounded Tavily press scan
+    status: Literal['pass', 'fail', 'unverified']   # 'unverified' on any transient/ambiguous error (D-12)
+    killed: bool
+    killReason: Optional[str]           # non-empty whenever killed is True — never silently dropped
+    checkedAt: int                      # Unix ms
+```
+
+**Conservative posture (D-12):** a candidate is `killed` ONLY on a DEFINITIVE failure (domain does
+not resolve, no registration found at all, or clearly not-obscure). Transient/ambiguous errors
+(timeout, 5xx, SSL/DNS blip, rate-limit) mark the affected check `'unverified'` and KEEP the
+candidate — mirrors `agents/verify.py::verify_research`'s "false negatives are acceptable, false
+positives are not" posture. Killed candidates are always recorded with a `killReason` and emitted —
+never silently dropped ("nothing silent").
+
+### §46.4 — `verification_records` DispatchState field (NEW)
+
+```python
+class DispatchState(TypedDict):
+    # ── Phase 46: verify_candidates records ────────────────────────────────────
+    verification_records: Optional[list[VerificationRecord]]   # JSON-serializable list[dict] —
+                                                                 # same checkpoint-safety precedent
+                                                                 # as story_leads (SGE-04).
+```
+
+### §46.5 — Convex store: `story_leads` + `verification_records` tables (NEW)
+
+Two **dedicated** Convex tables — NOT a new `deliberationEvents.eventType` literal. §37.3 declares
+that union **FROZEN** ("no new literal may be added for it"), and the architectural fit is wrong
+regardless: `deliberationEvents` rows are an immutable append-only event stream, but Phase 47
+(BRF-02) must PATCH lead state (Require this lead / Remove), which an append-only stream cannot
+support. This mirrors the `pitchLog` / `qaCorrections` / `charity_corrections` dedicated-table
+pattern (§39.1).
+
+```typescript
+// convex/schema.ts
+story_leads: defineTable({
+  runId: v.string(),
+  premise: v.string(),
+  datedPeg: v.string(),
+  pegSourceUrl: v.string(),
+  readerEnergy: v.string(),
+  charitableAngle: v.string(),
+  category: v.string(),
+  confidence: v.string(),
+  brandRiskFlag: v.boolean(),
+  brandRiskReason: v.optional(v.string()),
+  repetitionWarning: v.optional(v.string()),
+  recommended: v.boolean(),
+  timestamp: v.number(),
+})
+  .index('by_runId', ['runId']),
+
+verification_records: defineTable({
+  runId: v.string(),
+  candidateId: v.string(),
+  candidateName: v.string(),
+  domainLive: v.boolean(),
+  registrationId: v.optional(v.string()),
+  registrationVerified: v.boolean(),
+  // obscurity: {pressHits, verdict} is FLATTENED for the Convex column — the
+  // pipeline VerificationRecord dict re-nests it into obscurity: {pressHits, verdict}.
+  pressHits: v.number(),
+  obscurityVerdict: v.string(),
+  status: v.union(v.literal('pass'), v.literal('fail'), v.literal('unverified')),
+  killed: v.boolean(),
+  killReason: v.optional(v.string()),
+  checkedAt: v.number(),
+  timestamp: v.number(),
+})
+  .index('by_runId', ['runId'])
+  .index('by_runId_and_candidate', ['runId', 'candidateId']),
+```
+
+`pipelineSecret: v.optional(v.string())` is NOT a stored column on either table — it is the Phase
+29 D-1 pipeline-lane secret argument, stripped from `args` before the `ctx.db.insert(...)` call
+(exactly like `pitchLog.ts::insert`), never persisted.
+
+### §46.6 — `convex/storyLeads.ts` + `convex/verificationRecords.ts` functions (NEW)
+
+Both files mirror `convex/pitchLog.ts` exactly:
+
+```typescript
+// convex/storyLeads.ts
+export const insert = mutation({
+  args: {
+    runId: v.string(),
+    premise: v.string(), datedPeg: v.string(), pegSourceUrl: v.string(),
+    readerEnergy: v.string(), charitableAngle: v.string(), category: v.string(),
+    confidence: v.string(), brandRiskFlag: v.boolean(),
+    brandRiskReason: v.optional(v.string()), repetitionWarning: v.optional(v.string()),
+    recommended: v.boolean(),
+    pipelineSecret: v.optional(v.string()),   // Phase 29 D-1 — never persisted
+  },
+  handler: async (ctx, { pipelineSecret, ...args }) => {
+    requirePipelineSecret(pipelineSecret)
+    return await ctx.db.insert('story_leads', { ...args, timestamp: Date.now() })
+  },
+})
+
+export const byRunId = query({
+  args: { runId: v.string() },
+  handler: async (ctx, { runId }) =>
+    await ctx.db.query('story_leads').withIndex('by_runId', q => q.eq('runId', runId)).order('asc').collect(),
+})
+```
+
+```typescript
+// convex/verificationRecords.ts
+export const insert = mutation({
+  args: {
+    runId: v.string(), candidateId: v.string(), candidateName: v.string(),
+    domainLive: v.boolean(), registrationId: v.optional(v.string()),
+    registrationVerified: v.boolean(), pressHits: v.number(), obscurityVerdict: v.string(),
+    status: v.union(v.literal('pass'), v.literal('fail'), v.literal('unverified')),
+    killed: v.boolean(), killReason: v.optional(v.string()), checkedAt: v.number(),
+    pipelineSecret: v.optional(v.string()),   // Phase 29 D-1 — never persisted
+  },
+  handler: async (ctx, { pipelineSecret, ...args }) => {
+    requirePipelineSecret(pipelineSecret)
+    return await ctx.db.insert('verification_records', { ...args, timestamp: Date.now() })
+  },
+})
+
+export const byRunId = query({
+  args: { runId: v.string() },
+  handler: async (ctx, { runId }) =>
+    await ctx.db.query('verification_records').withIndex('by_runId', q => q.eq('runId', runId)).order('asc').collect(),
+})
+```
+
+Both `insert` paths MUST be added to `packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py`'s
+`_PIPELINE_SECRET_GUARDED_PATHS` frozenset (`"storyLeads:insert"`, `"verificationRecords:insert"`) —
+the Phase 42-03 lesson: an unregistered guarded path means every real call 500s Unauthorized despite
+mocked unit tests passing.
+
+### §46.7 — `signal` inspector-artifact row correction (amends §44.RECONCILIATION table in place)
+
+The §44 `agentKey` resolution table's `signal` row previously read "no Signal Editor exists until
+Phase 46." That is now stale. The row is corrected to:
+
+| Type | `agentKey` resolution |
+|---|---|
+| `signal` | `signal_editor` — the story leads emitted by the `signal_editor` step (§46.1/§46.2). `degraded: true` only when a legacy run predates Phase 46 (no `signal_editor` `agent_runs` row exists for that `runId`) — never a crash. |
+
+*All Phase 46 changes are additive: two new DispatchState fields (`story_leads`,
+`verification_records`); two new TypedDicts (`StoryLead`, `VerificationRecord`); two new Convex
+tables (`story_leads`, `verification_records`) with `insert`/`byRunId` functions each; two new
+guarded pipeline-secret paths. No existing field is renamed or removed; §7/§26/§37/§39/§44 shapes
+are unchanged except the single stale `signal` row correction in §46.7.*
