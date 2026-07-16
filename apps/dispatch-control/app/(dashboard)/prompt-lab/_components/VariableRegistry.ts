@@ -51,7 +51,7 @@ export const VARIABLE_REGISTRY: Record<string, string[]> = {
   advocate_user: ['candidates_json'],
   editor_gate1_user: ['issue_number', 'candidates_block'],
   editor_final_user: ['qa_corrections_json', 'section_headlines_json'],
-  researcher_user: ['charity', 'results_block', 'corrections'],
+  researcher_user: ['charity', 'results_block', 'corrections', 'source_material'],
   game_user: ['charity_name', 'mission_statement'],
   design_user: ['charity_name', 'visual_direction'],
   bonus_big_budget_user: ['charity_name', 'mission_statement', 'visual_direction'],
@@ -136,6 +136,8 @@ export const VARIABLE_DESCRIPTIONS: Record<string, string> = {
   results_block: 'Formatted web-search results passed to the agent.',
   corrections:
     'Prior editorial corrections logged for this charity, injected so research accounts for them (MEM-03).',
+  source_material:
+    'Optional operator-supplied URLs/notes from a "Start from my brief" entry, prioritized as seed context (Phase 48 D-10). Empty on discovery runs.',
   // ── structured JSON payloads ──────────────────────────────────────────────
   candidates_json: 'JSON array of charity candidates for the advocate to score.',
   candidates_block: 'Formatted candidate list with advocate scores for the editor.',
@@ -169,6 +171,8 @@ export const VARIABLE_SAMPLES: Record<string, string> = {
     'URL: https://example.org\nTitle: About\nContent: A small charity preserving library acoustics.',
   corrections:
     'PRIOR EDITORIAL CORRECTIONS (account for these):\n- AUM figure was wrong; use $4.2M',
+  source_material:
+    'OPERATOR-SUPPLIED SOURCE MATERIAL (prioritize these as seed context):\nhttps://example.org/notes',
   // ── structured JSON payloads ──────────────────────────────────────────────
   candidates_json:
     '[{"name": "The Quiet Foundation", "location": "Vermont", "focusArea": "library acoustics"}]',
