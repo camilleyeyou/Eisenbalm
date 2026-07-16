@@ -10,6 +10,8 @@
  *
  * Runs in jsdom (environmentMatchGlobs `*.test.tsx` -> jsdom).
  */
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vitest'
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 
@@ -68,6 +70,11 @@ interface WsMock {
   verificationRecords: unknown[] | undefined
   pitchRows: unknown[] | undefined
   brief: Record<string, string> | null | undefined
+  // Phase 48 (ENT-01/ENT-04, §48.4) — undefined mirrors "not yet loaded";
+  // absent/'discovery' is the Convex-side default (§48.4). Only tests that
+  // explicitly set this to 'brief' exercise the brief-mode Stage-1 render
+  // path (see the skip-guarded describe block below).
+  entryMode?: 'discovery' | 'brief'
 }
 
 let wsMock: WsMock
@@ -90,6 +97,17 @@ function fixtureFor(query: unknown) {
 
 import { useQuery } from 'convex/react'
 import { StoryBriefScreen } from '../app/(dashboard)/story-brief/_components/StoryBriefScreen'
+
+// Phase 48 Wave 0 (ENT-01/ENT-04) — source-scan skip-guard for the brief-mode
+// Stage 1 describe block below. Mirrors CreatePanel.test.tsx's
+// SECOND_CARD_SHIPPED idiom: read StoryBriefScreen.tsx's own source text and
+// only run the brief-mode assertions once the component actually branches on
+// `entryMode` (Plan 48-06). Until then the block is SKIPPED, not failing.
+const STORY_BRIEF_SCREEN_SRC = fs.readFileSync(
+  path.resolve(__dirname, '../app/(dashboard)/story-brief/_components/StoryBriefScreen.tsx'),
+  'utf-8',
+)
+const ENTRY_MODE_WIRED = /entryMode/.test(STORY_BRIEF_SCREEN_SRC)
 
 const QUIET_HARVEST_LEAD = {
   _id: 'lead-1',
@@ -159,6 +177,7 @@ beforeEach(() => {
     verificationRecords: undefined,
     pitchRows: undefined,
     brief: undefined,
+    entryMode: undefined,
   }
   runFixture = undefined
   advocateRowsFixture = undefined
@@ -279,3 +298,58 @@ describe('StoryBriefScreen — composition (BRF-01..06)', () => {
     expect(screen.queryByRole('region', { name: 'Needs your decision' })).toBeNull()
   })
 })
+
+// ── Brief-mode Stage 1 (Phase 48, ENT-01/ENT-04, D-11 — Wave 4) ────────────
+//
+// 48-RESEARCH.md Pattern 4: StoryBriefScreen/OrgOptionSlate are wired
+// entirely off story_leads (Signal Editor) + pitchLog (Scout) — both
+// PERMANENTLY EMPTY for a brief-started run. Without an entryMode-aware
+// branch, a brief-started issue's Stage 1 would show "No leads yet." and
+// "No organization options yet", silently hiding the human org and its
+// verification record even though both exist in Convex. This block is
+// skip-guarded (ENTRY_MODE_WIRED) until Plan 48-06 adds that branch.
+describe.skipIf(!ENTRY_MODE_WIRED)(
+  'StoryBriefScreen — brief-mode Stage 1 (ENT-01/ENT-04, D-11, Phase 48 — Wave 4)',
+  () => {
+    const HUMAN_ORG_RECORD = {
+      candidateId: 'charity-quiet-harvest-food-bank',
+      candidateName: 'Quiet Harvest Food Bank',
+      domainLive: true,
+      registrationId: 'https://charitynavigator.example/org/quiet-harvest',
+      registrationVerified: true,
+      pressHits: 1,
+      obscurityVerdict: 'obscure',
+      status: 'pass' as const,
+      killed: false,
+      checkedAt: 1_700_000_000_000,
+    }
+
+    beforeEach(() => {
+      wsMock.entryMode = 'brief'
+      wsMock.runId = 'r1'
+      wsMock.storyLeads = []
+      wsMock.pitchRows = []
+      wsMock.verificationRecords = [HUMAN_ORG_RECORD]
+      wsMock.brief = BRIEF_FIXTURE
+      runFixture = { status: 'complete' }
+    })
+
+    it('does not render the discovery-mode "No leads yet." message for a brief-started run', () => {
+      render(<StoryBriefScreen issueNumber={12} runId="r1" />)
+      expect(screen.queryByText(/no leads yet/i)).toBeNull()
+    })
+
+    it('does not render OrgOptionSlate\'s "No organization options yet" empty state', () => {
+      render(<StoryBriefScreen issueNumber={12} runId="r1" />)
+      expect(screen.queryByText(/no organization options yet/i)).toBeNull()
+    })
+
+    it("renders the human org's name and its verification-with-dates line (D-11 — surfaced prominently, never absent)", () => {
+      render(<StoryBriefScreen issueNumber={12} runId="r1" />)
+      expect(screen.getByText('Quiet Harvest Food Bank')).toBeDefined()
+      const verificationText = screen.getByText(/checked/i).textContent ?? ''
+      expect(verificationText).toMatch(/domain live/i)
+      expect(verificationText).toMatch(/registration verified/i)
+    })
+  },
+)
