@@ -1,9 +1,9 @@
 ---
 phase: 46
 slug: signal-editor-candidate-verification
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-15
 ---
 
@@ -41,12 +41,12 @@ created: 2026-07-15
 
 | Requirement | What must be TRUE | Test Type | Automated Command | Status |
 |-------------|-------------------|-----------|-------------------|--------|
-| SGE-01 | Signal Editor emits 3–5 leads, each with premise, datedPeg, pegSourceUrl, readerEnergy, charitableAngle, category, confidence, brandRiskFlag | unit (agent) | `uv run pytest tests/agents/test_signal_editor.py -q` | ⬜ pending |
-| SGE-02 | No brand-risk-flagged lead is ever `recommended`; brand-risk lead surfaced with reason | unit (agent) | `uv run pytest tests/agents/test_signal_editor.py -k brand_risk -q` | ⬜ pending |
-| SGE-03 | `verify_candidates` produces a per-org record (domainLive, registrationId, obscurity); definitively-failing candidates killed, transient errors kept as `unverified` | unit (node) | `uv run pytest tests/agents/test_verify_candidates.py -q` | ⬜ pending |
-| SGE-04 | Graph has 20 nodes; edges `signal_editor→scout`, `scout→verify_candidates→advocate`; Postgres checkpointer resumes across a pause/resume spanning the new nodes | integration (graph + checkpoint) | `uv run pytest tests/test_builder_wiring.py tests/test_checkpoint_resume_phase46.py -q` | ⬜ pending |
-| SGE-05 | Signal Editor reads Editorial Memory (recent coverage + avoid-list) and attaches a `repetitionWarning` to an overlapping lead WITHOUT dropping it | unit (agent + reused repetition_note) | `uv run pytest tests/agents/test_signal_editor.py -k repetition -q` | ⬜ pending |
-| SGE-03 (D-14 sub-behavior) | When all candidates are killed, run enters recoverable degraded/needs-human state — NOT a RuntimeError crash in editor_gate_1 | unit (editor) | `uv run pytest tests/agents/test_editor.py -k no_candidates -q` | ⬜ pending |
+| SGE-01 | Signal Editor emits 3–5 leads, each with premise, datedPeg, pegSourceUrl, readerEnergy, charitableAngle, category, confidence, brandRiskFlag | unit (agent) | `uv run pytest tests/agents/test_signal_editor.py -q` | ✅ green |
+| SGE-02 | No brand-risk-flagged lead is ever `recommended`; brand-risk lead surfaced with reason | unit (agent) | `uv run pytest tests/agents/test_signal_editor.py -k brand_risk -q` | ✅ green |
+| SGE-03 | `verify_candidates` produces a per-org record (domainLive, registrationId, obscurity); definitively-failing candidates killed, transient errors kept as `unverified` | unit (node) | `uv run pytest tests/agents/test_verify_candidates.py -q` | ✅ green |
+| SGE-04 | Graph has 20 nodes; edges `signal_editor→scout`, `scout→verify_candidates→advocate`; Postgres checkpointer resumes across a pause/resume spanning the new nodes | integration (graph + checkpoint) | `uv run pytest tests/test_builder_wiring.py tests/test_checkpoint_resume_phase46.py -q` | ✅ green (20-node wiring live-introspected in 46-06; pause/resume test filled in 46-07, skips cleanly without live Postgres — see 46-07-SUMMARY.md) |
+| SGE-05 | Signal Editor reads Editorial Memory (recent coverage + avoid-list) and attaches a `repetitionWarning` to an overlapping lead WITHOUT dropping it | unit (agent + reused repetition_note) | `uv run pytest tests/agents/test_signal_editor.py -k repetition -q` | ✅ green |
+| SGE-03 (D-14 sub-behavior) | When all candidates are killed, run enters recoverable degraded/needs-human state — NOT a RuntimeError crash in editor_gate_1 | unit (editor) | `uv run pytest tests/agents/test_editor.py -k no_candidates -q` | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -71,15 +71,17 @@ created: 2026-07-15
 | Obscurity press-hit threshold tuning | SGE-03 | No numeric precedent exists; the "genuinely obscure" cutoff is a judgment tuning item (research Open Question 1) | After a real pipeline run, spot-check that well-known orgs are killed as "not obscure" and genuinely obscure orgs pass; adjust the threshold constant. |
 | Signal Editor lead quality / Jesse-voice fit | SGE-01 | LLM output quality (premise sharpness, peg relevance) is not unit-assertable | On a real run, read the 3–5 emitted leads; confirm pegs are real + dated + sourced and the premise reads on-voice. |
 
+**Status (46-07):** Both items remain PENDING UAT (require a real pipeline run against live OpenRouter/Tavily) — recorded as non-blocking per 46-07-PLAN.md Task 2. See `46-07-...-SUMMARY.md` § Manual Tuning Items.
+
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify or Wave 0 test-file dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all new test files + the two UPDATE-required existing test files
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter (after planner maps Task IDs)
+- [x] All tasks have automated verify or Wave 0 test-file dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all new test files + the two UPDATE-required existing test files
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter (after planner maps Task IDs)
 
-**Approval:** pending
+**Approval:** Phase 46 integration gate closed 2026-07-16 (46-07). Full pipeline suite: 615 passed / 37 skipped / 0 failed. Convex live-sync (`dev:once`) + parity (`check:convex-parity`) both green on dev:modest-magpie-797.

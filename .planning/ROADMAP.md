@@ -53,7 +53,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide (completed 2026-07-15)
 - [x] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic (completed 2026-07-15)
 - [x] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard (completed 2026-07-16)
-- [ ] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection
+- [x] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection (completed 2026-07-16)
 - [ ] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief
 - [ ] **Phase 48: Brief Entry Point** - "Start from my brief" becomes a real second pipeline entry point that skips discovery and enters at the Researcher
 - [ ] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves
@@ -461,7 +461,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
 | 45. Agent Revision | 7/7 | Complete    | 2026-07-16 |
-| 46. Signal Editor & Candidate Verification | 6/7 | In Progress|  |
+| 46. Signal Editor & Candidate Verification | 7/7 | Complete   | 2026-07-16 |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
 | 49. Roles & Permissions | 0/TBD | Not started | - |
@@ -1016,7 +1016,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 46-04-signal-editor-agent-PLAN.md — agents/signal_editor.py (@agent_node: 3-5 leads, brand-risk recommended=false Python gate, Editorial Memory repetition warning) + unit tests (Wave 3)
 - [x] 46-05-verify-candidates-and-editor-recovery-PLAN.md — agents/verify_candidates.py deterministic check + editor_gate_1 all-killed recovery (D-14) + unit tests (Wave 3)
 - [x] 46-06-graph-wiring-and-consumer-sync-PLAN.md — builder.py 20-node rewire + api/runs.py agent_keys + agent_wrapper _INPUT_KEYS + test_builder_wiring/test_pipeline_real_mode updates (Wave 4)
-- [ ] 46-07-checkpoint-resume-and-integration-gate-PLAN.md — test_checkpoint_resume_phase46 (SGE-04) + full suite + Convex parity/live-sync gate (Wave 5)
+- [x] 46-07-checkpoint-resume-and-integration-gate-PLAN.md — test_checkpoint_resume_phase46 (SGE-04) + full suite + Convex parity/live-sync gate (Wave 5)
 
 ### Phase 47: Story & Brief Stage
 **Goal**: Stage 1 is REPLACED, not built from nothing: the provisional Signal Desk that Phase 41 mounted as Stage 1 is swapped out for the full v3 design, built on the leads and verification records Phase 46 now produces — organization options, "Needs your decision" adjudication when agents can't confidently choose, and an editable Brief the writers draft from.
