@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: "Phase 49: 7/9 plans done (49-01,03-08 autonomous, all green). BLOCKED on human gates: 49-02 (Clerk Dashboard role claim + deployed-env empirical verify) then 49-09 (integration gate + sign-off)."
-last_updated: "2026-07-16T19:22:56.189Z"
+status: Phase 49 complete — Phase 50 next
+stopped_at: "Phase 49 COMPLETE (9/9 plans; verified 4/4 success criteria). Human gates cleared this session: 49-02 (Clerk role claim on both token surfaces + Convex-surface empirical propagation verify) and 49-09 (six-gated source-scan + full suites/build/Convex-sync green + Collaborator UX sign-off). Residual (tracked in 49-VERIFICATION.md human_verification): FastAPI live-token empirical leg deferred — pipeline unreachable locally (NEXT_PUBLIC_PIPELINE_URL unset); unit-test-covered by test_role_gate.py. NOTE: `phase complete` CLI misreported is_last_phase=true (known 40-50 quirk) — milestone is NOT complete; Phase 50 (Workbench & Nomenclature) is unstarted."
+last_updated: "2026-07-16T23:16:41.432Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 49 — roles-permissions
+**Current focus:** Phase 50 — Workbench & Nomenclature (not started)
 
 ## Current Position
 
-Phase: 49 (roles-permissions) — EXECUTING
-Plan: 8 of 9
+Phase: 50
+Plan: Not started
 
 ## Performance Metrics
 

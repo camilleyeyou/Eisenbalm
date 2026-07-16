@@ -56,7 +56,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection (completed 2026-07-16)
 - [x] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief (completed 2026-07-16)
 - [x] **Phase 48: Brief Entry Point** - "Start from my brief" becomes a real second pipeline entry point that skips discovery and enters at the Researcher (completed 2026-07-16)
-- [ ] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves
+- [x] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves (completed 2026-07-16)
 - [ ] **Phase 50: Workbench & Nomenclature** - Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; nomenclature pass + failed-run recovery rail
 
 **v4.0 in progress. Binding spec: `docs/design/dispatch-control-v3/`.**
@@ -464,7 +464,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
-| 49. Roles & Permissions | 7/9 | In Progress|  |
+| 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
 
 ## Backlog
@@ -1071,14 +1071,14 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 **Plans**: 9 plans
 Plans:
 - [x] 49-01-contract-first-role-comments-PLAN.md — API_CONTRACTS §49 (role vocab + comments table) + schema shapes
-- [ ] 49-02-clerk-claim-empirical-gate-PLAN.md — Clerk role claim on both token surfaces + empirical propagation gate (checkpoint)
+- [x] 49-02-clerk-claim-empirical-gate-PLAN.md — Clerk role claim on both token surfaces + empirical propagation gate (checkpoint)
 - [x] 49-03-fastapi-editor-gate-PLAN.md — _require_editor + gate the 4 FastAPI actions + test_role_gate.py
 - [x] 49-04-convex-editor-gate-PLAN.md — requireEditor + gate activate/setStatus + update convex-test identities
 - [x] 49-05-comments-backend-PLAN.md — convex/comments.ts add/listByIssueNumber (both roles) + tests
 - [x] 49-06-role-hook-lockedcontrol-PLAN.md — useRole() hook + reusable LockedControl wrapper
 - [x] 49-07-wire-locked-controls-PLAN.md — wrap the six controls with verbatim §6 locked labels
 - [x] 49-08-comments-affordance-mount-PLAN.md — IssueComments mounted in FrameChrome + My Tasks
-- [ ] 49-09-integration-gate-PLAN.md — exactly-six source-scan + full suites + strict build + Convex sync (checkpoint)
+- [x] 49-09-integration-gate-PLAN.md — exactly-six source-scan + full suites + strict build + Convex sync (checkpoint)
 **UI hint**: yes
 
 ### Phase 50: Workbench & Nomenclature
