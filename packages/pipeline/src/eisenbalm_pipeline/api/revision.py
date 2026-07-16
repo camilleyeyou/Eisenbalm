@@ -1,5 +1,5 @@
-"""Phase 45 (REV-02/REV-03/REV-05, docs/API_CONTRACTS.md §45) — Passage-
-revision endpoint pair: the SINGLE generalization of §42.4a's FCT-06
+"""Phase 45 (REV-02/REV-03/REV-04/REV-05, docs/API_CONTRACTS.md §45) —
+Passage-revision endpoint pair: the SINGLE generalization of §42.4a's FCT-06
 preview/apply contract (``factcheck.py``'s ``evidence/preview`` +
 ``evidence/apply``) to arbitrary passage revision (D-01 — do NOT fork a
 second endpoint pair).
@@ -8,6 +8,11 @@ second endpoint pair).
     body {sectionName, quotedText, blockIndexHint?, direction, customDirection?, priorProposals?[]}
     -> 200 {proposedText, whatChanged, claimDelta:{added[],removed[],altered[]}}
     -> 409 {reason:"cost_cap_exceeded", ...}                                  (REV-05)
+
+  POST /issues/{run_id}/revise/apply
+    body {ifRevisionID, sectionName, quotedText, blockIndexHint?, newText}
+    -> 200 {revisionId, resolution:"revision_applied"}
+    -> 409 {reason:"revision_mismatch"|"span_not_resolved"|"claim_edit_unavailable", ...}
 
 ``revise/preview`` is read-only (mirrors ``voice_pass.py::voice_rewrite`` and
 ``factcheck.py``'s ``evidence/preview`` exactly): NO Sanity write, NO Convex
@@ -19,11 +24,16 @@ own cost durably under the issue's REAL ``run_id`` with a FRESH, distinct
 issuing the LLM call when the projected next call would exceed the per-issue
 cost cap (REV-05, D-14).
 
-Plan 45-03 Task 2 adds ``revise/apply`` (atomic + audited) to this same
-module and mounts the router in ``api/main.py``.
+``revise/apply`` is atomic + audited: delegates to the SAME shared apply core
+(``content.py::_patch_prose_span``, extracted in Plan 45-02) that
+``factcheck.py::_patch_claim_prose`` also calls (D-01) — span-resolve against
+CURRENT Sanity content -> content-patch -> reset touched claims FIRST
+(internal to ``_patch_prose_span``) -> revoke active sign-offs -> emit
+exactly ONE ``passage_revised`` audit row (§45.4).
 """
 from __future__ import annotations
 
+import json
 import logging
 import time
 import uuid
@@ -34,12 +44,17 @@ from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 import eisenbalm_pipeline.lib.sanity_client as _sc
-from eisenbalm_pipeline.api.content import _resolve_sanity_id
-from eisenbalm_pipeline.api.control import _require_clerk_jwt_control
+from eisenbalm_pipeline.api.content import _patch_prose_span, _resolve_sanity_id
+from eisenbalm_pipeline.api.control import (
+    _emit_audit,
+    _require_clerk_jwt_control,
+    _revoke_active_signoffs,
+)
+from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.budget import would_exceed_run_cap
 from eisenbalm_pipeline.lib.config_loader import load_run_config
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
-from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field  # noqa: F401 — Task 2 (apply) forwards these into _patch_prose_span
+from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 log = logging.getLogger(__name__)
@@ -118,6 +133,14 @@ class _RevisePreviewBody(BaseModel):
     direction: DirectionChip
     customDirection: Optional[str] = None
     priorProposals: list[str] = []
+
+
+class _ReviseApplyBody(BaseModel):
+    ifRevisionID: str
+    sectionName: str
+    quotedText: str
+    blockIndexHint: Optional[int] = None
+    newText: str
 
 
 # ── Best-effort "Match the brief" context (D-07, Pitfall 5) ─────────────────
@@ -288,6 +311,75 @@ async def preview_passage_revision(
         "whatChanged": what_changed,
         "claimDelta": claim_delta,
     }
+
+
+# ── POST /issues/{run_id}/revise/apply — §45.2/§45.4 ────────────────────────
+
+
+@router.post("/issues/{run_id}/revise/apply")
+async def apply_passage_revision(
+    request: Request,
+    run_id: str,
+    body: _ReviseApplyBody,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Ask agent to revise — STEP 2 (§45.4).
+
+    Atomic + audited: delegates to the SAME shared apply core
+    (``content.py::_patch_prose_span``) both this endpoint and
+    ``factcheck.py::_patch_claim_prose`` call (D-01) — span-resolve
+    ``quotedText`` against CURRENT Sanity content -> content-patch the prose
+    -> reset touched claims FIRST (internal to ``_patch_prose_span``) ->
+    revoke active sign-offs -> emit exactly ONE ``passage_revised`` audit
+    row. Passage revision has no claim-specific terminal status of its own,
+    so no additional reset-first/terminal-last ordering concern applies here
+    beyond what ``_patch_prose_span`` already does (45-RESEARCH Pitfall 4).
+
+    Forwards THIS module's own ``get_issue_draft``/``patch_issue_field``
+    bindings into the shared core (mirrors ``factcheck.py::_patch_claim_prose``,
+    Plan 45-02's documented seam) so this file's own test suite's
+    monkeypatches of ``revision.get_issue_draft``/``revision.patch_issue_field``
+    are honored exactly as ``test_factcheck_endpoints.py``'s are.
+    """
+    convex_http, sanity_http, sanity_id, actor = await _resolve_sanity_id(
+        request, run_id, claims
+    )
+
+    new_rev = await _patch_prose_span(
+        convex_http,
+        sanity_http,
+        sanity_id=sanity_id,
+        run_id=run_id,
+        section_name=body.sectionName,
+        quoted_text=body.quotedText,
+        block_index_hint=body.blockIndexHint,
+        new_text=body.newText,
+        if_revision_id=body.ifRevisionID,
+        _get_issue_draft=get_issue_draft,
+        _patch_issue_field=patch_issue_field,
+    )
+
+    await _revoke_active_signoffs(
+        convex_http, run_id=run_id, reason="passage revised"
+    )
+
+    await _emit_audit(
+        convex_http,
+        actor_id=actor,
+        action="passage_revised",
+        resource_type="passage",
+        resource_id=f"{run_id}:{body.sectionName}",
+        before=_truncate(
+            json.dumps(
+                {"sectionName": body.sectionName, "quotedText": body.quotedText},
+                default=str,
+            )
+        ),
+        after=_truncate(json.dumps({"newText": body.newText}, default=str)),
+        run_id=run_id,
+    )
+
+    return {"revisionId": new_rev, "resolution": "revision_applied"}
 
 
 __all__ = ["router"]
