@@ -49,6 +49,7 @@ from eisenbalm_pipeline.agents.problem import (
 from eisenbalm_pipeline.agents.qa.judge import JudgeFindings
 from eisenbalm_pipeline.agents.researcher import ResearchOutputModel
 from eisenbalm_pipeline.agents.scout import CharityCandidate, ScoutBatchOutput
+from eisenbalm_pipeline.agents.signal_editor import SignalEditorOutput
 from eisenbalm_pipeline.lib.search_client import SearchResult
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
@@ -83,6 +84,58 @@ def _scout_candidates() -> ScoutBatchOutput:
         for i in range(3)
     ]
     return ScoutBatchOutput(candidates=cands)
+
+
+def _signal_leads() -> SignalEditorOutput:
+    """3 valid StoryLead-shaped leads (Phase 46 D-01/SGE-01/SGE-02 wiring smoke).
+
+    All 11 StoryLead fields populated; one recommended non-risky lead, one
+    plain non-risky lead, and one brand-risk-flagged lead that is correctly
+    NOT recommended (mirrors the Python invariant signal_editor.py enforces —
+    this fixture is already compliant so the wiring smoke stays deterministic).
+    """
+    leads = [
+        {
+            "premise": "A precise, dated premise for lead one.",
+            "datedPeg": "A relief effort launched this week.",
+            "pegSourceUrl": "https://example.org/news/1",
+            "readerEnergy": "urgent and hopeful",
+            "charitableAngle": "direct funding gap",
+            "category": "disaster-relief",
+            "confidence": "high",
+            "brandRiskFlag": False,
+            "brandRiskReason": None,
+            "repetitionWarning": None,
+            "recommended": True,
+        },
+        {
+            "premise": "A precise, dated premise for lead two.",
+            "datedPeg": "A community response event two.",
+            "pegSourceUrl": "https://example.org/news/2",
+            "readerEnergy": "quiet urgency",
+            "charitableAngle": "overlooked cause",
+            "category": "education",
+            "confidence": "medium",
+            "brandRiskFlag": False,
+            "brandRiskReason": None,
+            "repetitionWarning": None,
+            "recommended": False,
+        },
+        {
+            "premise": "A precise, dated premise for lead three.",
+            "datedPeg": "A contested policy event three.",
+            "pegSourceUrl": "https://example.org/news/3",
+            "readerEnergy": "somber",
+            "charitableAngle": "community-led response",
+            "category": "housing",
+            "confidence": "low",
+            "brandRiskFlag": True,
+            "brandRiskReason": "Politically contentious topic — human review needed.",
+            "repetitionWarning": None,
+            "recommended": False,
+        },
+    ]
+    return SignalEditorOutput(leads=leads)
 
 
 def _advocate_votes() -> AdvocateOutput:
@@ -257,6 +310,8 @@ async def _mock_acomplete(
             bonusType="bigBudget",
             visualDirection="Warm cream paper feel; serif display, sans body.",
         ), usage
+    if response_format is SignalEditorOutput:
+        return _signal_leads(), usage
     if response_format is ScoutBatchOutput:
         return _scout_candidates(), usage
     if response_format is AdvocateOutput:
@@ -306,6 +361,7 @@ async def _mock_acomplete(
 # patched because Python copies the reference at import time).
 _ACOMPLETE_PATCH_TARGETS: tuple[str, ...] = (
     "eisenbalm_pipeline.agents.calibrator.acomplete",
+    "eisenbalm_pipeline.agents.signal_editor.acomplete",
     "eisenbalm_pipeline.agents.scout.acomplete",
     "eisenbalm_pipeline.agents.advocate.acomplete",
     "eisenbalm_pipeline.agents.editor.acomplete",
@@ -403,6 +459,46 @@ def _build_patches(stub_mode: bool) -> list:
     ))
     patches.append(patch(
         "eisenbalm_pipeline.agents.validate.convex_mutation_safe", convex_mock,
+    ))
+
+    # Phase 46 D-01 — signal_editor externals (Editorial Memory read + bounded
+    # Tavily search + per-lead Convex emission; RESEARCH Pitfall 3).
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.signal_editor.web_search",
+        AsyncMock(return_value=fake_results),
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.signal_editor.convex_mutation_safe", convex_mock,
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.signal_editor.convex_query_safe",
+        AsyncMock(return_value=[]),
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.signal_editor.groq_query",
+        AsyncMock(return_value=[]),
+    ))
+
+    # Phase 46 D-01 — verify_candidates externals (deterministic checks +
+    # Convex persistence; RESEARCH Pitfall 3). Domain check forced live and
+    # registration check forced verified so no candidate is killed in this
+    # wiring smoke (the _scout_candidates() fixture below carries no
+    # charityNavigatorUrl/guidestarUrl, which would otherwise trip D-12's
+    # "no registration found at all" definitive-kill rule).
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.verify_candidates.web_search",
+        AsyncMock(return_value=[]),
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.verify_candidates.convex_mutation_safe", convex_mock,
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.verify_candidates._check_domain_live",
+        AsyncMock(return_value=True),
+    ))
+    patches.append(patch(
+        "eisenbalm_pipeline.agents.verify_candidates._check_registration",
+        AsyncMock(return_value=("https://example.org/registration", True)),
     ))
 
     # verify_research network fetch — return a string containing 'Jane Doe' so
