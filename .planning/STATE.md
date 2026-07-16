@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 49-06-role-hook-lockedcontrol-PLAN.md
-last_updated: "2026-07-16T18:31:56.163Z"
+stopped_at: Completed 49-07-wire-locked-controls-PLAN.md
+last_updated: "2026-07-16T19:00:38.684Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 49 (roles-permissions) — EXECUTING
-Plan: 6 of 9
+Plan: 7 of 9
 
 ## Performance Metrics
 
@@ -349,6 +349,7 @@ Plan: 6 of 9
 | Phase 49 P04 | 11min | 3 tasks | 8 files |
 | Phase 49 P05 | 4min | 3 tasks | 3 files |
 | Phase 49 P06 | 5min | 2 tasks | 3 files |
+| Phase 49 P07 | 25min | 4 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -919,6 +920,8 @@ Recent decisions affecting current work:
 - [Phase 49]: comments.add uses a THIRD Convex auth lane (inline getUserIdentity, mirrors upsertCurrentUser) — neither requireOperator nor requireEditor fits 'any authenticated identity, no role check'
 - [Phase 49]: useRole() returns undefined while Clerk is loading (never defaults to Collaborator) to avoid a locked-flash-then-unlock flicker for editors
 - [Phase 49]: LockedControl force-disables the real interactive child via React.cloneElement (not a pointer-events-none overlay); label is always a caller-supplied prop, never hard-coded
+- [Phase 49]: Threaded the Apply-revision lock as optional props (applyLocked/applyLockedLabel) into the shared RevisionComparisonCard from RevisionFlow, rather than resolving useRole() inside the shared card, because that card is also mounted by BriefFieldStrengthen's ungated brief-strengthen/apply endpoint
+- [Phase 49]: RegistryTable locks the Blocklist-Charity trigger button (not the inner confirm), and VersionHistoryPanel locks only the top-level Make-active affordance -- both keep their secondary confirm/override sub-flows unreachable once locked
 
 ### Pending Todos
 
@@ -1009,6 +1012,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T18:31:56.148Z
-Stopped at: Completed 49-06-role-hook-lockedcontrol-PLAN.md
+Last session: 2026-07-16T19:00:22.585Z
+Stopped at: Completed 49-07-wire-locked-controls-PLAN.md
 Resume file: None
