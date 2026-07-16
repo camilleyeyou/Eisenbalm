@@ -37,6 +37,14 @@
  * this was made" header affordance for sections with no open finding to
  * hang the action off. Both are gated on `Boolean(onInspect)`; existing
  * callers that omit the prop are unaffected.
+ *
+ * Phase 45 (REV-01, Plan 45-05 Task 1): every block renderer now stamps
+ * `data-block-index` (derived from the synthetic `_key`, `row-{sectionId}-
+ * {blockIndex}`, via the 45-01 `blockIndexFromKey` helper — never a second
+ * parser) onto its rendered DOM node. This is the ONLY hook the shared
+ * `PassageToolbar` (mounted by `Galley.tsx`) needs to resolve an arbitrary
+ * `window.getSelection()` back to a block index; this file itself performs
+ * no selection handling.
  */
 import { useMemo } from 'react'
 import { PortableText, type PortableTextReactComponents } from '@portabletext/react'
@@ -46,6 +54,7 @@ import {
   type ResolvedClaim,
 } from '@/lib/galley/syntheticPortableText'
 import type { ResolvedAnnotation, UnresolvedFinding } from '@/lib/galley/spanResolver'
+import { blockIndexFromKey } from '@/lib/blockIndexFromKey'
 import AnnotationMark from './AnnotationMark'
 import ClaimMark from './ClaimMark'
 import UnresolvedFindingCard from './UnresolvedFindingCard'
@@ -120,11 +129,28 @@ export default function GallerySection({
   const components = useMemo<Partial<PortableTextReactComponents>>(
     () => ({
       block: {
-        normal: ({ children }) => <p className="galley-body">{children}</p>,
-        h2: ({ children }) => <h2 className="galley-h2">{children}</h2>,
-        h3: ({ children }) => <h3 className="galley-h2">{children}</h3>,
-        blockquote: ({ children }) => (
-          <blockquote className="galley-pullquote">{children}</blockquote>
+        normal: ({ value, children }) => (
+          <p className="galley-body" data-block-index={blockIndexFromKey(value._key ?? '') ?? undefined}>
+            {children}
+          </p>
+        ),
+        h2: ({ value, children }) => (
+          <h2 className="galley-h2" data-block-index={blockIndexFromKey(value._key ?? '') ?? undefined}>
+            {children}
+          </h2>
+        ),
+        h3: ({ value, children }) => (
+          <h3 className="galley-h2" data-block-index={blockIndexFromKey(value._key ?? '') ?? undefined}>
+            {children}
+          </h3>
+        ),
+        blockquote: ({ value, children }) => (
+          <blockquote
+            className="galley-pullquote"
+            data-block-index={blockIndexFromKey(value._key ?? '') ?? undefined}
+          >
+            {children}
+          </blockquote>
         ),
       },
       marks: {

@@ -52,6 +52,17 @@
  * forwarded, unmodified, into every `GallerySection` this Galley mounts —
  * the draft passage + voice finding entry points into the shared "Inspect
  * how this was made" panel. Undefined leaves today's render unaffected.
+ *
+ * Phase 45 (REV-01, D-18, Plan 45-05 Task 1): mounts ONE shared
+ * `PassageToolbar` inside `galley-root` — since Draft (`ReviewDeskRunView`)
+ * and Voice (`VoicePassRunView`) both mount this SAME `Galley` component,
+ * wiring the toolbar here covers both surfaces for free (D-18's "one
+ * component, every surface"). New optional `onRevise?`/`onRelatedFacts?`
+ * props mirror `onInspect`'s skip-when-undefined convention exactly;
+ * `onEditText` is NOT a new prop — the toolbar's "Edit text" action reuses
+ * the EXISTING (required) `onEditSection` prop below, and "Inspect how this
+ * was made" reuses the EXISTING `onInspect` prop, so no caller needs to
+ * change how it wires those two actions.
  */
 import { useEffect, useRef } from 'react'
 import { useQuery } from 'convex/react'
@@ -69,6 +80,7 @@ import { ensureThemeFont, applyThemeAccent } from '@/lib/galley/googleFontLoader
 import type { ResolvedClaim } from '@/lib/galley/syntheticPortableText'
 import GallerySection from './GallerySection'
 import GalleryGameSlot from './GalleryGameSlot'
+import { PassageToolbar, type PassageSelection, type RevisionPassageFromSelection } from './PassageToolbar'
 
 /** Minimal shape needed from a live `qaCorrections` row. */
 interface QaCorrectionRow {
@@ -119,6 +131,22 @@ interface GalleyProps {
    * every `GallerySection`. Undefined leaves today's render unaffected.
    */
   onInspect?: (sectionId: string) => void
+  /**
+   * Phase 45 (REV-01, D-18) — opens the shared "Ask agent to revise" flow
+   * (`RevisionFlow`, 45-04) scoped to the passage the operator selected in
+   * this galley. Optional; forwarded ONLY into the mounted `PassageToolbar`
+   * (never into GallerySection/AnnotationMark — the toolbar reads
+   * selections at the containerRef level, not per-block). Undefined leaves
+   * the toolbar's "Ask agent to revise" button a no-op (still enabled per
+   * the toolbar's own convention, never a false-disabled control).
+   */
+  onRevise?: (passage: RevisionPassageFromSelection) => void
+  /**
+   * Phase 45 (REV-01, D-16) — surfaces the shared `ClaimProvenanceCard` for
+   * a tracked claim intersecting the selected passage. Optional; forwarded
+   * ONLY into the mounted `PassageToolbar`, mirroring `onRevise` above.
+   */
+  onRelatedFacts?: (sel: PassageSelection) => void
   /** Phase 35 (PRV-03, D-10) — provenance wash layer, default ON. */
   showProvenance?: boolean
   /**
@@ -176,6 +204,8 @@ export default function Galley({
   reloadDraft,
   onEditSection,
   onInspect,
+  onRevise,
+  onRelatedFacts,
   showProvenance = true,
   includeAxes,
   labels,
@@ -300,6 +330,18 @@ export default function Galley({
 
   return (
     <div ref={containerRef} className="galley-root">
+      {/* Phase 45 (REV-01, D-18) — ONE shared selection toolbar for the
+          whole galley; renders nothing without an active in-container
+          selection. "Edit text" reuses onEditSection, "Inspect how this
+          was made" reuses onInspect — neither is a new prop. */}
+      <PassageToolbar
+        containerRef={containerRef}
+        onRevise={onRevise}
+        onEditText={(sel) => onEditSection(sel.sectionId)}
+        onRelatedFacts={onRelatedFacts}
+        onInspect={onInspect}
+      />
+
       {LONG_READ_SECTIONS.map(({ id, label }) => {
         const section = draft.sections[id]
         const rows = section?.blocks ?? []
