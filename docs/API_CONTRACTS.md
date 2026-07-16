@@ -1778,6 +1778,25 @@ class StyleBrief(TypedDict):
     visualDirection: str                # aesthetic direction for Design agent
     previousBonusTypes: list[str]       # to avoid repeating
 
+# ── Phase 47: Brief (Story & Brief stage) ──────────────────────────────────
+#
+# The Brief is the one genuinely new cross-boundary artifact of Phase 47
+# (§47, BRF-05). Convex is the editable source of truth (the `briefs` table,
+# §47.1); the pipeline reads/writes it and threads it into DispatchState for
+# the 7 section writers. It is deterministically ASSEMBLED inside
+# `editor_gate_1` immediately after `winning_charity` resolves — no new
+# graph node, no new LLM call (§47.3 documents the exact assembly). The
+# console makes it editable afterward; edits refine later revision passes
+# ("Match the brief") and seed Phase 48's hand-authored entry point — see
+# §47.5 for this tradeoff stated explicitly.
+class Brief(TypedDict):
+    premise: str                        # the story angle, one or two sentences
+    currentPeg: str                     # what makes this current/timely right now
+    centralClaim: str                   # the thesis this issue argues
+    readerEffect: str                   # what a reader should feel/understand/do
+    knownRisks: str                     # brand-risk/repetition/sensitivity notes to keep in mind while drafting
+    voiceIntention: str                 # the aesthetic/voice direction for this issue
+
 class CharityCandidate(TypedDict):
     name: str
     location: str
@@ -1950,6 +1969,20 @@ class DispatchState(TypedDict):
     editor_decision: Optional[str]              # why this charity won
     runner_up_notes: Optional[str]
     editor_confidence: Optional[float]          # Phase 37 §37.2 — EditorDecision.confidence, persisted (was computed then discarded)
+
+    # ── Phase 46: Signal Editor leads + verify_candidates records (see §46.1-§46.4) ──
+    story_leads: Optional[list[StoryLead]]
+    verification_records: Optional[list[VerificationRecord]]
+
+    # ── Phase 47: Brief (Story & Brief stage) ───────────────────────────────────
+    brief: Optional[Brief]                      # JSON-serializable dict — mirrors the story_leads/
+                                                 # verification_records checkpoint-safety precedent.
+                                                 # Deterministically assembled inside editor_gate_1
+                                                 # right after winning_charity resolves (§47.3); the
+                                                 # console's briefs Convex table is the editable
+                                                 # source of truth the pipeline reads back (§47.1).
+                                                 # Threaded to the 7 section writers via
+                                                 # build_section_writer_prompt's new brief= kwarg.
 
     # ── Phase 2: Content (populated in parallel) ───────────────────────────────
     research: Optional[ResearchOutput]
@@ -5513,3 +5546,200 @@ Phase 46." That is now stale. The row is corrected to:
 tables (`story_leads`, `verification_records`) with `insert`/`byRunId` functions each; two new
 guarded pipeline-secret paths. No existing field is renamed or removed; §7/§26/§37/§39/§44 shapes
 are unchanged except the single stale `signal` row correction in §46.7.*
+
+---
+
+## §47 — Story & Brief Stage (Phase 47)
+
+Stage 1 of the Issue Workspace (the provisional Signal Desk Phase 41 mounted) is REPLACED by the
+full v3 Story & Brief stage, built on Phase 46's `story_leads`/`verification_records`. Five of six
+requirements (BRF-01..04, BRF-06) are additive UI composition over already-shipped patterns (the
+never-truncated `CandidateSlate` card, the `adjudicateGate1`/`_resume_paused_run` resume bridge,
+Phase 45's revision preview/apply engine). The one genuinely new artifact is the **Brief** (BRF-05):
+six console-editable fields the section writers draft from. This contract is written BEFORE any
+consuming code exists (CLAUDE.md contract-first hard rule, mirroring §39/§42/§46). Plan 47-01
+implements the `briefs` table + `story_leads.status` verbatim — no field name, table name, or
+endpoint shape may be invented later. All Phase 47 changes are additive; no existing field, table,
+or endpoint documented in §1-§46 is renamed or removed.
+
+### §47.1 — `briefs` Convex table (NEW) — single-row-per-run, patch-based
+
+Unlike `story_leads`/`verification_records` (naturally multi-row per run), `briefs:byRunId` must
+resolve to exactly ONE current Brief per run — generated once by `editor_gate_1` (§47.3), then
+refined via console edits. The table is therefore **patch-based, not append-per-edit**:
+
+```typescript
+// convex/schema.ts
+briefs: defineTable({
+  runId: v.string(),
+  premise: v.string(),
+  currentPeg: v.string(),
+  centralClaim: v.string(),
+  readerEffect: v.string(),
+  knownRisks: v.string(),
+  voiceIntention: v.string(),
+  updatedAt: v.number(),
+})
+  .index('by_runId', ['runId']),
+```
+
+`pipelineSecret: v.optional(v.string())` is NOT a stored column — stripped from `args` before the
+write, exactly like `pitchLog.ts`/`storyLeads.ts` (Phase 29 D-1 convention).
+
+### §47.2 — `story_leads.status` additive field (amends §46.5 in place)
+
+`story_leads` gains ONE additive optional field. Phase 46's `storyLeads:insert` args shape is
+UNCHANGED — this field is set only via the new `setStatus` mutation (§47.4), never at insert time:
+
+```typescript
+// convex/schema.ts — story_leads table, additive field
+status: v.optional(v.union(v.literal('active'), v.literal('required'), v.literal('removed'))),
+// absent or 'active' = default un-adjudicated state (BRF-02).
+```
+
+### §47.3 — Brief generation mechanism (BRF-05, D-11) — deterministic, zero-new-node
+
+The Brief is assembled **inline inside `editor_gate_1`**, immediately after `winning_charity`
+resolves — no new LangGraph node, no new LLM call. It is a deterministic re-projection of data
+`editor_gate_1` already has in scope (the matched `StoryLead`, the matched `VerificationRecord`,
+`decision.editorReasoning`, `style_brief`):
+
+```python
+# packages/pipeline/src/eisenbalm_pipeline/agents/editor.py — illustrative, planner finalizes exact assembly
+winning_lead = _match_lead_for_winner(state.get("story_leads") or [], winning_charity)
+verification = _match_verification_record(state.get("verification_records") or [], winning_charity)
+brief: Brief = {
+    "premise": winning_lead.get("premise", "") if winning_lead else winning_charity.get("scoutSummary", ""),
+    "currentPeg": winning_lead.get("datedPeg", "") if winning_lead else "",
+    "centralClaim": decision.editorReasoning,
+    "readerEffect": winning_lead.get("readerEnergy", "") if winning_lead else "",
+    "knownRisks": _assemble_known_risks(winning_lead, verification),
+    "voiceIntention": (state.get("style_brief") or {}).get("visualDirection", ""),
+}
+await convex_mutation_safe("briefs:insert", {"runId": run_id, **brief})
+# ... return {**state, ..., "brief": brief}
+```
+
+**Honest tradeoff (RESEARCH Open Question 1), stated plainly:** `graph/builder.py` has zero
+`interrupt()` points between `editor_gate_1` and `publisher` — once Gate 1 resolves, the graph runs
+autonomously to completion in one `ainvoke()`. There is no natural pause for a human to edit the
+Brief before the writers' FIRST drafting pass. The section writers therefore draft from the
+**auto-generated** Brief on that first pass; human edits (via §47.4/§47.5) refine the Brief for
+LATER revision passes ("Match the brief," §45's `_fetch_brief_context`) and seed Phase 48's
+"Start from my brief" hand-authored entry point, which has no such race (it authors a Brief before
+any run starts). This satisfies BRF-05's literal text — "section writers draft from it" — without
+inventing new pipeline pause machinery, per D-11's explicit preference.
+
+### §47.4 — `convex/briefs.ts` + `convex/storyLeads.ts::setStatus` function signatures (NEW)
+
+```typescript
+// convex/briefs.ts — mirrors convex/pitchLog.ts / storyLeads.ts idioms
+export const insert = mutation({
+  // upsert-safe: by_runId lookup first — patches an existing row (e.g. a
+  // restarted run re-resolving editor_gate_1) instead of creating a duplicate.
+  args: {
+    runId: v.string(),
+    premise: v.string(), currentPeg: v.string(), centralClaim: v.string(),
+    readerEffect: v.string(), knownRisks: v.string(), voiceIntention: v.string(),
+    pipelineSecret: v.optional(v.string()),   // Phase 29 D-1 — never persisted
+  },
+  handler: async (ctx, { pipelineSecret, ...args }) => {
+    requirePipelineSecret(pipelineSecret)
+    const existing = await ctx.db.query('briefs').withIndex('by_runId', q => q.eq('runId', args.runId)).first()
+    if (existing) return await ctx.db.patch(existing._id, { ...args, updatedAt: Date.now() })
+    return await ctx.db.insert('briefs', { ...args, updatedAt: Date.now() })
+  },
+})
+
+export const patch = mutation({
+  // Single-field edit from the console's BriefFieldTable (BRF-05) or the
+  // strengthen/apply endpoint (BRF-06, §47.5).
+  args: {
+    runId: v.string(),
+    field: v.union(
+      v.literal('premise'), v.literal('currentPeg'), v.literal('centralClaim'),
+      v.literal('readerEffect'), v.literal('knownRisks'), v.literal('voiceIntention'),
+    ),
+    value: v.string(),
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { runId, field, value, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+    const existing = await ctx.db.query('briefs').withIndex('by_runId', q => q.eq('runId', runId)).first()
+    if (!existing) throw new Error(`No briefs row for runId=${runId}`)
+    return await ctx.db.patch(existing._id, { [field]: value, updatedAt: Date.now() })
+  },
+})
+
+export const byRunId = query({
+  args: { runId: v.string() },
+  handler: async (ctx, { runId }) =>
+    await ctx.db.query('briefs').withIndex('by_runId', q => q.eq('runId', runId)).first(),
+})
+```
+
+```typescript
+// convex/storyLeads.ts — additive mutation alongside the existing insert/byRunId
+export const setStatus = mutation({
+  args: {
+    leadId: v.id('story_leads'),
+    status: v.union(v.literal('active'), v.literal('required'), v.literal('removed')),
+    pipelineSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, { leadId, status, pipelineSecret }) => {
+    requirePipelineSecret(pipelineSecret)
+    return await ctx.db.patch(leadId, { status })
+  },
+})
+```
+
+### §47.5 — FastAPI endpoints (implemented in Plans 47-02/47-04 — declared here first)
+
+Two endpoint pairs, both Clerk-guarded (`_require_clerk_jwt_control`), both `_emit_audit`-logging
+("nothing silent"), mirroring the exact precedents named below:
+
+```
+POST  /issues/{run_id}/leads/{lead_id}/require            body {}                       -> 200 {leadId, status:'required'}
+POST  /issues/{run_id}/leads/{lead_id}/remove              body {reason}                 -> 200 {leadId, status:'removed'}   (422 if reason empty)
+PATCH /issues/{run_id}/brief                                body {field, value}           -> 200 (guarded edit + audit_log + Decision log)
+POST  /issues/{run_id}/brief/{field}/strengthen/preview     body {currentValue}            -> 200 {proposedText, whatChanged}  (read-only, NO audit)
+POST  /issues/{run_id}/brief/{field}/strengthen/apply       body {newText}                 -> 200 {resolution:'brief_field_strengthened'}
+```
+
+**Require/Remove (BRF-02)** mirror `factcheck.py::keep_claim`/`delete_claim` exactly: `Require`
+calls `storyLeads:setStatus` with no reason required; `Remove` requires a non-empty `reason` (422
+otherwise), calls `storyLeads:setStatus`, then `_emit_audit(..., reason=..., run_id=...)` so the
+removal surfaces in the shared Decision log — `claim_checks`' own module docstring argues this
+content/decision-log-writing shape must stay pipeline-routed, not a bare dashboard Convex mutation.
+
+**Brief field-strengthen (BRF-06)** generalizes `revision.py::preview_passage_revision`/
+`apply_passage_revision` to a Brief-field scope, exactly as Phase 45 generalized FCT-06 (claim-scope
+→ passage-scope) rather than forking a third revision engine: `preview` proposes a stronger field
+value (read-only, no mutation, no audit — mirrors `revise/preview`); `apply` writes the field via
+`briefs:patch` + `_emit_audit` + a Decision-log entry (mirrors `revise/apply`). The Brief has no
+built-in optimistic-concurrency token (unlike Sanity passage revision's `ifRevisionID`) — low
+collision risk (one operator per run) makes always-overwrite-and-log acceptable, matching
+`story_leads`/`verification_records`'s own lack of a revision-token concept.
+
+`PATCH /issues/{run_id}/brief` (direct field edits from `BriefFieldTable`, BRF-05) is
+content-touching per the same EDT-05 guarded-write pattern (D-12) — routed through this pipeline
+boundary, `briefs:patch` + `_emit_audit`, never a bare dashboard `useMutation`.
+
+### §47.6 — `_PIPELINE_SECRET_GUARDED_PATHS` additions (D-1 lesson, Phase 42-03)
+
+Three new guarded paths, registered in `packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py`
+alongside the Convex-side `requirePipelineSecret` guard — omitting either half means every real call
+500s Unauthorized despite mocked unit tests passing:
+
+```python
+"briefs:insert",
+"briefs:patch",
+"storyLeads:setStatus",
+```
+
+*All Phase 47 changes are additive: one new Convex table (`briefs`) with `insert`/`patch`/`byRunId`;
+one new additive optional field on `story_leads` (`status`) with a new `setStatus` mutation; one new
+DispatchState field (`brief`) and one new TypedDict (`Brief`, §7); three new guarded pipeline-secret
+paths; five new FastAPI endpoints (implemented in 47-02/47-04, declared here first per contract-first
+discipline). No existing field, table, or endpoint is renamed or removed; §7/§26/§37/§39/§42/§44/§45/
+§46 shapes are otherwise unchanged.*
