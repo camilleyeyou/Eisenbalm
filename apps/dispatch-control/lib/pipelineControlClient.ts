@@ -18,6 +18,12 @@
  *   trigger-secret-guarded (that separate guard belongs to the
  *   server-to-server POST /run/{run_id}/resume, which this client never
  *   calls and which the operator never sees).
+ *
+ * Phase 48 (ENT-01/ENT-02, §48.2, D-14) adds:
+ *   POST /pipeline/run/brief — Clerk-guarded second entry point
+ *   (triggerBriefRun), sibling of triggerRun. Posts a human-authored
+ *   premise/peg/organization/optional-source-material brief; the run skips
+ *   Signal Editor, Scout, Advocate, and Gate 1 and enters at the Researcher.
  */
 
 export interface TriggerRunBody {
@@ -77,6 +83,56 @@ export async function triggerRun(
     const detail = await res.text().catch(() => '')
     throw new Error(
       `trigger-run failed (${res.status})${detail ? `: ${detail}` : ''}`,
+    )
+  }
+
+  return (await res.json()) as TriggerRunResult
+}
+
+export interface TriggerBriefRunOrganization {
+  name: string
+  website?: string
+  charityNavigatorUrl?: string
+  guidestarUrl?: string
+}
+
+export interface TriggerBriefRunBody {
+  /** Optional: force a specific issue number (omit for auto-resolve). */
+  issueNumber?: number
+  premise: string
+  peg: string
+  organization: TriggerBriefRunOrganization
+  sourceMaterial?: string
+}
+
+/**
+ * Trigger a new pipeline run from a human-authored brief (§48.2, ENT-01/
+ * ENT-02). Mirrors `triggerRun` exactly — same fetch/auth/error shape, same
+ * `TriggerRunResult` return type — posting to `POST /pipeline/run/brief`
+ * instead of `POST /pipeline/run`. The run skips Signal Editor, Scout,
+ * Advocate, and Gate 1 and enters at the Researcher; `verify_candidates`
+ * still runs on the human-supplied organization (ENT-04).
+ *
+ * @param body    premise / peg / organization / optional source material
+ * @param token   a Clerk session JWT (from useAuth().getToken())
+ */
+export async function triggerBriefRun(
+  body: TriggerBriefRunBody,
+  token: string | null,
+): Promise<TriggerRunResult> {
+  const res = await fetch(`${pipelineBaseUrl()}/pipeline/run/brief`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(
+      `trigger-brief-run failed (${res.status})${detail ? `: ${detail}` : ''}`,
     )
   }
 
