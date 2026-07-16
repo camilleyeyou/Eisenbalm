@@ -38,9 +38,11 @@ import type * as qaCorrections from "../qaCorrections.js";
 import type * as reviewActions from "../reviewActions.js";
 import type * as runs from "../runs.js";
 import type * as signOffs from "../signOffs.js";
+import type * as storyLeads from "../storyLeads.js";
 import type * as stripeEvents from "../stripeEvents.js";
 import type * as stripeOrders from "../stripeOrders.js";
 import type * as users from "../users.js";
+import type * as verificationRecords from "../verificationRecords.js";
 import type * as workspace from "../workspace.js";
 
 import type {
@@ -80,9 +82,11 @@ declare const fullApi: ApiFromModules<{
   reviewActions: typeof reviewActions;
   runs: typeof runs;
   signOffs: typeof signOffs;
+  storyLeads: typeof storyLeads;
   stripeEvents: typeof stripeEvents;
   stripeOrders: typeof stripeOrders;
   users: typeof users;
+  verificationRecords: typeof verificationRecords;
   workspace: typeof workspace;
 }>;
 

@@ -95,6 +95,12 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
         # secret injected here or every pipeline-side call is Unauthorized.
         "issues:ensureByNumber",
         "issues:markPublished",
+        # Phase 46 (§46.6) — Signal Editor leads + verify_candidates records.
+        # handler calls requirePipelineSecret; register alongside the Convex-side
+        # guard, or every real call 500s Unauthorized despite mocked unit tests
+        # passing (42-03 lesson).
+        "storyLeads:insert",
+        "verificationRecords:insert",
     }
 )
 

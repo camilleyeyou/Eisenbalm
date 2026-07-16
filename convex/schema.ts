@@ -517,4 +517,46 @@ export default defineSchema({
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_workspace_issueNumber', ['workspace_id', 'issueNumber']),
+
+  // ── story_leads: Signal Editor's dated story leads (Phase 46, SGE-01) ──────
+  // Dedicated table, NOT a new deliberationEvents.eventType literal — that union
+  // is FROZEN (§37.3) and Phase 47 (BRF-02) needs a patchable per-lead row, which
+  // an append-only event stream cannot support. API_CONTRACTS §46.5/§46.6.
+  story_leads: defineTable({
+    runId: v.string(),
+    premise: v.string(),
+    datedPeg: v.string(),
+    pegSourceUrl: v.string(),
+    readerEnergy: v.string(),
+    charitableAngle: v.string(),
+    category: v.string(),
+    confidence: v.string(),
+    brandRiskFlag: v.boolean(),
+    brandRiskReason: v.optional(v.string()),
+    repetitionWarning: v.optional(v.string()),
+    recommended: v.boolean(),
+    timestamp: v.number(),
+  })
+    .index('by_runId', ['runId']),
+
+  // ── verification_records: verify_candidates's per-org record (Phase 46, SGE-03) ──
+  // obscurity: {pressHits, verdict} is flattened here; the pipeline
+  // VerificationRecord dict re-nests it. API_CONTRACTS §46.5/§46.6.
+  verification_records: defineTable({
+    runId: v.string(),
+    candidateId: v.string(),
+    candidateName: v.string(),
+    domainLive: v.boolean(),
+    registrationId: v.optional(v.string()),
+    registrationVerified: v.boolean(),
+    pressHits: v.number(),
+    obscurityVerdict: v.string(),
+    status: v.union(v.literal('pass'), v.literal('fail'), v.literal('unverified')),
+    killed: v.boolean(),
+    killReason: v.optional(v.string()),
+    checkedAt: v.number(),
+    timestamp: v.number(),
+  })
+    .index('by_runId', ['runId'])
+    .index('by_runId_and_candidate', ['runId', 'candidateId']),
 })
