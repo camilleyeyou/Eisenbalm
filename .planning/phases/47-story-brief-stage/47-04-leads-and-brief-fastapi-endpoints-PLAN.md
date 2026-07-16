@@ -78,6 +78,7 @@ Precedents to mirror:
 
 <task type="auto">
   <name>Task 1: api/leads.py — Require/Remove lead endpoints (BRF-02)</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/api/leads.py, packages/pipeline/src/eisenbalm_pipeline/api/main.py, packages/pipeline/tests/test_leads_endpoints.py</files>
   <read_first>
     packages/pipeline/src/eisenbalm_pipeline/api/factcheck.py (the module RATIONALE docstring L1-24 + `keep_claim` L184-235 + `delete_claim` — the reason-required, 422-on-empty, audit-before-write, `_emit_audit(reason=, run_id=)` shape to copy exactly). packages/pipeline/src/eisenbalm_pipeline/api/main.py L201-210 (`include_router` registration order). convex/storyLeads.ts (the `setStatus` mutation landed in 47-01). 47-RESEARCH.md §"Pattern 3".
   </read_first>
@@ -99,6 +100,7 @@ Precedents to mirror:
 
 <task type="auto">
   <name>Task 2: api/brief.py — PATCH brief + field-strengthen preview/apply; wire _fetch_brief_context</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/api/brief.py, packages/pipeline/src/eisenbalm_pipeline/api/revision.py, packages/pipeline/src/eisenbalm_pipeline/api/main.py, packages/pipeline/tests/test_brief_endpoints.py</files>
   <read_first>
     packages/pipeline/src/eisenbalm_pipeline/api/revision.py (`_fetch_brief_context` L149-188 — the degraded Sanity-proxy stub that explicitly anticipates this phase; `preview_passage_revision` L194+ / `apply_passage_revision` L319+ — the read-only-preview / audited-apply shapes + `_build_directive`, `acomplete`, budget guard). convex/briefs.ts (`patch` + `byRunId` landed in 47-01). packages/pipeline/src/eisenbalm_pipeline/lib/budget.py (`would_exceed_run_cap`). 47-RESEARCH.md §"Pattern 6" (field-scoped generalization; concurrency note — no optimistic token needed, log before/after in audit).
   </read_first>

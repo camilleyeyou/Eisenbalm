@@ -78,6 +78,7 @@ def build_section_writer_prompt(
 
 <task type="auto" tdd="true">
   <name>Task 1: Add 5th `brief` param to build_section_writer_prompt + render it</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/lib/voice.py, packages/pipeline/tests/lib/test_voice.py</files>
   <read_first>
     packages/pipeline/src/eisenbalm_pipeline/lib/voice.py L250-320 (the function signature + its hard 4-content-param docstring invariant + the USER-message assembly where `style_brief`'s bonusType/visualDirection are already rendered — append the Brief there the same way). packages/pipeline/tests/lib/test_voice.py (existing assertions on the returned message list). 47-RESEARCH.md §"Pattern 5".
   </read_first>
@@ -103,6 +104,7 @@ def build_section_writer_prompt(
 
 <task type="auto">
   <name>Task 2: Pass the Brief into all 7 section writers</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/agents/origin_story.py, packages/pipeline/src/eisenbalm_pipeline/agents/problem.py, packages/pipeline/src/eisenbalm_pipeline/agents/founder_bio.py, packages/pipeline/src/eisenbalm_pipeline/agents/case_study.py, packages/pipeline/src/eisenbalm_pipeline/agents/game.py, packages/pipeline/src/eisenbalm_pipeline/agents/bonus.py, packages/pipeline/src/eisenbalm_pipeline/agents/design/__init__.py</files>
   <read_first>
     Each of the 7 writer files at the call sites in the interfaces block. For the 4 helper users, the `build_section_writer_prompt(...)` call (add one kwarg). For game.py / bonus.py (~L259) / design/__init__.py (~L172), the `style_brief = state.get("style_brief") or {}` site where the bespoke prompt is assembled — append a compact Brief block to that prompt's user content. packages/pipeline/tests/lib/test_voice.py.
   </read_first>

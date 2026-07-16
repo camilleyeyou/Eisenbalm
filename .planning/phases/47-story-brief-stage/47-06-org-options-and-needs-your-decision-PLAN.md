@@ -72,6 +72,7 @@ One-active-lead-per-run (RESEARCH Pitfall 1): there is NO lead↔org join key. G
 
 <task type="auto" tdd="true">
   <name>Task 1: OrgOptionSlate.tsx — grouped org options, never-truncated concern (BRF-03)</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/OrgOptionSlate.tsx, apps/dispatch-control/__tests__/OrgOptions.test.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/signal-desk/_components/CandidateSlate.tsx (import `joinCandidates` verbatim; copy the L197-208 primaryConcern never-truncated block). apps/dispatch-control/app/(dashboard)/registry/_components/RegistryTable.tsx L62 (the `api.charities.listByWorkspace` read for prior-coverage). verification_records shape (API_CONTRACTS §46.5: candidateId, candidateName, domainLive, registrationId?, registrationVerified, pressHits, obscurityVerdict, status, killed, killReason?, checkedAt). apps/dispatch-control/__tests__/OrgOptions.test.tsx (Wave-0 scaffold to fill). Annotations §Stage 1 L51.
   </read_first>
@@ -97,6 +98,7 @@ One-active-lead-per-run (RESEARCH Pitfall 1): there is NO lead↔org join key. G
 
 <task type="auto" tdd="true">
   <name>Task 2: NeedsYourDecisionCard.tsx — two-option adjudication + resume (BRF-04)</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/NeedsYourDecisionCard.tsx, apps/dispatch-control/__tests__/NeedsYourDecision.test.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/signal-desk/_components/AdjudicationPanel.tsx (the pick + required-reason → adjudicateGate1 idiom — adapt to a two-column side-by-side comparison layout, do NOT reinvent the write path). apps/dispatch-control/app/(dashboard)/signal-desk/_components/SignalDeskScreen.tsx L94 (`isPausedAtGate1` = status==='awaiting-review' && completedAt==null — reuse this exact predicate). apps/dispatch-control/lib/pipelineControlClient.ts L186-211 (adjudicateGate1 signature — UNCHANGED). apps/dispatch-control/__tests__/NeedsYourDecision.test.tsx (Wave-0 scaffold to fill). Annotations §Stage 1 L52 + §State model L105-110. 47-RESEARCH.md §"Anti-Patterns" (no second resume/interrupt).
   </read_first>

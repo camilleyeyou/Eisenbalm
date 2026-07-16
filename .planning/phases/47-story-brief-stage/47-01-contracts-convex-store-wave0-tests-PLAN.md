@@ -110,6 +110,7 @@ POST  /issues/{run_id}/brief/{field}/strengthen/apply    body {newText}       ->
 
 <task type="auto">
   <name>Task 1: Amend API_CONTRACTS.md — §7 Brief + new §47</name>
+  <files>docs/API_CONTRACTS.md</files>
   <read_first>
     docs/API_CONTRACTS.md §7 (~L1763, the DispatchState TypedDict block) and §46 (~L5307, StoryLead/VerificationRecord/story_leads table — the additive-only precedent to mirror) and §37.3/§37.4 (~L3598, the adjudicate→resume bridge BRF-04 reuses UNCHANGED). 47-RESEARCH.md §"Architecture Patterns" (briefs shape Open Question 2; leads Require/Remove Pattern 3; field-scoped revision Pattern 6). 47-CONTEXT.md D-09/D-10/D-13.
   </read_first>
@@ -132,6 +133,7 @@ POST  /issues/{run_id}/brief/{field}/strengthen/apply    body {newText}       ->
 
 <task type="auto">
   <name>Task 2: Convex briefs table + story_leads.status + setStatus + guarded paths + live-sync</name>
+  <files>convex/schema.ts, convex/briefs.ts, convex/storyLeads.ts, packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py, packages/pipeline/tests/test_brief_convex_guard.py</files>
   <read_first>
     convex/schema.ts (the `story_leads` table added in Phase 46-01, and the pitchLog/qaCorrections dedicated-table pattern). convex/storyLeads.ts (existing `byRunId` query + `insert` mutation + `requirePipelineSecret` import). convex/pitchLog.ts (the exact insert/mutation idiom to mirror). packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py L54-75 (`_PIPELINE_SECRET_GUARDED_PATHS` frozenset). packages/pipeline/tests/test_factcheck_endpoints.py:641-645 (the guarded-paths membership assertion pattern to copy). Memory: convex-functions-need-live-sync.
   </read_first>
@@ -158,6 +160,7 @@ POST  /issues/{run_id}/brief/{field}/strengthen/apply    body {newText}       ->
 
 <task type="auto">
   <name>Task 3: Wave-0 vitest scaffolds for the six Stage-1 components</name>
+  <files>apps/dispatch-control/__tests__/LeadCard.test.tsx, apps/dispatch-control/__tests__/LeadActions.test.tsx, apps/dispatch-control/__tests__/OrgOptions.test.tsx, apps/dispatch-control/__tests__/NeedsYourDecision.test.tsx, apps/dispatch-control/__tests__/BriefFieldTable.test.tsx, apps/dispatch-control/__tests__/BriefFieldStrengthen.test.tsx</files>
   <read_first>
     apps/dispatch-control/__tests__/CandidateSlate.test.tsx (the never-truncated tripwire: `expect(el.textContent).toBe(longText)` + `expect(el.className).not.toMatch(/line-clamp|truncate/)`) — the exact pattern BRF-01/BRF-03 reuse. apps/dispatch-control/vitest.config.ts. 47-VALIDATION.md §"Wave 0 Requirements" (the six file names). 47-RESEARCH.md §"Validation Architecture".
   </read_first>

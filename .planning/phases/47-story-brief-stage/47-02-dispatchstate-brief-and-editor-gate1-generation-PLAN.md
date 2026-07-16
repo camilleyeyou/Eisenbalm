@@ -86,6 +86,7 @@ editor_gate_1 winner-resolution sites (agents/editor.py):
 
 <task type="auto" tdd="true">
   <name>Task 1: Add Brief TypedDict + brief field to DispatchState</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/graph/state.py</files>
   <read_first>
     packages/pipeline/src/eisenbalm_pipeline/graph/state.py (the `StyleBrief`/`StoryLead` TypedDicts + the `DispatchState` TypedDict; the §46 `story_leads: Optional[list[StoryLead]]` checkpoint-safe field is the precedent to mirror). docs/API_CONTRACTS.md §7 (the exact Brief shape landed in 47-01).
   </read_first>
@@ -109,6 +110,7 @@ editor_gate_1 winner-resolution sites (agents/editor.py):
 
 <task type="auto" tdd="true">
   <name>Task 2: Deterministically assemble + persist the Brief in editor_gate_1</name>
+  <files>packages/pipeline/src/eisenbalm_pipeline/agents/editor.py, packages/pipeline/tests/agents/test_editor.py</files>
   <read_first>
     packages/pipeline/src/eisenbalm_pipeline/agents/editor.py (BOTH winner-resolution return paths cited in the interfaces block — auto-select and resume; the existing `pitchLog:markSelected` convex call at ~L469-472 is the persistence idiom to mirror). packages/pipeline/src/eisenbalm_pipeline/lib/convex_client.py (`convex_mutation_safe`/`convex_mutation` — non-blocking, never-crash idiom; `briefs:insert` guarded path was registered in 47-01). packages/pipeline/src/eisenbalm_pipeline/graph/state.py (StoryLead/VerificationRecord field names to read). 47-RESEARCH.md §"Pattern 4" (the assembly + why zero-node/zero-LLM) and §"Open Question 1/2" (upsert-safety on re-run; idempotent insert).
   </read_first>

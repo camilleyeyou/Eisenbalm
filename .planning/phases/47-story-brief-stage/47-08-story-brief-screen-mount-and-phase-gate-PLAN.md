@@ -67,6 +67,7 @@ deriveStoryStage (derivedState.ts L152-158): currently `pitchRows.length > 0 && 
 
 <task type="auto" tdd="true">
   <name>Task 1: StoryBriefScreen.tsx composition + empty/loading/error states + StageStrip derivation</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/StoryBriefScreen.tsx, apps/dispatch-control/lib/derivedState.ts, apps/dispatch-control/__tests__/StoryBriefScreen.test.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/signal-desk/_components/SignalDeskScreen.tsx (the screen shell being replaced — mount contract, the runId prop, isPausedAtGate1). apps/dispatch-control/app/(dashboard)/issues/_components/CreatePanel.tsx (the two Create paths for the empty state). apps/dispatch-control/lib/derivedState.ts L148-160 (deriveStoryStage + DerivationInputs). The six components from 47-05/06/07 (LeadCard, LeadActions, OrgOptionSlate, NeedsYourDecisionCard, BriefFieldTable, BriefFieldStrengthen). apps/dispatch-control/__tests__/StoryBriefScreen.test.tsx (new). Annotations §Stage 1 L48-55.
   </read_first>
@@ -92,6 +93,7 @@ deriveStoryStage (derivedState.ts L152-158): currently `pitchRows.length > 0 && 
 
 <task type="auto">
   <name>Task 2: Mount StoryBriefScreen at Stage 1 and delete the provisional placeholder</name>
+  <files>apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/story/page.tsx, apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/story/page.tsx (L22-23 imports, L45 `<SignalDeskScreen .../>` render, the runId resolution). apps/dispatch-control/app/(dashboard)/issues/[issueNumber]/story/StoryPanelContent.tsx (the 131-line placeholder + `buildStoryPanelContent`/StoryPanelPublisher — confirm nothing else imports it before deleting). 47-CONTEXT.md §specifics ("replaced, not extended"; Phases 40 & 42 deleted the placeholders they replaced).
   </read_first>
@@ -111,6 +113,7 @@ deriveStoryStage (derivedState.ts L152-158): currently `pitchRows.length > 0 && 
 
 <task type="auto">
   <name>Task 3: Phase gate — full suites + strict build + Convex parity</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/StoryBriefScreen.tsx, apps/dispatch-control/lib/derivedState.ts</files>
   <read_first>
     47-VALIDATION.md §"Sampling Rate" / §"Validation Sign-Off" (the phase-gate definition). Memory: run-strict-build-before-frontend-phase-done (vitest does NOT type-check) + convex-functions-need-live-sync. apps/dispatch-control/package.json (build/test scripts). packages/pipeline/pyproject.toml (pytest config).
   </read_first>

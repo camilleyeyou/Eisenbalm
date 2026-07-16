@@ -71,6 +71,7 @@ Reuse target: components/revision/RevisionFlow.tsx — surface-agnostic by desig
 
 <task type="auto">
   <name>Task 1: briefClient.ts — patchBrief + strengthen preview/apply clients</name>
+  <files>apps/dispatch-control/lib/briefClient.ts</files>
   <read_first>
     apps/dispatch-control/lib/revisionClient.ts (previewRevision L167 / applyRevision L190 + the RevisePreviewBody/Result interfaces L75-104 — copy the Clerk-token fetch + typed result shape). apps/dispatch-control/lib/pipelineControlClient.ts (`pipelineBaseUrl()` helper). API_CONTRACTS §47 (the three Brief endpoint shapes landed in 47-04).
   </read_first>
@@ -89,6 +90,7 @@ Reuse target: components/revision/RevisionFlow.tsx — surface-agnostic by desig
 
 <task type="auto" tdd="true">
   <name>Task 2: BriefFieldTable.tsx — editable six-field table (BRF-05)</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/BriefFieldTable.tsx, apps/dispatch-control/__tests__/BriefFieldTable.test.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx (the `brief` subscription exposed in 47-05). apps/dispatch-control/lib/briefClient.ts (patchBrief from Task 1). apps/dispatch-control/__tests__/BriefFieldTable.test.tsx (Wave-0 scaffold to fill). Annotations §Stage 1 L53. 47-CONTEXT.md D-12 (guarded content-boundary edit).
   </read_first>
@@ -113,6 +115,7 @@ Reuse target: components/revision/RevisionFlow.tsx — surface-agnostic by desig
 
 <task type="auto" tdd="true">
   <name>Task 3: BriefFieldStrengthen.tsx — field-scoped strengthen (BRF-06)</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/BriefFieldStrengthen.tsx, apps/dispatch-control/__tests__/BriefFieldStrengthen.test.tsx</files>
   <read_first>
     apps/dispatch-control/components/revision/RevisionFlow.tsx (the surface-agnostic preview then comparison then apply state machine — wrap it with a Brief-field scope). apps/dispatch-control/lib/briefClient.ts (strengthen preview/apply from Task 1). apps/dispatch-control/components/decision-log/DecisionLog.tsx (apply audit display). apps/dispatch-control/__tests__/BriefFieldStrengthen.test.tsx (Wave-0 scaffold to fill). 47-CONTEXT.md D-13 + 47-RESEARCH.md §"Pattern 6".
   </read_first>

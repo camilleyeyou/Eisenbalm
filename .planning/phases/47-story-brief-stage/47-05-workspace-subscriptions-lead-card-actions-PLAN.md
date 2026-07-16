@@ -74,6 +74,7 @@ Provider pattern: WorkspaceStateProvider.tsx already does `const pitchRows = use
 
 <task type="auto">
   <name>Task 1: Add storyLeads/verificationRecords/briefs subscriptions + requireLead/removeLead clients</name>
+  <files>apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx, apps/dispatch-control/lib/pipelineControlClient.ts</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx (the `useQuery(api.pitchLog.byRunId, ...)` subscription at L135, the WorkspaceStateValue interface at L52, and the exposed value object at L244 — mirror all three for the new queries; honor the 41-04 "reuse, no new useQuery elsewhere" discipline). apps/dispatch-control/lib/pipelineControlClient.ts (`adjudicateGate1` L186-211 — the exact Clerk-token fetch + error-throw shape to copy). convex/_generated/api (confirm api.storyLeads.byRunId, api.verificationRecords.byRunId, api.briefs.byRunId exist post-47-01).
   </read_first>
@@ -94,6 +95,7 @@ Provider pattern: WorkspaceStateProvider.tsx already does `const pitchRows = use
 
 <task type="auto" tdd="true">
   <name>Task 2: LeadCard.tsx — never-truncated lead card (BRF-01)</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/LeadCard.tsx, apps/dispatch-control/__tests__/LeadCard.test.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/signal-desk/_components/CandidateSlate.tsx L197-208 (the "primaryConcern — ALWAYS visible, rendered in FULL, never clipped" block + its `data-testid` — the exact 1c-token idiom to mirror for the brand-risk warning). apps/dispatch-control/__tests__/CandidateSlate.test.tsx L90-114 (the never-truncated assertion to copy into LeadCard.test.tsx). apps/dispatch-control/__tests__/LeadCard.test.tsx (the Wave-0 scaffold from 47-01 to fill). Annotations §Stage 1 L50. story_leads shape in the interfaces block.
   </read_first>
@@ -119,6 +121,7 @@ Provider pattern: WorkspaceStateProvider.tsx already does `const pitchRows = use
 
 <task type="auto" tdd="true">
   <name>Task 3: LeadActions.tsx — Require / Remove+reason (BRF-02)</name>
+  <files>apps/dispatch-control/app/(dashboard)/story-brief/_components/LeadActions.tsx, apps/dispatch-control/__tests__/LeadActions.test.tsx</files>
   <read_first>
     apps/dispatch-control/app/(dashboard)/signal-desk/_components/AdjudicationPanel.tsx (the Clerk `useAuth().getToken()` + required-reason textarea + guarded-call idiom — the closest precedent). apps/dispatch-control/components/decision-log/DecisionLog.tsx (drop-in Decision-log display; confirm the props it accepts). apps/dispatch-control/lib/pipelineControlClient.ts (requireLead/removeLead added in Task 1). apps/dispatch-control/__tests__/LeadActions.test.tsx (the Wave-0 scaffold to fill). Annotations §Stage 1 L50 + §Decision & audit L112-113.
   </read_first>
