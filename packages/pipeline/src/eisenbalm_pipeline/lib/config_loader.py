@@ -123,6 +123,12 @@ AGENT_KEY_TO_PROMPT_FILE: dict[str, str] = {
     # Singleton assets.
     "rubric":                   "rubric",
     "voice_constraints":        "voice_constraints",
+    # ── Phase 46 (SGE-01/D-18): Signal Editor's two prompts. NOT part of the
+    # frozen Phase-22 SYSTEM_PROMPT_KEYS 11 (RESEARCH Pitfall 7) — this
+    # superset map + ALL_AGENT_KEYS/USER_TEMPLATE_KEYS are what
+    # load_run_config() and the Phase 46 seed iterate. ────────────────────
+    "signal_editor":            "signal_editor",
+    "signal_editor_user":       "signal_editor_user",
 }
 
 # ── Canonical Phase 22 system-prompt keys (the original 11) ─────────────────
@@ -146,6 +152,8 @@ USER_TEMPLATE_KEYS: tuple[str, ...] = (
     "scout_user", "advocate_user", "calibrator_user", "editor_gate1_user",
     "editor_final_user", "researcher_user", "game_user", "design_user",
     "bonus_big_budget_user", "bonus_jingle_user", "bonus_spec_ad_user",
+    # Phase 46 (SGE-01/D-18).
+    "signal_editor_user",
 )
 SECTION_GUIDANCE_KEYS: tuple[str, ...] = (
     "section_guidance_origin", "section_guidance_problem",

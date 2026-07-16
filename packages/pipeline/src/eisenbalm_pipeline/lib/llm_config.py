@@ -41,6 +41,14 @@ MODEL_BY_AGENT: dict[str, str] = {
     # here than for prose writers, so this one agent sits above the Sonnet
     # section-writer tier.
     "game":         "anthropic/claude-opus-4-8",
+    # Phase 46 (SGE-01, RESEARCH Pitfall 5): Signal Editor's leads are
+    # PROPOSALS for human review, not a final/irreversible voice-critical
+    # call — CONTEXT's "Advocate/Editor class" framing doesn't match the
+    # codebase (advocate is actually Haiku, below). The functional analog is
+    # Researcher: tool-use + structured judgment feeding downstream
+    # consumers. This is a discretion call, not a locked pin — the plumbing
+    # is identical if Andrew later bumps it to MODEL_PIN_VOICE_CRITICAL.
+    "signal_editor": "anthropic/claude-sonnet-4-6",
     # Mechanical (Haiku, latest-stable alias).
     "scout":    "anthropic/claude-haiku-4-5",
     "advocate": "anthropic/claude-haiku-4-5",
@@ -70,6 +78,9 @@ SAMPLING_BY_AGENT: dict[str, dict] = {
     # other section writers (quick-260711-iu2). Inert if OpenRouter drops
     # sampling params for this Opus-tier model.
     "game":         {"temperature": 0.4, "top_p": 1.0},
+    # Phase 46 (SGE-01): between Researcher's fact-finding 0.3 and the
+    # section writers' creative 0.7 — matches chronicler/design's 0.4.
+    "signal_editor": {"temperature": 0.4, "top_p": 1.0},
 }
 
 # RESEARCH §"OpenRouter Client Architecture": per-agent max_tokens for the
@@ -81,4 +92,7 @@ MAX_TOKENS_BY_AGENT: dict[str, int] = {
     # truncation triggers a schema retry and produces broken games
     # (quick-260711-iu2).
     "game":       24_000,
+    # Phase 46 (SGE-01): between Scout's 12_000 and Researcher's 20_000 —
+    # 3-5 structured leads plus tool-call transcript overhead.
+    "signal_editor": 16_000,
 }
