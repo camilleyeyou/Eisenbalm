@@ -52,7 +52,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card (completed 2026-07-15)
 - [x] **Phase 43: My Tasks & Decision Log** - My Tasks becomes a derived projection over open claims/findings/sign-offs; one Decision log records every reasoned action console-wide (completed 2026-07-15)
 - [x] **Phase 44: Inspect How This Was Made** - Universal 7-tab inspector reachable from six surfaces, with the missing-expected-input diff as the headline diagnostic (completed 2026-07-15)
-- [ ] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard
+- [x] **Phase 45: Agent Revision** - "Ask agent to revise" becomes a passage-level editing verb with direction chips, a claim-delta comparison card, and a per-issue cost guard (completed 2026-07-16)
 - [ ] **Phase 46: Signal Editor & Candidate Verification** - Pipeline grows 18 → 20 nodes: a Signal Editor agent emits dated story leads and a `verify_candidates` deterministic check gates organization selection
 - [ ] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief
 - [ ] **Phase 48: Brief Entry Point** - "Start from my brief" becomes a real second pipeline entry point that skips discovery and enters at the Researcher
@@ -460,7 +460,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 42. Fact Check Stage | 8/8 | Complete    | 2026-07-15 |
 | 43. My Tasks & Decision Log | 9/9 | Complete    | 2026-07-15 |
 | 44. Inspect How This Was Made | 9/9 | Complete    | 2026-07-15 |
-| 45. Agent Revision | 6/7 | In Progress|  |
+| 45. Agent Revision | 7/7 | Complete   | 2026-07-16 |
 | 46. Signal Editor & Candidate Verification | 0/TBD | Not started | - |
 | 47. Story & Brief Stage | 0/TBD | Not started | - |
 | 48. Brief Entry Point | 0/TBD | Not started | - |
@@ -996,7 +996,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 - [x] 45-04-frontend-revision-flow-kit-PLAN.md — revisionClient + DirectionChips + RevisionComparisonCard + RevisionFlow (chips→preview→card→apply, try-another/edit-before-applying) (Wave 2)
 - [x] 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md — data-block-index stamping + PassageToolbar (6 actions, Compare/Restore reserved) + Draft/Voice wiring + InspectorFooter flipped live (Wave 3)
 - [x] 45-06-frontend-cost-vs-budget-readout-PLAN.md — deriveRunCostUsd/deriveRunCapUsd + WorkspaceStateProvider agentRuns subscription + never-blank FrameChrome header readout (Wave 2)
-- [ ] 45-07-integration-gate-PLAN.md — full suite + strict build + Convex-sync confirm + Annotations demo-leg UAT (Wave 4)
+- [x] 45-07-integration-gate-PLAN.md — full suite + strict build + Convex-sync confirm + Annotations demo-leg UAT (Wave 4)
 **UI hint**: yes
 
 ### Phase 46: Signal Editor & Candidate Verification

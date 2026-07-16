@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md
-last_updated: "2026-07-16T05:53:31.367Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 45-07-integration-gate-PLAN.md
+last_updated: "2026-07-16T06:02:04.731Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -321,6 +321,7 @@ Plan: 7 of 7
 | Phase 45-agent-revision P06 | 8min | 2 tasks | 6 files |
 | Phase 45 P03 | 25min | 2 tasks | 2 files |
 | Phase 45 P05 | 200min | 3 tasks | 11 files |
+| Phase 45 P07 | 8min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -841,6 +842,8 @@ Recent decisions affecting current work:
 - [Phase 45]: revision.py forwards its own get_issue_draft/patch_issue_field bindings into content.py's shared _patch_prose_span apply core (45-02's caller-forwarded I/O seam), mirroring factcheck.py's wrapper exactly
 - [Phase 45]: InspectorFooter Ask agent to revise flips LIVE only when firstProseExcerpt derives a real non-empty quotedText; RevisionFlow stays mounted by the Draft/Voice surface, never by the inspector, via a shared requestRevision channel on InspectorProvider
 - [Phase 45]: Extended InspectorContainer.tsx (beyond 45-05's declared file list) to wire real sectionBlocks/sectionName/onRequestRevision from agent_run_payloads.outputSnapshot, so the inspector footer entry point is a real revision surface, not a dead button (D-18)
+- [Phase 45]: Confirmed Convex needs no sync for Phase 45 (no convex/*.ts diff since the phase's first commit); REV-05's header readout reuses already-deployed agentRuns.byRunId/pipelineConfig.getAll queries.
+- [Phase 45]: Persisted the 8-step Annotations demo-leg human-verify checkpoint as pending 45-UAT.md items (status: partial) rather than blocking the auto chain on an unavailable live browser/Clerk session, mirroring the 43-09/44-09 precedent.
 
 ### Pending Todos
 
@@ -931,6 +934,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T05:53:31.353Z
-Stopped at: Completed 45-05-frontend-passage-toolbar-and-surface-wiring-PLAN.md
+Last session: 2026-07-16T06:02:04.718Z
+Stopped at: Completed 45-07-integration-gate-PLAN.md
 Resume file: None
