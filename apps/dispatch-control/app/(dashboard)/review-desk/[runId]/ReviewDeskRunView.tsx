@@ -57,6 +57,22 @@
  * `onInspect` — the draft passage entry point into the shared "Inspect how
  * this was made" panel (`useInspector().openInspector`, mounted once at the
  * `(dashboard)` root layout). Opens on the section's `founder` artifact.
+ *
+ * Phase 45 (REV-01/REV-04, D-18, Plan 45-05 Task 2): the mounted `<Galley>`
+ * now also gets `onRevise`/`onRelatedFacts` — wired to the SAME
+ * `revisePassage`/`requestRevision`/`clearRevisePassage` channel the
+ * `InspectorProvider` context exposes (shared with the Phase-44 inspector
+ * footer's "Ask agent to revise", Plan 45-05 Task 3), not new local state —
+ * this is what makes the galley toolbar AND the inspector footer open the
+ * SAME `RevisionFlow` regardless of which one triggered it (D-18's "one
+ * component, every surface"). Applying reloads the draft (`reloadDraft`),
+ * re-fetching from Sanity so the reset claims and any revoked Voice
+ * sign-off surface immediately. "Related facts & sources" looks up a
+ * tracked `claim_checks` row intersecting the selected block from the SAME
+ * `claimChecks.listByRunId` query the shared galley already subscribes to
+ * internally (Convex dedupes the identical subscription — no new backend
+ * query) and renders the shared `ClaimProvenanceCard`, or an honest "No
+ * tracked claims in this passage."
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -77,6 +93,9 @@ import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 import { issueFactCheckHref } from '@/lib/issueRouteResolver'
+import { RevisionFlow } from '@/components/revision/RevisionFlow'
+import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
+import type { PassageSelection } from '@/components/galley/PassageToolbar'
 
 interface ReviewDeskRunViewProps {
   params: Promise<{ runId: string }>
@@ -99,6 +118,25 @@ interface QaCorrectionRow {
   accepted?: boolean
   /** §33.1 resolution state — filtered via the shared isOpenFinding (Pitfall 9). */
   resolution?: 'accepted' | 'dismissed'
+}
+
+/**
+ * Minimal shape needed from a live `claim_checks` row (Phase 45, D-16 —
+ * "Related facts & sources"). Mirrors `Galley.tsx`'s own internal
+ * `ClaimCheckRow` (this app duplicates "minimal shape needed from a row"
+ * interfaces per-surface today, matching `QaCorrectionRow` above).
+ */
+interface ClaimCheckRow {
+  claimIndex: number
+  text: string
+  status: string
+  claimId?: string
+  sourceUrl?: string
+  retrievedAt?: number
+  sectionName?: string
+  blockIndexHint?: number
+  importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  context?: string
 }
 
 /**
@@ -155,7 +193,22 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
 
   const { getToken } = useAuth()
   const router = useRouter()
-  const { openInspector } = useInspector()
+  const { openInspector, revisePassage, requestRevision, clearRevisePassage } = useInspector()
+
+  // Phase 45 (REV-01, D-16) — "Related facts & sources" selection; local to
+  // this surface (unlike revisePassage) since only ONE entry point (the
+  // galley toolbar) can ever set it.
+  const [relatedFacts, setRelatedFacts] = useState<PassageSelection | null>(null)
+  // The SAME claim_checks query Galley.tsx already subscribes to
+  // internally — Convex dedupes the identical subscription, so this is not
+  // a new backend query, just a second reader of the existing one.
+  const claimRows =
+    (useQuery(api.claimChecks.listByRunId, { runId }) as ClaimCheckRow[] | undefined) ?? []
+  const relatedClaim = relatedFacts
+    ? claimRows.find(
+        (row) => row.sectionName === relatedFacts.sectionId && row.blockIndexHint === relatedFacts.blockIndex,
+      )
+    : undefined
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -463,6 +516,8 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
                   reloadDraft={reloadDraft}
                   onEditSection={handleEditSection}
                   onInspect={handleInspect}
+                  onRevise={requestRevision}
+                  onRelatedFacts={setRelatedFacts}
                   showProvenance={showProvenance}
                   includeAxes={FACTUAL_AXES}
                   onUnsourcedClaimClick={() => {
@@ -503,6 +558,71 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
                   </p>
                 </div>
               ))}
+
+            {/* Phase 45 (REV-01/REV-04, D-18) — the shared "Ask agent to
+                revise" flow, scoped to whichever passage was selected
+                (galley toolbar) OR requested (inspector footer). Rendered
+                regardless of viewMode so an inspector-footer-triggered
+                request is never silently dropped. */}
+            {revisePassage && (
+              <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
+                    Ask agent to revise — {revisePassage.sectionName}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={clearRevisePassage}
+                    className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
+                  >
+                    Close
+                  </button>
+                </div>
+                <RevisionFlow
+                  runId={runId}
+                  passage={revisePassage}
+                  onApplied={reloadDraft}
+                  onClose={clearRevisePassage}
+                />
+              </div>
+            )}
+
+            {/* Phase 45 (REV-01, D-16) — "Related facts & sources": the
+                shared ClaimProvenanceCard for a tracked claim intersecting
+                the selected block, or an honest "no tracked claims" state. */}
+            {relatedFacts && (
+              <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
+                    Related facts &amp; sources
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setRelatedFacts(null)}
+                    className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
+                  >
+                    Close
+                  </button>
+                </div>
+                {relatedClaim ? (
+                  <ClaimProvenanceCard
+                    claim={{
+                      text: relatedClaim.text,
+                      importance: relatedClaim.importance,
+                      status: relatedClaim.status,
+                      sourceUrl: relatedClaim.sourceUrl,
+                      supportingPassage: relatedClaim.context,
+                      retrievedAt: relatedClaim.retrievedAt,
+                      sectionName: relatedClaim.sectionName,
+                    }}
+                  />
+                ) : (
+                  <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
+                    No tracked claims in this passage.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

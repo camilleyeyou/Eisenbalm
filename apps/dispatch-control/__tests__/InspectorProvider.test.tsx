@@ -102,3 +102,60 @@ describe('InspectorProvider / openInspector (§44.6)', () => {
     spy.mockRestore()
   })
 })
+
+// Phase 45 (REV-01, D-18, Plan 45-05) — the shared revision-request channel
+// between the inspector footer entry point and whichever surface (Draft or
+// Voice) currently owns a mounted RevisionFlow.
+function RevisionRequester() {
+  const { revisePassage, requestRevision, clearRevisePassage } = useInspector()
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() =>
+          requestRevision({ sectionName: 'founderBio', quotedText: 'a founder phrase', blockIndexHint: 2 })
+        }
+      >
+        Request revision
+      </button>
+      <button type="button" onClick={clearRevisePassage}>
+        Clear revision
+      </button>
+      <span data-testid="revise-passage">{revisePassage ? JSON.stringify(revisePassage) : 'none'}</span>
+    </div>
+  )
+}
+
+describe('InspectorProvider / revisePassage (§45 D-18)', () => {
+  it('requestRevision sets the shared passage; clearRevisePassage clears it', () => {
+    render(
+      <InspectorProvider>
+        <RevisionRequester />
+      </InspectorProvider>,
+    )
+
+    expect(screen.getByTestId('revise-passage').textContent).toBe('none')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request revision' }))
+    expect(screen.getByTestId('revise-passage').textContent).toBe(
+      JSON.stringify({ sectionName: 'founderBio', quotedText: 'a founder phrase', blockIndexHint: 2 }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear revision' }))
+    expect(screen.getByTestId('revise-passage').textContent).toBe('none')
+  })
+
+  it('a second requestRevision call replaces the passage rather than accumulating', () => {
+    render(
+      <InspectorProvider>
+        <RevisionRequester />
+      </InspectorProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request revision' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Request revision' }))
+    expect(screen.getByTestId('revise-passage').textContent).toBe(
+      JSON.stringify({ sectionName: 'founderBio', quotedText: 'a founder phrase', blockIndexHint: 2 }),
+    )
+  })
+})

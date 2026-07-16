@@ -51,6 +51,18 @@
  * this was made" panel (`useInspector().openInspector`, mounted once at the
  * `(dashboard)` root layout). Same `AnnotationMark` component as Review
  * Desk's draft-passage entry point — one prop covers both.
+ *
+ * Phase 45 (REV-01/REV-04, D-18, Plan 45-05 Task 2): the mounted `<Galley>`
+ * now also gets `onRevise`/`onRelatedFacts` — wired to the SAME
+ * `revisePassage`/`requestRevision`/`clearRevisePassage` channel the
+ * `InspectorProvider` context exposes (shared with Review Desk AND the
+ * Phase-44 inspector footer's "Ask agent to revise", Plan 45-05 Task 3) —
+ * one `RevisionFlow`, every surface (D-18). Applying reloads the draft
+ * (`reloadDraft`), which re-fetches from Sanity so any revoked "Sounds
+ * human" sign-off surfaces immediately on this screen. "Related facts &
+ * sources" reuses the SAME `claimChecks.listByRunId` query the shared
+ * galley already subscribes to internally (Convex dedupes the identical
+ * subscription — no new backend query).
  */
 import { use, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -64,6 +76,9 @@ import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPa
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { VOICE_AXES } from '@/lib/galley/axisPartition'
 import { recheck, VoicePassApiError } from '@/lib/voicePassClient'
+import { RevisionFlow } from '@/components/revision/RevisionFlow'
+import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
+import type { PassageSelection } from '@/components/galley/PassageToolbar'
 
 /** Phase 36 (VOX-02, D-10) — the voice-tell AnnotationMark label variant. */
 const VOICE_LABELS = {
@@ -88,6 +103,25 @@ interface QaCorrectionRow {
   resolution?: 'accepted' | 'dismissed'
 }
 
+/**
+ * Minimal shape needed from a live `claim_checks` row (Phase 45, D-16 —
+ * "Related facts & sources"). Mirrors `Galley.tsx`'s own internal
+ * `ClaimCheckRow` (this app duplicates "minimal shape needed from a row"
+ * interfaces per-surface today, matching `QaCorrectionRow` above).
+ */
+interface ClaimCheckRow {
+  claimIndex: number
+  text: string
+  status: string
+  claimId?: string
+  sourceUrl?: string
+  retrievedAt?: number
+  sectionName?: string
+  blockIndexHint?: number
+  importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  context?: string
+}
+
 export default function VoicePassRunView({ params }: VoicePassRunViewProps) {
   const { runId: rawRunId } = use(params)
   const runId = decodeURIComponent(rawRunId)
@@ -97,7 +131,22 @@ export default function VoicePassRunView({ params }: VoicePassRunViewProps) {
 export function VoicePassScreen({ runId }: { runId: string }) {
   const { getToken } = useAuth()
   const router = useRouter()
-  const { openInspector } = useInspector()
+  const { openInspector, revisePassage, requestRevision, clearRevisePassage } = useInspector()
+
+  // Phase 45 (REV-01, D-16) — "Related facts & sources" selection; local to
+  // this surface (unlike revisePassage) since only ONE entry point (the
+  // galley toolbar) can ever set it.
+  const [relatedFacts, setRelatedFacts] = useState<PassageSelection | null>(null)
+  // The SAME claim_checks query Galley.tsx already subscribes to
+  // internally — Convex dedupes the identical subscription, so this is not
+  // a new backend query, just a second reader of the existing one.
+  const claimRows =
+    (useQuery(api.claimChecks.listByRunId, { runId }) as ClaimCheckRow[] | undefined) ?? []
+  const relatedClaim = relatedFacts
+    ? claimRows.find(
+        (row) => row.sectionName === relatedFacts.sectionId && row.blockIndexHint === relatedFacts.blockIndex,
+      )
+    : undefined
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -245,10 +294,77 @@ export function VoicePassScreen({ runId }: { runId: string }) {
               reloadDraft={reloadDraft}
               onEditSection={handleEditSection}
               onInspect={handleInspect}
+              onRevise={requestRevision}
+              onRelatedFacts={setRelatedFacts}
               showProvenance={false}
               includeAxes={VOICE_AXES}
               labels={VOICE_LABELS}
             />
+
+            {/* Phase 45 (REV-01/REV-04, D-18) — the shared "Ask agent to
+                revise" flow, scoped to whichever passage was selected
+                (galley toolbar) OR requested (inspector footer). Applying
+                reloads the draft, so a revoked "Sounds human" sign-off
+                surfaces immediately via VoicePassRail's own subscription. */}
+            {revisePassage && (
+              <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
+                    Ask agent to revise — {revisePassage.sectionName}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={clearRevisePassage}
+                    className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
+                  >
+                    Close
+                  </button>
+                </div>
+                <RevisionFlow
+                  runId={runId}
+                  passage={revisePassage}
+                  onApplied={reloadDraft}
+                  onClose={clearRevisePassage}
+                />
+              </div>
+            )}
+
+            {/* Phase 45 (REV-01, D-16) — "Related facts & sources": the
+                shared ClaimProvenanceCard for a tracked claim intersecting
+                the selected block, or an honest "no tracked claims" state. */}
+            {relatedFacts && (
+              <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
+                    Related facts &amp; sources
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setRelatedFacts(null)}
+                    className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
+                  >
+                    Close
+                  </button>
+                </div>
+                {relatedClaim ? (
+                  <ClaimProvenanceCard
+                    claim={{
+                      text: relatedClaim.text,
+                      importance: relatedClaim.importance,
+                      status: relatedClaim.status,
+                      sourceUrl: relatedClaim.sourceUrl,
+                      supportingPassage: relatedClaim.context,
+                      retrievedAt: relatedClaim.retrievedAt,
+                      sectionName: relatedClaim.sectionName,
+                    }}
+                  />
+                ) : (
+                  <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
+                    No tracked claims in this passage.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT — the Voice Pass rail (VOX-03): machine-tells, voice law,
