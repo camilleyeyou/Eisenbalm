@@ -254,13 +254,96 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
     issue_number = state["issue_number"]
     candidates = state.get("candidates") or []
 
-    # No candidates is a hard failure — Scout must have emitted some.
+    # Phase 46 (D-14): verify_candidates may legitimately kill EVERY
+    # candidate (SGE-03's conservative-but-real kill rule). That is a
+    # RECOVERABLE degraded/needs-human state, not a fatal crash — mirrors
+    # the low-confidence interrupt path below (idempotency-before-interrupt:
+    # the status write MUST land BEFORE interrupt() — Phase 4 D-13). There
+    # is no sorted_candidates[0] to fall back to, so a minimal synthetic
+    # winning_charity is built from the human-supplied name alone, and the
+    # deterministic-ranking / LLM path is skipped entirely.
     if not candidates:
-        raise RuntimeError(
-            "editor_gate_1: state['candidates'] is empty — Scout produced "
-            "no candidates. This should be impossible after Phase 4 PIP-04 "
-            "(advocate_scored requires non-empty input)."
+        await convex_mutation_safe(
+            "pipelineRuns:updateStatus",
+            {
+                "runId": run_id,
+                "status": "awaiting-review",
+                "awaitingHumanAt": int(time.time() * 1000),
+            },
         )
+        # Suspend. interrupt() raises GraphInterrupt; the @agent_node
+        # wrapper re-raises it without writing the success-path event.
+        resume_value: Any = interrupt(
+            {
+                "prompt": (
+                    "verify_candidates killed every candidate — supply a "
+                    "charity to proceed or restart."
+                ),
+                "reason": "all-candidates-killed",
+                "candidates": [],
+            }
+        )
+        # Accept the same three resume shapes the existing interrupt path
+        # handles (Phase 4 PIP-10 contract / Phase 5 plan-08 contract).
+        human_name = ""
+        if isinstance(resume_value, dict):
+            human_name = (
+                resume_value.get("editorSelection")
+                or resume_value.get("winnerName")
+                or ""
+            )
+        elif isinstance(resume_value, str) and resume_value:
+            human_name = resume_value
+
+        # After resume, write status back to 'running' (mirror the existing
+        # interrupt path below).
+        await convex_mutation_safe(
+            "pipelineRuns:updateStatus",
+            {"runId": run_id, "status": "running"},
+        )
+
+        # Minimal synthetic CharityCandidate — every key present, empty
+        # where there is no data to fill (there is no scored candidate to
+        # fall back to). Downstream Researcher/Chronicler produce a
+        # degraded-but-non-crashing result — D-14 requires "recoverable
+        # rather than fatal", not "produces a great result".
+        winning_charity: dict = {
+            "name": human_name,
+            "location": "",
+            "website": "",
+            "charityNavigatorUrl": None,
+            "guidestarUrl": None,
+            "foundingYear": None,
+            "assetRange": "",
+            "focusArea": "",
+            "missionStatement": "",
+            "scoutSummary": "",
+            "whyOverlooked": "",
+            "advocateArgument": None,
+            "advocateScore": None,
+        }
+        transcript = (
+            f"# Eisenbalm Dispatch — Issue #{issue_number} Deliberation\n\n"
+            "## Decision\n\n"
+            "No candidates survived verification — verify_candidates killed "
+            "every candidate this run. A human supplied a charity directly "
+            "to recover the run.\n\n"
+            f"**Winner:** {human_name}\n"
+        )
+        return {
+            **state,
+            "winning_charity": winning_charity,
+            "editor_decision": (
+                "Degraded recovery path (D-14): verify_candidates killed "
+                "every candidate, so no deterministic ranking or LLM call "
+                "was made. A human supplied a charity directly via the "
+                "all-candidates-killed interrupt."
+            ),
+            "runner_up_notes": "",
+            "editor_confidence": None,
+            "deliberation_transcript": transcript,
+            "model_versions": dict(state.get("model_versions") or {}),
+        }
 
     # Deterministic ranking (D-18).
     sorted_candidates = _sort_candidates_by_score(candidates)

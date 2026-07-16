@@ -296,6 +296,90 @@ async def test_interrupt_skipped_when_confident() -> None:
 
 
 @pytest.mark.asyncio
+async def test_editor_gate_1_no_candidates_triggers_recoverable_interrupt() -> None:
+    """D-14: an empty state['candidates'] (verify_candidates killed every
+    candidate) does NOT raise RuntimeError. It writes
+    pipelineRuns:updateStatus('awaiting-review') BEFORE interrupt() —
+    exactly the existing idempotency-before-interrupt ordering (Phase 4
+    D-13) — and interrupt() propagates as GraphInterrupt, not a crash.
+    """
+    state = {
+        "run_id": "run-test-no-candidates-0001",
+        "issue_number": 42,
+        "candidates": [],
+        "model_versions": {},
+    }
+    mock_convex = AsyncMock()
+    with patch(
+        "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.interrupt",
+        _interrupt_raises_graph_interrupt,
+    ):
+        # NOT RuntimeError — must be GraphInterrupt (recoverable, not fatal).
+        with pytest.raises(GraphInterrupt):
+            await editor_gate_1(state)
+
+    awaiting_calls = [
+        c
+        for c in mock_convex.call_args_list
+        if c.args
+        and c.args[0] == "pipelineRuns:updateStatus"
+        and c.args[1].get("status") == "awaiting-review"
+    ]
+    assert len(awaiting_calls) >= 1, (
+        "pipelineRuns:updateStatus('awaiting-review') must be written "
+        "BEFORE interrupt() even on the all-candidates-killed path (D-13)"
+    )
+
+
+@pytest.mark.asyncio
+async def test_editor_gate_1_no_candidates_resume_builds_synthetic_winner() -> None:
+    """D-14: on resume with a human-supplied charityName, editor_gate_1
+    builds a minimal synthetic winning_charity from just that name (no
+    sorted_candidates[0] to fall back to) and returns a non-crashing
+    degraded state — no acomplete() call, no RuntimeError.
+    """
+    state = {
+        "run_id": "run-test-no-candidates-0002",
+        "issue_number": 42,
+        "candidates": [],
+        "model_versions": {"scout": "anthropic/claude-haiku-4-5"},
+    }
+    mock_convex = AsyncMock()
+    mock_acomplete = AsyncMock()
+    with patch(
+        "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.interrupt",
+        return_value={"winnerName": "Human Picked Org"},
+    ), patch(
+        "eisenbalm_pipeline.agents.editor.acomplete", mock_acomplete,
+    ):
+        result = await editor_gate_1(state)
+
+    assert result["winning_charity"]["name"] == "Human Picked Org"
+    # Every CharityCandidate key present, empty where there's no data.
+    assert result["winning_charity"]["location"] == ""
+    assert result["winning_charity"]["advocateScore"] is None
+    assert result["editor_confidence"] is None
+    assert result["runner_up_notes"] == ""
+    assert "all-candidates-killed" in result["editor_decision"] or "Degraded" in result["editor_decision"]
+    # Existing model_versions entries preserved; no LLM call made.
+    assert result["model_versions"] == {"scout": "anthropic/claude-haiku-4-5"}
+    mock_acomplete.assert_not_awaited()
+    # status written back to 'running' after resume.
+    running_calls = [
+        c
+        for c in mock_convex.call_args_list
+        if c.args
+        and c.args[0] == "pipelineRuns:updateStatus"
+        and c.args[1].get("status") == "running"
+    ]
+    assert len(running_calls) >= 1
+
+
+@pytest.mark.asyncio
 async def test_top_score_overrides_llm_winner() -> None:
     """AGT-06 D-18: deterministic top-score wins even if LLM names another.
 
