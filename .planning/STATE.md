@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Milestone complete
-stopped_at: Phase 45 context gathered
-last_updated: "2026-07-15T23:54:18.528Z"
+status: Ready to execute
+stopped_at: Completed 45-01-contract-and-wave0-test-stubs-PLAN.md
+last_updated: "2026-07-16T01:08:14.728Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 44 — inspect-how-this-was-made
+**Current focus:** Phase 45 — agent-revision
 
 ## Current Position
 
-Phase: 44
-Plan: Not started
+Phase: 45 (agent-revision) — EXECUTING
+Plan: 2 of 7
 
 ## Performance Metrics
 
@@ -315,6 +315,7 @@ Plan: Not started
 | Phase 44 P07 | 20min | 2 tasks | 11 files |
 | Phase 44 P08 | 20min | 3 tasks | 7 files |
 | Phase 44 P09 | 9min | 2 tasks | 3 files |
+| Phase 45 P01 | 12min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -823,6 +824,8 @@ Recent decisions affecting current work:
 - [Phase 44]: org Inspect affordance lives only on the winner card, not per-candidate -- resolveInspectorStep's org case always resolves to scout regardless of locator today
 - [Phase 44]: Task 2 human-verify checkpoint auto-approved under active --auto chain; four manual-only cross-surface behaviors persisted as pending UAT (44-UAT.md) rather than blocking or silently marking pass
 - [Phase 44]: Pipeline pytest run via packages/pipeline/.venv/bin/python (uv-managed venv) since bare pytest resolved to a Python without eisenbalm_pipeline installed
+- [Phase 45]: §45 locks the 7 DirectionChip identifiers (make_clearer/make_more_specific/tighten/match_brief/reduce_repetition/try_another_approach/custom) and the revise/preview+apply contract before any endpoint/UI code
+- [Phase 45]: test_revision_endpoints.py uses importorskip (whole module missing); test_budget.py uses skipif (one function missing) — two Wave-0 skip idioms matched to each module's actual state
 
 ### Pending Todos
 
@@ -913,6 +916,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T23:54:18.514Z
-Stopped at: Phase 45 context gathered
-Resume file: .planning/phases/45-agent-revision/45-CONTEXT.md
+Last session: 2026-07-16T01:08:14.714Z
+Stopped at: Completed 45-01-contract-and-wave0-test-stubs-PLAN.md
+Resume file: None
