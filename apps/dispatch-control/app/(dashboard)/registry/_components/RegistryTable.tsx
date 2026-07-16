@@ -18,6 +18,8 @@ import type { Id } from '@convex/_generated/dataModel'
 import CharityStatusBadge from './CharityStatusBadge'
 import AddCorrectionDialog from './AddCorrectionDialog'
 import CorrectionsList from './CorrectionsList'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 
 interface RegistryTableProps {
   workspace_id: string
@@ -61,6 +63,9 @@ function truncateUrl(url: string | undefined, maxLen = 32): string {
 export default function RegistryTable({ workspace_id }: RegistryTableProps) {
   const charities = useQuery(api.charities.listByWorkspace, { workspace_id })
   const setStatus = useMutation(api.charities.setStatus)
+  // ROL-03 (D-09): presentation-only client hint — the server
+  // `requireEditor` Convex helper (Plan 49-04) is the authoritative gate.
+  const isLocked = useRole() !== 'Editor-in-chief'
 
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
   // Track which charity has an open blocklist confirm popover
@@ -264,17 +269,22 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                             </div>
                           </div>
                         ) : (
-                          /* Blocklist trigger — opens inline confirm */
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setConfirmingBlocklistId(charity._id)
-                              setBlocklistReason('')
-                            }}
-                            className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
-                          >
-                            Blocklist Charity
-                          </button>
+                          /* Blocklist trigger — opens inline confirm. Locked
+                             for a Collaborator (ROL-03/D-09): the
+                             typed-confirmation + reason flow (Phase 47)
+                             stays unreachable behind this lock. */
+                          <LockedControl isLocked={isLocked} lockedLabel="🔒 editor only">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirmingBlocklistId(charity._id)
+                                setBlocklistReason('')
+                              }}
+                              className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
+                            >
+                              Blocklist Charity
+                            </button>
+                          </LockedControl>
                         )}
 
                         {/* Phase 39 (MEM-02): Add correction / view corrections toggle */}

@@ -41,6 +41,8 @@ import { useUser } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
 import { DiffViewer } from './DiffViewer'
 import EvalDrawer from './EvalDrawer'
+import { useRole } from '@/lib/role'
+import { LockedControl } from '@/components/LockedControl'
 
 interface VersionHistoryPanelProps {
   workspaceId: string
@@ -68,6 +70,9 @@ export default function VersionHistoryPanel({
 
   const { user } = useUser()
   const activateVersion = useMutation(api.promptVersions.activate)
+  // ROL-03 (D-09): presentation-only client hint — the server
+  // `requireEditor` Convex helper (Plan 49-04) is the authoritative gate.
+  const isLocked = useRole() !== 'Editor-in-chief'
 
   // In-progress signal: reuse the dashboard's existing runs query. A run with
   // status 'running' for this workspace disables activation (D-02).
@@ -252,25 +257,30 @@ export default function VersionHistoryPanel({
                     Currently live
                   </span>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleActivate(v.version)}
-                    disabled={runInProgress || activating !== null}
-                    title={
-                      runInProgress
-                        ? 'A run is in progress — activation will be available when it finishes.'
-                        : activeVersion !== null && v.version < activeVersion
-                          ? `Restore v${v.version}`
-                          : `Make live v${v.version}`
-                    }
-                    className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px]"
+                  <LockedControl
+                    isLocked={isLocked}
+                    lockedLabel="Make active 🔒 Editor-in-chief only"
                   >
-                    {activating === v.version
-                      ? 'Making live…'
-                      : activeVersion !== null && v.version < activeVersion
-                        ? 'Restore this version'
-                        : 'Make live'}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleActivate(v.version)}
+                      disabled={runInProgress || activating !== null}
+                      title={
+                        runInProgress
+                          ? 'A run is in progress — activation will be available when it finishes.'
+                          : activeVersion !== null && v.version < activeVersion
+                            ? `Restore v${v.version}`
+                            : `Make live v${v.version}`
+                      }
+                      className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px]"
+                    >
+                      {activating === v.version
+                        ? 'Making live…'
+                        : activeVersion !== null && v.version < activeVersion
+                          ? 'Restore this version'
+                          : 'Make live'}
+                    </button>
+                  </LockedControl>
                 )}
               </div>
 
