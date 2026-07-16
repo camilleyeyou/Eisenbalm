@@ -27,7 +27,9 @@ describe('LockedControl (ROL-03)', () => {
       </LockedControl>,
     )
 
-    const button = screen.getByRole('button', { name: 'Apply revision' })
+    const button = screen.getByRole('button', {
+      name: 'Apply revision',
+    }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     expect(button.getAttribute('aria-disabled')).toBe('true')
 
@@ -52,7 +54,9 @@ describe('LockedControl (ROL-03)', () => {
       </LockedControl>,
     )
 
-    const button = screen.getByRole('button', { name: 'Apply revision' })
+    const button = screen.getByRole('button', {
+      name: 'Apply revision',
+    }) as HTMLButtonElement
     expect(button.disabled).toBe(false)
     expect(button.getAttribute('aria-disabled')).toBeNull()
 
