@@ -464,7 +464,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 46. Signal Editor & Candidate Verification | 7/7 | Complete    | 2026-07-16 |
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
-| 49. Roles & Permissions | 1/9 | In Progress|  |
+| 49. Roles & Permissions | 2/9 | In Progress|  |
 | 50. Workbench & Nomenclature | 0/TBD | Not started | - |
 
 ## Backlog
@@ -1072,7 +1072,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
 Plans:
 - [x] 49-01-contract-first-role-comments-PLAN.md — API_CONTRACTS §49 (role vocab + comments table) + schema shapes
 - [ ] 49-02-clerk-claim-empirical-gate-PLAN.md — Clerk role claim on both token surfaces + empirical propagation gate (checkpoint)
-- [ ] 49-03-fastapi-editor-gate-PLAN.md — _require_editor + gate the 4 FastAPI actions + test_role_gate.py
+- [x] 49-03-fastapi-editor-gate-PLAN.md — _require_editor + gate the 4 FastAPI actions + test_role_gate.py
 - [ ] 49-04-convex-editor-gate-PLAN.md — requireEditor + gate activate/setStatus + update convex-test identities
 - [ ] 49-05-comments-backend-PLAN.md — convex/comments.ts add/listByIssueNumber (both roles) + tests
 - [ ] 49-06-role-hook-lockedcontrol-PLAN.md — useRole() hook + reusable LockedControl wrapper

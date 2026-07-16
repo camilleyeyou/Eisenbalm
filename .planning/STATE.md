@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 49-01-contract-first-role-comments-PLAN.md
-last_updated: "2026-07-16T17:41:09.425Z"
+stopped_at: Completed 49-03-fastapi-editor-gate-PLAN.md
+last_updated: "2026-07-16T18:00:45.478Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 49 (roles-permissions) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 
 ## Performance Metrics
 
@@ -345,6 +345,7 @@ Plan: 2 of 9
 | Phase 48 P04 | 6min | 2 tasks | 1 files |
 | Phase 48-brief-entry-point P07 | 9min | 2 tasks | 1 files |
 | Phase 49 P01 | 10min | 3 tasks | 2 files |
+| Phase 49 P03 | 20 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -908,6 +909,8 @@ Recent decisions affecting current work:
 - [Phase 48-brief-entry-point]: 48-07: Activated brief-mode e2e test with 7-section-field + factual-claims assertions (verified against real Sanity/Convex write shapes); phase gate green (679 pipeline tests, 939 dispatch-control tests, strict build, Convex sync)
 - [Phase 49]: users.role vocabulary re-mapped to Editor-in-chief|Collaborator (field name unchanged); Clerk publicMetadata.role JWT claim is the live source, not users.role
 - [Phase 49]: New append-only comments Convex table (by_workspace_issueNumber, by_workspace indices) modeled on §39 charity_corrections precedent
+- [Phase 49]: Monkeypatch target for jwt in tests is sys.modules['jwt'], not the control module's jwt attribute (local import inside _require_clerk_jwt_control bypasses module-attribute patching)
+- [Phase 49]: signoffs.py gates kind==sounds-human in-handler (not a route Depends swap); facts-cleared stays ungated on the same endpoint
 
 ### Pending Todos
 
@@ -998,6 +1001,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T17:41:09.411Z
-Stopped at: Completed 49-01-contract-first-role-comments-PLAN.md
+Last session: 2026-07-16T18:00:45.464Z
+Stopped at: Completed 49-03-fastapi-editor-gate-PLAN.md
 Resume file: None
