@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 48-03-pipeline-entry-seam-PLAN.md
-last_updated: "2026-07-16T15:11:54.742Z"
+stopped_at: Completed 48-05-create-panel-brief-path-PLAN.md
+last_updated: "2026-07-16T15:23:15.725Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 48 (brief-entry-point) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Performance Metrics
 
@@ -340,6 +340,7 @@ Plan: 4 of 7
 | Phase 48 P01 | 17min | 2 tasks | 4 files |
 | Phase 48 P02 | 25min | 3 tasks | 7 files |
 | Phase 48 P03 | 15min | 3 tasks | 8 files |
+| Phase 48 P05 | 18min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -895,6 +896,7 @@ Recent decisions affecting current work:
 - [Phase 48]: Wave 0 scaffolds authored: verify_candidates ENT-04 advisory characterization runs GREEN with no code change; graph-fork/_start_run/endpoint/CreatePanel/StoryBriefScreen scaffolds are skip-guarded red, ready for Plans 48-03..48-06
 - [Phase 48]: 48-03: initial_state['entry_mode'] always set explicitly (discovery included) per RESEARCH.md Pattern 2 + frozen Wave-0 test, overriding the plan's literal (inconsistent) task-2 prose
 - [Phase 48]: 48-03: two Phase 46 test_builder_wiring.py assertions updated to match the new conditional-edge form, replacing the now-removed static calibrator->signal_editor / verify_candidates->advocate edges
+- [Phase 48]: CreatePanel second Create-path card ships inline-expand (not modal), sharing className constants with the first card so both remain visual peers (ENT-01)
 
 ### Pending Todos
 
@@ -985,6 +987,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T15:11:54.728Z
-Stopped at: Completed 48-03-pipeline-entry-seam-PLAN.md
+Last session: 2026-07-16T15:23:15.712Z
+Stopped at: Completed 48-05-create-panel-brief-path-PLAN.md
 Resume file: None
