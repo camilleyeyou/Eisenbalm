@@ -27,19 +27,13 @@ from fastapi import APIRouter, Depends, Request
 import eisenbalm_pipeline.lib.convex_client as _cc
 import eisenbalm_pipeline.lib.sanity_client as _sc
 from eisenbalm_pipeline.api.control import _require_clerk_jwt_control
+from eisenbalm_pipeline.lib.registry_repetition import compute_repetition_note
 
 log = logging.getLogger(__name__)
 router = APIRouter()
 
 # Matches the canonical WORKSPACE_ID literal used by scout.py / config_loader.py.
 WORKSPACE_ID = "eisenbalm"
-
-# Phase 40 (D-10, §40.4): a cause/geo value is "over-represented" in the
-# last-8 coverage-memory sample once it appears at least this many times.
-REPETITION_THRESHOLD = 3
-
-# §40.4 step 6: fixed tie-break order when counts are equal — geo before cause.
-_REPETITION_DIMENSION_ORDER = {"geo": 0, "cause": 1}
 
 
 @router.get("/registry/coverage-strip")
@@ -137,42 +131,10 @@ async def repetition_note(
         else []
     )
 
-    # dimension -> lowercased value -> [count, first-seen display casing]
-    counters: dict[str, dict[str, list]] = {"geo": {}, "cause": {}}
-    for s in sanity_rows:
-        for dimension, field in (("cause", "focusArea"), ("geo", "location")):
-            raw = s.get(field)
-            if not raw:
-                continue
-            display_value = raw.strip()
-            if not display_value:
-                continue
-            key = display_value.lower()
-            entry = counters[dimension].get(key)
-            if entry is None:
-                counters[dimension][key] = [1, display_value]
-            else:
-                entry[0] += 1
-
-    over_represented: list[tuple[str, str, int]] = [
-        (dimension, display_value, count)
-        for dimension, values in counters.items()
-        for count, display_value in values.values()
-        if count >= REPETITION_THRESHOLD
-    ]
-
-    # Sort by count DESC, then geo-before-cause, then value ascending; take
-    # at most 2 (the UI-SPEC's "avoid X · avoid Y" shape).
-    over_represented.sort(
-        key=lambda item: (
-            -item[2],
-            _REPETITION_DIMENSION_ORDER[item[0]],
-            item[1],
-        )
-    )
-    top = over_represented[:2]
-
-    avoid = [{"dimension": d, "value": v, "count": c} for (d, v, c) in top]
-    note = " · ".join(f"avoid {item['value']}" for item in avoid) or None
-
-    return {"note": note, "avoid": avoid, "sampleSize": sample_size}
+    # Phase 46 Plan 02 (SGE-05): the counting algorithm now lives in
+    # lib/registry_repetition.compute_repetition_note — the Signal Editor
+    # (Plan 46-04) reuses it directly rather than reinventing it here.
+    # sampleSize is overridden with the Convex row count (`len(rows)`,
+    # captured BEFORE the Sanity join) to keep this endpoint's historical
+    # contract byte-stable — the helper's own sampleSize is len(sanity_rows).
+    return {**compute_repetition_note(sanity_rows), "sampleSize": sample_size}
