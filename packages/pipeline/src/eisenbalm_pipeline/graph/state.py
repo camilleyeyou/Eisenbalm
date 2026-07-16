@@ -159,6 +159,54 @@ class Narrator(TypedDict):
     active: bool                   # narrator on/off switch (Sanity narratorProfile.active; default True; D-14: when False → fall back to Jesse)
 
 
+class StoryLead(TypedDict):
+    """Phase 46 (SGE-01): a single Signal Editor story lead.
+
+    Field names mirror docs/API_CONTRACTS.md §46.1 verbatim — do not rename
+    without amending the contract first (CLAUDE.md hard rule). A Pydantic
+    model enforces this shape at the ``signal_editor`` agent boundary
+    (the ``body: list[BodyBlock]`` / ``claims: list[dict]`` structured-output
+    precedent). Invariant (D-08, enforced in Python, not only prompted): a
+    lead with ``brandRiskFlag: True`` MUST have ``recommended: False``.
+    """
+    premise: str                        # the story angle, one or two sentences
+    datedPeg: str                       # what makes this current/timely right now
+    pegSourceUrl: str                   # a REAL, sourced URL for the dated peg — never invented (D-19)
+    readerEnergy: str                   # why a reader would care
+    charitableAngle: str                # how this connects to a charitable response
+    category: str                       # e.g. "disaster relief", "housing", "food security"
+    confidence: str                     # 'low' | 'medium' | 'high' — constrained at the Pydantic boundary
+    brandRiskFlag: bool                 # true when the lead carries reputational/sensitivity risk
+    brandRiskReason: Optional[str]      # populated ONLY when brandRiskFlag is true; else None
+    repetitionWarning: Optional[str]    # SGE-05 advisory, e.g. "avoid US-SE · avoid weather"; never suppresses the lead
+    recommended: bool                   # SGE-02 gate — MUST be False whenever brandRiskFlag is True
+
+
+class VerificationRecord(TypedDict):
+    """Phase 46 (SGE-03): a per-organization deterministic verification record
+    produced by the ``verify_candidates`` node.
+
+    Field names mirror docs/API_CONTRACTS.md §46.3 verbatim. Conservative
+    posture (D-12): ``killed`` is True ONLY on a DEFINITIVE failure (domain
+    does not resolve, no registration found at all, or clearly not-obscure).
+    Transient/ambiguous errors mark the affected check ``'unverified'`` and
+    KEEP the candidate — mirrors ``agents/verify.py::verify_research``'s
+    "false negatives are acceptable, false positives are not" posture.
+    """
+    candidateId: str                    # f"charity-{slugify(name)}" — the SAME join key already
+                                         # used across Sanity _id / pitchLog.charityId /
+                                         # agentVotes.charityId (agents/advocate.py::_charity_id_for)
+    candidateName: str
+    domainLive: bool                    # httpx-resolved: DNS-resolves + 2xx/3xx after redirects
+    registrationId: Optional[str]       # reachable charityNavigatorUrl/guidestarUrl identifier, if any
+    registrationVerified: bool
+    obscurity: dict                     # {"pressHits": int, "verdict": str} — bounded Tavily press scan
+    status: Literal['pass', 'fail', 'unverified']   # 'unverified' on any transient/ambiguous error (D-12)
+    killed: bool
+    killReason: Optional[str]           # non-empty whenever killed is True — never silently dropped
+    checkedAt: int                      # Unix ms
+
+
 class DispatchState(TypedDict):
     # ── Identity ──────────────────────────────────────────────────────────────
     run_id: str                         # UUID, set at pipeline start
@@ -168,7 +216,15 @@ class DispatchState(TypedDict):
 
     # ── Phase 1: Selection ────────────────────────────────────────────────────
     style_brief: Optional[StyleBrief]
+    # Phase 46 — JSON-serializable list[dict] (NOT set/objects) so the
+    # Postgres checkpointer resumes across signal_editor→scout→verify_candidates
+    # (SGE-04). See docs/API_CONTRACTS.md §46.
+    story_leads: Optional[list[StoryLead]]
     candidates: Optional[list[CharityCandidate]]
+    # Phase 46 — JSON-serializable list[dict] (NOT set/objects) so the
+    # Postgres checkpointer resumes across signal_editor→scout→verify_candidates
+    # (SGE-04). See docs/API_CONTRACTS.md §46.
+    verification_records: Optional[list[VerificationRecord]]
     winning_charity: Optional[CharityCandidate]
     winning_charity_sanity_id: Optional[str]    # set after Sanity write
     deliberation_transcript: Optional[str]      # full Scout+Advocate+Editor text
