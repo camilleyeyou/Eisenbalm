@@ -387,8 +387,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **REV-01**: Selecting a passage offers Edit text, Ask agent to revise, Compare with previous, Restore previous, Related facts & sources, and Inspect how this was made.
 - [ ] **REV-02**: "Ask agent to revise" offers direction chips (Make clearer / Make more specific / Tighten / Match the brief / Reduce repetition / Try another approach / Custom) — never a bare "Regenerate".
 - [ ] **REV-03**: A revision returns a comparison card showing original, proposed, what changed, and the explicit claim delta (added / removed / altered) *before* anything is applied.
-- [ ] **REV-04**: Operator can Apply, Edit before applying, Try another approach, or Discard; applying mutates the draft through the existing content-patch write boundary and logs to `audit_log`.
-- [ ] **REV-05**: Agent revision calls are bounded by a per-issue cost guard, surfaced against the header's cost-vs-budget.
+- [x] **REV-04**: Operator can Apply, Edit before applying, Try another approach, or Discard; applying mutates the draft through the existing content-patch write boundary and logs to `audit_log`.
+- [x] **REV-05**: Agent revision calls are bounded by a per-issue cost guard, surfaced against the header's cost-vs-budget.
 
 ### Signal Editor & Candidate Verification (SGE)
 - [ ] **SGE-01**: A Signal Editor agent emits 3–5 dated story leads per run, each with premise, dated peg + source link, reader energy, charitable angle, category, confidence, and a brand-risk flag where applicable.

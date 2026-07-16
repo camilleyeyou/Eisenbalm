@@ -20,3 +20,8 @@
 - **Suggested fix (future phase/session):** either add `respx` to the environment's installed
   packages (`pip install respx` / re-sync the venv against `pyproject.toml`) or, if `respx` is no
   longer desired, remove the dependency declaration and the test file together.
+- **Plan 45-02 re-confirmation:** still present, still unrelated (verified via `git stash` that the
+  same `ModuleNotFoundError` occurs on the pre-45-02 tree). `python -m pytest -q
+  --ignore=tests/lib/test_vercel_client.py` after Plan 45-02's two tasks: **578 passed, 37 skipped**
+  (0 failed) — the +3 passed / -3 skipped delta vs. 45-01's count is exactly `test_budget.py`'s
+  3 `run_cap` tests going from skipif'd to green now that `would_exceed_run_cap` lands.
