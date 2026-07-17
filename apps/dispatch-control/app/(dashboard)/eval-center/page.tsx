@@ -9,15 +9,15 @@
  * is no server-only data to resolve here beyond the single-tenant workspace
  * constant, so `getCurrentWorkspace()`'s async round-trip buys nothing).
  *
- * Fetches the 8 golden scenarios once via `fetchScenarios(undefined, token)`
- * (D-01: repo-fixture-sourced, no scenario data duplicated into Convex), then
- * renders:
+ * Fetches the 8 standard test cases once via `fetchScenarios(undefined,
+ * token)` (D-01: repo-fixture-sourced, no scenario data duplicated into
+ * Convex), then renders:
  *   - a ScenarioCard grid (description + whatItCatches + latest eval_scores
  *     "last result" per scenario, D-08)
  *   - a DriftScoreboard (the FULL append-only eval_scores time-series per
  *     scenario — the actual drift detector, D-09/D-10)
- *   - a ShadowRunPanel (the read-only shadow-discovery preview affordance,
- *     D-11/D-13 — triggers POST /eval/shadow-run and shows the preview inline)
+ *   - a ShadowRunPanel (the read-only preview-next-run affordance, D-11/D-13
+ *     — triggers POST /eval/shadow-run and shows the preview inline)
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -33,7 +33,7 @@ export default function EvalCenterPage() {
   const [scenarios, setScenarios] = useState<EvalScenario[] | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
-  // Fetch once on mount — the golden-scenario fixture set does not change
+  // Fetch once on mount — the standard-test-case fixture set does not change
   // within a session (D-01: repo-sourced, read-only from the dashboard).
   useEffect(() => {
     let cancelled = false
@@ -62,9 +62,9 @@ export default function EvalCenterPage() {
           {WORKBENCH_NAV_LABELS.eval_center}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-[color:var(--color-ink-soft)]">
-          The drift detector: golden-scenario cards, an append-only scoreboard
-          time-series across prompt versions, and a read-only shadow run
-          against this week&apos;s real news.
+          The drift detector: standard test case cards, an append-only
+          scoreboard time-series across prompt versions, and a read-only
+          preview next run against this week&apos;s real news.
         </p>
       </div>
 
@@ -83,13 +83,13 @@ export default function EvalCenterPage() {
 
       {scenarios !== null && (
         <>
-          <section aria-label="Golden scenarios">
+          <section aria-label="Standard test cases">
             <h2 className="font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]">
-              Golden scenarios
+              Standard test cases
             </h2>
             {scenarios.length === 0 ? (
               <p className="mt-2 text-[13px] italic text-[color:var(--color-ink-soft)]">
-                No golden scenarios seeded yet.
+                No standard test cases yet.
               </p>
             ) : (
               <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

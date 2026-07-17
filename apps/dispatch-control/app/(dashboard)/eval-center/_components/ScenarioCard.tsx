@@ -1,6 +1,6 @@
 'use client'
 /**
- * ScenarioCard — one golden-scenario card (Phase 38, EVL-04, D-08).
+ * ScenarioCard — one standard-test-case card (Phase 38, EVL-04, D-08).
  *
  * Shows the scenario's agentKey/id chip, description, whatItCatches, and its
  * "last result" — the latest (max `ranAt`) `eval_scores` row for this

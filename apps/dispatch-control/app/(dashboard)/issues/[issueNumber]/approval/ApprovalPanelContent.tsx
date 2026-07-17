@@ -80,7 +80,7 @@ export function buildApprovalPanelContent({
       <dd>{voiceSigned ? 'signed' : 'not signed'}</dd>
       <dt className="text-[color:var(--color-ink-soft)]">Held</dt>
       <dd>{held ? 'Held — release to publish' : 'not held'}</dd>
-      <dt className="text-[color:var(--color-ink-soft)]">Blocking items</dt>
+      <dt className="text-[color:var(--color-ink-soft)]">Must fix items</dt>
       <dd>{mustFixCount > 0 ? `${mustFixCount} must-fix` : 'none'}</dd>
     </dl>
   )

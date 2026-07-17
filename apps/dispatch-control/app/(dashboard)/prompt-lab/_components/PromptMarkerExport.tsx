@@ -3,12 +3,12 @@
  * Phase 28 (PRC-10) — copyable `.md`-marker export of the active prompt.
  *
  * Renders the active content wrapped in the EXACT pipeline marker byte form so
- * an operator can copy it and commit it to the `.md` source of truth. The byte
- * form satisfies the loader contract in
+ * an operator can copy it and check it into the `.md` source of truth. The
+ * byte form satisfies the loader contract in
  * packages/.../lib/prompts.py::_extract — content lives between
  * `<!-- PROMPT START -->` and `<!-- PROMPT END -->`, with exactly ONE leading
  * newline after START and ONE trailing newline before END stripped on load. So
- * copy→commit keeps `load_prompt()` byte-verification passing.
+ * copy→check-in keeps `load_prompt()` byte-verification passing.
  *
  * Honest boundary (D-03): this is copy-to-clipboard only — it never writes to
  * the repo.
@@ -48,7 +48,7 @@ export default function PromptMarkerExport({ content }: { content: string }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-          .md export (copy → commit)
+          .md export (copy → check into repo)
         </span>
         <button
           type="button"

@@ -1,7 +1,7 @@
 'use client'
 /**
- * Phase 39 (MEM-01) — CoverageStrip: the coverage-memory strip at the top of
- * the Registry, visualizing the last-8 featured charities' cause/geo/signal
+ * Phase 39 (MEM-01) — CoverageStrip: the "Recent coverage" strip at the top
+ * of the Registry, visualizing the last-8 featured charities' cause/geo/signal
  * chips so thematic repetition ("three housing causes in a row") is
  * scannable at a glance (design README §Registry).
  *
@@ -88,11 +88,11 @@ export function CoverageStrip() {
 
   return (
     <section
-      aria-label="Coverage memory"
+      aria-label="Recent coverage"
       className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
     >
       <h2 className="font-[family-name:var(--font-ui)] text-[9.5px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-ink-soft)]">
-        Coverage memory — last 8
+        Recent coverage — last 8
       </h2>
 
       {error && (
@@ -103,7 +103,7 @@ export function CoverageStrip() {
 
       {columns === null && !error && (
         <p className="mt-2 text-[12px] text-[color:var(--color-ink-soft)]">
-          Loading coverage memory…
+          Loading recent coverage…
         </p>
       )}
 

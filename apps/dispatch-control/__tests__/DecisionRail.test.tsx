@@ -215,7 +215,7 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
     })
     renderRail(<DecisionRail runId="run-1" />)
 
-    const blocking = screen.getByText(/blocking items/i)
+    const blocking = screen.getByText(/must fix items/i)
     const readiness = screen.getByText(/readiness board/i)
     const recommendation = screen.getByText(/agent editor.s recommendation/i)
     // DOCUMENT_POSITION_FOLLOWING: each element comes after the previous one.
@@ -694,11 +694,11 @@ describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
     expect(facts.disabled).toBe(false)
   })
 
-  it('the blocking-items jump-link list contains only FACTUAL_AXES findings', () => {
+  it('the must-fix-items jump-link list contains only FACTUAL_AXES findings', () => {
     mockQueries({ findings: [machineTellError, precisionError] })
     renderRail(<DecisionRail runId="run-1" />)
 
-    const blockingSection = screen.getByText(/blocking items/i).closest('section')!
+    const blockingSection = screen.getByText(/must fix items/i).closest('section')!
     expect(blockingSection.textContent).toMatch(/vague causal claim/i)
     expect(blockingSection.textContent).not.toMatch(/reads like ai-generated prose/i)
   })

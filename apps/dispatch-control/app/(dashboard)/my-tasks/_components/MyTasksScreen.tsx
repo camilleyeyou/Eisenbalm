@@ -207,7 +207,7 @@ export function MyTasksList({
                 <button
                   type="button"
                   disabled
-                  title="No single artifact anchors this sign-off gate — the inspector is reserved for this row."
+                  title="No single artifact anchors this sign-off — the inspector is reserved for this row."
                   className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Inspect context

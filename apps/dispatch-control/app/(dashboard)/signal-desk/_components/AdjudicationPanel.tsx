@@ -56,11 +56,11 @@ export function AdjudicationPanel({ runId, candidates }: AdjudicationPanelProps)
 
   return (
     <section
-      aria-label="Gate 1 adjudication"
+      aria-label="Story decision required"
       className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-4"
     >
       <h2 className="font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-vermilion)]">
-        Gate 1 paused — adjudication required
+        Paused for your decision — choose the story
       </h2>
       <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">
         Pick a candidate and give a reason to resume the run.

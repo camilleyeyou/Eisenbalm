@@ -3,37 +3,42 @@
  * Phase 24 (PRM-04) — version-history list + compare for one agent.
  *
  * Subscribes to api.promptVersions.listForAgent (newest-first) and renders each
- * version's number, author, timestamp, note, and a LIVE badge.
+ * version's number, author, timestamp, note, and an "Active" badge.
  *
  * Plan 08 adds:
  *   - a two-version compare selector (pick A + B) that renders <DiffViewer> for
  *     the chosen pair (default A = active version, B = the selected version).
- *   - per-version "Make live" / "Restore this version" controls wired to
- *     api.promptVersions.activate. Restore IS activate(olderVersion) — no
- *     separate call. The control is DISABLED while a run is in progress
- *     (api.runs.latest.status === 'running'), with an inline explanation
- *     (D-02 block-with-explanation, no queue). On a server-side `{ blocked }`
- *     return (TOCTOU race, Pitfall 2) the reason is surfaced inline.
+ *   - per-version "Make active" / "Restore this version" controls (Phase 50
+ *     WBN-05 renamed from "Make live") wired to api.promptVersions.activate.
+ *     Restore IS activate(olderVersion) — no separate call. The control is
+ *     DISABLED while a run is in progress (api.runs.latest.status ===
+ *     'running'), with an inline explanation (D-02 block-with-explanation, no
+ *     queue). On a server-side `{ blocked }` return (TOCTOU race, Pitfall 2)
+ *     the reason is surfaced inline.
  *
  * Phase 38 Plan 38-04 (§38.3, EVL-03) adds:
- *   - when a `{ blocked: true, reason }` comes back from the NEW eval-gate
- *     (not the in-progress guard — that keeps the run disabled entirely, per
- *     D-02), a typed-reason override affordance appears: an input for the
- *     operator's justification + "Commit anyway (override)" button. Submitting
- *     calls activate again with `override: { reason }`; a `{ overridden: true }`
- *     response clears the blocked state. The override is NEVER offered while
- *     a run is in progress — that guard is unbypassable by design.
+ *   - when a `{ blocked: true, reason }` comes back from the NEW eval
+ *     deterministic check (not the in-progress guard — that keeps the run
+ *     disabled entirely, per D-02), a typed-reason override affordance
+ *     appears: an input for the operator's justification + "Make active
+ *     anyway (override)" button (Phase 50 WBN-05 renamed from "Commit
+ *     anyway"). Submitting calls activate again with `override: { reason }`;
+ *     a `{ overridden: true }` response clears the blocked state. The
+ *     override is NEVER offered while a run is in progress — that guard is
+ *     unbypassable by design.
  *
  * Phase 38 Plan 38-05 Task 3 (closes the plan-review Blocker 1) adds:
- *   - a "Run evals for v{N}" affordance on every NON-active version row. It
- *     toggles an inline <EvalDrawer> mounted with `draftPrompt = that
- *     version's SAVED content` and `targetVersion={{ version: N }}` — this is
- *     the producer that writes the commit-tagged (`promptVersion: String(N)`,
- *     `source: 'commit'`) eval_scores rows the §38.3 gate above reads before
- *     allowing Activate(N) to pass without an override. Without this
- *     affordance, every commit after the first would force-block into the
- *     override path (there is never a fresh scored row for the version being
- *     activated). Does NOT alter the Activate/override logic itself.
+ *   - a "Test changes for v{N}" affordance (Phase 50 WBN-05 renamed from "Run
+ *     evals for v{N}") on every NON-active version row. It toggles an inline
+ *     <EvalDrawer> mounted with `draftPrompt = that version's SAVED content`
+ *     and `targetVersion={{ version: N }}` — this is the producer that writes
+ *     the activation-tagged (`promptVersion: String(N)`, `source: 'commit'` —
+ *     the STORED enum value stays byte-unchanged, D-14) eval_scores rows the
+ *     §38.3 check above reads before allowing Activate(N) to pass without an
+ *     override. Without this affordance, every activation after the first
+ *     would force-block into the override path (there is never a fresh
+ *     scored row for the version being activated). Does NOT alter the
+ *     Activate/override logic itself.
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
@@ -183,18 +188,18 @@ export default function VersionHistoryPanel({
         </div>
       )}
 
-      {/* Phase 38 §38.3 — eval-gate override-with-reason escape hatch.
+      {/* Phase 38 §38.3 — quality-test override-with-reason escape hatch.
           NEVER shown while a run is in progress: that guard is unbypassable,
           so no override is offered for it (D-02 stays a hard block). */}
       {blockedReason && blockedVersion !== null && !runInProgress && (
         <div className="space-y-2 rounded border border-red-200 bg-red-50 px-3 py-2">
           <label className="block text-xs font-medium text-red-900">
-            Override reason (required to commit anyway)
+            Override reason (required to make active anyway)
             <input
               type="text"
               value={overrideReason}
               onChange={e => setOverrideReason(e.target.value)}
-              placeholder="Why activate despite the red eval gate?"
+              placeholder="Why activate despite the failing quality test?"
               className="mt-1 block w-full min-h-[44px] rounded border border-red-300 bg-white px-2 py-1.5 text-xs text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             />
           </label>
@@ -207,8 +212,8 @@ export default function VersionHistoryPanel({
             className="min-h-[44px] rounded border border-red-700 bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-1"
           >
             {activating === blockedVersion
-              ? 'Committing anyway…'
-              : 'Commit anyway (override)'}
+              ? 'Making active anyway…'
+              : 'Make active anyway (override)'}
           </button>
         </div>
       )}
@@ -229,7 +234,7 @@ export default function VersionHistoryPanel({
                 </span>
                 {v.isActive && (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                    LIVE
+                    Active
                   </span>
                 )}
               </div>
@@ -246,15 +251,16 @@ export default function VersionHistoryPanel({
               {v.note && (
                 <p className="mt-1 text-xs text-neutral-600">{v.note}</p>
               )}
-              {/* Activate / rollback control (PRM-04). Rollback == activate of
-                  an older version; same mutation, label differs. */}
+              {/* Activate / restore control (PRM-04, Phase 50 WBN-05: "Make
+                  active" / "Restore version"). Restore == activate of an
+                  older version; same mutation, label differs. */}
               <div
                 data-rollback-mount={`${agentKey}:${v.version}`}
                 className="mt-2"
               >
                 {v.isActive ? (
                   <span className="text-xs text-neutral-400">
-                    Currently live
+                    Currently active
                   </span>
                 ) : (
                   <LockedControl
@@ -270,15 +276,15 @@ export default function VersionHistoryPanel({
                           ? 'A run is in progress — activation will be available when it finishes.'
                           : activeVersion !== null && v.version < activeVersion
                             ? `Restore v${v.version}`
-                            : `Make live v${v.version}`
+                            : `Make active v${v.version}`
                       }
                       className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px]"
                     >
                       {activating === v.version
-                        ? 'Making live…'
+                        ? 'Making active…'
                         : activeVersion !== null && v.version < activeVersion
                           ? 'Restore this version'
-                          : 'Make live'}
+                          : 'Make active'}
                     </button>
                   </LockedControl>
                 )}
@@ -297,8 +303,8 @@ export default function VersionHistoryPanel({
                     className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 min-h-[44px]"
                   >
                     {evalOpenVersion === v.version
-                      ? 'Hide eval run'
-                      : `Run evals for v${v.version}`}
+                      ? 'Hide quality test'
+                      : `Test changes for v${v.version}`}
                   </button>
 
                   {evalOpenVersion === v.version && (
@@ -336,7 +342,7 @@ export default function VersionHistoryPanel({
                 {versions.map(v => (
                   <option key={v._id} value={v.version}>
                     v{v.version}
-                    {v.isActive ? ' (live)' : ''}
+                    {v.isActive ? ' (active)' : ''}
                   </option>
                 ))}
               </select>
@@ -353,7 +359,7 @@ export default function VersionHistoryPanel({
                 {versions.map(v => (
                   <option key={v._id} value={v.version}>
                     v{v.version}
-                    {v.isActive ? ' (live)' : ''}
+                    {v.isActive ? ' (active)' : ''}
                   </option>
                 ))}
               </select>

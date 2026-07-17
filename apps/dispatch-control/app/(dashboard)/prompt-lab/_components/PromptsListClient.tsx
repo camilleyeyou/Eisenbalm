@@ -225,7 +225,7 @@ export default function PromptsListClient({
                           ? '…'
                           : active
                             ? `active v${active.version} · updated ${formatDate(active.updatedAt)}`
-                            : 'never seeded'}
+                            : 'no starting version'}
                       </span>
                     </Link>
                   </li>

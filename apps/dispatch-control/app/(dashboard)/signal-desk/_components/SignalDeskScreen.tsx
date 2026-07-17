@@ -102,7 +102,7 @@ export function SignalDeskScreen({ workspace_id, runId: passedRunId }: SignalDes
           Signal Desk
         </h1>
         <p className="mt-0.5 text-[13px] text-[color:var(--color-ink-soft)]">
-          The charity decision — candidate slate, Gate 1 verdict, and adjudication when paused.
+          The charity decision — candidate slate, story decision, and adjudication when paused.
         </p>
       </div>
 

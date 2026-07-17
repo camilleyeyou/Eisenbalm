@@ -7,7 +7,7 @@
  * (D-04) and shows the raw output + cost. It does NOT trigger a pipeline run;
  * it POSTs to POST /agents/{key}/test-run via testRunClient with a Clerk token.
  *
- * Four input modes (labeled in the UI as "Rehearsal"):
+ * Four input modes (labeled in the UI as "Test changes"):
  *   (1) Replay a real run (prior) — pick a prior run → sets prior_run_id.
  *   (2) Your own input (manual) — a form generated from VARIABLE_REGISTRY[agentKey].
  *   (3) Sample week (fixture) — "use sample": leaves variables empty + no
@@ -17,10 +17,11 @@
  * Phase 28 authoring loop (the standout guardrail):
  *   - PRC-09: every draft run is SCORED against the live voice rubric and shows a
  *     per-axis breakdown + overall headline + 1-2 line rationale. ADVISORY ONLY —
- *     the score never gates any action (D-05/D-06).
- *   - PRC-08 (D-07): a "Draft vs. live" action runs the LIVE (active) version's
- *     prompt ON DEMAND (the default Run stays 1×), scores it too, and renders both
- *     outputs + costs side-by-side with the score delta (D-08).
+ *     the score never blocks any action (D-05/D-06).
+ *   - PRC-08 (D-07): a "Compare results" action (Phase 50 WBN-05 renamed from
+ *     "Draft vs. live") runs the active version's prompt ON DEMAND (the default
+ *     Run stays 1×), scores it too, and renders both outputs + costs
+ *     side-by-side with the score delta (D-08).
  *
  * Output display reuses the AgentIOPanel metrics/output style.
  */
@@ -40,8 +41,9 @@ import { scoreOutput, type ScoreResult } from '@/lib/scoreClient'
 type InputMode = 'prior' | 'manual' | 'fixture'
 
 /**
- * Per-mode descriptor shown beneath the Rehearsal mode radiogroup (Prompt Lab
- * Nomenclature Proposal, quick 260710-k8y). Copied verbatim from PROPOSAL.md.
+ * Per-mode descriptor shown beneath the Test changes mode radiogroup (Prompt
+ * Lab Nomenclature Proposal, quick 260710-k8y; Phase 50 WBN-05 renamed
+ * "Rehearsal" -> "Test changes"). Copied verbatim from PROPOSAL.md.
  */
 const MODE_DESCRIPTORS: Record<InputMode, string> = {
   fixture: 'Runs the draft on a stored example input. Quick smoke test.',
@@ -90,7 +92,7 @@ export default function TestRunPanel({
   const [result, setResult] = useState<TestRunResult | null>(null)
   const [draftScore, setDraftScore] = useState<ScoreResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // Live side (only populated by "Draft vs. live")
+  // Active side (only populated by "Compare results")
   const [comparing, setComparing] = useState(false)
   const [activeResult, setActiveResult] = useState<TestRunResult | null>(null)
   const [activeScore, setActiveScore] = useState<ScoreResult | null>(null)
@@ -145,8 +147,9 @@ export default function TestRunPanel({
     }
   }
 
-  // Draft vs. live (PRC-08, D-07): runs the LIVE (active) version's prompt ON
-  // DEMAND (only this handler calls runActiveVersionTest), then scores it.
+  // Compare results (PRC-08, D-07, Phase 50 WBN-05 renamed from "Draft vs.
+  // live"): runs the active version's prompt ON DEMAND (only this handler
+  // calls runActiveVersionTest), then scores it.
   async function handleCompare() {
     if (!active) return
     setComparing(true)
@@ -192,7 +195,7 @@ export default function TestRunPanel({
   return (
     <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-neutral-900">Rehearsal</h2>
+        <h2 className="text-base font-semibold text-neutral-900">Test changes</h2>
         <span className="text-xs text-neutral-400">
           Tests the unsaved draft — does not run the pipeline
         </span>
@@ -311,7 +314,7 @@ export default function TestRunPanel({
           }
           className="rounded border border-neutral-900 bg-white px-3 py-2 text-sm font-medium text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px] hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
         >
-          {comparing ? 'Comparing…' : 'Draft vs. live'}
+          {comparing ? 'Comparing…' : 'Compare results'}
         </button>
       </div>
       <p className="text-[11px] text-neutral-400">
@@ -345,10 +348,10 @@ export default function TestRunPanel({
             }
           >
             {scoreDelta >= 0 ? '+' : ''}
-            {scoreDelta.toFixed(1)} vs live
+            {scoreDelta.toFixed(1)} vs active
           </span>
           <span className="ml-1 text-neutral-400">
-            (draft {draftScore!.overall.toFixed(1)} · live{' '}
+            (draft {draftScore!.overall.toFixed(1)} · active{' '}
             {activeScore!.overall.toFixed(1)})
           </span>
         </div>
@@ -371,7 +374,7 @@ export default function TestRunPanel({
           />
           {sideBySide && (
             <ResultColumn
-              label="Live"
+              label="Active"
               result={activeResult}
               score={activeScore}
               scored

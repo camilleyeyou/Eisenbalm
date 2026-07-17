@@ -183,7 +183,7 @@ describe('EvalDrawer — auto-select + N-scenario scoreboard (D-04/D-05, Plan 38
     render(<EvalDrawer workspaceId="eisenbalm" agentKey="scout" draftPrompt="draft text" />)
     await waitForScenarios()
 
-    fireEvent.click(screen.getByRole('button', { name: /run evals/i }))
+    fireEvent.click(screen.getByRole('button', { name: /test changes/i }))
 
     await waitFor(() => {
       expect(screen.getByTestId('eval-row-draft-scout_normal_week')).toBeDefined()
@@ -205,7 +205,7 @@ describe('EvalDrawer — auto-select + N-scenario scoreboard (D-04/D-05, Plan 38
     render(<EvalDrawer workspaceId="eisenbalm" agentKey="scout" draftPrompt="draft text" />)
     await waitForScenarios()
 
-    fireEvent.click(screen.getByRole('button', { name: /run evals/i }))
+    fireEvent.click(screen.getByRole('button', { name: /test changes/i }))
 
     await waitFor(() => {
       expect(recordMock).toHaveBeenCalledTimes(4) // 2 scenarios x (draft + active)
@@ -232,7 +232,7 @@ describe('EvalDrawer — auto-select + N-scenario scoreboard (D-04/D-05, Plan 38
     )
     await waitForScenarios()
 
-    fireEvent.click(screen.getByRole('button', { name: /run evals/i }))
+    fireEvent.click(screen.getByRole('button', { name: /test changes/i }))
 
     await waitFor(() => {
       expect(recordMock).toHaveBeenCalledTimes(4)
@@ -274,12 +274,12 @@ describe('VersionHistoryPanel — "Run evals for v{N}" freshness producer (Plan 
     },
   ]
 
-  it('shows "Run evals for v{N}" on the non-active row only — not on the active row', () => {
+  it('shows "Test changes for v{N}" on the non-active row only — not on the active row', () => {
     mockConvex({ active: { version: 2, content: 'v2 content' }, versions: VERSIONS })
     render(<VersionHistoryPanel workspaceId="eisenbalm" agentKey="scout" />)
 
-    expect(screen.getByRole('button', { name: /run evals for v1/i })).toBeDefined()
-    expect(screen.queryByRole('button', { name: /run evals for v2/i })).toBeNull()
+    expect(screen.getByRole('button', { name: /test changes for v1/i })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /test changes for v2/i })).toBeNull()
   })
 
   it("clicking it mounts EvalDrawer with draftPrompt = that version's content + targetVersion set, writing commit-tagged eval_scores", async () => {
@@ -287,11 +287,11 @@ describe('VersionHistoryPanel — "Run evals for v{N}" freshness producer (Plan 
     mockConvex({ active: { version: 2, content: 'v2 content' }, versions: VERSIONS })
     render(<VersionHistoryPanel workspaceId="eisenbalm" agentKey="scout" />)
 
-    fireEvent.click(screen.getByRole('button', { name: /run evals for v1/i }))
+    fireEvent.click(screen.getByRole('button', { name: /test changes for v1/i }))
 
     await waitForScenarios()
 
-    fireEvent.click(screen.getByRole('button', { name: /run evals \(/i }))
+    fireEvent.click(screen.getByRole('button', { name: /test changes \(/i }))
 
     await waitFor(() => {
       expect(recordMock).toHaveBeenCalledTimes(4)

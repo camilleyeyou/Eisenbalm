@@ -1,8 +1,9 @@
 'use client'
 /**
- * ShadowRunPanel — read-only shadow discovery preview (Phase 38, EVL-05,
- * D-11/D-13). Design brief §Eval Center: "Shadow run card (runs scenario 1
- * against this week's real news before paying for a live run)".
+ * ShadowRunPanel — read-only "Preview next run" affordance (Phase 38,
+ * EVL-05, D-11/D-13; Phase 50 WBN-05 renamed from "Shadow run"). Design
+ * brief §Eval Center: "Shadow run card (runs scenario 1 against this week's
+ * real news before paying for a live run)".
  *
  * Triggers `POST /eval/shadow-run` (via lib/shadowRunClient's `runShadow`) on
  * an EXPLICIT button click only — never on mount — and renders the returned
@@ -43,12 +44,12 @@ export default function ShadowRunPanel() {
 
   return (
     <section
-      aria-label="Shadow run"
+      aria-label="Preview next run"
       className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
     >
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]">
-          Shadow run
+          Preview next run
         </h2>
         <span className="font-[family-name:var(--font-ui)] text-[10px] font-medium uppercase tracking-[.06em] text-[color:var(--color-marigold-text)]">
           Read-only preview
@@ -67,7 +68,7 @@ export default function ShadowRunPanel() {
         disabled={status === 'running'}
         className="mt-3 min-h-[44px] rounded-[2px] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-2"
       >
-        {status === 'running' ? 'Running shadow discovery…' : 'Run shadow discovery'}
+        {status === 'running' ? 'Previewing next run…' : 'Preview next run'}
       </button>
 
       {error && (

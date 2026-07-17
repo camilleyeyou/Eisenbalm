@@ -273,15 +273,16 @@ export default function AgentPromptEditorView({
               draftPrompt={draft}
             />
 
-            {/* Phase 38 (EVL-02, D-04/D-05) — the eval drawer: auto-selects
-                this agent's golden scenarios and runs the N-scenario
-                draft-vs-active scoreboard on demand. No targetVersion here —
-                this is the normal iteration loop (draft side tags
-                promptVersion:'draft', source:'drawer'). §38.3 freshness
-                workflow: after Save-as-version, re-run evals against the
-                SAVED version's content from VersionHistoryPanel's "Run evals
-                for v{N}" producer (Task 3) BEFORE activating it, so the
-                commit gate has a fresh, target-version-tagged score to read. */}
+            {/* Phase 38 (EVL-02, D-04/D-05) — the quality test drawer:
+                auto-selects this agent's standard test cases and runs the
+                N-scenario draft-vs-active scoreboard on demand. No
+                targetVersion here — this is the normal iteration loop (draft
+                side tags promptVersion:'draft', source:'drawer'). §38.3
+                freshness workflow: after Save-as-version, test changes again
+                against the SAVED version's content from VersionHistoryPanel's
+                "Test changes for v{N}" producer (Task 3) BEFORE activating
+                it, so the activation check has a fresh, target-version-tagged
+                score to read. */}
             <EvalDrawer
               workspaceId={workspaceId}
               agentKey={agentKey}
@@ -316,10 +317,10 @@ export default function AgentPromptEditorView({
             <PromptMarkerExport content={active.content} />
           </>
         ) : (
-          /* EMPTY / never-seeded: loaded with no active version. */
+          /* EMPTY / no starting version yet: loaded with no active version. */
           <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-6 text-center">
             <p className="text-sm text-neutral-500">
-              This prompt has not been seeded yet.
+              This prompt has no starting version yet.
             </p>
             <button
               type="button"

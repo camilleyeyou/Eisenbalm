@@ -119,8 +119,8 @@ export default function CreatePanel({ nextIssueNumber }: CreatePanelProps) {
       <div className={CARD_CLASS}>
         <h2 className={HEADING_CLASS}>Find a story</h2>
         <p className={BODY_CLASS}>
-          The agents scout, argue, and land on this week&rsquo;s charity — you decide at
-          Gate 1.
+          The agents scout, argue, and land on this week&rsquo;s charity — you choose the
+          recommended story.
         </p>
         <button type="button" onClick={handleCreate} disabled={busy} className={BUTTON_CLASS}>
           Find a story with agents
@@ -131,7 +131,7 @@ export default function CreatePanel({ nextIssueNumber }: CreatePanelProps) {
         <h2 className={HEADING_CLASS}>Start from my brief</h2>
         <p className={BODY_CLASS}>
           You supply the premise, peg, and organization — the run skips Signal Editor, Scout,
-          Advocate, and Gate 1, and enters at the Researcher.
+          Advocate, and the story decision, and enters at the Researcher.
         </p>
         {!briefOpen && (
           <button

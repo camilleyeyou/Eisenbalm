@@ -326,9 +326,9 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         )}
       </p>
 
-      {/* 2 — Blocking items checklist (D-10, D-11b) */}
-      <section aria-label="Blocking items">
-        <h3 className={MICRO_LABEL}>Blocking items</h3>
+      {/* 2 — Must fix items checklist (D-10, D-11b) */}
+      <section aria-label="Must fix items">
+        <h3 className={MICRO_LABEL}>Must fix items</h3>
         {blockers.length === 0 ? (
           <p className="mt-1 text-[13px] text-[color:var(--color-green,#148a52)]">
             No blockers — clear to publish.

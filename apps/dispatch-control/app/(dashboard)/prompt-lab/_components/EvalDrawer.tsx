@@ -1,30 +1,33 @@
 'use client'
 /**
- * Phase 38 (EVL-02, D-04/D-05) + Plan 38-05 — the Prompt Lab eval drawer.
+ * Phase 38 (EVL-02, D-04/D-05) + Plan 38-05 — the Agent Instructions quality
+ * test drawer (Phase 50 WBN-05 renamed from "Prompt Lab eval drawer").
  *
- * Auto-selects the golden scenarios for the agent being edited (agentKey ===
- * this.agentKey — no manual picking, D-04), and on an explicit "Run evals"
- * click runs each scenario through the EXISTING test-run -> score primitive
- * TWICE (once against the unsaved draft, once against the currently active
- * version — D-05, scaling TestRunPanel's 1-scenario draft-vs-active pattern
- * up to N scenarios). Each scored side is persisted as an append-only
- * `eval_scores` row so the Eval Center drift time-series (§38.2) and the
- * commit gate (§38.3) can read it.
+ * Auto-selects the standard test cases for the agent being edited (agentKey
+ * === this.agentKey — no manual picking, D-04), and on an explicit "Test
+ * changes" click runs each scenario through the EXISTING test-run -> score
+ * primitive TWICE (once against the unsaved draft, once against the
+ * currently active version — D-05, scaling TestRunPanel's 1-scenario
+ * draft-vs-active pattern up to N scenarios). Each scored side is persisted
+ * as an append-only `eval_scores` row so the Quality Tests drift time-series
+ * (§38.2) and the activation check (§38.3) can read it.
  *
  * Freshness producer (closes the plan-review Blocker 1 — see Task 3 of
  * 38-05-PLAN.md / VersionHistoryPanel.tsx): when this drawer is mounted from
- * VersionHistoryPanel's "Run evals for v{N}" affordance, an explicit
- * `targetVersion` prop is supplied and the caller passes THAT version's saved
- * content as `draftPrompt`. In that mode the "draft" side of each run is
- * really re-evaluating version N, so its eval_scores row is tagged
- * `promptVersion: String(N)`, `source: 'commit'` — the exact shape §38.3's
- * `evaluateEvalGate` queries via `by_workspace_agentKey_version` before
- * allowing Activate(N) to proceed on its non-override path. With no
- * `targetVersion` (the normal iteration case, mounted from
- * AgentPromptEditorView), the draft side stays tagged `promptVersion:
- * 'draft'`, `source: 'drawer'`. The active side is ALWAYS tagged
- * `promptVersion: String(active.version)`, `source: 'drawer'` regardless of
- * `targetVersion` — the active side is never the thing being committed.
+ * VersionHistoryPanel's "Test changes for v{N}" affordance (Phase 50 WBN-05
+ * renamed from "Run evals for v{N}"), an explicit `targetVersion` prop is
+ * supplied and the caller passes THAT version's saved content as
+ * `draftPrompt`. In that mode the "draft" side of each run is really
+ * re-evaluating version N, so its eval_scores row is tagged `promptVersion:
+ * String(N)`, `source: 'commit'` — the STORED enum value stays
+ * byte-unchanged (D-14) — the exact shape §38.3's `evaluateEvalGate` queries
+ * via `by_workspace_agentKey_version` before allowing Activate(N) to proceed
+ * on its non-override path. With no `targetVersion` (the normal iteration
+ * case, mounted from AgentPromptEditorView), the draft side stays tagged
+ * `promptVersion: 'draft'`, `source: 'drawer'`. The active side is ALWAYS
+ * tagged `promptVersion: String(active.version)`, `source: 'drawer'`
+ * regardless of `targetVersion` — the active side is never the thing being
+ * activated.
  *
  * COST NOTE (38-RESEARCH Pitfall 3): N scenarios x 4 model calls (2 of them
  * Opus-tier `score`). Runs ONLY on the explicit button click below — NEVER on
@@ -288,10 +291,10 @@ export default function EvalDrawer({
   return (
     <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-neutral-900">Eval scoreboard</h2>
+        <h2 className="text-base font-semibold text-neutral-900">Quality test scoreboard</h2>
         {targetVersion && (
           <span className="rounded bg-[color:var(--color-cobalt,#253ad4)]/10 px-1.5 py-0.5 text-[11px] font-medium text-[color:var(--color-cobalt,#253ad4)]">
-            Scoring v{targetVersion.version} for commit
+            Scoring v{targetVersion.version} for activation
           </span>
         )}
       </div>
@@ -311,7 +314,7 @@ export default function EvalDrawer({
 
       {scenarios !== null && scenarioCount === 0 && (
         <p className="text-xs text-neutral-400">
-          No golden scenarios for <span className="font-mono">{agentKey}</span> yet.
+          No standard test cases for <span className="font-mono">{agentKey}</span> yet.
         </p>
       )}
 
@@ -352,8 +355,8 @@ export default function EvalDrawer({
             className="min-h-[44px] rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
           >
             {running
-              ? 'Running evals…'
-              : `Run evals (${scenarioCount} scenario${scenarioCount !== 1 ? 's' : ''} · ~${scenarioCount * 4} model calls)`}
+              ? 'Testing changes…'
+              : `Test changes (${scenarioCount} scenario${scenarioCount !== 1 ? 's' : ''} · ~${scenarioCount * 4} model calls)`}
           </button>
 
           <ul className="divide-y divide-neutral-100 rounded border border-neutral-200 bg-white">

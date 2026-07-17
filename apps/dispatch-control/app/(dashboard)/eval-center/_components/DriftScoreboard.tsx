@@ -2,7 +2,7 @@
 /**
  * DriftScoreboard — the append-only `eval_scores` TIME-SERIES render
  * (Phase 38, EVL-04, D-09/D-10). This is the editorial drift detector: for
- * each golden scenario it renders the FULL history of scored runs (overall,
+ * each standard test case it renders the FULL history of scored runs (overall,
  * promptVersion, source, ranAt) across prompt versions — never collapsed to
  * a single latest number (that's ScenarioCard's job, D-08). Reads
  * `listForScenario` directly (ascending by `ranAt`, oldest-first — the
@@ -39,7 +39,7 @@ export default function DriftScoreboard({ workspaceId, scenarios }: DriftScorebo
 
       {scenarios.length === 0 ? (
         <p className="mt-3 text-[13px] italic text-[color:var(--color-ink-soft)]">
-          No golden scenarios yet.
+          No standard test cases yet.
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-4">
