@@ -334,7 +334,17 @@ export const listRecentFeatured = query({
  *
  * Also available as an operator-triggered "Seed registry" button in dispatch-control.
  *
- * Rows are processed sequentially to avoid Convex concurrency issues.
+ * `timesFeatured` is DERIVED from the input, not accumulated: it is SET to the
+ * count of input rows sharing a given charity's dedupKey (name.lower()|domain),
+ * i.e. the number of published issues that featured it. Re-running with the
+ * same input converges to the same value instead of inflating it further —
+ * this also self-heals a previously-corrupted counter (e.g. a row stuck at
+ * 33886 from the old increment-per-call behavior) on the next backfill.
+ * `lastFeaturedAt` intentionally still refreshes on every run — the counter
+ * is idempotent, the timestamp is deliberately not.
+ *
+ * Rows are tallied in memory first (pass 1, no db access), then written
+ * sequentially (pass 2) to avoid Convex concurrency issues.
  */
 export const seedFromPublished = mutation({
   args: {
@@ -353,10 +363,40 @@ export const seedFromPublished = mutation({
   handler: async (ctx, { workspace_id, rows, pipelineSecret }) => {
     requirePipelineSecret(pipelineSecret)
 
+    // PASS 1 — tally in memory (no db access). Key: dedupKey.
+    const tally = new Map<
+      string,
+      {
+        name: string
+        website?: string
+        sanityCharityId?: string
+        domain: string
+        count: number
+      }
+    >()
+
     for (const row of rows) {
       const domain = bareDomain(row.website)
       const dedupKey = `${row.name.trim().toLowerCase()}|${domain}`
 
+      const prior = tally.get(dedupKey)
+      if (prior) {
+        prior.count += 1
+        prior.website ??= row.website
+        prior.sanityCharityId ??= row.sanityCharityId
+      } else {
+        tally.set(dedupKey, {
+          name: row.name,
+          website: row.website,
+          sanityCharityId: row.sanityCharityId,
+          domain,
+          count: 1,
+        })
+      }
+    }
+
+    // PASS 2 — write sequentially (sequential to avoid Convex concurrency issues).
+    for (const [dedupKey, seed] of tally) {
       const existing = await ctx.db
         .query('charities')
         .withIndex('by_workspace_dedupKey', q =>
@@ -369,22 +409,22 @@ export const seedFromPublished = mutation({
       if (existing) {
         await ctx.db.patch(existing._id, {
           status: 'featured',
-          timesFeatured: (existing.timesFeatured ?? 0) + 1,
+          timesFeatured: seed.count,
           lastFeaturedAt: now,
-          ...(row.sanityCharityId ? { sanityCharityId: row.sanityCharityId } : {}),
-          ...(row.website && !existing.website ? { website: row.website } : {}),
-          ...(domain && !existing.domain ? { domain } : {}),
+          ...(seed.sanityCharityId ? { sanityCharityId: seed.sanityCharityId } : {}),
+          ...(seed.website && !existing.website ? { website: seed.website } : {}),
+          ...(seed.domain && !existing.domain ? { domain: seed.domain } : {}),
         })
       } else {
         await ctx.db.insert('charities', {
           workspace_id,
-          name: row.name,
+          name: seed.name,
           status: 'featured',
-          website: row.website,
-          domain,
+          website: seed.website,
+          domain: seed.domain,
           dedupKey,
-          sanityCharityId: row.sanityCharityId,
-          timesFeatured: 1,
+          sanityCharityId: seed.sanityCharityId,
+          timesFeatured: seed.count,
           lastFeaturedAt: now,
         })
       }
