@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md
-last_updated: "2026-07-17T01:59:57.629Z"
+stopped_at: Completed 50-04-why-this-draft-exists-origin-ref-PLAN.md
+last_updated: "2026-07-17T02:23:21.522Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 50 (workbench-nomenclature) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 
 ## Performance Metrics
 
@@ -355,6 +355,7 @@ Plan: 5 of 7
 | Phase 50-workbench-nomenclature P01 | 25min | 2 tasks | 8 files |
 | Phase 50 P02 | 35min | 2 tasks | 6 files |
 | Phase 50 P03 | 20min | 3 tasks | 8 files |
+| Phase 50 P04 | 35min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -934,6 +935,8 @@ Recent decisions affecting current work:
 - [Phase 50-workbench-nomenclature]: Role indicator implemented inline in AppSidebar.tsx (already a client component) rather than a new extracted component file
 - [Phase 50]: RunDetail.tsx groups per-agent rows by runStepFor().actionLabel so the 7 writers + validate_sections collapse into one expandable 'Draft sections' row automatically; calibrator/chronicler render dimmed as 'supporting step' (no §7 entry)
 - [Phase 50]: Masthead ON chip/AutoPublishBanner reworded off switch-framing (D-16); typed org-name+reason confirm added to Mark Do-not-use only, publish surfaces confirmed clean (D-15); blocklisted status renders Do not use over unchanged stored enum (D-03)
+- [Phase 50]: prompt_versions.originRef is additive/optional, captured only from InspectorPanel's existing sectionName + firstProseExcerpt data (no new fetch), and only 'Improve this agent' carries the deep-link params
+- [Phase 50]: AgentPromptEditorView prefers persisted active.originRef over session deep-link params for display, but forwards only the deep-link's own origin to saveVersion to avoid re-stamping later unrelated edits
 
 ### Pending Todos
 
@@ -1024,6 +1027,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T01:59:57.617Z
-Stopped at: Completed 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md
+Last session: 2026-07-17T02:23:21.507Z
+Stopped at: Completed 50-04-why-this-draft-exists-origin-ref-PLAN.md
 Resume file: None
