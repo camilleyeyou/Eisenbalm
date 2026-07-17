@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed 50-06-nomenclature-sweep-tripwire-green-PLAN.md
-last_updated: "2026-07-17T03:40:43.455Z"
+stopped_at: Completed quick 260717-35u (fix FastAPI error envelope unwrapping)
+last_updated: "2026-07-17T09:34:30.330Z"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -1033,6 +1033,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T03:29:12.724Z
-Stopped at: Completed 50-06-nomenclature-sweep-tripwire-green-PLAN.md
+Last session: 2026-07-17T09:34:30.330Z
+Stopped at: Completed quick 260717-35u (fix FastAPI error envelope unwrapping)
 Resume file: None
