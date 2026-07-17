@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Phase Details — Mission Control Dashboard
+milestone: v4.0
+milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
 stopped_at: Completed 50-06-nomenclature-sweep-tripwire-green-PLAN.md
 last_updated: "2026-07-17T03:40:43.455Z"
 progress:
-  total_phases: 29
-  completed_phases: 28
-  total_plans: 183
-  completed_plans: 181
+  total_phases: 11
+  completed_phases: 11
+  total_plans: 92
+  completed_plans: 92
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 50 — workbench-nomenclature
+**Current focus:** v4.0 (Dispatch Control v3 — The Editorial Workspace) shipped 2026-07-17 — planning next milestone (run `/gsd:new-milestone`)
 
 ## Current Position
 
-Phase: 50
-Plan: Not started
+Phase: 50 (complete — final phase of milestone v4.0, shipped 2026-07-17)
+Plan: All v4.0 plans complete — next: /gsd:new-milestone
 
 ## Performance Metrics
 

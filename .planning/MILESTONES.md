@@ -31,3 +31,29 @@
 Archived: `milestones/v3.0-ROADMAP.md` (full phase details), `milestones/v3.0-REQUIREMENTS.md` (frozen requirements snapshot). Tag: `v3.0`.
 
 **Deferred:** Studio deletion + full Sanity-removal follow-up milestone (gated on real weekly cycles); Signal Editor agent + REAL/OBSCURE/SPECIFIC/TELLABLE gates; Suno + NotebookLM API automation (V3-DEF-05). Open human/visual UAT items persisted per phase in `*-HUMAN-UAT.md` / `*-VERIFICATION.md`.
+
+---
+
+## v4.0 Dispatch Control v3 — The Editorial Workspace — Complete (2026-07-17)
+
+**Goal:** The console stops being a set of desks that mirror the pipeline and becomes an editorial product with an *issue* at its center. The machine retreats behind a "System Workbench" the operator visits only when something broke or they want to make an agent better. The editor never "triggers a pipeline."
+
+**Phases:** 40–50 (issue entity + Issues home, one Issue Workspace with stages 1–5, the new Fact Check stage, My Tasks + Decision log, universal inspector, agent revision, Signal Editor + verify_candidates, Story & Brief stage, Brief entry point, Roles & permissions, Workbench rename + nomenclature pass).
+
+**Stats:** 11 phases · 92 plans · 2026-07-14 → 2026-07-17 (4 days) · 406 commits · 556 files changed (+79,142 / −1,747). Requirements: 62/62 checked (all v4.0 blocks ISS/WSP/FCT/TSK/INS/REV/SGE/BRF/ENT/ROL/WBN complete). Phase 50 verified 6/6.
+
+**Shipped:**
+- **Issue as first-class entity + Issues home** — console routing inverted from run-keyed to issue-keyed; a run is now reachable only as a historical record *under* an issue. The Issues home shows the in-progress issue with its 5-stage strip, the scheduled slot + Calibrator repetition note, held issues (reason/who/when + Reopen), and four never-blended header state systems (Phase 40).
+- **One Issue Workspace, stages 1–5** — the Review Desk, Signal Desk, and Voice Pass nav items collapsed into a single Workspace with live-status stage tabs, a persistent 5-state issue outline, and a per-stage collapsible context panel; Stages 2 (Draft), 4 (Voice Pass), and 5 (Approval) are recompositions of shipped v3.0 galley/voice-pass/decision-rail/publish-gate work — no capability lost (Phase 41).
+- **Fact Check stage** — the milestone's only genuinely new stage, on the Phase 35 provenance substrate plus a Researcher-emitted `importance` tier: an affirmative "blank never means verified" coverage summary, a filterable claim table, and a provenance card reused in Draft, Approval, and the inspector (Phase 42).
+- **My Tasks + Decision log** — My Tasks as a *derived projection* over open claims/findings/sign-offs (no new task store, with superseded-step handling), and one Decision log recording every reason-requiring action console-wide (actor/action/time/reason/before-after/instruction version/issue/run) (Phase 43).
+- **Universal inspector** — one 7-tab "Inspect how this was made" panel reachable from six surfaces, with the missing-expected-input diff (declared template vars minus keys actually supplied) as the headline diagnostic (Phase 44).
+- **Agent revision as an editing verb** — passage-level "Ask agent to revise" everywhere, with direction chips (never a bare "Regenerate"), a claim-delta comparison card before apply, and a per-issue cost guard against the header budget readout (Phase 45).
+- **Signal Editor + verify_candidates (18 → 20 nodes)** — a Signal Editor agent emitting 3–5 dated story leads (never self-selecting a brand-risk lead) and a deterministic `verify_candidates` check between Scout and Advocate; checkpoint-resume verified across the new nodes (Phase 46).
+- **Story & Brief stage + Brief entry point** — Stage 1 replaced with the full design on real leads and verification records (org options, "Needs your decision" adjudication, never-truncated concern) plus an editable Brief the writers draft from (Phase 47); and "Start from my brief" as a real second pipeline entry point that skips discovery and enters at the Researcher (Phase 48).
+- **Roles & permissions** — Editor-in-chief vs Collaborator with exactly six server-enforced gated actions; locked controls render with an explanation rather than hiding; Collaborators can read every screen and comment (Phase 49).
+- **Workbench rename + nomenclature + recovery rail** — Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; a display-copy-only nomenclature sweep (routes/enums/node-ids preserved); action-named run steps, a failed-run recovery rail with honest Restart-from-step, and typed confirmation reserved for Mark Do-not-use (Phase 50).
+
+Archived: `milestones/v4.0-ROADMAP.md` (full phase details), `milestones/v4.0-REQUIREMENTS.md` (frozen requirements snapshot). No git tag — by the project owner's choice.
+
+**Deferred:** Sanity removal (V3-DEF-01), inline WYSIWYG galley editing (V3-DEF-03), and Suno + NotebookLM API automation (V3-DEF-05) remain deferred to future milestones. Open per-phase human/visual UAT items persist in `*-HUMAN-UAT.md` / `*-VERIFICATION.md`; Phase 50 carries three open visual/UX items plus the pre-existing duplicate-React-key nav warning in its deferred-items record.

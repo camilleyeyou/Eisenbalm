@@ -47,6 +47,8 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v3.0 complete (shipped 2026-07-10). v4.0: Dispatch Control v3 — The Editorial Workspace (Phases 40–50)**
 
+- ✅ **v4.0 Dispatch Control v3 — The Editorial Workspace** — Phases 40-50 (shipped 2026-07-17) — 92 plans; archived to [milestones/v4.0-ROADMAP.md](milestones/v4.0-ROADMAP.md)
+
 - [x] **Phase 40: Issue Entity & Issues Home** - Console routing inverts to issue-keyed; an Issues home shows the in-progress issue's 5-stage strip, scheduled slot, held issues, and four separated header state systems (completed 2026-07-15)
 - [x] **Phase 41: Issue Workspace Frame — Draft, Voice Pass & Approval** - One Issue Workspace with stage tabs 1-5, persistent outline, and collapsible context panel; recomposes the existing galley/voice-pass/decision-rail endpoints into Stages 2, 4, 5 (all 12 plans executed 2026-07-15, including the WSP-03 gap closure: the context panel now feeds real, stage-specific content on all 5 stages) (completed 2026-07-15)
 - [x] **Phase 42: Fact Check Stage** - Stage 3 goes live — Researcher-emitted claim importance, an affirmative coverage summary, a filterable claim table, and the reused provenance card (completed 2026-07-15)
@@ -59,7 +61,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves (completed 2026-07-16)
 - [x] **Phase 50: Workbench & Nomenclature** - Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; nomenclature pass + failed-run recovery rail (completed 2026-07-17)
 
-**v4.0 in progress. Binding spec: `docs/design/dispatch-control-v3/`.**
+**v4.0 complete (shipped 2026-07-17). Binding spec: `docs/design/dispatch-control-v3/`.**
 
 ## Phase Details
 
