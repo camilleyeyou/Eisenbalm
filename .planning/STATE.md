@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 50-00-topology-nomenclature-module-tripwire-scaffolds-PLAN.md
-last_updated: "2026-07-17T01:08:25.321Z"
+stopped_at: Completed 50-01-nav-rename-role-indicator-PLAN.md
+last_updated: "2026-07-17T01:20:53.187Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 50 (workbench-nomenclature) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 
 ## Performance Metrics
 
@@ -352,6 +352,7 @@ Plan: 2 of 7
 | Phase 49 P07 | 25min | 4 tasks | 14 files |
 | Phase 49 P08 | 9 | 3 tasks | 9 files |
 | Phase 50 P00 | 20min | 3 tasks | 8 files |
+| Phase 50-workbench-nomenclature P01 | 25min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -927,6 +928,8 @@ Recent decisions affecting current work:
 - [Phase 49]: IssueComments mounted as a persistent FrameChrome region (sibling to ContextPanel, never inside its per-stage panelContent slot) plus on My Tasks; never wrapped in LockedControl since commenting (ROL-04) is not editor-gated
 - [Phase 50]: GATE_KEYS reconciled to §7 literally: added verify_candidates + publisher, dropped validate_sections; RUN_STEP_MAP derives isDeterministicCheck from GATE_KEYS (single diamond source, never duplicated)
 - [Phase 50]: WBN-02/WBN-05 requirement checkboxes deliberately left unmarked by 50-00 (Wave 0 prerequisite only); 50-02 and 50-06 are the plans that deliver the actual user-facing behavior and will flip them
+- [Phase 50-workbench-nomenclature]: Sourced Workbench nav labels + page headings from lib/nomenclature.ts's WORKBENCH_NAV_LABELS constant (single source of truth) rather than literal strings, per explicit no-duplicate-hardcoding instruction
+- [Phase 50-workbench-nomenclature]: Role indicator implemented inline in AppSidebar.tsx (already a client component) rather than a new extracted component file
 
 ### Pending Todos
 
@@ -1017,6 +1020,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T01:08:25.307Z
-Stopped at: Completed 50-00-topology-nomenclature-module-tripwire-scaffolds-PLAN.md
+Last session: 2026-07-17T01:20:53.174Z
+Stopped at: Completed 50-01-nav-rename-role-indicator-PLAN.md
 Resume file: None

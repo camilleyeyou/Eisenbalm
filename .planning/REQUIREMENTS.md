@@ -418,7 +418,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **ROL-04**: A Collaborator can read everything and comment.
 
 ### Workbench & Nomenclature (WBN)
-- [ ] **WBN-01**: Nav splits into two visibly distinct groups — Editorial (Issues, My Tasks, Issue Workspace) and System Workbench (Run Details, Agent Instructions, Quality Tests, Editorial Memory) — with the signed-in role shown.
+- [x] **WBN-01**: Nav splits into two visibly distinct groups — Editorial (Issues, My Tasks, Issue Workspace) and System Workbench (Run Details, Agent Instructions, Quality Tests, Editorial Memory) — with the signed-in role shown.
 - [ ] **WBN-02**: Run Details names steps by action ("Find story leads", "Verify research", "Draft sections") with the agent as secondary metadata, renders deterministic checks as diamond markers, and states plainly whether it is showing a historical record or a live run.
 - [ ] **WBN-03**: A failed run shows a plain-language recovery rail — what happened / what completed successfully / what did not happen / recommended recovery — with Restart from this step (reusing completed steps, not re-paying) and Improve this agent; downstream steps dim as Skipped.
 - [ ] **WBN-04**: Agent Instructions shows *why a draft instruction exists*, linking back to the specific issue output that motivated it.
