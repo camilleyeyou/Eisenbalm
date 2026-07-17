@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 50-01-nav-rename-role-indicator-PLAN.md
-last_updated: "2026-07-17T01:20:53.187Z"
+stopped_at: Completed 50-02-run-details-action-steps-diamonds-framing-PLAN.md
+last_updated: "2026-07-17T01:42:45.154Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 50 (workbench-nomenclature) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 
 ## Performance Metrics
 
@@ -353,6 +353,7 @@ Plan: 3 of 7
 | Phase 49 P08 | 9 | 3 tasks | 9 files |
 | Phase 50 P00 | 20min | 3 tasks | 8 files |
 | Phase 50-workbench-nomenclature P01 | 25min | 2 tasks | 8 files |
+| Phase 50 P02 | 35min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -930,6 +931,7 @@ Recent decisions affecting current work:
 - [Phase 50]: WBN-02/WBN-05 requirement checkboxes deliberately left unmarked by 50-00 (Wave 0 prerequisite only); 50-02 and 50-06 are the plans that deliver the actual user-facing behavior and will flip them
 - [Phase 50-workbench-nomenclature]: Sourced Workbench nav labels + page headings from lib/nomenclature.ts's WORKBENCH_NAV_LABELS constant (single source of truth) rather than literal strings, per explicit no-duplicate-hardcoding instruction
 - [Phase 50-workbench-nomenclature]: Role indicator implemented inline in AppSidebar.tsx (already a client component) rather than a new extracted component file
+- [Phase 50]: RunDetail.tsx groups per-agent rows by runStepFor().actionLabel so the 7 writers + validate_sections collapse into one expandable 'Draft sections' row automatically; calibrator/chronicler render dimmed as 'supporting step' (no §7 entry)
 
 ### Pending Todos
 
@@ -1020,6 +1022,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T01:20:53.174Z
-Stopped at: Completed 50-01-nav-rename-role-indicator-PLAN.md
+Last session: 2026-07-17T01:42:45.140Z
+Stopped at: Completed 50-02-run-details-action-steps-diamonds-framing-PLAN.md
 Resume file: None
