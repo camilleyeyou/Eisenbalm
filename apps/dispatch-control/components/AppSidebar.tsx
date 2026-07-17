@@ -2,7 +2,8 @@
 /**
  * Persistent left sidebar chrome for Dispatch Control (CHR-03, dc.html 1c skin).
  * - Renders NAV_GROUPS as three labeled sections, then NAV_PINNED ("How to use")
- *   pinned at the bottom via mt-auto.
+ *   pinned at the bottom via mt-auto, followed by the Phase 50 (WBN-01, D-05)
+ *   signed-in role indicator.
  * - Active-state formula (RESEARCH, verbatim from dc.html): 3px vermilion left
  *   border + ink background + masthead-text color when active; faint text +
  *   transparent border when inactive.
@@ -14,6 +15,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NAV_GROUPS, NAV_PINNED } from '@/lib/nav'
+import { useRole } from '@/lib/role'
 
 function isActiveHref(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
@@ -35,6 +37,30 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
     >
       <span>{label}</span>
     </Link>
+  )
+}
+
+/**
+ * Phase 50 (WBN-01, D-05) — the signed-in role indicator, bottom-left of the
+ * sidebar (Annotations §Nav). Presentation-only: `useRole()` (Phase 49,
+ * `lib/role.ts`) is a client rendering hint, never a security boundary — the
+ * server dependency (`_require_editor` / `requireEditor`) remains the
+ * authoritative gate.
+ *
+ * Renders nothing while `useRole()` returns undefined (Clerk still loading),
+ * so an Editor-in-chief is never flashed a "Collaborator" readout mid-load.
+ */
+function RoleIndicator() {
+  const role = useRole()
+  if (!role) return null
+
+  return (
+    <p
+      data-testid="role-indicator"
+      className="px-4 pt-3 font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]"
+    >
+      Signed in as {role}
+    </p>
   )
 }
 
@@ -70,6 +96,7 @@ export default function AppSidebar() {
             label={NAV_PINNED.label}
             active={isActiveHref(pathname, NAV_PINNED.href)}
           />
+          <RoleIndicator />
         </div>
       </nav>
     </aside>

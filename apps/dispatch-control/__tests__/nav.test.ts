@@ -5,6 +5,14 @@
  * Operations, and Review Desk / Signal Desk / Voice Pass left the nav (they
  * are now issue sub-routes reachable from `/issues/[n]`).
  *
+ * Updated Phase 50 Plan 50-01 (WBN-01, D-04/D-06) — the four System Workbench
+ * labels are renamed (Run Monitor -> Run Details, Prompt Lab -> Agent
+ * Instructions, Eval Center -> Quality Tests, Registry -> Editorial Memory)
+ * over UNCHANGED hrefs. The role-indicator render assertions (mocked
+ * `useRole()` + mounted `<AppSidebar>`) live in `AppSidebar.test.tsx` — this
+ * file stays `.ts` (node environment, no DOM) and only asserts the NAV_GROUPS
+ * data shape.
+ *
  * Asserts:
  *   1. The 3 group labels exist, in order (Editorial, System Workbench, Operations).
  *   2. Issues is the first (and only) item in the Editorial group (the new
@@ -14,6 +22,8 @@
  *   4. Every nav href across all 3 groups, plus NAV_PINNED, has a corresponding
  *      real page file on disk (no dead links) — this now requires
  *      `/issues/page.tsx`, which Plan 40-05 created.
+ *   5. (Phase 50) The System Workbench group's 4 items read the renamed
+ *      labels over unchanged hrefs, and none of the old labels survive.
  *
  * If a nav item is added without a page, or a page is deleted without removing
  * the nav item, this test will fail — preventing dead-link regressions automatically.
@@ -29,6 +39,17 @@ const REMOVED_HREFS = ['/review-desk', '/signal-desk', '/voice-pass']
 // LABELS either (they left as hrefs in Phase 40; WSP-01 replaces them with the
 // single "Issue Workspace" item).
 const REMOVED_LABELS = ['Review Desk', 'Signal Desk', 'Voice Pass']
+
+// Phase 50 (WBN-01) — the renamed System Workbench labels, in nav order, over
+// UNCHANGED hrefs (D-02: rename-without-reroute).
+const EXPECTED_WORKBENCH_LABELS = [
+  'Run Details',
+  'Agent Instructions',
+  'Quality Tests',
+  'Editorial Memory',
+]
+const EXPECTED_WORKBENCH_HREFS = ['/run-monitor', '/prompt-lab', '/eval-center', '/registry']
+const OLD_WORKBENCH_LABELS = ['Run Monitor', 'Prompt Lab', 'Eval Center', 'Registry']
 
 function pagePathFor(appRoot: string, href: string): string {
   // e.g. "/run-monitor" → "app/(dashboard)/run-monitor/page.tsx"
@@ -52,6 +73,31 @@ describe('NAV_GROUPS', () => {
     const workbench = NAV_GROUPS.find((g) => g.label === 'System Workbench')
     const labels = workbench?.items.map((i) => i.label) ?? []
     expect(labels).toContain('Run Details')
+  })
+
+  it('has two visibly distinct groups labeled "Editorial" and "System Workbench" (Annotations §Nav)', () => {
+    const labels = NAV_GROUPS.map((g) => g.label)
+    expect(labels).toContain('Editorial')
+    expect(labels).toContain('System Workbench')
+    // Distinct groups, not merged into one.
+    expect(NAV_GROUPS.find((g) => g.label === 'Editorial')).not.toBe(
+      NAV_GROUPS.find((g) => g.label === 'System Workbench'),
+    )
+  })
+
+  it('the System Workbench group reads the 4 Phase 50 renamed labels, in order, over unchanged hrefs (WBN-01, D-02)', () => {
+    const workbench = NAV_GROUPS.find((g) => g.label === 'System Workbench')
+    const labels = workbench?.items.map((i) => i.label) ?? []
+    const hrefs = workbench?.items.map((i) => i.href) ?? []
+    expect(labels).toEqual(EXPECTED_WORKBENCH_LABELS)
+    expect(hrefs).toEqual(EXPECTED_WORKBENCH_HREFS)
+  })
+
+  it('none of the pre-rename System Workbench labels survive anywhere in the nav (WBN-01)', () => {
+    const allLabels = NAV_GROUPS.flatMap((group) => group.items.map((i) => i.label))
+    for (const oldLabel of OLD_WORKBENCH_LABELS) {
+      expect(allLabels).not.toContain(oldLabel)
+    }
   })
 
   it('none of Review Desk / Signal Desk / Voice Pass hrefs appear anywhere in the nav (they left the nav — now issue sub-routes)', () => {
