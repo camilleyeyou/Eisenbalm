@@ -28,7 +28,7 @@
  *   `qaCorrections.byRunId` / `pitchLog.byRunId` for the current runId — the
  *   exact `DerivationInputs` shape `deriveIssueStatus`/`deriveTasks` expect.
  *
- * Also carries the D-26 rename: "Auto-publish OFF" → "Human approval
+ * Also carries the D-26 rename: the OFF/normal case reads "Human approval
  * required" (quiet reassurance). The ON case keeps its existing loud
  * vermilion treatment exactly as before — `AutoPublishBanner` (elsewhere in
  * the layout) is untouched.
@@ -272,9 +272,12 @@ export default function Masthead() {
         </span>
       )}
 
-      {/* Auto-publish lock chip — D-26 rename. OFF is the safe/expected
-          state ("Human approval required", quiet reassurance); ON keeps the
-          existing loud vermilion treatment exactly. */}
+      {/* Auto-publish chip — D-26 rename (Phase 40) + D-16 reframe (Phase
+          50-03). OFF is the safe/expected state ("Human approval required",
+          quiet reassurance). ON is an honest alert — never switch-framed as
+          something flipped here — pointing at where the setting actually
+          lives (Administration / Config); keeps the existing loud vermilion
+          treatment. */}
       {autoPublish !== undefined && (
         <span
           className={
@@ -283,7 +286,7 @@ export default function Masthead() {
               : 'font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-green)]'
           }
         >
-          {autoPublish ? 'Auto-publish ON' : 'Human approval required'}
+          {autoPublish ? 'Publishing automatically — managed in Administration' : 'Human approval required'}
         </span>
       )}
 
