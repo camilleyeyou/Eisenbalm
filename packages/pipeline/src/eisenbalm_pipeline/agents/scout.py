@@ -56,6 +56,33 @@ SCOUT_QUERIES: tuple[str, ...] = (
 )
 
 
+# Escalating corrective-retry instructions for the zero-candidates case
+# (bug scout-zero-candidates). Each entry is tried in order until the LLM
+# returns a non-empty candidates list; if all are exhausted, scout() raises.
+# The final entry deliberately authorizes relaxing the obscurity filter —
+# see the comment at the call site in discover_candidates() for the reasoning.
+SCOUT_EMPTY_RETRY_MESSAGES: tuple[str, ...] = (
+    (
+        "Your previous response contained zero charity candidates. "
+        "You MUST extract at least 3 distinct candidate charities from "
+        "the Tavily search results already provided above. "
+        "Do not add new searches — parse the existing results and return "
+        "a populated candidates list now."
+    ),
+    (
+        "You have now returned zero candidates twice. Outputting an empty "
+        "list is not an acceptable response under any circumstance. If you "
+        "rejected every result because it seemed too well-known or "
+        "prominent, relax that bar: select the 3-5 LEAST prominent or "
+        "least-covered organizations among the Tavily results already "
+        "provided, even if none of them feel like a perfect match for "
+        "'obscure'. An imperfect but populated list is required. Do not "
+        "run new searches — parse the existing results and return "
+        "candidates now."
+    ),
+)
+
+
 # ── Pydantic output schemas ──────────────────────────────────────────────
 
 
@@ -279,30 +306,39 @@ async def discover_candidates(
 
     candidates_raw: list[Any] = _extract_candidates(batch_out)
 
-    # Corrective retry: when the LLM returns zero candidates, retry ONCE with
-    # a strengthened instruction. This must live here (not in acomplete) because
+    # Corrective retry: when the LLM returns zero candidates, retry with
+    # escalating strengthened instructions (bug scout-zero-candidates,
+    # debugged 2026-07-17). This must live here (not in acomplete) because
     # structured-output parse runs the validator inside the SDK — so an empty
     # list would escape acomplete's error path entirely and surface as a
     # ValidationError mid-parse. Making the check explicit here keeps the
     # failure recoverable and surfaces a clear RuntimeError if unrecoverable.
-    if not candidates_raw:
+    #
+    # SCOUT_EMPTY_RETRY_MESSAGES has 2 entries (3 total LLM attempts, up from
+    # 1 retry / 2 total attempts). Root-cause investigation found the system
+    # prompt instructs the model to aggressively reject anything resembling a
+    # Charity Navigator-ranked/prominent charity (scout.md: "You reject
+    # anything Charity Navigator already ranks prominently"); when Tavily's
+    # generic queries happen to surface only well-known or listicle-style
+    # results, the model can conclude — consistently, across a naive retry
+    # that just repeats "try harder" — that zero of them qualify. The first
+    # retry keeps the original re-parse instruction; the second explicitly
+    # authorizes relaxing the obscurity bar rather than returning empty
+    # again. This is a probabilistic mitigation for LLM behavior, not a
+    # deterministic fix: it cannot guarantee the model never returns empty
+    # three times in a row, but it (a) gives a materially different
+    # instruction on the final attempt instead of repeating a prompt that
+    # already failed once, and (b) widens the retry budget so uncorrelated
+    # empty responses are less likely to exhaust it.
+    for attempt, retry_instruction in enumerate(SCOUT_EMPTY_RETRY_MESSAGES, start=1):
+        if candidates_raw:
+            break
         log.warning(
-            "Scout (run %s): LLM returned zero candidates — retrying once with "
+            "Scout (run %s): LLM returned zero candidates — retrying (%d/%d) with "
             "strengthened instruction.",
-            run_id,
+            run_id, attempt, len(SCOUT_EMPTY_RETRY_MESSAGES),
         )
-        retry_messages = messages + [
-            {
-                "role": "user",
-                "content": (
-                    "Your previous response contained zero charity candidates. "
-                    "You MUST extract at least 3 distinct candidate charities from "
-                    "the Tavily search results already provided above. "
-                    "Do not add new searches — parse the existing results and return "
-                    "a populated candidates list now."
-                ),
-            }
-        ]
+        retry_messages = messages + [{"role": "user", "content": retry_instruction}]
         batch_out, usage = await acomplete(
             agent_id="scout",
             run_id=run_id,
@@ -310,11 +346,13 @@ async def discover_candidates(
             response_format=ScoutBatchOutput,
         )
         candidates_raw = _extract_candidates(batch_out)
-        if not candidates_raw:
-            raise RuntimeError(
-                f"Scout: LLM returned zero charity candidates after one corrective "
-                f"retry (run {run_id}); Tavily surfaced {len(tavily_results)} results"
-            )
+
+    if not candidates_raw:
+        raise RuntimeError(
+            f"Scout: LLM returned zero charity candidates after "
+            f"{len(SCOUT_EMPTY_RETRY_MESSAGES)} corrective retries (run {run_id}); "
+            f"Tavily surfaced {len(tavily_results)} results"
+        )
 
     # 4. Python-side dedup (defensive — model may ignore the system rule).
     surviving: list[dict] = []
