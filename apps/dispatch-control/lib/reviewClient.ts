@@ -80,10 +80,15 @@ async function _reviewFetch<T>(
     let reason = 'unknown'
     let message = `HTTP ${res.status}`
     try {
-      const detail = await res.json()
+      const parsed = await res.json()
+      // FastAPI HTTPException wraps dict details as {detail: {reason, message}};
+      // fall back to a flat {reason, message} body.
+      const detail =
+        parsed?.detail && typeof parsed.detail === 'object' ? parsed.detail : parsed
       if (detail?.reason) reason = detail.reason
       if (detail?.message) message = detail.message
-      else if (typeof detail === 'string') message = detail
+      else if (typeof parsed?.detail === 'string') message = parsed.detail
+      else if (typeof parsed === 'string') message = parsed
     } catch {
       const text = await res.text().catch(() => '')
       if (text) message = text
