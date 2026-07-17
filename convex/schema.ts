@@ -312,6 +312,18 @@ export default defineSchema({
     createdAt: v.number(),
     createdBy: v.optional(v.string()),  // Clerk userId
     note: v.optional(v.string()),
+    // Phase 50 (WBN-04, D-13) ADD — additive/optional "why this draft
+    // exists" back-reference, captured from the inspector's "Improve this
+    // agent" deep link (docs/API_CONTRACTS.md §4A.2c). Absent on every
+    // existing row and on any save not initiated from that deep link.
+    originRef: v.optional(
+      v.object({
+        runId: v.string(),
+        sectionName: v.string(),
+        excerpt: v.string(),
+        issueNumber: v.optional(v.number()),
+      }),
+    ),
   })
     .index('by_workspace', ['workspace_id'])
     .index('by_workspace_agentKey', ['workspace_id', 'agentKey'])

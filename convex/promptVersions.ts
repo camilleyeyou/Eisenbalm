@@ -198,8 +198,20 @@ export const saveVersion = mutation({
     content: v.string(),
     createdBy: v.optional(v.string()),
     note: v.optional(v.string()),
+    // Phase 50 (WBN-04, D-13) ADD — additive/optional "why this draft
+    // exists" back-reference (docs/API_CONTRACTS.md §4A.2c). Omitted on
+    // every save NOT initiated from the inspector's "Improve this agent"
+    // deep link — the overwhelmingly common case.
+    originRef: v.optional(
+      v.object({
+        runId: v.string(),
+        sectionName: v.string(),
+        excerpt: v.string(),
+        issueNumber: v.optional(v.number()),
+      }),
+    ),
   },
-  handler: async (ctx, { workspace_id, agentKey, content, createdBy, note }) => {
+  handler: async (ctx, { workspace_id, agentKey, content, createdBy, note, originRef }) => {
     // Phase 29 D-1: dashboard-only mutation — Clerk identity required. The
     // audit row uses the VERIFIED actor from the JWT, not the caller-supplied
     // `createdBy` (kept as free-text row metadata only).
@@ -224,6 +236,7 @@ export const saveVersion = mutation({
       createdAt: Date.now(),
       createdBy,
       note,
+      ...(originRef !== undefined ? { originRef } : {}),
     })
 
     await ctx.runMutation(internal.auditLog.write, {
