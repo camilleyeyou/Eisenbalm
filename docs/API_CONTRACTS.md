@@ -1513,6 +1513,50 @@ a clean row per path (D-06 Option A). The `voice_constraints` row stores the FUL
 assembled `VOICE_CONSTRAINTS` string, not just `JESSE_PERSONA_BLOCK`; it is
 hydrated into `RunConfig.voice_constraints` at run start (see §7).
 
+#### 4A.2c — Phase 50 (WBN-04, D-13) `originRef` — "why this draft exists"
+
+`prompt_versions` gains ONE ADDITIVE, OPTIONAL field. No existing field is
+renamed or removed, no index changes, and every existing row (and every row
+saved without it going forward) remains valid — `originRef` is simply absent:
+
+```typescript
+prompt_versions: defineTable({
+  // ...unchanged fields (§4A.2)...
+  originRef: v.optional(v.object({
+    runId: v.string(),        // the run whose output motivated this draft
+    sectionName: v.string(),  // the drafted section (e.g. "founderBio")
+    excerpt: v.string(),      // a short, real (verbatim) excerpt of that output
+    issueNumber: v.optional(v.number()),
+  })),
+})
+```
+
+Captured from the inspector's "Improve this agent →" deep link
+(`InspectorFooter.tsx`, §44.7): the link now carries `fromRun` / `section` /
+`excerpt` query params into `/prompt-lab/[agentKey]`. When a NEW version is
+saved during that deep-linked session, the assembled `originRef` object is
+passed to `saveVersion` and persisted on the inserted row. This is a STORED
+back-reference, not an inference engine — Agent Instructions
+(`AgentPromptEditorView.tsx`) renders it as "why this draft exists", linking
+back to the run whose output motivated the draft. It does not affect
+active-version resolution (`getActive`/`activate`), the eval-gate, or any
+other existing versioning behavior.
+
+`saveVersion`'s signature (§4A.2a) gains one additional optional arg:
+
+```typescript
+saveVersion(workspace_id: string, agentKey: string, content: string,
+            createdBy?: string, note?: string,
+            originRef?: { runId: string; sectionName: string; excerpt: string;
+                          issueNumber?: number })
+            → Id<'prompt_versions'>
+//   Persists originRef on the inserted row when supplied. Omitted (the
+//   overwhelmingly common case — most saves are NOT deep-linked from the
+//   inspector) → the field is simply absent. All other saveVersion behavior
+//   (immutable versioning, isActive: false, the 'prompt_version.saved'
+//   audit row) is unchanged.
+```
+
 ### 4A.3 — `pipeline_config` (global key/value settings)
 
 ```typescript
