@@ -60,6 +60,8 @@ export default defineConfig({
       // Testing Library) but is named `.test.ts` per the plan's file list —
       // explicit jsdom override, mirroring registryDoNotUse.test.ts above.
       ['__tests__/promptVersionOrigin.test.ts', 'jsdom'],
+      // Quick 260717-41s: seedFromPublished idempotency convex-test file
+      ['__tests__/seedFromPublishedIdempotent.test.ts', 'edge-runtime'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],
