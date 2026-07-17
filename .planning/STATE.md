@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Phase 49 complete — Phase 50 next
-stopped_at: Phase 50 context gathered
-last_updated: "2026-07-16T23:37:56.647Z"
+status: Ready to execute
+stopped_at: Completed 50-00-topology-nomenclature-module-tripwire-scaffolds-PLAN.md
+last_updated: "2026-07-17T01:08:25.321Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-14)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** Phase 50 — Workbench & Nomenclature (not started)
+**Current focus:** Phase 50 — workbench-nomenclature
 
 ## Current Position
 
-Phase: 50
-Plan: Not started
+Phase: 50 (workbench-nomenclature) — EXECUTING
+Plan: 2 of 7
 
 ## Performance Metrics
 
@@ -351,6 +351,7 @@ Plan: Not started
 | Phase 49 P06 | 5min | 2 tasks | 3 files |
 | Phase 49 P07 | 25min | 4 tasks | 14 files |
 | Phase 49 P08 | 9 | 3 tasks | 9 files |
+| Phase 50 P00 | 20min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -924,6 +925,8 @@ Recent decisions affecting current work:
 - [Phase 49]: Threaded the Apply-revision lock as optional props (applyLocked/applyLockedLabel) into the shared RevisionComparisonCard from RevisionFlow, rather than resolving useRole() inside the shared card, because that card is also mounted by BriefFieldStrengthen's ungated brief-strengthen/apply endpoint
 - [Phase 49]: RegistryTable locks the Blocklist-Charity trigger button (not the inner confirm), and VersionHistoryPanel locks only the top-level Make-active affordance -- both keep their secondary confirm/override sub-flows unreachable once locked
 - [Phase 49]: IssueComments mounted as a persistent FrameChrome region (sibling to ContextPanel, never inside its per-stage panelContent slot) plus on My Tasks; never wrapped in LockedControl since commenting (ROL-04) is not editor-gated
+- [Phase 50]: GATE_KEYS reconciled to §7 literally: added verify_candidates + publisher, dropped validate_sections; RUN_STEP_MAP derives isDeterministicCheck from GATE_KEYS (single diamond source, never duplicated)
+- [Phase 50]: WBN-02/WBN-05 requirement checkboxes deliberately left unmarked by 50-00 (Wave 0 prerequisite only); 50-02 and 50-06 are the plans that deliver the actual user-facing behavior and will flip them
 
 ### Pending Todos
 
@@ -1014,6 +1017,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-16T23:37:56.633Z
-Stopped at: Phase 50 context gathered
-Resume file: .planning/phases/50-workbench-nomenclature/50-CONTEXT.md
+Last session: 2026-07-17T01:08:25.307Z
+Stopped at: Completed 50-00-topology-nomenclature-module-tripwire-scaffolds-PLAN.md
+Resume file: None
