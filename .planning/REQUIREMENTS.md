@@ -422,8 +422,8 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **WBN-02**: Run Details names steps by action ("Find story leads", "Verify research", "Draft sections") with the agent as secondary metadata, renders deterministic checks as diamond markers, and states plainly whether it is showing a historical record or a live run.
 - [ ] **WBN-03**: A failed run shows a plain-language recovery rail — what happened / what completed successfully / what did not happen / recommended recovery — with Restart from this step (reusing completed steps, not re-paying) and Improve this agent; downstream steps dim as Skipped.
 - [ ] **WBN-04**: Agent Instructions shows *why a draft instruction exists*, linking back to the specific issue output that motivated it.
-- [ ] **WBN-05**: Product vocabulary follows the nomenclature table throughout — deterministic check (not gate), step / Restart from this step (not node / re-run from node), Make active / Restore version (not commit / rollback), Quality test / Standard test case (not eval / golden scenario), Preview next run (not shadow run), Do not use (not blocklisted), Must fix (not blocking), Human approval required (not Auto-publish OFF).
-- [ ] **WBN-06**: Typed confirmation is reserved for Mark Do-not-use (organization name + required reason); the automation toggle leaves the operator surface for Administration.
+- [x] **WBN-05**: Product vocabulary follows the nomenclature table throughout — deterministic check (not gate), step / Restart from this step (not node / re-run from node), Make active / Restore version (not commit / rollback), Quality test / Standard test case (not eval / golden scenario), Preview next run (not shadow run), Do not use (not blocklisted), Must fix (not blocking), Human approval required (not Auto-publish OFF).
+- [x] **WBN-06**: Typed confirmation is reserved for Mark Do-not-use (organization name + required reason); the automation toggle leaves the operator surface for Administration.
 
 ## Future Requirements (deferred beyond v2.0)
 

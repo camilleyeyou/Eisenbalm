@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 50-02-run-details-action-steps-diamonds-framing-PLAN.md
-last_updated: "2026-07-17T01:42:45.154Z"
+stopped_at: Completed 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md
+last_updated: "2026-07-17T01:59:57.629Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 50 (workbench-nomenclature) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Performance Metrics
 
@@ -354,6 +354,7 @@ Plan: 4 of 7
 | Phase 50 P00 | 20min | 3 tasks | 8 files |
 | Phase 50-workbench-nomenclature P01 | 25min | 2 tasks | 8 files |
 | Phase 50 P02 | 35min | 2 tasks | 6 files |
+| Phase 50 P03 | 20min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -932,6 +933,7 @@ Recent decisions affecting current work:
 - [Phase 50-workbench-nomenclature]: Sourced Workbench nav labels + page headings from lib/nomenclature.ts's WORKBENCH_NAV_LABELS constant (single source of truth) rather than literal strings, per explicit no-duplicate-hardcoding instruction
 - [Phase 50-workbench-nomenclature]: Role indicator implemented inline in AppSidebar.tsx (already a client component) rather than a new extracted component file
 - [Phase 50]: RunDetail.tsx groups per-agent rows by runStepFor().actionLabel so the 7 writers + validate_sections collapse into one expandable 'Draft sections' row automatically; calibrator/chronicler render dimmed as 'supporting step' (no §7 entry)
+- [Phase 50]: Masthead ON chip/AutoPublishBanner reworded off switch-framing (D-16); typed org-name+reason confirm added to Mark Do-not-use only, publish surfaces confirmed clean (D-15); blocklisted status renders Do not use over unchanged stored enum (D-03)
 
 ### Pending Todos
 
@@ -1022,6 +1024,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T01:42:45.140Z
-Stopped at: Completed 50-02-run-details-action-steps-diamonds-framing-PLAN.md
+Last session: 2026-07-17T01:59:57.617Z
+Stopped at: Completed 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md
 Resume file: None
