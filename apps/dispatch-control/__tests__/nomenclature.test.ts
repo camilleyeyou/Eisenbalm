@@ -1,10 +1,11 @@
 /**
  * WBN-05 source-scan tripwire (banned-legacy-term sweep).
  *
- * TODO(50-06): un-skip after the sweep lands. This suite is authored FULLY
- * now (Phase 50 Wave 0 scaffold) so 50-06 only needs to flip `describe.skip`
- * -> `describe`; operator-facing copy has not yet been swept across Waves
- * 1-2, so running this for real today would be RED across many files.
+ * Un-skipped in 50-06 after the sweep landed across Waves 1-2 (nav/headings,
+ * Run Details, automation reframe, Agent Instructions origin-ref, recovery
+ * rail) plus this plan's own sweep (how-to-use glossary, Prompt Lab/Eval
+ * Center/Signal Desk copy, the 260710-k8y conflict terms, and the
+ * nomenclature-table tail rows).
  *
  * Mirrors the recursive-fs regex-scan pattern from
  * `roleGateInventory.test.ts` / `dispatch-control-no-sanity-write.test.ts`.
@@ -193,8 +194,7 @@ function collectViolations(files: string[]): Violation[] {
   return violations
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-describe.skip('WBN-05: no legacy nomenclature term survives in operator-facing copy', () => {
+describe('WBN-05: no legacy nomenclature term survives in operator-facing copy', () => {
   it('app/ + components/ contain zero FORBIDDEN_COPY_TERMS in rendered JSX text or string props', () => {
     const files = SEARCH_DIRS.flatMap(listSourceFiles)
     expect(files.length).toBeGreaterThan(0) // sanity: directory scan actually found files
