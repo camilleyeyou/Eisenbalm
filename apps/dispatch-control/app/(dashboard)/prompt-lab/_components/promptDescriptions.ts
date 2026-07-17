@@ -38,12 +38,16 @@ export const PROMPT_DESCRIPTIONS: Record<string, string> = {
     'Writes the jingle bonus: lyrics plus an audio-generation prompt.',
   bonus_spec_ad:
     'Writes the spec-ad bonus as a structured, scannable advertisement.',
+  signal_editor:
+    'Finds dated story leads from current news before Scout searches for organizations.',
 
   // ── user-prompt templates ─────────────────────────────────────────────────
   calibrator_user:
     'User message that frames the calibration request for the style brief.',
   scout_user:
     'User message that hands the scout its web-search results to triage.',
+  signal_editor_user:
+    'User message that hands the signal editor its web-search results to triage.',
   advocate_user:
     'User message that passes the candidate list to the advocate for scoring.',
   editor_gate1_user:

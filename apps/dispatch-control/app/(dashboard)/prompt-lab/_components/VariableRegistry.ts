@@ -44,10 +44,15 @@ export const VARIABLE_REGISTRY: Record<string, string[]> = {
   bonus_big_budget: ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
   bonus_jingle: ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
   bonus_spec_ad: ['VOICE_CONSTRAINTS', 'STRUCTURE_CONTRACT'],
+  // Phase 46/50 (SGE-01, Pitfall 6): signal_editor's system prompt
+  // substitutes {avoid_note} only (agents/signal_editor.py:147).
+  signal_editor: ['avoid_note'],
 
   // ── user-prompt templates (distinct token sets from their system prompts) ──
   calibrator_user: [], // used verbatim — no .replace tokens (calibrator.py)
   scout_user: ['results_block'],
+  // signal_editor_user substitutes {results_block} (agents/signal_editor.py:154).
+  signal_editor_user: ['results_block'],
   advocate_user: ['candidates_json'],
   editor_gate1_user: ['issue_number', 'candidates_block'],
   editor_final_user: ['qa_corrections_json', 'section_headlines_json'],
@@ -134,6 +139,8 @@ export const VARIABLE_DESCRIPTIONS: Record<string, string> = {
   display_list: 'Whitelisted display-font names available to the design agent.',
   body_list: 'Whitelisted body-font names available to the design agent.',
   results_block: 'Formatted web-search results passed to the agent.',
+  avoid_note:
+    'Repetition-avoidance note derived from recently-featured charities (empty on failure or first run).',
   corrections:
     'Prior editorial corrections logged for this charity, injected so research accounts for them (MEM-03).',
   source_material:
@@ -169,6 +176,7 @@ export const VARIABLE_SAMPLES: Record<string, string> = {
   body_list: 'Lora, Inter, Newsreader',
   results_block:
     'URL: https://example.org\nTitle: About\nContent: A small charity preserving library acoustics.',
+  avoid_note: 'avoid: library acoustics · avoid: Vermont',
   corrections:
     'PRIOR EDITORIAL CORRECTIONS (account for these):\n- AUM figure was wrong; use $4.2M',
   source_material:

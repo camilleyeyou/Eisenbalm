@@ -138,8 +138,9 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
     ).not.toThrow()
 
     expect(screen.getByText(/No upstream node/i)).toBeDefined()
-    // calibrator's one downstream (scout) still renders.
-    expect(screen.getByText('scout', { exact: false })).toBeDefined()
+    // calibrator's one downstream is now signal_editor (Phase 50 D-08
+    // topology reconciliation — calibrator -> signal_editor -> scout).
+    expect(screen.getByText('signal_editor', { exact: false })).toBeDefined()
   })
 
   it('degrades gracefully for a node with many downstream (verify_research fan-out)', () => {

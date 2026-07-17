@@ -1,9 +1,11 @@
 /**
  * Phase 23 — static pipeline DAG topology for the Graph view.
  *
- * Mirrors packages/pipeline/src/eisenbalm_pipeline/graph/builder.py exactly.
- * 18 nodes: sequential spine + 7-writer fan-out from verify_research +
- * fan-in to validate_sections + post-fan-in spine.
+ * Phase 50 (WBN-02, D-08 — Wave 0 prerequisite): reconciled to the live 20-node
+ * graph. Mirrors packages/pipeline/src/eisenbalm_pipeline/graph/builder.py
+ * exactly: sequential spine (now including `signal_editor` + `verify_candidates`,
+ * added by Phase 46) + 7-writer fan-out from verify_research + fan-in to
+ * validate_sections + post-fan-in spine.
  *
  * IMPORTANT (Pitfall 4): the `design` node is ALWAYS in the topology even
  * when DESIGNAGENT_SUPPRESSED=true. When suppressed, the `agents` table row
@@ -14,12 +16,16 @@
 // ── node list ────────────────────────────────────────────────────────────────
 
 /**
- * All 18 pipeline agent keys in topological order (matches builder.py).
- * design is always included — see Pitfall 4 note above.
+ * All 20 pipeline agent keys in topological order (matches builder.py).
+ * design is always included — see Pitfall 4 note above. `signal_editor`
+ * (after calibrator) and `verify_candidates` (after scout) were added in
+ * Phase 46 and reconciled into this static topology in Phase 50.
  */
 export const PIPELINE_NODES: string[] = [
   'calibrator',
+  'signal_editor',
   'scout',
+  'verify_candidates',
   'advocate',
   'editor_gate_1',
   'chronicler',
@@ -68,23 +74,36 @@ export const SECTION_WRITER_KEYS: string[] = [
 // ── code gates ───────────────────────────────────────────────────────────────
 
 /**
- * Phase 37 (MON-01, D-02) — the two real code-gate nodes, rendered as
- * marigold diamonds on the forensic spine (everything else is a dot).
+ * Phase 37 (MON-01, D-02) — the deterministic-check ("code gate") nodes,
+ * rendered as marigold diamonds on the forensic spine (everything else is
+ * a dot).
  *
- * SCOPE CORRECTION (Research Pitfall 8): the design brief describes THREE
- * code-gate diamonds — that phantom third gate name is stale and does not
- * exist in `builder.py`. Only two nodes are wrapped as code gates. Do NOT
- * add a third gate to this set.
+ * Phase 50 (D-08) reconciles this set to spec §7's diamond marks
+ * (DERIVED-STATE-CONTRACT.md §7: "Verify organizations ◆", "Verify research
+ * ◆", "Prepare publication ◆") against the live 20-node graph:
+ *   - `verify_candidates` (Phase 46's non-LLM bottleneck between scout and
+ *     advocate) is ADDED — it did not exist when this set was first defined.
+ *   - `publisher` is ADDED — §7 marks it as a deterministic check despite
+ *     doing real (irreversible) publish work; follow the spec verbatim.
+ *   - `validate_sections` is DROPPED — §7 does not name it as a distinct
+ *     step; it folds into "Draft sections" (see RESEARCH Open Q #3).
+ *
+ * This is the single diamond source of truth — `lib/nomenclature.ts`
+ * imports GATE_KEYS rather than defining a second diamond set.
  */
 export const GATE_KEYS: Set<string> = new Set<string>([
+  'verify_candidates',
   'verify_research',
-  'validate_sections',
+  'publisher',
 ])
 
 export const PIPELINE_EDGES: [string, string][] = [
-  // Sequential pre-fan-out spine
-  ['calibrator', 'scout'],
-  ['scout', 'advocate'],
+  // Sequential pre-fan-out spine (calibrator -> signal_editor -> scout ->
+  // verify_candidates -> advocate — Phase 46's discovery-chain additions)
+  ['calibrator', 'signal_editor'],
+  ['signal_editor', 'scout'],
+  ['scout', 'verify_candidates'],
+  ['verify_candidates', 'advocate'],
   ['advocate', 'editor_gate_1'],
   ['editor_gate_1', 'chronicler'],
   ['chronicler', 'researcher'],
