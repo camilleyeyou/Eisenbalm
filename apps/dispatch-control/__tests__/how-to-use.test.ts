@@ -36,12 +36,13 @@ describe('How-to-use screen (source-scan)', () => {
       })
     }
 
-    it('contains all 5 screen names', () => {
+    it('contains all 5 screen names (Phase 50, WBN-05: renamed Workbench screens + current stage names)', () => {
       expect(contents).toContain('Signal Desk')
-      expect(contents).toContain('Run Monitor')
-      expect(contents).toContain('Review Desk')
+      expect(contents).toContain('WORKBENCH_NAV_LABELS.run_monitor')
+      expect(contents).toContain('Fact Check')
       expect(contents).toContain('Voice Pass')
-      expect(contents).toContain('Prompt Lab + Eval Center')
+      expect(contents).toContain('WORKBENCH_NAV_LABELS.prompt_lab')
+      expect(contents).toContain('WORKBENCH_NAV_LABELS.eval_center')
     })
   })
 

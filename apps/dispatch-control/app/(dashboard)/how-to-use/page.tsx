@@ -7,7 +7,21 @@
  * interactivity needed for a static reference screen.
  *
  * ONLY 1c token classes are used (no literal Tailwind gray-scale/white/black).
+ *
+ * Phase 50 (WBN-05, D-06): swept to the binding Workbench nomenclature table
+ * — "node" -> "step", "Re-run from this node" -> "Restart from this step",
+ * "run evals"/"commit" -> "test changes"/"make active", "shadow" -> "Preview
+ * next run", "blocking" -> "Must fix", "blocklist"/"auto-publish" -> "Do not
+ * use"/"Human approval required". The WEEKLY_LOOP `screen` labels are
+ * term-swapped to the renamed Workbench screens (via WORKBENCH_NAV_LABELS)
+ * and the current Issue Workspace stage names — a label swap only, NOT the
+ * deeper 5-stage-architecture narrative rewrite (deferred). The
+ * "three deterministic checks" legend is corrected: there are exactly TWO
+ * deterministic checks (Verify organizations, Verify research); the
+ * Publisher's Prepare publication step also renders as a marigold diamond
+ * but is a real action, not a check.
  */
+import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 
 const WEEKLY_LOOP = [
   {
@@ -16,24 +30,26 @@ const WEEKLY_LOOP = [
     screen: 'Signal Desk',
     body: (
       <>
-        Read the three signals, pin or kill any, and adjudicate the Gate 1
-        winner. If two candidates tie or a brand-risk shows up, the screen
-        enters <b>interrupt mode</b> — pick, and your reason is logged to the
-        transcript and remembered next week.
+        Read the three signals, pin or kill any, and choose the recommended
+        story when asked. If two candidates tie or a brand-risk shows up, the
+        screen enters <b>interrupt mode</b> — pick, and your reason is logged
+        to the transcript and remembered next week.
       </>
     ),
   },
   {
     n: 2,
     title: 'Watch the run',
-    screen: 'Run Monitor',
+    screen: WORKBENCH_NAV_LABELS.run_monitor,
     body: (
       <>
-        Agents are <b>dots</b>, the three deterministic checks are{' '}
-        <b className="text-[color:var(--color-marigold-text)]">◆ gold diamonds</b>.
-        Click any node to read exactly what it handed downstream
+        Agents are <b>dots</b>; Verify organizations and Verify research are
+        the two deterministic checks, marked with a{' '}
+        <b className="text-[color:var(--color-marigold-text)]">◆ gold diamond</b>{' '}
+        (Prepare publication also renders one, but it&apos;s an action, not a
+        check). Click any step to read exactly what it handed downstream
         (human-readable first, JSON behind a toggle). Don&apos;t like a step?{' '}
-        <b>Re-run from this node</b> with new steering — everything after it
+        <b>Restart from this step</b> with new steering — everything after it
         re-flows.
       </>
     ),
@@ -41,7 +57,7 @@ const WEEKLY_LOOP = [
   {
     n: 3,
     title: 'Clear the facts',
-    screen: 'Review Desk',
+    screen: 'Fact Check',
     body: (
       <>
         Read the issue as the reader will. Every error in the rail must be
@@ -50,7 +66,7 @@ const WEEKLY_LOOP = [
         <b className="text-[color:var(--color-marigold-text)]">Marigold</b>{' '}
         underlines are sourced claims (hover for the source); a{' '}
         <b className="text-[color:var(--color-vermilion)]">rust</b> tint means
-        unsourced. Publish stays locked until the blocking list is empty.
+        unsourced. Publish stays locked until the Must fix list is empty.
       </>
     ),
   },
@@ -70,13 +86,14 @@ const WEEKLY_LOOP = [
   {
     n: 5,
     title: 'Improve the machine',
-    screen: 'Prompt Lab + Eval Center',
+    screen: `${WORKBENCH_NAV_LABELS.prompt_lab} + ${WORKBENCH_NAV_LABELS.eval_center}`,
     body: (
       <>
-        Between issues, edit a prompt, <b>run evals</b> on just the affected
-        scenarios, and commit only if the scoreboard improves with no
-        regressions (or override with a logged reason). Run a{' '}
-        <b>shadow</b> against real news before ever paying for a live run.
+        Between issues, edit an instruction, <b>test changes</b> on just the
+        affected scenarios, and make it active only if the scoreboard
+        improves with no regressions (or override with a logged reason).{' '}
+        <b>Preview next run</b> against real news before ever paying for a
+        live run.
       </>
     ),
   },
@@ -91,12 +108,12 @@ const COLOR_LEGEND = [
   {
     hex: '#e8471d',
     token: 'var(--color-vermilion)',
-    meaning: 'Error / blocking / unsourced — needs you',
+    meaning: 'Error / Must fix / unsourced — needs you',
   },
   {
     hex: '#f2b01e',
     token: 'var(--color-marigold)',
-    meaning: 'Warning / sourced-claim / code gate',
+    meaning: 'Warning / sourced-claim / deterministic check',
   },
   {
     hex: '#253ad4',
@@ -120,7 +137,7 @@ const HOUSE_RULES = [
   },
   {
     headline: 'The irreversible ones ask twice.',
-    body: 'Publish, blocklist, and turning auto-publish on take a typed confirmation. Everything else is one click and an undo.',
+    body: 'Marking an organization Do not use takes a typed confirmation — organization name plus a reason. Human approval required is the default; the automation setting itself lives in Administration. Everything else is one click and an undo.',
   },
 ]
 
