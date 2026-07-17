@@ -171,3 +171,59 @@ export const PRODUCT_TERMS = {
   mustFix: 'Must fix',
   humanApprovalRequired: 'Human approval required',
 } as const
+
+// ── "Restart from this step" honesty matrix (WBN-03, D-11/D-12) ────────────
+
+/**
+ * Phase 50 (WBN-03, D-11/D-12, docs/API_CONTRACTS.md §50.1,
+ * 50-RESEARCH.md Pitfall 1) — of the 11 §7 Run Details steps, exactly 3
+ * have a real "completed steps are reused, not re-paid" reuse primitive:
+ *
+ *   - the 7 section writers (LIVE, `POST /runs/{id}/agents/{key}/rerun`,
+ *     `rerun_agent` — RerollButton already wires this)
+ *   - `editor_gate_1`, ONLY when the run is genuinely paused at the Gate-1
+ *     interrupt (LIVE, `POST /issues/{run_id}/adjudicate` — the Signal Desk
+ *     adjudication surface)
+ *   - `publisher` (LIVE, `POST /issues/{run_id}/publish-manual`, the Phase
+ *     50 Clerk-guarded bridge around `_run_publisher` — §50.1)
+ *
+ * The other 8 (signal_editor, scout, verify_candidates, advocate,
+ * researcher, verify_research, qa, editor_final) have NO reuse primitive —
+ * they MUST render reserved-with-explanation (the InspectorFooter
+ * RESERVED_CLASSES/disabledTitle pattern), never a blanket "Restart from
+ * this step" claim. ONE source of truth — both RecoveryRail.tsx and
+ * InspectorFooter.tsx consume this function so the two surfaces can never
+ * drift out of sync with each other.
+ */
+export const RESTART_LIVE_WRITER_KEYS = new Set<string>([
+  'origin_story',
+  'problem',
+  'founder_bio',
+  'case_study',
+  'game',
+  'bonus',
+  'design',
+])
+
+export type RestartAvailability = 'live' | 'reserved'
+
+/**
+ * Resolve whether "Restart from this step" is LIVE (a real reuse primitive
+ * backs it) or RESERVED (no primitive exists — render disabled with an
+ * honest explanation, never a false-live button) for a given pipeline
+ * agentKey.
+ *
+ * `opts.isPausedAtGate1` must be supplied by the caller from the ACTUAL
+ * paused-at-Gate-1 predicate (§37.4(c): `status === 'awaiting-review' &&
+ * completedAt == null`) — this function never infers it, so a genuinely
+ * FAILED run (not paused) always resolves `editor_gate_1` to RESERVED.
+ */
+export function restartAvailabilityFor(
+  agentKey: string,
+  opts: { isPausedAtGate1?: boolean } = {},
+): RestartAvailability {
+  if (RESTART_LIVE_WRITER_KEYS.has(agentKey)) return 'live'
+  if (agentKey === 'editor_gate_1') return opts.isPausedAtGate1 ? 'live' : 'reserved'
+  if (agentKey === 'publisher') return 'live'
+  return 'reserved'
+}

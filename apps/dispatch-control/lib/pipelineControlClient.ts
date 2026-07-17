@@ -266,6 +266,54 @@ export async function adjudicateGate1(
   return (await res.json()) as AdjudicateGate1Result
 }
 
+export interface PublishManualResult {
+  runId: string
+  issueId: string
+  issueNumber: number
+  scheduled: boolean
+}
+
+/**
+ * Phase 50 (WBN-03, docs/API_CONTRACTS.md §50.1) — the Editor-in-chief
+ * Clerk-guarded Publisher-restart bridge: `POST /issues/{run_id}/publish-manual`.
+ * The operator-reachable sibling of the server-to-server
+ * `POST /run/{run_id}/publish` (WHK-08) — SAME `_run_publisher` work, gated
+ * by `_require_editor` (Clerk) instead of the trigger secret this client
+ * never references. Re-invokes the Publisher directly against the
+ * already-written Sanity draft; reuses all upstream pipeline work. This is
+ * the ONE of the failed-run recovery rail's "Restart from this step" LIVE
+ * cases for the `publisher` step (the other two are `rerollAgent` for
+ * writers and `adjudicateGate1` for the Gate-1 pause).
+ *
+ * @param runId   the run's runId string
+ * @param token   a Clerk session JWT (from useAuth().getToken()) — must
+ *                belong to an Editor-in-chief; a Collaborator token 403s.
+ */
+export async function publishManual(
+  runId: string,
+  token: string | null,
+): Promise<PublishManualResult> {
+  const res = await fetch(
+    `${pipelineBaseUrl()}/issues/${encodeURIComponent(runId)}/publish-manual`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  )
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(
+      `publish-manual failed (${res.status})${detail ? `: ${detail}` : ''}`,
+    )
+  }
+
+  return (await res.json()) as PublishManualResult
+}
+
 export interface RequireLeadResult {
   leadId: string
   status: 'required'

@@ -7,17 +7,24 @@
  * kind=="sounds-human" only — NOT a route Depends swap, since that route also
  * handles kind=="facts-cleared", which stays ungated), and two Convex
  * mutations via `requireEditor(ctx)` (promptVersions.ts activate, charities.ts
- * setStatus). This test asserts the gate call sites land in EXACTLY those six
- * places — no more, no fewer — by scanning the source tree directly (no
- * server or Convex deployment needed).
+ * setStatus).
+ *
+ * Phase 50 (WBN-03, docs/API_CONTRACTS.md §49.4 addendum + §50.1) adds a 7th
+ * Editor-in-chief-gated action via the SAME `Depends(_require_editor)`
+ * mechanism: `POST /issues/{run_id}/publish-manual` (`api/control.py::
+ * publish_manual`, the failed-run recovery rail's Publisher-restart bridge).
+ * This test now asserts the FastAPI gate call sites land in EXACTLY four
+ * files (revision.py, factcheck.py, review.py, control.py) and the Convex
+ * gate call sites in EXACTLY two — no more, no fewer — by scanning the
+ * source tree directly (no server or Convex deployment needed).
  *
  * Mirrors apps/dispatch-control/__tests__/dispatch-control-no-sanity-write.test.ts
  * (recursive fs source-scan pattern).
  *
- * If this test fails because a future change gates a 7th action or ungates
- * one of the six, DO NOT weaken the assertions — fix the gate placement to
- * match docs/API_CONTRACTS.md §49.4 (or update §49.4 first, contract-first,
- * per CLAUDE.md).
+ * If this test fails because a future change gates an 8th action or ungates
+ * one of the seven, DO NOT weaken the assertions — fix the gate placement to
+ * match docs/API_CONTRACTS.md §49.4/§50.1 (or update those sections first,
+ * contract-first, per CLAUDE.md).
  */
 import * as fs from 'node:fs'
 import * as path from 'node:path'
@@ -31,7 +38,15 @@ const PIPELINE_API_DIR = path.join(
 )
 const CONVEX_DIR = path.join(REPO_ROOT, 'convex')
 
-const EXPECTED_FASTAPI_EDITOR_FILES = ['factcheck.py', 'review.py', 'revision.py'].sort()
+// Phase 50 (WBN-03, §50.1) adds control.py (publish_manual) as the 4th
+// FastAPI Depends(_require_editor) call site — the other three are the
+// original Phase 49 set.
+const EXPECTED_FASTAPI_EDITOR_FILES = [
+  'control.py',
+  'factcheck.py',
+  'review.py',
+  'revision.py',
+].sort()
 const EXPECTED_CONVEX_EDITOR_FILES = ['charities.ts', 'promptVersions.ts'].sort()
 
 const FASTAPI_EDITOR_PATTERN = /Depends\(_require_editor\)/
@@ -53,8 +68,8 @@ function listFiles(dir: string, ext: string, excludeDirNames: string[] = []): st
   return results
 }
 
-describe('ROL-02: exactly six actions are role-gated (source-scan tripwire)', () => {
-  it('FastAPI: Depends(_require_editor) appears in EXACTLY revision.py, factcheck.py, review.py — and no other api/*.py file', () => {
+describe('ROL-02: exactly seven actions are role-gated (source-scan tripwire)', () => {
+  it('FastAPI: Depends(_require_editor) appears in EXACTLY revision.py, factcheck.py, review.py, control.py — and no other api/*.py file', () => {
     const apiFiles = listFiles(PIPELINE_API_DIR, '.py', ['__pycache__'])
     expect(apiFiles.length).toBeGreaterThan(0) // sanity: directory scan actually found files
 
@@ -63,7 +78,7 @@ describe('ROL-02: exactly six actions are role-gated (source-scan tripwire)', ()
     )
     const matchingNames = matching.map(f => path.basename(f)).sort()
 
-    expect(matching.length).toBe(3)
+    expect(matching.length).toBe(4)
     expect(matchingNames).toEqual(EXPECTED_FASTAPI_EDITOR_FILES)
   })
 

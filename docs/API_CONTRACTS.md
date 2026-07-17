@@ -6082,6 +6082,14 @@ The local-dev sentinel `{"sub":"local-dev-operator"}` (returned by `_require_cle
 `CLERK_JWT_ISSUER_DOMAIN` is unset) resolves to Editor-in-chief on the FastAPI side (D-04). Convex
 has no equivalent sentinel and fails closed on an absent/undefined role.
 
+**Phase 50 addendum (WBN-03, §50.1):** a 7th Editor-in-chief-gated action is added —
+`POST /issues/{run_id}/publish-manual` (`api/control.py::publish_manual`, the Publisher-restart
+bridge) — via the SAME `Depends(_require_editor)` mechanism as the three FastAPI rows above. This
+table's original six rows stay the canonical Phase 49 list; see §50.1 for the full 7th-action
+contract. The `apps/dispatch-control/__tests__/roleGateInventory.test.ts` tripwire is updated
+accordingly (4 FastAPI files, not 3) — per that test's own docstring instruction: "if a future
+change gates a 7th action... fix the gate placement... or update §49.4 first, contract-first."
+
 ### §49.5 — Verbatim locked labels (from DERIVED-STATE-CONTRACT §6, D-09)
 
 Reproduced EXACTLY — do not paraphrase:

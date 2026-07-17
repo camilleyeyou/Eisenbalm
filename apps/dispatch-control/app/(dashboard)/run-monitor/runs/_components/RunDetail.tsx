@@ -35,6 +35,7 @@ import { runStepFor } from '@/lib/nomenclature'
 import { PIPELINE_NODES } from '../../graph/_components/pipelineTopology'
 import CancelRunButton from './CancelRunButton'
 import RerollButton from './RerollButton'
+import RecoveryRail from './RecoveryRail'
 
 interface RunDetailProps {
   runId: string
@@ -305,6 +306,22 @@ export default function RunDetail({ runId }: RunDetailProps) {
           </div>
         </div>
       </div>
+
+      {/* Failed-run recovery rail (Phase 50, WBN-03, D-10/D-11/D-12) — the
+          plain-language what-happened / what-completed / what-didn't-happen /
+          recommended-recovery explanation, mounted whenever this run's
+          status is "failed". */}
+      {run.status === 'failed' && (
+        <RecoveryRail
+          runId={runId}
+          agentRuns={agentRuns as AgentRunRow[]}
+          // §37.4(c)'s paused-at-Gate-1 predicate is status==='awaiting-review'
+          // && completedAt==null — mutually exclusive with status==='failed',
+          // so this mount is always false here. Left explicit (not omitted)
+          // so the honesty matrix's contract stays visible at the call site.
+          isPausedAtGate1={false}
+        />
+      )}
 
       {/* Cancel Run button (running-only — RUN-04) */}
       <CancelRunButton runId={runId} status={run.status} />
