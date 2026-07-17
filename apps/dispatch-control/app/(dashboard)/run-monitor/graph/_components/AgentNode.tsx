@@ -21,13 +21,19 @@
  * D-03: disabled agents rendered visually dimmed (opacity-40).
  *
  * Phase 37 additions (D-02, D-03):
- *  - `isGate`: the two real code gates (verify_research, validate_sections)
- *    render as a rotated marigold (`#f2b01e`) diamond; every other node
- *    renders as a plain dot ("agents = black dots" per design brief).
+ *  - `isGate`: the reconciled deterministic-check set (`verify_candidates`,
+ *    `verify_research`, `publisher` — Phase 50 D-08) renders as a rotated
+ *    marigold (`#f2b01e`) diamond; every other node renders as a plain dot
+ *    ("agents = black dots" per design brief).
  *  - `retryCount`: renders a small badge when > 0 (0/undefined → no chip).
  *  - The model chip renders UNCONDITIONALLY (not only at-rest) so an
  *    executed node still shows model + cost/duration + retry TOGETHER —
  *    these must not be mutually exclusive (MON-01 plan-review fix).
+ *
+ * Phase 50 (WBN-02, D-07): `displayName` now carries the §7 ACTION label
+ * (e.g. "Find story leads") sourced from `lib/nomenclature.ts`'s
+ * `runStepFor()` — the agent is demoted to `agentLabel`, rendered as small
+ * secondary metadata under the title (e.g. "— Signal Editor").
  */
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Loader2 } from 'lucide-react'
@@ -36,6 +42,8 @@ import { cn } from '@/lib/utils'
 export type AgentNodeData = {
   agentKey: string
   displayName: string
+  /** Secondary metadata — the agent/mechanism name (Phase 50 D-07). */
+  agentLabel?: string
   model?: string
   enabled: boolean
   description?: string
@@ -86,8 +94,9 @@ export function AgentNode({ data, selected }: NodeProps) {
 
       {/* Node header row: shape marker (dot/diamond) + spinner (if running) + agent name */}
       <div className="flex items-center gap-1.5">
-        {/* Phase 37 (D-02): dot for agents, marigold diamond for the two
-            real code gates (verify_research, validate_sections). Marigold =
+        {/* Phase 37 (D-02), reconciled Phase 50 (D-08): dot for agents,
+            marigold diamond for the deterministic-check set
+            (verify_candidates, verify_research, publisher). Marigold =
             --color-marigold (#f2b01e, see app/globals.css @theme) — the 1c
             design system token (docs/design/dispatch-control-v2/README.md). */}
         <span
@@ -121,6 +130,16 @@ export function AgentNode({ data, selected }: NodeProps) {
           </span>
         )}
       </div>
+
+      {/* Agent secondary metadata (Phase 50, D-07) — the action label above
+          is primary; the agent/mechanism name renders as its own small,
+          dashed caption line so it never crowds the title on the narrow
+          w-44 node. */}
+      {nodeData.agentLabel && (
+        <p className="mt-0.5 text-[10px] text-neutral-400 truncate">
+          — {nodeData.agentLabel}
+        </p>
+      )}
 
       {/* Model chip — config-at-rest field (Research Pitfall 7), renders
           UNCONDITIONALLY so an executed node shows model alongside

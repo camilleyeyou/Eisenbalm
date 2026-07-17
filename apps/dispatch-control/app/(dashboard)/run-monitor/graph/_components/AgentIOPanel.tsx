@@ -1,27 +1,31 @@
 'use client'
 /**
  * Phase 23 — AgentIOPanel: slide-over panel for per-agent I/O + error + cost.
- * Phase 37 (MON-02) — extended into the upstream→node→downstream handoff
+ * Phase 37 (MON-02) — extended into the upstream→step→downstream handoff
  * inspector.
  *
  * OBS-05: Operator can inspect per-agent input/output and any error/retry.
  *
- * Queries agent_run_payloads on node click (NOT subscribed — keeps live
+ * Queries agent_run_payloads on step click (NOT subscribed — keeps live
  * subscription lean, per RESEARCH Pattern 4 / Pitfall 2). Renders:
  *   - error message when status === 'failed'
  *   - costUsd / durationMs / tokensIn / tokensOut from the agentRun row
- *   - the handoff (MON-02): upstream node's output → this node's
- *     input/output → downstream node's input, resolved from PIPELINE_EDGES.
+ *   - the handoff (MON-02): upstream step's output → this step's
+ *     input/output → downstream step's input, resolved from PIPELINE_EDGES.
  *     Human-readable summary first; raw JSON (the existing prettyJson <pre>
  *     blocks) sits behind a "Show raw JSON" toggle. Snapshots are truncated
  *     ~2000 chars server-side (Phase 23 OBS-05) — the truncation is noted
  *     in the UI, not hidden.
  *
- * A node with no upstream (calibrator) or multiple upstream/downstream
+ * A step with no upstream (calibrator) or multiple upstream/downstream
  * (verify_research/validate_sections fan-out/fan-in) degrades gracefully:
  * renders whatever exists, never crashes.
  *
  * Read-only panel — no mutating actions.
+ *
+ * Phase 50 (WBN-02): operator-facing copy in this panel says "step", per the
+ * binding nomenclature table's Old->new column. Component/identifier names
+ * (`HandoffNode`, `agentKey`) are unchanged per D-01.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -49,10 +53,10 @@ interface AgentIOPanelProps {
 // ── HandoffNode ──────────────────────────────────────────────────────────────
 
 /**
- * Fetches + renders one upstream/downstream node's payload snapshot as a
+ * Fetches + renders one upstream/downstream step's payload snapshot as a
  * compact human-readable summary. Kept as its own component (one useQuery
  * call per instance) so the hook count stays stable regardless of how many
- * upstream/downstream edges the selected node has (MON-02 fan-out/fan-in).
+ * upstream/downstream edges the selected step has (MON-02 fan-out/fan-in).
  */
 function HandoffNode({
   runId,
@@ -93,7 +97,7 @@ export function AgentIOPanel({
   agentRun,
   onClose,
 }: AgentIOPanelProps) {
-  // Fetch this node's own I/O payload on demand (NOT subscribed — see
+  // Fetch this step's own I/O payload on demand (NOT subscribed — see
   // OBS-05 / Pattern 4).
   const payload = useQuery(
     api.agentRuns.payloadByRunIdAgentKey,
@@ -104,7 +108,7 @@ export function AgentIOPanel({
   // (MON-02).
   const [showRawJson, setShowRawJson] = useState(false)
 
-  // Resolve upstream/downstream keys from the static topology. A node can
+  // Resolve upstream/downstream keys from the static topology. A step can
   // have zero (calibrator has no upstream; publisher has no downstream),
   // one, or many (verify_research fans out to 7; validate_sections fans in
   // from 7) — all degrade gracefully below.
@@ -190,7 +194,7 @@ export function AgentIOPanel({
           </p>
         )}
 
-        {/* Handoff — upstream output → this node's input/output → downstream
+        {/* Handoff — upstream output → this step's input/output → downstream
             input (MON-02). Human-readable summary first; raw JSON behind
             the toggle below. */}
         {runId && (
@@ -211,14 +215,14 @@ export function AgentIOPanel({
                   </div>
                 ) : (
                   <p className="text-[10px] text-neutral-400">
-                    No upstream node (start of pipeline)
+                    No upstream step (start of pipeline)
                   </p>
                 )}
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
-                  This node (input → output)
+                  This step (input → output)
                 </p>
                 {payload === undefined ? (
                   <p className="text-[10px] text-neutral-400">Loading…</p>
@@ -247,7 +251,7 @@ export function AgentIOPanel({
                   </div>
                 ) : (
                   <p className="text-[10px] text-neutral-400">
-                    No downstream node (end of pipeline)
+                    No downstream step (end of pipeline)
                   </p>
                 )}
               </div>
@@ -267,7 +271,7 @@ export function AgentIOPanel({
           </section>
         )}
 
-        {/* Raw JSON — this node's own input/output snapshots, behind the
+        {/* Raw JSON — this step's own input/output snapshots, behind the
             toggle above. */}
         {showRawJson && payload !== undefined && payload !== null && (
           <>

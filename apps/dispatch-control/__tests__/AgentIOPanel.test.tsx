@@ -73,7 +73,7 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
     )
 
     expect(screen.getByText(/From \(upstream output\)/i)).toBeDefined()
-    expect(screen.getByText(/This node \(input → output\)/i)).toBeDefined()
+    expect(screen.getByText(/This step \(input → output\)/i)).toBeDefined()
     expect(screen.getByText(/To \(downstream input\)/i)).toBeDefined()
 
     // Upstream/downstream keys resolved from the real PIPELINE_EDGES topology.
@@ -137,7 +137,7 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
       ),
     ).not.toThrow()
 
-    expect(screen.getByText(/No upstream node/i)).toBeDefined()
+    expect(screen.getByText(/No upstream step/i)).toBeDefined()
     // calibrator's one downstream is now signal_editor (Phase 50 D-08
     // topology reconciliation — calibrator -> signal_editor -> scout).
     expect(screen.getByText('signal_editor', { exact: false })).toBeDefined()

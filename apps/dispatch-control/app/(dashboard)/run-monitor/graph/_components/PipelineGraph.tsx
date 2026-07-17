@@ -17,6 +17,12 @@
  *
  * At rest (latest run = null): all nodes show config-at-rest with no status.
  * During a run: nodes repaint live as agent_runs rows change status.
+ *
+ * Phase 50 (WBN-02, D-07): node labels now come from `runStepFor()`
+ * (`lib/nomenclature.ts`) — the §7 ACTION label is primary (`displayName`),
+ * the agent/mechanism name is secondary (`agentLabel`). `isGate` still comes
+ * from `GATE_KEYS` (reconciled in 50-00 to {verify_candidates,
+ * verify_research, publisher}) — no visual change to diamond-vs-dot render.
  */
 import { useCallback, useMemo, useState } from 'react'
 import {
@@ -38,19 +44,10 @@ import { AgentNode, type AgentNodeData } from './AgentNode'
 import { AgentIOPanel } from './AgentIOPanel'
 import { DriftStrip } from './DriftStrip'
 import { WriterExpansion } from './WriterExpansion'
+import { runStepFor } from '@/lib/nomenclature'
 
 // Register the custom AgentNode type with React Flow.
 const nodeTypes = { agent: AgentNode }
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-/** Convert agentKey → display name (Title Case with underscores → spaces). */
-function toDisplayName(key: string): string {
-  return key
-    .split('_')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
-}
 
 // ── PipelineGraphInner (needs ReactFlowProvider in parent) ───────────────────
 
@@ -94,10 +91,12 @@ function PipelineGraphInner({ workspace_id }: PipelineGraphInnerProps) {
     const rfNodes: Node[] = PIPELINE_NODES.map(agentKey => {
       const config = agentMap.get(agentKey)
       const run = runMap.get(agentKey)
+      const step = runStepFor(agentKey)
 
       const data: AgentNodeData = {
         agentKey,
-        displayName: toDisplayName(agentKey),
+        displayName: step.actionLabel,
+        agentLabel: step.agentLabel,
         model: config?.model ?? undefined,
         enabled: config?.enabled ?? true,
         description: config?.description ?? undefined,
