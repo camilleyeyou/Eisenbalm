@@ -39,6 +39,24 @@ vi.mock('@convex/_generated/api', () => ({
   },
 }))
 
+// Phase 50 (WBN-03): InspectorFooter's "Restart from this step" now calls
+// useAuth() unconditionally (Rules of Hooks) on every render — this file
+// renders InspectorFooter directly, so both need mocking even though no
+// test here exercises the Restart action's click path (that honesty matrix
+// is covered end-to-end by __tests__/InspectorFooter.test.tsx).
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
+}))
+vi.mock('@/lib/pipelineControlClient', () => ({
+  rerollAgent: vi.fn(async () => ({ runId: 'run-1', agentKey: 'scout', rerolled: true })),
+  publishManual: vi.fn(async () => ({
+    runId: 'run-1',
+    issueId: 'issue-1',
+    issueNumber: 1,
+    scheduled: true,
+  })),
+}))
+
 import { useMutation, useQuery } from 'convex/react'
 import { InspectorFooter } from '../components/inspector/InspectorFooter'
 import { PromptSaveDialog } from '../app/(dashboard)/prompt-lab/_components/PromptSaveDialog'

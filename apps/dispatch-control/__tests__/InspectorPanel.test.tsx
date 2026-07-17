@@ -12,6 +12,26 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+
+// Phase 50 (WBN-03): InspectorFooter's "Restart from this step" now calls
+// useAuth() unconditionally (Rules of Hooks) and may invoke
+// rerollAgent/publishManual on click — every render of InspectorPanel goes
+// through InspectorFooter, so this suite needs both mocked even though no
+// test here exercises the Restart action's click path (that honesty matrix
+// is covered end-to-end by __tests__/InspectorFooter.test.tsx).
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
+}))
+vi.mock('@/lib/pipelineControlClient', () => ({
+  rerollAgent: vi.fn(async () => ({ runId: 'run-1', agentKey: 'founder_bio', rerolled: true })),
+  publishManual: vi.fn(async () => ({
+    runId: 'run-1',
+    issueId: 'issue-1',
+    issueNumber: 1,
+    scheduled: true,
+  })),
+}))
+
 import {
   InspectorPanel,
   type InspectorArtifact,
@@ -174,12 +194,26 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
     expect(screen.getByText(/not recorded/i)).toBeDefined()
   })
 
-  it("footer 'Restart from this step' is disabled with an explanatory title for all artifact types", () => {
-    render(<InspectorPanel {...makeProps()} />)
+  // Phase 50 (WBN-03, D-11/D-12): "Restart from this step" is no longer
+  // blanket-reserved — it follows the SAME 3-tier honesty matrix
+  // RecoveryRail.tsx uses (lib/nomenclature.ts::restartAvailabilityFor).
+  // The full LIVE/RESERVED matrix (writers, publisher, editor_gate_1,
+  // qa, etc.) is pinned end-to-end in __tests__/InspectorFooter.test.tsx;
+  // these two assertions prove InspectorPanel's integration wiring didn't
+  // regress either direction.
+  it("footer 'Restart from this step' is disabled with an explanatory title for a non-primitive artifact type (qa)", () => {
+    render(<InspectorPanel {...makeProps({ agentKey: 'qa' })} />)
 
     const button = screen.getByRole('button', { name: /Restart from this step/i })
     expect(button.hasAttribute('disabled')).toBe(true)
-    expect(button.getAttribute('title')).toMatch(/not yet wired/i)
+    expect(button.getAttribute('title')).toMatch(/no restart primitive/i)
+  })
+
+  it("footer 'Restart from this step' is enabled for a section-writer artifact type (founder_bio, the default agentKey)", () => {
+    render(<InspectorPanel {...makeProps()} />)
+
+    const button = screen.getByRole('button', { name: /Restart from this step/i })
+    expect(button.hasAttribute('disabled')).toBe(false)
   })
 
   it("footer 'Ask agent to revise' is reserved when no revisable passage is derivable (no sectionBlocks/sectionName/onRequestRevision, Phase 45 D-18)", () => {

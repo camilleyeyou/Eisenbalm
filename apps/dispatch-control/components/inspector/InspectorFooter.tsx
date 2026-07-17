@@ -5,8 +5,10 @@
  * Live deep-links target ALREADY-SHIPPED surfaces; the rest render as
  * visible-but-reserved controls with an explanatory title (D-08, mirroring
  * how Phases 42/43 shipped Inspect entry points as stubs before this panel
- * existed). The inspector performs no mutations — every live action here
- * navigates or deep-links, never writes (D-09).
+ * existed). Every OTHER live action here navigates or deep-links, never
+ * writes (D-09) — "Restart from this step" (Phase 50 below) is the one
+ * exception, a genuine mutation, gated by the SAME honesty matrix the
+ * RecoveryRail uses.
  *
  * | Action                        | State                                              |
  * |--------------------------------|-----------------------------------------------------|
@@ -15,14 +17,7 @@
  * | Related quality tests          | LIVE when promptKey !== null; else RESERVED         |
  * | Prior & downstream steps       | Always LIVE                                         |
  * | Ask agent to revise            | LIVE when `onAskToRevise` is provided; else RESERVED |
- * | Restart from this step         | Always RESERVED, for ALL artifact types             |
- *
- * "Restart from this step" rationale (44-RESEARCH.md Pitfall 6): the only
- * existing resume endpoint (`POST /run/{run_id}/resume`) is hardcoded to the
- * Gate-1 `interrupt()` payload shape — there is no generic "resume from node
- * X" mechanism, so wiring this to it would either silently no-op or misfire
- * a Gate-1-shaped payload at a non-Gate-1 step. Reserved for every artifact
- * type, no exception (§44.7).
+ * | Restart from this step         | LIVE for 3 of 11 §7 step-types; else RESERVED (Phase 50) |
  *
  * Phase 45 (REV-01, D-18, Plan 45-05 Task 3): "Ask agent to revise" flips
  * from Always RESERVED to conditionally LIVE. The panel (`InspectorPanel.tsx`)
@@ -34,6 +29,21 @@
  * constant for this action is gone: there is no longer a single static
  * reserved reason for every caller.
  *
+ * Phase 50 (WBN-03, D-11/D-12, docs/API_CONTRACTS.md §50.1): "Restart from
+ * this step" upgrades from the Phase-44 blanket-reserved posture (44-RESEARCH
+ * Pitfall 6) to the SAME three-tier honesty matrix `RecoveryRail.tsx` uses —
+ * `lib/nomenclature.ts::restartAvailabilityFor`, ONE source of truth so the
+ * two surfaces can never drift. LIVE for the 7 section writers (via
+ * `rerollAgent`/`rerun_agent`) and `publisher` (via the `publishManual`/
+ * `publish-manual` bridge, §50.1). This footer has no signal for whether the
+ * run is genuinely paused at the Gate-1 interrupt (§37.4(c) requires the
+ * `runs` table's status/completedAt, which this panel does not fetch), so
+ * `editor_gate_1` — like the other 7 non-primitive step-types — renders
+ * RESERVED here (an honest degrade, never a guessed LIVE). Unlike every
+ * other footer action, this one performs a real mutation on click (with a
+ * confirm step) — mirroring `RerollButton.tsx`'s own confirm/loading/success
+ * pattern.
+ *
  * Phase 50 (WBN-04, D-13, docs/API_CONTRACTS.md §4A.2c): "Improve this
  * agent →" carries an origin back-reference — `fromRun` / `section` /
  * `excerpt` query params — into `/prompt-lab/[agentKey]`, so the editor can
@@ -44,6 +54,8 @@
  * keeps the plain `promptHref` unchanged.
  */
 import Link from 'next/link'
+import { useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import {
   Wand2,
   GitCompare,
@@ -53,6 +65,8 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { rerollAgent, publishManual } from '@/lib/pipelineControlClient'
+import { restartAvailabilityFor } from '@/lib/nomenclature'
 
 export interface InspectorFooterProps {
   /** null => the agent is not externalized to prompt-lab (§44.9's 5-agent set). */
@@ -86,8 +100,12 @@ export interface InspectorFooterProps {
 const NOT_EXTERNALIZED_TITLE = "This agent's instructions are code-defined, not editable here."
 const REVISE_NOT_AVAILABLE_TITLE =
   'No revisable passage available for this artifact — the galley toolbar covers drafted sections directly.'
-const RESTART_TITLE =
-  'Completed steps are reused, not re-paid — general step restart is not yet wired (Gate-1 resume only).'
+// Phase 50 (D-11/D-12): deliberately does NOT claim "completed steps are
+// reused, not re-paid" — that copy is reserved for the 3 step-types with a
+// real primitive (RestartFooterAction's LIVE branch, below). This step has
+// none from the inspector's vantage point.
+const RESTART_RESERVED_TITLE =
+  'This step has no restart primitive available here — re-run the whole pipeline, or improve the agent and try again next run.'
 
 const LIVE_CLASSES =
   'flex min-h-[36px] items-center gap-[6px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-2.5 py-1.5 font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.03em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]'
@@ -137,6 +155,86 @@ function FooterAction({
       <Icon size={13} aria-hidden="true" />
       {label}
     </button>
+  )
+}
+
+/**
+ * Phase 50 (WBN-03, D-11/D-12) — "Restart from this step", honestly wired
+ * per `restartAvailabilityFor` (`lib/nomenclature.ts`, the SAME matrix
+ * `RecoveryRail.tsx` uses). RESERVED for every step-type except the 7
+ * section writers and `publisher` (this footer has no paused-at-Gate-1
+ * signal, so `editor_gate_1` renders RESERVED here — an honest degrade).
+ * Unlike every other footer action, LIVE here performs a real mutation
+ * (confirm -> rerollAgent/publishManual), mirroring RerollButton.tsx's own
+ * confirm/loading/success states.
+ */
+function RestartFooterAction({ runId, agentKey }: { runId: string; agentKey: string }) {
+  const { getToken } = useAuth()
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [errorText, setErrorText] = useState<string | null>(null)
+
+  const availability = restartAvailabilityFor(agentKey)
+
+  if (availability === 'reserved') {
+    return (
+      <button
+        type="button"
+        disabled
+        title={RESTART_RESERVED_TITLE}
+        className={RESERVED_CLASSES}
+      >
+        <RotateCcw size={13} aria-hidden="true" />
+        Restart from this step
+      </button>
+    )
+  }
+
+  const isPublisher = agentKey === 'publisher'
+
+  async function handleClick() {
+    const confirmed = window.confirm(
+      isPublisher
+        ? 'Restart Prepare publication? This re-renders and re-publishes from the already-written draft. Completed steps are reused, not re-paid.'
+        : 'Restart this step? This regenerates just this section; other completed sections are reused, not re-paid.',
+    )
+    if (!confirmed) return
+
+    setState('loading')
+    setErrorText(null)
+    try {
+      const token = await getToken()
+      if (isPublisher) {
+        await publishManual(runId, token)
+      } else {
+        await rerollAgent(runId, agentKey, token)
+      }
+      setState('done')
+    } catch (e) {
+      setErrorText(e instanceof Error ? e.message : String(e))
+      setState('error')
+    }
+  }
+
+  if (state === 'done') {
+    return <span className="text-[10.5px] text-green-600">Restarted ✓</span>
+  }
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={state === 'loading'}
+        title="Completed steps are reused, not re-paid."
+        className={LIVE_CLASSES}
+      >
+        <RotateCcw size={13} aria-hidden="true" />
+        {state === 'loading' ? 'Restarting…' : 'Restart from this step'}
+      </button>
+      {state === 'error' && errorText && (
+        <span className="text-[10.5px] text-red-600">{errorText}</span>
+      )}
+    </div>
   )
 }
 
@@ -194,7 +292,7 @@ export function InspectorFooter({
         onClick={onAskToRevise}
         disabledTitle={REVISE_NOT_AVAILABLE_TITLE}
       />
-      <FooterAction icon={RotateCcw} label="Restart from this step" disabledTitle={RESTART_TITLE} />
+      <RestartFooterAction runId={runId} agentKey={agentKey} />
     </div>
   )
 }
