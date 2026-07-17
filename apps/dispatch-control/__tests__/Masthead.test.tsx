@@ -200,7 +200,7 @@ describe('Masthead', () => {
     expect(screen.getByText('Human approval required')).toBeDefined()
   })
 
-  it('renders an "Auto-publish ON" lock chip when auto_publish is true (unchanged, loud treatment)', () => {
+  it('renders the reframed ON alert (not switch-framed) with loud vermilion treatment, pointing at Administration (Phase 50-03 D-16)', () => {
     mockMasthead({
       latest: { status: 'running', runId: 'run-1', startedAt: 1 },
       pipelineRun: { issueNumber: 42 },
@@ -208,8 +208,12 @@ describe('Masthead', () => {
     })
 
     render(<Masthead />)
-    const chip = screen.getByText(/Auto-publish ON/)
+    // The ON case never reads as a switch flipped here ("Auto-publish
+    // ON/OFF") — it names where the setting lives (D-16).
+    expect(screen.queryByText(/Auto-publish ON/)).toBeNull()
+    const chip = screen.getByText(/Publishing automatically/)
     expect(chip).toBeDefined()
+    expect(chip.textContent).toContain('managed in Administration')
     expect(chip.className).toContain('var(--color-vermilion)')
   })
 
