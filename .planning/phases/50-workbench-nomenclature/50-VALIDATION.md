@@ -2,7 +2,7 @@
 phase: 50
 slug: workbench-nomenclature
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-16
 ---
@@ -61,7 +61,7 @@ created: 2026-07-16
 
 ## Wave 0 Requirements
 
-- [ ] `apps/dispatch-control/__tests__/nomenclature.test.ts` — the WBN-05 banned-term source-scan tripwire (banned set MUST include the spec's "old" column **and** the already-live conflicting terms found in research: "Rehearsal", "Make live", "LIVE badge", "Draft vs. live"). Allowlist: route path strings, node ids (`editor_gate_1`, `verify_research`…), stored enum literals (`'blocklisted'`), and code identifiers.
+- [ ] `apps/dispatch-control/__tests__/nomenclature.test.ts` — the WBN-05 banned-term source-scan tripwire (banned set MUST include the spec's "old" column, the already-live conflicting terms found in research ("Rehearsal", "Make live", "LIVE badge", "Draft vs. live"), **and** the three nomenclature-table rows still live in the tree: "Coverage memory", "never seeded", and "blocking"/"Must fix (not blocking)"). Allowlist: route path strings, node ids (`editor_gate_1`, `verify_research`…), stored enum literals (`'blocklisted'`), the `seeded`/`setSeeded` state identifiers / seed-script names, and code identifiers (scan targets JSX text + string props only, never identifiers/comments).
 - [ ] `apps/dispatch-control/__tests__/rename-preservation.test.ts` (or fold into above) — asserts route folders + `charities.status='blocklisted'` + `charity.blocklisted` audit action are NOT renamed (guards D-02/D-03).
 - [ ] Fix + re-pin `run-monitor/graph/_components/pipelineTopology.ts` to the real 20 nodes and update its stale 18-node test (Wave-0 prerequisite for WBN-02/D-08 per research finding #1).
 - [ ] Extend `apps/dispatch-control/__tests__/nav.test.ts` for the renamed labels + role indicator (WBN-01).
@@ -84,11 +84,13 @@ created: 2026-07-16
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (nomenclature tripwire, topology fix)
-- [ ] No watch-mode flags (use `--run`)
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (nomenclature tripwire, topology fix + both tripwire scaffolds)
+- [x] No watch-mode flags (use `--run`)
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+> `wave_0_complete: false` remains — Wave 0 authoring is complete, but this is an **execution** fact (the plans have not run yet).
+
+**Approval:** 2026-07-16 (plans authored + revised per plan-checker feedback)

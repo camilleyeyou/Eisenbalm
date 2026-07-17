@@ -11,6 +11,8 @@ files_modified:
   - apps/dispatch-control/app/(dashboard)/registry/_components/CharityStatusBadge.tsx
   - apps/dispatch-control/__tests__/registryDoNotUse.test.ts
   - apps/dispatch-control/__tests__/publishNoTypedConfirm.test.ts
+  - apps/dispatch-control/app/(dashboard)/review-desk/[runId]/_components/DecisionRail.tsx
+  - apps/dispatch-control/app/(dashboard)/run-monitor/runs/[runId]/review/_components/ReviewDecisionPanel.tsx
 autonomous: true
 requirements: [WBN-06, WBN-05]
 

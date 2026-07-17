@@ -205,8 +205,13 @@ Existing AgentNode diamond render (do NOT change the visual system):
         />LIVE</ or /\bLIVE badge\b/ → "active version" (260710-k8y)
         /Draft vs\.?\s*live/i → "Compare results" (260710-k8y)
         /\bAuto-publish ON\b/ → "Human approval required / Administration"
+        /Coverage memory/i → "Recent coverage"            (nomenclature-table row: Coverage memory / registry record)
+        /registry record/i → "Organization history"
+        /\bnever seeded\b/i → "no starting version"        (nomenclature-table row: Seeded / never seeded)
+        /\bseeded\b/i (JSX text / string-prop only) → "has a starting version / no starting version"
+        /\bblocking\b/i (JSX text / string-prop only) → "Must fix"   (REQUIREMENTS WBN-05 "Must fix (not blocking)")
       - Scan ONLY rendered JSX text nodes + string literal props (`title=`, `aria-label=`, `placeholder=`, and visible children), NOT raw identifiers, per RESEARCH §Validation Architecture #1/#2.
-      - `ALLOWLIST` for legitimate code identifiers so the scan never flags them: route path strings `/run-monitor` `/prompt-lab` `/eval-center` `/registry`; the Convex/API literal `'blocklisted'` and audit action `charity.blocklisted`; node-key identifiers `editor_gate_1` `verify_research` `verify_candidates` `validate_sections`; component/identifier names (`EvalDrawer`, `evalScores`, `eval_scores`, `EvalCenter*`). Collect violations into an array and assert it is empty with a readable message listing file:line + suggested product term.
+      - `ALLOWLIST` for legitimate code identifiers so the scan never flags them: route path strings `/run-monitor` `/prompt-lab` `/eval-center` `/registry`; the Convex/API literal `'blocklisted'` and audit action `charity.blocklisted`; node-key identifiers `editor_gate_1` `verify_research` `verify_candidates` `validate_sections`; component/identifier names (`EvalDrawer`, `evalScores`, `eval_scores`, `EvalCenter*`); and — for the newly-added prose patterns — the React state identifiers `seeded`/`setSeeded`, seed-script identifiers, and any `blocking` used as a code identifier or CSS token. The scan targets rendered JSX text + string-literal props ONLY (never raw identifiers or comments), so `/\bseeded\b/i` and `/\bblocking\b/i` catch operator copy (e.g. `'never seeded'`, `aria-label="Coverage memory"`, `<h3>Blocking items</h3>`) but never the `seeded` state var or a `blocking` code comment. Collect violations into an array and assert it is empty with a readable message listing file:line + suggested product term.
 
     File 2 — `apps/dispatch-control/__tests__/rename-preservation.test.ts` (guards D-02/D-03; ACTIVE/green immediately — these must NEVER change):
       - Assert the four route folders still exist on disk: `app/(dashboard)/run-monitor`, `.../prompt-lab`, `.../eval-center`, `.../registry` (statSync directory exists).
@@ -214,7 +219,7 @@ Existing AgentNode diamond render (do NOT change the visual system):
       - Assert the audit action string `charity.blocklisted` still appears in the charities Convex source (grep). If not present as a literal there today, assert the `setStatus` mutation still writes the unchanged status — keep this assertion tied to a real, currently-true source fact so it stays green.
   </action>
   <acceptance_criteria>
-    - `apps/dispatch-control/__tests__/nomenclature.test.ts` exists, contains `FORBIDDEN_COPY_TERMS` including `Rehearsal`, `Make live`, `Draft vs. live`, and is wrapped in `describe.skip` with the `TODO(50-06)` comment.
+    - `apps/dispatch-control/__tests__/nomenclature.test.ts` exists, contains `FORBIDDEN_COPY_TERMS` including `Rehearsal`, `Make live`, `Draft vs. live`, `Coverage memory`, `never seeded`, and `blocking`, and is wrapped in `describe.skip` with the `TODO(50-06)` comment.
     - `apps/dispatch-control/__tests__/rename-preservation.test.ts` exists and PASSES now: `pnpm --filter dispatch-control test -- --run rename-preservation` is green.
     - `grep -n "describe.skip" apps/dispatch-control/__tests__/nomenclature.test.ts` confirms the scaffold is skip-guarded (does not fail CI this wave).
     - Full suite stays green: `pnpm --filter dispatch-control test -- --run` passes (skipped nomenclature suite reported as skipped, not failed).
