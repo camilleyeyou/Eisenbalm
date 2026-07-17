@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 50-04-why-this-draft-exists-origin-ref-PLAN.md
-last_updated: "2026-07-17T02:23:21.522Z"
+stopped_at: Completed 50-05-failed-run-recovery-rail-honest-restart-PLAN.md
+last_updated: "2026-07-17T02:58:23.784Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-14)
 ## Current Position
 
 Phase: 50 (workbench-nomenclature) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 
 ## Performance Metrics
 
@@ -356,6 +356,7 @@ Plan: 6 of 7
 | Phase 50 P02 | 35min | 2 tasks | 6 files |
 | Phase 50 P03 | 20min | 3 tasks | 8 files |
 | Phase 50 P04 | 35min | 2 tasks | 10 files |
+| Phase 50 P05 | 33min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -937,6 +938,8 @@ Recent decisions affecting current work:
 - [Phase 50]: Masthead ON chip/AutoPublishBanner reworded off switch-framing (D-16); typed org-name+reason confirm added to Mark Do-not-use only, publish surfaces confirmed clean (D-15); blocklisted status renders Do not use over unchanged stored enum (D-03)
 - [Phase 50]: prompt_versions.originRef is additive/optional, captured only from InspectorPanel's existing sectionName + firstProseExcerpt data (no new fetch), and only 'Improve this agent' carries the deep-link params
 - [Phase 50]: AgentPromptEditorView prefers persisted active.originRef over session deep-link params for display, but forwards only the deep-link's own origin to saveVersion to avoid re-stamping later unrelated edits
+- [Phase 50]: Publisher-restart bridge (POST /issues/{run_id}/publish-manual) gated by _require_editor (Editor-in-chief), not the weaker Clerk-only guard adjudicate uses — matches Publisher's irreversible real-world consequences
+- [Phase 50]: restartAvailabilityFor is the single honesty-matrix source of truth (lib/nomenclature.ts), consumed by both RecoveryRail and InspectorFooter — editor_gate_1's paused case is an explicit caller-supplied flag, never inferred
 
 ### Pending Todos
 
@@ -1027,6 +1030,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T02:23:21.507Z
-Stopped at: Completed 50-04-why-this-draft-exists-origin-ref-PLAN.md
+Last session: 2026-07-17T02:58:23.770Z
+Stopped at: Completed 50-05-failed-run-recovery-rail-honest-restart-PLAN.md
 Resume file: None

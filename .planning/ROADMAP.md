@@ -465,7 +465,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
-| 50. Workbench & Nomenclature | 5/7 | In Progress|  |
+| 50. Workbench & Nomenclature | 6/7 | In Progress|  |
 
 ## Backlog
 
@@ -1099,6 +1099,6 @@ Plans:
 - [x] 50-02-run-details-action-steps-diamonds-framing-PLAN.md — WBN-02: §7 action-named steps (agent secondary) via RUN_STEP_MAP, reconciled diamonds, 7-writers collapse, historical-vs-live framing (Wave 1)
 - [x] 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md — WBN-06/WBN-05: remove automation switch-framing (Masthead/banner to Administration), typed org-name confirm on Mark Do-not-use, verify no typed-confirm on publish, "Do not use" label over unchanged 'blocklisted' (Wave 1)
 - [x] 50-04-why-this-draft-exists-origin-ref-PLAN.md — WBN-04: contract-first prompt_versions.originRef additive field + Convex sync; "Improve this agent" carries origin; editor renders "why this draft exists" (Wave 1)
-- [ ] 50-05-failed-run-recovery-rail-honest-restart-PLAN.md — WBN-03: 4-part recovery rail + Skipped dimming; honest 3-of-11 Restart matrix (writers/Gate-1/Publisher-Clerk-bridge live, 8 reserved); Improve-this-agent (Wave 2)
+- [x] 50-05-failed-run-recovery-rail-honest-restart-PLAN.md — WBN-03: 4-part recovery rail + Skipped dimming; honest 3-of-11 Restart matrix (writers/Gate-1/Publisher-Clerk-bridge live, 8 reserved); Improve-this-agent (Wave 2)
 - [ ] 50-06-nomenclature-sweep-tripwire-green-PLAN.md — WBN-05: sweep how-to-use glossary + Prompt Lab/Eval Center + 260710-k8y conflict terms (Rehearsal/Make live/Draft vs. live); un-skip the nomenclature tripwire green; phase gate (Wave 3)
 **UI hint**: yes
