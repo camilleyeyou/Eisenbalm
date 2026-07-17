@@ -5,7 +5,11 @@ Reads every published weekly issue from Sanity (GROQ), then upserts each
 linked charity into the Convex ``charities`` table with status='featured'.
 
 The ``charities:seedFromPublished`` mutation is idempotent — running this script
-multiple times is safe and leaves no duplicate rows.
+multiple times is safe and leaves no duplicate rows. As of Quick 260717-41s,
+``timesFeatured`` is DERIVED from row multiplicity: the mutation tallies how
+many rows carry each charity's dedupKey (name.lower()|domain) and SETs
+``timesFeatured`` to that count, so this script sends ONE row per published
+issue (not deduped by name) — the row multiplicity IS the signal.
 
 Run AFTER the Convex functions from Phase 26 are deployed and the Sanity token
 is available:
@@ -39,8 +43,14 @@ WORKSPACE_ID = "eisenbalm"
 
 # Sanity GROQ: all charities linked to published weekly issues.
 # Follows the charity reference (``charity->``) to get name, slug, website.
+# Excludes drafts (``!(_id in path("drafts.**"))``): the script authenticates
+# with SANITY_API_TOKEN, so drafts ARE visible, and a `drafts.*` copy of a
+# published issue also carries status=="published" — without this exclusion
+# it would be counted a second time now that Change 1 below removed the
+# caller-side name-dedup that used to mask this.
 _GROQ_FEATURED = (
-    '*[_type == "weeklyIssue" && status == "published" && defined(charity)]'
+    '*[_type == "weeklyIssue" && status == "published" && defined(charity) '
+    '&& !(_id in path("drafts.**"))]'
     '.charity->{ name, "slug": slug.current, website }'
 )
 
@@ -95,23 +105,25 @@ async def _fetch_published_charities(sanity_http: AsyncClient) -> list[dict]:
 
 
 def _normalise_rows(rows: list[dict]) -> list[dict]:
-    """De-duplicate on (name, website) and build seed rows.
+    """Build seed rows — ONE per published issue, no name-based dedup.
 
-    A published weekly issue might link the same charity more than once
-    (e.g., duplicate records). Dedup on lowercase name before sending to
-    Convex. Convex ``charities:seedFromPublished`` is idempotent but we
-    still avoid duplicate work.
+    Convex ``charities:seedFromPublished`` (Quick 260717-41s) now DERIVES
+    ``timesFeatured`` from row multiplicity: it tallies how many rows share a
+    charity's dedupKey and SETs the counter to that tally. Deduping by name
+    here would collapse every charity to a single row, so the mutation would
+    always compute a tally of 1 regardless of how many issues actually
+    featured it. The GROQ query returns one row per published issue; that
+    multiplicity must survive to the mutation for the tally to mean anything.
+
+    Same-name/different-website charities are correctly kept as separate
+    charities by the mutation's `name|domain` dedupKey — the old name-only
+    dedup here would have silently collapsed them into one row.
     """
-    seen: set[str] = set()
     result: list[dict] = []
     for row in rows:
         name = (row.get("name") or "").strip()
         if not name:
             continue
-        key = name.lower()
-        if key in seen:
-            continue
-        seen.add(key)
         seed_row: dict = {"name": name}
         website = (row.get("website") or "").strip()
         if website:
@@ -130,7 +142,7 @@ async def main() -> None:
 
     Workflow:
       1. Fetch published charities from Sanity via GROQ.
-      2. Normalise + deduplicate.
+      2. Normalise (one row per published issue — no name dedup).
       3. Call charities:seedFromPublished on Convex.
       4. Print a summary.
     """
@@ -151,7 +163,7 @@ async def main() -> None:
     # ── Step 2: normalise ─────────────────────────────────────────────────────
     print("\n[2/3] Normalising rows…")
     seed_rows = _normalise_rows(raw_rows)
-    print(f"      {len(seed_rows)} unique row(s) to seed")
+    print(f"      {len(seed_rows)} row(s) to seed (one per published issue)")
 
     if not seed_rows:
         print("\n      Nothing to seed — exiting (idempotent run or empty Sanity).")
@@ -178,7 +190,7 @@ async def main() -> None:
 
     # ── Done ─────────────────────────────────────────────────────────────────
     print("\n[DONE] Backfill complete.")
-    print(f"       Seeded {len(seed_rows)} row(s) with status='featured'.")
+    print(f"       Sent {len(seed_rows)} row(s) (one per published issue) with status='featured'.")
     print("       Re-run is safe — charities:seedFromPublished is idempotent.")
     print("=" * 60)
 
