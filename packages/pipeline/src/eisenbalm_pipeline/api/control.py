@@ -18,6 +18,7 @@ Audit model:
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -837,3 +838,87 @@ async def adjudicate(
     )
 
     return await _resume_paused_run(request.app, run_id, body.selection.charityName)
+
+
+# ── POST /issues/{run_id}/publish-manual — WBN-03, D-11/D-12 ─────────────────
+#
+# docs/API_CONTRACTS.md §50.1 (contract-first). The Clerk-guarded operator
+# sibling of the server-to-server POST /run/{run_id}/publish (manual_publish,
+# WHK-08, api/runs.py) — SAME _run_publisher work, gated by _require_editor
+# (Clerk, Editor-in-chief only) instead of _require_trigger_secret. This is
+# the third of 11 §7 Run Details steps (RESEARCH Pitfall 1) with a real
+# "Restart from this step" reuse primitive — writers (rerun_agent, §3B.4) and
+# the Gate-1 pause (adjudicate above) are the other two. The operator NEVER
+# handles PIPELINE_TRIGGER_SECRET.
+
+
+@router.post("/issues/{run_id}/publish-manual")
+async def publish_manual(
+    request: Request,
+    run_id: str,
+    claims: dict = Depends(_require_editor),
+) -> dict:
+    """Editor-in-chief Publisher-restart bridge (WBN-03, docs/API_CONTRACTS.md §50.1).
+
+    Re-invokes the SAME `_run_publisher` coroutine the Sanity webhook and the
+    trigger-secret-guarded `manual_publish` (WHK-08) both call — there is
+    exactly one Publisher implementation. Because `_run_publisher` re-renders
+    directly against the already-written Sanity draft (no LangGraph
+    checkpoint state needed), this genuinely reuses all upstream pipeline
+    work — the honest basis for the recovery rail's "completed steps are
+    reused, not re-paid" copy on the `publisher` step (D-11/D-12).
+
+    Gated by `_require_editor` (not the weaker `_require_clerk_jwt_control`
+    `adjudicate` uses above) — Publisher is irreversible real work (PDF +
+    Vercel deploy + Sanity publish), matching the other five Editor-in-chief-
+    only actions in §49.4, not merely "any authenticated operator."
+    """
+    http = getattr(request.app.state, "convex_http", None)
+    actor_id = claims.get("sub") or "unknown"
+
+    # Local imports mirror manual_publish's own lazy-import pattern
+    # (api/runs.py) — avoids circular imports at module load.
+    from eisenbalm_pipeline.agents.publisher import (  # noqa: PLC0415
+        QUERY_ISSUE_BY_RUN_ID,
+        _run_publisher,
+    )
+    from eisenbalm_pipeline.lib.sanity_client import groq_query  # noqa: PLC0415
+
+    result = await groq_query(QUERY_ISSUE_BY_RUN_ID, params={"runId": run_id})
+    issue = None
+    if isinstance(result, list) and result:
+        issue = result[0]
+    elif isinstance(result, dict):
+        issue = result
+    if not issue or not issue.get("_id"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No Sanity weeklyIssue found for runId={run_id}",
+        )
+
+    # Audit BEFORE scheduling the publisher task ("nothing silent").
+    await _emit_audit(
+        http,
+        actor_id=actor_id,
+        action="publisher.manual_restart",
+        resource_type="run",
+        resource_id=run_id,
+    )
+
+    task = asyncio.create_task(
+        _run_publisher(
+            request.app,
+            issue_id=issue["_id"],
+            issue_number=issue["issueNumber"],
+            run_id=run_id,
+        )
+    )
+    request.app.state.background_tasks.add(task)
+    task.add_done_callback(request.app.state.background_tasks.discard)
+
+    return {
+        "runId": run_id,
+        "issueId": issue["_id"],
+        "issueNumber": issue["issueNumber"],
+        "scheduled": True,
+    }
