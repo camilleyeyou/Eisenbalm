@@ -6099,3 +6099,61 @@ new additive table (§49.2/§49.3); the six gates (§49.4) are additive authoriz
 existing authentication — no existing auth dependency (`_require_clerk_jwt_control`, `requireOperator`)
 is removed or altered. No new `deliberationEvents.eventType` literal is added — denials are not
 audited per D-08, and comments are their own dedicated table, not a `deliberationEvents` concern.*
+
+---
+
+## §50 — Workbench & Nomenclature (Phase 50)
+
+This contract is written BEFORE the endpoint exists (CLAUDE.md contract-first hard rule, mirroring
+§37/§39/§48/§49). It declares the one net-new pipeline endpoint this phase adds — the Clerk-guarded
+Publisher-restart bridge that lets the failed-run recovery rail (WBN-03, D-10/D-11/D-12) honestly
+offer "Restart from this step" for the `publisher` step, the third of the 11 §7 steps (alongside the
+7 section writers via `rerun_agent` and the Gate-1 pause via `adjudicate`/`resume`) that has a real
+reuse primitive behind it.
+
+### §50.1 — `POST /issues/{run_id}/publish-manual` (Clerk-guarded Publisher-restart bridge)
+
+```
+POST /issues/{run_id}/publish-manual
+Authorization: Bearer <Clerk JWT>   # _require_editor — Editor-in-chief ONLY (NOT the trigger secret)
+Body: none
+```
+
+This is the **operator-reachable sibling** of the existing server-to-server
+`POST /run/{run_id}/publish` (`manual_publish`, WHK-08, `api/runs.py`) — same underlying work, ONLY
+the auth differs (`_require_editor` / Clerk here, vs `_require_trigger_secret` there). The
+server-to-server route is **unchanged** by this addition.
+
+Behavior, in order (mirrors `manual_publish` exactly, then adds the audit + editor gate `adjudicate`,
+§37.3, established):
+
+1. Resolve the Sanity `weeklyIssue` for this `run_id` via the SAME lookup `manual_publish` uses
+   (`QUERY_ISSUE_BY_RUN_ID`, `agents/publisher/__init__.py` — `pipelineMetadata.runId == $runId`).
+   `404` if no issue is found.
+2. `_emit_audit` the operator's restart ("nothing silent" — every dashboard write is audit-logged
+   like every other v3.0 mutation): `action="publisher.manual_restart"`, `resourceType="run"`,
+   `resourceId=run_id`, `actor_id` from the Clerk claim's `sub`.
+3. Schedule the SAME `_run_publisher` coroutine both the Sanity webhook and `manual_publish` invoke
+   (`agents/publisher/__init__.py::_run_publisher`) — there is exactly one Publisher implementation
+   (the same "exactly one" invariant §37.3/Research Pitfall 7 already establish for resume/publish).
+   This re-invokes the Publisher directly against the already-written Sanity draft — it needs no
+   LangGraph checkpoint state at all, so it inherently reuses everything upstream (RESEARCH Pitfall 1).
+
+Returns (byte-identical shape to `manual_publish`):
+
+```python
+{ "runId": run_id, "issueId": str, "issueNumber": int, "scheduled": True }
+```
+
+**Auth note:** `_require_editor` (not the weaker `_require_clerk_jwt_control` `adjudicate` uses) —
+Publisher is irreversible real work (PDF render + Vercel deploy + Sanity `published` flip), so this
+bridge is gated the same as the other five Editor-in-chief-only actions in §49.4, not merely
+"any authenticated operator." The operator never handles `PIPELINE_TRIGGER_SECRET`.
+
+**Restart-honesty scope note (D-11/D-12, RESEARCH Pitfall 1):** this bridge is what upgrades the
+failed-run recovery rail's "Restart from this step" from 2-of-11 to 3-of-11 honest — writers
+(`rerun_agent`, §3B.4), the Gate-1 pause (`adjudicate`, §37.3), and now `publisher` (this endpoint)
+are the ONLY three of the 11 §7 steps with a real "completed steps are reused, not re-paid" claim.
+The other 8 step-types (`signal_editor`, `scout`, `verify_candidates`, `advocate`, `researcher`,
+`verify_research`, `qa`, `editor_final`) have no reuse primitive and MUST render reserved-with-
+explanation — no blanket "Restart from this step" claim across all 11 steps.
