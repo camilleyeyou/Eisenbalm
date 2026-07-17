@@ -55,6 +55,11 @@ export default defineConfig({
       // per the plan's file list — explicit jsdom override, mirroring the
       // other named-file entries above.
       ['__tests__/registryDoNotUse.test.ts', 'jsdom'],
+      // Phase 50-04: promptVersionOrigin.test.ts renders InspectorFooter,
+      // PromptSaveDialog, and AgentPromptEditorView's OriginBanner (React
+      // Testing Library) but is named `.test.ts` per the plan's file list —
+      // explicit jsdom override, mirroring registryDoNotUse.test.ts above.
+      ['__tests__/promptVersionOrigin.test.ts', 'jsdom'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],

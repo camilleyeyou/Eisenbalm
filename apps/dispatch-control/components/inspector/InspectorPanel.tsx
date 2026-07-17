@@ -587,11 +587,17 @@ export function InspectorPanel({
         )}
       </div>
 
+      {/* Phase 50 (WBN-04, D-13) — the SAME sectionName/quotedText derived
+          above for "Ask agent to revise" also seeds "Improve this agent →"'s
+          origin reference; '' -> undefined so the footer degrades to the
+          plain promptHref rather than a params-with-empty-excerpt link. */}
       <InspectorFooter
         promptKey={promptKey}
         agentKey={agentKey}
         runId={runId}
         onAskToRevise={onAskToRevise}
+        sectionName={sectionName}
+        excerpt={quotedText || undefined}
       />
     </div>
   )

@@ -16,6 +16,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import type { PromptOriginRef } from './promptOrigin'
 
 interface PromptSaveDialogProps {
   workspaceId: string
@@ -23,6 +24,12 @@ interface PromptSaveDialogProps {
   content: string
   /** Clerk user id (or undefined when unavailable) — recorded as createdBy. */
   createdBy?: string
+  /**
+   * Phase 50 (WBN-04, D-13) — forwarded verbatim to
+   * `promptVersions.saveVersion`. Undefined for every save NOT initiated
+   * from the inspector's "Improve this agent →" deep link.
+   */
+  originRef?: PromptOriginRef
   /** Disable confirm (e.g. when unknown variables block the save). */
   disabled?: boolean
   onSaved: () => void
@@ -34,6 +41,7 @@ export function PromptSaveDialog({
   agentKey,
   content,
   createdBy,
+  originRef,
   disabled = false,
   onSaved,
   onCancel,
@@ -66,6 +74,7 @@ export function PromptSaveDialog({
         content,
         createdBy,
         note: note.trim(),
+        ...(originRef ? { originRef } : {}),
       })
       setNote('')
       onSaved()

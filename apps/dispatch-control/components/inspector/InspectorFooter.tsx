@@ -33,6 +33,15 @@
  * rather than a false-live dead button. The old Phase-44 reserved-reason
  * constant for this action is gone: there is no longer a single static
  * reserved reason for every caller.
+ *
+ * Phase 50 (WBN-04, D-13, docs/API_CONTRACTS.md §4A.2c): "Improve this
+ * agent →" carries an origin back-reference — `fromRun` / `section` /
+ * `excerpt` query params — into `/prompt-lab/[agentKey]`, so the editor can
+ * render "why this draft exists" and persist the reference on a new draft.
+ * Sourced from the SAME data the panel already has (`sectionName` prop +
+ * `firstProseExcerpt` over the artifact's output — no new fetch). Only
+ * THIS action's link carries the params; "Compare instruction versions"
+ * keeps the plain `promptHref` unchanged.
  */
 import Link from 'next/link'
 import {
@@ -58,6 +67,20 @@ export interface InspectorFooterProps {
    * false-live button.
    */
   onAskToRevise?: () => void
+  /**
+   * Phase 50 (WBN-04, D-13) — this artifact's galley/draft section id (the
+   * SAME value already passed to `InspectorPanel`, e.g. "founderBio").
+   * Present together with `excerpt` => "Improve this agent →" carries the
+   * origin reference. Either absent => the link stays the plain promptHref
+   * (no origin to forward — honest, not a guess).
+   */
+  sectionName?: string
+  /**
+   * Phase 50 (WBN-04, D-13) — a short, real excerpt of this artifact's
+   * output (e.g. `firstProseExcerpt` over the same section blocks the panel
+   * already reads — no new fetch).
+   */
+  excerpt?: string
 }
 
 const NOT_EXTERNALIZED_TITLE = "This agent's instructions are code-defined, not editable here."
@@ -117,8 +140,24 @@ function FooterAction({
   )
 }
 
-export function InspectorFooter({ promptKey, agentKey, runId, onAskToRevise }: InspectorFooterProps) {
+export function InspectorFooter({
+  promptKey,
+  agentKey,
+  runId,
+  onAskToRevise,
+  sectionName,
+  excerpt,
+}: InspectorFooterProps) {
   const promptHref = promptKey ? `/prompt-lab/${encodeURIComponent(promptKey)}` : undefined
+  // Phase 50 (WBN-04, D-13) — ONLY "Improve this agent →" carries the origin
+  // reference; "Compare instruction versions" below keeps the plain
+  // `promptHref`. Both `sectionName` and `excerpt` must be real (non-empty)
+  // for the params to appear — an honest degrade to the plain link when
+  // either is unavailable, rather than a partial/misleading origin.
+  const improveHref =
+    promptHref && sectionName && excerpt
+      ? `${promptHref}?fromRun=${encodeURIComponent(runId)}&section=${encodeURIComponent(sectionName)}&excerpt=${encodeURIComponent(excerpt)}`
+      : promptHref
   // eval-center does not yet read an `agent` query param (confirmed against
   // ScenarioCard.tsx / page.tsx as of 44-05) — the link below is still LIVE
   // (the page loads and is genuinely useful), and forward-compatible for
@@ -133,7 +172,7 @@ export function InspectorFooter({ promptKey, agentKey, runId, onAskToRevise }: I
       <FooterAction
         icon={Wand2}
         label="Improve this agent →"
-        href={promptHref}
+        href={improveHref}
         disabledTitle={NOT_EXTERNALIZED_TITLE}
       />
       <FooterAction

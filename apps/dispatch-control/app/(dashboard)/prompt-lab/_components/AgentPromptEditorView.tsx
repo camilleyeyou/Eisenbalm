@@ -11,7 +11,18 @@
  *
  * allowedVariables come from VARIABLE_REGISTRY[agentKey] (empty array when the
  * asset has no {tokens}, e.g. voice_constraints / rubric / section guidance).
+ *
+ * Phase 50 (WBN-04, D-13, docs/API_CONTRACTS.md §4A.2c): renders "why this
+ * draft exists" — a stored back-reference to the issue output that
+ * motivated a draft, carried in from the inspector's "Improve this agent →"
+ * deep link (`deepLinkOrigin`, via [agentKey]/page.tsx's `fromRun`/`section`/
+ * `excerpt` query params) or already persisted on the active version
+ * (`active.originRef`, once a deep-linked save has landed). The persisted
+ * value wins once it exists — the deep-link params are the pre-save preview
+ * of the same fact. No origin from either source => renders nothing (D-13:
+ * a stored reference, never a guess).
  */
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
@@ -25,6 +36,7 @@ import VariableChips from './VariableChips'
 import AssembledPreview from './AssembledPreview'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
 import { descriptionFor } from './promptDescriptions'
+import type { PromptOriginRef } from './promptOrigin'
 
 function DriftBadge() {
   return (
@@ -34,9 +46,42 @@ function DriftBadge() {
   )
 }
 
+/**
+ * Phase 50 (WBN-04, D-13) — the "why this draft exists" bridge. Split out as
+ * its own named export (rather than inlined in the default export below) so
+ * it can be unit-tested in isolation from the rest of this view's heavy
+ * dependency tree (VersionHistoryPanel -> useRole/useUser/EvalDrawer, etc.)
+ * — see __tests__/promptVersionOrigin.test.ts. Renders NOTHING when
+ * `originRef` is absent (D-13: a stored reference, never a guess).
+ */
+export function OriginBanner({ originRef }: { originRef?: PromptOriginRef }) {
+  if (!originRef) return null
+  return (
+    <div
+      aria-label="why this draft exists"
+      className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+    >
+      <p className="font-medium">why this draft exists</p>
+      <p className="mt-1">
+        This draft exists because of {originRef.sectionName} in run{' '}
+        <span className="font-mono">{originRef.runId}</span>:{' '}
+        <span className="italic">&ldquo;{originRef.excerpt}&rdquo;</span>
+      </p>
+      <Link
+        href={`/run-monitor/runs/${encodeURIComponent(originRef.runId)}`}
+        className="mt-1 inline-block font-medium text-amber-900 underline underline-offset-2"
+      >
+        View the motivating output →
+      </Link>
+    </div>
+  )
+}
+
 interface AgentPromptEditorViewProps {
   workspaceId: string
   agentKey: string
+  /** Phase 50 (WBN-04, D-13) — assembled from the "Improve this agent →" deep-link query params. */
+  deepLinkOrigin?: PromptOriginRef
 }
 
 function formatTimestamp(ms: number): string {
@@ -52,6 +97,7 @@ function formatTimestamp(ms: number): string {
 export default function AgentPromptEditorView({
   workspaceId,
   agentKey,
+  deepLinkOrigin,
 }: AgentPromptEditorViewProps) {
   const allowedVariables = VARIABLE_REGISTRY[agentKey] ?? []
   const { user } = useUser()
@@ -60,6 +106,12 @@ export default function AgentPromptEditorView({
     workspace_id: workspaceId,
     agentKey,
   })
+
+  // Phase 50 (WBN-04, D-13) — the persisted origin (once a deep-linked save
+  // has landed on the active version) wins over the deep-link params still
+  // sitting in the URL for this session; either alone is enough to render
+  // "why this draft exists". Neither present => undefined => renders nothing.
+  const originRef: PromptOriginRef | undefined = active?.originRef ?? deepLinkOrigin
 
   // PRC-02 drift: compare active content against the v1 seed for this key.
   const seedV1 = useQuery(api.promptVersions.getByVersion, {
@@ -143,6 +195,11 @@ export default function AgentPromptEditorView({
           <p className="text-sm text-neutral-500">{description}</p>
         )}
 
+        {/* Phase 50 (WBN-04, D-13) — the Flow-C bridge: renders ONLY when a
+            real origin exists (deep-link params or a persisted originRef),
+            never a guess, never rendered for the common no-origin case. */}
+        <OriginBanner originRef={originRef} />
+
         {allowedVariables.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {allowedVariables.map(name => (
@@ -197,6 +254,12 @@ export default function AgentPromptEditorView({
               agentKey={agentKey}
               workspaceId={workspaceId}
               createdBy={user?.id}
+              // Phase 50 (WBN-04, D-13) — ONLY the deep-link's own origin is
+              // forwarded to the save mutation (not the merged `originRef`,
+              // which may already be the persisted value from a PRIOR save —
+              // re-stamping it on every subsequent edit would misattribute
+              // later, unrelated edits to the original motivating output).
+              originRef={deepLinkOrigin}
               onSaved={() => {
                 /* version list updates reactively via useQuery */
               }}

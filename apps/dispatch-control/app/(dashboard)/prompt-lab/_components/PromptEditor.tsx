@@ -23,6 +23,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { findUnknownVariables } from './VariableRegistry'
 import { PromptSaveDialog } from './PromptSaveDialog'
+import type { PromptOriginRef } from './promptOrigin'
 
 const CodeMirrorEditor = dynamic(() => import('./_CodeMirrorInner'), {
   ssr: false,
@@ -39,6 +40,14 @@ interface PromptEditorProps {
   agentKey?: string
   workspaceId?: string
   createdBy?: string
+  /**
+   * Phase 50 (WBN-04, D-13) — when the host's draft was opened from the
+   * inspector's "Improve this agent →" deep link, forwarded straight
+   * through to `promptVersions.saveVersion` so the "why this draft exists"
+   * bridge persists on the new version. Undefined for every ordinary
+   * (non-deep-linked) save.
+   */
+  originRef?: PromptOriginRef
   /** Called after a version is saved (host clears its dirty flag / refreshes). */
   onSaved?: () => void
 }
@@ -50,6 +59,7 @@ export function PromptEditor({
   agentKey,
   workspaceId,
   createdBy,
+  originRef,
   onSaved,
 }: PromptEditorProps) {
   const [showSave, setShowSave] = useState(false)
@@ -108,6 +118,7 @@ export function PromptEditor({
               agentKey={agentKey}
               content={value}
               createdBy={createdBy}
+              originRef={originRef}
               disabled={hasUnknown}
               onSaved={() => {
                 setShowSave(false)

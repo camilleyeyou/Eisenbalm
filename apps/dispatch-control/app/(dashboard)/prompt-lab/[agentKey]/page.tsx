@@ -21,22 +21,37 @@ export const dynamic = 'force-dynamic'
  * (PRM-05), wired to its live editor draft state, so the operator can test-run
  * the CURRENT unsaved draft against the four input modes (D-04) without running
  * the pipeline. The pipeline base URL comes from NEXT_PUBLIC_PIPELINE_URL.
+ *
+ * Phase 50 (WBN-04, D-13): also reads the `fromRun` / `section` / `excerpt`
+ * query params the inspector's "Improve this agent →" deep link carries
+ * (`InspectorFooter.tsx`) and assembles them into a `deepLinkOrigin` object
+ * for the client view to render "why this draft exists" from and, on save,
+ * persist as `prompt_versions.originRef`. All three params must be present
+ * (non-empty) — a partial set is treated as no origin (honest degrade).
  */
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AgentPromptEditorView from '../_components/AgentPromptEditorView'
 
 interface AgentPromptPageProps {
   params: Promise<{ agentKey: string }>
+  searchParams: Promise<{ fromRun?: string; section?: string; excerpt?: string }>
 }
 
-export default async function AgentPromptPage({ params }: AgentPromptPageProps) {
+export default async function AgentPromptPage({ params, searchParams }: AgentPromptPageProps) {
   const { agentKey: raw } = await params
   const agentKey = decodeURIComponent(raw)
   const workspace_id = await getCurrentWorkspace()
 
+  const { fromRun, section, excerpt } = await searchParams
+  const deepLinkOrigin = fromRun && section && excerpt ? { runId: fromRun, sectionName: section, excerpt } : undefined
+
   return (
     <div className="space-y-4">
-      <AgentPromptEditorView workspaceId={workspace_id} agentKey={agentKey} />
+      <AgentPromptEditorView
+        workspaceId={workspace_id}
+        agentKey={agentKey}
+        deepLinkOrigin={deepLinkOrigin}
+      />
     </div>
   )
 }
