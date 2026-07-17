@@ -1,5 +1,8 @@
 /**
  * Phase 26 — REG-01: Charity state badge.
+ * Phase 50-03 (D-03/WBN-05): the rendered label for 'blocklisted' is
+ * "Do not use" — the STORED status literal + the `status === 'blocklisted'`
+ * comparison stay unchanged; only the displayed text changes.
  *
  * Color-coded badge for the three charity lifecycle states.
  * Text label is always present (color is additive, not the sole signal — WCAG).
@@ -22,7 +25,7 @@ export default function CharityStatusBadge({ status }: CharityStatusBadgeProps) 
     case 'blocklisted':
       classes =
         'inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700'
-      label = 'Blocklisted'
+      label = 'Do not use'
       break
     case 'candidate':
     default:

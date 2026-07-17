@@ -50,6 +50,11 @@ export default defineConfig({
       ['__tests__/auditLogDecision.test.ts', 'edge-runtime'],
       // Phase 43 Plan 43-08 Do-not-use reason-capture convex-test file
       ['__tests__/charitiesDoNotUse.test.ts', 'edge-runtime'],
+      // Phase 50-03: registryDoNotUse.test.ts renders RegistryTable +
+      // CharityStatusBadge (React Testing Library) but is named `.test.ts`
+      // per the plan's file list — explicit jsdom override, mirroring the
+      // other named-file entries above.
+      ['__tests__/registryDoNotUse.test.ts', 'jsdom'],
       // React component tests require jsdom
       ['__tests__/*.test.tsx', 'jsdom'],
     ],

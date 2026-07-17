@@ -1,15 +1,19 @@
 'use client'
 /**
  * Phase 26 — REG-01: Charity registry table.
+ * Phase 50-03 (D-03/D-15) — rendered "Blocklisted" -> "Do not use" over the
+ * unchanged stored `'blocklisted'` enum; the confirm popover gains a typed
+ * organization-name gate in front of the existing reason requirement.
  *
  * Real-time list of all charities in the workspace, with filter pills,
- * status badges, featured stats, and blocklist/unblocklist controls.
+ * status badges, featured stats, and Mark Do-not-use / Restore controls.
  *
  * Data source: charities:listByWorkspace (Convex query)
- * Mutations:   charities:setStatus
+ * Mutations:   charities:setStatus (status value 'blocklisted' unchanged)
  *
  * Filter pills are client-side (status is the only axis).
- * Blocklist action is gated behind an inline confirmation popover.
+ * Mark Do-not-use is gated behind an inline typed-name + reason confirm
+ * popover, Editor-in-chief only (LockedControl / server requireEditor).
  */
 import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
@@ -27,11 +31,14 @@ interface RegistryTableProps {
 
 type FilterStatus = 'all' | 'candidate' | 'featured' | 'blocklisted'
 
+// Phase 50-03 (D-03/WBN-05): rendered label only — the filter VALUE stays
+// the unchanged stored enum literal 'blocklisted' (charities:setStatus,
+// audit action charity.blocklisted). Only the operator-facing text changes.
 const FILTER_LABELS: { value: FilterStatus; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'candidate', label: 'Candidates' },
   { value: 'featured', label: 'Featured' },
-  { value: 'blocklisted', label: 'Blocklisted' },
+  { value: 'blocklisted', label: 'Do not use' },
 ]
 
 function formatRelativeTime(ms: number | undefined): string {
@@ -68,11 +75,15 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
   const isLocked = useRole() !== 'Editor-in-chief'
 
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
-  // Track which charity has an open blocklist confirm popover
+  // Track which charity has an open Mark Do-not-use confirm popover
   const [confirmingBlocklistId, setConfirmingBlocklistId] = useState<string | null>(null)
   // Phase 43 (TSK-06): required reason text for the Do-not-use decision, reset
   // whenever the confirm popover opens/closes for a different (or no) row.
   const [blocklistReason, setBlocklistReason] = useState('')
+  // Phase 50-03 (D-15): typed organization-name confirmation — the operator
+  // must type the charity's exact name to unlock the destructive action.
+  // Reset alongside blocklistReason on open/close/confirm.
+  const [typedName, setTypedName] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   // Phase 39 (MEM-02): which charity row has its corrections detail expanded
@@ -89,15 +100,19 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
       ? charities
       : charities.filter(c => c.status === activeFilter)
 
-  async function handleBlocklist(charityId: Id<'charities'>) {
+  // Phase 50-03 (D-15): the STORED value/mutation is byte-unchanged from
+  // Phase 43/47 — `status: 'blocklisted'` — only the UI adds the typed-name
+  // gate in front of it and renames the operator-facing labels.
+  async function handleBlocklist(charityId: Id<'charities'>, charityName: string) {
     const reason = blocklistReason.trim()
-    if (reason === '') return
+    if (reason === '' || typedName.trim() !== charityName.trim()) return
     setPendingAction(charityId)
     setActionError(null)
     try {
       await setStatus({ workspace_id, charityId, status: 'blocklisted', reason })
       setConfirmingBlocklistId(null)
       setBlocklistReason('')
+      setTypedName('')
     } catch {
       setActionError('Could not update the registry. Try again.')
     } finally {
@@ -210,7 +225,8 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         {charity.status === 'blocklisted' ? (
-                          /* Unblocklist action — immediate */
+                          /* Restore action — immediate. Value/handler
+                             unchanged (Phase 50-03 label swap only). */
                           <button
                             type="button"
                             onClick={() => handleUnblocklist(charity._id)}
@@ -218,17 +234,37 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                             aria-busy={isPendingThisAction}
                             className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
                           >
-                            {isPendingThisAction ? 'Updating…' : 'Remove from Blocklist'}
+                            {isPendingThisAction ? 'Updating…' : 'Restore to consideration'}
                           </button>
                         ) : isConfirmingThisBlocklist ? (
-                          /* Inline blocklist confirmation */
+                          /* Inline Mark Do-not-use confirmation — Phase 50-03
+                             (D-15) adds the typed org-name gate on top of the
+                             Phase 43 reason-only confirm. The confirm button
+                             stays disabled until BOTH the typed name matches
+                             the charity's exact name AND reason is non-empty. */
                           <div className="space-y-2 rounded border border-neutral-200 bg-neutral-50 p-3 text-sm">
-                            <p className="font-semibold text-neutral-900">Blocklist this charity?</p>
+                            <p className="font-semibold text-neutral-900">Mark Do not use?</p>
                             <p className="text-neutral-600">
                               The Scout will skip{' '}
                               <span className="font-medium">{charity.name}</span> in all
                               future runs.
                             </p>
+                            <label
+                              htmlFor={`blocklist-typed-name-${charity._id}`}
+                              className="block text-xs font-medium text-neutral-700"
+                            >
+                              Type the organization&rsquo;s name to confirm: {charity.name}
+                            </label>
+                            <input
+                              id={`blocklist-typed-name-${charity._id}`}
+                              type="text"
+                              value={typedName}
+                              onChange={e => setTypedName(e.target.value)}
+                              disabled={isPendingThisAction}
+                              required
+                              placeholder={charity.name}
+                              className="w-full min-h-[44px] rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                            />
                             <label
                               htmlFor={`blocklist-reason-${charity._id}`}
                               className="block text-xs font-medium text-neutral-700"
@@ -248,18 +284,23 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => handleBlocklist(charity._id)}
-                                disabled={isPendingThisAction || blocklistReason.trim() === ''}
+                                onClick={() => handleBlocklist(charity._id, charity.name)}
+                                disabled={
+                                  isPendingThisAction ||
+                                  blocklistReason.trim() === '' ||
+                                  typedName.trim() !== charity.name.trim()
+                                }
                                 aria-busy={isPendingThisAction}
                                 className="min-h-[44px] rounded bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
                               >
-                                {isPendingThisAction ? 'Blocklisting…' : 'Blocklist Charity'}
+                                {isPendingThisAction ? 'Marking…' : 'Mark Do not use'}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setConfirmingBlocklistId(null)
                                   setBlocklistReason('')
+                                  setTypedName('')
                                 }}
                                 disabled={isPendingThisAction}
                                 className="min-h-[44px] rounded border border-neutral-300 px-3 text-sm text-neutral-700 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
@@ -269,20 +310,21 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                             </div>
                           </div>
                         ) : (
-                          /* Blocklist trigger — opens inline confirm. Locked
-                             for a Collaborator (ROL-03/D-09): the
-                             typed-confirmation + reason flow (Phase 47)
-                             stays unreachable behind this lock. */
+                          /* Mark Do-not-use trigger — opens inline confirm.
+                             Locked for a Collaborator (ROL-03/D-09): the
+                             typed-confirmation + reason flow (Phase 50) stays
+                             unreachable behind this lock. */
                           <LockedControl isLocked={isLocked} lockedLabel="🔒 editor only">
                             <button
                               type="button"
                               onClick={() => {
                                 setConfirmingBlocklistId(charity._id)
                                 setBlocklistReason('')
+                                setTypedName('')
                               }}
                               className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
                             >
-                              Blocklist Charity
+                              Mark Do not use
                             </button>
                           </LockedControl>
                         )}
