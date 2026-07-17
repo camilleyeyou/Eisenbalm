@@ -57,7 +57,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 47: Story & Brief Stage** - Stage 1 goes live on real leads and verification records — organization options, "Needs your decision" adjudication, and an editable Brief (completed 2026-07-16)
 - [x] **Phase 48: Brief Entry Point** - "Start from my brief" becomes a real second pipeline entry point that skips discovery and enters at the Researcher (completed 2026-07-16)
 - [x] **Phase 49: Roles & Permissions** - Editor-in-chief vs Collaborator, six server-enforced gated actions, locked controls that explain themselves (completed 2026-07-16)
-- [ ] **Phase 50: Workbench & Nomenclature** - Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; nomenclature pass + failed-run recovery rail
+- [x] **Phase 50: Workbench & Nomenclature** - Run Monitor → Run Details, Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry → Editorial Memory; nomenclature pass + failed-run recovery rail (completed 2026-07-17)
 
 **v4.0 in progress. Binding spec: `docs/design/dispatch-control-v3/`.**
 
@@ -465,7 +465,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 47. Story & Brief Stage | 8/8 | Complete    | 2026-07-16 |
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
-| 50. Workbench & Nomenclature | 6/7 | In Progress|  |
+| 50. Workbench & Nomenclature | 7/7 | Complete   | 2026-07-17 |
 
 ## Backlog
 
@@ -1100,5 +1100,5 @@ Plans:
 - [x] 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md — WBN-06/WBN-05: remove automation switch-framing (Masthead/banner to Administration), typed org-name confirm on Mark Do-not-use, verify no typed-confirm on publish, "Do not use" label over unchanged 'blocklisted' (Wave 1)
 - [x] 50-04-why-this-draft-exists-origin-ref-PLAN.md — WBN-04: contract-first prompt_versions.originRef additive field + Convex sync; "Improve this agent" carries origin; editor renders "why this draft exists" (Wave 1)
 - [x] 50-05-failed-run-recovery-rail-honest-restart-PLAN.md — WBN-03: 4-part recovery rail + Skipped dimming; honest 3-of-11 Restart matrix (writers/Gate-1/Publisher-Clerk-bridge live, 8 reserved); Improve-this-agent (Wave 2)
-- [ ] 50-06-nomenclature-sweep-tripwire-green-PLAN.md — WBN-05: sweep how-to-use glossary + Prompt Lab/Eval Center + 260710-k8y conflict terms (Rehearsal/Make live/Draft vs. live); un-skip the nomenclature tripwire green; phase gate (Wave 3)
+- [x] 50-06-nomenclature-sweep-tripwire-green-PLAN.md — WBN-05: sweep how-to-use glossary + Prompt Lab/Eval Center + 260710-k8y conflict terms (Rehearsal/Make live/Draft vs. live); un-skip the nomenclature tripwire green; phase gate (Wave 3)
 **UI hint**: yes

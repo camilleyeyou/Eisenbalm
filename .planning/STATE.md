@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 50-05-failed-run-recovery-rail-honest-restart-PLAN.md
-last_updated: "2026-07-17T02:58:23.784Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 50-06-nomenclature-sweep-tripwire-green-PLAN.md
+last_updated: "2026-07-17T03:29:12.737Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -357,6 +357,7 @@ Plan: 7 of 7
 | Phase 50 P03 | 20min | 3 tasks | 8 files |
 | Phase 50 P04 | 35min | 2 tasks | 10 files |
 | Phase 50 P05 | 33min | 3 tasks | 13 files |
+| Phase 50 P06 | 35 | 3 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -940,6 +941,8 @@ Recent decisions affecting current work:
 - [Phase 50]: AgentPromptEditorView prefers persisted active.originRef over session deep-link params for display, but forwards only the deep-link's own origin to saveVersion to avoid re-stamping later unrelated edits
 - [Phase 50]: Publisher-restart bridge (POST /issues/{run_id}/publish-manual) gated by _require_editor (Editor-in-chief), not the weaker Clerk-only guard adjudicate uses — matches Publisher's irreversible real-world consequences
 - [Phase 50]: restartAvailabilityFor is the single honesty-matrix source of truth (lib/nomenclature.ts), consumed by both RecoveryRail and InspectorFooter — editor_gate_1's paused case is an explicit caller-supplied flag, never inferred
+- [Phase 50]: WEEKLY_LOOP screen labels term-swapped to current names (Fact Check, WORKBENCH_NAV_LABELS-sourced Run Details/Agent Instructions/Quality Tests); House Rule 4 corrected to match the already-tripwired D-15 fact that Publish carries no typed confirmation
+- [Phase 50]: Stored eval_scores 'commit' enum literal left byte-unchanged (D-14) while all operator-facing labels around it were swept to Quality test/Test changes/Make active vocabulary
 
 ### Pending Todos
 
@@ -1030,6 +1033,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T02:58:23.770Z
-Stopped at: Completed 50-05-failed-run-recovery-rail-honest-restart-PLAN.md
+Last session: 2026-07-17T03:29:12.724Z
+Stopped at: Completed 50-06-nomenclature-sweep-tripwire-green-PLAN.md
 Resume file: None
