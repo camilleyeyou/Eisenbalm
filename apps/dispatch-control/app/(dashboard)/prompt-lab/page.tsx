@@ -14,6 +14,7 @@
  * humanized name + active-prompt preview + "active v{N} · updated {date}".
  */
 import { getCurrentWorkspace } from '@/lib/workspace'
+import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import {
   listEditableAgentKeys,
   groupForAgentKey,
@@ -48,7 +49,9 @@ export default async function PromptsPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-neutral-900">Prompts</h1>
+        <h1 className="text-xl font-semibold text-neutral-900">
+          {WORKBENCH_NAV_LABELS.prompt_lab}
+        </h1>
         <p className="text-sm text-neutral-500">
           Edit any agent prompt, user template, or shared asset with live
           variable hints and immutable versioning. Choose an asset to begin.

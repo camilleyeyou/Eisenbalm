@@ -19,8 +19,14 @@
  * sub-routes reachable from `/issues/[issueNumber]` (D-07/D-09): thin
  * issue→run param translations around the already-shipped screens, at
  * `/issues/[n]/review` and `/issues/[n]/voice`. Their labels are unchanged;
- * the nomenclature pass (Run Monitor → Run Details, Registry → Editorial
- * Memory) is Phase 50, not this plan.
+ *
+ * Phase 50 (WBN-01, D-04/D-06) — the nomenclature pass has now landed: the
+ * four System Workbench labels below are sourced from
+ * `lib/nomenclature.ts`'s `WORKBENCH_NAV_LABELS` (Run Monitor → Run Details,
+ * Prompt Lab → Agent Instructions, Eval Center → Quality Tests, Registry →
+ * Editorial Memory) so the display copy has one source of truth. Only the
+ * LABELS changed — every href below is unchanged (D-02: routes are not
+ * renamed).
  *
  * "How to use" is pinned at the bottom, outside the three groups.
  * The dc.html spec uses no icons — plain text nav items only.
@@ -32,6 +38,8 @@
  * Different hosts, different frameworks, opposite path-param meanings — they
  * collide in string only.
  */
+
+import { WORKBENCH_NAV_LABELS } from './nomenclature'
 
 export interface NavItem {
   label: string
@@ -64,10 +72,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'System Workbench',
     items: [
-      { label: 'Run Monitor', href: '/run-monitor' },
-      { label: 'Prompt Lab', href: '/prompt-lab' },
-      { label: 'Eval Center', href: '/eval-center' },
-      { label: 'Registry', href: '/registry' },
+      { label: WORKBENCH_NAV_LABELS.run_monitor, href: '/run-monitor' },
+      { label: WORKBENCH_NAV_LABELS.prompt_lab, href: '/prompt-lab' },
+      { label: WORKBENCH_NAV_LABELS.eval_center, href: '/eval-center' },
+      { label: WORKBENCH_NAV_LABELS.registry, href: '/registry' },
     ],
   },
   {

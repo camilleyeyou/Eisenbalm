@@ -10,6 +10,7 @@
 export const dynamic = 'force-dynamic'
 
 import { getCurrentWorkspace } from '@/lib/workspace'
+import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import AddCharityDialogTrigger from './_components/AddCharityDialogTrigger'
 import CoverageStrip from './_components/CoverageStrip'
 import RegistryTable from './_components/RegistryTable'
@@ -20,7 +21,9 @@ export default async function RegistryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Charity Registry</h1>
+        <h1 className="text-xl font-semibold text-neutral-900">
+          {WORKBENCH_NAV_LABELS.registry}
+        </h1>
         <AddCharityDialogTrigger workspace_id={workspace_id} />
       </div>
 

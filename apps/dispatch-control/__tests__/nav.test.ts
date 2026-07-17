@@ -48,10 +48,10 @@ describe('NAV_GROUPS', () => {
     expect(first?.href).toBe('/issues')
   })
 
-  it('Run Monitor moved under System Workbench (D-08 — survives, but is no longer the editorial object)', () => {
+  it('Run Details (nee Run Monitor) is under System Workbench (D-08 — survives, but is no longer the editorial object; Phase 50 WBN-01 renamed the label)', () => {
     const workbench = NAV_GROUPS.find((g) => g.label === 'System Workbench')
     const labels = workbench?.items.map((i) => i.label) ?? []
-    expect(labels).toContain('Run Monitor')
+    expect(labels).toContain('Run Details')
   })
 
   it('none of Review Desk / Signal Desk / Voice Pass hrefs appear anywhere in the nav (they left the nav — now issue sub-routes)', () => {

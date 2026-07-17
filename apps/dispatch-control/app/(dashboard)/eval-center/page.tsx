@@ -22,6 +22,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
+import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import { fetchScenarios, type EvalScenario } from '@/lib/evalScenarioClient'
 import ScenarioCard from './_components/ScenarioCard'
 import DriftScoreboard from './_components/DriftScoreboard'
@@ -58,7 +59,7 @@ export default function EvalCenterPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--color-ink)]">
-          Eval Center
+          {WORKBENCH_NAV_LABELS.eval_center}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-[color:var(--color-ink-soft)]">
           The drift detector: golden-scenario cards, an append-only scoreboard
