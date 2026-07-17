@@ -1092,5 +1092,13 @@ Plans:
   4. Agent Instructions shows why a draft instruction exists, linking back to the specific issue output that motivated it.
   5. Typed confirmation appears only for Mark Do-not-use (organization name + required reason); the automation toggle no longer lives on the operator surface, moved to Administration.
   6. Every renamed term from the nomenclature table (deterministic check, step / Restart from this step, Make active / Restore version, Quality test / Standard test case, Preview next run, Do not use, Must fix, Human approval required) appears consistently across the console — no legacy term ("gate", "node", "eval", "golden scenario", "shadow run", "blocklisted") remains in operator-facing copy.
-**Plans**: TBD
+**Plans**: 7 plans (4 waves)
+Plans:
+- [ ] 50-00-topology-nomenclature-module-tripwire-scaffolds-PLAN.md — Wave 0 prereq: fix pipelineTopology.ts to 20 nodes + reconcile GATE_KEYS diamond set + signal_editor reachability; shared lib/nomenclature.ts (RUN_STEP_MAP + renamed terms); nomenclature banned-term tripwire (skip-guarded) + route/enum preservation tripwire (Wave 0)
+- [ ] 50-01-nav-rename-role-indicator-PLAN.md — WBN-01: rename the 4 Workbench nav labels + screen headings over unchanged hrefs; net-new signed-in role indicator bottom-left (Wave 1)
+- [ ] 50-02-run-details-action-steps-diamonds-framing-PLAN.md — WBN-02: §7 action-named steps (agent secondary) via RUN_STEP_MAP, reconciled diamonds, 7-writers collapse, historical-vs-live framing (Wave 1)
+- [ ] 50-03-automation-reframe-typed-confirm-donotuse-PLAN.md — WBN-06/WBN-05: remove automation switch-framing (Masthead/banner to Administration), typed org-name confirm on Mark Do-not-use, verify no typed-confirm on publish, "Do not use" label over unchanged 'blocklisted' (Wave 1)
+- [ ] 50-04-why-this-draft-exists-origin-ref-PLAN.md — WBN-04: contract-first prompt_versions.originRef additive field + Convex sync; "Improve this agent" carries origin; editor renders "why this draft exists" (Wave 1)
+- [ ] 50-05-failed-run-recovery-rail-honest-restart-PLAN.md — WBN-03: 4-part recovery rail + Skipped dimming; honest 3-of-11 Restart matrix (writers/Gate-1/Publisher-Clerk-bridge live, 8 reserved); Improve-this-agent (Wave 2)
+- [ ] 50-06-nomenclature-sweep-tripwire-green-PLAN.md — WBN-05: sweep how-to-use glossary + Prompt Lab/Eval Center + 260710-k8y conflict terms (Rehearsal/Make live/Draft vs. live); un-skip the nomenclature tripwire green; phase gate (Wave 3)
 **UI hint**: yes
