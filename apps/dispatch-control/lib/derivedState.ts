@@ -32,7 +32,14 @@ import { encodeArtifactKey } from './inspectorArtifact'
 
 // ── Types (§40.6, verbatim) ──────────────────────────────────────────────────
 
-export type IssueStatus = 'unknown' | 'draft' | 'needs-review' | 'ready' | 'published' | 'held'
+export type IssueStatus =
+  | 'unknown'
+  | 'draft'
+  | 'needs-review'
+  | 'ready'
+  | 'published'
+  | 'held'
+  | 'failed'
 export type StageState = 'not-generated' | 'in-progress' | 'needs-you' | 'clean'
 export type TaskSeverity = 'must-fix' | 'review-recommended' | 'information'
 
@@ -139,6 +146,11 @@ export function deriveIssueStatus(i: DerivationInputs): IssueStatus {
   if (i.issue === null) return 'unknown'
   if (i.issue.published) return 'published'
   if (i.issue.held) return 'held'
+  // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — a failed run is terminal
+  // and never a reviewable 'needs-review': placed after the not-loaded
+  // ('unknown') guard and after published/held (both win) so those
+  // precedent terminal states are preserved.
+  if (i.runStatus === 'failed') return 'failed'
   const factDone = i.signOffs['facts-cleared'] !== undefined
   const voiceDone = i.signOffs['sounds-human'] !== undefined
   if (factDone && voiceDone) return 'ready'
@@ -225,6 +237,16 @@ function deriveApprovalStage(i: DerivationInputs): StageStateResult {
 export function deriveStageStates(
   i: DerivationInputs,
 ): [StageStateResult, StageStateResult, StageStateResult, StageStateResult, StageStateResult] {
+  // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — a failed run is terminal:
+  // no stage is actionable (mirrors run-monitor RunDetail's first-class
+  // 'failed' treatment). One guard here, not five edits to the internal
+  // derivations. Published wins: a published issue's latest run is never
+  // 'failed' in practice, but stay robust and don't clobber its clean
+  // Approval mark.
+  if (i.runStatus === 'failed' && !i.issue?.published) {
+    const dead: StageStateResult = { state: 'not-generated', openCount: 0 }
+    return [dead, dead, dead, dead, dead]
+  }
   return [
     deriveStoryStage(i),
     deriveDraftStage(i),
@@ -406,6 +428,11 @@ function findingSeverityToTaskSeverity(severity: 'info' | 'warning' | 'error'): 
 
 export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   if (i.runId === null) return []
+  // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — a failed run cannot be
+  // driven to publish; its only real next step is re-run (Run Monitor
+  // recovery rail). Emit no findings/claims/sign-off tasks so My Tasks and
+  // the header open-count stop advertising actions that can only 409.
+  if (i.runStatus === 'failed') return []
 
   const n = i.issueNumber
   const fallbackHref = n === null ? '/issues' : undefined

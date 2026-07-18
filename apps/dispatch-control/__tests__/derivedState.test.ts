@@ -106,6 +106,43 @@ describe('deriveIssueStatus (§40.6, ISS-06)', () => {
   })
 })
 
+// quick 260718-51o — FAILED-RUN-TERMINAL-STATE. A failed run must never
+// masquerade as a reviewable 'needs-review' issue (the DecisionRail
+// sign-off buttons can only 409 for a run that produced nothing to
+// review).
+describe('deriveIssueStatus — failed run is terminal (quick 260718-51o)', () => {
+  it('runStatus:"failed" returns "failed", never "needs-review"', () => {
+    const status = deriveIssueStatus(baseInputs({ runStatus: 'failed', runId: 'r1', signOffs: {} }))
+    expect(status).toBe('failed')
+    expect(status).not.toBe('needs-review')
+  })
+
+  it('a published issue with runStatus:"failed" still returns "published" (published wins)', () => {
+    const status = deriveIssueStatus(
+      baseInputs({
+        runStatus: 'failed',
+        issue: { held: false, published: true },
+        signOffs: {
+          'facts-cleared': { actorId: 'a', signedAt: 1 },
+          'sounds-human': { actorId: 'a', signedAt: 1 },
+        },
+      }),
+    )
+    expect(status).toBe('published')
+  })
+
+  it('a held (not published) issue with runStatus:"failed" still returns "held" (held wins)', () => {
+    const status = deriveIssueStatus(
+      baseInputs({
+        runStatus: 'failed',
+        issue: { held: true, published: false },
+        signOffs: {},
+      }),
+    )
+    expect(status).toBe('held')
+  })
+})
+
 describe('deriveStageStates (§40.6, D-19)', () => {
   it('completed run with zero checked claims is NOT clean', () => {
     const result = deriveStageStates(
@@ -243,6 +280,24 @@ describe('deriveStoryStage (Phase 47 Plan 47-08, Pitfall 3 — precise Gate-1-pa
       }),
     )
     expect(result[0]).toEqual({ state: 'clean', openCount: 0 })
+  })
+})
+
+describe('deriveStageStates — failed run is terminal (quick 260718-51o)', () => {
+  it('a failed, non-published run: every stage is not-generated — Approval [4] and Voice [3] are NOT "needs-you"', () => {
+    const result = deriveStageStates(baseInputs({ runStatus: 'failed' }))
+    for (const stage of result) {
+      expect(stage).toEqual({ state: 'not-generated', openCount: 0 })
+    }
+    expect(result[4].state).not.toBe('needs-you')
+    expect(result[3].state).not.toBe('needs-you')
+  })
+
+  it('a failed run on an already-published issue does not clobber the clean Approval slot', () => {
+    const result = deriveStageStates(
+      baseInputs({ runStatus: 'failed', issue: { held: false, published: true } }),
+    )
+    expect(result[4]).toEqual({ state: 'clean', openCount: 0 })
   })
 })
 
@@ -437,6 +492,11 @@ describe('deriveSectionStates + draftSectionIdsFromDraft (Phase 41 Plan 41-01, W
 describe('deriveTasks (§40.6, D-21)', () => {
   it('returns [] when runId is null', () => {
     const tasks = deriveTasks(baseInputs({ runId: null }))
+    expect(tasks).toEqual([])
+  })
+
+  it('returns [] for a failed run (quick 260718-51o) — no signoff-facts/signoff-voice tasks that can only 409', () => {
+    const tasks = deriveTasks(baseInputs({ runStatus: 'failed', signOffs: {} }))
     expect(tasks).toEqual([])
   })
 
