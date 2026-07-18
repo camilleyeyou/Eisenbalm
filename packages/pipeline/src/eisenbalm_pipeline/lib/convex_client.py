@@ -155,10 +155,21 @@ async def convex_mutation(http: AsyncClient, path: str, args: dict) -> Any:
     closed on the CONVEX side (Unauthorized) rather than raising a KeyError
     here.
     """
+    # Bug fix (quick 260718-7dk): Convex v.optional(v.string()) accepts an ABSENT
+    # key but REJECTS an explicit JSON null. Python callers pass None for optional
+    # fields (signal_editor brandRiskReason/repetitionWarning; verify_candidates
+    # registrationId/killReason), which reached Convex as `null` → ArgumentValidationError
+    # → convex_mutation_safe silently dropped the write (run b106e87a lost 4 leads +
+    # 2 verification records). Omit None-valued keys so optional fields are ABSENT.
+    # Shallow strip: every known call site carries its optionals at the top level.
+    # Safe unconditionally: Convex already rejects `null` for BOTH optional and
+    # required fields, so no caller can depend on sending null — any such caller
+    # is already broken, and removing a None key can only improve outcomes.
+    cleaned = {k: v for k, v in args.items() if v is not None}
     if path in _PIPELINE_SECRET_GUARDED_PATHS:
-        merged_args = {**args, "pipelineSecret": os.environ.get("PIPELINE_CONVEX_SECRET", "")}
+        merged_args = {**cleaned, "pipelineSecret": os.environ.get("PIPELINE_CONVEX_SECRET", "")}
     else:
-        merged_args = args
+        merged_args = cleaned
     r = await http.post(
         "/api/mutation",
         json={"path": path, "args": merged_args, "format": "json"},
