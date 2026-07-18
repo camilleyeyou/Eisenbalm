@@ -192,6 +192,20 @@ async def test_editor_invokes_publisher_and_audits(monkeypatch) -> None:
 
     monkeypatch.setattr(control_mod, "_emit_audit", fake_emit_audit)
 
+    # Both sign-offs active — this test exercises the normal 200 path, which
+    # now sits behind the two-sign-off gate added to publish_manual.
+    async def mock_convex_query(http, path, args):  # noqa: ARG001
+        if path == "signOffs:activeByRunId":
+            return {
+                "facts-cleared": {"actorId": "u", "signedAt": 1},
+                "sounds-human": {"actorId": "u", "signedAt": 1},
+            }
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._cc.convex_query", mock_convex_query
+    )
+
     app = _build_app()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -252,6 +266,54 @@ async def test_editor_404_when_no_sanity_issue(monkeypatch) -> None:
     pub_spy.assert_not_called()
 
 
+# ── test_publish_manual_requires_both_signoffs ─────────────────────────────
+
+
+async def test_publish_manual_requires_both_signoffs(monkeypatch) -> None:
+    """Phase 50-hardening (finish-phase-34-retirement): publish-manual must
+    enforce the SAME two-sign-off gate publish_issue does (review.py:118-133)
+    before scheduling _run_publisher. With an Editor-in-chief claim and NO
+    active sign-offs, the endpoint must 409 missing_signoffs and never
+    schedule the publisher or emit the publisher.manual_restart audit."""
+    fake_groq, pub_spy = _wire_publisher(
+        monkeypatch, issue={"_id": "issue-99", "issueNumber": 99}
+    )
+    _set_role_claims(monkeypatch, role="Editor-in-chief", sub="user_editor")
+
+    import eisenbalm_pipeline.api.control as control_mod
+
+    audit_calls: list[dict] = []
+
+    async def fake_emit_audit(http, **kwargs):  # noqa: ARG001
+        audit_calls.append(kwargs)
+
+    monkeypatch.setattr(control_mod, "_emit_audit", fake_emit_audit)
+
+    async def mock_convex_query(http, path, args):  # noqa: ARG001
+        if path == "signOffs:activeByRunId":
+            return {}  # no active sign-offs
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._cc.convex_query", mock_convex_query
+    )
+
+    app = _build_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/issues/run-nosignoff-001/publish-manual", headers=AUTH_HEADER
+        )
+
+    assert response.status_code == 409, response.text
+    detail = response.json()["detail"]
+    assert detail["reason"] == "missing_signoffs"
+    assert set(detail["missing"]) == {"facts-cleared", "sounds-human"}
+
+    pub_spy.assert_not_called()
+    assert audit_calls == []
+
+
 # ── test_sentinel_regression_resolves_editor ───────────────────────────────
 
 
@@ -261,6 +323,19 @@ async def test_sentinel_regression_resolves_editor(monkeypatch) -> None:
     normal path (never 403), header-free."""
     monkeypatch.delenv("CLERK_JWT_ISSUER_DOMAIN", raising=False)
     _wire_publisher(monkeypatch, issue={"_id": "issue-1", "issueNumber": 1})
+
+    # Both sign-offs active so this reaches the normal (non-403, non-409) path.
+    async def mock_convex_query(http, path, args):  # noqa: ARG001
+        if path == "signOffs:activeByRunId":
+            return {
+                "facts-cleared": {"actorId": "u", "signedAt": 1},
+                "sounds-human": {"actorId": "u", "signedAt": 1},
+            }
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._cc.convex_query", mock_convex_query
+    )
 
     app = _build_app()
     transport = ASGITransport(app=app)

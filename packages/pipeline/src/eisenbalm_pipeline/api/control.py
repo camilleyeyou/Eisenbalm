@@ -896,6 +896,29 @@ async def publish_manual(
             detail=f"No Sanity weeklyIssue found for runId={run_id}",
         )
 
+    # Two-sign-off gate (mirrors review.py:118-133, publish_issue) — closes
+    # the ungated bridge Q1b of the finish-phase-34-retirement audit found:
+    # this recovery path must never publish content nobody re-attested to.
+    # Sits AFTER the 404 (a nonexistent issue still 404s) and BEFORE the
+    # audit + _run_publisher schedule ("nothing silent" — a blocked publish
+    # is neither audited as a restart nor scheduled).
+    active = await _cc.convex_query(
+        http, "signOffs:activeByRunId", {"runId": run_id}
+    ) or {}
+    missing = [k for k in ("facts-cleared", "sounds-human") if k not in active]
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "reason": "missing_signoffs",
+                "message": (
+                    "Both sign-offs (Facts cleared + Sounds human) are "
+                    "required before publishing."
+                ),
+                "missing": missing,
+            },
+        )
+
     # Audit BEFORE scheduling the publisher task ("nothing silent").
     await _emit_audit(
         http,
