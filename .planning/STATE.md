@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260717-35u (fix FastAPI error envelope unwrapping)
-last_updated: "2026-07-17T09:34:30.330Z"
+stopped_at: Completed quick 260718-00i (finish Phase 34 studio-bypass-retirement — collapse legacy publish surface)
+last_updated: "2026-07-18T07:25:09Z"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -1035,6 +1035,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T09:34:30.330Z
-Stopped at: Completed quick 260717-35u (fix FastAPI error envelope unwrapping)
+Last session: 2026-07-18T07:25:09Z
+Stopped at: Completed quick 260718-00i (finish Phase 34 studio-bypass-retirement — collapse legacy publish surface)
 Resume file: None
