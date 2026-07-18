@@ -48,6 +48,10 @@ const STATUS_META: Record<
   ready: { label: 'Ready to publish', Icon: CheckCircle2, color: 'var(--color-green)' },
   published: { label: 'Published', Icon: BadgeCheck, color: 'var(--color-green)' },
   held: { label: 'Held', Icon: PauseCircle, color: 'var(--color-vermilion)' },
+  // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — non-actionable: the card
+  // body's only affordance stays the "Open issue" link to issueHref, never
+  // Approval — a failed issue no longer advertises "Needs review".
+  failed: { label: 'Run failed', Icon: AlertTriangle, color: 'var(--color-vermilion)' },
 }
 
 function Readout({

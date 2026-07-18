@@ -85,6 +85,10 @@ const ISSUE_STATUS_META: Record<
   ready: { label: 'Ready to publish', Icon: CheckCircle2, color: 'var(--color-green)' },
   published: { label: 'Published', Icon: BadgeCheck, color: 'var(--color-green)' },
   held: { label: 'Held', Icon: PauseCircle, color: 'var(--color-vermilion)' },
+  // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — non-actionable. Note: the
+  // separate SystemActivity readout below ALREADY renders 'Failed' from run
+  // status; this is the distinct issue-status record, which also needs the key.
+  failed: { label: 'Run failed', Icon: AlertTriangle, color: 'var(--color-vermilion)' },
 }
 
 function IssueStatusReadout({ status }: { status: IssueStatus }) {

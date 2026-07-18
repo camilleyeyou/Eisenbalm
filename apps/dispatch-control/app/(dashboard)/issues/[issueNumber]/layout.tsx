@@ -129,6 +129,10 @@ const STATUS_META: Record<Exclude<IssueStatus, 'unknown'>, { label: string; Icon
   ready: { label: 'Ready to publish', Icon: CheckCircle2, color: 'var(--color-green)' },
   published: { label: 'Published', Icon: BadgeCheck, color: 'var(--color-green)' },
   held: { label: 'Held', Icon: PauseCircle, color: 'var(--color-vermilion)' },
+  // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — non-actionable: a plain
+  // label + icon, never a link to an action (mirrors the 'unknown' affordance's
+  // vermilion, minus the "refresh" action since there is nothing to refresh).
+  failed: { label: 'Run failed', Icon: AlertTriangle, color: 'var(--color-vermilion)' },
 }
 
 function StatusReadout({ status }: { status: IssueStatus }) {
