@@ -11,12 +11,20 @@
  * (`PublishPreviewDialog`), never a typed-text-match input.
  *
  * Manually verified (also documented in 50-03-SUMMARY.md): reading
- * DecisionRail.tsx, PublishPreviewDialog.tsx, and ReviewDecisionPanel.tsx
- * confirms neither publish surface contains a typed-title/typed-name
- * confirm input today. This test makes that fact a tripwire.
+ * DecisionRail.tsx and PublishPreviewDialog.tsx confirms neither publish
+ * surface contains a typed-title/typed-name confirm input today. This test
+ * makes that fact a tripwire.
  *
- * Scoped to the THREE actual publish-decision files (not every file under
- * their parent `_components/` directories) — those directories also hold
+ * finish-phase-34-retirement (quick 260718-00i Task 3): the legacy sibling
+ * publish surface `ReviewDecisionPanel.tsx` (run-monitor/runs/[runId]/review)
+ * has been deleted — its stale `claimChecks.allSignedOff` gate disagreed
+ * with the server's `signOffs:activeByRunId` gate and produced the traced
+ * production dead end. `DecisionRail` (mounted at the Approval stage) and
+ * `PublishPreviewDialog` are now the only two publish-decision surfaces;
+ * this tripwire is trimmed to scan only those two.
+ *
+ * Scoped to the TWO actual publish-decision files (not every file under
+ * their parent `_components/` directory) — that directory also holds
  * unrelated content-editing components with legitimate `<input>` elements
  * (AssetUploadSlot, TurnListEditor, StructuredFieldEditor,
  * SchedulePublishDialog's date/time field) that are out of scope for this
@@ -46,28 +54,24 @@ const PUBLISH_PREVIEW_DIALOG = path.join(
   DASHBOARD_ROOT,
   'review-desk/[runId]/_components/PublishPreviewDialog.tsx',
 )
-const REVIEW_DECISION_PANEL = path.join(
-  DASHBOARD_ROOT,
-  'run-monitor/runs/[runId]/review/_components/ReviewDecisionPanel.tsx',
-)
 
-const PUBLISH_SURFACE_FILES = [DECISION_RAIL, PUBLISH_PREVIEW_DIALOG, REVIEW_DECISION_PANEL]
+const PUBLISH_SURFACE_FILES = [DECISION_RAIL, PUBLISH_PREVIEW_DIALOG]
 
 // Forbidden pattern: any raw <input> control on a publish-decision surface.
-// Narrow to these three named files (see header) so it does not false-positive
-// on sibling content-editing components in the same parent directories, nor
+// Narrow to these two named files (see header) so it does not false-positive
+// on sibling content-editing components in the same parent directory, nor
 // on the registry Do-not-use typed-name confirm (different directory,
 // legitimately HAS one — out of this scan's scope).
 const INPUT_ELEMENT_PATTERN = /<input\b/
 
 // A typed-confirm idiom would gate a button on a value comparison against a
 // title/name field — e.g. `typedName`/`typedTitle`/`confirmText` state, or a
-// `.trim() ===`/`.trim() !==` name/title match. None of these three files
+// `.trim() ===`/`.trim() !==` name/title match. Neither of these two files
 // should reference any such idiom.
 const TYPED_CONFIRM_IDIOM_PATTERN = /typed(Name|Title|Text|Confirm)|confirmText|type the .* to confirm/i
 
 describe('publishNoTypedConfirm: neither publish surface carries a typed-confirmation input (D-15)', () => {
-  it('all three publish-decision files exist (sanity)', () => {
+  it('both publish-decision files exist (sanity)', () => {
     for (const file of PUBLISH_SURFACE_FILES) {
       expect(fs.existsSync(file), `Missing publish-surface file: ${file}`).toBe(true)
     }
@@ -85,12 +89,6 @@ describe('publishNoTypedConfirm: neither publish surface carries a typed-confirm
     expect(TYPED_CONFIRM_IDIOM_PATTERN.test(content)).toBe(false)
   })
 
-  it('ReviewDecisionPanel.tsx (legacy sibling publish surface) has NO <input> element and NO typed-confirm idiom', () => {
-    const content = fs.readFileSync(REVIEW_DECISION_PANEL, 'utf-8')
-    expect(INPUT_ELEMENT_PATTERN.test(content)).toBe(false)
-    expect(TYPED_CONFIRM_IDIOM_PATTERN.test(content)).toBe(false)
-  })
-
   it("DecisionRail.tsx's Publish button gates on the sign-off state (factsActive/humanActive), not a typed match", () => {
     const content = fs.readFileSync(DECISION_RAIL, 'utf-8')
     // The publish-disabled derivation references the two sign-off booleans.
@@ -98,12 +96,6 @@ describe('publishNoTypedConfirm: neither publish surface carries a typed-confirm
     expect(/publishDisabled\s*=[\s\S]{0,160}humanActive/.test(content)).toBe(true)
     // The actual Publish button is wired to that derivation.
     expect(/disabled=\{publishDisabled\}/.test(content)).toBe(true)
-  })
-
-  it("ReviewDecisionPanel.tsx's Approve-and-Publish button gates on allSignedOff, not a typed match", () => {
-    const content = fs.readFileSync(REVIEW_DECISION_PANEL, 'utf-8')
-    expect(/canApprove\s*=[\s\S]{0,120}allSignedOff/.test(content)).toBe(true)
-    expect(/disabled=\{!canApprove \|\| loading\}/.test(content)).toBe(true)
   })
 
   it('the registry Do-not-use typed-name confirm remains the ONLY typed confirmation in operator copy (cross-check)', () => {

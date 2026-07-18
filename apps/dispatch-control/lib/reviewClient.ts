@@ -1,11 +1,14 @@
 /**
  * Phase 26 (RVW-03) — client for pipeline review-decision endpoints.
+ * Phase 34 (§34.4, D-04) relocated the claims-signoff gate off publish/schedule
+ * directly and onto the facts-cleared sign-off endpoint; publish/schedule now
+ * both enforce the two-sign-off gate (signOffs:activeByRunId) server-side.
  *
  * Mirrors pipelineControlClient.ts:
  *   - pipelineBaseUrl() reads NEXT_PUBLIC_PIPELINE_URL (throws if unset, strips slash)
  *   - Bearer token from useAuth().getToken() passed as Authorization header
  *   - 4xx responses surface a typed reason string so the UI can show
- *     the UI-SPEC error copy ("claims_not_signed_off", "wrong_status", etc.)
+ *     the UI-SPEC error copy ("missing_signoffs", "wrong_status", etc.)
  *
  * Endpoints covered (API_CONTRACTS §26.3 / Plan 26-03):
  *   POST /issues/{runId}/publish  — approve + publish immediately (RVW-03)
@@ -105,10 +108,13 @@ async function _reviewFetch<T>(
  * Approve and publish a run immediately.
  *
  * On success: returns `{ issueId, published: true }`.
- * On 409 `claims_not_signed_off`: ReviewApiError — show
- *   "Sign off all factual claims before publishing."
+ * On 409 `missing_signoffs`: ReviewApiError — show
+ *   "Both sign-offs (Facts cleared + Sounds human) are required before publishing."
+ *   (server also returns a `missing` array naming which sign-off(s) are absent)
  * On 409 `wrong_status`: ReviewApiError — show
  *   "This run cannot be published in its current state."
+ * On 409 `no_sanity_issue`: ReviewApiError — show
+ *   "No Sanity issue ID found for this run."
  *
  * @param token   Clerk session JWT (from useAuth().getToken())
  * @param runId   the run's runId string
@@ -130,7 +136,8 @@ export async function publishIssue(
  *
  * On success: returns `{ issueId, scheduledAt }`.
  * On 400 `schedule_in_past`: ReviewApiError — show "Choose a time in the future."
- * On 409: ReviewApiError with reason "claims_not_signed_off" or "wrong_status".
+ * On 409: ReviewApiError with reason "missing_signoffs" (both sign-offs
+ *   required — identical gate to publish), "wrong_status", or "no_sanity_issue".
  *
  * @param token        Clerk session JWT
  * @param runId        the run's runId string

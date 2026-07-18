@@ -1,17 +1,25 @@
 'use client'
 /**
  * Phase 26 (RVW-01/RVW-02) — Awaiting-review queue panel.
+ * finish-phase-34-retirement (quick 260718-00i Task 3): the "Review →" CTA
+ * now resolves to the Approval stage (`issueApprovalHref`), not the retired
+ * `/run-monitor/runs/[runId]/review` panel. `runs.listForWorkspace` rows
+ * carry NO `issueNumber` field (schema.ts), so each row resolves its own
+ * issueNumber via `api.pipelineRuns.byRunId` in the extracted
+ * `AwaitingReviewRow` child component below; while that query is loading (or
+ * unresolvable) the link falls back to the legacy run-keyed URL, which now
+ * itself redirects to Approval — never a dead end.
  *
  * Displays runs with status "awaiting-review" above the run history table.
- * Each card links to the review screen at /runs/{runId}/review.
  *
  * Data source: api.runs.listForWorkspace (Convex real-time subscription)
- * filtered to status === "awaiting-review".
+ * filtered to status === "awaiting-review").
  */
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
+import { issueApprovalHref } from '@/lib/issueRouteResolver'
 
 interface ReviewQueueProps {
   workspace_id: string
@@ -25,6 +33,57 @@ function formatRelativeTime(ms: number): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   return `${days}d ago`
+}
+
+/**
+ * One Awaiting Review card. Resolves its own issueNumber (runs rows have
+ * none) so the "Review →" CTA can target the Approval stage directly. While
+ * `pipelineRuns.byRunId` is loading/unresolved, the CTA falls back to the
+ * legacy run-keyed URL — that route now redirects to Approval itself, so
+ * this is a safe loading fallback, never a dead end.
+ */
+function AwaitingReviewRow({
+  run,
+}: {
+  run: { _id: string; runId: string; startedAt: number; cost?: string }
+}) {
+  const pRun = useQuery(api.pipelineRuns.byRunId, { runId: run.runId })
+  const cost = parseCostJson(run.cost).total
+  const href = pRun?.issueNumber
+    ? issueApprovalHref(pRun.issueNumber)
+    : `/run-monitor/runs/${encodeURIComponent(run.runId)}/review`
+
+  return (
+    <li className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Left: run info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+            Awaiting Review
+          </span>
+        </div>
+        <p className="mt-1 text-sm font-medium text-neutral-900 truncate">
+          Run {run.runId}
+        </p>
+        <p className="mt-0.5 text-xs text-neutral-500">
+          Started {formatRelativeTime(run.startedAt)}
+        </p>
+        {cost > 0 && (
+          <p className="mt-0.5 text-xs text-neutral-500">
+            <span className="font-medium">Estimated run cost</span> ${cost.toFixed(4)}
+          </p>
+        )}
+      </div>
+
+      {/* Right: Review link */}
+      <Link
+        href={href}
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 transition-colors"
+      >
+        Review →
+      </Link>
+    </li>
+  )
 }
 
 export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
@@ -62,44 +121,9 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
     <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
       <h2 className="text-base font-semibold text-neutral-900">Awaiting Review</h2>
       <ul role="list" className="mt-4 space-y-3">
-        {awaitingReview.map(run => {
-          const cost = parseCostJson(run.cost).total
-          return (
-            <li
-              key={run._id}
-              className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              {/* Left: run info */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                    Awaiting Review
-                  </span>
-                </div>
-                <p className="mt-1 text-sm font-medium text-neutral-900 truncate">
-                  Run {run.runId}
-                </p>
-                <p className="mt-0.5 text-xs text-neutral-500">
-                  Started {formatRelativeTime(run.startedAt)}
-                </p>
-                {cost > 0 && (
-                  <p className="mt-0.5 text-xs text-neutral-500">
-                    <span className="font-medium">Estimated run cost</span>{' '}
-                    ${cost.toFixed(4)}
-                  </p>
-                )}
-              </div>
-
-              {/* Right: Review link */}
-              <Link
-                href={`/run-monitor/runs/${encodeURIComponent(run.runId)}/review`}
-                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 transition-colors"
-              >
-                Review →
-              </Link>
-            </li>
-          )
-        })}
+        {awaitingReview.map(run => (
+          <AwaitingReviewRow key={run._id} run={run} />
+        ))}
       </ul>
     </div>
   )

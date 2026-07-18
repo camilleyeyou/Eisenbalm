@@ -62,16 +62,24 @@ export function issueRunHref(issueNumber: number, runId: string): string {
 }
 
 /**
- * The old run-keyed URLs (`/review-desk/[runId]`, `/voice-pass/[runId]`)
- * redirect here once a Convex lookup resolves `runId -> issueNumber` (that
- * lookup happens at the call site — this function is pure). When the
- * issueNumber cannot be resolved (no issue row / unknown runId), fall back
- * to `/issues` — NEVER a run-keyed URL, which would redirect-loop.
+ * The old run-keyed URLs (`/review-desk/[runId]`, `/voice-pass/[runId]`,
+ * `/run-monitor/runs/[runId]/review`) redirect here once a Convex lookup
+ * resolves `runId -> issueNumber` (that lookup happens at the call site —
+ * this function is pure). When the issueNumber cannot be resolved (no issue
+ * row / unknown runId), fall back to `/issues` — NEVER a run-keyed URL,
+ * which would redirect-loop.
+ *
+ * `'approval'` (finish-phase-34-retirement, quick 260718-00i Task 3) maps
+ * the retired `/run-monitor/runs/[runId]/review` publish/decision panel to
+ * `issueApprovalHref` — the Approval stage (mounts DecisionRail) is that
+ * panel's true replacement, NOT the galley `issueReviewHref` stage.
  */
 export function legacyRedirectTarget(
-  surface: 'review' | 'voice',
+  surface: 'review' | 'voice' | 'approval',
   issueNumber: number | null | undefined,
 ): string {
   if (typeof issueNumber !== 'number') return '/issues'
-  return surface === 'review' ? issueReviewHref(issueNumber) : issueVoiceHref(issueNumber)
+  if (surface === 'review') return issueReviewHref(issueNumber)
+  if (surface === 'voice') return issueVoiceHref(issueNumber)
+  return issueApprovalHref(issueNumber)
 }
