@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260718-00i (finish Phase 34 studio-bypass-retirement — collapse legacy publish surface)
-last_updated: "2026-07-18T07:25:09Z"
+stopped_at: Completed quick 260718-51o (failed runs must not present a working-looking review surface)
+last_updated: "2026-07-18T11:03:59.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -1035,6 +1035,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-18T07:25:09Z
-Stopped at: Completed quick 260718-00i (finish Phase 34 studio-bypass-retirement — collapse legacy publish surface)
+Last session: 2026-07-18T11:03:59.000Z
+Stopped at: Completed quick 260718-51o (failed runs must not present a working-looking review surface)
 Resume file: None
