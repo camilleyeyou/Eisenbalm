@@ -3,8 +3,10 @@
 Inserted between Scout and Advocate by graph/builder.py (D-01 chain:
 calibrator -> signal_editor -> scout -> verify_candidates -> advocate). For
 every candidate in ``state['candidates']`` runs three deterministic checks —
-domain-live, registration-ID reachability, and an obscurity/press scan — and
-kills a candidate ONLY on a DEFINITIVE failure (D-12). Every check and every
+domain-live, a registration self-lookup, and an obscurity/press scan — and
+kills a candidate ONLY on a DEFINITIVE failure (D-12): a dead domain, or a
+near-total obscurity-scan saturation. Registration NEVER kills (bug fix,
+quick 260718-7dk) — it only upgrades confidence. Every check and every
 record is persisted; nothing is silently dropped.
 
 NOT an @agent_node:
@@ -36,14 +38,23 @@ log = logging.getLogger(__name__)
 _FETCH_TIMEOUT_S: float = 10.0
 _USER_AGENT: str = "Mozilla/5.0 (compatible; EisenbalmBot/1.0)"
 
-# Obscurity press-hit thresholds (RESEARCH Open Question 1) — tuning items,
-# no numeric precedent exists anywhere in the codebase. Bounded search is
-# max_results=5 (mirrors Scout's default). <=OBSCURITY_PASS_MAX_HITS ⇒ pass
-# (genuinely obscure); >=OBSCURITY_FAIL_MIN_HITS ⇒ fail (clearly not obscure
-# enough — a definitive kill signal per D-12); the middle band (3 hits) is
-# deliberately left as `unverified` — never a kill on an ambiguous count.
-OBSCURITY_PASS_MAX_HITS: int = 2
-OBSCURITY_FAIL_MIN_HITS: int = 4
+# Obscurity press-hit thresholds. Bug-fix (quick 260718-7dk): the scan is WIDENED
+# to a 10-result cap and the verdict is ADVISORY except at a genuinely definitive
+# bar. Rationale: at a 5-result cap even mildly-covered orgs saturate at 5/5
+# (Knowbility, a niche a11y nonprofit, scored 5/5 → false 'not-obscure' kill);
+# widening to 10 restores discriminating power — a genuinely obscure org falls
+# short of the cap while a mainstream org fills it. Only a near-total 9-of-10
+# saturation is a DEFINITIVE "not obscure enough" kill (D-12: false negatives OK,
+# false positives are not). The old 4-of-5 hair-trigger is gone.
+OBSCURITY_SCAN_MAX_RESULTS: int = 10
+OBSCURITY_PASS_MAX_HITS: int = 3     # <=3/10 ⇒ genuinely obscure (advisory verdict only)
+OBSCURITY_FAIL_MIN_HITS: int = 9     # >=9/10 ⇒ definitive not-obscure (the ONLY obscurity kill)
+
+# Registration self-lookup (D-11 — reuse Tavily, NO new paid/government API).
+# Bounded: at most len(_REGISTRATION_SITES) site-scoped searches per candidate,
+# short-circuited on the first hit. Registration NEVER kills — it only upgrades
+# confidence (registrationVerified).
+_REGISTRATION_SITES: tuple[str, ...] = ("charitynavigator.org", "guidestar.org")
 
 
 def _charity_id_for(name: str) -> str:
@@ -80,31 +91,39 @@ async def _check_domain_live(url: Optional[str]) -> Optional[bool]:
 
 
 async def _check_registration(candidate: dict) -> tuple[Optional[str], bool]:
-    """Reachability of charityNavigatorUrl/guidestarUrl (D-11 — no new
-    paid/government EIN API). Returns (registrationId, registrationVerified).
+    """Registration lookup (D-11 — no new paid/gov API). Returns
+    (registrationId, registrationVerified). NEVER a kill signal — inconclusive
+    results just leave registrationVerified False for the human Editor Gate.
 
-    - Neither field present at all => (None, False) — a DEFINITIVE "no
-      registration found" (D-12 kill signal).
-    - A URL is present and reachable (2xx/3xx) => (url, True).
-    - A URL is present but unreachable due to a transient error (timeout,
-      5xx, SSL/DNS blip, or a definitive 4xx) => (url, False) — the
-      candidate is NOT killed on this alone since a URL DOES exist; only
-      the "neither field present" case is a definitive kill.
+    - A URL already on the candidate (Scout never fills these today, but honor a
+      future agent that does): verify reachability via _check_domain_live.
+    - Otherwise: run up to len(_REGISTRATION_SITES) site-scoped Tavily queries
+      (site:charitynavigator.org "{name}", then guidestar), short-circuiting on
+      the first hit whose url is on that registry ⇒ (url, True). A Tavily hit is
+      an indexed, reachable registry page, so it is taken as verified without a
+      second fetch (per-run cost containment).
+    - Nothing found, or every search errors ⇒ (None, False) — inconclusive,
+      candidate KEPT (D-12).
     """
-    url = candidate.get("charityNavigatorUrl") or candidate.get("guidestarUrl")
-    if not url:
+    existing = candidate.get("charityNavigatorUrl") or candidate.get("guidestarUrl")
+    if existing:
+        return existing, (await _check_domain_live(existing)) is True
+    name = (candidate.get("name") or "").strip()
+    if not name:
         return None, False
-    try:
-        async with httpx.AsyncClient(
-            timeout=_FETCH_TIMEOUT_S, follow_redirects=True,
-        ) as client:
-            r = await client.get(url, headers={"User-Agent": _USER_AGENT})
-        return url, bool(200 <= r.status_code < 400)
-    except Exception as exc:  # noqa: BLE001
-        log.warning(
-            "verify_candidates: registration fetch failed url=%r err=%r", url, exc,
-        )
-        return url, False
+    for site in _REGISTRATION_SITES:
+        try:
+            results = await web_search(f'site:{site} "{name}"', max_results=3)
+        except Exception as exc:  # noqa: BLE001 — a search blip is inconclusive, never a kill
+            log.warning(
+                "verify_candidates: registration lookup failed site=%r name=%r err=%r",
+                site, name, exc,
+            )
+            continue
+        for r in results:
+            if site in (r.url or ""):
+                return r.url, True
+    return None, False
 
 
 async def _obscurity_press_scan(name: Optional[str]) -> Optional[int]:
@@ -114,7 +133,7 @@ async def _obscurity_press_scan(name: Optional[str]) -> Optional[int]:
     if not name:
         return None
     try:
-        results = await web_search(name, max_results=5)
+        results = await web_search(name, max_results=OBSCURITY_SCAN_MAX_RESULTS)
         return len(results)
     except Exception as exc:  # noqa: BLE001
         log.warning("verify_candidates: press scan failed name=%r err=%r", name, exc)
@@ -123,24 +142,17 @@ async def _obscurity_press_scan(name: Optional[str]) -> Optional[int]:
 
 def _apply_kill_rule(
     domain_live: Optional[bool],
-    registration: tuple[Optional[str], bool],
+    registration: tuple[Optional[str], bool],   # kept for signature stability; no longer a kill input
     press_hits: Optional[int],
 ) -> tuple[bool, Optional[str]]:
-    """Kill ONLY on a DEFINITIVE failure (D-12). ``None`` values (transient
-    errors) NEVER contribute to a kill — only an explicit False/definitive
-    signal does.
-    """
-    registration_id, registration_verified = registration
-
+    """Kill ONLY on DEFINITIVE proof (D-12). Registration NEVER kills anymore —
+    absence of a registration record is absence of evidence, not proof of
+    non-existence; it only fails to upgrade confidence. None values (transient
+    errors) never contribute to a kill."""
     if domain_live is False:
         return True, "domain does not resolve / returned a definitive 4xx"
-
-    if registration_id is None and not registration_verified:
-        return True, "no registration record found (no charityNavigatorUrl or guidestarUrl)"
-
     if press_hits is not None and press_hits >= OBSCURITY_FAIL_MIN_HITS:
-        return True, f"clearly not obscure enough — {press_hits} press hits found"
-
+        return True, f"clearly not obscure enough — {press_hits} of {OBSCURITY_SCAN_MAX_RESULTS} press hits found"
     return False, None
 
 
