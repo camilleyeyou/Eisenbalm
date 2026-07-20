@@ -46,14 +46,21 @@ async def coverage_strip(
     by ``lastFeaturedAt`` desc (order comes straight from
     ``charities:listRecentFeatured``)."""
     convex_http = getattr(request.app.state, "convex_http", None)
-    rows = (
-        await _cc.convex_query(
-            convex_http,
-            "charities:listRecentFeatured",
-            {"workspace_id": WORKSPACE_ID, "limit": 8},
+    try:
+        rows = (
+            await _cc.convex_query(
+                convex_http,
+                "charities:listRecentFeatured",
+                {"workspace_id": WORKSPACE_ID, "limit": 8},
+            )
+            or []
         )
-        or []
-    )
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "coverage-strip Convex query failed — degrading to empty result.",
+            exc_info=True,
+        )
+        rows = []
 
     ids = [r["sanityCharityId"] for r in rows if r.get("sanityCharityId")]
 
@@ -61,14 +68,21 @@ async def coverage_strip(
     # uses the module-level Sanity client registered at FastAPI lifespan
     # (calibrator.py:70 precedent). Only issued when there's at least one id
     # to look up.
-    sanity_rows = (
-        await _sc.groq_query(
-            '*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}',
-            params={"ids": ids},
+    try:
+        sanity_rows = (
+            await _sc.groq_query(
+                '*[_type=="charity" && _id in $ids]{_id, focusArea, location, scoutNotes}',
+                params={"ids": ids},
+            )
+            if ids
+            else []
         )
-        if ids
-        else []
-    )
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "coverage-strip Sanity groq_query failed — degrading to empty chips.",
+            exc_info=True,
+        )
+        sanity_rows = []
     by_id = {s["_id"]: s for s in sanity_rows}
 
     result: list[dict] = []
@@ -107,14 +121,21 @@ async def repetition_note(
     notes) is deliberately excluded: it is not a categorical value.
     """
     convex_http = getattr(request.app.state, "convex_http", None)
-    rows = (
-        await _cc.convex_query(
-            convex_http,
-            "charities:listRecentFeatured",
-            {"workspace_id": WORKSPACE_ID, "limit": 8},
+    try:
+        rows = (
+            await _cc.convex_query(
+                convex_http,
+                "charities:listRecentFeatured",
+                {"workspace_id": WORKSPACE_ID, "limit": 8},
+            )
+            or []
         )
-        or []
-    )
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "repetition-note Convex query failed — degrading to empty result.",
+            exc_info=True,
+        )
+        rows = []
     sample_size = len(rows)
 
     ids = [r["sanityCharityId"] for r in rows if r.get("sanityCharityId")]
@@ -122,14 +143,23 @@ async def repetition_note(
     # groq_query(query, *, params=None) — NO http/positional-client arg (same
     # calling convention as coverage_strip above). Only cause/geo fields are
     # requested — the signal field is never counted.
-    sanity_rows = (
-        await _sc.groq_query(
-            '*[_type=="charity" && _id in $ids]{_id, focusArea, location}',
-            params={"ids": ids},
+    try:
+        sanity_rows = (
+            await _sc.groq_query(
+                '*[_type=="charity" && _id in $ids]{_id, focusArea, location}',
+                params={"ids": ids},
+            )
+            if ids
+            else []
         )
-        if ids
-        else []
-    )
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "repetition-note Sanity groq_query failed — degrading to neutral "
+            "note (sampleSize=%d preserved from Convex).",
+            sample_size,
+            exc_info=True,
+        )
+        sanity_rows = []
 
     # Phase 46 Plan 02 (SGE-05): the counting algorithm now lives in
     # lib/registry_repetition.compute_repetition_note — the Signal Editor
