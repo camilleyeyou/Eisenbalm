@@ -200,6 +200,19 @@ export function OrgOptionSlate() {
                   </p>
                 )}
 
+                {/* quick 260719-w6o (F2) — a killed candidate must render AS
+                    killed, with its killReason (BriefOrgCard.tsx:93-101
+                    pattern). Advisory only: it does not remove the org from
+                    the slate. */}
+                {verification?.killed && (
+                  <p
+                    data-testid={`org-killed-${candidate.charityName}`}
+                    className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-marigold-text)]"
+                  >
+                    Verification flagged a concern: {verification.killReason || 'unspecified'}.
+                  </p>
+                )}
+
                 {/* agent case + confidence */}
                 {candidate.advocateScore != null && (
                   <p
@@ -237,7 +250,9 @@ export function OrgOptionSlate() {
                     data-testid={`main-concern-${candidate.charityName}`}
                     className="mt-0.5 text-[13px] leading-relaxed text-[color:var(--color-ink)]"
                   >
-                    {candidate.primaryConcern || '—'}
+                    {verification?.killed
+                      ? verification.killReason || candidate.primaryConcern || '—'
+                      : candidate.primaryConcern || '—'}
                   </p>
                 </div>
               </li>

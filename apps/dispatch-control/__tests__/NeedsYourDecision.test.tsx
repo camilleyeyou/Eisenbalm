@@ -209,4 +209,42 @@ describe('NeedsYourDecision (BRF-04)', () => {
       expect(screen.getByRole('status').textContent).toContain('Resumed the run')
     })
   })
+
+  it('quick 260719-w6o (F2): a killed top-two candidate with no primaryConcern shows its killReason in Risk, never "No concern flagged."', () => {
+    const killedAdvocateRows = [
+      {
+        charityId: 'charity-quiet-harvest',
+        payload: JSON.stringify({
+          charityName: 'Quiet Harvest Food Bank',
+          score: 9,
+          argument: 'Decade-long unglamorous local impact, easy to verify.',
+          // No primaryConcern — the killReason must be what renders.
+        }),
+      },
+      advocateRows[1],
+      advocateRows[2],
+    ]
+    const killedVerificationRecords = [
+      {
+        ...verificationRecords[0],
+        killed: true,
+        killReason: 'failed obscurity check',
+      },
+      verificationRecords[1],
+    ]
+    render(
+      <NeedsYourDecisionCard
+        runId="run-1"
+        pitchRows={pitchRows}
+        advocateRows={killedAdvocateRows}
+        verificationRecords={killedVerificationRecords}
+      />,
+    )
+    expect(screen.getByTestId('decision-risk-Quiet Harvest Food Bank').textContent).toContain(
+      'failed obscurity check',
+    )
+    expect(screen.getByTestId('decision-risk-Quiet Harvest Food Bank').textContent).not.toBe(
+      'No concern flagged.',
+    )
+  })
 })

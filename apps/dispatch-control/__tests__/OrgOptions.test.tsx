@@ -224,4 +224,25 @@ describe('OrgOptions (BRF-03)', () => {
     render(<OrgOptionSlate />)
     expect(screen.getByText('Loading…')).toBeDefined()
   })
+
+  it('quick 260719-w6o (F2): a killed candidate renders AS killed with its killReason — never "—" as Main concern', () => {
+    wsMock.verificationRecords = [
+      {
+        candidateId: 'charity-quiet-harvest',
+        candidateName: 'Quiet Harvest Food Bank',
+        domainLive: false,
+        registrationId: undefined,
+        registrationVerified: false,
+        pressHits: 0,
+        obscurityVerdict: 'obscure',
+        status: 'fail',
+        killed: true,
+        killReason: 'domain parked; no registration',
+        checkedAt: 1_700_000_000_000,
+      },
+    ]
+    render(<OrgOptionSlate />)
+    expect(document.body.textContent).toContain('domain parked; no registration')
+    expect(screen.getByTestId('main-concern-Quiet Harvest Food Bank').textContent).not.toBe('—')
+  })
 })

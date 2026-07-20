@@ -40,6 +40,11 @@ export interface VerificationRecordRow {
   pressHits: number
   obscurityVerdict: string
   checkedAt: number
+  // quick 260719-w6o (F2) — the runtime Convex row already carries these
+  // (verificationRecords schema, convex/schema.ts:572-574); this LOCAL type
+  // just hadn't declared them yet.
+  killed?: boolean
+  killReason?: string
 }
 
 export interface NeedsYourDecisionCardProps {
@@ -193,7 +198,9 @@ export function NeedsYourDecisionCard({
                   data-testid={`decision-risk-${candidate.charityName}`}
                   className="mt-0.5 text-[13px] leading-relaxed text-[color:var(--color-ink)]"
                 >
-                  {candidate.primaryConcern || 'No concern flagged.'}
+                  {verification?.killed
+                    ? `Verification killed this candidate: ${verification.killReason || 'unspecified'}`
+                    : candidate.primaryConcern || 'No concern flagged.'}
                 </p>
               </div>
 

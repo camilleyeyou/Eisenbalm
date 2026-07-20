@@ -22,7 +22,7 @@ import Link from 'next/link'
 import { ConvexHttpClient } from 'convex/browser'
 import { AlertTriangle } from 'lucide-react'
 import { api } from '@convex/_generated/api'
-import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
+import { parseIssueNumber, issueHref, issueStoryHref } from '@/lib/issueRouteResolver'
 import ApprovalStage from './ApprovalStage'
 import ApprovalPanelPublisher from './ApprovalPanelContent'
 
@@ -78,6 +78,47 @@ function FailedRunPanel({ issueNumber: n, runId, errorMessage }: { issueNumber: 
   )
 }
 
+// quick 260719-w6o (F3) — a run paused at the Gate-1 interrupt
+// (status==='awaiting-review' && completedAt==null, §37.4(c)) is a DIFFERENT
+// status than 'failed', so it shared none of the FailedRunPanel guard above:
+// it would fall through to DecisionRail and render a dead "clear to
+// publish" screen (nothing was drafted yet — no claims, no findings, no
+// sanityIssueId). Mirrors FailedRunPanel's styling exactly.
+function PausedAtGate1Panel({ issueNumber: n, runId }: { issueNumber: number; runId: string }) {
+  return (
+    <div className="w-full rounded-[2px] border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] p-6">
+      <div className="flex items-center gap-2">
+        <AlertTriangle
+          size={18}
+          className="shrink-0 text-[color:var(--color-vermilion)]"
+          aria-hidden="true"
+        />
+        <h2 className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)]">
+          Paused at the story decision
+        </h2>
+      </div>
+      <p className="mt-3 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+        This run paused before choosing a charity — pick the story first, then the rest of the pipeline
+        runs.
+      </p>
+      <div className="mt-5 flex flex-wrap items-center gap-4">
+        <Link
+          href={issueStoryHref(n)}
+          className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-cobalt)]"
+        >
+          Go to the story decision
+        </Link>
+        <Link
+          href="/signal-desk"
+          className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]"
+        >
+          Open Signal Desk
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export default async function IssueApprovalPage({ params }: IssueApprovalPageProps) {
   const { issueNumber: rawIssueNumber } = await params
   const n = parseIssueNumber(rawIssueNumber)
@@ -93,6 +134,14 @@ export default async function IssueApprovalPage({ params }: IssueApprovalPagePro
   // it renders the terminal panel above instead.
   if (run.status === 'failed') {
     return <FailedRunPanel issueNumber={n} runId={run.runId} errorMessage={run.errorMessage} />
+  }
+
+  // quick 260719-w6o (F3) — a run paused at Gate 1 never mounts DecisionRail
+  // (ApprovalStage/ApprovalPanelPublisher); it renders the paused panel
+  // above instead. A finished run has completedAt set, so this branch never
+  // catches a genuinely reviewable run.
+  if (run.status === 'awaiting-review' && run.completedAt == null) {
+    return <PausedAtGate1Panel issueNumber={n} runId={run.runId} />
   }
 
   return (
