@@ -20,6 +20,7 @@ import {
   deriveRunCostUsd,
   deriveRunCapUsd,
   DEFAULT_RUN_CAP_USD,
+  isPausedAtGate1,
   type DerivationInputs,
   type DerivedTask,
   type SectionState,
@@ -283,6 +284,22 @@ describe('deriveStoryStage (Phase 47 Plan 47-08, Pitfall 3 — precise Gate-1-pa
   })
 })
 
+describe('isPausedAtGate1 (quick 260719-w6o, F1) — the shared predicate', () => {
+  it('true when awaiting-review with completedAt undefined', () => {
+    expect(isPausedAtGate1(baseInputs({ runStatus: 'awaiting-review', runCompletedAt: undefined }))).toBe(
+      true,
+    )
+  })
+
+  it('false when awaiting-review but completedAt is set (the finished-run gate)', () => {
+    expect(isPausedAtGate1(baseInputs({ runStatus: 'awaiting-review', runCompletedAt: 123 }))).toBe(false)
+  })
+
+  it('false when the run is still running', () => {
+    expect(isPausedAtGate1(baseInputs({ runStatus: 'running' }))).toBe(false)
+  })
+})
+
 describe('deriveStageStates — failed run is terminal (quick 260718-51o)', () => {
   it('a failed, non-published run: every stage is not-generated — Approval [4] and Voice [3] are NOT "needs-you"', () => {
     const result = deriveStageStates(baseInputs({ runStatus: 'failed' }))
@@ -498,6 +515,25 @@ describe('deriveTasks (§40.6, D-21)', () => {
   it('returns [] for a failed run (quick 260718-51o) — no signoff-facts/signoff-voice tasks that can only 409', () => {
     const tasks = deriveTasks(baseInputs({ runStatus: 'failed', signOffs: {} }))
     expect(tasks).toEqual([])
+  })
+
+  it('quick 260719-w6o (F1): a run paused at Gate 1 emits exactly ONE story-decision task, never the false sign-off tasks', () => {
+    const tasks = deriveTasks(
+      baseInputs({ runStatus: 'awaiting-review', runCompletedAt: undefined, signOffs: {} }),
+    )
+    expect(tasks).toHaveLength(1)
+    expect(tasks[0].stage).toBe(1)
+    expect(tasks[0].primary.href).toContain('/story')
+    expect(tasks.find((t) => t.id === 'signoff-facts')).toBeUndefined()
+    expect(tasks.find((t) => t.id === 'signoff-voice')).toBeUndefined()
+  })
+
+  it('quick 260719-w6o (F1) regression guard: a genuinely reviewable run (awaiting-review WITH completedAt set) still emits the two sign-off tasks', () => {
+    const tasks = deriveTasks(
+      baseInputs({ runStatus: 'awaiting-review', runCompletedAt: 1_700_000_000_000, signOffs: {} }),
+    )
+    expect(tasks.find((t) => t.id === 'signoff-facts')).toBeDefined()
+    expect(tasks.find((t) => t.id === 'signoff-voice')).toBeDefined()
   })
 
   it('length equals open findings + pending claims + missing sign-offs on a non-running run', () => {

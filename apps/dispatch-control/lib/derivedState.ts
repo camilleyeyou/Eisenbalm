@@ -20,6 +20,7 @@ import {
   issueVoiceHref,
   issueFactCheckHref,
   issueApprovalHref,
+  issueStoryHref,
 } from './issueRouteResolver'
 import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
 import type { DraftResponse } from './contentPatchClient'
@@ -168,6 +169,15 @@ function countOpen(rows: DerivationInputs['qaFindings']): number {
   return (rows ?? []).filter(isOpenFinding).length
 }
 
+// quick 260719-w6o (F1) — THE single paused-at-Gate-1 predicate
+// (§37.4(c)): status==='awaiting-review' && completedAt==null. Both the
+// all-candidates-killed and low-confidence Gate-1 interrupts share this
+// shape (editor.py:378-398 / 526-538). A finished run at the final Andrew
+// gate is 'awaiting-review' with completedAt SET, so this is FALSE for it.
+export function isPausedAtGate1(i: DerivationInputs): boolean {
+  return i.runStatus === 'awaiting-review' && i.runCompletedAt == null
+}
+
 function deriveStoryStage(i: DerivationInputs): StageStateResult {
   if (i.runId === null) return { state: 'not-generated', openCount: 0 }
   if (i.pitchRows === undefined) return { state: 'in-progress', openCount: 0 }
@@ -177,7 +187,7 @@ function deriveStoryStage(i: DerivationInputs): StageStateResult {
   // merely "leads exist and none is selected yet," which would flash "Needs
   // you" for a mid-flight run (Scout/Advocate still working, Gate 1 not
   // reached). Mirrors SignalDeskScreen's isPausedAtGate1 exactly.
-  const pausedAtGate1 = i.runStatus === 'awaiting-review' && i.runCompletedAt == null
+  const pausedAtGate1 = isPausedAtGate1(i)
   if (pausedAtGate1) return { state: 'needs-you', openCount: 1 }
   return { state: 'in-progress', openCount: 0 }
 }
@@ -433,6 +443,28 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   // recovery rail). Emit no findings/claims/sign-off tasks so My Tasks and
   // the header open-count stop advertising actions that can only 409.
   if (i.runStatus === 'failed') return []
+
+  // quick 260719-w6o (F1) — a run paused at Gate 1 has NOT chosen a charity:
+  // it has no draft/claims/findings, and its sign-off buttons can only
+  // mislead (deriveTasks's runningOrDone below was TRUE for 'awaiting-review',
+  // emitting two false 'Must fix' sign-off tasks pointing at a dead Approval
+  // screen — the audit's single most misleading signal). Emit ONE task: the
+  // story decision itself, so My Tasks still says what's needed.
+  if (isPausedAtGate1(i)) {
+    const href = i.issueNumber === null ? '/issues' : issueStoryHref(i.issueNumber)
+    return [
+      {
+        id: 'gate1-decision',
+        sev: 'must-fix',
+        title: 'Choose the charity to continue',
+        where: 'Story',
+        why: 'The run is paused for your decision — the agents could not confidently choose a charity.',
+        primary: { label: 'Decide', href },
+        stage: 1,
+        openedAt: i.runStartedAt,
+      },
+    ]
+  }
 
   const n = i.issueNumber
   const fallbackHref = n === null ? '/issues' : undefined
