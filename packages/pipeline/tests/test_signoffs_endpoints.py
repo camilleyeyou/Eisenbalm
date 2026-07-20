@@ -419,6 +419,47 @@ def test_facts_cleared_ignores_open_voice_axis_error(monkeypatch):
     assert record_calls[0]["kind"] == "facts-cleared"
 
 
+def test_sign_off_409_no_sanity_issue(monkeypatch):
+    """
+    Quick 260719-w6o (F5) — POST sign-off {kind:"sounds-human"} for a run
+    with NO sanityIssueId (the failed-early AND paused-at-Gate-1 shape) →
+    409 {reason:"no_sanity_issue"}; does NOT call signOffs:record. This
+    reproduces the 2026-07-18 production incident where sounds-human 200'd
+    on a contentless run.
+    """
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return {"status": "awaiting-review", "runId": "run-abc"}
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
+
+    response = _client.post(
+        "/issues/run-abc/sign-off", json={"kind": "sounds-human"}
+    )
+    assert response.status_code == 409, (
+        f"Expected 409, got {response.status_code}: {response.text}"
+    )
+    detail = response.json()["detail"]
+    assert detail["reason"] == "no_sanity_issue"
+
+    record_calls = [
+        args for path, args in mutation_calls if path == "signOffs:record"
+    ]
+    assert record_calls == [], "signOffs:record must NOT be called"
+
+
 def test_facts_cleared_409_open_factual_axis_error(monkeypatch):
     """
     POST sign-off {kind:"facts-cleared"} with an open axis="precision"

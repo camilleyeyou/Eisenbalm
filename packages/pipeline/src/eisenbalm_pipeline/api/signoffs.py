@@ -89,6 +89,24 @@ async def record_sign_off(
             detail=f"Run not found: {run_id}",
         )
 
+    # quick 260719-w6o (F5) — a run with no Sanity issue has produced no
+    # reviewable content: it failed early, or paused at Gate 1 before any
+    # draft was written (editor.py:378-398 / 526-538). No sign-off can
+    # attest content that does not exist. ONE guard covers BOTH the failed
+    # and Gate-1-paused shapes without enumerating status values, closing
+    # the same class as quick 260718-51o at the source. A genuinely
+    # reviewable run always carries sanityIssueId (written at draft time —
+    # content.py's edit routes already require it), so this never over-gates.
+    sanity_id = run.get("sanityIssueId")
+    if not sanity_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "reason": "no_sanity_issue",
+                "message": "This run has produced no reviewable content to sign off.",
+            },
+        )
+
     if body.kind == "facts-cleared":
         # 2a. Claims signoff gate — relocated verbatim from review.py (D-04).
         signoff = await _cc.convex_query(
