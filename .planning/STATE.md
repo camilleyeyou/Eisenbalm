@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260718-7dk (fix run-killing verification — None vs null)
-last_updated: "2026-07-18T12:36:04.000Z"
+stopped_at: Completed quick 260719-w6o (make paused-at-Gate-1 a first-class UI state)
+last_updated: "2026-07-20T06:30:59.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -1035,6 +1035,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-18T12:36:04.000Z
-Stopped at: Completed quick 260718-7dk (fix run-killing verification — None vs null)
+Last session: 2026-07-20T06:30:59.000Z
+Stopped at: Completed quick 260719-w6o (make paused-at-Gate-1 a first-class UI state)
 Resume file: None
