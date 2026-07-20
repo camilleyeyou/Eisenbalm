@@ -161,6 +161,44 @@ async def sanity_publish(request: Request) -> dict:
             log.warning("bypass alert emit failed for run=%s (non-blocking)", run_id)
         return {"ok": True, "blocked": "missing_signoffs", "missing": missing}
 
+    # ── Self-echo guard (quick 260720-gic) ──────────────────────────────────
+    # Publisher step 3 patches problemPdf on the already-published doc, which
+    # RE-FIRES this webhook. Each echo carries a DISTINCT header idempotency-key
+    # (so the WHK-04 dedup above never catches it) and the operator's sign-offs
+    # stay active (so the §34.5 gate above never blocks it) → an infinite ~2s
+    # publish loop (CONFIRMED: run d9c09fa7 / issue-999604).
+    #
+    # Atomically claim (publisher-run, issue_id) BEFORE scheduling: the FIRST
+    # webhook for a published issue wins and schedules; every problemPdf echo
+    # finds it claimed → skip. INSERT ON CONFLICT is race-safe by construction,
+    # so this holds even though Publisher patches problemPdf (step 3) BEFORE it
+    # writes status=complete (step 6). A DISTINCT source keeps these rows off the
+    # header-key dedup namespace. Placed AFTER the sign-off gate so a blocked/
+    # reverted publish does NOT consume the claim (a later legit publish must pass).
+    # Operator re-publish is unaffected: publish_manual (control.py) and
+    # manual_publish (runs.py) call _run_publisher DIRECTLY, not via this webhook.
+    if pool is not None:
+        try:
+            first_publish = await claim_idempotency_key(
+                pool,
+                source="publisher-run",
+                idempotency_key=issue_id,
+                run_id=run_id,
+            )
+        except Exception as exc:  # noqa: BLE001 — a DB blip must not drop a real publish
+            log.exception(
+                "publisher-run claim failed for issue=%s (proceeding): %s",
+                issue_id,
+                exc,
+            )
+            first_publish = True
+        if not first_publish:
+            log.info(
+                "publisher already scheduled for %s, skipping self-echo",
+                issue_id,
+            )
+            return {"ok": True, "duplicate": "self-echo"}
+
     task = asyncio.create_task(
         _run_publisher(
             request.app,
