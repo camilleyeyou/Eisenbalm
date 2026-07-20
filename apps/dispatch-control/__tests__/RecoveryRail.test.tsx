@@ -91,6 +91,14 @@ describe('RecoveryRail (WBN-03) — four §7 sections', () => {
     expect(screen.getByText(/no specific step is recorded as failed/i)).toBeTruthy()
   })
 
+  it('quick 260719-w6o (F4): a genuinely paused run (no failed agent row) mounts a reachable /signal-desk recovery, not the generic failed fallback', () => {
+    render(<RecoveryRail runId="run-1" agentRuns={[]} isPausedAtGate1 />)
+    expect(screen.getByText('Paused for your decision')).toBeTruthy()
+    const link = screen.getByRole('link', { name: 'Restart from this step' })
+    expect(link.getAttribute('href')).toBe('/signal-desk')
+    expect(screen.queryByText(/no specific step is recorded as failed/i)).toBeNull()
+  })
+
   it('falls back to a generic reason when the failed row has no error text', () => {
     render(<RecoveryRail runId="run-1" agentRuns={rows('scout')} />)
     expect(screen.getByText(/failed without a specific error message/i)).toBeTruthy()

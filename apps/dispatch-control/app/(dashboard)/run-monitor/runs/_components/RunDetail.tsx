@@ -249,6 +249,14 @@ export default function RunDetail({ runId }: RunDetailProps) {
 
   const stepGroups = buildStepGroups(agentRuns as AgentRunRow[])
 
+  // quick 260719-w6o (F4) — the §37.4(c) paused-at-Gate-1 predicate,
+  // computed from this `runs`-table row (has status + completedAt,
+  // convex/schema.ts:254-256). Mutually exclusive with status==='failed'
+  // (mirrors deriveState.ts's isPausedAtGate1 shape against a run object
+  // rather than DerivationInputs — 47-RESEARCH/§scope_notes: intentional,
+  // not cross-boundary duplication worth a shared helper).
+  const isPausedAtGate1 = run.status === 'awaiting-review' && run.completedAt == null
+
   return (
     <div className="space-y-6">
       {/* Back link */}
@@ -320,6 +328,19 @@ export default function RunDetail({ runId }: RunDetailProps) {
           // so this mount is always false here. Left explicit (not omitted)
           // so the honesty matrix's contract stays visible at the call site.
           isPausedAtGate1={false}
+        />
+      )}
+
+      {/* quick 260719-w6o (F4) — a genuinely paused run gets its own reachable
+          recovery rail (Signal Desk adjudication link), unhardcoding the dead
+          nomenclature editor_gate_1 'live' branch for the first time in the
+          shipped app. Failed and paused are mutually exclusive, so this
+          mount never overlaps the one above. */}
+      {isPausedAtGate1 && (
+        <RecoveryRail
+          runId={runId}
+          agentRuns={agentRuns as AgentRunRow[]}
+          isPausedAtGate1={true}
         />
       )}
 

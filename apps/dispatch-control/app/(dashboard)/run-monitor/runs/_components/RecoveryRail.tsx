@@ -234,6 +234,39 @@ export default function RecoveryRail({
   const sequence = namedStepSequence()
 
   if (!failedAgentKey) {
+    // quick 260719-w6o (F4) — a run genuinely paused at Gate 1 (no agent row
+    // is "failed"; a failure and a pause are mutually exclusive) has a real
+    // recovery primitive — the Signal Desk adjudication surface — unlike the
+    // generic "no specific step is recorded as failed" fallback below, which
+    // dead-ends. Reuses RestartAction's existing editor_gate_1 LIVE branch,
+    // making restartAvailabilityFor('editor_gate_1',{isPausedAtGate1:true})
+    // reachable in the shipped app for the first time. Nested here (not a
+    // sibling branch) so a run with a real failed agent row — including the
+    // artificial editor_gate_1 failed row used elsewhere in this file's own
+    // tests — is completely unaffected.
+    if (isPausedAtGate1) {
+      return (
+        <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-white p-5">
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
+              Paused for your decision
+            </h3>
+            <p className="mt-1 text-sm text-neutral-700">
+              This run paused at the story decision — the agents could not confidently choose a
+              charity. Choose one to resume; completed steps are reused, not re-paid.
+            </p>
+          </section>
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+              Recommended recovery
+            </h3>
+            <div className="mt-2 flex flex-wrap items-start gap-4">
+              <RestartAction runId={runId} agentKey="editor_gate_1" isPausedAtGate1={true} />
+            </div>
+          </section>
+        </div>
+      )
+    }
     return (
       <div className="rounded-lg border border-[color:var(--color-vermilion)] bg-white p-5">
         <h3 className="text-sm font-semibold text-[color:var(--color-vermilion)]">
