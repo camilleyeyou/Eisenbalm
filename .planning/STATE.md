@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260720-gic (stop publisher webhook self-trigger loop)
-last_updated: "2026-07-20T07:00:00.000Z"
+stopped_at: Completed quick 260720-i3c (harden registry endpoints to degrade-never-500)
+last_updated: "2026-07-20T07:15:00.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
