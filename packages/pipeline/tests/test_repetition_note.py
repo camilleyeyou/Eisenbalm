@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -202,3 +203,27 @@ async def test_repetition_note_at_most_two(monkeypatch):
     data = resp.json()
     assert len(data["avoid"]) <= 2
     assert data["note"].count("avoid ") <= 2
+
+
+async def test_repetition_note_degrades_on_sanity_failure(monkeypatch):
+    """A Sanity groq_query failure (e.g. 401 from a bad SANITY_API_TOKEN)
+    degrades to a neutral note instead of a 500 — sampleSize is preserved
+    from the Convex row count, captured BEFORE the Sanity join."""
+    convex_mock = AsyncMock(return_value=_FEATURED_ROWS_OVER_REPRESENTED)
+    monkeypatch.setattr(_cc, "convex_query", convex_mock)
+
+    _req = httpx.Request("GET", "https://x.api.sanity.io/v1/data/query/x")
+    _err = httpx.HTTPStatusError(
+        "401 Unauthorized", request=_req, response=httpx.Response(401, request=_req)
+    )
+
+    with patch.object(_sc, "groq_query", autospec=True) as groq_mock:
+        groq_mock.side_effect = _err
+        client = _make_client()
+        resp = client.get("/registry/repetition-note")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["note"] is None
+    assert data["avoid"] == []
+    assert data["sampleSize"] == 8
