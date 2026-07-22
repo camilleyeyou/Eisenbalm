@@ -124,6 +124,15 @@ vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
 }))
 
+// ── Quick 260721-qdx: IssueWorkspaceLayout now mounts StageHintStrip, which
+// reads the shell-level onboarding context (@/components/onboarding/
+// OnboardingProvider) — NOT mounted by this test (it only renders the Issue
+// Workspace layout in isolation, not the full dashboard shell). Mock
+// useOnboarding() directly; this test has no assertions about onboarding. ───
+vi.mock('@/components/onboarding/OnboardingProvider', () => ({
+  useOnboarding: () => ({ onboarding: null }),
+}))
+
 // ── The authoritative-draft fetch the provider runs — resolves once to a
 // stable, contentless-but-loaded draft so the provider's draft-load effect
 // settles quickly and isn't itself a render-loop driver in this test. ───────
@@ -181,6 +190,9 @@ vi.mock('@convex/_generated/api', () => ({
     // DecisionLog's two subscriptions (mounted by the REAL ApprovalPanelPublisher).
     auditLog: { listDecisions: 'auditLog:listDecisions' },
     users: { byClerkUserId: 'users:byClerkUserId' },
+    // Quick 260721-qdx — StageHintStrip (now mounted by IssueWorkspaceLayout)
+    // unconditionally calls useMutation(api.userOnboarding.dismissStageHint).
+    userOnboarding: { dismissStageHint: 'userOnboarding:dismissStageHint' },
   },
 }))
 
