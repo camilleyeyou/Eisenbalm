@@ -172,7 +172,19 @@ export function VoicePassScreen({ runId }: { runId: string }) {
             : 'Failed to load draft.',
       )
     }
-  }, [runId, getToken])
+    // getToken (Clerk) is a stable accessor called FRESH inside the try block
+    // and always returns a current token regardless of which reference was
+    // captured; including its identity here caused an infinite
+    // refetch/re-render loop on CONTENT runs when getToken's reference
+    // churns — quick 260721-ohu. Same chosen approach as
+    // ReviewDeskRunView.tsx: drop getToken from THIS useCallback's deps
+    // (rather than the mount effect below, which depends on [reloadDraft])
+    // so reloadDraft stays stable per-runId, preserving Pitfall 1 (reused as
+    // a prop after accept / revision_mismatch — see reloadDraft={reloadDraft}
+    // / onApplied={reloadDraft} below). Depend on runId ONLY. The SECOND
+    // getToken usage further down (deep-check re-run) is untouched.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId])
 
   useEffect(() => {
     let cancelled = false

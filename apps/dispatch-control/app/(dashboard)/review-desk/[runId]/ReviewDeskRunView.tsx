@@ -347,7 +347,19 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
             : 'Failed to load draft.',
       )
     }
-  }, [runId, getToken])
+    // getToken (Clerk) is a stable accessor called FRESH inside the try block
+    // and always returns a current token regardless of which reference was
+    // captured; including its identity here caused an infinite
+    // refetch/re-render loop on CONTENT runs when getToken's reference
+    // churns — quick 260721-ohu. CHOSEN APPROACH: drop getToken from THIS
+    // useCallback's deps (rather than the mount effect below, which depends
+    // on [reloadDraft]) — the churn enters through reloadDraft's identity, so
+    // stabilizing reloadDraft per-runId both breaks the loop AND preserves
+    // Pitfall 1 (reloadDraft is reused as a prop after accept /
+    // revision_mismatch — see reloadDraft={reloadDraft} / onApplied={reloadDraft}
+    // below). Depend on runId ONLY.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId])
 
   useEffect(() => {
     let cancelled = false

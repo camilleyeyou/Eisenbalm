@@ -199,6 +199,12 @@ export default function IssuesHomePage() {
 
   const [repetitionNote, setRepetitionNote] = useState<string | null>(null)
   const noteFetchedRef = useRef(false)
+  // Quick 260721-ohu note: this effect's deps ([getToken]) are intentionally
+  // UNCHANGED — it is already safe against getToken's reference churn
+  // because of the noteFetchedRef one-shot guard immediately below (any
+  // refire early-returns before doing work). This is the precedent the
+  // codebase already knew getToken could churn; the bug fixed elsewhere in
+  // this quick task was effects that refire AND redo unguarded work.
   useEffect(() => {
     if (noteFetchedRef.current) return
     noteFetchedRef.current = true

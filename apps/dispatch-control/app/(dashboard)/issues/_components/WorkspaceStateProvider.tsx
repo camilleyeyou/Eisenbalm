@@ -313,7 +313,14 @@ export function WorkspaceStateProvider({
     return () => {
       cancelled = true
     }
-  }, [runId, getToken])
+    // getToken (Clerk) is a stable accessor called FRESH inside load() and
+    // always returns a current token regardless of which reference was
+    // captured; including its identity here caused an infinite
+    // refetch/re-render loop on CONTENT runs (setDraft stores a fresh object
+    // every fetch) when getToken's reference churns — quick 260721-ohu.
+    // Depend on runId ONLY; the draft still refetches on run change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId])
 
   const sectionStates = draft
     ? deriveSectionStates(derivationInputs, draftSectionIdsFromDraft(draft))
