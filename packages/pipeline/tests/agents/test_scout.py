@@ -10,10 +10,12 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from eisenbalm_pipeline.agents.scout import (
+    SCOUT_QUERIES,
     CharityCandidate,
     ScoutBatchOutput,
     _candidate_keys,
     _domain_of,
+    discover_candidates,
     scout,
 )
 from eisenbalm_pipeline.lib.errors import AgentToolCallLimitExceeded
@@ -330,3 +332,96 @@ async def test_tool_limit_exceeded(sample_dispatch_state) -> None:
     assert excinfo.value.agent_id == "scout"
     assert excinfo.value.limit == 8
     assert excinfo.value.attempts >= 8
+
+
+# ── bug scout-zero-candidates: query-pool + instrumentation regression ────
+#
+# Live repro (2026-07-22, see .planning/debug/resolved/scout-zero-candidates.md)
+# proved the original 3 SCOUT_QUERIES reliably surfaced ZERO extractable
+# charity content (meta-commentary/listicle/how-to articles about the
+# nonprofit sector, never naming a specific org) — a genuinely empty batch
+# that no amount of corrective-retry wording could recover from, since every
+# retry re-sends the same stale results. 2 site:guidestar.org/profile queries
+# (validated live to reliably return named-charity profile content) were
+# added to SCOUT_QUERIES as the primary fix. These tests guard against a
+# silent revert of that fix and lock in the new empty-batch instrumentation.
+
+
+def test_scout_queries_include_guidestar_targeted_queries() -> None:
+    """Regression guard (scout-zero-candidates): the guidestar.org/profile
+    queries added 2026-07-22 must stay present — they are the primary fix
+    for the "Tavily batch had zero extractable charities" root cause. Losing
+    them silently (e.g. an unrelated refactor reverting SCOUT_QUERIES) would
+    reopen the bug without any test failing elsewhere, since the corrective
+    retry loop's own tests use mocked acomplete()/web_search() and can't
+    detect real-world query-quality regressions.
+    """
+    assert len(SCOUT_QUERIES) >= 5
+    guidestar_queries = [q for q in SCOUT_QUERIES if "guidestar.org/profile" in q]
+    assert len(guidestar_queries) == 2, (
+        "expected exactly 2 site:guidestar.org/profile-targeted queries in "
+        "SCOUT_QUERIES (the scout-zero-candidates root-cause fix)"
+    )
+
+
+def test_scout_queries_within_tool_call_budget() -> None:
+    """AGT-18: the real (unpatched) SCOUT_QUERIES must stay <= max_tool_calls
+    (8) — adding queries to fix scout-zero-candidates must not itself trip
+    the tool-call budget on every real run.
+    """
+    assert len(SCOUT_QUERIES) <= 8
+
+
+async def test_empty_first_attempt_logs_tavily_titles(caplog) -> None:
+    """Instrumentation regression (scout-zero-candidates follow-up #1): when
+    the LLM returns zero candidates on the FIRST attempt, discover_candidates
+    must log the actual Tavily titles/URLs at WARNING — this is the evidence
+    that let this bug be diagnosed and must not be lost. Previously only
+    len(tavily_results) was reported, which couldn't distinguish "well-known
+    content correctly rejected" from "no extractable charity at all" (the
+    real cause).
+    """
+    import logging
+
+    tavily_results = [
+        SearchResult(
+            url="https://example.com/some-article",
+            title="A Very Specific Article Title",
+            content="...",
+            score=0.5,
+        ),
+    ]
+    empty_batch = ScoutBatchOutput(candidates=[])
+    populated_batch = ScoutBatchOutput(
+        candidates=[_make_candidate("Org 0", "https://org0.example")]
+    )
+    USAGE = {
+        "tokens_in": 10, "tokens_out": 8, "usd": 0.001,
+        "resolved_model": "anthropic/claude-haiku-4-5",
+    }
+    acomplete_mock = AsyncMock(
+        side_effect=[(empty_batch, USAGE), (populated_batch, USAGE)]
+    )
+
+    with caplog.at_level(logging.WARNING, logger="eisenbalm_pipeline.agents.scout"):
+        with patch(
+            "eisenbalm_pipeline.agents.scout.web_search",
+            AsyncMock(return_value=tavily_results),
+        ), patch(
+            "eisenbalm_pipeline.agents.scout.acomplete", acomplete_mock,
+        ), patch(
+            "eisenbalm_pipeline.agents.scout._load_registry_keys",
+            AsyncMock(return_value=[]),
+        ), patch(
+            "eisenbalm_pipeline.agents.scout.get_convex_http",
+            return_value=object(),
+        ):
+            await discover_candidates(run_id="test-instrumentation", config=None)
+
+    matching = [
+        r for r in caplog.records
+        if "zero candidates on first attempt" in r.message
+    ]
+    assert matching, "expected a WARNING logging the first-attempt empty batch"
+    assert "A Very Specific Article Title" in matching[0].message
+    assert "https://example.com/some-article" in matching[0].message

@@ -48,11 +48,36 @@ log = logging.getLogger(__name__)
 
 
 # Curated Tavily queries (RESEARCH §"Scout" lines 397-430).
-# Three queries × 5 results = up to 15 raw hits for the LLM to filter.
+#
+# bug scout-zero-candidates (root-caused 2026-07-22, live Tavily reproduction):
+# the original 3 generic queries below reliably surface META-COMMENTARY about
+# the nonprofit sector (blog posts, "10 mission statement examples" listicles,
+# Reddit threads, "how to start a nonprofit" guides) rather than pages that
+# describe a SPECIFIC named charity. A live repro of these exact 3 queries
+# returned 15/15 results with zero extractable charities; the LLM correctly
+# emitted `{"candidates": []}` in ~8 output tokens (not a refusal, not a
+# parse failure, not over-aggressive rejection — genuinely nothing to
+# extract). All 3 LLM attempts (initial + both corrective retries) see the
+# SAME Tavily batch, so no amount of "try harder" retry wording can recover
+# once the underlying content has zero named orgs in it.
+#
+# The 2 `site:guidestar.org/profile` queries appended below were validated
+# against live Tavily to reliably return individual charity profile pages
+# with real names + mission text (e.g. "Emerald Development and Economic
+# Network, Inc.", "Foster Love", "No Baby Blisters", "Strive") — genuinely
+# extractable, often-obscure-sounding candidates in every batch observed.
+# Kept the original 3 for diversity (they occasionally surface useful
+# listicle content with real charities embedded) and added these 2 so every
+# run's combined batch has actual charity content to extract from, not just
+# the retry-prompt escalation added in 9d3b29b (which remains as
+# defense-in-depth for genuine model over-rejection, not as the primary
+# fix). 5 queries stays well under the max_tool_calls=8 budget (AGT-18).
 SCOUT_QUERIES: tuple[str, ...] = (
     "obscure charity small nonprofit overlooked impact",
     "underfunded charitable foundation lesser-known",
     "small charity unique mission narrow focus",
+    "site:guidestar.org/profile small overlooked nonprofit obscure mission",
+    "site:guidestar.org/profile tiny nonprofit organization narrow focus",
 )
 
 
@@ -306,6 +331,22 @@ async def discover_candidates(
 
     candidates_raw: list[Any] = _extract_candidates(batch_out)
 
+    # Instrumentation (bug scout-zero-candidates follow-up #1, 2026-07-17
+    # resolved/scout-zero-candidates.md): the original RuntimeError only
+    # reported len(tavily_results), which cost real diagnosis time — the
+    # count alone can't distinguish "well-known content the model correctly
+    # rejected" from "genuinely no extractable charity in the batch" (the
+    # actual cause, confirmed 2026-07-22 via live repro). Log the titles/URLs
+    # up front so any future recurrence is diagnosable from logs alone.
+    if not candidates_raw:
+        log.warning(
+            "Scout (run %s): LLM returned zero candidates on first attempt. "
+            "Tavily batch (%d results) was: %s",
+            run_id,
+            len(tavily_results),
+            [(r.title, r.url) for r in tavily_results],
+        )
+
     # Corrective retry: when the LLM returns zero candidates, retry with
     # escalating strengthened instructions (bug scout-zero-candidates,
     # debugged 2026-07-17). This must live here (not in acomplete) because
@@ -330,6 +371,21 @@ async def discover_candidates(
     # instruction on the final attempt instead of repeating a prompt that
     # already failed once, and (b) widens the retry budget so uncorrelated
     # empty responses are less likely to exhaust it.
+    #
+    # UPDATE 2026-07-22 (bug scout-zero-candidates recurrence): this retry
+    # loop alone was NOT sufficient — live repro (real Tavily + real
+    # OpenRouter, see debug session) showed the dominant failure mode is not
+    # "model over-rejects well-known content" but "the batch contains zero
+    # results describing a specific named charity at all" (meta-commentary/
+    # listicle/how-to content from the 3 generic SCOUT_QUERIES). Since every
+    # retry attempt here re-sends the SAME `tavily_results` (deliberately —
+    # "do not run new searches"), no retry wording can manufacture a charity
+    # out of content that never named one. The actual fix is upstream: 2
+    # `site:guidestar.org/profile`-targeted queries were added to
+    # SCOUT_QUERIES (validated live to reliably return named-org content) so
+    # the batch this loop retries against has real material to extract from
+    # in the first place. This retry loop is kept as defense-in-depth for
+    # genuine model conservatism, not as the primary mitigation.
     for attempt, retry_instruction in enumerate(SCOUT_EMPTY_RETRY_MESSAGES, start=1):
         if candidates_raw:
             break
