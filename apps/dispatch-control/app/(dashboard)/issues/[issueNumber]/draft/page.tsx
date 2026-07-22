@@ -14,13 +14,24 @@
  * resolution (D-12).
  *
  * - `parseIssueNumber` fails -> redirect to `/issues` (unknown/garbage param).
- * - No run yet for a real issue -> redirect to the issue overview
- *   (`/issues/[n]`, D-09) rather than showing a broken editor.
+ * - No run yet for a real issue -> redirect to the Story stage
+ *   (`/issues/[n]/story`, D-09) rather than showing a broken editor.
+ *   Debug session issue-workspace-blink-loop (2026-07-22): this used to
+ *   redirect to the bare `/issues/[n]` index instead. The index page (D-03)
+ *   redirects INTO `issue.lastVisitedStage` whenever it's a valid stage
+ *   segment, without checking a run exists — so an issue whose
+ *   `lastVisitedStage` is `'draft'` (set on an earlier visit, e.g. before its
+ *   run was deleted/reset) but which currently has NO run bounced infinitely
+ *   between `/issues/[n]` and `/issues/[n]/draft`. Story is the one stage
+ *   wrapper already designed to handle the no-run case gracefully (renders
+ *   `StoryBriefScreen`'s Empty/CreatePanel state, no further redirect) —
+ *   redirecting here breaks the cycle at its source. Mirrors the index
+ *   page's own D-04 fallback: "no run at all also lands on Story."
  */
 import { redirect } from 'next/navigation'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
-import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
+import { parseIssueNumber, issueStoryHref } from '@/lib/issueRouteResolver'
 import ReviewDeskRunView from '../../../review-desk/[runId]/ReviewDeskRunView'
 import DraftPanelPublisher from './DraftPanelContent'
 
@@ -39,7 +50,7 @@ export default async function IssueDraftPage({ params }: IssueDraftPageProps) {
   const run = url
     ? await new ConvexHttpClient(url).query(api.pipelineRuns.byIssueNumber, { issueNumber: n })
     : null
-  if (!run) redirect(issueHref(n))
+  if (!run) redirect(issueStoryHref(n))
 
   return (
     <>

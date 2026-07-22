@@ -14,8 +14,16 @@
  * (41-RESEARCH Pitfall 3 — no duplicated subscriptions).
  *
  * - `parseIssueNumber` fails -> redirect to `/issues` (unknown/garbage param).
- * - No run yet for a real issue -> redirect to the issue overview
- *   (`/issues/[n]`) rather than showing a broken rail.
+ * - No run yet for a real issue -> redirect to the Story stage
+ *   (`/issues/[n]/story`) rather than showing a broken rail.
+ *   Debug session issue-workspace-blink-loop (2026-07-22): this used to
+ *   redirect to the bare `/issues/[n]` index instead, which can bounce right
+ *   back here via `issue.lastVisitedStage`, producing an infinite redirect
+ *   loop for any issue whose `lastVisitedStage` is `'approval'` while it
+ *   currently has no run. Story always handles the no-run case without a
+ *   further redirect. `issueHref` is still used below for the FailedRunPanel
+ *   "Back to issue" link — that's a user-initiated click, not an automatic
+ *   redirect, so it cannot loop.
  */
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -128,7 +136,7 @@ export default async function IssueApprovalPage({ params }: IssueApprovalPagePro
   const run = url
     ? await new ConvexHttpClient(url).query(api.pipelineRuns.byIssueNumber, { issueNumber: n })
     : null
-  if (!run) redirect(issueHref(n))
+  if (!run) redirect(issueStoryHref(n))
 
   // quick 260718-51o — a failed run never mounts DecisionRail (ApprovalStage);
   // it renders the terminal panel above instead.

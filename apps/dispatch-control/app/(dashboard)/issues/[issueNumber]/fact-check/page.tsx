@@ -12,11 +12,18 @@
  * content when no claim is selected — `FactCheckScreen` overrides it with
  * the shared `ClaimProvenanceCard` on selection and restores it on
  * deselect/cleanup (D-19).
+ *
+ * Debug session issue-workspace-blink-loop (2026-07-22): the no-run redirect
+ * below targets Story (`issueStoryHref`), not the bare `/issues/[n]` index —
+ * redirecting to the index can bounce right back here via
+ * `issue.lastVisitedStage`, producing an infinite redirect loop for any
+ * issue whose `lastVisitedStage` is `'fact-check'` while it currently has no
+ * run. Story always handles the no-run case without a further redirect.
  */
 import { redirect } from 'next/navigation'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
-import { parseIssueNumber, issueHref } from '@/lib/issueRouteResolver'
+import { parseIssueNumber, issueStoryHref } from '@/lib/issueRouteResolver'
 import FactCheckScreen from './FactCheckScreen'
 import FactCheckPanelPublisher from './FactCheckPanelContent'
 
@@ -35,7 +42,7 @@ export default async function IssueFactCheckPage({ params }: IssueFactCheckPageP
   const run = url
     ? await new ConvexHttpClient(url).query(api.pipelineRuns.byIssueNumber, { issueNumber: n })
     : null
-  if (!run) redirect(issueHref(n))
+  if (!run) redirect(issueStoryHref(n))
 
   return (
     <>
