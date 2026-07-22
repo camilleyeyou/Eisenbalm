@@ -47,6 +47,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 import { useWorkspaceState } from '../../_components/WorkspaceStateProvider'
 import { useInspector } from '@/components/inspector/InspectorProvider'
 import { useRole } from '@/lib/role'
@@ -414,6 +416,10 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
 
       {rows !== undefined && rows.length > 0 && (
         <>
+          <div className="flex items-center gap-1.5">
+            <h2 className={MICRO_LABEL}>Claims</h2>
+            <HelpTip text={HELP_COPY.factCheck.claimMark} label="Explain claim marks" />
+          </div>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Claim filters">
             {FACT_CHECK_FILTERS.map(f => {
               const active = activeFilters.includes(f.id)

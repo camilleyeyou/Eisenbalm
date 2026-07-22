@@ -33,6 +33,8 @@ import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { VOICE_AXES } from '@/lib/galley/axisPartition'
 import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface VoicePassRailProps {
   runId: string
@@ -136,7 +138,10 @@ export default function VoicePassRail({ runId }: VoicePassRailProps) {
     >
       {/* 1 — Machine-tells list */}
       <section aria-label="Machine-tells">
-        <h3 className={MICRO_LABEL}>Machine-tells</h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className={MICRO_LABEL}>Machine-tells</h3>
+          <HelpTip text={HELP_COPY.voice.galley} label="Explain machine-tells" />
+        </div>
         <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink)]">
           {voiceBlockers.length} tell{voiceBlockers.length === 1 ? '' : 's'} to clear
           {voiceWarnings > 0 && (
@@ -182,7 +187,10 @@ export default function VoicePassRail({ runId }: VoicePassRailProps) {
 
       {/* 3 — Sign-offs: the server-gated "Sounds human" green (§36.7). */}
       <section aria-label="Sign-offs">
-        <h3 className={MICRO_LABEL}>Sign-offs</h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className={MICRO_LABEL}>Sign-offs</h3>
+          <HelpTip text={HELP_COPY.voice.soundsHuman} label="Explain Sounds human sign-off" />
+        </div>
         <div className="mt-1 flex flex-col gap-2">
           {humanActive ? (
             <p className="text-[13px] text-[color:var(--color-green,#148a52)]">

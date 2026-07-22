@@ -48,6 +48,8 @@ import { DiffViewer } from './DiffViewer'
 import EvalDrawer from './EvalDrawer'
 import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface VersionHistoryPanelProps {
   workspaceId: string
@@ -160,9 +162,12 @@ export default function VersionHistoryPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-neutral-900">
-          Version history
-        </h2>
+        <div className="flex items-center gap-1.5">
+          <h2 className="text-base font-semibold text-neutral-900">
+            Version history
+          </h2>
+          <HelpTip text={HELP_COPY.promptLab.activate} label="Explain make active / restore" />
+        </div>
         <span className="text-xs text-neutral-400">
           {versions.length === 0
             ? 'No versions'
@@ -193,6 +198,10 @@ export default function VersionHistoryPanel({
           so no override is offered for it (D-02 stays a hard block). */}
       {blockedReason && blockedVersion !== null && !runInProgress && (
         <div className="space-y-2 rounded border border-red-200 bg-red-50 px-3 py-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-red-900">Quality-test override</span>
+            <HelpTip text={HELP_COPY.promptLab.evalGate} label="Explain the eval gate" />
+          </div>
           <label className="block text-xs font-medium text-red-900">
             Override reason (required to make active anyway)
             <input

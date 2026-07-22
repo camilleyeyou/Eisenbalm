@@ -11,6 +11,8 @@ import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface RunsTableProps {
   workspace_id: string
@@ -69,7 +71,12 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-            <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
+            <th className="px-4 py-3 font-medium text-neutral-600">
+              <span className="flex items-center gap-1">
+                Status
+                <HelpTip text={HELP_COPY.runMonitor.runState} label="Explain run status" />
+              </span>
+            </th>
             <th className="px-4 py-3 font-medium text-neutral-600">Trigger</th>
             <th className="px-4 py-3 font-medium text-neutral-600">Triggered By</th>
             <th className="px-4 py-3 font-medium text-neutral-600">Started</th>

@@ -20,6 +20,8 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 export interface PitchLogRow {
   charityId?: string
@@ -166,12 +168,15 @@ export function CandidateSlate({ runId }: CandidateSlateProps) {
                 </p>
 
                 {candidate.advocateScore != null && (
-                  <p
-                    data-testid={`advocate-score-${candidate.charityName}`}
-                    className="mt-1.5 font-[family-name:var(--font-ui)] text-[12px] font-semibold text-[color:var(--color-cobalt)]"
-                  >
-                    Advocate score: {candidate.advocateScore}/10
-                  </p>
+                  <div className="mt-1.5 flex items-center gap-1">
+                    <p
+                      data-testid={`advocate-score-${candidate.charityName}`}
+                      className="font-[family-name:var(--font-ui)] text-[12px] font-semibold text-[color:var(--color-cobalt)]"
+                    >
+                      Advocate score: {candidate.advocateScore}/10
+                    </p>
+                    <HelpTip text={HELP_COPY.signalDesk.advocateScore} label="Explain advocate score" />
+                  </div>
                 )}
 
                 {candidate.advocateArgument && (

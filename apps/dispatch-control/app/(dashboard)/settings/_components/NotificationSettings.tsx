@@ -27,6 +27,8 @@ import { useEffect, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { Switch } from '@/components/ui/switch'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface NotificationSettingsProps {
   workspace_id: string
@@ -166,7 +168,10 @@ export default function NotificationSettings({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Notifications</h2>
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Notifications</h2>
+        <HelpTip text={HELP_COPY.settings.notifications} label="Explain notifications" />
+      </div>
 
       {unconfigured && (
         <p className="text-sm text-[color:var(--color-faint)]">

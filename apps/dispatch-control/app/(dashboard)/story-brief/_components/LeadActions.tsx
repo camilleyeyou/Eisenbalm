@@ -23,6 +23,8 @@ import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { requireLead, removeLead } from '@/lib/pipelineControlClient'
 import DecisionLog from '@/components/decision-log/DecisionLog'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 export interface LeadActionsProps {
   runId: string
@@ -73,14 +75,17 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
       aria-label="Lead actions"
       className="mt-2 flex flex-col gap-3 border-t border-[color:var(--color-faint)] pt-2"
     >
-      <button
-        type="button"
-        disabled={busy}
-        onClick={handleRequire}
-        className="min-h-[44px] w-fit bg-[color:var(--color-green)] px-4 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-white disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Require this lead
-      </button>
+      <div className="flex w-fit items-center gap-1.5">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={handleRequire}
+          className="min-h-[44px] w-fit bg-[color:var(--color-green)] px-4 py-2 font-[family-name:var(--font-ui)] text-[12px] font-semibold uppercase tracking-[.06em] text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Require this lead
+        </button>
+        <HelpTip text={HELP_COPY.storyBrief.leadRequire} label="Help: require lead" />
+      </div>
 
       <div>
         <label
@@ -89,6 +94,9 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
         >
           Remove — add reason (required)
         </label>
+        <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
+          {HELP_COPY.storyBrief.leadRemove}
+        </p>
         <textarea
           id={`remove-reason-${leadId}`}
           value={reason}

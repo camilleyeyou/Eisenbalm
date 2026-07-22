@@ -40,6 +40,8 @@ import {
   RESTART_LIVE_WRITER_KEYS,
 } from '@/lib/nomenclature'
 import { PIPELINE_NODES } from '../../graph/_components/pipelineTopology'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 export interface RecoveryRailAgentRun {
   agentKey: string
@@ -257,9 +259,12 @@ export default function RecoveryRail({
             </p>
           </section>
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
-              Recommended recovery
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+                Recommended recovery
+              </h3>
+              <HelpTip text={HELP_COPY.runMonitor.recovery} label="Explain recommended recovery" />
+            </div>
             <div className="mt-2 flex flex-wrap items-start gap-4">
               <RestartAction runId={runId} agentKey="editor_gate_1" isPausedAtGate1={true} />
             </div>
@@ -346,9 +351,12 @@ export default function RecoveryRail({
 
       {/* 4. Recommended recovery */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
-          Recommended recovery
-        </h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+            Recommended recovery
+          </h3>
+          <HelpTip text={HELP_COPY.runMonitor.recovery} label="Explain recommended recovery" />
+        </div>
         <div className="mt-2 flex flex-wrap items-start gap-4">
           <RestartAction runId={runId} agentKey={failedAgentKey} isPausedAtGate1={isPausedAtGate1} />
           <ImproveAgentAction agentKey={failedAgentKey} />

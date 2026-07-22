@@ -70,6 +70,8 @@ import PublishPreviewDialog from './PublishPreviewDialog'
 import SchedulePublishDialog from './SchedulePublishDialog'
 import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface DecisionRailProps {
   runId: string
@@ -366,7 +368,10 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
           data source this phase (organization verification) still renders
           an explicit "Not tracked yet" — never a blank or a fake green. */}
       <section aria-label="Readiness board">
-        <h3 className={MICRO_LABEL}>Readiness board</h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className={MICRO_LABEL}>Readiness board</h3>
+          <HelpTip text={HELP_COPY.approval.twoSignOff} label="Explain publish readiness" />
+        </div>
         <dl className="mt-1 grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-[13px] text-[color:var(--color-ink)]">
           <dt className="text-[color:var(--color-ink-soft)]">Fact check</dt>
           <dd>
@@ -539,6 +544,9 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
                   Publish
                 </button>
               </LockedControl>
+              <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
+                {HELP_COPY.approval.publish}
+              </p>
               {blockers.length > 0 ? (
                 <p className="text-[11px] text-[color:var(--color-vermilion)]">{blockerReason}</p>
               ) : (!factsActive || !humanActive) ? (

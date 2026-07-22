@@ -26,6 +26,8 @@
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { adjudicateGate1 } from '@/lib/pipelineControlClient'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 import {
   joinCandidates,
   type PitchLogRow,
@@ -126,9 +128,12 @@ export function NeedsYourDecisionCard({
       aria-label="Needs your decision"
       className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-4"
     >
-      <h2 className="font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-vermilion)]">
-        Needs your decision
-      </h2>
+      <div className="flex items-center gap-1.5">
+        <h2 className="font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-vermilion)]">
+          Needs your decision
+        </h2>
+        <HelpTip text={HELP_COPY.story.ranking} label="Explain candidate ranking" />
+      </div>
       <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">
         The agents could not confidently choose. Compare the top two options and pick one, with a
         reason.
