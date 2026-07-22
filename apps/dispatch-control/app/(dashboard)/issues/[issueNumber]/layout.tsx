@@ -69,6 +69,7 @@ import WorkspaceOutline from '../_components/WorkspaceOutline'
 import ContextPanel from '../_components/ContextPanel'
 import WorkspaceControls from '../_components/WorkspaceControls'
 import IssueComments from './_components/IssueComments'
+import StageHintStrip from '@/components/onboarding/StageHintStrip'
 
 type StageSegment = 'story' | 'draft' | 'fact-check' | 'voice' | 'approval'
 
@@ -286,7 +287,12 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr_300px]">
           <WorkspaceOutline />
-          <div className="min-w-0">{children}</div>
+          <div className="min-w-0">
+            {currentStageSegment && (
+              <StageHintStrip issueNumber={n} stage={currentStageSegment} />
+            )}
+            {children}
+          </div>
           <ContextPanel title="Context">{panelContent}</ContextPanel>
         </div>
 
