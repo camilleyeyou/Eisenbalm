@@ -20,12 +20,22 @@
  * else. This layout stays a Server Component; wrapping its children in the
  * 'use client' InspectorProvider is fine — the children remain
  * server-rendered.
+ *
+ * Quick 260721-qdx: `<OnboardingProvider>` is mounted here too, INSIDE
+ * `<InspectorProvider>` — the ONE place it is ever mounted, so every
+ * dashboard route shares the same onboarding state + tour opener. It is a
+ * sibling of, and independent from, the Issue Workspace's
+ * `WorkspaceStateProvider` (mounted separately, only under
+ * `/issues/[issueNumber]`). `<OnboardingTour>` renders once here, alongside
+ * the rest of the shell, so it can overlay any dashboard route.
  */
 import AppSidebar from '@/components/AppSidebar'
 import Masthead from '@/components/Masthead'
 import AutoPublishBanner from './_components/AutoPublishBanner'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { InspectorProvider } from '@/components/inspector/InspectorProvider'
+import { OnboardingProvider } from '@/components/onboarding/OnboardingProvider'
+import OnboardingTour from '@/components/onboarding/OnboardingTour'
 
 export default function DashboardLayout({
   children,
@@ -34,19 +44,22 @@ export default function DashboardLayout({
 }) {
   return (
     <InspectorProvider>
-      <div className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-rail)]">
-        <Masthead />
-        <div className="flex flex-1 overflow-hidden">
-          <AppSidebar />
-          <main className="flex-1 overflow-y-auto p-6">
-            {/* Persistent red banner when auto_publish is enabled — RVW-04 */}
-            <div className="mb-4 empty:mb-0">
-              <AutoPublishBanner workspace_id={DEFAULT_WORKSPACE_ID} />
-            </div>
-            {children}
-          </main>
+      <OnboardingProvider>
+        <div className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-rail)]">
+          <Masthead />
+          <div className="flex flex-1 overflow-hidden">
+            <AppSidebar />
+            <main className="flex-1 overflow-y-auto p-6">
+              {/* Persistent red banner when auto_publish is enabled — RVW-04 */}
+              <div className="mb-4 empty:mb-0">
+                <AutoPublishBanner workspace_id={DEFAULT_WORKSPACE_ID} />
+              </div>
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+        <OnboardingTour />
+      </OnboardingProvider>
     </InspectorProvider>
   )
 }

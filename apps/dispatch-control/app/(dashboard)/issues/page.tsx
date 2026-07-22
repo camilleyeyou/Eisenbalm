@@ -37,6 +37,7 @@ import ScheduledSlotCard from './_components/ScheduledSlotCard'
 import HeldIssueRow from './_components/HeldIssueRow'
 import RecentlyPublishedRow from './_components/RecentlyPublishedRow'
 import CreatePanel from './_components/CreatePanel'
+import StartHereCard from './_components/StartHereCard'
 
 type ConfigRow = { key: string; value: string }
 
@@ -235,6 +236,8 @@ export default function IssuesHomePage() {
   return (
     <div className="min-h-screen bg-[color:var(--color-rail)] px-6 py-8 lg:px-8">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-12">
+        <StartHereCard inProgressIssueNumber={inProgressIssue?.issueNumber ?? null} />
+
         {issuesList === undefined ? (
           <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             Loading…

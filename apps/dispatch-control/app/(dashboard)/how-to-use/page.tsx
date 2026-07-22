@@ -8,6 +8,10 @@
  *
  * ONLY 1c token classes are used (no literal Tailwind gray-scale/white/black).
  *
+ * Quick 260721-qdx: gains a "Replay the tour" entry (`ReplayTourButton`,
+ * a small client island) under the header — this page stays a Server
+ * Component; only the button itself is a client child.
+ *
  * Phase 50 (WBN-05, D-06): swept to the binding Workbench nomenclature table
  * — "node" -> "step", "Re-run from this node" -> "Restart from this step",
  * "run evals"/"commit" -> "test changes"/"make active", "shadow" -> "Preview
@@ -22,6 +26,7 @@
  * but is a real action, not a check.
  */
 import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
+import ReplayTourButton from '@/components/onboarding/ReplayTourButton'
 
 const WEEKLY_LOOP = [
   {
@@ -151,6 +156,10 @@ export default function HowToUsePage() {
         <span className="font-[family-name:var(--font-ui)] text-[11.5px] text-[color:var(--color-ink-soft)]">
           One editor, a full masthead. Here&apos;s the loop and the rules.
         </span>
+      </div>
+
+      <div className="mb-6">
+        <ReplayTourButton />
       </div>
 
       {/* ─── The weekly loop ─────────────────────────────────────────── */}
