@@ -173,6 +173,14 @@ body {
  * D-04 galley type scale (Newsreader 52px headline, italic 22px deck,
  * 16.5px/1.7 body) — theme fonts + accent color only (D-04); the scale
  * itself is fixed, not per-issue.
+ *
+ * quick 260722-n5r: the viewport-based clamp() below is kept as the
+ * fallback for browsers without container-query support; the `@supports`
+ * block further down overrides headline/h2 with container-query (`cqi`)
+ * units once `.galley-root` (below) establishes an inline-size containment
+ * context, so the type scale resolves against the galley's own column width
+ * instead of the full viewport (which wrapped one word per line in a narrow
+ * canvas).
  */
 .galley-headline {
   font-family: var(--font-display);
@@ -202,13 +210,27 @@ body {
   padding-left: 16px;
 }
 
+@supports (container-type: inline-size) {
+  .galley-headline {
+    font-size: clamp(26px, 5.5cqi, 44px);
+  }
+  .galley-h2 {
+    font-size: clamp(20px, 3cqi, 26px);
+  }
+}
+
 /**
  * D-04 paper background, explicit not implicit: the galley sits on the
  * console's paper background as a deliberate rule, so a future white-card
  * wrapper around the galley can never silently change the reading surface.
+ *
+ * quick 260722-n5r: `container-type: inline-size` establishes the
+ * containment context the `@supports` block above resolves its `cqi` units
+ * against — the galley's own width, not the viewport.
  */
 .galley-root {
   background: var(--background);
+  container-type: inline-size;
 }
 
 /**

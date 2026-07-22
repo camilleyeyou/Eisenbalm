@@ -2,6 +2,10 @@
 /**
  * Phase 41 Plan 41-06 (WSP-01, D-01..D-04) — the Issue Workspace frame.
  *
+ * quick 260722-n5r: widened the frame to `max-w-[1600px]` (232/minmax(0,1fr)/
+ * 320 grid) and made the stage-tab nav + both side rails sticky/independently
+ * scrolling so navigation stays reachable while the center canvas scrolls.
+ *
  * The shared layout mounted at every `/issues/[issueNumber]/*` route
  * (including the bare index `page.tsx`, which is now a redirect-only Server
  * Component — see the sibling `page.tsx`). This is the spine the whole
@@ -221,7 +225,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
 
   return (
     <div className="min-h-screen bg-[color:var(--color-rail)] px-6 py-8 lg:px-8">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-6">
         <Link
           href="/issues"
           className="flex min-h-[44px] w-fit items-center font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-cobalt)]"
@@ -252,7 +256,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
         </div>
         <nav
           aria-label="Workspace stages"
-          className="flex flex-wrap gap-2 border-b border-[color:var(--color-faint)] pb-3"
+          className="sticky top-0 z-30 flex flex-wrap gap-2 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] pb-3 pt-2"
         >
           {STAGE_TABS.map((tab, i) => {
             const href = tab.hrefFor(n)
@@ -295,15 +299,19 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
           })}
         </nav>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr_300px]">
-          <WorkspaceOutline />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)_320px] lg:items-start">
+          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto">
+            <WorkspaceOutline />
+          </div>
           <div className="min-w-0">
             {currentStageSegment && (
               <StageHintStrip issueNumber={n} stage={currentStageSegment} />
             )}
             {children}
           </div>
-          <ContextPanel title="Context">{panelContent}</ContextPanel>
+          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto">
+            <ContextPanel title="Context">{panelContent}</ContextPanel>
+          </div>
         </div>
 
         {/*

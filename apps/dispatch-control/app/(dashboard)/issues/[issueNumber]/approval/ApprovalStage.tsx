@@ -15,6 +15,11 @@
  * `lg:w-[336px]` sidebar sizing lived on ReviewDeskRunView's aside wrapper
  * (removed in Plan 41-08), never on the rail itself, so no extra sizing
  * wrapper is needed here.
+ *
+ * quick 260722-n5r: the frame's canvas column widened considerably
+ * (`layout.tsx`'s `minmax(0,1fr)` track), so the rail is now wrapped in a
+ * `max-w-[760px]` readability measure — otherwise its decision copy and
+ * controls would stretch edge-to-edge across the enlarged canvas.
  */
 import { useWorkspaceState } from '../../_components/WorkspaceStateProvider'
 import DecisionRail from '../../../review-desk/[runId]/_components/DecisionRail'
@@ -27,5 +32,9 @@ interface ApprovalStageProps {
 export default function ApprovalStage({ runId, issueNumber }: ApprovalStageProps) {
   const { held } = useWorkspaceState()
 
-  return <DecisionRail runId={runId} issueNumber={issueNumber} held={held} />
+  return (
+    <div className="max-w-[760px]">
+      <DecisionRail runId={runId} issueNumber={issueNumber} held={held} />
+    </div>
+  )
 }
