@@ -244,6 +244,19 @@ export default defineSchema({
     .index('by_workspace', ['workspace_id'])
     .index('by_clerkUserId', ['clerkUserId']),
 
+  // ── user_onboarding: per-user first-run onboarding state (quick 260721-qdx) ──
+  // Keyed by Clerk sub; additive — decoupled from `users` JIT provisioning.
+  user_onboarding: defineTable({
+    workspace_id: v.string(),
+    clerkUserId: v.string(),                          // Clerk "sub"
+    tourCompletedAt: v.optional(v.number()),          // set on tour complete OR skip
+    cardDismissedAt: v.optional(v.number()),          // Start-here card dismissed
+    dismissedStageHints: v.optional(v.array(v.string())), // segments: story|draft|fact-check|voice|approval
+    updatedAt: v.number(),
+  })
+    .index('by_workspace', ['workspace_id'])
+    .index('by_clerkUserId', ['clerkUserId']),
+
   // ── runs: dashboard superset of frozen pipelineRuns (Phase 21 AUTH-04, Phase 23) ──
   runs: defineTable({
     workspace_id: v.string(),

@@ -43,6 +43,7 @@ import type * as signOffs from "../signOffs.js";
 import type * as storyLeads from "../storyLeads.js";
 import type * as stripeEvents from "../stripeEvents.js";
 import type * as stripeOrders from "../stripeOrders.js";
+import type * as userOnboarding from "../userOnboarding.js";
 import type * as users from "../users.js";
 import type * as verificationRecords from "../verificationRecords.js";
 import type * as workspace from "../workspace.js";
@@ -89,6 +90,7 @@ declare const fullApi: ApiFromModules<{
   storyLeads: typeof storyLeads;
   stripeEvents: typeof stripeEvents;
   stripeOrders: typeof stripeOrders;
+  userOnboarding: typeof userOnboarding;
   users: typeof users;
   verificationRecords: typeof verificationRecords;
   workspace: typeof workspace;
