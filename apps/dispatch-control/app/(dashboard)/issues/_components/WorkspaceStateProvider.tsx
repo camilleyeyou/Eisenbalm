@@ -39,7 +39,7 @@
  * ContentPatchError reason) still leaves the outline on "Loading outline…"
  * (the original WSP-07 transient-failure intent, preserved).
  */
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
@@ -151,6 +151,15 @@ export interface WorkspaceStateValue {
 
 const WorkspaceStateContext = createContext<WorkspaceStateValue | null>(null)
 
+/**
+ * Quick 260721-pmn — a stable, module-level empty sign-offs fallback. Used
+ * instead of an inline `{}` (which allocates a FRESH object every render) so
+ * the `runId === null` branch of the `signOffs` computation below doesn't
+ * itself become an identity-unstable input to the derivation memo further
+ * down. See the memoized derivation block for the full fix rationale.
+ */
+const EMPTY_SIGNOFFS: DerivationInputs['signOffs'] = {}
+
 interface WorkspaceStateProviderProps {
   issueNumber: number | null
   children: ReactNode
@@ -218,53 +227,88 @@ export function WorkspaceStateProvider({
   // run lookup has genuinely resolved to "no run", `signOffs` becomes
   // loaded-and-empty `{}` rather than staying the raw `undefined` a skipped
   // query produces — otherwise a brand-new issue with no run yet would show
-  // `status === 'unknown'` forever instead of 'draft'.
-  const signOffs = !runLookupResolved ? undefined : runId === null ? {} : signOffsRaw
+  // `status === 'unknown'` forever instead of 'draft'. Quick 260721-pmn: the
+  // `{}` is now the module-level `EMPTY_SIGNOFFS` (a stable reference)
+  // instead of a fresh literal — see that const's comment.
+  const signOffs = !runLookupResolved ? undefined : runId === null ? EMPTY_SIGNOFFS : signOffsRaw
 
-  const claimRows = claimRowsRaw?.map(row => ({
-    _id: row._id,
-    status: row.status,
-    sourceUrl: row.sourceUrl,
-    sectionName: row.sectionName,
-    claimText: row.text,
-    // Phase 42 Plan 42-05 (FCT-02, D-16) — severity/summary fields so My
-    // Tasks + the stage badges read the SAME data as the Stage 3 screen.
-    // Deliberately NOT claimType/context — those are full-row-only, read
-    // directly by the Stage 3 screen + Approval SourceIndex (see 42-06
-    // Task 3, 42-CONTEXT SCOPE NOTE).
-    claimIndex: row.claimIndex,
-    claimId: row.claimId,
-    importance: row.importance,
-    changedSinceCheck: row.changedSinceCheck,
-    conflict: row.conflict,
-    checkedAt: row.checkedAt,
-  }))
+  // Quick 260721-pmn — memoized keyed ONLY on the raw Convex query result.
+  // `claimRowsRaw` is referentially stable between renders when the
+  // underlying subscribed data hasn't changed (real Convex `useQuery`
+  // behavior); before this fix, `.map()` allocated a FRESH array every
+  // render regardless, which was one of the two identity-unstable provider
+  // outputs feeding the Approval/FactCheck panel publishers' `setPanelContent`
+  // effects into a self-sustaining render loop (see
+  // WorkspaceApprovalPanelLoop.test.tsx for the full mechanism).
+  const claimRows = useMemo(
+    () =>
+      claimRowsRaw?.map(row => ({
+        _id: row._id,
+        status: row.status,
+        sourceUrl: row.sourceUrl,
+        sectionName: row.sectionName,
+        claimText: row.text,
+        // Phase 42 Plan 42-05 (FCT-02, D-16) — severity/summary fields so My
+        // Tasks + the stage badges read the SAME data as the Stage 3 screen.
+        // Deliberately NOT claimType/context — those are full-row-only, read
+        // directly by the Stage 3 screen + Approval SourceIndex (see 42-06
+        // Task 3, 42-CONTEXT SCOPE NOTE).
+        claimIndex: row.claimIndex,
+        claimId: row.claimId,
+        importance: row.importance,
+        changedSinceCheck: row.changedSinceCheck,
+        conflict: row.conflict,
+        checkedAt: row.checkedAt,
+      })),
+    [claimRowsRaw],
+  )
 
-  const derivationInputs: DerivationInputs = {
-    issueNumber: n,
-    runId,
-    issue:
-      issue === undefined
-        ? undefined
-        : issue === null
-          ? null
-          : { held: issue.held, published: issue.published },
-    signOffs,
-    claimRows,
-    qaFindings,
-    pitchRows,
-    runStatus: runRow?.status,
-    // Phase 47 Plan 47-08 (Pitfall 3) — threads the run's completedAt so
-    // deriveStoryStage can gate its 'needs-you' state on the precise
-    // Gate-1-paused predicate (status==='awaiting-review' && completedAt==
-    // null) rather than "leads exist and none is selected."
-    runCompletedAt: runRow?.completedAt,
-  }
-
-  const status = deriveIssueStatus(derivationInputs)
-  const stages = deriveStageStates(derivationInputs)
-  const tasks = deriveTasks(derivationInputs)
-  const workMinutes = estimateWorkMinutes(tasks)
+  // Quick 260721-pmn (fixes the Approval/FactCheck setPanelContent render
+  // loop — see WorkspaceApprovalPanelLoop.test.tsx) — the OTHER identity-
+  // unstable provider output: `deriveTasks`/`deriveStageStates` (and, by
+  // extension, `estimateWorkMinutes(tasks)`) allocate fresh arrays/tuples on
+  // every call, even over unchanged inputs. `ApprovalPanelPublisher`'s
+  // `content` memo depends on `[ws.signOffs, ws.claimRows, ws.tasks,
+  // ws.held]`; `FactCheckPanelContent`'s depends on `[ws.claimRows]`. Because
+  // those publishers call `setPanelContent`, which is STATE INSIDE this
+  // provider, a fresh identity on ANY of those fields re-renders the
+  // provider, which (pre-fix) produced ANOTHER fresh identity, re-firing the
+  // publisher's effect forever. Memoizing this whole block keyed on the
+  // STABLE raw inputs (`signOffs`/`claimRows` above are now stable too)
+  // breaks the cycle: once the underlying Convex data stops changing, `tasks`
+  // /`stages`/`workMinutes` (and `derivationInputs` itself) keep the SAME
+  // references across re-renders, so the publishers' effects settle after
+  // one legitimate publish.
+  const { derivationInputs, status, stages, tasks, workMinutes } = useMemo(() => {
+    const derivationInputs: DerivationInputs = {
+      issueNumber: n,
+      runId,
+      issue:
+        issue === undefined
+          ? undefined
+          : issue === null
+            ? null
+            : { held: issue.held, published: issue.published },
+      signOffs,
+      claimRows,
+      qaFindings,
+      pitchRows,
+      runStatus: runRow?.status,
+      // Phase 47 Plan 47-08 (Pitfall 3) — threads the run's completedAt so
+      // deriveStoryStage can gate its 'needs-you' state on the precise
+      // Gate-1-paused predicate (status==='awaiting-review' && completedAt==
+      // null) rather than "leads exist and none is selected."
+      runCompletedAt: runRow?.completedAt,
+    }
+    const tasks = deriveTasks(derivationInputs)
+    return {
+      derivationInputs,
+      status: deriveIssueStatus(derivationInputs),
+      stages: deriveStageStates(derivationInputs),
+      tasks,
+      workMinutes: estimateWorkMinutes(tasks),
+    }
+  }, [n, runId, issue, signOffs, claimRows, qaFindings, pitchRows, runRow])
 
   // ── The authoritative-draft fetch (the blocker fix) ─────────────────────
   // Mirrors ReviewDeskRunView's reloadDraft: getDraft(runId, token), token
@@ -322,9 +366,13 @@ export function WorkspaceStateProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId])
 
-  const sectionStates = draft
-    ? deriveSectionStates(derivationInputs, draftSectionIdsFromDraft(draft))
-    : undefined
+  // Quick 260721-pmn — memoized keyed on the now-stable `derivationInputs`
+  // (+ `draft`) so this doesn't reintroduce an identity-unstable field of its
+  // own now that the derivation block above is fixed.
+  const sectionStates = useMemo(
+    () => (draft ? deriveSectionStates(derivationInputs, draftSectionIdsFromDraft(draft)) : undefined),
+    [derivationInputs, draft],
+  )
 
   // ── The panel-content slot (Plan 41-11, WSP-03 gap closure) ──────────────
   // A stage publisher calls `setPanelContent` to feed the frame's single
