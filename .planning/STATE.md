@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260721-ohu (fix infinite render loop on content review pages — getToken churn)
-last_updated: "2026-07-21T17:48:00.000Z"
+stopped_at: Completed quick 260721-pmn (fix approval-stage setPanelContent infinite render loop)
+last_updated: "2026-07-21T18:50:00.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
