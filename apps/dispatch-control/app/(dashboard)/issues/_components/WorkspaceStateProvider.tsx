@@ -22,10 +22,22 @@
  * "not generated" from their absence). This provider fetches the draft the
  * same way `ReviewDeskRunView.reloadDraft` does and derives `sectionStates`
  * from `draftSectionIdsFromDraft(draft)` (the 41-01 shared presence
- * source — the SAME source the canvas uses). While the draft is loading OR
- * the fetch failed, `sectionStates` stays `undefined` — it is NEVER an
- * empty set, which would silently mislabel every section 'not-generated'
- * (the mirror-image of the WSP-07 "never silently clean" concern).
+ * source — the SAME source the canvas uses).
+ *
+ * THREE-WAY DRAFT OUTCOME (quick 260720-ig5 — supersedes the original
+ * two-way "undefined on load-or-fail" design above): a definitive
+ * `ContentPatchError` with `reason === 'no_sanity_issue'` (a run that never
+ * got past Gate 1, e.g. a paused-at-Gate-1 run — quick 260719-w6o) is NOT
+ * "still loading" — it is a resolved, honest "there is no content" outcome.
+ * Conflating the two produced a perpetual "Loading outline…" spinner for
+ * every contentless run. `sectionStates` STILL stays `undefined` while
+ * loading OR on any OTHER failure (never an inferred empty set — the
+ * mirror-image of the WSP-07 "never silently clean" concern, unchanged).
+ * The `no_sanity_issue` case is instead surfaced via the separate
+ * `draftContentAbsent` boolean below, scoped STRICTLY to that one reason so
+ * every other error (network blip, generic Error, any other
+ * ContentPatchError reason) still leaves the outline on "Loading outline…"
+ * (the original WSP-07 transient-failure intent, preserved).
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useQuery } from 'convex/react'
@@ -57,12 +69,28 @@ export interface WorkspaceStateValue {
   status: IssueStatus
   stages: ReturnType<typeof deriveStageStates>
   /**
-   * `undefined` while the authoritative draft is loading or failed to load
-   * — never an inferred empty set (the blocker fix above). Consumers
-   * (WorkspaceOutline, Plan 41-05 Task 2) MUST render a loading state when
-   * this is `undefined`, never a wall of "not generated".
+   * `undefined` while the authoritative draft is loading OR the fetch failed
+   * for a reason OTHER than a definitive `no_sanity_issue` 409 — never an
+   * inferred empty set (the blocker fix above). Consumers (WorkspaceOutline,
+   * Plan 41-05 Task 2) MUST render a loading state when this is `undefined`,
+   * never a wall of "not generated". See `draftContentAbsent` below for the
+   * third, definitively-contentless outcome (quick 260720-ig5).
    */
   sectionStates: Record<string, SectionStateResult> | undefined
+  /**
+   * Quick 260720-ig5 (outline-spins-loading-forever fix) — true ONLY once
+   * the authoritative draft fetch has thrown a `ContentPatchError` with
+   * `reason === 'no_sanity_issue'` (a definitive "this run never generated
+   * content" 409, e.g. a paused-at-Gate-1 run). False while loading, on a
+   * successful load, and on every OTHER error (network blip, generic Error,
+   * any other `ContentPatchError` reason) — those keep `sectionStates`
+   * `undefined` and the outline on "Loading outline…" (the WSP-07 transient
+   * guard, unchanged). Reset to `false` at the start of every new run's
+   * fetch so a prior run's absent-state never leaks. Consumers
+   * (WorkspaceOutline) MUST check this BEFORE the `sectionStates ===
+   * undefined` loading branch and render a dedicated honest empty state.
+   */
+  draftContentAbsent: boolean
   tasks: DerivedTask[]
   workMinutes: number
   history: Doc<'pipelineRuns'>[] | undefined
@@ -243,25 +271,40 @@ export function WorkspaceStateProvider({
   // from useAuth().getToken(). Guarded on runId === null. `draft` stays
   // `null` while loading/on error, so `sectionStates` below stays
   // `undefined` in both cases — never an inferred empty set.
+  //
+  // `draftContentAbsent` (quick 260720-ig5) is the THIRD outcome: true ONLY
+  // when the fetch threw a `ContentPatchError` whose `reason ===
+  // 'no_sanity_issue'` (a definitive contentless-run 409) — reset to false
+  // at the top of every fetch so a prior run's absent-state never leaks into
+  // a new run, and left false for every other error (the WSP-07 transient
+  // guard).
   const [draft, setDraft] = useState<DraftResponse | null>(null)
+  const [draftContentAbsent, setDraftContentAbsent] = useState(false)
 
   useEffect(() => {
     if (runId === null) {
       setDraft(null)
+      setDraftContentAbsent(false)
       return
     }
     let cancelled = false
+    setDraftContentAbsent(false)
     async function load() {
       try {
         const token = await getToken()
         const result = await getDraft(runId as string, token)
-        if (!cancelled) setDraft(result)
+        if (!cancelled) {
+          setDraft(result)
+          setDraftContentAbsent(false)
+        }
       } catch (e) {
         if (!cancelled) {
           setDraft(null)
+          setDraftContentAbsent(e instanceof ContentPatchError && e.reason === 'no_sanity_issue')
           // Non-fatal by design (mirrors ReviewDeskRunView) — the outline
-          // simply keeps showing its loading state; a future task-carrying
-          // plan may surface this message directly.
+          // simply keeps showing its loading state (or, for the definitive
+          // no_sanity_issue case above, the honest empty state); a future
+          // task-carrying plan may surface this message directly.
           void (e instanceof ContentPatchError ? e.message : e instanceof Error ? e.message : e)
         }
       }
@@ -290,6 +333,7 @@ export function WorkspaceStateProvider({
     status,
     stages,
     sectionStates,
+    draftContentAbsent,
     tasks,
     workMinutes,
     history,

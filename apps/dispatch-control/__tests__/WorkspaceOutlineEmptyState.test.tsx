@@ -14,10 +14,19 @@
  * @clerk/nextjs, @convex/_generated/api, convex/react, fixtureFor) so the
  * REAL WorkspaceStateProvider + IssueWorkspaceLayout render end to end. The
  * ONLY divergence is the `@/lib/contentPatchClient` mock: getDraft is
- * per-test controllable (mockRejectedValueOnce/mockResolvedValueOnce) and the
+ * per-test controllable (mockRejectedValue/mockResolvedValue) and the
  * stubbed ContentPatchError carries a `status`/`reason` so the provider's
  * `e instanceof ContentPatchError && e.reason === 'no_sanity_issue'` branch
  * can be exercised against the SAME mocked class the provider imports.
+ *
+ * Uses the PERSISTENT `mockRejectedValue`/`mockResolvedValue` (not the
+ * `*Once` variants): the mocked `@clerk/nextjs` `useAuth()` returns a fresh
+ * `getToken` reference on every render (same as WorkspaceLayout.test.tsx),
+ * so the provider's draft-fetch effect can legitimately re-fire more than
+ * once per test. A persistent mock keeps every firing's outcome identical
+ * regardless of how many times it runs; a `*Once` mock would let a second
+ * firing fall through to the mock's default (`undefined`), silently
+ * resetting `draftContentAbsent` after the assertion's `findBy*` resolves.
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
@@ -31,8 +40,22 @@ vi.mock('next/navigation', () => ({
 }))
 
 // ── @clerk/nextjs: the provider + controls both call useAuth().getToken() ───
+// A STABLE getToken reference (module-scoped, not re-created inside the
+// factory arrow) — deliberate divergence from WorkspaceLayout.test.tsx's
+// verbatim precedent, which creates a fresh `vi.fn()` on every `useAuth()`
+// call. That instability is invisible over there (its getDraft mock always
+// resolves the SAME content, so the resulting re-fires of the provider's
+// draft-fetch effect are idempotent no-ops). THIS file's timing-sensitive
+// assertions (a boolean flag toggling loading vs. empty) are NOT idempotent
+// against that instability: an unstable getToken retriggers the effect's
+// `[runId, getToken]` dependency on every render, and each retrigger
+// synchronously resets `draftContentAbsent` to `false` before its async
+// catch sets it back — a real (if narrow) re-render race, not a fix defect.
+// Real Clerk's `useAuth().getToken` is referentially stable across renders,
+// so a stable mock here is the accurate simulation.
+const mockGetToken = vi.fn(async () => 'tok-clerk')
 vi.mock('@clerk/nextjs', () => ({
-  useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
+  useAuth: () => ({ getToken: mockGetToken }),
 }))
 
 // ── The authoritative-draft fetch the provider runs (blocker fix) — the ONLY
@@ -142,7 +165,7 @@ function renderWorkspace() {
 
 describe('WorkspaceOutline empty state on a contentless (no_sanity_issue) run', () => {
   it('resolves to the honest outline-empty state — never a perpetual outline-loading spinner', async () => {
-    ;(getDraft as unknown as Mock).mockRejectedValueOnce(
+    ;(getDraft as unknown as Mock).mockRejectedValue(
       new ContentPatchError(409, 'no_sanity_issue', 'run has no content'),
     )
     renderWorkspace()
@@ -154,7 +177,7 @@ describe('WorkspaceOutline empty state on a contentless (no_sanity_issue) run', 
 
 describe('WorkspaceOutline transient-guard (WSP-07) — non-no_sanity_issue failures stay loading', () => {
   it('a DIFFERENT ContentPatchError reason still shows outline-loading, never outline-empty', async () => {
-    ;(getDraft as unknown as Mock).mockRejectedValueOnce(
+    ;(getDraft as unknown as Mock).mockRejectedValue(
       new ContentPatchError(500, 'server_error', 'boom'),
     )
     renderWorkspace()
@@ -164,7 +187,7 @@ describe('WorkspaceOutline transient-guard (WSP-07) — non-no_sanity_issue fail
   })
 
   it('a generic network Error still shows outline-loading, never outline-empty', async () => {
-    ;(getDraft as unknown as Mock).mockRejectedValueOnce(new Error('network'))
+    ;(getDraft as unknown as Mock).mockRejectedValue(new Error('network'))
     renderWorkspace()
 
     expect(await screen.findByTestId('outline-loading')).toBeDefined()
@@ -174,7 +197,7 @@ describe('WorkspaceOutline transient-guard (WSP-07) — non-no_sanity_issue fail
 
 describe('WorkspaceOutline happy path — a run WITH content renders the real rows', () => {
   it('renders the real outline row for a generated section, no loading/empty state', async () => {
-    ;(getDraft as unknown as Mock).mockResolvedValueOnce({
+    ;(getDraft as unknown as Mock).mockResolvedValue({
       sections: { originStory: { blocks: [{ type: 'paragraph', text: 'x' }], lossy: false } },
       bonus: null,
       game: null,

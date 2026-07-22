@@ -18,6 +18,13 @@
  * `sectionStates` is `undefined`, never inferring a wall of "not generated"
  * from an as-yet-unloaded draft.
  *
+ * Quick 260720-ig5 — a THIRD state: when `useWorkspaceState().draftContentAbsent`
+ * is true (the draft fetch resolved to a definitive `no_sanity_issue` 409 —
+ * e.g. a paused-at-Gate-1 run), the outline renders a dedicated honest empty
+ * state (`outline-empty`) instead of the perpetual `outline-loading`
+ * spinner a `sectionStates === undefined` check alone would produce forever
+ * for a contentless run. Checked BEFORE the loading branch below.
+ *
  * A small legend lists all five state labels (so the vocabulary is visible
  * even for 'changed-since-review', which the 41-01 selector never actually
  * produces this phase).
@@ -111,12 +118,19 @@ function OutlineLegend() {
 }
 
 export default function WorkspaceOutline() {
-  const { sectionStates } = useWorkspaceState()
+  const { sectionStates, draftContentAbsent } = useWorkspaceState()
 
   return (
     <nav aria-label="Issue outline" className="flex flex-col gap-3">
       <OutlineLegend />
-      {sectionStates === undefined ? (
+      {draftContentAbsent ? (
+        <p
+          data-testid="outline-empty"
+          className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]"
+        >
+          No sections yet — this run paused before generating content.
+        </p>
+      ) : sectionStates === undefined ? (
         <p
           data-testid="outline-loading"
           className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]"
