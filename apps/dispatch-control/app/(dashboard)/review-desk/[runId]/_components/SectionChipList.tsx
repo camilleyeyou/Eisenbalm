@@ -12,6 +12,14 @@
  * `counts` computation (via the span resolver), and all save wiring. Each
  * chip is a keyboard-focusable <button> with a >=44px hit target; `dirty`
  * drives the unsaved-edit dot (D-07 dirty-state).
+ *
+ * quick 260722-n5r (Draft nav de-duplication): added an `orientation` prop
+ * ('vertical' default | 'horizontal'). `ReviewDeskRunView` (the ONLY
+ * consumer of this default export — `WorkspaceOutline` imports only the
+ * named `EDITABLE_SECTIONS` export below) now renders this strip
+ * horizontally as the section selector inside edit mode only; galley mode
+ * no longer nests a second, duplicate vertical copy of this list (the
+ * frame's `WorkspaceOutline` already provides galley jump-nav).
  */
 
 export interface SectionMeta {
@@ -53,6 +61,10 @@ interface SectionChipListProps {
   onSelect: (id: string) => void
   dirty?: Record<string, boolean>
   counts?: Record<string, SectionChipCounts>
+  /** quick 260722-n5r — 'vertical' (default, unchanged) is the jump-nav
+   * column layout; 'horizontal' wraps chips in a row (used as the edit-mode
+   * section selector strip). */
+  orientation?: 'vertical' | 'horizontal'
 }
 
 /** Highest-severity present -> the 1c token that tints the count badge (D-07). */
@@ -68,9 +80,13 @@ export default function SectionChipList({
   onSelect,
   dirty = {},
   counts = {},
+  orientation = 'vertical',
 }: SectionChipListProps) {
   return (
-    <nav aria-label="Editable sections" className="flex flex-col gap-1">
+    <nav
+      aria-label="Editable sections"
+      className={orientation === 'horizontal' ? 'flex flex-wrap gap-1.5' : 'flex flex-col gap-1'}
+    >
       {sections.map(section => {
         const isSelected = section.id === selected
         const isDirty = Boolean(dirty[section.id])

@@ -73,6 +73,15 @@
  * internally (Convex dedupes the identical subscription — no new backend
  * query) and renders the shared `ClaimProvenanceCard`, or an honest "No
  * tracked claims in this passage."
+ *
+ * quick 260722-n5r (Draft nav de-duplication): dropped the nested
+ * `lg:w-64` `SectionChipList` column that used to sit beside the canvas —
+ * in galley mode it duplicated the frame's `WorkspaceOutline` jump-nav
+ * (both render the same 9 `EDITABLE_SECTIONS`), and it starved the galley's
+ * width badly enough that headlines wrapped one word per line. The chip
+ * list now renders ONLY in edit mode, as a horizontal strip (new
+ * `orientation="horizontal"` prop) above the editor — its section-selector
+ * role there has no `WorkspaceOutline` equivalent.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -464,19 +473,12 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
       )}
 
       {!loading && !error && (
-        <div className="flex flex-1 flex-col gap-4 lg:flex-row">
-          {/* LEFT — section-chip jump-nav / section selector */}
-          <div className="w-full shrink-0 lg:w-64">
-            <SectionChipList
-              sections={EDITABLE_SECTIONS}
-              selected={selectedSection}
-              onSelect={handleChipSelect}
-              dirty={dirty}
-              counts={chipCounts}
-            />
-          </div>
-
-          {/* RIGHT — galley (default) | editor | iframe fallback */}
+        <div className="flex flex-1 flex-col gap-4">
+          {/* Galley (default) | editor | iframe fallback — full-width canvas.
+              quick 260722-n5r: the LEFT chip column that used to sit here
+              was removed (galley mode already gets jump-nav from the
+              frame's WorkspaceOutline); the chip strip now renders inline
+              below, horizontally, and edit-mode only. */}
           <div className="flex flex-1 flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
@@ -518,6 +520,21 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
                 </button>
               </div>
             </div>
+
+            {/* quick 260722-n5r: section SELECTOR, edit mode only — a
+                horizontal chip strip; galley mode's jump-nav lives entirely
+                in the frame's WorkspaceOutline (left rail), so no duplicate
+                renders here. */}
+            {viewMode === 'edit' && (
+              <SectionChipList
+                orientation="horizontal"
+                sections={EDITABLE_SECTIONS}
+                selected={selectedSection}
+                onSelect={handleChipSelect}
+                dirty={dirty}
+                counts={chipCounts}
+              />
+            )}
 
             {viewMode === 'galley' &&
               (draft ? (
