@@ -46,9 +46,9 @@ export function AdjudicationPanel({ runId, candidates }: AdjudicationPanelProps)
     try {
       const token = await getToken()
       await adjudicateGate1(runId, { selection: { charityName: pick }, reason }, token)
-      setMessage(`Resumed the run with ${pick}.`)
+      setMessage(`Got it — the run is continuing with ${pick}.`)
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Adjudication failed.')
+      setMessage(e instanceof Error ? e.message : "Couldn't submit your choice — try again.")
     } finally {
       setBusy(false)
     }

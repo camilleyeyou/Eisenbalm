@@ -66,7 +66,7 @@ function findVerification(
   return records.find(r => r.candidateName === charityName)
 }
 
-/** "Evidence quality" — the real Phase-46 verification record, not fabricated copy. */
+/** "What's been verified" — the real Phase-46 verification record, not fabricated copy. */
 function describeEvidenceQuality(record: VerificationRecordRow | undefined): string {
   if (!record) return 'Verification not yet complete.'
   return (
@@ -76,13 +76,13 @@ function describeEvidenceQuality(record: VerificationRecordRow | undefined): str
   )
 }
 
-/** "Burden" — outstanding verification work remaining, derived from the same record. */
+/** "What still needs checking" — outstanding verification work remaining, derived from the same record. */
 function describeBurden(record: VerificationRecordRow | undefined): string {
   if (!record) return 'Outstanding verification work before this org can proceed.'
   const gaps: string[] = []
   if (!record.domainLive) gaps.push('confirm the domain is live')
   if (!record.registrationVerified) gaps.push('verify registration')
-  if (gaps.length === 0) return 'No outstanding verification burden.'
+  if (gaps.length === 0) return 'Nothing left to check here.'
   return `Still needs to: ${gaps.join('; ')}.`
 }
 
@@ -113,9 +113,9 @@ export function NeedsYourDecisionCard({
     try {
       const token = await getToken()
       await adjudicateGate1(runId, { selection: { charityName: pick }, reason }, token)
-      setMessage(`Resumed the run with ${pick}.`)
+      setMessage(`Got it — the run is continuing with ${pick}.`)
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Adjudication failed.')
+      setMessage(e instanceof Error ? e.message : "Couldn't submit your choice — try again.")
     } finally {
       setBusy(false)
     }
@@ -180,7 +180,7 @@ export function NeedsYourDecisionCard({
 
               <div>
                 <span className="font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
-                  Evidence quality
+                  What&rsquo;s been verified
                 </span>
                 <p
                   data-testid={`decision-evidence-${candidate.charityName}`}
@@ -206,7 +206,7 @@ export function NeedsYourDecisionCard({
 
               <div>
                 <span className="font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
-                  Burden
+                  What still needs checking
                 </span>
                 <p
                   data-testid={`decision-burden-${candidate.charityName}`}
@@ -224,8 +224,11 @@ export function NeedsYourDecisionCard({
         className="mt-3 block font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)]"
         htmlFor={`decision-reason-${runId}`}
       >
-        Rationale (required)
+        Why this pick? (required)
       </label>
+      <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
+        Saved to the decision log — not published.
+      </p>
       <textarea
         id={`decision-reason-${runId}`}
         value={reason}

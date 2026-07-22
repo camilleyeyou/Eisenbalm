@@ -130,7 +130,7 @@ function pickQuietHarvest() {
 }
 
 function enterRationale() {
-  fireEvent.change(screen.getByLabelText(/rationale/i), {
+  fireEvent.change(screen.getByLabelText(/why this pick/i), {
     target: { value: 'Stronger local sourcing and a live verified domain.' },
   })
 }
@@ -160,7 +160,7 @@ describe('NeedsYourDecision (BRF-04)', () => {
       'No annual report filed in two years.',
     )
     expect(screen.getByTestId('decision-burden-Quiet Harvest Food Bank').textContent).toBe(
-      'No outstanding verification burden.',
+      'Nothing left to check here.',
     )
     expect(screen.getByTestId('decision-burden-Riverbend Literacy Project').textContent).toContain(
       'verify registration',
@@ -206,7 +206,7 @@ describe('NeedsYourDecision (BRF-04)', () => {
     fireEvent.click(screen.getByRole('button', { name: /choose this story/i }))
 
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toContain('Resumed the run')
+      expect(screen.getByRole('status').textContent).toContain('the run is continuing')
     })
   })
 
