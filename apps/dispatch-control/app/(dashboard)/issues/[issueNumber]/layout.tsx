@@ -70,6 +70,8 @@ import ContextPanel from '../_components/ContextPanel'
 import WorkspaceControls from '../_components/WorkspaceControls'
 import IssueComments from './_components/IssueComments'
 import StageHintStrip from '@/components/onboarding/StageHintStrip'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 type StageSegment = 'story' | 'draft' | 'fact-check' | 'voice' | 'approval'
 
@@ -233,13 +235,21 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
           </h1>
           <div className="flex flex-wrap items-center gap-6">
             <StatusReadout status={status} />
+            <HelpTip text={HELP_COPY.workspace.statusReadout} label="Explain issue status" />
             <span className="font-[family-name:var(--font-mono)] text-[13px] text-[color:var(--color-ink)]">
               {tasks.length} open · ~{workMinutes} min
             </span>
             <CostBudgetReadout runCostUsd={runCostUsd} capUsd={capUsd} />
+            <HelpTip text={HELP_COPY.workspace.costBudget} label="Explain cost vs budget" />
           </div>
         </div>
 
+        <div className="flex items-center gap-1.5">
+          <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
+            Stages
+          </span>
+          <HelpTip text={HELP_COPY.workspace.stageTabs} label="Explain workspace stages" />
+        </div>
         <nav
           aria-label="Workspace stages"
           className="flex flex-wrap gap-2 border-b border-[color:var(--color-faint)] pb-3"

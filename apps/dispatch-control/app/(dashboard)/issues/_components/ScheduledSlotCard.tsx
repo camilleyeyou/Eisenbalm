@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 import { triggerRun } from '@/lib/pipelineControlClient'
 import { issueHref } from '@/lib/issueRouteResolver'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 
 export interface ScheduledSlotCardProps {
   issueNumber: number
@@ -53,8 +55,9 @@ export default function ScheduledSlotCard({
         Scheduled
       </span>
 
-      <h2 className="mt-2 font-[family-name:var(--font-display)] text-[16px] font-semibold text-[color:var(--color-ink)]">
+      <h2 className="mt-2 flex items-center gap-1 font-[family-name:var(--font-display)] text-[16px] font-semibold text-[color:var(--color-ink)]">
         Issue {issueNumber}
+        <HelpTip text={HELP_COPY.issuesHome.scheduledSlot} label="Explain scheduled slot" />
       </h2>
 
       <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">

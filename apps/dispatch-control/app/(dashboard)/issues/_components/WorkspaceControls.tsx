@@ -38,6 +38,7 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { issueRunHref } from '@/lib/issueRouteResolver'
 import { cancelRun } from '@/lib/pipelineControlClient'
 import DecisionLog from '@/components/decision-log/DecisionLog'
+import { HELP_COPY } from '@/components/help/helpCopy'
 import { useWorkspaceState } from './WorkspaceStateProvider'
 import HoldDialog from './HoldDialog'
 import { relativeTime } from './HeldIssueRow'
@@ -137,6 +138,9 @@ export default function WorkspaceControls({ issueNumber: n }: WorkspaceControlsP
             Hold issue
           </button>
         )}
+        <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
+          {HELP_COPY.workspace.hold}
+        </p>
       </div>
 
       <div className="flex flex-col gap-1 border-t border-[color:var(--color-ink)]/[.08] pt-4">

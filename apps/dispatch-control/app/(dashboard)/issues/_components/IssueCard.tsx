@@ -16,6 +16,8 @@ import { AlertTriangle, BadgeCheck, CheckCircle2, FileEdit, PauseCircle } from '
 import type { LucideIcon } from 'lucide-react'
 import type { IssueStatus, StageState, StageStateResult } from '@/lib/derivedState'
 import { issueHref } from '@/lib/issueRouteResolver'
+import HelpTip from '@/components/ui/HelpTip'
+import { HELP_COPY } from '@/components/help/helpCopy'
 import StageStrip, { STAGE_STATE_LABELS } from './StageStrip'
 
 interface IssueCardState {
@@ -58,15 +60,18 @@ function Readout({
   label,
   value,
   mono,
+  help,
 }: {
   label: string
   value: React.ReactNode
   mono?: boolean
+  help?: string
 }) {
   return (
     <div className="flex flex-col gap-[2px]">
-      <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
+      <span className="flex items-center gap-1 font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
         {label}
+        {help && <HelpTip text={help} label={`Explain ${label.toLowerCase()}`} />}
       </span>
       <span
         className={
@@ -146,6 +151,7 @@ export default function IssueCard({
         >
           <StatusIcon size={16} aria-hidden="true" />
           {statusMeta.label}
+          <HelpTip text={HELP_COPY.issuesHome.statusChip} label="Explain issue status" />
         </span>
       </div>
 
@@ -159,6 +165,7 @@ export default function IssueCard({
           label="Claim coverage"
           value={`${claimCoverage.checked} of ${claimCoverage.total} claims checked`}
           mono
+          help={HELP_COPY.issuesHome.claimCoverage}
         />
         <Readout label="Voice" value={voiceLabel} />
         <Readout label="Est. work remaining" value={`~${workMinutes} min`} mono />
