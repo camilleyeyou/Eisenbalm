@@ -4,14 +4,20 @@
  * `LeadActions` renders "Require this lead" / "Remove — add reason" for a
  * `story_leads` row. Require calls `requireLead` (no reason). Remove is
  * disabled while the reason textarea is empty; submitting with a non-empty
- * reason calls `removeLead` and the removal surfaces in the shared Decision
- * log (`components/decision-log/DecisionLog.tsx`) via the pipeline's
- * `_emit_audit` call (docs/API_CONTRACTS.md §47.5) — mirrors
- * `factcheck.py::keep_claim`/`delete_claim` (reason mandatory on Remove).
+ * reason calls `removeLead` via the pipeline's `_emit_audit` call
+ * (docs/API_CONTRACTS.md §47.5) — mirrors `factcheck.py::keep_claim`/
+ * `delete_claim` (reason mandatory on Remove).
+ *
+ * quick 260722-v01 (audit item 6): `LeadActions` no longer mounts its own
+ * `<DecisionLog>` — StoryBriefScreen.tsx now mounts exactly ONE consolidated
+ * Decision log for the whole Story stage. The removal's reason still
+ * surfaces there (StoryBriefScreen-level, not this component's concern); the
+ * behavior assertions below (requireLead/removeLead called correctly, the
+ * optimistic status message) are unchanged.
  *
  * Runs in jsdom (environmentMatchGlobs `*.test.tsx` -> jsdom).
  */
-import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, afterEach, vi, type Mock } from 'vitest'
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 
 vi.mock('@clerk/nextjs', () => ({
@@ -23,33 +29,8 @@ vi.mock('@/lib/pipelineControlClient', () => ({
   removeLead: vi.fn(async () => ({ leadId: 'lead-1', status: 'removed' })),
 }))
 
-// LeadActions mounts the shared DecisionLog component (mirrors
-// ApprovalPanelContent's "always mounted, scoped to the run" idiom) — mock
-// its Convex subscriptions exactly like CandidateSlate.test.tsx does.
-vi.mock('convex/react', () => ({
-  useQuery: vi.fn(),
-}))
-
-vi.mock('@convex/_generated/api', () => ({
-  api: {
-    auditLog: { listDecisions: 'auditLog:listDecisions' },
-    users: { byClerkUserId: 'users:byClerkUserId' },
-  },
-}))
-
-import { useQuery } from 'convex/react'
 import { requireLead, removeLead } from '@/lib/pipelineControlClient'
 import { LeadActions } from '../app/(dashboard)/story-brief/_components/LeadActions'
-
-let decisionRows: Array<Record<string, unknown>> = []
-
-beforeEach(() => {
-  decisionRows = []
-  ;(useQuery as unknown as Mock).mockImplementation((query: unknown) => {
-    if (query === 'auditLog:listDecisions') return decisionRows
-    return undefined
-  })
-})
 
 afterEach(() => {
   cleanup()
@@ -112,18 +93,7 @@ describe('LeadActions (BRF-02)', () => {
     })
   })
 
-  it('a successful Remove surfaces the reason in the shared Decision log (DecisionLog component)', async () => {
-    decisionRows = [
-      {
-        _id: 'audit-1',
-        actorId: 'pipeline',
-        action: 'lead_removed',
-        reason: 'Duplicate of another lead.',
-        timestamp: 1_700_000_000_000,
-        runId: 'run-1',
-      },
-    ]
-
+  it('a successful Remove surfaces an optimistic status message with the reason', async () => {
     render(<LeadActions runId="run-1" leadId="lead-1" />)
 
     fireEvent.change(screen.getByLabelText(/remove — add reason/i), {
@@ -135,9 +105,9 @@ describe('LeadActions (BRF-02)', () => {
       expect(removeLead).toHaveBeenCalled()
     })
 
-    // The shared DecisionLog component (not a bespoke re-implementation)
-    // renders the removal's reason, sourced from auditLog.listDecisions.
-    expect(screen.getByText('Duplicate of another lead.')).toBeDefined()
+    // The optimistic status message (this component's own concern) — the
+    // shared Decision log now lives one level up, in StoryBriefScreen.
+    expect(screen.getByRole('status').textContent).toContain('Duplicate of another lead.')
   })
 
   it('a failed requireLead call surfaces an error message, not a silent failure', async () => {

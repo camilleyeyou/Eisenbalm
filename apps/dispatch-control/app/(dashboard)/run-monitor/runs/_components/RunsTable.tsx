@@ -5,11 +5,19 @@
  * Displays all runs for a workspace, newest-first. Each row links to the
  * run detail page at /runs/{runId}. Read-only.
  *
- * Data source: api.runs.listForWorkspace (Convex query, real-time subscription)
+ * Data source: api.runs.listRecentForWorkspace (Convex query, real-time
+ * subscription — server-side capped to the latest 100 rows, see quick
+ * 260722-v01 below).
  *
  * quick 260722-tv1: client-capped to the latest 50 rows (runs is already
  * newest-first) with a "Show all" toggle — an unbounded table ran
  * indefinitely long on a workspace with a long run history.
+ *
+ * quick 260722-v01 (audit item 3): switched from `api.runs.listForWorkspace`
+ * (full-collect) to the additive `api.runs.listRecentForWorkspace`
+ * (server-side `take(100)`, same newest-first ordering) — this table only
+ * ever renders 50 rows client-side anyway. ReviewQueue/CostRollup/DriftStrip
+ * are untouched and still subscribe to `listForWorkspace`.
  */
 import { useState } from 'react'
 import Link from 'next/link'
@@ -52,7 +60,7 @@ export const STATUS_CLASSES: Record<string, string> = {
 }
 
 export default function RunsTable({ workspace_id }: RunsTableProps) {
-  const runs = useQuery(api.runs.listForWorkspace, { workspace_id })
+  const runs = useQuery(api.runs.listRecentForWorkspace, { workspace_id })
   // Called unconditionally (before the loading/empty guards below) so the
   // hook order never changes across renders of this component instance.
   const [showAll, setShowAll] = useState(false)

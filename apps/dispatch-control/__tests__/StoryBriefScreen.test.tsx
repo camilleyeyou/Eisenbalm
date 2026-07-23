@@ -297,6 +297,19 @@ describe('StoryBriefScreen — composition (BRF-01..06)', () => {
 
     expect(screen.queryByRole('region', { name: 'Needs your decision' })).toBeNull()
   })
+
+  // quick 260722-v01 (audit item 6) — exactly ONE consolidated Decision log
+  // for the whole Story stage (was up to ~11 duplicate per-lead/per-field
+  // logs, one from LeadActions per lead + one from BriefFieldStrengthen per
+  // Brief field).
+  it('renders exactly ONE consolidated Decision log region, not one per lead/brief field', () => {
+    runFixture = { status: 'complete' }
+    wsMock.brief = BRIEF_FIXTURE
+
+    render(<StoryBriefScreen issueNumber={12} runId="run-1" />)
+
+    expect(screen.getAllByRole('region', { name: 'Decision log' })).toHaveLength(1)
+  })
 })
 
 // ── Brief-mode Stage 1 (Phase 48, ENT-01/ENT-04, D-11 — Wave 4) ────────────

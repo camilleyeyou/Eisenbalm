@@ -14,6 +14,10 @@
  * Filter pills are client-side (status is the only axis).
  * Mark Do-not-use is gated behind an inline typed-name + reason confirm
  * popover, Editor-in-chief only (LockedControl / server requireEditor).
+ *
+ * quick 260722-v01 (audit item 5): client-capped to the latest 50 filtered
+ * rows with a "Show all" toggle, mirroring RunsTable.tsx's exemplar — an
+ * unbounded table grew unusably long on a workspace with a large registry.
  */
 import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
@@ -88,6 +92,9 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   // Phase 39 (MEM-02): which charity row has its corrections detail expanded
   const [expandedCharityId, setExpandedCharityId] = useState<string | null>(null)
+  // quick 260722-v01 (audit item 5) — called unconditionally, before the
+  // loading guard below, so hook order never changes across renders.
+  const [showAll, setShowAll] = useState(false)
 
   if (charities === undefined) {
     return (
@@ -99,6 +106,10 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
     activeFilter === 'all'
       ? charities
       : charities.filter(c => c.status === activeFilter)
+
+  // quick 260722-v01 (audit item 5) — cap at the latest 50 filtered rows
+  // (mirrors RunsTable.tsx's client-cap exemplar).
+  const visibleCharities = showAll ? filtered : filtered.slice(0, 50)
 
   // Phase 50-03 (D-15): the STORED value/mutation is byte-unchanged from
   // Phase 43/47 — `status: 'blocklisted'` — only the UI adds the typed-name
@@ -153,6 +164,12 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
         ))}
       </div>
 
+      {filtered.length > 50 && !showAll && (
+        <p className="text-xs text-neutral-500">
+          Showing latest 50 of {filtered.length}
+        </p>
+      )}
+
       {actionError && (
         <p role="alert" className="text-xs text-red-700">
           {actionError}
@@ -184,7 +201,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {filtered.map(charity => {
+              {visibleCharities.map(charity => {
                 const isConfirmingThisBlocklist = confirmingBlocklistId === charity._id
                 const isPendingThisAction = pendingAction === charity._id
 
@@ -365,6 +382,15 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
               })}
             </tbody>
           </table>
+          {filtered.length > 50 && !showAll && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="w-full border-t border-neutral-200 px-4 py-3 text-xs font-medium text-blue-600 hover:bg-neutral-50"
+            >
+              Show all ({filtered.length})
+            </button>
+          )}
         </div>
       )}
     </div>

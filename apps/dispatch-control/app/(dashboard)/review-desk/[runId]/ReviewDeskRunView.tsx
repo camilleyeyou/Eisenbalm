@@ -88,6 +88,12 @@
  * one-shot `#galley-*` hash-scroll receiver so jump-nav controls on stages
  * with no galley mounted (Story/Fact Check/Approval) can route here and land
  * on the right section.
+ *
+ * quick 260722-v01 (item 2g, user-reported): the `'iframe'` mode's mount
+ * wrapper gained a DEFINITE height (`h-[max(560px,calc(100vh-280px))]`,
+ * replacing `min-h-[500px] flex-1`) so `PreviewIframe`'s internal `h-full`
+ * chain resolves instead of collapsing to the ~150px UA default — see the
+ * inline comment at the mount site.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -601,7 +607,13 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
 
             {viewMode === 'iframe' &&
               (previewUrl ? (
-                <div className="min-h-[500px] flex-1">
+                // quick 260722-v01 (item 2g): `min-h-[500px] flex-1` never
+                // yields a DEFINITE height, so PreviewIframe's internal
+                // `h-full` chain resolved to auto and the iframe collapsed to
+                // the UA default ~150px strip. A definite height here lets
+                // that chain resolve; the border frames the preview against
+                // the rail background.
+                <div className="h-[max(560px,calc(100vh-280px))] w-full border border-[color:var(--color-faint)] bg-white">
                   <PreviewIframe previewUrl={previewUrl} />
                 </div>
               ) : (

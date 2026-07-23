@@ -16,7 +16,12 @@
  *   finance:publishedIssues   → the issue list (Convex-derived; no Sanity dep)
  *   finance:perIssueRevenue   → gross/fee/net per window + unattributed bucket
  *   payouts:listByWorkspace   → payout status across all issues
+ *
+ * quick 260722-v01 (audit item 5): client-capped to the latest 24 issue rows
+ * with a "Show all" toggle (mirrors RunsTable.tsx's client-cap exemplar) —
+ * the always-visible Unattributed row sits outside the cap.
  */
+import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { formatCents, type IssueRevenueRow } from './FinanceSummaryCard'
@@ -61,6 +66,9 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
   const payouts = useQuery(api.payouts.listByWorkspace, { workspace_id }) as
     | PayoutRowData[]
     | undefined
+  // quick 260722-v01 (audit item 5) — called unconditionally, before the
+  // loading guard below, so hook order never changes across renders.
+  const [showAll, setShowAll] = useState(false)
 
   if (issues === undefined || revenue === undefined || payouts === undefined) {
     return <SkeletonTable />
@@ -82,9 +90,17 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
   for (const p of payouts) payoutByIssue.set(p.issueNumber, p)
 
   const hasUnattributed = revenue.unattributed.orderCount > 0
+  // quick 260722-v01 (audit item 5) — cap at the latest 24 issue rows; the
+  // Unattributed bucket below is rendered unconditionally, outside the cap.
+  const visibleIssueRows = showAll ? revenue.issues : revenue.issues.slice(0, 24)
 
   return (
     <div className="overflow-x-auto rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)]">
+      {revenue.issues.length > 24 && !showAll && (
+        <p className="border-b border-[color:var(--color-ink)]/15 bg-[color:var(--color-card-alt)] px-4 py-2 text-xs text-[color:var(--color-faint)]">
+          Showing latest 24 of {revenue.issues.length}
+        </p>
+      )}
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[color:var(--color-ink)]/15 bg-[color:var(--color-card-alt)] text-left">
@@ -118,7 +134,7 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
           </tr>
         </thead>
         <tbody>
-          {revenue.issues.map(row => (
+          {visibleIssueRows.map(row => (
             <tr key={row.issueNumber} className="border-t border-[color:var(--color-ink)]/10">
               <td className="px-4 py-3 text-sm text-[color:var(--color-ink)]">
                 {row.issueNumber}
@@ -189,6 +205,15 @@ export default function IssueRevenueTable({ workspace_id }: IssueRevenueTablePro
           )}
         </tbody>
       </table>
+      {revenue.issues.length > 24 && !showAll && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="w-full border-t border-[color:var(--color-ink)]/15 px-4 py-3 text-xs font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
+        >
+          Show all ({revenue.issues.length})
+        </button>
+      )}
     </div>
   )
 }

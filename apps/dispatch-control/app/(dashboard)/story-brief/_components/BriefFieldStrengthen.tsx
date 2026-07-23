@@ -26,14 +26,15 @@
  * delta for, so `claimDelta` is always the empty/"no claims" shape
  * `RevisionComparisonCard` already renders honestly for that case.
  *
- * `DecisionLog` is mounted below (mirrors `LeadActions.tsx`'s "always
- * mounted, scoped to the run" idiom) — `strengthen/apply`'s reasoned audit
- * row ("Applied agent-strengthened {field}.") surfaces there.
+ * quick 260722-v01 (audit item 6): no longer mounts its own `<DecisionLog>`
+ * — StoryBriefScreen.tsx mounts exactly ONE consolidated Decision log for
+ * the whole Story stage (was up to ~11 duplicate run-scoped logs, one per
+ * lead/brief-field). `strengthen/apply`'s reasoned audit row ("Applied
+ * agent-strengthened {field}.") still surfaces there.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { RevisionComparisonCard } from '@/components/revision/RevisionComparisonCard'
-import DecisionLog from '@/components/decision-log/DecisionLog'
 import {
   strengthenBriefFieldPreview,
   strengthenBriefFieldApply,
@@ -159,8 +160,6 @@ export function BriefFieldStrengthen({
           onDiscard={handleDiscard}
         />
       )}
-
-      <DecisionLog runId={runId} />
     </div>
   )
 }

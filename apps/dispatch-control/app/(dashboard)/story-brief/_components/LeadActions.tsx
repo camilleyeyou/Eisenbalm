@@ -11,10 +11,13 @@
  * which write `storyLeads:setStatus` + (Remove only) a reason-carrying
  * `audit_log` row — the removal surfaces in the shared Decision log
  * (`components/decision-log/DecisionLog.tsx`) server-side; this component
- * mounts `DecisionLog` below its controls (mirrors
- * `ApprovalPanelContent.tsx`'s "always mounted, scoped to the run" idiom)
- * and shows an optimistic pending/success message per the
+ * shows an optimistic pending/success message per the
  * `AdjudicationPanel.tsx` idiom while Convex's live subscription catches up.
+ *
+ * quick 260722-v01 (audit item 6): no longer mounts its own `<DecisionLog>`
+ * — StoryBriefScreen.tsx mounts exactly ONE consolidated Decision log for
+ * the whole Story stage (was up to ~11 duplicate run-scoped logs, one per
+ * lead/brief-field). The require/remove reason still surfaces there.
  *
  * The operator never handles the pipeline's server-to-server auth value —
  * this component contains no reference to it whatsoever.
@@ -22,7 +25,6 @@
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { requireLead, removeLead } from '@/lib/pipelineControlClient'
-import DecisionLog from '@/components/decision-log/DecisionLog'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
@@ -119,8 +121,6 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
           {message}
         </p>
       )}
-
-      <DecisionLog runId={runId} />
     </section>
   )
 }

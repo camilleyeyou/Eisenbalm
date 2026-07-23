@@ -145,3 +145,28 @@ describe('MyTasksList — resolved task row (TSK-05)', () => {
     expect(screen.getByText(/resolved just now/i)).toBeDefined()
   })
 })
+
+// quick 260722-v01 (audit item 2) — severity-grouped sections.
+describe('MyTasksList — severity grouping (audit item 2)', () => {
+  it('groups tasks into "Must fix · N" / "Review recommended · N" / "Information · N" sections, omitting empty buckets', () => {
+    const mustFix = makeActiveTask({ id: 'qa-1', sev: 'must-fix', title: 'Must-fix task' })
+    const reviewRec = makeActiveTask({
+      id: 'qa-2',
+      sev: 'review-recommended',
+      title: 'Review-recommended task',
+    })
+
+    render(<MyTasksList tasks={[mustFix, reviewRec]} approvalHref="/issues/7/approval" />)
+
+    expect(screen.getByText('Must fix · 1')).toBeDefined()
+    expect(screen.getByText('Review recommended · 1')).toBeDefined()
+    // No 'information' tasks in this fixture — that section is omitted entirely.
+    expect(screen.queryByText(/^Information ·/)).toBeNull()
+
+    // The row-level SeverityBadge's text ("Must fix") stays unambiguous —
+    // the section header's "Must fix · 1" is a single text node, not a
+    // nested <span> that would collide with getByText('Must fix').
+    const sevLabel = screen.getByText('Must fix')
+    expect(sevLabel.querySelector('svg')).not.toBeNull()
+  })
+})

@@ -49,6 +49,14 @@
  * pads it, so the sibling stage canvases carry none. The Error branch's root
  * is itself a bordered card (`border ... p-6`), not extra frame padding, so
  * its `p-6` is genuine internal card padding and stays.
+ *
+ * quick 260722-v01 (audit item 6): `LeadActions` and `BriefFieldStrengthen`
+ * no longer mount their own `<DecisionLog>` (was up to ~11 duplicate
+ * run-scoped logs on this page, one per lead/brief field). This screen now
+ * mounts exactly ONE consolidated `<DecisionLog runId={effectiveRunId} />`
+ * at the bottom of the main return, under a "Decision log" heading —
+ * `effectiveRunId` is non-null in that code path (the Empty-state branch
+ * above returns early on `effectiveRunId === null`).
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -68,6 +76,7 @@ import { BriefOrgCard } from './BriefOrgCard'
 import { NeedsYourDecisionCard, type VerificationRecordRow } from './NeedsYourDecisionCard'
 import { BriefFieldTable } from './BriefFieldTable'
 import { BriefFieldStrengthen } from './BriefFieldStrengthen'
+import DecisionLog from '@/components/decision-log/DecisionLog'
 import {
   type PitchLogRow,
   type AdvocateArgumentRow,
@@ -294,6 +303,11 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
             ))}
           </div>
         )}
+      </section>
+
+      <section aria-label="Decision log" className="flex flex-col gap-3">
+        <h2 className={MICRO_LABEL}>Decision log</h2>
+        <DecisionLog runId={effectiveRunId} />
       </section>
     </div>
   )

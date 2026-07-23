@@ -30,6 +30,12 @@
  * unit-testable directly against DisplayTask fixtures (__tests__/
  * MyTasksScreen.test.tsx) — MyTasksScreen (default export) is the thin
  * data-fetching wrapper that feeds it.
+ *
+ * quick 260722-v01 (audit item 2): `MyTasksList` groups its (already
+ * severity-sorted) tasks into three `TaskSeverity` sections — "Must fix",
+ * "Review recommended", "Information" — each with a "{label} · {count}"
+ * micro-label header, in that order, omitting empty buckets. Row markup
+ * (`renderTask`) is unchanged byte-for-byte from before the grouping.
  */
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
@@ -90,6 +96,13 @@ const STRUCK_ROW =
 
 const ROW_TITLE_LINE_THROUGH = 'line-through'
 
+// quick 260722-v01 (audit item 2) — copied verbatim from StoryBriefScreen.tsx's MICRO_LABEL.
+const MICRO_LABEL =
+  'font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]'
+
+// Section render order — matches the sort order `deriveTasks` already produces.
+const SEVERITY_SECTION_ORDER: TaskSeverity[] = ['must-fix', 'review-recommended', 'information']
+
 // ── MyTasksList (pure — no Convex, unit-testable directly) ──────────────────
 
 export function MyTasksList({
@@ -125,99 +138,121 @@ export function MyTasksList({
     )
   }
 
-  return (
-    <ul role="list" className="flex flex-col gap-3">
-      {tasks.map(task => {
-        if (task.sessionState === 'resolved') {
-          return (
-            <li key={task.id} className={STRUCK_ROW}>
-              <span className={ROW_TITLE_LINE_THROUGH}>{task.title}</span>
-              <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-green)]">
-                resolved {formatTaskAge(task.openedAt)}
-              </span>
-            </li>
-          )
-        }
+  function renderTask(task: DisplayTask) {
+    if (task.sessionState === 'resolved') {
+      return (
+        <li key={task.id} className={STRUCK_ROW}>
+          <span className={ROW_TITLE_LINE_THROUGH}>{task.title}</span>
+          <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-green)]">
+            resolved {formatTaskAge(task.openedAt)}
+          </span>
+        </li>
+      )
+    }
 
-        if (task.sessionState === 'superseded') {
-          return (
-            <li key={task.id} className={STRUCK_ROW}>
-              <span className={ROW_TITLE_LINE_THROUGH}>{task.title}</span>
-              <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-cobalt)]">
-                superseded
-              </span>
-              <Link
-                href={task.supersededBy ?? '/issues'}
-                className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
-              >
-                See the new step
-              </Link>
-            </li>
-          )
-        }
-
-        return (
-          <li
-            key={task.id}
-            className="flex flex-col gap-2 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
+    if (task.sessionState === 'superseded') {
+      return (
+        <li key={task.id} className={STRUCK_ROW}>
+          <span className={ROW_TITLE_LINE_THROUGH}>{task.title}</span>
+          <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-cobalt)]">
+            superseded
+          </span>
+          <Link
+            href={task.supersededBy ?? '/issues'}
+            className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
           >
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <SeverityBadge sev={task.sev} />
-              <span className="font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                Stage {task.stage}
-              </span>
-              <span className="font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                {formatTaskAge(task.openedAt)}
-              </span>
-            </div>
+            See the new step
+          </Link>
+        </li>
+      )
+    }
 
-            <p className="text-[15px] font-semibold text-[color:var(--color-ink)]">{task.title}</p>
+    return (
+      <li
+        key={task.id}
+        className="flex flex-col gap-2 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
+      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <SeverityBadge sev={task.sev} />
+          <span className="font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
+            Stage {task.stage}
+          </span>
+          <span className="font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
+            {formatTaskAge(task.openedAt)}
+          </span>
+        </div>
 
-            <p className="text-[13px] text-[color:var(--color-ink-soft)]">
-              <span className="font-semibold text-[color:var(--color-ink)]">{task.where}</span>
-              {' — '}
-              <span>{task.why}</span>
-            </p>
+        <p className="text-[15px] font-semibold text-[color:var(--color-ink)]">{task.title}</p>
 
-            {task.rec && (
-              <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">{task.rec}</p>
-            )}
+        <p className="text-[13px] text-[color:var(--color-ink-soft)]">
+          <span className="font-semibold text-[color:var(--color-ink)]">{task.where}</span>
+          {' — '}
+          <span>{task.why}</span>
+        </p>
 
-            <div className="mt-1 flex flex-wrap gap-2">
-              <Link
-                href={task.primary.href}
-                className="min-h-[44px] rounded-[2px] bg-[color:var(--color-ink)] px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-white hover:opacity-90"
-              >
-                {task.primary.label}
-              </Link>
-              {task.insp ? (
-                // Phase 44 Plan 44-08 (INS-01) — qa/claim tasks carry a
-                // populated `insp` key (§44.1); the button is live.
-                <button
-                  type="button"
-                  onClick={() => openInspector(task.insp!)}
-                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
-                >
-                  Inspect context
-                </button>
-              ) : (
-                // Sign-off tasks (signoff-facts/signoff-voice) have no
-                // single natural artifact — the button stays reserved for
-                // just those two rows (44-RESEARCH Open Question 1).
-                <button
-                  type="button"
-                  disabled
-                  title="No single artifact anchors this sign-off — the inspector is reserved for this row."
-                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Inspect context
-                </button>
-              )}
-            </div>
-          </li>
-        )
-      })}
-    </ul>
+        {task.rec && (
+          <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">{task.rec}</p>
+        )}
+
+        <div className="mt-1 flex flex-wrap gap-2">
+          <Link
+            href={task.primary.href}
+            className="min-h-[44px] rounded-[2px] bg-[color:var(--color-ink)] px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-white hover:opacity-90"
+          >
+            {task.primary.label}
+          </Link>
+          {task.insp ? (
+            // Phase 44 Plan 44-08 (INS-01) — qa/claim tasks carry a
+            // populated `insp` key (§44.1); the button is live.
+            <button
+              type="button"
+              onClick={() => openInspector(task.insp!)}
+              className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+            >
+              Inspect context
+            </button>
+          ) : (
+            // Sign-off tasks (signoff-facts/signoff-voice) have no
+            // single natural artifact — the button stays reserved for
+            // just those two rows (44-RESEARCH Open Question 1).
+            <button
+              type="button"
+              disabled
+              title="No single artifact anchors this sign-off — the inspector is reserved for this row."
+              className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Inspect context
+            </button>
+          )}
+        </div>
+      </li>
+    )
+  }
+
+  // quick 260722-v01 (audit item 2) — group the already severity-sorted
+  // `tasks` array into Must fix / Review recommended / Information sections.
+  const buckets: Record<TaskSeverity, DisplayTask[]> = {
+    'must-fix': [],
+    'review-recommended': [],
+    information: [],
+  }
+  for (const task of tasks) {
+    buckets[task.sev].push(task)
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {SEVERITY_SECTION_ORDER.filter(sev => buckets[sev].length > 0).map(sev => (
+        <section key={sev} aria-label={SEVERITY_META[sev].label}>
+          <h2 className={`${MICRO_LABEL} mb-2`}>
+            {SEVERITY_META[sev].label} · {buckets[sev].length}
+          </h2>
+          <ul role="list" className="flex flex-col gap-3">
+            {buckets[sev].map(task => renderTask(task))}
+          </ul>
+        </section>
+      ))}
+    </div>
   )
 }
 

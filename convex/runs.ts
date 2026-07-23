@@ -102,6 +102,41 @@ export const listForWorkspace = query({
   },
 })
 
+// ── listRecentForWorkspace ───────────────────────────────────────────────────
+
+/**
+ * quick 260722-v01 (audit item 3) — ADDITIVE ONLY. `listForWorkspace`
+ * `.collect()`s every run for the workspace; several subscribers do (and
+ * still should) depend on that full set. `RunsTable.tsx` only ever renders
+ * its latest 50 rows client-side (with a "Show all" toggle) — this query
+ * gives it a server-side `take(100)` instead of pulling the entire table.
+ *
+ * Uses the SAME `by_workspace` index, `.order('desc')` (Convex orders by the
+ * index's implicit trailing `_creationTime` field when no other sort field is
+ * specified — NOT `startedAt`). Documented assumption: `_creationTime desc`
+ * is an acceptable proxy for `startedAt desc` for `runs` rows, since each run
+ * document is created once, at (or immediately after) the moment it starts —
+ * the two orderings only disagree if a row were ever inserted materially
+ * out-of-band from its own start time, which does not happen in this
+ * pipeline. The taken rows are then explicitly re-sorted by `startedAt desc`
+ * (matching `listForWorkspace`'s exact ordering contract) so a caller can
+ * never observe a difference between the two queries' row order.
+ *
+ * Does NOT modify `listForWorkspace` or any other query — ReviewQueue /
+ * CostRollup / DriftStrip keep subscribing to the full-collect query.
+ */
+export const listRecentForWorkspace = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const rows = await ctx.db
+      .query('runs')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .order('desc')
+      .take(100)
+    return rows.sort((a, b) => b.startedAt - a.startedAt)
+  },
+})
+
 // ── latest ───────────────────────────────────────────────────────────────────
 
 /**

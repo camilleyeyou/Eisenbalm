@@ -5,14 +5,18 @@
  * calls `strengthenBriefFieldPreview` (read-only, no mutation), the
  * proposal renders via the shared `RevisionComparisonCard`, Apply calls
  * `strengthenBriefFieldApply` (writes the field via `briefs:patch` +
- * `audit_log`), and Discard leaves the field unchanged (no apply call). A
- * successful Apply's reasoned audit row surfaces in the shared Decision log
- * (`components/decision-log/DecisionLog.tsx`) — mocked exactly like
- * `LeadActions.test.tsx` mocks it.
+ * `audit_log`), and Discard leaves the field unchanged (no apply call).
+ *
+ * quick 260722-v01 (audit item 6): `BriefFieldStrengthen` no longer mounts
+ * its own `<DecisionLog>` — StoryBriefScreen.tsx now mounts exactly ONE
+ * consolidated Decision log for the whole Story stage. A successful Apply's
+ * reasoned audit row still surfaces there (StoryBriefScreen-level, not this
+ * component's concern); this file's assertions are scoped to the
+ * preview/apply/discard behavior only.
  *
  * Runs in jsdom (environmentMatchGlobs `*.test.tsx` -> jsdom).
  */
-import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, afterEach, vi, type Mock } from 'vitest'
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 
 vi.mock('@clerk/nextjs', () => ({
@@ -31,32 +35,8 @@ vi.mock('@/lib/briefClient', async () => {
   }
 })
 
-// BriefFieldStrengthen mounts the shared DecisionLog component (mirrors
-// LeadActions.test.tsx's mock of the same component's Convex subscriptions).
-vi.mock('convex/react', () => ({
-  useQuery: vi.fn(),
-}))
-
-vi.mock('@convex/_generated/api', () => ({
-  api: {
-    auditLog: { listDecisions: 'auditLog:listDecisions' },
-    users: { byClerkUserId: 'users:byClerkUserId' },
-  },
-}))
-
-import { useQuery } from 'convex/react'
 import { strengthenBriefFieldPreview, strengthenBriefFieldApply } from '@/lib/briefClient'
 import { BriefFieldStrengthen } from '../app/(dashboard)/story-brief/_components/BriefFieldStrengthen'
-
-let decisionRows: Array<Record<string, unknown>> = []
-
-beforeEach(() => {
-  decisionRows = []
-  ;(useQuery as unknown as Mock).mockImplementation((query: unknown) => {
-    if (query === 'auditLog:listDecisions') return decisionRows
-    return undefined
-  })
-})
 
 afterEach(() => {
   cleanup()
@@ -110,18 +90,7 @@ describe('BriefFieldStrengthen (BRF-06)', () => {
     })
   })
 
-  it('a successful Apply surfaces a Decision-log entry (resolution: "brief_field_strengthened")', async () => {
-    decisionRows = [
-      {
-        _id: 'audit-1',
-        actorId: 'pipeline',
-        action: 'brief_field_strengthened',
-        reason: 'Applied agent-strengthened premise.',
-        timestamp: 1_700_000_000_000,
-        runId: 'run-1',
-      },
-    ]
-
+  it('a successful Apply resolves (resolution: "brief_field_strengthened") and signals onApplied', async () => {
     const onApplied = vi.fn()
     render(
       <BriefFieldStrengthen
@@ -144,9 +113,10 @@ describe('BriefFieldStrengthen (BRF-06)', () => {
       expect(onApplied).toHaveBeenCalled()
     })
 
-    // The shared DecisionLog component (not a bespoke re-implementation)
-    // renders the strengthen apply's reasoned audit row.
-    expect(screen.getByText('Applied agent-strengthened premise.')).toBeDefined()
+    // Apply clears the preview back to the "Ask an agent" idle state — the
+    // reasoned audit row now surfaces one level up, in StoryBriefScreen's
+    // consolidated Decision log, not inside this component.
+    expect(screen.queryByText('A sharper, more concrete premise.')).toBeNull()
   })
 
   it('Discard/cancel leaves the Brief field unchanged', async () => {
