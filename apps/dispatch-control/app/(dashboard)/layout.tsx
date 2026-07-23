@@ -62,10 +62,16 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <InspectorProvider>
-      <OnboardingProvider>
-        <ConfirmProvider>
-          <CommandPaletteProvider>
+    // fast 260723 (prod console fix): ConfirmProvider + CommandPaletteProvider
+    // must sit OUTSIDE InspectorProvider — InspectorProvider renders the
+    // inspector panel itself, and the panel's footer calls useConfirm();
+    // with the old inside-ordering, opening the inspector crashed with
+    // "useConfirm must be used within a ConfirmProvider" (tests wrapped
+    // providers explicitly, masking the hierarchy).
+    <ConfirmProvider>
+      <CommandPaletteProvider>
+        <InspectorProvider>
+          <OnboardingProvider>
             <div className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-rail)]">
               <MobileNavDrawer />
               <Masthead />
@@ -81,9 +87,9 @@ export default function DashboardLayout({
               </div>
             </div>
             <OnboardingTour />
-          </CommandPaletteProvider>
-        </ConfirmProvider>
-      </OnboardingProvider>
-    </InspectorProvider>
+          </OnboardingProvider>
+        </InspectorProvider>
+      </CommandPaletteProvider>
+    </ConfirmProvider>
   )
 }

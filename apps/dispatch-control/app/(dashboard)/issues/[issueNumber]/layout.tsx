@@ -54,7 +54,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, usePathname, useRouter } from 'next/navigation'
-import { useMutation } from 'convex/react'
+import { useConvexAuth, useMutation } from 'convex/react'
 import {
   AlertTriangle,
   BadgeCheck,
@@ -212,6 +212,14 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
   const { status, stages, tasks, workMinutes, panelContent, runCostUsd, capUsd } =
     useWorkspaceState()
   const setLastVisitedStage = useMutation(api.issues.setLastVisitedStage)
+  // fast 260723 (prod console fix): this mount-time write used to race the
+  // Convex↔Clerk auth handshake — on a fresh page load the mutation reached
+  // the server before the websocket was authenticated, so requireOperator
+  // threw a logged-but-swallowed "Unauthorized" and the write was lost.
+  // Every OTHER operator mutation fires on user clicks (auth long ready);
+  // this is the only mount-time one, so it alone gates on isAuthenticated —
+  // the effect re-fires when auth lands, so the write still happens.
+  const { isAuthenticated: convexAuthReady } = useConvexAuth()
 
   // quick 260723-4a6 (Task 2d): bare digit 1-5 jumps between the 5 stage
   // tabs — ONLY when no modifier is held and the operator isn't typing
@@ -233,6 +241,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
 
   // Last-visited-stage writer (D-03/D-04) — best-effort, never blocks nav.
   useEffect(() => {
+    if (!convexAuthReady) return // fast 260723 — wait out the auth handshake
     const segments = pathname.split('/').filter(Boolean)
     const last = segments[segments.length - 1]
     if (!isStageSegment(last)) return
@@ -244,7 +253,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
       // Tolerated — a failed "remember where I was" write must never block
       // navigation or surface an error to the operator.
     })
-  }, [pathname, n, setLastVisitedStage])
+  }, [pathname, n, setLastVisitedStage, convexAuthReady])
 
   // Phase 49 Plan 08 (ROL-04) — derives the same stage segment the effect
   // above computes, for the persistent Comments affordance's `stage` scope.

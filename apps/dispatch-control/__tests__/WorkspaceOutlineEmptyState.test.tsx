@@ -119,6 +119,8 @@ vi.mock('@convex/_generated/api', () => ({
 }))
 
 vi.mock('convex/react', () => ({
+  // fast 260723: FrameChrome's last-visited writer now gates on useConvexAuth.
+  useConvexAuth: () => ({ isLoading: false, isAuthenticated: true }),
   useQuery: vi.fn(),
   useMutation: vi.fn(),
 }))
