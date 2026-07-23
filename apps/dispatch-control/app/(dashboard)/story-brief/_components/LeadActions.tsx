@@ -38,7 +38,11 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
 
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  // fast 260723 — feedback carries tone, and renders NEXT TO the Require
+  // button (top of the section), not below the Remove textarea where it sat
+  // below the fold: the operator reported clicking Require with "nothing
+  // happens" while the (error) message rendered off-screen in 13px ink.
+  const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
 
   const canRemove = reason.trim().length > 0 && !busy
 
@@ -48,9 +52,12 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
     try {
       const token = await getToken()
       await requireLead(runId, leadId, token)
-      setMessage('Lead required.')
+      setMessage({ tone: 'ok', text: 'Locked in — the pipeline must pick this lead.' })
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Require failed.')
+      setMessage({
+        tone: 'error',
+        text: `Couldn't require this lead — ${e instanceof Error ? e.message : 'request failed.'}`,
+      })
     } finally {
       setBusy(false)
     }
@@ -63,10 +70,13 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
     try {
       const token = await getToken()
       await removeLead(runId, leadId, reason, token)
-      setMessage(`Removed: ${reason}`)
+      setMessage({ tone: 'ok', text: `Removed: ${reason}` })
       setReason('')
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Remove failed.')
+      setMessage({
+        tone: 'error',
+        text: `Couldn't remove this lead — ${e instanceof Error ? e.message : 'request failed.'}`,
+      })
     } finally {
       setBusy(false)
     }
@@ -87,7 +97,27 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
           Require this lead
         </button>
         <HelpTip text={HELP_COPY.storyBrief.leadRequire} label="Help: require lead" />
+        {busy && (
+          <span className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
+            Working…
+          </span>
+        )}
       </div>
+
+      {/* fast 260723 — feedback lives HERE, adjacent to the button that was
+          clicked; error = vermilion + role=alert, success = green. */}
+      {message && (
+        <p
+          role={message.tone === 'error' ? 'alert' : 'status'}
+          className={
+            message.tone === 'error'
+              ? 'border border-[color:var(--color-vermilion)]/50 bg-[color:var(--color-vermilion)]/10 p-2 font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-vermilion)]'
+              : 'font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-green)]'
+          }
+        >
+          {message.text}
+        </p>
+      )}
 
       <div>
         <label
@@ -116,11 +146,6 @@ export function LeadActions({ runId, leadId }: LeadActionsProps) {
         </button>
       </div>
 
-      {message && (
-        <p role="status" className="text-[13px] text-[color:var(--color-ink)]">
-          {message}
-        </p>
-      )}
     </section>
   )
 }

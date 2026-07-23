@@ -119,7 +119,9 @@ describe('LeadActions (BRF-02)', () => {
     fireEvent.click(screen.getByRole('button', { name: /require this lead/i }))
 
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toContain('require-lead failed')
+      // fast 260723: errors now render as role="alert" (assertive, vermilion),
+      // distinct from the role="status" success message.
+      expect(screen.getByRole('alert').textContent).toContain('require-lead failed')
     })
   })
 
@@ -135,7 +137,7 @@ describe('LeadActions (BRF-02)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
 
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toContain('remove-lead failed')
+      expect(screen.getByRole('alert').textContent).toContain('remove-lead failed')
     })
   })
 })

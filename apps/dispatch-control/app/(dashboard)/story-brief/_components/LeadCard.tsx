@@ -47,14 +47,37 @@ export function LeadCard({ lead }: LeadCardProps) {
         <span className="font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
           {lead.category}
         </span>
-        {lead.recommended && (
-          <span
-            data-testid={`lead-recommended-${lead._id}`}
-            className="font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-green)]"
-          >
-            Recommended
-          </span>
-        )}
+        <span className="flex items-center gap-2">
+          {/* fast 260723 — durable operator-action state. `status` was in the
+              type but never rendered, so a successful Require/Remove changed
+              NOTHING visible on the card (the operator reported clicking with
+              no effect). Chip updates live via the existing Convex
+              subscription the moment storyLeads:setStatus lands. */}
+          {lead.status === 'required' && (
+            <span
+              data-testid={`lead-status-${lead._id}`}
+              className="bg-[color:var(--color-green)] px-2 py-0.5 font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-white"
+            >
+              Required — locked in
+            </span>
+          )}
+          {lead.status === 'removed' && (
+            <span
+              data-testid={`lead-status-${lead._id}`}
+              className="bg-[color:var(--color-vermilion)] px-2 py-0.5 font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-white"
+            >
+              Removed
+            </span>
+          )}
+          {lead.recommended && (
+            <span
+              data-testid={`lead-recommended-${lead._id}`}
+              className="font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-green)]"
+            >
+              Recommended
+            </span>
+          )}
+        </span>
       </div>
 
       {/* premise — ALWAYS visible, rendered in FULL, never clipped. */}
