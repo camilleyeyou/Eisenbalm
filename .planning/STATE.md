@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260722-n5r (redesign issue workspace stage pages layout — sticky frame, container-query galley, de-duplicated Draft nav, grouped Fact Check claims)
-last_updated: "2026-07-23T00:00:30.000Z"
+stopped_at: Completed quick 260722-tv1 (fix app-wide layout audit findings — sidebar clip, page overscroll, Voice Pass width starvation, dead jump-nav, galley overlay clamps, run-monitor list caps)
+last_updated: "2026-07-23T05:04:59.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -1041,6 +1041,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-20T06:30:59.000Z
-Stopped at: Completed quick 260719-w6o (make paused-at-Gate-1 a first-class UI state)
+Last session: 2026-07-23T05:04:59.000Z
+Stopped at: Completed quick 260722-tv1 (fix app-wide layout audit findings — sidebar clip, page overscroll, Voice Pass width starvation, dead jump-nav, galley overlay clamps, run-monitor list caps)
 Resume file: None
