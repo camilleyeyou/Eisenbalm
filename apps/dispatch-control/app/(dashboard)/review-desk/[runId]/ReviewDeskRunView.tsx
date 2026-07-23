@@ -82,6 +82,12 @@
  * list now renders ONLY in edit mode, as a horizontal strip (new
  * `orientation="horizontal"` prop) above the editor — its section-selector
  * role there has no `WorkspaceOutline` equivalent.
+ *
+ * quick 260722-tv1: dropped the root's viewport-sized `min-h-[70vh]` (this
+ * stage canvas already sizes to its content inside the frame). Added a
+ * one-shot `#galley-*` hash-scroll receiver so jump-nav controls on stages
+ * with no galley mounted (Story/Fact Check/Approval) can route here and land
+ * on the right section.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -334,6 +340,24 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, searchParams])
 
+  // quick 260722-tv1: one-shot hash-scroll receiver for jump-nav controls
+  // (WorkspaceOutline / DecisionRail / SourceIndex) that route here with a
+  // `#galley-*` hash when their own stage has no galley mounted. Mirrors the
+  // deepLinkAppliedRef one-shot pattern above; `[id^='galley-']` already
+  // carries `scroll-margin-top: 88px` for the sticky stage-nav offset.
+  const hashScrollAppliedRef = useRef(false)
+
+  useEffect(() => {
+    if (hashScrollAppliedRef.current) return
+    if (!draft) return
+    if (typeof window === 'undefined') return
+    const hash = window.location.hash
+    if (!hash.startsWith('#galley-')) return
+    hashScrollAppliedRef.current = true
+    document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft])
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   /**
@@ -462,7 +486,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
     : undefined
 
   return (
-    <div className="flex min-h-[70vh] flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4">
       {loading && (
         <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
       )}

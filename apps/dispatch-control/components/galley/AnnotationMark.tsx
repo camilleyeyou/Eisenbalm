@@ -43,8 +43,14 @@
  * `onInspect(sectionId)`; the caller (Galley -> GallerySection) supplies a
  * callback that opens the shared inspector on this section's founder
  * artifact (`openInspector({ type: 'founder', runId, locator: sectionId })`).
+ *
+ * quick 260722-tv1: the popover self-clamps horizontally via a
+ * `useLayoutEffect` measuring its own `getBoundingClientRect()` — a
+ * right-edge annotation could otherwise clip against main's `overflow-y-auto`
+ * (no `overflow-x` escape hatch). Mirrors `HelpTip`'s existing self-clamp;
+ * jsdom returns a zero-width rect, so this no-ops safely in tests.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { acceptFinding, dismissFinding, FindingsError } from '@/lib/findingsClient'
 import { rewrite } from '@/lib/voicePassClient'
@@ -113,6 +119,8 @@ export default function AnnotationMark({
 }: AnnotationMarkProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
+  const popoverRef = useRef<HTMLSpanElement>(null)
+  const [popoverShift, setPopoverShift] = useState(0)
   const { getToken } = useAuth()
 
   // Phase 33 action state.
@@ -173,6 +181,22 @@ export default function AnnotationMark({
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
+  }, [open])
+
+  // quick 260722-tv1: self-clamp the popover leftward when it would overflow
+  // the right edge of the viewport (jsdom's zero-width rect no-ops safely).
+  useLayoutEffect(() => {
+    if (!open) {
+      setPopoverShift(0)
+      return
+    }
+    if (typeof window === 'undefined') return
+    const el = popoverRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width === 0) return
+    const overflow = rect.right - (window.innerWidth - 16)
+    setPopoverShift(overflow > 0 ? -overflow : 0)
   }, [open])
 
   /**
@@ -250,7 +274,12 @@ export default function AnnotationMark({
         {children}
       </mark>
       {open && (
-        <span className="galley-popover" role="dialog">
+        <span
+          ref={popoverRef}
+          className="galley-popover"
+          role="dialog"
+          style={popoverShift ? { left: popoverShift } : undefined}
+        >
           <span className="galley-popover__severity" style={{ display: 'block' }}>
             {value.severity}
           </span>

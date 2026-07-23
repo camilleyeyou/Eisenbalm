@@ -29,6 +29,11 @@
  * map, never a Convex query (no such row exists in `users`). Any id that
  * resolves to neither falls back to the raw id itself — explicit, never
  * blank (the "blank never means verified" honesty rule extended to actors).
+ *
+ * quick 260722-tv1: every value `<dd>` in the `Who/Action/When/Issue-Run/
+ * Instruction ver./Before/After` grid gets `min-w-0 break-words` — long
+ * runId/JSON snapshot values were overflowing the fixed `[auto_1fr]` value
+ * column instead of wrapping.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -184,22 +189,22 @@ export function DecisionLogRows({ rows, resolveActor }: DecisionLogRowsProps) {
             </p>
             <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
               <dt>Who</dt>
-              <dd>{resolveActor(row.actorId)}</dd>
+              <dd className="min-w-0 break-words">{resolveActor(row.actorId)}</dd>
               <dt>Action</dt>
-              <dd>{row.action}</dd>
+              <dd className="min-w-0 break-words">{row.action}</dd>
               <dt>When</dt>
-              <dd>{formatTimestamp(row.timestamp)}</dd>
+              <dd className="min-w-0 break-words">{formatTimestamp(row.timestamp)}</dd>
               <dt>Issue / Run</dt>
-              <dd>
+              <dd className="min-w-0 break-words">
                 {row.issueNumber !== undefined ? `Issue ${row.issueNumber}` : '—'} ·{' '}
                 {row.runId ?? '—'}
               </dd>
               <dt>Instruction ver.</dt>
-              <dd>{row.instructionVersion ?? '—'}</dd>
+              <dd className="min-w-0 break-words">{row.instructionVersion ?? '—'}</dd>
               <dt>Before</dt>
-              <dd>{formatSnapshot(row.before)}</dd>
+              <dd className="min-w-0 break-words">{formatSnapshot(row.before)}</dd>
               <dt>After</dt>
-              <dd>{formatSnapshot(row.after)}</dd>
+              <dd className="min-w-0 break-words">{formatSnapshot(row.after)}</dd>
             </dl>
           </li>
         )

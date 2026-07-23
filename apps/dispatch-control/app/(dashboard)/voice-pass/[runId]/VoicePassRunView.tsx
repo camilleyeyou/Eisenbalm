@@ -63,6 +63,12 @@
  * sources" reuses the SAME `claimChecks.listByRunId` query the shared
  * galley already subscribes to internally (Convex dedupes the identical
  * subscription — no new backend query).
+ *
+ * quick 260722-tv1: the two-column stage row now uses `globals.css`'s
+ * `.voice-canvas`/`.voice-stage-row`/`.voice-stage-rail` container-query
+ * classes instead of `min-h-[70vh]`/`lg:flex-row`/`lg:w-[336px]` — those
+ * viewport breakpoints starved the galley in the narrow Issue-Workspace
+ * canvas mount even though the standalone route is plenty wide.
  */
 import { use, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -256,7 +262,7 @@ export function VoicePassScreen({ runId }: { runId: string }) {
   }
 
   return (
-    <div className="flex min-h-[70vh] flex-col gap-4">
+    <div className="voice-canvas flex flex-col gap-4">
       {/* Phase 41 (D-07, Plan 41-07 Task 3): the standalone "Voice Pass —
           Run {runId}" header + advisory paragraph were removed here — the
           Issue Workspace frame's Voice tab + status mark is now the single
@@ -296,7 +302,7 @@ export function VoicePassScreen({ runId }: { runId: string }) {
       )}
 
       {!loading && !error && draft && (
-        <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+        <div className="voice-stage-row flex-1 gap-4">
           {/* LEFT — the VOICE_AXES-scoped galley, voice-tell labels (D-10). */}
           <div className="flex flex-1 flex-col gap-3">
             <Galley
@@ -382,7 +388,7 @@ export function VoicePassScreen({ runId }: { runId: string }) {
           {/* RIGHT — the Voice Pass rail (VOX-03): machine-tells, voice law,
               the server-gated "Sounds human" sign-off. Mirrors Review Desk's
               336px decision-rail column. */}
-          <div className="w-full shrink-0 lg:w-[336px]">
+          <div className="voice-stage-rail shrink-0">
             <VoicePassRail runId={runId} />
           </div>
         </div>

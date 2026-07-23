@@ -20,6 +20,11 @@
  * The candidate list handed to AdjudicationPanel reuses CandidateSlate's own
  * `joinCandidates` helper (SIG-01's join) rather than re-deriving advocate
  * data a second way — one join, two consumers.
+ *
+ * quick 260722-tv1: this screen only mounts standalone at `/signal-desk`
+ * (Phase 47 replaced its workspace-frame mount with `StoryBriefScreen`) —
+ * inside main's `p-6`, so its own `p-6` was double-guttering. Dropped from
+ * both the no-runs empty root and the main root.
  */
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
@@ -81,7 +86,7 @@ export function SignalDeskScreen({ workspace_id, runId: passedRunId }: SignalDes
 
   if (!effectiveRunId) {
     return (
-      <div className="p-6">
+      <div>
         <p className="text-[13px] text-[color:var(--color-ink-soft)]">No runs yet.</p>
       </div>
     )
@@ -96,7 +101,7 @@ export function SignalDeskScreen({ workspace_id, runId: passedRunId }: SignalDes
   const candidates = pitchRows && advocateRows ? joinCandidates(pitchRows, advocateRows) : []
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--color-ink)]">
           Signal Desk

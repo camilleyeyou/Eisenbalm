@@ -29,16 +29,27 @@
  * `deriveClaimChipState` field-mapping helpers Stage 3 Fact Check and
  * Stage 2 Draft consume — no forked mapping (D-16). The Approval-specific
  * check/skip/jump/open-source CONTROLS below are unchanged.
+ *
+ * quick 260722-tv1: this rail mounts on the Approval stage, which has no
+ * galley of its own — `handleJump` used to silently no-op when its target
+ * anchor wasn't in the current DOM. It now falls back to routing to
+ * `issueDraftHref(issueNumber)#anchor` when the anchor element is absent AND
+ * an `issueNumber` was passed down (legacy standalone
+ * `/review-desk/[runId]` mounts, where it's undefined, keep the old
+ * attempt-scroll-only behavior).
  */
+import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import {
   ClaimProvenanceRow,
   type ClaimProvenanceView,
 } from '@/components/provenance/ClaimProvenanceCard'
+import { issueDraftHref } from '@/lib/issueRouteResolver'
 
 interface SourceIndexProps {
   runId: string
+  issueNumber?: number
 }
 
 /** Minimal shape needed from a live `claim_checks` row (§35.4 + Phase 42 importance/context). */
@@ -88,7 +99,8 @@ function galleyAnchorId(sectionName: string | undefined): string | null {
   return `galley-${sectionName}`
 }
 
-export default function SourceIndex({ runId }: SourceIndexProps) {
+export default function SourceIndex({ runId, issueNumber }: SourceIndexProps) {
+  const router = useRouter()
   const rows =
     (useQuery(api.claimChecks.listByRunId, { runId }) as ClaimCheckRow[] | undefined) ?? []
   const setStatus = useMutation(api.claimChecks.setStatus)
@@ -100,7 +112,12 @@ export default function SourceIndex({ runId }: SourceIndexProps) {
   function handleJump(sectionName: string | undefined) {
     const anchor = galleyAnchorId(sectionName)
     if (!anchor) return
-    document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const el = document.getElementById(anchor)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else if (issueNumber != null) {
+      router.push(issueDraftHref(issueNumber) + '#' + anchor)
+    }
   }
 
   if (rows.length === 0) return null

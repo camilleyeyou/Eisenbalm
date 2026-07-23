@@ -51,9 +51,19 @@
  * server-side `facts-cleared` narrowing so a voice/machine-tell error can
  * never block or clutter this rail; it belongs to Voice Pass's own
  * "Sounds human" surface instead.
+ *
+ * quick 260722-tv1: this rail is mounted as the Approval stage, which never
+ * mounts a galley — `handleTranscript`/`jumpToFinding` used to silently
+ * no-op if invoked here without a Draft-stage galley already in the DOM.
+ * Both now fall back to routing to `issueDraftHref(issueNumber)#anchor` when
+ * the anchor element is absent AND `issueNumber` is known (legacy standalone
+ * `/review-desk/[runId]` mounts, where `issueNumber` is undefined, keep the
+ * old attempt-scroll-only behavior). `issueNumber` is also now threaded down
+ * to the mounted `SourceIndex` so its own jump links get the same fallback.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { publishIssue, rejectIssue, ReviewApiError } from '@/lib/reviewClient'
@@ -62,6 +72,7 @@ import { recordSignOff, SignOffApiError, type SignOffKind } from '@/lib/signOffC
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
+import { issueDraftHref } from '@/lib/issueRouteResolver'
 // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector opener.
 import { useInspector } from '@/components/inspector/InspectorProvider'
 import ResolvedFindingsList from './ResolvedFindingsList'
@@ -154,6 +165,7 @@ const MICRO_LABEL =
 
 export default function DecisionRail({ runId, issueNumber, held }: DecisionRailProps) {
   const { getToken } = useAuth()
+  const router = useRouter()
   // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector
   // opener, mounted once at the (dashboard) root layout.
   const { openInspector } = useInspector()
@@ -304,9 +316,13 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
   }
 
   function handleTranscript() {
-    document
-      .getElementById('galley-deliberation')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const anchor = 'galley-deliberation'
+    const el = document.getElementById(anchor)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else if (issueNumber != null) {
+      router.push(issueDraftHref(issueNumber) + '#' + anchor)
+    }
   }
 
   function jumpToFinding(finding: QaCorrectionRow) {
@@ -314,7 +330,12 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
     if (!galleyId) return
     const anchor = galleyAnchorFor(galleyId)
     if (!anchor) return
-    document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const el = document.getElementById(anchor)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else if (issueNumber != null) {
+      router.push(issueDraftHref(issueNumber) + '#' + anchor)
+    }
   }
 
   const blockerReason = `${blockers.length} blocker${blockers.length === 1 ? '' : 's'} to clear`
@@ -484,7 +505,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
             below, each with check/skip + jump link. Reads/writes the SAME
             claim_checks table this section's summary above already reads;
             the facts-cleared gate contract is untouched. */}
-        <SourceIndex runId={runId} />
+        <SourceIndex runId={runId} issueNumber={issueNumber} />
       </section>
 
       {/* 6b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,

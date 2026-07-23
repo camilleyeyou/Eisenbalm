@@ -31,6 +31,13 @@
  * `onInspect`'s existing optional-prop convention elsewhere in the galley).
  * Reuses the `InspectorFooter` (§44.7) reserved/live button class strings
  * for visual consistency between the two toolbars this phase ships.
+ *
+ * quick 260722-tv1: the fixed-position anchor now clamps to the viewport —
+ * `top` is floored at 60 (52px Masthead + 8px breathing room) so it can
+ * never overlap the Masthead, and `left` is clamped against a conservative
+ * 360px width estimate so it can't run off the right edge on a narrow
+ * viewport. In jsdom `selection.left`/`.top` are always 0, so both clamps
+ * no-op there.
  */
 import { useEffect, useState, type RefObject } from 'react'
 
@@ -170,7 +177,13 @@ export function PassageToolbar({
       role="toolbar"
       aria-label="Passage actions"
       className="galley-passage-toolbar fixed z-30 flex flex-wrap gap-2 border border-[color:var(--color-faint)] bg-[color:var(--color-paper)] p-2 shadow-sm"
-      style={{ top: Math.max(selection.top - 44, 8), left: selection.left }}
+      style={{
+        top: Math.max(selection.top - 44, 60),
+        left: Math.min(
+          selection.left,
+          Math.max(8, (typeof window !== 'undefined' ? window.innerWidth : 1024) - 368),
+        ),
+      }}
     >
       <button type="button" className={LIVE_CLASSES} onClick={() => onEditText?.(publicSelection)}>
         Edit text

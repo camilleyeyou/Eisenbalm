@@ -28,12 +28,19 @@
  * A small legend lists all five state labels (so the vocabulary is visible
  * even for 'changed-since-review', which the 41-01 selector never actually
  * produces this phase).
+ *
+ * quick 260722-tv1: `jumpToSection` used to silently no-op when the current
+ * stage has no galley mounted (Story/Fact Check/Approval — only Draft mounts
+ * one). It now falls back to routing to the Draft stage's galley anchor
+ * (`issueDraftHref(n)#anchor`) when the element isn't present in the DOM.
  */
+import { useRouter, useParams } from 'next/navigation'
 import { CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Circle } from 'lucide-react'
 import type { SectionState } from '@/lib/derivedState'
 import { useWorkspaceState } from './WorkspaceStateProvider'
 import { EDITABLE_SECTIONS } from '../../review-desk/[runId]/_components/SectionChipList'
 import { galleyAnchorFor } from '@/lib/galley/sectionIdMap'
+import { parseIssueNumber, issueDraftHref } from '@/lib/issueRouteResolver'
 
 /** The 5-value outline vocabulary — distinct wording from `StageState` (Pitfall 4). */
 export const SECTION_STATE_LABELS: Record<SectionState, string> = {
@@ -89,10 +96,19 @@ function SectionStateIcon({ state }: { state: SectionState }) {
   }
 }
 
-function jumpToSection(sectionId: string) {
+function jumpToSection(
+  sectionId: string,
+  router: ReturnType<typeof useRouter>,
+  issueNumber: number | null,
+) {
   const anchor = galleyAnchorFor(sectionId)
   if (!anchor) return
-  document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const el = document.getElementById(anchor)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } else if (issueNumber != null) {
+    router.push(issueDraftHref(issueNumber) + '#' + anchor)
+  }
 }
 
 /** The vocabulary legend — visible even for states that never fire this phase. */
@@ -119,6 +135,9 @@ function OutlineLegend() {
 
 export default function WorkspaceOutline() {
   const { sectionStates, draftContentAbsent } = useWorkspaceState()
+  const router = useRouter()
+  const params = useParams()
+  const issueNumber = typeof params.issueNumber === 'string' ? parseIssueNumber(params.issueNumber) : null
 
   return (
     <nav aria-label="Issue outline" className="flex flex-col gap-3">
@@ -152,7 +171,7 @@ export default function WorkspaceOutline() {
                 <button
                   type="button"
                   data-testid={`outline-row-${section.id}`}
-                  onClick={() => jumpToSection(section.id)}
+                  onClick={() => jumpToSection(section.id, router, issueNumber)}
                   className="flex min-h-[44px] w-full items-center justify-between gap-2 px-2 py-1.5 text-left font-[family-name:var(--font-ui)] text-[12.5px] font-medium text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)]"
                 >
                   <span>{section.label}</span>

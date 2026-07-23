@@ -43,6 +43,12 @@
  * §37.4(c)) — the SAME condition `deriveStoryStage` (lib/derivedState.ts,
  * tightened this plan) now gates its 'needs-you' StageStrip state on, so the
  * tab badge and this card's visibility can never disagree.
+ *
+ * quick 260722-tv1: the empty/loading/main state roots dropped their outer
+ * `p-6` — this stage canvas mounts inside the workspace frame, which already
+ * pads it, so the sibling stage canvases carry none. The Error branch's root
+ * is itself a bordered card (`border ... p-6`), not extra frame padding, so
+ * its `p-6` is genuine internal card padding and stays.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -133,7 +139,7 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
   // ── Empty (D-14): no run exists yet for this issue. ──────────────────────
   if (effectiveRunId === null) {
     return (
-      <div className="flex flex-col gap-4 p-6" data-testid="story-brief-empty">
+      <div className="flex flex-col gap-4" data-testid="story-brief-empty">
         <div>
           <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--color-ink)]">
             Story &amp; Brief
@@ -191,7 +197,7 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
   // ── Loading (D-14): discovery in progress, no leads have landed yet. ─────
   if (isDiscovering) {
     return (
-      <div className="flex flex-col gap-3 p-6" data-testid="story-brief-loading">
+      <div className="flex flex-col gap-3" data-testid="story-brief-loading">
         <p className="text-[13px] text-[color:var(--color-ink-soft)]">Finding leads… (~40s)</p>
       </div>
     )
@@ -216,7 +222,7 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
   const brief = ws.brief
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--color-ink)]">
           Story &amp; Brief

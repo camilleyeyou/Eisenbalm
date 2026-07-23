@@ -272,3 +272,29 @@ body {
 .galley-claim[data-checked="true"] {
   opacity: 0.72;
 }
+
+/* quick 260722-tv1 — Voice Pass container-query layout: one layout serves
+   both the narrow Issue-Workspace canvas mount AND the wide standalone
+   /voice-pass/[runId] route. Column (rail full-width below galley) by
+   default; row (336px fixed rail) once the CANVAS (not viewport) is >= 56rem.
+   Replaces the viewport lg: breakpoint that starved the galley in the
+   ~582px workspace canvas (the defect Draft was cured of in 260722-n5r). */
+.voice-canvas {
+  container-type: inline-size;
+}
+.voice-stage-row {
+  display: flex;
+  flex-direction: column;
+}
+.voice-stage-rail {
+  width: 100%;
+}
+@container (min-width: 56rem) {
+  .voice-stage-row {
+    flex-direction: row;
+  }
+  .voice-stage-rail {
+    width: 336px;
+    flex-shrink: 0;
+  }
+}
