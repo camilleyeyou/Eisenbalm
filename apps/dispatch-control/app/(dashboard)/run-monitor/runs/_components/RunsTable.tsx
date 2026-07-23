@@ -18,6 +18,10 @@
  * (server-side `take(100)`, same newest-first ordering) — this table only
  * ever renders 50 rows client-side anyway. ReviewQueue/CostRollup/DriftStrip
  * are untouched and still subscribe to `listForWorkspace`.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system used across the issues/workspace
+ * surfaces — no structural change, no testid/behavior change.
  */
 import { useState } from 'react'
 import Link from 'next/link'
@@ -52,11 +56,11 @@ function formatDuration(ms: number | undefined): string {
 }
 
 export const STATUS_CLASSES: Record<string, string> = {
-  running: 'bg-blue-100 text-blue-800',
-  done: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-  'awaiting-review': 'bg-yellow-100 text-yellow-800',
-  cancelled: 'bg-neutral-100 text-neutral-600',
+  running: 'bg-[color:var(--color-cobalt)]/15 text-[color:var(--color-cobalt)]',
+  done: 'bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]',
+  failed: 'bg-[color:var(--color-vermilion)]/15 text-[color:var(--color-vermilion)]',
+  'awaiting-review': 'bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
+  cancelled: 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
 }
 
 export default function RunsTable({ workspace_id }: RunsTableProps) {
@@ -67,14 +71,16 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
 
   if (runs === undefined) {
     return (
-      <div className="text-sm text-neutral-500 py-4">Loading runs…</div>
+      <div className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] py-4">
+        Loading runs…
+      </div>
     )
   }
 
   if (runs.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
-        <p className="text-sm text-neutral-500">
+      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
+        <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
           No pipeline runs recorded yet. The first run will appear here once the
           dispatch pipeline is triggered.
         </p>
@@ -87,59 +93,60 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
   const visibleRuns = showAll ? runs : runs.slice(0, 50)
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
+      <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
         <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-            <th className="px-4 py-3 font-medium text-neutral-600">
+          <tr className="border-b border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-left">
+            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">
               <span className="flex items-center gap-1">
                 Status
                 <HelpTip text={HELP_COPY.runMonitor.runState} label="Explain run status" />
               </span>
             </th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Trigger</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Triggered By</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Started</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Duration</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Cost</th>
+            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Trigger</th>
+            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Triggered By</th>
+            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Started</th>
+            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Duration</th>
+            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Cost</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-100">
+        <tbody className="divide-y divide-[color:var(--color-ink)]/10">
           {visibleRuns.map(run => {
             const cost = parseCostJson(run.cost).total
             const statusClass =
-              STATUS_CLASSES[run.status] ?? 'bg-neutral-100 text-neutral-700'
+              STATUS_CLASSES[run.status] ??
+              'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
             return (
               <tr
                 key={run._id}
-                className="hover:bg-neutral-50 transition-colors"
+                className="hover:bg-[color:var(--color-card-alt)] transition-colors"
               >
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass}`}
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusClass}`}
                   >
                     {run.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-neutral-700">
+                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                   {run.triggerSource}
                 </td>
-                <td className="px-4 py-3 text-neutral-500">
+                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                   {run.triggeredBy ?? '—'}
                 </td>
-                <td className="px-4 py-3 text-neutral-700">
+                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                   {formatTimestamp(run.startedAt)}
                 </td>
-                <td className="px-4 py-3 text-neutral-700">
+                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                   {formatDuration(run.durationMs)}
                 </td>
-                <td className="px-4 py-3 text-neutral-700">
+                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                   {cost > 0 ? `$${cost.toFixed(4)}` : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/run-monitor/runs/${run.runId}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium"
+                    className="text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline text-[11px] font-medium"
                   >
                     View →
                   </Link>
@@ -153,7 +160,7 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="w-full border-t border-neutral-200 px-4 py-3 text-xs font-medium text-blue-600 hover:bg-neutral-50"
+          className="w-full border-t border-[color:var(--color-faint)] px-4 py-3 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
         >
           Show all ({runs.length})
         </button>

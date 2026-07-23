@@ -27,6 +27,9 @@
  * `runKeyToPromptKey` resolver the inspector uses (`lib/inspectorArtifact.ts`,
  * §44.3) — honest degrade to a reserved control when the failed step has no
  * externalized prompt (e.g. `qa`), never a guessed link.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change.
  */
 import Link from 'next/link'
 import { useState } from 'react'
@@ -107,9 +110,9 @@ const RESERVED_TITLE =
 const NOT_EXTERNALIZED_TITLE = "This agent's instructions are code-defined, not editable here."
 
 const LIVE_BUTTON_CLASSES =
-  'inline-flex min-h-[36px] items-center gap-1.5 rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[.03em] text-neutral-900 hover:bg-neutral-50'
+  'inline-flex min-h-[36px] items-center gap-1.5 rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.03em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]'
 const RESERVED_BUTTON_CLASSES =
-  'inline-flex min-h-[36px] items-center gap-1.5 rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[.03em] text-neutral-400 cursor-not-allowed opacity-60'
+  'inline-flex min-h-[36px] items-center gap-1.5 rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.03em] text-[color:var(--color-faint)] cursor-not-allowed opacity-60'
 
 function RestartAction({
   runId,
@@ -132,7 +135,7 @@ function RestartAction({
         <button type="button" disabled title={RESERVED_TITLE} className={RESERVED_BUTTON_CLASSES}>
           {PRODUCT_TERMS.restartStep}
         </button>
-        <p className="mt-1 text-[11px] text-neutral-400">{RESERVED_TITLE}</p>
+        <p className="mt-1 text-[11px] text-[color:var(--color-faint)]">{RESERVED_TITLE}</p>
       </div>
     )
   }
@@ -146,7 +149,7 @@ function RestartAction({
         <Link href="/signal-desk" className={LIVE_BUTTON_CLASSES}>
           {PRODUCT_TERMS.restartStep}
         </Link>
-        <p className="mt-1 text-[11px] text-neutral-500">
+        <p className="mt-1 text-[11px] text-[color:var(--color-ink-soft)]">
           Completed steps are reused, not re-paid — go to Signal Desk to choose the recommended
           story and resume.
         </p>
@@ -182,7 +185,7 @@ function RestartAction({
   }
 
   if (status === 'done') {
-    return <span className="text-xs text-green-600">Restarted ✓</span>
+    return <span className="text-[11px] text-[color:var(--color-green)]">Restarted ✓</span>
   }
 
   return (
@@ -195,12 +198,12 @@ function RestartAction({
       >
         {status === 'loading' ? 'Restarting…' : PRODUCT_TERMS.restartStep}
       </button>
-      <p className="mt-1 text-[11px] text-neutral-500">
+      <p className="mt-1 text-[11px] text-[color:var(--color-ink-soft)]">
         Completed steps are reused, not re-paid — {isWriter ? 'sibling sections are' : 'upstream work is'}{' '}
         untouched.
       </p>
       {status === 'error' && errorText && (
-        <p className="mt-1 text-[11px] text-red-600">{errorText}</p>
+        <p className="mt-1 text-[11px] text-[color:var(--color-vermilion)]">{errorText}</p>
       )}
     </div>
   )
@@ -248,19 +251,19 @@ export default function RecoveryRail({
     // tests — is completely unaffected.
     if (isPausedAtGate1) {
       return (
-        <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-white p-5">
+        <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
               Paused for your decision
             </h3>
-            <p className="mt-1 text-sm text-neutral-700">
+            <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
               This run paused at the story decision — the agents could not confidently choose a
               charity. Choose one to resume; completed steps are reused, not re-paid.
             </p>
           </section>
           <section>
             <div className="flex items-center gap-1.5">
-              <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
                 Recommended recovery
               </h3>
               <HelpTip text={HELP_COPY.runMonitor.recovery} label="Explain recommended recovery" />
@@ -273,11 +276,11 @@ export default function RecoveryRail({
       )
     }
     return (
-      <div className="rounded-lg border border-[color:var(--color-vermilion)] bg-white p-5">
-        <h3 className="text-sm font-semibold text-[color:var(--color-vermilion)]">
+      <div className="rounded-lg border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
+        <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-vermilion)]">
           What happened
         </h3>
-        <p className="mt-1 text-sm text-neutral-700">
+        <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
           This run failed, but no specific step is recorded as failed.
         </p>
       </div>
@@ -298,31 +301,31 @@ export default function RecoveryRail({
   const reason = failedRow?.error?.trim() || 'This step failed without a specific error message.'
 
   return (
-    <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-white p-5">
+    <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
       {/* 1. What happened */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
           What happened
         </h3>
-        <p className="mt-1 text-sm font-medium text-[color:var(--color-vermilion)]">
+        <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-vermilion)]">
           {failedStep.actionLabel}
-          {failedStep.named && <span className="font-normal text-neutral-500"> — {failedStep.agentLabel}</span>}
+          {failedStep.named && <span className="font-normal text-[color:var(--color-ink-soft)]"> — {failedStep.agentLabel}</span>}
         </p>
-        <p className="mt-1 text-sm text-neutral-700">{reason}</p>
+        <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">{reason}</p>
       </section>
 
       {/* 2. What completed successfully */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
           What completed successfully
         </h3>
         {completed.length === 0 ? (
-          <p className="mt-1 text-sm text-neutral-500">Nothing completed before this step failed.</p>
+          <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">Nothing completed before this step failed.</p>
         ) : (
-          <ul className="mt-1 space-y-0.5 text-sm text-neutral-700">
+          <ul className="mt-1 space-y-0.5 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             {completed.map(s => (
               <li key={s.actionLabel}>
-                {s.actionLabel} <span className="text-neutral-400">— {s.agentLabel}</span>
+                {s.actionLabel} <span className="text-[color:var(--color-faint)]">— {s.agentLabel}</span>
               </li>
             ))}
           </ul>
@@ -331,15 +334,15 @@ export default function RecoveryRail({
 
       {/* 3. What did not happen — downstream steps dim + read "Skipped" */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
           What did not happen
         </h3>
         {downstream.length === 0 ? (
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             This was the last step — nothing downstream was skipped.
           </p>
         ) : (
-          <ul className="mt-1 space-y-0.5 text-sm text-neutral-400 opacity-70">
+          <ul className="mt-1 space-y-0.5 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-faint)] opacity-70">
             {downstream.map(s => (
               <li key={s.actionLabel} data-testid={`skipped-${s.actionLabel}`}>
                 {s.actionLabel} <span className="italic">— Skipped</span>
@@ -352,7 +355,7 @@ export default function RecoveryRail({
       {/* 4. Recommended recovery */}
       <section>
         <div className="flex items-center gap-1.5">
-          <h3 className="text-xs font-semibold uppercase tracking-[.06em] text-neutral-500">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
             Recommended recovery
           </h3>
           <HelpTip text={HELP_COPY.runMonitor.recovery} label="Explain recommended recovery" />

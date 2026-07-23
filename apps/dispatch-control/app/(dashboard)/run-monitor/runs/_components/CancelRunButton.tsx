@@ -13,6 +13,9 @@
  *
  * autoFocus on "Confirm Cancel?" so keyboard users land on the confirm step
  * without needing to re-tab.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -55,7 +58,7 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
   return (
     <div className="flex items-center gap-3">
       {error && (
-        <span className="text-xs text-red-600">{error}</span>
+        <span className="text-[11px] text-[color:var(--color-vermilion)]">{error}</span>
       )}
 
       {confirming ? (
@@ -66,7 +69,7 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             onClick={handleConfirm}
             disabled={loading}
             aria-busy={loading}
-            className="min-h-[44px] rounded-md border border-red-200 bg-white px-4 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="min-h-[44px] rounded-md border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             {loading ? (
               <span className="flex items-center gap-1.5">
@@ -82,7 +85,7 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             type="button"
             onClick={handleKeepRunning}
             disabled={loading}
-            className="min-h-[44px] px-1 text-sm text-neutral-600 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="min-h-[44px] px-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             Keep Running
           </button>
@@ -94,7 +97,7 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             setError(null)
             setConfirming(true)
           }}
-          className="min-h-[44px] rounded-md border border-red-200 bg-white px-4 text-sm text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+          className="min-h-[44px] rounded-md border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
         >
           Cancel Run
         </button>

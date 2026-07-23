@@ -16,6 +16,10 @@
  * inside it) sizes to the height REMAINING under the dashboard layout's
  * AutoPublishBanner instead of overflowing by the banner's height (audit
  * item 4 — graph × AutoPublishBanner height chain).
+ *
+ * quick 260722-v01 (audit item 9): tab-label typography migrated
+ * `text-sm font-medium` -> `font-[family-name:var(--font-ui)] text-[13px]` —
+ * the cobalt active-underline was already tokened, so it's unchanged.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -39,7 +43,7 @@ export default function RunMonitorLayout({ children }: { children: React.ReactNo
               key={tab.href}
               href={tab.href}
               className={cn(
-                'inline-flex min-h-[44px] items-center border-b-2 px-1 text-sm font-medium transition-colors',
+                'inline-flex min-h-[44px] items-center border-b-2 px-1 font-[family-name:var(--font-ui)] text-[13px] transition-colors',
                 isActive
                   ? 'border-[color:var(--color-cobalt)] text-[color:var(--color-ink)]'
                   : 'border-transparent text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]',

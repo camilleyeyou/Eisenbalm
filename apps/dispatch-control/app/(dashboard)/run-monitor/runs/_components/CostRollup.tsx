@@ -11,6 +11,9 @@
  * the already-captured cost field on each run row.
  *
  * Rendered as a collapsible summary card above the RunsTable.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change.
  */
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
@@ -27,7 +30,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
 
   if (runs === undefined) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-500">
+      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
         Loading cost data…
       </div>
     )
@@ -49,47 +52,47 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
     .slice(0, 5)
 
   return (
-    <details className="rounded-lg border border-neutral-200 bg-white" open>
+    <details className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)]" open>
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3 select-none">
-        <span className="text-sm font-semibold text-neutral-800">
+        <span className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]">
           Spend Summary
         </span>
-        <span className="text-xs text-neutral-400">click to collapse</span>
+        <span className="text-[11px] text-[color:var(--color-faint)]">click to collapse</span>
       </summary>
 
-      <div className="border-t border-neutral-100 px-4 pb-4 pt-3">
+      <div className="border-t border-[color:var(--color-ink)]/10 px-4 pb-4 pt-3">
         {/* Aggregate windows */}
         <div className="mb-4 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
             <thead>
-              <tr className="border-b border-neutral-100 text-left">
-                <th className="pb-2 pr-8 font-medium text-neutral-500 text-xs uppercase tracking-wide">
+              <tr className="border-b border-[color:var(--color-ink)]/10 text-left">
+                <th className="pb-2 pr-8 font-medium text-[color:var(--color-ink-soft)] text-[11px] uppercase tracking-wide">
                   Window
                 </th>
-                <th className="pb-2 pr-8 font-medium text-neutral-500 text-xs uppercase tracking-wide">
+                <th className="pb-2 pr-8 font-medium text-[color:var(--color-ink-soft)] text-[11px] uppercase tracking-wide">
                   Runs
                 </th>
-                <th className="pb-2 font-medium text-neutral-500 text-xs uppercase tracking-wide">
+                <th className="pb-2 font-medium text-[color:var(--color-ink-soft)] text-[11px] uppercase tracking-wide">
                   Total Cost
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-neutral-50">
-                <td className="py-2 pr-8 text-neutral-700">Last 7 days</td>
-                <td className="py-2 pr-8 text-neutral-700">
+              <tr className="border-b border-[color:var(--color-ink)]/[.06]">
+                <td className="py-2 pr-8 text-[color:var(--color-ink-soft)]">Last 7 days</td>
+                <td className="py-2 pr-8 text-[color:var(--color-ink-soft)]">
                   {runsLastWeek.length}
                 </td>
-                <td className="py-2 font-medium text-neutral-900">
+                <td className="py-2 font-medium text-[color:var(--color-ink)]">
                   {weekCost > 0 ? `$${weekCost.toFixed(4)}` : '$0.00'}
                 </td>
               </tr>
               <tr>
-                <td className="py-2 pr-8 text-neutral-700">Last 30 days</td>
-                <td className="py-2 pr-8 text-neutral-700">
+                <td className="py-2 pr-8 text-[color:var(--color-ink-soft)]">Last 30 days</td>
+                <td className="py-2 pr-8 text-[color:var(--color-ink-soft)]">
                   {runsLastMonth.length}
                 </td>
-                <td className="py-2 font-medium text-neutral-900">
+                <td className="py-2 font-medium text-[color:var(--color-ink)]">
                   {monthCost > 0 ? `$${monthCost.toFixed(4)}` : '$0.00'}
                 </td>
               </tr>
@@ -100,27 +103,33 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
         {/* Recent per-run costs */}
         {recentWithCost.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+            <p className="mb-2 text-[11px] font-medium text-[color:var(--color-ink-soft)] uppercase tracking-wide">
               Recent run costs
             </p>
-            <table className="w-full text-sm">
+            <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
               <thead>
-                <tr className="border-b border-neutral-100 text-left">
-                  <th className="pb-1 pr-8 font-medium text-neutral-400 text-xs">Run ID</th>
-                  <th className="pb-1 pr-8 font-medium text-neutral-400 text-xs">Trigger</th>
-                  <th className="pb-1 font-medium text-neutral-400 text-xs">Cost</th>
+                <tr className="border-b border-[color:var(--color-ink)]/10 text-left">
+                  <th className="pb-1 pr-8 font-medium text-[color:var(--color-faint)] text-[11px]">
+                    Run ID
+                  </th>
+                  <th className="pb-1 pr-8 font-medium text-[color:var(--color-faint)] text-[11px]">
+                    Trigger
+                  </th>
+                  <th className="pb-1 font-medium text-[color:var(--color-faint)] text-[11px]">
+                    Cost
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {recentWithCost.map(run => (
-                  <tr key={run._id} className="border-b border-neutral-50">
-                    <td className="py-1.5 pr-8 font-mono text-xs text-neutral-600">
+                  <tr key={run._id} className="border-b border-[color:var(--color-ink)]/[.06]">
+                    <td className="py-1.5 pr-8 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                       {run.runId.slice(0, 16)}…
                     </td>
-                    <td className="py-1.5 pr-8 text-xs text-neutral-500">
+                    <td className="py-1.5 pr-8 text-[11px] text-[color:var(--color-ink-soft)]">
                       {run.triggerSource}
                     </td>
-                    <td className="py-1.5 text-xs font-medium text-neutral-800">
+                    <td className="py-1.5 text-[11px] font-medium text-[color:var(--color-ink-soft)]">
                       ${parseCostJson(run.cost).total.toFixed(4)}
                     </td>
                   </tr>
@@ -131,7 +140,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
         )}
 
         {runs.length === 0 && (
-          <p className="text-sm text-neutral-400">
+          <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-faint)]">
             No runs yet — cost data will appear after the first pipeline run.
           </p>
         )}

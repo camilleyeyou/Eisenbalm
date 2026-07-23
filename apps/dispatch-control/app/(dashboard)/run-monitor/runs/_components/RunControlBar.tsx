@@ -13,6 +13,9 @@
  *
  * Inline confirm pattern (D-12): NO modal. The button label swaps in-place.
  * autoFocus on confirm so keyboard users don't re-tab.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -56,11 +59,11 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
 
   return (
     <div className="flex items-center justify-between">
-      <h1 className="text-xl font-semibold text-neutral-900">Runs</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">Runs</h1>
 
       <div className="flex items-center gap-3">
         {error && (
-          <span className="text-xs text-red-600">{error}</span>
+          <span className="text-[11px] text-[color:var(--color-vermilion)]">{error}</span>
         )}
 
         {confirming ? (
@@ -71,7 +74,7 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
               onClick={handleConfirm}
               disabled={loading}
               aria-busy={loading}
-              className="min-h-[44px] rounded-md bg-neutral-900 px-4 text-sm text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+              className="min-h-[44px] rounded-md bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
             >
               {loading ? (
                 <span className="flex items-center gap-1.5">
@@ -87,7 +90,7 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
               type="button"
               onClick={handleCancel}
               disabled={loading}
-              className="min-h-[44px] px-1 text-sm text-neutral-600 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+              className="min-h-[44px] px-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
             >
               Cancel
             </button>
@@ -105,7 +108,7 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
                 ? 'A run is already in progress. Wait for it to complete or cancel it first.'
                 : undefined
             }
-            className="min-h-[44px] rounded-md bg-neutral-900 px-4 text-sm text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+            className="min-h-[44px] rounded-md bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             Trigger Run
           </button>

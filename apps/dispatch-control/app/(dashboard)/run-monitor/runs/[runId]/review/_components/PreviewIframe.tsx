@@ -11,6 +11,11 @@
  *
  * The iframe fills its container exactly (D-10):
  *   width: 100%, height: 100%, border: none
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change. (The
+ * Draft-stage collapsed-iframe height fix lives at the ReviewDeskRunView.tsx
+ * mount site, item 2g — this file's internals are untouched structurally.)
  */
 import { useState, useEffect } from 'react'
 
@@ -53,10 +58,10 @@ export default function PreviewIframe({ previewUrl }: PreviewIframeProps) {
 
   if (error) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-neutral-50 text-center px-8">
+      <div className="flex h-full w-full items-center justify-center bg-[color:var(--color-card-alt)] text-center px-8">
         <div>
-          <p className="text-sm font-medium text-neutral-700">Preview unavailable.</p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-ink-soft)]">Preview unavailable.</p>
+          <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             The draft issue may not be ready yet.
           </p>
         </div>
@@ -70,7 +75,7 @@ export default function PreviewIframe({ previewUrl }: PreviewIframeProps) {
       {!loaded && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-10 animate-pulse bg-neutral-100"
+          className="absolute inset-0 z-10 animate-pulse bg-[color:var(--color-card-alt)]"
         />
       )}
 

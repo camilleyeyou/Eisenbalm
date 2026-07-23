@@ -19,6 +19,9 @@ export const dynamic = 'force-dynamic'
  * quick 260722-tv1: root drops the vertical half of `-m-6` (kept `-mx-6`) —
  * `-my-6` pulled this page's own header under the run-monitor tab bar and
  * added ~24px of overscroll past the tab bar's sticky top offset.
+ *
+ * quick 260722-v01 (audit item 9): header typography/color migrated onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change.
  */
 import { getCurrentWorkspace } from '@/lib/workspace'
 import { PipelineGraph } from './_components/PipelineGraph'
@@ -30,8 +33,10 @@ export default async function GraphPage() {
     <div className="flex flex-col h-full -mx-6">
       {/* Page header — outside the graph canvas so it doesn't overlap nodes */}
       <div className="px-6 pt-6 pb-3 shrink-0">
-        <h1 className="text-xl font-semibold text-neutral-900">Pipeline Graph</h1>
-        <p className="text-sm text-neutral-500 mt-0.5">
+        <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">
+          Pipeline Graph
+        </h1>
+        <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] mt-0.5">
           Live agent DAG — click a node to inspect I/O and cost.
         </p>
       </div>

@@ -15,6 +15,10 @@ export const dynamic = 'force-dynamic'
  * only addition here is the issue-keyed URL shape plus a back link to the
  * issue overview (D-09) — a run is reachable HERE, under its issue, never
  * as a top-level editorial destination.
+ *
+ * quick 260722-v01 (audit item 9): header + back-link typography/color
+ * migrated onto the `var(--color-*)` / bracket-pixel system — no structural
+ * change.
  */
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -34,11 +38,13 @@ export default async function IssueRunDetailPage({ params }: IssueRunDetailPageP
     <div className="space-y-4">
       <Link
         href={issueHref(n)}
-        className="text-xs font-medium text-neutral-500 hover:text-neutral-700"
+        className="font-[family-name:var(--font-ui)] text-[11px] font-medium text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
       >
         ← Back to Issue {n}
       </Link>
-      <h1 className="text-xl font-semibold text-neutral-900">Run Detail — Issue {n}</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">
+        Run Detail — Issue {n}
+      </h1>
       <RunDetail runId={runId} />
     </div>
   )

@@ -22,6 +22,11 @@
  * times inside one component body, so each trailing runId (and the current
  * run) gets its own `DriftBar` child with its own `useQuery` call — the
  * hook count stays stable regardless of how many trailing runs exist.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change. Preserves
+ * every `data-testid` (DriftStrip.test.tsx asserts text/behavior, not
+ * classes — see plan RESEARCH).
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -93,8 +98,8 @@ function deltaPct(current: number | undefined, avg: number | undefined): number 
 }
 
 function deltaColorClass(pct: number | undefined): string {
-  if (pct == null || pct === 0) return 'text-neutral-400'
-  return pct > 0 ? 'text-red-600' : 'text-green-600'
+  if (pct == null || pct === 0) return 'text-[color:var(--color-faint)]'
+  return pct > 0 ? 'text-[color:var(--color-vermilion)]' : 'text-[color:var(--color-green)]'
 }
 
 export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
@@ -151,7 +156,7 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-6 border-b border-neutral-200 bg-white px-4 py-2 text-xs"
+      className="flex flex-wrap items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-4 py-2 text-[11px]"
       role="region"
       aria-label="Run drift vs trailing completed runs"
     >
@@ -161,9 +166,9 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
       ))}
       <DriftBar runId={currentRunId} onData={handleCurrentData} />
 
-      <span className="font-semibold uppercase tracking-wide text-neutral-500">Drift</span>
+      <span className="font-semibold uppercase tracking-wide text-[color:var(--color-ink-soft)]">Drift</span>
 
-      <span data-testid="drift-cost" className="text-neutral-700">
+      <span data-testid="drift-cost" className="text-[color:var(--color-ink-soft)]">
         Cost: {currentData?.cost != null ? `$${currentData.cost.toFixed(4)}` : '—'}
         {' · '}
         <span data-testid="drift-cost-delta" className={deltaColorClass(costDeltaPct)}>
@@ -171,7 +176,7 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
         </span>
       </span>
 
-      <span data-testid="drift-duration" className="text-neutral-700">
+      <span data-testid="drift-duration" className="text-[color:var(--color-ink-soft)]">
         Duration:{' '}
         {currentData?.durationMs != null
           ? `${(currentData.durationMs / 1000).toFixed(1)}s`
@@ -182,7 +187,7 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
         </span>
       </span>
 
-      <span data-testid="drift-trailing-count" className="text-neutral-400">
+      <span data-testid="drift-trailing-count" className="text-[color:var(--color-faint)]">
         vs last {trailingRunIds.length}
       </span>
     </div>

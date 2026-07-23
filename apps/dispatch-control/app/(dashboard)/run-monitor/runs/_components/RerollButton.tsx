@@ -12,6 +12,9 @@
  * browsers; no custom modal needed for this low-frequency operation).
  *
  * On success: shows "Re-rolled ✓" inline (green) for 3 seconds, then clears.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system — no structural change.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -79,13 +82,13 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
 
   if (success) {
     return (
-      <span className="text-xs text-green-600">Re-rolled ✓</span>
+      <span className="text-[11px] text-[color:var(--color-green)]">Re-rolled ✓</span>
     )
   }
 
   if (error) {
     return (
-      <span className="text-xs text-red-600">{error}</span>
+      <span className="text-[11px] text-[color:var(--color-vermilion)]">{error}</span>
     )
   }
 
@@ -96,7 +99,7 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
         disabled
         title="Re-roll is available only after the run completes (D-04)."
         aria-label={`Re-roll ${sectionLabel}`}
-        className="text-xs text-neutral-300 cursor-not-allowed underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+        className="text-[11px] text-[color:var(--color-faint)] cursor-not-allowed underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
       >
         Re-roll
       </button>
@@ -109,7 +112,7 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
       onClick={handleReroll}
       disabled={loading}
       aria-label={`Re-roll ${sectionLabel}`}
-      className="text-xs text-neutral-500 underline hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+      className="text-[11px] text-[color:var(--color-ink-soft)] underline hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
     >
       Re-roll
     </button>

@@ -25,6 +25,10 @@
  * header states plainly whether this is a **historical record** (finished
  * run) or a **live run** (in-flight) — the legacy idle-state term is banned
  * here per the nomenclature table's Old->new column.
+ *
+ * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
+ * `var(--color-*)` / bracket-pixel system used across the issues/workspace
+ * surfaces — no structural change, no testid/behavior change.
  */
 import { Fragment, useState } from 'react'
 import Link from 'next/link'
@@ -74,12 +78,12 @@ function formatDuration(ms: number | undefined | null): string {
 }
 
 const STATUS_CLASSES: Record<string, string> = {
-  running: 'bg-blue-100 text-blue-800',
-  queued: 'bg-neutral-100 text-neutral-600',
-  done: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-  'awaiting-review': 'bg-yellow-100 text-yellow-800',
-  cancelled: 'bg-neutral-100 text-neutral-600',
+  running: 'bg-[color:var(--color-cobalt)]/15 text-[color:var(--color-cobalt)]',
+  queued: 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+  done: 'bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]',
+  failed: 'bg-[color:var(--color-vermilion)]/15 text-[color:var(--color-vermilion)]',
+  'awaiting-review': 'bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
+  cancelled: 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
 }
 
 // ── §7 step-state vocabulary (DERIVED-STATE-CONTRACT.md §7) ──────────────────
@@ -216,19 +220,25 @@ export default function RunDetail({ runId }: RunDetailProps) {
 
   if (run === undefined || agentRuns === undefined) {
     return (
-      <div className="text-sm text-neutral-500 py-4">Loading run details…</div>
+      <div className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] py-4">
+        Loading run details…
+      </div>
     )
   }
 
   if (run === null) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
-        <p className="text-sm text-neutral-500">
-          Run <code className="font-mono text-neutral-700">{runId}</code> not found.
+      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
+        <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+          Run{' '}
+          <code className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
+            {runId}
+          </code>{' '}
+          not found.
         </p>
         <Link
           href="/run-monitor/runs"
-          className="mt-4 inline-block text-sm text-blue-600 hover:underline"
+          className="mt-4 inline-block font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:underline"
         >
           ← Back to Runs
         </Link>
@@ -238,7 +248,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
 
   const cost = parseCostJson(run.cost)
   const runStatusClass =
-    STATUS_CLASSES[run.status] ?? 'bg-neutral-100 text-neutral-700'
+    STATUS_CLASSES[run.status] ?? 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
   const liveRun = isLiveRun(run.status)
 
   // Per-agent sum: sum of agents[agentKey].usd values from runs.cost.agents
@@ -262,55 +272,69 @@ export default function RunDetail({ runId }: RunDetailProps) {
       {/* Back link */}
       <Link
         href="/run-monitor/runs"
-        className="inline-block text-sm text-blue-600 hover:text-blue-800 hover:underline"
+        className="inline-block font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline"
       >
         ← Back to all runs
       </Link>
 
       {/* Run header */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-5 space-y-4">
+      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5 space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-base font-semibold text-neutral-900">
+          <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
             Run Details
           </h2>
           {/* D-09: state plainly whether this is a historical record or a
               live run — the banned legacy idle-state term never appears. */}
           <span
-            className={`text-xs font-medium ${liveRun ? 'text-blue-700' : 'text-neutral-500'}`}
+            className={`font-[family-name:var(--font-ui)] text-[11px] font-medium ${liveRun ? 'text-[color:var(--color-cobalt)]' : 'text-[color:var(--color-ink-soft)]'}`}
           >
             {liveRun
               ? 'Live run — steps update as they complete'
               : 'Historical record — this run has finished'}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 font-[family-name:var(--font-ui)] text-[13px] sm:grid-cols-3">
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Run ID</p>
-            <p className="font-mono text-neutral-800 break-all">{run.runId}</p>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Run ID
+            </p>
+            <p className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)] break-all">
+              {run.runId}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Status</p>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Status
+            </p>
             <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${runStatusClass}`}
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${runStatusClass}`}
             >
               {run.status}
             </span>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Trigger</p>
-            <p className="text-neutral-800">{run.triggerSource}</p>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Trigger
+            </p>
+            <p className="text-[color:var(--color-ink)]">{run.triggerSource}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Triggered By</p>
-            <p className="text-neutral-800">{run.triggeredBy ?? '—'}</p>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Triggered By
+            </p>
+            <p className="text-[color:var(--color-ink)]">{run.triggeredBy ?? '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Started</p>
-            <p className="text-neutral-800">{formatTimestamp(run.startedAt)}</p>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Started
+            </p>
+            <p className="text-[color:var(--color-ink)]">{formatTimestamp(run.startedAt)}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Duration</p>
-            <p className="text-neutral-800">{formatDuration(run.durationMs)}</p>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Duration
+            </p>
+            <p className="text-[color:var(--color-ink)]">{formatDuration(run.durationMs)}</p>
           </div>
         </div>
       </div>
@@ -348,92 +372,98 @@ export default function RunDetail({ runId }: RunDetailProps) {
       <CancelRunButton runId={runId} status={run.status} />
 
       {/* Per-step table (Phase 50, D-07: action-primary/agent-secondary rows) */}
-      <div className="rounded-lg border border-neutral-200 bg-white overflow-x-auto">
-        <div className="px-5 py-3 border-b border-neutral-100">
-          <h3 className="text-sm font-semibold text-neutral-800">
+      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] overflow-x-auto">
+        <div className="px-5 py-3 border-b border-[color:var(--color-ink)]/10">
+          <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
             Per-Step Status
           </h3>
         </div>
         {stepGroups.length === 0 ? (
-          <div className="px-5 py-6 text-sm text-neutral-500">
+          <div className="px-5 py-6 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             No agent runs recorded for this run yet.
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
             <thead>
-              <tr className="border-b border-neutral-100 bg-neutral-50 text-left">
-                <th className="px-4 py-3 font-medium text-neutral-600">Step</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Cost</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Duration</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Tokens In</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Tokens Out</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Error</th>
-                <th className="px-4 py-3 font-medium text-neutral-600">Re-roll</th>
+              <tr className="border-b border-[color:var(--color-ink)]/10 bg-[color:var(--color-card-alt)] text-left">
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Step</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Status</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Cost</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Duration</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Tokens In</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Tokens Out</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Error</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Re-roll</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-[color:var(--color-ink)]/10">
               {stepGroups.map(group => {
                 // ── Draft sections: ONE collapsible top-level row ───────────
                 if (group.isDraftSections) {
                   const status = aggregateStatus(group.members)
-                  const statusClass = STATUS_CLASSES[status] ?? 'bg-neutral-100 text-neutral-700'
+                  const statusClass =
+                    STATUS_CLASSES[status] ??
+                    'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
                   const failedCount = group.members.filter(m => m.status === 'failed').length
 
                   return (
                     <Fragment key={group.groupKey}>
-                      <tr className="hover:bg-neutral-50 transition-colors">
+                      <tr className="hover:bg-[color:var(--color-card-alt)] transition-colors">
                         <td className="px-4 py-3">
                           <button
                             type="button"
                             onClick={() => setDraftSectionsExpanded(v => !v)}
-                            className="flex items-center gap-1.5 text-left font-medium text-neutral-800 hover:text-neutral-900"
+                            className="flex items-center gap-1.5 text-left font-medium text-[color:var(--color-ink)] hover:text-[color:var(--color-ink)]"
                             aria-expanded={draftSectionsExpanded}
                           >
                             <span aria-hidden="true">{draftSectionsExpanded ? '▾' : '▸'}</span>
                             {group.actionLabel}
                           </button>
-                          <p className="ml-4 text-[11px] text-neutral-400">
+                          <p className="ml-4 text-[11px] text-[color:var(--color-faint)]">
                             — {group.agentLabel} ({group.members.length})
                           </p>
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass}`}
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusClass}`}
                           >
                             {stepStateLabel(status)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">
+                        <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                           {(() => {
                             const total = sumCost(group.members)
                             return total != null ? `$${total.toFixed(4)}` : '—'
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">
+                        <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                           {formatDuration(maxDuration(group.members))}
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">
+                        <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                           {sumTokens(group.members, 'tokensIn')?.toLocaleString() ?? '—'}
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">
+                        <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                           {sumTokens(group.members, 'tokensOut')?.toLocaleString() ?? '—'}
                         </td>
-                        <td className="px-4 py-3 text-red-600 text-xs">
+                        <td className="px-4 py-3 text-[color:var(--color-vermilion)] text-[11px]">
                           {failedCount > 0 ? `${failedCount} of ${group.members.length} failed` : '—'}
                         </td>
-                        <td className="px-4 py-3 text-xs text-neutral-400">
+                        <td className="px-4 py-3 text-[11px] text-[color:var(--color-faint)]">
                           Expand for per-section re-roll
                         </td>
                       </tr>
                       {draftSectionsExpanded &&
                         group.members.map(ar => {
                           const arStatusClass =
-                            STATUS_CLASSES[ar.status] ?? 'bg-neutral-100 text-neutral-700'
+                            STATUS_CLASSES[ar.status] ??
+                            'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
                           const subLabel = WRITER_SUB_LABELS[ar.agentKey] ?? ar.agentKey
                           return (
-                            <tr key={ar._id} className="bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
-                              <td className="px-4 py-2 pl-10 text-xs text-neutral-600">
+                            <tr
+                              key={ar._id}
+                              className="bg-[color:var(--color-card-alt)]/60 hover:bg-[color:var(--color-card-alt)] transition-colors"
+                            >
+                              <td className="px-4 py-2 pl-10 text-[11px] text-[color:var(--color-ink-soft)]">
                                 {subLabel}
                               </td>
                               <td className="px-4 py-2">
@@ -443,19 +473,19 @@ export default function RunDetail({ runId }: RunDetailProps) {
                                   {stepStateLabel(ar.status)}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-xs text-neutral-600">
+                              <td className="px-4 py-2 text-[11px] text-[color:var(--color-ink-soft)]">
                                 {ar.costUsd != null ? `$${ar.costUsd.toFixed(4)}` : '—'}
                               </td>
-                              <td className="px-4 py-2 text-xs text-neutral-600">
+                              <td className="px-4 py-2 text-[11px] text-[color:var(--color-ink-soft)]">
                                 {formatDuration(ar.durationMs)}
                               </td>
-                              <td className="px-4 py-2 text-xs text-neutral-600">
+                              <td className="px-4 py-2 text-[11px] text-[color:var(--color-ink-soft)]">
                                 {ar.tokensIn?.toLocaleString() ?? '—'}
                               </td>
-                              <td className="px-4 py-2 text-xs text-neutral-600">
+                              <td className="px-4 py-2 text-[11px] text-[color:var(--color-ink-soft)]">
                                 {ar.tokensOut?.toLocaleString() ?? '—'}
                               </td>
-                              <td className="px-4 py-2 text-red-600 text-[11px]">
+                              <td className="px-4 py-2 text-[color:var(--color-vermilion)] text-[11px]">
                                 {ar.error ?? '—'}
                               </td>
                               <td className="px-4 py-2">
@@ -475,38 +505,47 @@ export default function RunDetail({ runId }: RunDetailProps) {
                 // ── Every other step: one row, action-primary/agent-secondary ──
                 const ar = group.members[0]
                 if (!ar) return null // unreachable — non-Draft-sections groups always have exactly 1 member
-                const arStatusClass = STATUS_CLASSES[ar.status] ?? 'bg-neutral-100 text-neutral-700'
+                const arStatusClass =
+                  STATUS_CLASSES[ar.status] ??
+                  'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
 
                 return (
-                  <tr key={group.groupKey} className={`hover:bg-neutral-50 transition-colors ${!group.named ? 'opacity-70' : ''}`}>
+                  <tr
+                    key={group.groupKey}
+                    className={`hover:bg-[color:var(--color-card-alt)] transition-colors ${!group.named ? 'opacity-70' : ''}`}
+                  >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-neutral-800">{group.actionLabel}</div>
+                      <div className="font-medium text-[color:var(--color-ink)]">{group.actionLabel}</div>
                       {group.named ? (
-                        <p className="text-[11px] text-neutral-400">— {group.agentLabel}</p>
+                        <p className="text-[11px] text-[color:var(--color-faint)]">
+                          — {group.agentLabel}
+                        </p>
                       ) : (
-                        <p className="text-[11px] italic text-neutral-400">supporting step</p>
+                        <p className="text-[11px] italic text-[color:var(--color-faint)]">
+                          supporting step
+                        </p>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${arStatusClass}`}
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${arStatusClass}`}
                       >
                         {stepStateLabel(ar.status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-700">
+                    <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                       {ar.costUsd != null ? `$${ar.costUsd.toFixed(4)}` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-neutral-700">
+                    <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                       {formatDuration(ar.durationMs)}
                     </td>
-                    <td className="px-4 py-3 text-neutral-700">
+                    <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                       {ar.tokensIn?.toLocaleString() ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-neutral-700">
+                    <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
                       {ar.tokensOut?.toLocaleString() ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-red-600 text-xs">
+                    <td className="px-4 py-3 text-[color:var(--color-vermilion)] text-[11px]">
                       {ar.error ?? '—'}
                     </td>
                     <td className="px-4 py-3">
@@ -525,43 +564,43 @@ export default function RunDetail({ runId }: RunDetailProps) {
       </div>
 
       {/* Cost reconciliation panel (OBS-04) */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold text-neutral-800 mb-4">
+      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
+        <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)] mb-4">
           Cost Reconciliation
         </h3>
         <div className="flex gap-8">
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
               Per-Agent Sum
             </p>
-            <p className="text-lg font-semibold text-neutral-900">
+            <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)]">
               {perAgentSum > 0 ? `$${perAgentSum.toFixed(4)}` : '$0.00'}
             </p>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-[11px] text-[color:var(--color-faint)] mt-0.5">
               Sum of agents in runs.cost
             </p>
           </div>
-          <div className="w-px bg-neutral-200" />
+          <div className="w-px bg-[color:var(--color-faint)]" />
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
               runs.cost.total
             </p>
-            <p className="text-lg font-semibold text-neutral-900">
+            <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)]">
               {cost.total > 0 ? `$${cost.total.toFixed(4)}` : '$0.00'}
             </p>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-[11px] text-[color:var(--color-faint)] mt-0.5">
               Recorded by pipeline recorder
             </p>
           </div>
           {Math.abs(perAgentSum - cost.total) > 0.0001 && (
             <div>
-              <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">
+              <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
                 Discrepancy
               </p>
-              <p className="text-lg font-semibold text-red-600">
+              <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-vermilion)]">
                 ${Math.abs(perAgentSum - cost.total).toFixed(4)}
               </p>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-[11px] text-[color:var(--color-faint)] mt-0.5">
                 Investigate double-count
               </p>
             </div>

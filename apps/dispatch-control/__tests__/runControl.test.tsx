@@ -59,9 +59,14 @@ function mockQuery(returnValue: unknown) {
 import { STATUS_CLASSES } from '../app/(dashboard)/run-monitor/runs/_components/RunsTable'
 
 describe('STATUS_CLASSES', () => {
-  it('contains a cancelled entry with neutral palette (RUN-04)', () => {
+  // quick 260722-v01 (audit item 9): the "neutral palette" is now expressed
+  // via the app's `var(--color-*)` token system, not literal `neutral-*`
+  // classes — same visual intent (dim/inactive), tokened.
+  it('contains a cancelled entry with neutral (tokened) palette (RUN-04)', () => {
     expect(STATUS_CLASSES).toHaveProperty('cancelled')
-    expect(STATUS_CLASSES.cancelled).toBe('bg-neutral-100 text-neutral-600')
+    expect(STATUS_CLASSES.cancelled).toBe(
+      'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+    )
   })
 
   it('contains all pre-existing status entries', () => {
