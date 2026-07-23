@@ -45,6 +45,11 @@
  * max-lg:overflow-x-auto` (single scrollable row below lg; unchanged wrap at
  * lg+) and each tab `<Link>` gained `shrink-0` so tabs don't compress on
  * narrow viewports (audit item — mobile stage-tab scroll).
+ *
+ * fast 260723: the scrollable tab row is wrapped in `ScrollHintRow` —
+ * measurement-driven edge fades + chevrons so a phone operator can SEE that
+ * Voice/Approval exist off-screen. The `<nav>` keeps the sticky/bg/border
+ * chrome; the flex/scroll classes moved onto the ScrollHintRow scroller.
  */
 import { useEffect } from 'react'
 import Link from 'next/link'
@@ -80,6 +85,7 @@ import WorkspaceControls from '../_components/WorkspaceControls'
 import IssueComments from './_components/IssueComments'
 import StageHintStrip from '@/components/onboarding/StageHintStrip'
 import HelpTip from '@/components/ui/HelpTip'
+import ScrollHintRow from '@/components/ui/ScrollHintRow'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
 type StageSegment = 'story' | 'draft' | 'fact-check' | 'voice' | 'approval'
@@ -266,8 +272,9 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
         </div>
         <nav
           aria-label="Workspace stages"
-          className="sticky top-0 z-30 flex flex-wrap gap-2 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] pb-3 pt-2 max-lg:flex-nowrap max-lg:overflow-x-auto"
+          className="sticky top-0 z-30 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] pb-3 pt-2"
         >
+          <ScrollHintRow className="flex flex-wrap gap-2 max-lg:flex-nowrap max-lg:overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {STAGE_TABS.map((tab, i) => {
             const href = tab.hrefFor(n)
             const isActive = pathname === href || pathname.startsWith(href + '/')
@@ -307,6 +314,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
               </Link>
             )
           })}
+          </ScrollHintRow>
         </nav>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)_320px] lg:items-start">

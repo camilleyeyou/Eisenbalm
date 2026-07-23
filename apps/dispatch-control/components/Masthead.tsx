@@ -71,6 +71,7 @@ import {
   type IssueStatus,
 } from '@/lib/derivedState'
 import AwaitingYouInbox from './AwaitingYouInbox'
+import ScrollHintRow from './ui/ScrollHintRow'
 
 type ConfigRow = { key: string; value: string }
 
@@ -263,7 +264,12 @@ export default function Masthead() {
           hidden) instead of pushing the right cluster off-screen into the
           shell's overflow-hidden clip. On md+ everything fits and this
           renders identically to the old flat row. */}
-      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4">
+      <ScrollHintRow
+        wrapperClassName="min-w-0 flex-1"
+        fadeColor="var(--color-ink)"
+        chevronClassName="text-[color:var(--color-masthead-muted)]"
+        className="flex items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
+      >
         {/* Issue number — contextual identifier, not one of the four ISS-05 readouts */}
         <span className="shrink-0 whitespace-nowrap font-[family-name:var(--font-mono)] text-[color:var(--color-masthead-muted)]">
           {issueNumber != null ? `Issue ${issueNumber}` : 'Issue —'}
@@ -314,7 +320,7 @@ export default function Masthead() {
             {autoPublish ? 'Publishing automatically — managed in Administration' : 'Human approval required'}
           </span>
         )}
-      </div>
+      </ScrollHintRow>
 
       {/* Readout 3: My Tasks (D-21/D-25) + the existing inbox dropdown —
           `relative` anchors the inbox's `absolute top-[52px]` positioning
