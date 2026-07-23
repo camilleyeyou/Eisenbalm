@@ -6,7 +6,12 @@
  * run detail page at /runs/{runId}. Read-only.
  *
  * Data source: api.runs.listForWorkspace (Convex query, real-time subscription)
+ *
+ * quick 260722-tv1: client-capped to the latest 50 rows (runs is already
+ * newest-first) with a "Show all" toggle — an unbounded table ran
+ * indefinitely long on a workspace with a long run history.
  */
+import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
@@ -48,6 +53,9 @@ export const STATUS_CLASSES: Record<string, string> = {
 
 export default function RunsTable({ workspace_id }: RunsTableProps) {
   const runs = useQuery(api.runs.listForWorkspace, { workspace_id })
+  // Called unconditionally (before the loading/empty guards below) so the
+  // hook order never changes across renders of this component instance.
+  const [showAll, setShowAll] = useState(false)
 
   if (runs === undefined) {
     return (
@@ -65,6 +73,10 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
       </div>
     )
   }
+
+  // runs is already newest-first from the query — the first 50 are the most
+  // recent.
+  const visibleRuns = showAll ? runs : runs.slice(0, 50)
 
   return (
     <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
@@ -85,7 +97,7 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
-          {runs.map(run => {
+          {visibleRuns.map(run => {
             const cost = parseCostJson(run.cost).total
             const statusClass =
               STATUS_CLASSES[run.status] ?? 'bg-neutral-100 text-neutral-700'
@@ -129,6 +141,15 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
           })}
         </tbody>
       </table>
+      {runs.length > 50 && !showAll && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="w-full border-t border-neutral-200 px-4 py-3 text-xs font-medium text-blue-600 hover:bg-neutral-50"
+        >
+          Show all ({runs.length})
+        </button>
+      )}
     </div>
   )
 }

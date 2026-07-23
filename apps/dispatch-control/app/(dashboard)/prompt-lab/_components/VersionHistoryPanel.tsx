@@ -39,6 +39,10 @@
  *     would force-block into the override path (there is never a fresh
  *     scored row for the version being activated). Does NOT alter the
  *     Activate/override logic itself.
+ *
+ * quick 260722-tv1: the version list caps to the latest 20 (`versions` is
+ * newest-first, so `slice(0, 20)`) with a "Show older" toggle — an unbounded
+ * list ran indefinitely long for an agent with a long version history.
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
@@ -100,6 +104,9 @@ export default function VersionHistoryPanel({
   // drawer is currently expanded (at most one at a time — toggled per row).
   const [evalOpenVersion, setEvalOpenVersion] = useState<number | null>(null)
 
+  // quick 260722-tv1: latest-20 cap for the version list below.
+  const [showAllVersions, setShowAllVersions] = useState(false)
+
   async function handleActivate(version: number, override?: { reason: string }) {
     if (!override) {
       setBlockedReason(null)
@@ -158,6 +165,9 @@ export default function VersionHistoryPanel({
       <div className="text-sm text-neutral-500 py-4">Loading versions…</div>
     )
   }
+
+  // versions is newest-first — the first 20 are the most recent.
+  const visibleVersions = showAllVersions ? versions : versions.slice(0, 20)
 
   return (
     <div className="space-y-3">
@@ -235,7 +245,7 @@ export default function VersionHistoryPanel({
         </div>
       ) : (
         <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white">
-          {versions.map(v => (
+          {visibleVersions.map(v => (
             <li key={v._id} className="px-4 py-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-neutral-900">
@@ -331,6 +341,16 @@ export default function VersionHistoryPanel({
             </li>
           ))}
         </ul>
+      )}
+
+      {versions.length > 20 && !showAllVersions && (
+        <button
+          type="button"
+          onClick={() => setShowAllVersions(true)}
+          className="text-xs font-medium text-blue-600 hover:underline"
+        >
+          Show older ({versions.length})
+        </button>
       )}
 
       {/* ── Compare two versions (PRM-04 side-by-side diff) ──────────────── */}

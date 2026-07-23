@@ -113,9 +113,13 @@ import { createRoot, type Root } from 'react-dom/client'
 
 // ── next/navigation: fixed params + the Approval-stage pathname (DIVERGENCE
 // from the sibling harnesses, which use '/issues/7/draft') ──────────────────
+// quick 260722-tv1: added useRouter — DecisionRail/WorkspaceOutline (mounted
+// by the real frame this test renders) now fall back to router.push(...)
+// when a jump target's galley anchor isn't in the DOM.
 vi.mock('next/navigation', () => ({
   useParams: () => ({ issueNumber: '7' }),
   usePathname: () => '/issues/7/approval',
+  useRouter: () => ({ push: vi.fn() }),
 }))
 
 // ── @clerk/nextjs: stable getToken (this test is not exercising the

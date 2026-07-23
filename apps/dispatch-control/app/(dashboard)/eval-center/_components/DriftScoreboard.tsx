@@ -12,7 +12,13 @@
  * so every scenario gets its own `useQuery` hook instance — the correct React
  * pattern for a per-item subscription over a dynamic list, rather than
  * calling `useQuery` inside a `.map()` in this component's own body.
+ *
+ * quick 260722-tv1: each series' table now wraps in `overflow-x-auto` and
+ * caps to its latest 20 rows (rows are ascending oldest-first, so `slice(-20)`
+ * is the latest 20) with a per-scenario "Show all" toggle — an unbounded
+ * history table ran indefinitely long for a scenario with a long eval history.
  */
+import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { EvalScenario } from '@/lib/evalScenarioClient'
@@ -63,6 +69,10 @@ function ScenarioDriftSeries({
     workspace_id: workspaceId,
     scenarioId: scenario.id,
   }) as EvalScoreRow[] | undefined
+  // Called unconditionally so hook order stays stable across the
+  // loading/empty/populated renders below.
+  const [showAll, setShowAll] = useState(false)
+  const visibleRows = rows === undefined ? [] : showAll ? rows : rows.slice(-20)
 
   return (
     <div data-testid={`drift-series-${scenario.id}`}>
@@ -80,34 +90,47 @@ function ScenarioDriftSeries({
           Never evaluated
         </p>
       ) : (
-        <table className="mt-1 w-full min-w-[420px] border-collapse text-[12px]">
-          <thead>
-            <tr className="border-b border-[color:var(--color-faint)] text-left text-[10px] uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
-              <th className="py-1 pr-2 font-medium">Ran at</th>
-              <th className="py-1 pr-2 font-medium">Version</th>
-              <th className="py-1 pr-2 font-medium">Source</th>
-              <th className="py-1 font-medium">Overall</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={`${row.promptVersion}-${row.ranAt}-${i}`}
-                data-testid={`drift-point-${scenario.id}-${i}`}
-                className="border-b border-[color:var(--color-faint)]/40"
-              >
-                <td className="py-1 pr-2 text-[color:var(--color-ink-soft)]">
-                  {new Date(row.ranAt).toLocaleString()}
-                </td>
-                <td className="py-1 pr-2 font-mono">{row.promptVersion}</td>
-                <td className="py-1 pr-2">{row.source}</td>
-                <td className="py-1 font-semibold text-[color:var(--color-ink)]">
-                  {row.overall.toFixed(1)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="overflow-x-auto">
+            <table className="mt-1 w-full min-w-[420px] border-collapse text-[12px]">
+              <thead>
+                <tr className="border-b border-[color:var(--color-faint)] text-left text-[10px] uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
+                  <th className="py-1 pr-2 font-medium">Ran at</th>
+                  <th className="py-1 pr-2 font-medium">Version</th>
+                  <th className="py-1 pr-2 font-medium">Source</th>
+                  <th className="py-1 font-medium">Overall</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.map((row, i) => (
+                  <tr
+                    key={`${row.promptVersion}-${row.ranAt}-${i}`}
+                    data-testid={`drift-point-${scenario.id}-${i}`}
+                    className="border-b border-[color:var(--color-faint)]/40"
+                  >
+                    <td className="py-1 pr-2 text-[color:var(--color-ink-soft)]">
+                      {new Date(row.ranAt).toLocaleString()}
+                    </td>
+                    <td className="py-1 pr-2 font-mono">{row.promptVersion}</td>
+                    <td className="py-1 pr-2">{row.source}</td>
+                    <td className="py-1 font-semibold text-[color:var(--color-ink)]">
+                      {row.overall.toFixed(1)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {rows.length > 20 && !showAll && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="mt-1 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:underline"
+            >
+              Show all ({rows.length})
+            </button>
+          )}
+        </>
       )}
     </div>
   )

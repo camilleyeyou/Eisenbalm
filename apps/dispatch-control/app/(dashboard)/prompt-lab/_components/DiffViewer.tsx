@@ -12,6 +12,10 @@
  * scaffold test asserts both sides exist and that removed/added text lands in
  * the correct column). Per-line type drives the background tint:
  *   removed = red, added = green, context = neutral.
+ *
+ * quick 260722-tv1: the split-diff root gains `max-h-[480px]` — it already
+ * carried `overflow-auto` but no height cap, so a large diff ran unbounded
+ * instead of engaging its own vertical scroll.
  */
 import { diffLines, type Change } from 'diff'
 
@@ -99,7 +103,7 @@ export function DiffViewer({ left, right }: DiffViewerProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 divide-x divide-neutral-200 overflow-auto rounded border border-neutral-200 font-mono text-xs">
+    <div className="grid max-h-[480px] grid-cols-2 divide-x divide-neutral-200 overflow-auto rounded border border-neutral-200 font-mono text-xs">
       <DiffColumn label={left.label} lines={leftLines} side="left" />
       <DiffColumn label={right.label} lines={rightLines} side="right" />
     </div>

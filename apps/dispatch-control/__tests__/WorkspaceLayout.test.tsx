@@ -14,9 +14,13 @@ import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vite
 import { render, screen, cleanup } from '@testing-library/react'
 
 // ── next/navigation: fixed params + a Draft-stage pathname ──────────────────
+// quick 260722-tv1: added useRouter — WorkspaceOutline (mounted by the real
+// frame this test renders) now falls back to router.push(...) when a jump
+// target's galley anchor isn't in the DOM.
 vi.mock('next/navigation', () => ({
   useParams: () => ({ issueNumber: '7' }),
   usePathname: () => '/issues/7/draft',
+  useRouter: () => ({ push: vi.fn() }),
 }))
 
 // ── @clerk/nextjs: the provider + controls both call useAuth().getToken() ───

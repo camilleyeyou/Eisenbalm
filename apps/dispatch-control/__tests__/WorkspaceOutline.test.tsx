@@ -14,6 +14,14 @@ import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vite
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import type { SectionState } from '@/lib/derivedState'
 
+// quick 260722-tv1: WorkspaceOutline's jump-to-section fallback now reads
+// useRouter()/useParams() (routes to the Draft stage when no galley anchor
+// is mounted on the current stage) — mock both so the component can render.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useParams: () => ({ issueNumber: '7' }),
+}))
+
 vi.mock('../app/(dashboard)/issues/_components/WorkspaceStateProvider', () => ({
   useWorkspaceState: vi.fn(),
 }))

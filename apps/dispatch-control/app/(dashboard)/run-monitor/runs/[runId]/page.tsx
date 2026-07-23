@@ -13,6 +13,10 @@ export const dynamic = 'force-dynamic'
  *   api.agentRuns.byRunId → per-agent status + cost + error
  *
  * Read-only — no mutation controls.
+ *
+ * quick 260722-tv1: root gains `mx-auto w-full max-w-[1600px]` — matches the
+ * workspace's 1600px measure so this detail view doesn't stretch
+ * edge-to-edge on wide monitors.
  */
 import RunDetail from '../_components/RunDetail'
 
@@ -24,7 +28,7 @@ export default async function RunDetailPage({ params }: RunDetailPageProps) {
   const { runId } = await params
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4">
       <h1 className="text-xl font-semibold text-neutral-900">Run Detail</h1>
       <RunDetail runId={runId} />
     </div>

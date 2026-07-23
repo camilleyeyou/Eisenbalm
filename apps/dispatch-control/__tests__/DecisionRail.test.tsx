@@ -42,6 +42,15 @@ vi.mock('convex/react', () => ({
   useMutation: vi.fn(),
 }))
 
+// quick 260722-tv1: DecisionRail's handleTranscript/jumpToFinding, and the
+// SourceIndex it mounts, now fall back to useRouter().push(...) when a
+// jump target's galley anchor isn't in the DOM (this rail mounts as the
+// Approval stage, which never mounts a galley) — mock useRouter so the
+// component tree can render.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
 vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
 }))

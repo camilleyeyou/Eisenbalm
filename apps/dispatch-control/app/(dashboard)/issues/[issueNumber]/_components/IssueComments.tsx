@@ -18,6 +18,11 @@
  * the persistent issue-workspace layout (FrameChrome, `layout.tsx`, sibling
  * to — never inside — the per-stage collapsible panel's content slot) and by
  * `MyTasksScreen.tsx` (a sibling route, not nested under that layout).
+ *
+ * quick 260722-tv1: caps to the latest 20 comments (the query is
+ * oldest-first, so `slice(-20)` is the latest 20, in order) with a "Show
+ * earlier comments" toggle ABOVE the list — an unbounded thread ran
+ * indefinitely long on a heavily-discussed issue.
  */
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
@@ -40,6 +45,12 @@ export default function IssueComments({ issueNumber, stage }: IssueCommentsProps
 
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showAllComments, setShowAllComments] = useState(false)
+
+  // comments is oldest-first — the latest 20 is the trailing slice, and
+  // slice() preserves chronological order within it.
+  const visibleComments =
+    comments === undefined ? [] : showAllComments ? comments : comments.slice(-20)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -75,8 +86,18 @@ export default function IssueComments({ issueNumber, stage }: IssueCommentsProps
           No comments yet.
         </p>
       ) : (
-        <ul role="list" className="flex flex-col gap-2">
-          {comments.map(c => (
+        <>
+          {comments.length > 20 && !showAllComments && (
+            <button
+              type="button"
+              onClick={() => setShowAllComments(true)}
+              className="self-start font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-cobalt)] hover:underline"
+            >
+              Show earlier comments ({comments.length - 20})
+            </button>
+          )}
+          <ul role="list" className="flex flex-col gap-2">
+          {visibleComments.map(c => (
             <li
               key={c._id}
               className="border-b border-[color:var(--color-ink)]/[.08] pb-2 last:border-b-0 last:pb-0"
@@ -89,7 +110,8 @@ export default function IssueComments({ issueNumber, stage }: IssueCommentsProps
               </p>
             </li>
           ))}
-        </ul>
+          </ul>
+        </>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">

@@ -6,6 +6,10 @@
  * so both /run-monitor/runs and /run-monitor/graph share one nav slot.
  * Active tab underlines in cobalt per the 1c token system. Tab mechanics are
  * intentionally minimal — Phase 37 replaces the interior of this shell.
+ *
+ * quick 260722-tv1: the tab bar is now `sticky top-0` (with an opaque rail
+ * background) so it stays visible while a sub-route (e.g. the long Runs
+ * table) scrolls underneath it.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -21,7 +25,7 @@ export default function RunMonitorLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center gap-6 border-b border-[color:var(--color-faint)] px-1">
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] px-1">
         {TABS.map(tab => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
           return (

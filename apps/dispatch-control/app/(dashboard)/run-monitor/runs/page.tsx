@@ -9,6 +9,10 @@
  *
  * force-dynamic: Convex useQuery subscriptions require a live ConvexProvider
  * context — static prerendering (no Convex URL in CI) would throw without this.
+ *
+ * quick 260722-tv1: root gains `mx-auto w-full max-w-[1600px]` — matches the
+ * workspace's 1600px measure so the run table/cards don't stretch
+ * edge-to-edge on wide monitors.
  */
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +27,7 @@ export default async function RunsPage() {
   const workspace_id = await getCurrentWorkspace()
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4">
       <BudgetAlertBanner workspace_id={workspace_id} />
       <RunControlBar workspace_id={workspace_id} />
       <CostRollup workspace_id={workspace_id} />

@@ -15,6 +15,10 @@ export const dynamic = 'force-dynamic'
  * The page shell + height: The dashboard layout sets h-screen overflow-hidden;
  * this page fills the remaining content area with flex-1. We set h-full on
  * the graph container so React Flow's canvas fills the viewport.
+ *
+ * quick 260722-tv1: root drops the vertical half of `-m-6` (kept `-mx-6`) —
+ * `-my-6` pulled this page's own header under the run-monitor tab bar and
+ * added ~24px of overscroll past the tab bar's sticky top offset.
  */
 import { getCurrentWorkspace } from '@/lib/workspace'
 import { PipelineGraph } from './_components/PipelineGraph'
@@ -23,7 +27,7 @@ export default async function GraphPage() {
   const workspace_id = await getCurrentWorkspace()
 
   return (
-    <div className="flex flex-col h-full -m-6">
+    <div className="flex flex-col h-full -mx-6">
       {/* Page header — outside the graph canvas so it doesn't overlap nodes */}
       <div className="px-6 pt-6 pb-3 shrink-0">
         <h1 className="text-xl font-semibold text-neutral-900">Pipeline Graph</h1>
