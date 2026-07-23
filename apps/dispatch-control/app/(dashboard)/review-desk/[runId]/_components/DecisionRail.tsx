@@ -83,6 +83,7 @@ import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
+import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface DecisionRailProps {
   runId: string
@@ -456,7 +457,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
       <section aria-label="Hook">
         <h3 className={MICRO_LABEL}>Hook</h3>
         {pitch === undefined ? (
-          <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">Loading…</p>
+          <SkeletonLine className="mt-1 h-4 w-40" />
         ) : pitch === null ? (
           <p className="mt-1 text-[13px] italic text-[color:var(--color-ink-soft)]">
             No charity selected yet

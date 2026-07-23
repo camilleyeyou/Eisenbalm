@@ -15,10 +15,14 @@
  */
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import FinanceSummaryCard from './_components/FinanceSummaryCard'
 import IssueRevenueTable from './_components/IssueRevenueTable'
 import ModelPricingCard from './_components/ModelPricingCard'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: 'Finance' }
 
 export default async function FinancePage() {
   const workspace_id = await getCurrentWorkspace()

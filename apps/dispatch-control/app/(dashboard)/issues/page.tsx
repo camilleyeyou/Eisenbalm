@@ -43,6 +43,7 @@ import HeldIssueRow from './_components/HeldIssueRow'
 import RecentlyPublishedRow from './_components/RecentlyPublishedRow'
 import CreatePanel from './_components/CreatePanel'
 import StartHereCard from './_components/StartHereCard'
+import DocumentTitle from '@/components/ui/DocumentTitle'
 
 type ConfigRow = { key: string; value: string }
 
@@ -240,6 +241,7 @@ export default function IssuesHomePage() {
 
   return (
     <div className="min-h-full bg-[color:var(--color-rail)] py-2">
+      <DocumentTitle title="Issues" />
       <div className="mx-auto flex max-w-[1100px] flex-col gap-12">
         <StartHereCard inProgressIssueNumber={inProgressIssue?.issueNumber ?? null} />
 

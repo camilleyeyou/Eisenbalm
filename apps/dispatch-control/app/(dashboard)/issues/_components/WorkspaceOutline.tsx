@@ -37,6 +37,7 @@
 import { useRouter, useParams } from 'next/navigation'
 import { CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Circle } from 'lucide-react'
 import type { SectionState } from '@/lib/derivedState'
+import { SkeletonLine } from '@/components/ui/Skeleton'
 import { useWorkspaceState } from './WorkspaceStateProvider'
 import { EDITABLE_SECTIONS } from '../../review-desk/[runId]/_components/SectionChipList'
 import { galleyAnchorFor } from '@/lib/galley/sectionIdMap'
@@ -150,12 +151,11 @@ export default function WorkspaceOutline() {
           No sections yet — this run paused before generating content.
         </p>
       ) : sectionStates === undefined ? (
-        <p
-          data-testid="outline-loading"
-          className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]"
-        >
-          Loading outline…
-        </p>
+        <div data-testid="outline-loading" className="flex flex-col gap-2">
+          <SkeletonLine className="h-4 w-full" />
+          <SkeletonLine className="h-4 w-5/6" />
+          <SkeletonLine className="h-4 w-2/3" />
+        </div>
       ) : (
         <ul className="flex flex-col gap-1">
           {EDITABLE_SECTIONS.map(section => {

@@ -13,6 +13,7 @@
  * (api.promptVersions.listActiveForWorkspace) and renders each card with a
  * humanized name + active-prompt preview + "active v{N} · updated {date}".
  */
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import {
@@ -21,6 +22,9 @@ import {
   type EditableAgentGroup,
 } from './_components/agentList'
 import PromptsListClient from './_components/PromptsListClient'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: WORKBENCH_NAV_LABELS.prompt_lab }
 
 const GROUP_ORDER: EditableAgentGroup[] = [
   'asset',

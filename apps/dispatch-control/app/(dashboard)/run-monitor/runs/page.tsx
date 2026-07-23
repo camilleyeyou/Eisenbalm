@@ -16,12 +16,17 @@
  */
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
+import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import BudgetAlertBanner from './_components/BudgetAlertBanner'
 import RunControlBar from './_components/RunControlBar'
 import CostRollup from './_components/CostRollup'
 import RunsTable from './_components/RunsTable'
 import ReviewQueue from './_components/ReviewQueue'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: WORKBENCH_NAV_LABELS.run_monitor }
 
 export default async function RunsPage() {
   const workspace_id = await getCurrentWorkspace()

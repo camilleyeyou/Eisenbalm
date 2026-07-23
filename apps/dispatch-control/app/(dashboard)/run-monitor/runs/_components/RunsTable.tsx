@@ -30,6 +30,7 @@ import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
+import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface RunsTableProps {
   workspace_id: string
@@ -71,8 +72,10 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
 
   if (runs === undefined) {
     return (
-      <div className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] py-4">
-        Loading runs…
+      <div className="flex flex-col gap-2 py-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <SkeletonLine key={i} className="h-8 w-full" />
+        ))}
       </div>
     )
   }

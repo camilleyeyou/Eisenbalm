@@ -23,6 +23,7 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
 import { issueApprovalHref } from '@/lib/issueRouteResolver'
+import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface ReviewQueueProps {
   workspace_id: string
@@ -102,9 +103,10 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
         <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
           Awaiting Review
         </h2>
-        <p className="mt-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-          Loading…
-        </p>
+        <div className="mt-2 flex flex-col gap-2">
+          <SkeletonLine className="h-4 w-full" />
+          <SkeletonLine className="h-4 w-2/3" />
+        </div>
       </div>
     )
   }

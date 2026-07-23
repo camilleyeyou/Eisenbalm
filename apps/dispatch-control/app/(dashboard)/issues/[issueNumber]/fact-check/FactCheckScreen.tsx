@@ -83,6 +83,7 @@ import {
   FactCheckError,
   type EvidencePreviewResult,
 } from '@/lib/factCheckClient'
+import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface FactCheckScreenProps {
   runId: string
@@ -495,7 +496,9 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
       >
         <h2 className={MICRO_LABEL}>Coverage</h2>
         {rows === undefined ? (
-          <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">Loading…</p>
+          <div data-testid="fact-check-coverage-loading">
+            <SkeletonLine className="mt-1 h-4 w-32" />
+          </div>
         ) : rows.length === 0 ? (
           <p className="mt-1 text-[13px] italic text-[color:var(--color-ink-soft)]">
             No claims extracted yet

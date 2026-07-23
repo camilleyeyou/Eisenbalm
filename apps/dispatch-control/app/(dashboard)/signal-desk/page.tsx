@@ -17,8 +17,12 @@ export const dynamic = 'force-dynamic'
  * slate (SIG-01), the decision panel (SIG-02), and — when the run is paused
  * at Gate 1 — the adjudication surface (SIG-03).
  */
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import { SignalDeskScreen } from './_components/SignalDeskScreen'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: 'Signal Desk' }
 
 export default async function SignalDeskPage() {
   const workspace_id = await getCurrentWorkspace()

@@ -63,7 +63,10 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
     renderScreen()
 
     const summary = within(screen.getByRole('region', { name: 'Fact check summary' }))
-    expect(summary.getByText(/loading/i)).toBeDefined()
+    // quick 260723-4a6 (Task 1): the loading state is now a shimmer skeleton
+    // (components/ui/Skeleton.tsx), not a "Loading…" text string — queried by
+    // its stable testid instead of text content.
+    expect(summary.getByTestId('fact-check-coverage-loading')).toBeDefined()
     expect(summary.queryByText(/verified/i)).toBeNull()
     expect(summary.queryByText(/\bcomplete\b/i)).toBeNull()
   })

@@ -9,11 +9,15 @@
  */
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import AddCharityDialogTrigger from './_components/AddCharityDialogTrigger'
 import CoverageStrip from './_components/CoverageStrip'
 import RegistryTable from './_components/RegistryTable'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: WORKBENCH_NAV_LABELS.registry }
 
 export default async function RegistryPage() {
   const workspace_id = await getCurrentWorkspace()

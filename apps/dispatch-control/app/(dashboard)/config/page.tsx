@@ -12,10 +12,14 @@
  */
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AutomationPanel from './_components/AutomationPanel'
 import AutoPublishToggle from './_components/AutoPublishToggle'
 import BudgetCapsPanel from './_components/BudgetCapsPanel'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: 'Configuration' }
 
 export default async function ConfigPage() {
   const workspace_id = await getCurrentWorkspace()

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- quick 260723-4a6 (Task 1) — favicon: ink square + vermilion diagonal
+       slash, matching the DISPATCH/CONTROL wordmark's "/" divider
+       (components/Masthead.tsx). Next.js serves app/icon.svg as the
+       favicon automatically. -->
+  <rect width="64" height="64" fill="#17140e" />
+  <rect x="-8" y="26" width="80" height="12" fill="#e8471d" transform="rotate(-24 32 32)" />
+</svg>

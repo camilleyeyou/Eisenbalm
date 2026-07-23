@@ -27,6 +27,7 @@ import { fetchScenarios, type EvalScenario } from '@/lib/evalScenarioClient'
 import ScenarioCard from './_components/ScenarioCard'
 import DriftScoreboard from './_components/DriftScoreboard'
 import ShadowRunPanel from './_components/ShadowRunPanel'
+import DocumentTitle from '@/components/ui/DocumentTitle'
 
 export default function EvalCenterPage() {
   const { getToken } = useAuth()
@@ -57,6 +58,7 @@ export default function EvalCenterPage() {
 
   return (
     <div className="space-y-6">
+      <DocumentTitle title={WORKBENCH_NAV_LABELS.eval_center} />
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--color-ink)]">
           {WORKBENCH_NAV_LABELS.eval_center}

@@ -40,8 +40,13 @@ const fontMono = IBM_Plex_Mono({
   weight: ['400', '500'],
 })
 
+// quick 260723-4a6 (Task 1): every route now gets a title via the shared
+// template — either a Server Component's `export const metadata = { title }`
+// or, for client-only frames, `<DocumentTitle title="…" />`
+// (components/ui/DocumentTitle.tsx). `default` covers any route that sets
+// neither.
 export const metadata: Metadata = {
-  title: 'Eisenbalm Dispatch Control',
+  title: { template: '%s — Dispatch Control', default: 'Dispatch Control' },
   description: 'Mission Control dashboard for the Eisenbalm editorial pipeline.',
 }
 

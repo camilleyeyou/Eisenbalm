@@ -77,6 +77,7 @@ import { NeedsYourDecisionCard, type VerificationRecordRow } from './NeedsYourDe
 import { BriefFieldTable } from './BriefFieldTable'
 import { BriefFieldStrengthen } from './BriefFieldStrengthen'
 import DecisionLog from '@/components/decision-log/DecisionLog'
+import { SkeletonLine } from '@/components/ui/Skeleton'
 import {
   type PitchLogRow,
   type AdvocateArgumentRow,
@@ -250,7 +251,10 @@ export function StoryBriefScreen({ issueNumber, runId }: StoryBriefScreenProps) 
           </p>
         )}
         {rawStoryLeads === undefined ? (
-          <p className="text-[13px] text-[color:var(--color-ink-soft)]">Loading…</p>
+          <div className="flex flex-col gap-2">
+            <SkeletonLine className="h-4 w-full" />
+            <SkeletonLine className="h-4 w-2/3" />
+          </div>
         ) : storyLeadsTyped.length === 0 ? (
           isBrief ? (
             <p

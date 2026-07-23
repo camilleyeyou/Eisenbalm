@@ -9,9 +9,13 @@
  */
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AuditLogViewer from './_components/AuditLogViewer'
 import NotificationSettings from './_components/NotificationSettings'
+
+// quick 260723-4a6 (Task 1e): Server Component route — static title.
+export const metadata: Metadata = { title: 'Settings' }
 
 export default async function SettingsPage() {
   const workspace_id = await getCurrentWorkspace()

@@ -12,7 +12,12 @@
  */
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import MyTasksScreen from './_components/MyTasksScreen'
+
+// quick 260723-4a6 (Task 1e): a Server Component route can export a static
+// title directly — composes with app/layout.tsx's `%s — Dispatch Control` template.
+export const metadata: Metadata = { title: 'My Tasks' }
 
 export default function MyTasksPage() {
   return <MyTasksScreen />
