@@ -4,6 +4,16 @@ _block_index_hint computes the ordinal of the ONE block whose text contains
 the finding's quotedSpan, mirroring the client resolver's unique-substring
 rule (D-12: never guess). Covers: unique match, no match, ambiguous match,
 unknown/game section, and empty quotedSpan.
+
+Bug fix (stale-empty-section-qa-findings, 2026-07-23): these fixtures used
+to build blocks in the legacy nested Portable-Text-like shape
+(``{"children": [{"text": ...}]}``), but ``graph/blocks.py``'s ``BodyBlock``
+(the ACTUAL production shape emitted by every long-read writer since Phase
+18) is flat — ``{"type": ..., "text": ...}`` with no ``children`` key. The
+old fixtures made this suite pass while testing a shape ``_block_index_hint``
+never actually receives in production, masking the real extraction bug the
+whole time. ``_block()`` now builds the real flat shape; ``_legacy_block()``
+preserves fallback coverage for the nested shape.
 """
 from __future__ import annotations
 
@@ -11,6 +21,12 @@ from eisenbalm_pipeline.agents.qa import _block_index_hint
 
 
 def _block(text: str) -> dict:
+    """The real, current BodyBlock shape (Phase 18): flat, no 'children'."""
+    return {"type": "paragraph", "text": text}
+
+
+def _legacy_block(text: str) -> dict:
+    """The legacy nested Portable-Text-like shape — back-compat fallback only."""
     return {"children": [{"text": text}]}
 
 
@@ -69,3 +85,19 @@ def test_empty_quoted_span_returns_none() -> None:
     }
     assert _block_index_hint(state, "origin_story", "") is None
     assert _block_index_hint(state, "origin_story", None) is None
+
+
+def test_legacy_nested_children_shape_still_resolves() -> None:
+    """Back-compat fallback: a block with a 'children' key still resolves
+    via the legacy nested-shape path (defensive only — not the production
+    shape since Phase 18's flat BodyBlock)."""
+    state = {
+        "origin_story": {
+            "body": [
+                _legacy_block("The founder began in obscurity."),
+                _legacy_block("A quiet act of charity changed everything."),
+            ]
+        }
+    }
+    hint = _block_index_hint(state, "origin_story", "quiet act of charity")
+    assert hint == 1

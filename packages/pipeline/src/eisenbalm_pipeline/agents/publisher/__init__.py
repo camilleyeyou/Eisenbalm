@@ -29,6 +29,7 @@ import time
 from slugify import slugify
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
+from eisenbalm_pipeline.agents.qa import _extract_sections, heal_stale_empty_section_findings
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.claims import (
     _SECTION_ORDER,
@@ -76,6 +77,24 @@ async def publisher(state: DispatchState) -> DispatchState:
         }
 
     issue_id = await write_issue_draft(sanity_http, state, cost_payload)
+
+    # Bug fix (stale-empty-section-qa-findings, 2026-07-23) — heal path (b):
+    # write_issue_draft above just persisted whatever is in state['origin_story']
+    # etc. If any of those sections has real, non-empty content NOW (the
+    # normal case — QA's extraction bug, fixed in agents/qa/__init__.py, is
+    # what fed the judge an empty view of a section the writer actually
+    # populated), auto-dismiss any OPEN "{section} section is empty" QA
+    # finding for it — that finding is definitionally stale/false once
+    # content has durably landed in the draft. Best-effort: a Convex hiccup
+    # here must never fail a run that already succeeded end-to-end.
+    try:
+        await heal_stale_empty_section_findings(run_id, _extract_sections(state))
+    except Exception as _heal_exc:  # noqa: BLE001
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "Publisher: heal_stale_empty_section_findings failed (%r) — continuing",
+            _heal_exc,
+        )
 
     # Phase 35 (PRV-02/PRV-04): sourced + unsourced claim_checks seeding.
     # Extract BEFORE flipping to awaiting-review so claims are ready the instant

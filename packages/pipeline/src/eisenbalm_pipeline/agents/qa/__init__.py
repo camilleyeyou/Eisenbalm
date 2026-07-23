@@ -27,12 +27,14 @@ Layout pattern mirrors agents/design/ (Plan 05-04): the package
 from __future__ import annotations
 
 import logging
+import re
+import time
 
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.agents.qa.judge import run_llm_judge
 from eisenbalm_pipeline.agents.qa.rules import QAFinding, run_all_predicates
 from eisenbalm_pipeline.graph.state import DispatchState
-from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
+from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe, convex_query_safe
 
 log = logging.getLogger(__name__)
 
@@ -62,21 +64,50 @@ def _body_to_text(body) -> str:
     """Extract plain text from a section body field.
 
     Phase 18 RESEARCH Pitfall 2: after Phase 18, long-read writer bodies are
-    list[dict] (Portable Text blocks) not str. QA judge sees concatenated prose
-    so it can evaluate sub-head wording and pull-quote authenticity without
-    parsing block JSON itself.
+    list[dict] (BodyBlock-shaped blocks) not str. QA judge sees concatenated
+    prose so it can evaluate sub-head wording and pull-quote authenticity
+    without parsing block JSON itself.
 
     Handles both legacy str (BigBudget/Jingle body, stubs) and new list[dict]
     (Phase 18 OriginStory/Problem/FounderBio/CaseStudy/SpecAd bodies).
+
+    Bug fix (stale-empty-section-qa-findings, 2026-07-23): graph/blocks.py's
+    ``BodyBlock`` is a FLAT ``{"type": ..., "text": ...}`` shape (Phase 18's
+    "post-launch fix" collapsed the original discriminated-union
+    Paragraph/Heading/Blockquote classes into one flat class specifically
+    because Anthropic's structured-output API rejects `oneOf` schemas — see
+    graph/blocks.py's docstring). It has NO ``children`` key. This function
+    was written in the SAME Phase 18-04 commit that shipped the flat
+    BodyBlock shape everywhere else, but assumed the OLDER nested
+    Sanity-Portable-Text shape (``{"children": [{"text": ...}]}``) — a
+    same-commit authoring mistake that made this helper return "" for EVERY
+    list-bodied section, on EVERY run, silently feeding empty prose to the
+    Layer-2 LLM judge. Whether the judge then explicitly flags "this section
+    is empty" as a finding is a non-deterministic LLM judgment call, which is
+    why the visible symptom is intermittent even though the underlying
+    extraction bug fires every single time.
+
+    Each list element is checked for a direct ``"text"`` key FIRST (the real,
+    current BodyBlock shape); the legacy ``children[].text`` shape is
+    supported as a fallback only, for any old fixture/back-compat caller that
+    still emits the nested Portable-Text-like shape.
     """
     if isinstance(body, str):
         return body
     if isinstance(body, list):
         parts: list[str] = []
         for block in body:
-            for child in (block.get('children') or []) if isinstance(block, dict) else []:
-                parts.append(child.get('text', ''))
-        return ' '.join(parts)
+            if not isinstance(block, dict):
+                continue
+            if 'children' in block:
+                # Legacy nested Portable-Text-like shape (fallback only).
+                for child in block.get('children') or []:
+                    if isinstance(child, dict):
+                        parts.append(child.get('text', ''))
+            else:
+                # Current flat BodyBlock shape: {"type": ..., "text": ...}.
+                parts.append(block.get('text', ''))
+        return ' '.join(p for p in parts if p)
     return ''
 
 
@@ -126,7 +157,15 @@ _SECTION_STATE_FIELD = {
 def _block_index_hint(state: DispatchState, section: str, quoted: str | None) -> int | None:
     """Return the ordinal of the ONLY block whose text contains `quoted`,
     else None (0 or 2+ matches -> no hint; game/None -> no hint). Mirrors
-    the client resolver's unique-substring rule (D-12: never guess)."""
+    the client resolver's unique-substring rule (D-12: never guess).
+
+    Bug fix (stale-empty-section-qa-findings, 2026-07-23): same shape
+    mismatch as ``_body_to_text`` above — ``BodyBlock`` blocks are flat
+    ``{"type": ..., "text": ...}`` dicts with no ``children`` key. Reads
+    ``block.get("text", "")`` directly; falls back to the legacy nested
+    ``children[].text`` shape only when a block actually has a ``children``
+    key (defensive back-compat, not the production shape).
+    """
     if not quoted:
         return None
     field = _SECTION_STATE_FIELD.get(section)
@@ -139,10 +178,13 @@ def _block_index_hint(state: DispatchState, section: str, quoted: str | None) ->
     for i, block in enumerate(body):
         if not isinstance(block, dict):
             continue
-        text = " ".join(
-            (c.get("text", "") for c in (block.get("children") or [])
-             if isinstance(c, dict))
-        )
+        if 'children' in block:
+            text = " ".join(
+                (c.get("text", "") for c in (block.get("children") or [])
+                 if isinstance(c, dict))
+            )
+        else:
+            text = block.get("text", "")
         if quoted in text:
             matches.append(i)
     return matches[0] if len(matches) == 1 else None
@@ -250,4 +292,87 @@ async def qa(state: DispatchState) -> DispatchState:
     }
 
 
-__all__ = ["qa"]
+async def heal_stale_empty_section_findings(
+    run_id: str, sections: dict[str, str],
+) -> int:
+    """Auto-dismiss any OPEN "{section} section is empty" QA finding whose
+    section now demonstrably has content (heal path — bug session
+    ``stale-empty-section-qa-findings``, 2026-07-23).
+
+    Root cause: ``_body_to_text``/``_block_index_hint`` above used to
+    silently extract "" for every list-bodied section (a same-commit Phase
+    18-04 shape-mismatch bug — see their docstrings), so the Layer-2 LLM
+    judge sometimes hallucinated an "empty section" finding despite the
+    writer having produced real content the whole time. That extraction bug
+    is fixed above; this function is defense-in-depth for TWO cases the fix
+    above does not retroactively cover:
+
+      1. qaCorrections rows already inserted by runs that executed BEFORE
+         this fix landed — this is the only path that can retract them.
+      2. Any future run where the Layer-2 judge independently hallucinates
+         an "empty section" claim despite receiving correct, non-empty
+         input (an LLM judgment error, not an extraction bug) — rare, but a
+         factually self-contradictory finding should never survive to block
+         a human sign-off.
+
+    Called from ``agents/publisher`` immediately after ``write_issue_draft``
+    persists the section content this function checks against — i.e. only
+    once the content is genuinely, durably non-empty.
+
+    Conservative by design: only dismisses a finding when BOTH (a) its
+    ``reason`` matches "the {sectionName} section is empty" for its OWN
+    ``sectionName`` (never a fuzzy/cross-section match) and (b) the
+    freshly-extracted section text is non-empty. Never touches any other
+    finding — voice/precision/structural findings on real content are left
+    untouched (they are not this bug), and any finding already resolved
+    (accepted/dismissed) is skipped.
+
+    Returns the number of findings healed (0 on no-op, including when the
+    qaCorrections read fails — convex_query_safe degrades to None/[]).
+    """
+    rows = await convex_query_safe("qaCorrections:byRunId", {"runId": run_id}) or []
+    healed = 0
+    now_ms = int(time.time() * 1000)
+    for row in rows:
+        if row.get("resolution"):
+            continue  # already resolved — never touch
+        section = row.get("sectionName") or ""
+        reason = row.get("reason") or ""
+        if not re.search(
+            rf"\bthe\s+{re.escape(section)}\s+section is empty\b",
+            reason,
+            re.IGNORECASE,
+        ):
+            continue
+        current_text = (sections.get(section) or "").strip()
+        if not current_text:
+            continue  # genuinely still empty — do not heal
+        await convex_mutation_safe(
+            "qaCorrections:setResolution",
+            {
+                "id": row["_id"],
+                "resolution": "dismissed",
+                "resolutionReason": (
+                    "Auto-resolved: write_issue_draft persisted non-empty "
+                    "content for this section. This finding was produced "
+                    "under a QA extraction bug that fed an empty body to "
+                    "the judge despite the writer's real output "
+                    "(stale-empty-section-qa-findings) — it no longer "
+                    "reflects the draft."
+                ),
+                "resolvedBy": "pipeline-auto-heal",
+                "resolvedAt": now_ms,
+            },
+        )
+        healed += 1
+    if healed:
+        log.info(
+            "heal_stale_empty_section_findings: auto-dismissed %d stale "
+            "'section is empty' finding(s) for run_id=%s",
+            healed,
+            run_id,
+        )
+    return healed
+
+
+__all__ = ["qa", "heal_stale_empty_section_findings"]
