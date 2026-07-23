@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260722-tv1 (fix app-wide layout audit findings — sidebar clip, page overscroll, Voice Pass width starvation, dead jump-nav, galley overlay clamps, run-monitor list caps)
-last_updated: "2026-07-23T05:04:59.000Z"
+stopped_at: Completed quick 260722-v01 (mobile-responsive nav drawer + graph/banner height chain, My Tasks severity grouping, single Story Decision log, portaled HelpTip, Registry/Finance table caps, dead ClaimsChecklist deletion, additive listRecentForWorkspace Convex query, Draft-stage preview iframe fix, Run Monitor token migration)
+last_updated: "2026-07-23T06:06:46.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
