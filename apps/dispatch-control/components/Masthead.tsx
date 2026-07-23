@@ -32,6 +32,11 @@
  * required" (quiet reassurance). The ON case keeps its existing loud
  * vermilion treatment exactly as before — `AutoPublishBanner` (elsewhere in
  * the layout) is untouched.
+ *
+ * quick 260722-v01: header gained `pl-[52px] md:pl-[22px]` so the fixed
+ * below-md hamburger (`MobileNavDrawer.tsx`, mounted in the dashboard layout,
+ * NOT here) doesn't overlap the wordmark. No other change — this file is
+ * still not aware of the drawer.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -237,7 +242,7 @@ export default function Masthead() {
   const systemActivity = systemActivityFromRunStatus(latest?.status)
 
   return (
-    <header className="flex h-[52px] items-center gap-4 bg-[color:var(--color-ink)] px-[22px] text-[color:var(--color-masthead-text)]">
+    <header className="flex h-[52px] items-center gap-4 bg-[color:var(--color-ink)] pl-[52px] pr-[22px] text-[color:var(--color-masthead-text)] md:pl-[22px]">
       {/* Wordmark */}
       <span className="font-[family-name:var(--font-ui)] text-[15.5px] font-bold tracking-[.03em]">
         DISPATCH<span className="text-[color:var(--color-vermilion)]">/</span>CONTROL

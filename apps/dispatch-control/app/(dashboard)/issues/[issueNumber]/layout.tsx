@@ -40,6 +40,11 @@
  * This file intentionally does NOT render a second main landmark element —
  * the dashboard root layout (`app/(dashboard)/layout.tsx`) already owns the
  * single one for the whole app; this frame's root is a plain `<div>`.
+ *
+ * quick 260722-v01: the stage-tab `<nav>` is `max-lg:flex-nowrap
+ * max-lg:overflow-x-auto` (single scrollable row below lg; unchanged wrap at
+ * lg+) and each tab `<Link>` gained `shrink-0` so tabs don't compress on
+ * narrow viewports (audit item — mobile stage-tab scroll).
  */
 import { useEffect } from 'react'
 import Link from 'next/link'
@@ -261,7 +266,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
         </div>
         <nav
           aria-label="Workspace stages"
-          className="sticky top-0 z-30 flex flex-wrap gap-2 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] pb-3 pt-2"
+          className="sticky top-0 z-30 flex flex-wrap gap-2 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] pb-3 pt-2 max-lg:flex-nowrap max-lg:overflow-x-auto"
         >
           {STAGE_TABS.map((tab, i) => {
             const href = tab.hrefFor(n)
@@ -283,7 +288,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
                 data-testid={`workspace-tab-${tab.segment}`}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-[44px] min-w-[112px] items-center gap-[6px] rounded-[2px] border-b-2 px-[9px] py-[3px] transition-colors',
+                  'flex min-h-[44px] min-w-[112px] shrink-0 items-center gap-[6px] rounded-[2px] border-b-2 px-[9px] py-[3px] transition-colors',
                   isActive
                     ? 'border-[color:var(--color-cobalt)] text-[color:var(--color-ink)]'
                     : 'border-transparent text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]',

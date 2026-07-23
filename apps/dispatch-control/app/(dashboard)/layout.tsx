@@ -28,9 +28,19 @@
  * `WorkspaceStateProvider` (mounted separately, only under
  * `/issues/[issueNumber]`). `<OnboardingTour>` renders once here, alongside
  * the rest of the shell, so it can overlay any dashboard route.
+ *
+ * quick 260722-v01: mounts `<MobileNavDrawer />` (client) as the FIRST child,
+ * before `<Masthead />` — the below-md hamburger + off-canvas nav (audit item
+ * 1). This layout stays a Server Component; it may render this client child.
+ * Also: `<main>` drops to `p-4 md:p-6` (audit item — mobile padding) and
+ * becomes a `flex flex-col` column (with the banner wrapper `shrink-0`) so
+ * flex-column descendants (e.g. the run-monitor shell) size to the space
+ * remaining under the AutoPublishBanner instead of overflowing by its height
+ * (audit item 4).
  */
 import AppSidebar from '@/components/AppSidebar'
 import Masthead from '@/components/Masthead'
+import MobileNavDrawer from '@/components/MobileNavDrawer'
 import AutoPublishBanner from './_components/AutoPublishBanner'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { InspectorProvider } from '@/components/inspector/InspectorProvider'
@@ -46,12 +56,13 @@ export default function DashboardLayout({
     <InspectorProvider>
       <OnboardingProvider>
         <div className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-rail)]">
+          <MobileNavDrawer />
           <Masthead />
           <div className="flex flex-1 overflow-hidden">
             <AppSidebar />
-            <main className="flex-1 overflow-y-auto p-6">
+            <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
               {/* Persistent red banner when auto_publish is enabled — RVW-04 */}
-              <div className="mb-4 empty:mb-0">
+              <div className="mb-4 shrink-0 empty:mb-0">
                 <AutoPublishBanner workspace_id={DEFAULT_WORKSPACE_ID} />
               </div>
               {children}

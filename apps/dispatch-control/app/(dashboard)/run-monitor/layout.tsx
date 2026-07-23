@@ -10,6 +10,12 @@
  * quick 260722-tv1: the tab bar is now `sticky top-0` (with an opaque rail
  * background) so it stays visible while a sub-route (e.g. the long Runs
  * table) scrolls underneath it.
+ *
+ * quick 260722-v01: the shell root is `flex min-h-0 flex-1 flex-col` (was
+ * `flex h-full flex-col`) so this shell (and the graph page's `h-full` chain
+ * inside it) sizes to the height REMAINING under the dashboard layout's
+ * AutoPublishBanner instead of overflowing by the banner's height (audit
+ * item 4 — graph × AutoPublishBanner height chain).
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -24,7 +30,7 @@ export default function RunMonitorLayout({ children }: { children: React.ReactNo
   const pathname = usePathname()
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="sticky top-0 z-20 flex shrink-0 items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] px-1">
         {TABS.map(tab => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
