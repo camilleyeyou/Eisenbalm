@@ -34,6 +34,10 @@
  * (e.g. "Find story leads") sourced from `lib/nomenclature.ts`'s
  * `runStepFor()` — the agent is demoted to `agentLabel`, rendered as small
  * secondary metadata under the title (e.g. "— Signal Editor").
+ *
+ * quick 260722-v01 (graph components token migration follow-up): mechanical
+ * class-token swap onto the `var(--color-*)` / bracket-pixel system — no
+ * structural change.
  */
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Loader2 } from 'lucide-react'
@@ -57,10 +61,10 @@ export type AgentNodeData = {
 }
 
 const STATUS_COLORS: Record<NonNullable<AgentNodeData['status']>, string> = {
-  queued: 'border-neutral-300 bg-neutral-50',
-  running: 'border-blue-400 bg-blue-50',
-  done: 'border-green-400 bg-green-50',
-  failed: 'border-red-400 bg-red-50',
+  queued: 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)]',
+  running: 'border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)]/10',
+  done: 'border-[color:var(--color-green)] bg-[color:var(--color-green)]/10',
+  failed: 'border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/10',
 }
 
 export function AgentNode({ data, selected }: NodeProps) {
@@ -73,8 +77,8 @@ export function AgentNode({ data, selected }: NodeProps) {
   const borderClass = nodeData.status
     ? STATUS_COLORS[nodeData.status]
     : nodeData.enabled
-      ? 'border-neutral-200 bg-white'
-      : 'border-neutral-100 bg-neutral-50'
+      ? 'border-[color:var(--color-faint)] bg-[color:var(--color-card)]'
+      : 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)]'
 
   const isDisabled = !nodeData.enabled
   const showCostDuration =
@@ -86,7 +90,7 @@ export function AgentNode({ data, selected }: NodeProps) {
         'rounded-lg border-2 p-3 w-44 cursor-pointer select-none',
         borderClass,
         isDisabled && !nodeData.status && 'opacity-40',
-        selected && 'ring-2 ring-neutral-900 ring-offset-1',
+        selected && 'ring-2 ring-[color:var(--color-ink)] ring-offset-1',
       )}
     >
       {/* Source handle — hidden visually but required for React Flow edge routing */}
@@ -104,18 +108,18 @@ export function AgentNode({ data, selected }: NodeProps) {
           aria-hidden="true"
           className={cn(
             'inline-block h-2 w-2 shrink-0',
-            nodeData.isGate ? 'rotate-45 bg-marigold' : 'rounded-full bg-neutral-900',
+            nodeData.isGate ? 'rotate-45 bg-marigold' : 'rounded-full bg-[color:var(--color-ink)]',
           )}
         />
         {nodeData.status === 'running' && (
-          <Loader2 className="h-3 w-3 animate-spin text-blue-500 shrink-0" />
+          <Loader2 className="h-3 w-3 animate-spin text-[color:var(--color-cobalt)] shrink-0" />
         )}
-        <span className="text-xs font-semibold text-neutral-800 truncate">
+        <span className="text-xs font-semibold text-[color:var(--color-ink)] truncate">
           {nodeData.displayName}
         </span>
         {/* Suppressed badge — only shown at rest when agent is disabled */}
         {isDisabled && !nodeData.status && (
-          <span className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide bg-neutral-200 text-neutral-500">
+          <span className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]">
             suppressed
           </span>
         )}
@@ -123,7 +127,7 @@ export function AgentNode({ data, selected }: NodeProps) {
         {nodeData.retryCount != null && nodeData.retryCount > 0 && (
           <span
             data-testid="retry-chip"
-            className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium bg-amber-100 text-amber-700"
+            className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]"
             title="Retry count"
           >
             ↻{nodeData.retryCount}
@@ -136,7 +140,7 @@ export function AgentNode({ data, selected }: NodeProps) {
           dashed caption line so it never crowds the title on the narrow
           w-44 node. */}
       {nodeData.agentLabel && (
-        <p className="mt-0.5 text-[10px] text-neutral-400 truncate">
+        <p className="mt-0.5 text-[10px] text-[color:var(--color-faint)] truncate">
           — {nodeData.agentLabel}
         </p>
       )}
@@ -145,17 +149,17 @@ export function AgentNode({ data, selected }: NodeProps) {
           UNCONDITIONALLY so an executed node shows model alongside
           cost/duration/retry TOGETHER, not mutually exclusive (MON-01 fix). */}
       {nodeData.model && (
-        <p className="mt-1 text-[10px] text-neutral-400 truncate">{nodeData.model}</p>
+        <p className="mt-1 text-[10px] text-[color:var(--color-faint)] truncate">{nodeData.model}</p>
       )}
 
       {/* At rest only: truncated description (model chip now renders above) */}
       {!nodeData.status && nodeData.description && (
-        <p className="mt-0.5 text-[10px] text-neutral-500 truncate">{nodeData.description}</p>
+        <p className="mt-0.5 text-[10px] text-[color:var(--color-ink-soft)] truncate">{nodeData.description}</p>
       )}
 
       {/* During run (not queued): inline cost + duration */}
       {showCostDuration && (
-        <p className="mt-1 text-[10px] text-neutral-600">
+        <p className="mt-1 text-[10px] text-[color:var(--color-ink-soft)]">
           {nodeData.costUsd != null
             ? `$${nodeData.costUsd.toFixed(4)}`
             : '—'}
@@ -167,7 +171,7 @@ export function AgentNode({ data, selected }: NodeProps) {
 
       {/* Queued label */}
       {nodeData.status === 'queued' && (
-        <p className="mt-1 text-[10px] text-neutral-400">queued</p>
+        <p className="mt-1 text-[10px] text-[color:var(--color-faint)]">queued</p>
       )}
 
       {/* Target handle */}

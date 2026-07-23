@@ -17,6 +17,10 @@ export const dynamic = 'force-dynamic'
  * quick 260722-tv1: root gains `mx-auto w-full max-w-[1600px]` — matches the
  * workspace's 1600px measure so this detail view doesn't stretch
  * edge-to-edge on wide monitors.
+ *
+ * quick 260722-v01 (graph components token migration follow-up): heading
+ * migrated onto the `var(--color-*)` / bracket-pixel system — no structural
+ * change.
  */
 import RunDetail from '../_components/RunDetail'
 
@@ -29,7 +33,9 @@ export default async function RunDetailPage({ params }: RunDetailPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-4">
-      <h1 className="text-xl font-semibold text-neutral-900">Run Detail</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">
+        Run Detail
+      </h1>
       <RunDetail runId={runId} />
     </div>
   )

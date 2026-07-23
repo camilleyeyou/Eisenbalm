@@ -26,6 +26,10 @@
  * Phase 50 (WBN-02): operator-facing copy in this panel says "step", per the
  * binding nomenclature table's Old->new column. Component/identifier names
  * (`HandoffNode`, `agentKey`) are unchanged per D-01.
+ *
+ * quick 260722-v01 (graph components token migration follow-up): mechanical
+ * class-token swap onto the `var(--color-*)` / bracket-pixel system — no
+ * structural change.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -70,10 +74,12 @@ function HandoffNode({
   const payload = useQuery(api.agentRuns.payloadByRunIdAgentKey, { runId, agentKey })
 
   if (payload === undefined) {
-    return <p className="text-[10px] text-neutral-400">{agentKey}: loading…</p>
+    return <p className="text-[10px] text-[color:var(--color-faint)]">{agentKey}: loading…</p>
   }
   if (payload === null) {
-    return <p className="text-[10px] text-neutral-400">{agentKey}: no snapshot stored</p>
+    return (
+      <p className="text-[10px] text-[color:var(--color-faint)]">{agentKey}: no snapshot stored</p>
+    )
   }
 
   // Upstream: we care about what it produced (its output).
@@ -81,8 +87,8 @@ function HandoffNode({
   const snapshot = direction === 'upstream' ? payload.outputSnapshot : payload.inputSnapshot
 
   return (
-    <p className="text-[10px] text-neutral-600">
-      <span className="font-medium text-neutral-700">{agentKey}</span>
+    <p className="text-[10px] text-[color:var(--color-ink-soft)]">
+      <span className="font-medium text-[color:var(--color-ink-soft)]">{agentKey}</span>
       {': '}
       {summarize(snapshot ?? undefined)}
     </p>
@@ -117,16 +123,18 @@ export function AgentIOPanel({
 
   return (
     <div
-      className="absolute right-0 top-0 h-full w-96 bg-white border-l border-neutral-200 shadow-lg overflow-y-auto z-10 flex flex-col"
+      className="absolute right-0 top-0 h-full w-96 bg-[color:var(--color-card)] border-l border-[color:var(--color-faint)] shadow-lg overflow-y-auto z-10 flex flex-col"
       role="complementary"
       aria-label={`${agentKey} details`}
     >
       {/* Panel header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 sticky top-0 bg-white z-10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--color-faint)] sticky top-0 bg-[color:var(--color-card)] z-10">
         <div>
-          <h2 className="text-sm font-semibold text-neutral-900">{agentKey}</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
+            {agentKey}
+          </h2>
           {agentRun && (
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] mt-0.5">
               {agentRun.status}
               {agentRun.costUsd != null && ` · $${agentRun.costUsd.toFixed(4)}`}
               {agentRun.durationMs != null &&
@@ -136,7 +144,7 @@ export function AgentIOPanel({
         </div>
         <button
           onClick={onClose}
-          className="rounded p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="rounded p-1 text-[color:var(--color-faint)] hover:text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-vermilion)]"
           aria-label="Close panel"
         >
           ✕
@@ -147,10 +155,10 @@ export function AgentIOPanel({
         {/* Error block — shown when status=failed */}
         {agentRun?.status === 'failed' && agentRun.error && (
           <section>
-            <h3 className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">
+            <h3 className="text-[11px] font-semibold text-[color:var(--color-vermilion)] uppercase tracking-wide mb-1">
               Error
             </h3>
-            <pre className="text-xs bg-red-50 border border-red-200 rounded p-2 whitespace-pre-wrap break-words text-red-800">
+            <pre className="text-[11px] bg-[color:var(--color-vermilion)]/10 border border-[color:var(--color-vermilion)]/40 rounded p-2 whitespace-pre-wrap break-words text-[color:var(--color-vermilion)]">
               {agentRun.error}
             </pre>
           </section>
@@ -159,28 +167,28 @@ export function AgentIOPanel({
         {/* Cost + token metrics */}
         {agentRun && (
           <section>
-            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+            <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
               Metrics
             </h3>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              <dt className="text-neutral-500">Cost</dt>
-              <dd className="text-neutral-800">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+              <dt className="text-[color:var(--color-ink-soft)]">Cost</dt>
+              <dd className="text-[color:var(--color-ink)]">
                 {agentRun.costUsd != null
                   ? `$${agentRun.costUsd.toFixed(4)}`
                   : '—'}
               </dd>
-              <dt className="text-neutral-500">Duration</dt>
-              <dd className="text-neutral-800">
+              <dt className="text-[color:var(--color-ink-soft)]">Duration</dt>
+              <dd className="text-[color:var(--color-ink)]">
                 {agentRun.durationMs != null
                   ? `${(agentRun.durationMs / 1000).toFixed(1)}s`
                   : '—'}
               </dd>
-              <dt className="text-neutral-500">Tokens in</dt>
-              <dd className="text-neutral-800">
+              <dt className="text-[color:var(--color-ink-soft)]">Tokens in</dt>
+              <dd className="text-[color:var(--color-ink)]">
                 {agentRun.tokensIn?.toLocaleString() ?? '—'}
               </dd>
-              <dt className="text-neutral-500">Tokens out</dt>
-              <dd className="text-neutral-800">
+              <dt className="text-[color:var(--color-ink-soft)]">Tokens out</dt>
+              <dd className="text-[color:var(--color-ink)]">
                 {agentRun.tokensOut?.toLocaleString() ?? '—'}
               </dd>
             </dl>
@@ -189,7 +197,7 @@ export function AgentIOPanel({
 
         {/* No run active */}
         {!runId && (
-          <p className="text-xs text-neutral-400">
+          <p className="text-[11px] text-[color:var(--color-faint)]">
             No run active. Start a run to see I/O snapshots.
           </p>
         )}
@@ -199,12 +207,12 @@ export function AgentIOPanel({
             the toggle below. */}
         {runId && (
           <section>
-            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+            <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
               Handoff
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] uppercase tracking-wide mb-1">
                   From (upstream output)
                 </p>
                 {upstreamKeys.length > 0 ? (
@@ -214,24 +222,24 @@ export function AgentIOPanel({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[10px] text-neutral-400">
+                  <p className="text-[10px] text-[color:var(--color-faint)]">
                     No upstream step (start of pipeline)
                   </p>
                 )}
               </div>
 
               <div>
-                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] uppercase tracking-wide mb-1">
                   This step (input → output)
                 </p>
                 {payload === undefined ? (
-                  <p className="text-[10px] text-neutral-400">Loading…</p>
+                  <p className="text-[10px] text-[color:var(--color-faint)]">Loading…</p>
                 ) : payload === null ? (
-                  <p className="text-[10px] text-neutral-400">
+                  <p className="text-[10px] text-[color:var(--color-faint)]">
                     No I/O snapshot stored for this agent in this run.
                   </p>
                 ) : (
-                  <p className="text-[10px] text-neutral-600">
+                  <p className="text-[10px] text-[color:var(--color-ink-soft)]">
                     {summarize(payload.inputSnapshot ?? undefined)}
                     {' → '}
                     {summarize(payload.outputSnapshot ?? undefined)}
@@ -240,7 +248,7 @@ export function AgentIOPanel({
               </div>
 
               <div>
-                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] uppercase tracking-wide mb-1">
                   To (downstream input)
                 </p>
                 {downstreamKeys.length > 0 ? (
@@ -250,21 +258,21 @@ export function AgentIOPanel({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[10px] text-neutral-400">
+                  <p className="text-[10px] text-[color:var(--color-faint)]">
                     No downstream step (end of pipeline)
                   </p>
                 )}
               </div>
             </div>
 
-            <p className="mt-3 text-[9px] italic text-neutral-400">
+            <p className="mt-3 text-[9px] italic text-[color:var(--color-faint)]">
               Snapshots truncated to ~2000 characters.
             </p>
 
             <button
               type="button"
               onClick={() => setShowRawJson(v => !v)}
-              className="mt-2 text-[10px] font-medium text-neutral-600 underline hover:text-neutral-900"
+              className="mt-2 text-[10px] font-medium text-[color:var(--color-ink-soft)] underline hover:text-[color:var(--color-ink)]"
             >
               {showRawJson ? 'Hide raw JSON' : 'Show raw JSON'}
             </button>
@@ -276,19 +284,19 @@ export function AgentIOPanel({
         {showRawJson && payload !== undefined && payload !== null && (
           <>
             <section>
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+              <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
                 Input Snapshot (raw)
               </h3>
-              <pre className="text-[10px] bg-neutral-50 border border-neutral-200 rounded p-2 whitespace-pre-wrap break-words text-neutral-700 max-h-64 overflow-y-auto">
+              <pre className="text-[10px] bg-[color:var(--color-card-alt)] border border-[color:var(--color-faint)] rounded p-2 whitespace-pre-wrap break-words text-[color:var(--color-ink-soft)] max-h-64 overflow-y-auto">
                 {prettyJson(payload.inputSnapshot ?? undefined)}
               </pre>
             </section>
 
             <section>
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+              <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
                 Output Snapshot (raw)
               </h3>
-              <pre className="text-[10px] bg-neutral-50 border border-neutral-200 rounded p-2 whitespace-pre-wrap break-words text-neutral-700 max-h-64 overflow-y-auto">
+              <pre className="text-[10px] bg-[color:var(--color-card-alt)] border border-[color:var(--color-faint)] rounded p-2 whitespace-pre-wrap break-words text-[color:var(--color-ink-soft)] max-h-64 overflow-y-auto">
                 {prettyJson(payload.outputSnapshot ?? undefined)}
               </pre>
             </section>

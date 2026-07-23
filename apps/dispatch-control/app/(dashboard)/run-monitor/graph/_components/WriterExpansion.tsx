@@ -22,6 +22,10 @@
  *
  * A section with zero qaCorrections rows shows 100/green (no findings yet
  * means nothing has flagged it).
+ *
+ * quick 260722-v01 (graph components token migration follow-up): mechanical
+ * class-token swap onto the `var(--color-*)` / bracket-pixel system — no
+ * structural change.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -50,15 +54,15 @@ const SECTION_LABELS: Record<string, string> = {
 }
 
 const BAND_BAR_CLASS: Record<'green' | 'amber' | 'red', string> = {
-  green: 'bg-green-500',
-  amber: 'bg-amber-500',
-  red: 'bg-red-500',
+  green: 'bg-[color:var(--color-green)]',
+  amber: 'bg-[color:var(--color-marigold)]',
+  red: 'bg-[color:var(--color-vermilion)]',
 }
 
 const BAND_TEXT_CLASS: Record<'green' | 'amber' | 'red', string> = {
-  green: 'text-green-700',
-  amber: 'text-amber-700',
-  red: 'text-red-700',
+  green: 'text-[color:var(--color-green)]',
+  amber: 'text-[color:var(--color-marigold-text)]',
+  red: 'text-[color:var(--color-vermilion)]',
 }
 
 interface QaCorrectionRow extends QaFindingRow {
@@ -97,16 +101,16 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
 
   return (
     <div
-      className="p-3 space-y-2 bg-white border border-neutral-200 rounded-lg shadow-lg"
+      className="p-3 space-y-2 bg-[color:var(--color-card)] border border-[color:var(--color-faint)] rounded-lg shadow-lg"
       role="region"
       aria-label="7-writers strength expansion"
     >
-      <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+      <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide">
         Section Strength
       </h3>
 
       {rows === undefined ? (
-        <p className="text-[11px] text-neutral-400">Loading…</p>
+        <p className="text-[11px] text-[color:var(--color-faint)]">Loading…</p>
       ) : (
         <ul className="space-y-2">
           {WRITER_SECTIONS.map(sectionName => {
@@ -118,13 +122,13 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
 
             return (
               <li key={sectionName} className="flex items-center gap-3">
-                <span className="w-24 shrink-0 text-[11px] font-medium text-neutral-700">
+                <span className="w-24 shrink-0 text-[11px] font-medium text-[color:var(--color-ink-soft)]">
                   {label}
                 </span>
 
                 {/* Strength bar (MON-03) */}
                 <div
-                  className="flex-1 h-2 rounded bg-neutral-100 overflow-hidden"
+                  className="flex-1 h-2 rounded bg-[color:var(--color-card-alt)] overflow-hidden"
                   role="progressbar"
                   aria-valuenow={score}
                   aria-valuemin={0}
@@ -150,13 +154,22 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
                   className="shrink-0 flex gap-1 text-[10px]"
                   data-testid={`flag-counts-${sectionName}`}
                 >
-                  <span className="rounded bg-red-100 px-1 text-red-700" title="Open errors">
+                  <span
+                    className="rounded bg-[color:var(--color-vermilion)]/15 px-1 text-[color:var(--color-vermilion)]"
+                    title="Open errors"
+                  >
                     E:{flags.error}
                   </span>
-                  <span className="rounded bg-amber-100 px-1 text-amber-700" title="Open warnings">
+                  <span
+                    className="rounded bg-[color:var(--color-marigold)]/20 px-1 text-[color:var(--color-marigold-text)]"
+                    title="Open warnings"
+                  >
                     W:{flags.warning}
                   </span>
-                  <span className="rounded bg-neutral-100 px-1 text-neutral-600" title="Open info">
+                  <span
+                    className="rounded bg-[color:var(--color-card-alt)] px-1 text-[color:var(--color-ink-soft)]"
+                    title="Open info"
+                  >
                     I:{flags.info}
                   </span>
                 </span>
@@ -166,7 +179,7 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
                   type="button"
                   onClick={() => handleRerun(sectionName)}
                   disabled={isRunning || busyKey === sectionName}
-                  className="shrink-0 rounded border border-neutral-300 bg-white px-2 py-1 text-[10px] font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="shrink-0 rounded border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2 py-1 text-[10px] font-medium text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {busyKey === sectionName ? 'Re-running…' : 'Re-run'}
                 </button>
@@ -176,7 +189,7 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
         </ul>
       )}
 
-      {message && <p className="text-[10px] text-neutral-500">{message}</p>}
+      {message && <p className="text-[10px] text-[color:var(--color-ink-soft)]">{message}</p>}
     </div>
   )
 }
