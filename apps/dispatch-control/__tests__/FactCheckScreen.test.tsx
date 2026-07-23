@@ -95,11 +95,16 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
 
     renderScreen()
 
-    expect(screen.getByText(/checked 1 of 1/i)).toBeDefined()
-    expect(screen.getByText(/0 must fix/i)).toBeDefined()
-    expect(screen.getByText(/0 conflicting sources/i)).toBeDefined()
-    expect(screen.getByText(/0 checks not run/i)).toBeDefined()
-    expect(screen.getByText(/0 changed since check/i)).toBeDefined()
+    // quick 260722-n5r: scoped to the summary region — the claim table's new
+    // per-section group header (below) legitimately repeats "0 must fix" /
+    // "0 unchecked" in its own counts line, so an unscoped getByText would
+    // now match two elements.
+    const summary = within(screen.getByRole('region', { name: 'Fact check summary' }))
+    expect(summary.getByText(/checked 1 of 1/i)).toBeDefined()
+    expect(summary.getByText(/0 must fix/i)).toBeDefined()
+    expect(summary.getByText(/0 conflicting sources/i)).toBeDefined()
+    expect(summary.getByText(/0 checks not run/i)).toBeDefined()
+    expect(summary.getByText(/0 changed since check/i)).toBeDefined()
   })
 
   it('renders "not yet verified" (never blank) when no claim has ever been checked', () => {

@@ -42,6 +42,16 @@
  * `claimIndex` (always present, unlike the Phase 35-only `claimId`
  * provenance field) — the same identifier every other claim action on this
  * screen already keys off (`selectedClaimIndex`).
+ *
+ * quick 260722-n5r (claim table grouped by section, collapsible): the
+ * `<section aria-label="Claims">` list render below is reorganized into one
+ * collapsible group per `EDITABLE_SECTIONS` entry (reading order), plus a
+ * trailing "Other" group for any row whose `sectionName` doesn't resolve to
+ * a known section id. A 132-claim run used to render as one flat `<ul>` —
+ * an unnavigable wall; grouping + collapse-by-default on all-checked
+ * sections makes the wall scannable. Filters, selection state, the
+ * published context-panel card, and every action handler are UNCHANGED —
+ * this is purely a reorganization of how `filteredRows` is rendered.
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -60,6 +70,8 @@ import ClaimProvenanceCard, {
   deriveClaimChipState,
   type ClaimProvenanceView,
 } from '@/components/provenance/ClaimProvenanceCard'
+import { EDITABLE_SECTIONS } from '../../../review-desk/[runId]/_components/SectionChipList'
+import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { getDraft, ContentPatchError } from '@/lib/contentPatchClient'
 import {
   keepClaim,
@@ -113,6 +125,74 @@ function formatAgo(ts: number): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   return `${days}d ago`
+}
+
+/** quick 260722-n5r — claim table grouping. */
+
+/** The trailing group's key/label for any row whose `sectionName` doesn't
+ * resolve to a known `EDITABLE_SECTIONS` id. */
+const OTHER_GROUP_KEY = 'other'
+const OTHER_GROUP_LABEL = 'Other'
+
+interface ClaimGroup {
+  key: string
+  label: string
+  rows: FullClaimRow[]
+}
+
+/**
+ * Normalizes a claim row's `sectionName` to a matching `EDITABLE_SECTIONS`
+ * id: (a) direct id match (the vocabulary `claim_checks.sectionName`
+ * actually uses per verified fact), else (b) `qaSectionToGalleyId` as a
+ * defensive fallback for any legacy snake_case rows. Unknown/missing ->
+ * null (routes the row to the trailing "Other" group).
+ */
+function sectionGroupKeyFor(sectionName: string | undefined): string | null {
+  if (!sectionName) return null
+  if (EDITABLE_SECTIONS.some(section => section.id === sectionName)) return sectionName
+  const mapped = qaSectionToGalleyId(sectionName)
+  if (mapped && EDITABLE_SECTIONS.some(section => section.id === mapped)) return mapped
+  return null
+}
+
+/** Reuses the SAME chip classifier every row already renders with — never a
+ * second, forked notion of "must fix" / "unchecked" / "checked". */
+function chipStateForRow(row: FullClaimRow) {
+  return deriveClaimChipState({
+    text: row.text,
+    status: row.status,
+    importance: row.importance,
+    sourceUrl: row.sourceUrl,
+    changedSinceCheck: row.changedSinceCheck,
+  })
+}
+
+/** Builds ordered groups from the already-filtered rows: one group per
+ * `EDITABLE_SECTIONS` entry (reading order) that has >=1 matching row
+ * (empty sections are skipped, not rendered as empty groups), then a
+ * trailing "Other" group if any row didn't resolve to a known section. */
+function buildClaimGroups(filteredRows: FullClaimRow[]): ClaimGroup[] {
+  const groups: ClaimGroup[] = []
+  for (const section of EDITABLE_SECTIONS) {
+    const sectionRows = filteredRows.filter(
+      row => sectionGroupKeyFor(row.sectionName) === section.id,
+    )
+    if (sectionRows.length > 0) {
+      groups.push({ key: section.id, label: section.label, rows: sectionRows })
+    }
+  }
+  const otherRows = filteredRows.filter(row => sectionGroupKeyFor(row.sectionName) === null)
+  if (otherRows.length > 0) {
+    groups.push({ key: OTHER_GROUP_KEY, label: OTHER_GROUP_LABEL, rows: otherRows })
+  }
+  return groups
+}
+
+/** All-checked -> collapsed by default; ANY must-fix/unchecked/changed/
+ * review-recommended row in the group -> open by default (a problem group
+ * should never start hidden). */
+function defaultCollapsedFor(group: ClaimGroup): boolean {
+  return group.rows.every(row => chipStateForRow(row) === 'checked')
 }
 
 /** DERIVED-STATE-CONTRACT §9-style comparison card for "Ask agent for
@@ -188,6 +268,11 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [evidence, setEvidence] = useState<EvidencePreviewResult | null>(null)
+  // quick 260722-n5r — per-group collapse state. Undefined for a key means
+  // "use the computed default" (all-checked -> collapsed); once the
+  // operator toggles a group, the override wins regardless of the computed
+  // default on subsequent renders.
+  const [collapseOverrides, setCollapseOverrides] = useState<Record<string, boolean>>({})
 
   const selectedRow = rows?.find(r => r.claimIndex === selectedClaimIndex) ?? null
 
@@ -369,6 +454,28 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
 
   const summary = rows ? deriveFactCheckSummary(rows) : null
   const filteredRows = rows ? applyFilters(rows, activeFilters) : []
+  // quick 260722-n5r — grouped-by-section claim list (reading order, "Other"
+  // trailing). Purely a render reorganization of the same `filteredRows`.
+  const claimGroups = buildClaimGroups(filteredRows)
+
+  function isGroupCollapsed(group: ClaimGroup): boolean {
+    return collapseOverrides[group.key] ?? defaultCollapsedFor(group)
+  }
+
+  function toggleGroup(group: ClaimGroup) {
+    setCollapseOverrides(prev => ({ ...prev, [group.key]: !isGroupCollapsed(group) }))
+  }
+
+  function groupCounts(group: ClaimGroup): { mustFix: number; unchecked: number } {
+    let mustFix = 0
+    let unchecked = 0
+    for (const row of group.rows) {
+      const chip = chipStateForRow(row)
+      if (chip === 'must-fix') mustFix += 1
+      if (chip === 'unchecked') unchecked += 1
+    }
+    return { mustFix, unchecked }
+  }
 
   return (
     <div className="flex min-h-[60vh] flex-col gap-4 p-6">
@@ -441,71 +548,102 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
             })}
           </div>
 
-          <section aria-label="Claims" className="flex flex-col gap-1.5">
+          <section aria-label="Claims" className="flex flex-col gap-3">
             {filteredRows.length === 0 ? (
               <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
                 No claims match the active filters.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
-                {filteredRows.map(row => {
-                  const chip = deriveClaimChipState({
-                    text: row.text,
-                    status: row.status,
-                    importance: row.importance,
-                    sourceUrl: row.sourceUrl,
-                    changedSinceCheck: row.changedSinceCheck,
-                  })
-                  const selected = row.claimIndex === selectedClaimIndex
-                  return (
-                    <li key={row.claimIndex}>
-                      <button
-                        type="button"
-                        aria-pressed={selected}
-                        data-testid={`fact-check-row-${row.claimIndex}`}
-                        onClick={() => selectClaim(row.claimIndex)}
-                        className={`w-full border p-2 text-left ${
-                          selected
-                            ? 'border-[color:var(--color-cobalt)] bg-[color:var(--color-card-alt)]'
-                            : 'border-[color:var(--color-faint)] bg-white'
-                        }`}
-                      >
-                        <p className="text-[13px] leading-snug text-[color:var(--color-ink)]">
-                          {row.text}
-                        </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className={MICRO_LABEL}>
-                            <span aria-hidden="true">
-                              {chip === 'checked'
-                                ? '✓'
-                                : chip === 'must-fix'
-                                  ? '✕'
-                                  : chip === 'changed'
-                                    ? '⟳'
-                                    : chip === 'review-recommended'
-                                      ? '△'
-                                      : '○'}
-                            </span>{' '}
-                            {chip === 'checked'
-                              ? 'Checked'
-                              : chip === 'must-fix'
-                                ? 'Must fix'
-                                : chip === 'changed'
-                                  ? 'Changed'
-                                  : chip === 'review-recommended'
-                                    ? 'Review recommended'
-                                    : 'Unchecked'}
-                          </span>
-                          <span className={MICRO_LABEL}>{row.importance ?? 'Supporting'}</span>
-                          <span className={MICRO_LABEL}>
-                            {row.sourceUrl ? 'Sourced' : 'Unsourced'}
-                          </span>
-                        </div>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+              claimGroups.map(group => {
+                const collapsed = isGroupCollapsed(group)
+                const { mustFix, unchecked } = groupCounts(group)
+                return (
+                  <div key={group.key} className="flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group)}
+                      aria-expanded={!collapsed}
+                      className="flex min-h-[44px] w-full items-center justify-between gap-2 border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-3 py-2 text-left"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="text-[11px] text-[color:var(--color-ink-soft)]"
+                        >
+                          {collapsed ? '▸' : '▾'}
+                        </span>
+                        <span className={MICRO_LABEL}>{group.label}</span>
+                      </span>
+                      <span className="text-[12px] text-[color:var(--color-ink-soft)]">
+                        {group.rows.length} claims · {mustFix} must fix · {unchecked} unchecked
+                      </span>
+                    </button>
+                    {!collapsed && (
+                      <ul className="flex flex-col gap-1.5">
+                        {group.rows.map(row => {
+                          const chip = deriveClaimChipState({
+                            text: row.text,
+                            status: row.status,
+                            importance: row.importance,
+                            sourceUrl: row.sourceUrl,
+                            changedSinceCheck: row.changedSinceCheck,
+                          })
+                          const selected = row.claimIndex === selectedClaimIndex
+                          return (
+                            <li key={row.claimIndex}>
+                              <button
+                                type="button"
+                                aria-pressed={selected}
+                                data-testid={`fact-check-row-${row.claimIndex}`}
+                                onClick={() => selectClaim(row.claimIndex)}
+                                className={`w-full border p-2 text-left ${
+                                  selected
+                                    ? 'border-[color:var(--color-cobalt)] bg-[color:var(--color-card-alt)]'
+                                    : 'border-[color:var(--color-faint)] bg-white'
+                                }`}
+                              >
+                                <p className="text-[13px] leading-snug text-[color:var(--color-ink)]">
+                                  {row.text}
+                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                  <span className={MICRO_LABEL}>
+                                    <span aria-hidden="true">
+                                      {chip === 'checked'
+                                        ? '✓'
+                                        : chip === 'must-fix'
+                                          ? '✕'
+                                          : chip === 'changed'
+                                            ? '⟳'
+                                            : chip === 'review-recommended'
+                                              ? '△'
+                                              : '○'}
+                                    </span>{' '}
+                                    {chip === 'checked'
+                                      ? 'Checked'
+                                      : chip === 'must-fix'
+                                        ? 'Must fix'
+                                        : chip === 'changed'
+                                          ? 'Changed'
+                                          : chip === 'review-recommended'
+                                            ? 'Review recommended'
+                                            : 'Unchecked'}
+                                  </span>
+                                  <span className={MICRO_LABEL}>
+                                    {row.importance ?? 'Supporting'}
+                                  </span>
+                                  <span className={MICRO_LABEL}>
+                                    {row.sourceUrl ? 'Sourced' : 'Unsourced'}
+                                  </span>
+                                </div>
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )
+              })
             )}
           </section>
         </>
