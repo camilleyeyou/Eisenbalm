@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260722-f2c (rename obscure Gate-1 operator-facing labels in dispatch-control)
-last_updated: "2026-07-22T18:00:23.000Z"
+stopped_at: Completed quick 260722-n5r (redesign issue workspace stage pages layout — sticky frame, container-query galley, de-duplicated Draft nav, grouped Fact Check claims)
+last_updated: "2026-07-23T00:00:30.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
