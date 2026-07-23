@@ -130,3 +130,24 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 All 7 modified/created source files and the SUMMARY.md confirmed present on disk; all 3 task commits (`30938fd`, `53a91a2`, `9d50a80`) confirmed present in `git log`.
+
+## Orchestrator follow-up (47bf012)
+
+Post-execution review against the dashboard shell revealed the workspace's real
+scroll container is `(dashboard)/layout.tsx`'s `<main class="overflow-y-auto p-6">`
+(inside an `h-screen` shell with a 52px Masthead), not the window. Three
+adjustments, all in `issues/[issueNumber]/layout.tsx` + `globals.css`:
+
+1. Rails `max-h-[calc(100vh-88px)]` → `calc(100vh-140px)` — the old calc ignored
+   the 52px Masthead, leaving the rails' bottom ~36px pinned off-screen and
+   unreachable (they're sticky; their internal scrollbar can't reveal clipped box).
+2. Frame root `min-h-screen px-6 py-8 lg:px-8` → `min-h-full py-2` — `min-h-screen`
+   inside the shorter scrollport forced ~52px of overscroll on every stage page,
+   and the px doubled `<main>`'s p-6 into 48px gutters per side. (Applied to the
+   invalid-issue branch too.)
+3. `[id^='galley-'] { scroll-margin-top: 88px }` — outline/chip jump-nav
+   scrollIntoView targets now land below the sticky stage-tab bar instead of
+   underneath it.
+
+Gates re-run after the follow-up: `pnpm --filter dispatch-control build` clean,
+full suite 1085 passed (136 files).
