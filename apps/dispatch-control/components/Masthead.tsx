@@ -267,7 +267,7 @@ export default function Masthead() {
       <ScrollHintRow
         wrapperClassName="min-w-0 flex-1"
         fadeColor="var(--color-ink)"
-        chevronClassName="text-[color:var(--color-masthead-muted)]"
+        chevronClassName="text-[color:var(--color-masthead-text)]"
         className="flex items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
       >
         {/* Issue number — contextual identifier, not one of the four ISS-05 readouts */}

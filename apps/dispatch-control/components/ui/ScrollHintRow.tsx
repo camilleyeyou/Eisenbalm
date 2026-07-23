@@ -46,7 +46,7 @@ export default function ScrollHintRow({
   className,
   wrapperClassName,
   fadeColor = 'var(--color-rail)',
-  chevronClassName = 'text-[color:var(--color-ink-soft)]',
+  chevronClassName = 'text-[color:var(--color-ink)]',
 }: ScrollHintRowProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [hints, setHints] = useState({ left: false, right: false })
@@ -82,19 +82,19 @@ export default function ScrollHintRow({
       {hints.left && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 flex w-8 items-center justify-start"
-          style={{ background: `linear-gradient(to right, ${fadeColor} 25%, transparent)` }}
+          className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-start"
+          style={{ background: `linear-gradient(to right, ${fadeColor} 45%, transparent)` }}
         >
-          <ChevronLeft size={14} className={cn('shrink-0', chevronClassName)} />
+          <ChevronLeft size={19} strokeWidth={2.75} className={cn('shrink-0', chevronClassName)} />
         </span>
       )}
       {hints.right && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 flex w-8 items-center justify-end"
-          style={{ background: `linear-gradient(to left, ${fadeColor} 25%, transparent)` }}
+          className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end"
+          style={{ background: `linear-gradient(to left, ${fadeColor} 45%, transparent)` }}
         >
-          <ChevronRight size={14} className={cn('shrink-0', chevronClassName)} />
+          <ChevronRight size={19} strokeWidth={2.75} className={cn('shrink-0', chevronClassName)} />
         </span>
       )}
     </div>
