@@ -6,7 +6,10 @@
  *
  * - framer-motion stagger: containerVariants staggerChildren 0.26s
  * - messageVariants: opacity 0 y14 → opacity 1 y0 over 0.5s
- * - useInView(ref, { once:true, amount:0.2 }) for trigger
+ * - useInView(ref, { once:true, margin:'0px 0px -100px 0px' }) for trigger —
+ *   height-independent (fast 260723): the old amount:0.2 could never fire for
+ *   the ~5000px chat container on narrow viewports (20% of it exceeds the
+ *   viewport), leaving every message at opacity:0
  * - useReducedMotion(): when set, all messages are immediately visible
  *   (initial={false}, no per-message variants applied — DEL-04 opacity-0 trap avoided)
  * - role="log" + aria-live="polite" for screen readers (UI-SPEC §Accessibility line 721)
@@ -67,7 +70,7 @@ type Props = {
 export function DelibChat({ messages, onComplete }: Props) {
   const prefersReducedMotion = useReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true, amount: 0.2 })
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -100px 0px' })
   const onCompleteCalledRef = useRef(false)
 
   // Call onComplete after last message reveals
