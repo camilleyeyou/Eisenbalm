@@ -67,6 +67,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { rerollAgent, publishManual } from '@/lib/pipelineControlClient'
 import { restartAvailabilityFor } from '@/lib/nomenclature'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 export interface InspectorFooterProps {
   /** null => the agent is not externalized to prompt-lab (§44.9's 5-agent set). */
@@ -170,6 +171,7 @@ function FooterAction({
  */
 function RestartFooterAction({ runId, agentKey }: { runId: string; agentKey: string }) {
   const { getToken } = useAuth()
+  const confirm = useConfirm()
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [errorText, setErrorText] = useState<string | null>(null)
 
@@ -192,11 +194,14 @@ function RestartFooterAction({ runId, agentKey }: { runId: string; agentKey: str
   const isPublisher = agentKey === 'publisher'
 
   async function handleClick() {
-    const confirmed = window.confirm(
-      isPublisher
-        ? 'Restart Prepare publication? This re-renders and re-publishes from the already-written draft. Completed steps are reused, not re-paid.'
-        : 'Restart this step? This regenerates just this section; other completed sections are reused, not re-paid.',
-    )
+    const confirmed = await confirm({
+      title: isPublisher ? 'Restart Prepare publication?' : 'Restart this step?',
+      body: isPublisher
+        ? 'This re-renders and re-publishes from the already-written draft. Completed steps are reused, not re-paid.'
+        : 'This regenerates just this section; other completed sections are reused, not re-paid.',
+      confirmLabel: 'Restart',
+      tone: 'danger',
+    })
     if (!confirmed) return
 
     setState('loading')

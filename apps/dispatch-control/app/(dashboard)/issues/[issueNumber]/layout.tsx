@@ -53,7 +53,7 @@
  */
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { useParams, usePathname } from 'next/navigation'
+import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useMutation } from 'convex/react'
 import {
   AlertTriangle,
@@ -87,6 +87,8 @@ import StageHintStrip from '@/components/onboarding/StageHintStrip'
 import HelpTip from '@/components/ui/HelpTip'
 import ScrollHintRow from '@/components/ui/ScrollHintRow'
 import { HELP_COPY } from '@/components/help/helpCopy'
+import DocumentTitle from '@/components/ui/DocumentTitle'
+import { isTypingTarget } from '@/components/CommandPalette'
 
 type StageSegment = 'story' | 'draft' | 'fact-check' | 'voice' | 'approval'
 
@@ -206,9 +208,28 @@ function CostBudgetReadout({ runCostUsd, capUsd }: { runCostUsd: number | undefi
 
 function FrameChrome({ issueNumber: n, children }: { issueNumber: number; children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { status, stages, tasks, workMinutes, panelContent, runCostUsd, capUsd } =
     useWorkspaceState()
   const setLastVisitedStage = useMutation(api.issues.setLastVisitedStage)
+
+  // quick 260723-4a6 (Task 2d): bare digit 1-5 jumps between the 5 stage
+  // tabs — ONLY when no modifier is held and the operator isn't typing
+  // (isTypingTarget mirrors the CommandPalette's own typing-target guard, so
+  // the two keyboard listeners in this console never disagree).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (isTypingTarget(document.activeElement)) return
+      const index = Number(e.key) - 1
+      if (!Number.isInteger(index) || index < 0 || index >= STAGE_TABS.length) return
+      const tab = STAGE_TABS[index]
+      if (!tab) return
+      router.push(tab.hrefFor(n))
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [router, n])
 
   // Last-visited-stage writer (D-03/D-04) — best-effort, never blocks nav.
   useEffect(() => {
@@ -234,6 +255,13 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
   const lastPathSegment = pathSegments[pathSegments.length - 1]
   const currentStageSegment = isStageSegment(lastPathSegment) ? lastPathSegment : undefined
 
+  // quick 260723-4a6 (Task 1e): the per-stage browser-tab title — "Issue 12 ·
+  // Draft — Dispatch Control". Derived from the SAME STAGE_TABS labels the
+  // tab row above renders; the bare overview route (no stage segment) falls
+  // back to "Overview".
+  const currentStageLabel =
+    STAGE_TABS.find(tab => tab.segment === currentStageSegment)?.label ?? 'Overview'
+
   return (
     // quick 260722-n5r follow-up: the dashboard shell's <main> is the actual
     // scroll container (h-screen minus the 52px Masthead) AND already pads
@@ -241,6 +269,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
     // overscroll on every page) and drops its own horizontal padding
     // (px-6 on top of main's p-6 doubled the gutters to 48px per side).
     <div className="min-h-full bg-[color:var(--color-rail)] py-2">
+      <DocumentTitle title={`Issue ${n} · ${currentStageLabel}`} />
       <div className="mx-auto flex max-w-[1600px] flex-col gap-6">
         <Link
           href="/issues"
@@ -303,8 +332,17 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
               >
                 <StageTabIcon state={stageResult.state} />
                 <span className="flex flex-col leading-tight">
-                  <span className="font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]">
-                    {tab.label}
+                  <span className="flex items-center gap-1 font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]">
+                    {/* quick 260723-4a6 (Task 2d): faint digit hint for the
+                        1-5 keyboard shortcut — hidden below lg (mirrors the
+                        tab row's own lg breakpoint for the wrap/scroll switch).
+                        The label stays in its OWN span (not fused with the
+                        digit) so exact-text queries against the plain label
+                        (e.g. "Story") keep matching. */}
+                    <span className="hidden lg:inline text-[color:var(--color-faint)]">
+                      {i + 1}
+                    </span>
+                    <span>{tab.label}</span>
                   </span>
                   <span className="font-[family-name:var(--font-ui)] text-[13px]">
                     {stateLabel}

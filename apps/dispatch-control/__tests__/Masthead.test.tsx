@@ -62,6 +62,20 @@ vi.mock('@clerk/nextjs', () => ({
 
 import { useQuery } from 'convex/react'
 import Masthead, { MyTasksTrigger } from '../components/Masthead'
+import { CommandPaletteProvider } from '../components/CommandPalette'
+
+// quick 260723-4a6 (Task 2): Masthead now calls useCommandPalette() (the ⌘K
+// chip) unconditionally, so every render needs a CommandPaletteProvider
+// ancestor. The palette overlay itself only mounts (and only then issues its
+// own useQuery calls) once opened — never in these tests — so no additional
+// query mocking is needed here.
+function renderMasthead() {
+  return render(
+    <CommandPaletteProvider>
+      <Masthead />
+    </CommandPaletteProvider>,
+  )
+}
 
 interface MastheadMocks {
   latest?: unknown
@@ -125,7 +139,7 @@ describe('Masthead', () => {
       configRows: [{ key: 'monthly_cap_usd', value: '200' }],
     })
 
-    render(<Masthead />)
+    renderMasthead()
 
     // Issue status readout — derived from deriveIssueStatus (published: true)
     const issueStatus = screen.getByText('Published')
@@ -140,7 +154,7 @@ describe('Masthead', () => {
     expect(screen.getByText(/My Tasks · \d+/)).toBeDefined()
 
     // Cost vs budget readout
-    const { container } = render(<Masthead />)
+    const { container } = renderMasthead()
     expect(container.textContent).toContain('$12.40 / $200')
   })
 
@@ -154,7 +168,7 @@ describe('Masthead', () => {
       configRows: [{ key: 'monthly_cap_usd', value: '200' }],
     })
 
-    render(<Masthead />)
+    renderMasthead()
 
     const issueStatusLabel = screen.getByText('Needs review')
     expect(issueStatusLabel.parentElement?.querySelector('svg')).not.toBeNull()
@@ -172,7 +186,7 @@ describe('Masthead', () => {
       pipelineRun: { issueNumber: 42 },
     })
 
-    const { container } = render(<Masthead />)
+    const { container } = renderMasthead()
     const spinners = container.querySelectorAll('.animate-spin')
     expect(spinners.length).toBe(1)
   })
@@ -185,7 +199,7 @@ describe('Masthead', () => {
       configRows: [{ key: 'monthly_cap_usd', value: '200' }],
     })
 
-    const { container } = render(<Masthead />)
+    const { container } = renderMasthead()
     expect(container.textContent).toContain('$12.40 / $200')
   })
 
@@ -196,7 +210,7 @@ describe('Masthead', () => {
       configRows: [{ key: 'auto_publish', value: 'false' }],
     })
 
-    render(<Masthead />)
+    renderMasthead()
     expect(screen.getByText('Human approval required')).toBeDefined()
   })
 
@@ -207,7 +221,7 @@ describe('Masthead', () => {
       configRows: [{ key: 'auto_publish', value: 'true' }],
     })
 
-    render(<Masthead />)
+    renderMasthead()
     // The ON case never reads as a switch flipped here ("Auto-publish
     // ON/OFF") — it names where the setting lives (D-16).
     expect(screen.queryByText(/Auto-publish ON/)).toBeNull()
@@ -223,21 +237,21 @@ describe('Masthead', () => {
       pipelineRun: { issueNumber: 42 },
     })
 
-    render(<Masthead />)
+    renderMasthead()
     expect(screen.getByText('Issue 42')).toBeDefined()
   })
 
   it('renders a graceful "Issue —" dash when there is no resolvable issue number', () => {
     mockMasthead({})
 
-    render(<Masthead />)
+    renderMasthead()
     expect(screen.getByText('Issue —')).toBeDefined()
   })
 
   it('renders the wordmark "DISPATCH" + vermilion "/" + "CONTROL"', () => {
     mockMasthead({})
 
-    const { container } = render(<Masthead />)
+    const { container } = renderMasthead()
     expect(container.textContent).toContain('DISPATCH')
     expect(container.textContent).toContain('CONTROL')
     const slash = screen.getByText('/')
@@ -247,7 +261,7 @@ describe('Masthead', () => {
   it('renders the My Tasks trigger and the sign-out UserButton', () => {
     mockMasthead({})
 
-    render(<Masthead />)
+    renderMasthead()
     expect(screen.getByRole('button', { name: /my tasks/i })).toBeDefined()
     expect(screen.getByTestId('user-button')).toBeDefined()
   })
@@ -263,7 +277,7 @@ describe('Masthead', () => {
       // stale "Ready to publish" can never render.
     })
 
-    render(<Masthead />)
+    renderMasthead()
     expect(screen.getByText('State unknown — refresh')).toBeDefined()
     expect(screen.queryByText('Ready to publish')).toBeNull()
   })
@@ -271,7 +285,7 @@ describe('Masthead', () => {
   it('the My Tasks readout still opens the existing AwaitingYouInbox dropdown (D-25 — no capability lost)', () => {
     mockMasthead({})
 
-    render(<Masthead />)
+    renderMasthead()
     const trigger = screen.getByRole('button', { name: /my tasks/i })
     fireEvent.click(trigger)
     expect(screen.getByRole('dialog', { name: /awaiting you/i })).toBeDefined()

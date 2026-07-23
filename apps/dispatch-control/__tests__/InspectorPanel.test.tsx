@@ -32,16 +32,27 @@ vi.mock('@/lib/pipelineControlClient', () => ({
   })),
 }))
 
+import type { ReactElement } from 'react'
 import {
   InspectorPanel,
   type InspectorArtifact,
   type InspectorPanelProps,
 } from '../components/inspector/InspectorPanel'
 import type { MissingInputsResult } from '../lib/inspector/missingInputsDiff'
+import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 
 afterEach(() => {
   cleanup()
 })
+
+// quick 260723-4a6 (Task 2): every InspectorPanel render mounts
+// InspectorFooter, which now calls useConfirm() unconditionally (Rules of
+// Hooks) — every render here needs a ConfirmProvider ancestor, even though no
+// test in this file exercises the Restart action's click path (that's
+// covered end-to-end by __tests__/InspectorFooter.test.tsx).
+function renderPanel(ui: ReactElement) {
+  return render(<ConfirmProvider>{ui}</ConfirmProvider>)
+}
 
 // ── fixtures ─────────────────────────────────────────────────────────────
 
@@ -99,7 +110,7 @@ function makeProps(overrides: Partial<InspectorPanelProps> = {}): InspectorPanel
 
 describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   it('default active tab is Summary; Technical is never the default', () => {
-    render(<InspectorPanel {...makeProps()} />)
+    renderPanel(<InspectorPanel {...makeProps()} />)
 
     const summaryTab = screen.getByRole('button', { name: 'Summary' })
     const technicalTab = screen.getByRole('button', { name: 'Technical' })
@@ -113,7 +124,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   })
 
   it("every non-Technical tab leads with human-readable content; raw JSON sits behind a 'Show raw JSON' toggle", () => {
-    render(<InspectorPanel {...makeProps()} />)
+    renderPanel(<InspectorPanel {...makeProps()} />)
 
     // Summary (default) shows prose, never JSON.
     expect(screen.getByText(/Draft the founder bio section\./)).toBeDefined()
@@ -126,14 +137,14 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   })
 
   it("Instructions tab renders 'not externalized — code-defined' for origin_story/problem/founder_bio/case_study/qa", () => {
-    render(<InspectorPanel {...makeProps({ instructionsExternalized: false })} />)
+    renderPanel(<InspectorPanel {...makeProps({ instructionsExternalized: false })} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Instructions' }))
     expect(screen.getByText(/code-defined, not editable here/i)).toBeDefined()
   })
 
   it('Instructions tab renders the shared rules referenced (VOICE_CONSTRAINTS + STRUCTURE_CONTRACT) for a non-externalized narrative writer, and the rubric shared rule for qa — never a bare one-liner', () => {
-    const { unmount } = render(
+    const { unmount } = renderPanel(
       <InspectorPanel
         {...makeProps({
           agentKey: 'founder_bio',
@@ -152,7 +163,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
     expect(screen.getByText('STRUCTURE_CONTRACT')).toBeDefined()
     unmount()
 
-    render(
+    renderPanel(
       <InspectorPanel
         {...makeProps({
           agentKey: 'qa',
@@ -169,7 +180,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   })
 
   it('Instructions tab renders REAL active-version content + version number when instructionsExternalized === true (externalized agent), never a blank tab', () => {
-    render(
+    renderPanel(
       <InspectorPanel
         {...makeProps({
           agentKey: 'scout',
@@ -188,7 +199,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   })
 
   it("Diagnostics 'model' renders 'not recorded' with a label+icon, never blank", () => {
-    render(<InspectorPanel {...makeProps()} />)
+    renderPanel(<InspectorPanel {...makeProps()} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Diagnostics' }))
     expect(screen.getByText(/not recorded/i)).toBeDefined()
@@ -202,7 +213,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   // these two assertions prove InspectorPanel's integration wiring didn't
   // regress either direction.
   it("footer 'Restart from this step' is disabled with an explanatory title for a non-primitive artifact type (qa)", () => {
-    render(<InspectorPanel {...makeProps({ agentKey: 'qa' })} />)
+    renderPanel(<InspectorPanel {...makeProps({ agentKey: 'qa' })} />)
 
     const button = screen.getByRole('button', { name: /Restart from this step/i })
     expect(button.hasAttribute('disabled')).toBe(true)
@@ -210,14 +221,14 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   })
 
   it("footer 'Restart from this step' is enabled for a section-writer artifact type (founder_bio, the default agentKey)", () => {
-    render(<InspectorPanel {...makeProps()} />)
+    renderPanel(<InspectorPanel {...makeProps()} />)
 
     const button = screen.getByRole('button', { name: /Restart from this step/i })
     expect(button.hasAttribute('disabled')).toBe(false)
   })
 
   it("footer 'Ask agent to revise' is reserved when no revisable passage is derivable (no sectionBlocks/sectionName/onRequestRevision, Phase 45 D-18)", () => {
-    render(<InspectorPanel {...makeProps()} />)
+    renderPanel(<InspectorPanel {...makeProps()} />)
 
     const button = screen.getByRole('button', { name: /Ask agent to revise/i })
     expect(button.hasAttribute('disabled')).toBe(true)
@@ -226,7 +237,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
 
   it("footer 'Ask agent to revise' goes LIVE and calls onRequestRevision with a REAL, non-empty quotedText when sectionBlocks/sectionName/onRequestRevision are all derivable (Phase 45, D-18 — never a dead button)", () => {
     const onRequestRevision = vi.fn()
-    render(
+    renderPanel(
       <InspectorPanel
         {...makeProps({
           sectionBlocks: [{ text: 'A former county clerk built this organization from nothing.' }],
@@ -249,7 +260,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
 
   it("footer 'Ask agent to revise' stays reserved when sectionBlocks derive an empty excerpt, even with sectionName + onRequestRevision provided (never seeds quotedText: '')", () => {
     const onRequestRevision = vi.fn()
-    render(
+    renderPanel(
       <InspectorPanel
         {...makeProps({
           sectionBlocks: [{ text: '' }],
@@ -266,7 +277,7 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
   })
 
   it('live footer actions deep-link using the promptKey namespace (editor_gate1, not editor_gate_1)', () => {
-    render(
+    renderPanel(
       <InspectorPanel
         {...makeProps({
           agentKey: 'editor_gate_1',

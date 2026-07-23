@@ -61,16 +61,24 @@ import { useMutation, useQuery } from 'convex/react'
 import { InspectorFooter } from '../components/inspector/InspectorFooter'
 import { PromptSaveDialog } from '../app/(dashboard)/prompt-lab/_components/PromptSaveDialog'
 import { OriginBanner } from '../app/(dashboard)/prompt-lab/_components/AgentPromptEditorView'
+import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 
 afterEach(() => {
   cleanup()
 })
 
+// quick 260723-4a6 (Task 2): InspectorFooter's "Restart from this step" now
+// calls useConfirm() unconditionally — every render needs a ConfirmProvider
+// ancestor, even though no test in this file exercises that click path.
+function renderWithConfirm(element: React.ReactElement) {
+  return render(React.createElement(ConfirmProvider, null, element))
+}
+
 // ── 1. InspectorFooter — "Improve this agent →" carries the origin ─────────
 
 describe('InspectorFooter — "Improve this agent" carries origin (WBN-04, D-13)', () => {
   it('includes fromRun, section, and excerpt params when sectionName + excerpt are supplied', () => {
-    render(
+    renderWithConfirm(
       React.createElement(InspectorFooter, {
         promptKey: 'scout',
         agentKey: 'scout',
@@ -90,7 +98,7 @@ describe('InspectorFooter — "Improve this agent" carries origin (WBN-04, D-13)
   })
 
   it('falls back to the plain promptHref when sectionName/excerpt are absent', () => {
-    render(
+    renderWithConfirm(
       React.createElement(InspectorFooter, {
         promptKey: 'scout',
         agentKey: 'scout',
@@ -105,7 +113,7 @@ describe('InspectorFooter — "Improve this agent" carries origin (WBN-04, D-13)
   })
 
   it('does not carry origin params on "Compare instruction versions"', () => {
-    render(
+    renderWithConfirm(
       React.createElement(InspectorFooter, {
         promptKey: 'scout',
         agentKey: 'scout',

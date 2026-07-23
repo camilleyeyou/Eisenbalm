@@ -246,7 +246,17 @@ describe('CancelRunButton', () => {
 
 // ── RerollButton ──────────────────────────────────────────────────────────────
 
+import type { ReactElement } from 'react'
 import RerollButton from '../app/(dashboard)/run-monitor/runs/_components/RerollButton'
+import { ConfirmProvider } from '../components/ui/ConfirmDialog'
+
+// quick 260723-4a6 (Task 2): RerollButton's confirm step now calls
+// useConfirm() unconditionally (Rules of Hooks) — every render needs a
+// ConfirmProvider ancestor, even for the non-section-writer agentKeys that
+// return null.
+function renderReroll(ui: ReactElement) {
+  return render(<ConfirmProvider>{ui}</ConfirmProvider>)
+}
 
 describe('RerollButton', () => {
   beforeEach(() => {
@@ -257,28 +267,28 @@ describe('RerollButton', () => {
   })
 
   it('renders Re-roll link for a section-writer on a completed run', () => {
-    const { container } = render(
+    const { container } = renderReroll(
       <RerollButton runId="run-001" agentKey="origin_story" runStatus="done" />,
     )
     expect(container.textContent).toContain('Re-roll')
   })
 
   it('renders null for a non-section agent (scout) on a completed run', () => {
-    const { container } = render(
+    const { container } = renderReroll(
       <RerollButton runId="run-001" agentKey="scout" runStatus="done" />,
     )
     expect(container.firstChild).toBeNull()
   })
 
   it('renders null for a non-section agent (qa) on a completed run', () => {
-    const { container } = render(
+    const { container } = renderReroll(
       <RerollButton runId="run-001" agentKey="qa" runStatus="done" />,
     )
     expect(container.firstChild).toBeNull()
   })
 
   it('renders null for advocate on a completed run', () => {
-    const { container } = render(
+    const { container } = renderReroll(
       <RerollButton runId="run-001" agentKey="advocate" runStatus="done" />,
     )
     expect(container.firstChild).toBeNull()
@@ -295,7 +305,7 @@ describe('RerollButton', () => {
       'design',
     ]
     for (const key of sectionWriters) {
-      const { container } = render(
+      const { container } = renderReroll(
         <RerollButton runId="run-001" agentKey={key} runStatus="done" />,
       )
       expect(container.textContent).toContain('Re-roll')
@@ -303,7 +313,7 @@ describe('RerollButton', () => {
   })
 
   it('disables Re-roll with D-04 tooltip when run is still running', () => {
-    render(
+    renderReroll(
       <RerollButton runId="run-001" agentKey="origin_story" runStatus="running" />,
     )
     const btn = screen.getByRole('button', { name: /re-roll/i })

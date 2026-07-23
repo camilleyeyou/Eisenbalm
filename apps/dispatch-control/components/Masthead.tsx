@@ -72,6 +72,7 @@ import {
 } from '@/lib/derivedState'
 import AwaitingYouInbox from './AwaitingYouInbox'
 import ScrollHintRow from './ui/ScrollHintRow'
+import { useCommandPalette } from './CommandPalette'
 
 type ConfigRow = { key: string; value: string }
 
@@ -204,6 +205,7 @@ export function MyTasksTrigger({
 
 export default function Masthead() {
   const [inboxOpen, setInboxOpen] = useState(false)
+  const { open: openCommandPalette } = useCommandPalette()
   const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
   const pipelineRun = useQuery(
     api.pipelineRuns.byRunId,
@@ -321,6 +323,17 @@ export default function Masthead() {
           </span>
         )}
       </ScrollHintRow>
+
+      {/* quick 260723-4a6 (Task 2c): the discoverable ⌘K chip — opens the
+          SAME palette the global keydown listener does. hidden md:flex:
+          mobile uses the drawer, not the masthead strip. */}
+      <button
+        type="button"
+        onClick={() => openCommandPalette()}
+        className="hidden min-h-[44px] shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-masthead-muted)] hover:text-[color:var(--color-masthead-text)] md:flex"
+      >
+        ⌘K
+      </button>
 
       {/* Readout 3: My Tasks (D-21/D-25) + the existing inbox dropdown —
           `relative` anchors the inbox's `absolute top-[52px]` positioning

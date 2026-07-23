@@ -14,6 +14,7 @@
  *
  * Runs in jsdom (vitest.config.ts: __tests__/*.test.tsx -> jsdom).
  */
+import type { ReactElement } from 'react'
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
@@ -39,6 +40,7 @@ vi.mock('@/lib/pipelineControlClient', () => ({
 }))
 
 import { InspectorFooter } from '../components/inspector/InspectorFooter'
+import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 
 afterEach(() => {
   cleanup()
@@ -46,10 +48,16 @@ afterEach(() => {
   publishManualMock.mockClear()
 })
 
+// quick 260723-4a6 (Task 2): InspectorFooter's "Restart from this step" now
+// calls useConfirm() unconditionally — every render needs a ConfirmProvider
+// ancestor.
+function renderFooter(ui: ReactElement) {
+  return render(<ConfirmProvider>{ui}</ConfirmProvider>)
+}
+
 describe('InspectorFooter (WBN-03) — "Restart from this step" honesty matrix', () => {
   it('is LIVE for a section-writer artifact (origin_story) — enabled, reuse claim shown, and invokes rerollAgent', async () => {
-    window.confirm = vi.fn(() => true)
-    render(
+    renderFooter(
       <InspectorFooter promptKey={null} agentKey="origin_story" runId="run-1" />,
     )
 
@@ -57,6 +65,7 @@ describe('InspectorFooter (WBN-03) — "Restart from this step" honesty matrix',
     expect((btn as HTMLButtonElement).disabled).toBe(false)
 
     fireEvent.click(btn)
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }))
     await Promise.resolve()
     await Promise.resolve()
 
@@ -64,13 +73,13 @@ describe('InspectorFooter (WBN-03) — "Restart from this step" honesty matrix',
   })
 
   it('is LIVE for the publisher artifact — enabled, and invokes publishManual', async () => {
-    window.confirm = vi.fn(() => true)
-    render(<InspectorFooter promptKey={null} agentKey="publisher" runId="run-1" />)
+    renderFooter(<InspectorFooter promptKey={null} agentKey="publisher" runId="run-1" />)
 
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(false)
 
     fireEvent.click(btn)
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }))
     await Promise.resolve()
     await Promise.resolve()
 
@@ -78,7 +87,7 @@ describe('InspectorFooter (WBN-03) — "Restart from this step" honesty matrix',
   })
 
   it('is RESERVED-with-title for a qa artifact — disabled, honest title, no reuse claim anywhere', () => {
-    render(<InspectorFooter promptKey={null} agentKey="qa" runId="run-1" />)
+    renderFooter(<InspectorFooter promptKey={null} agentKey="qa" runId="run-1" />)
 
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
@@ -88,7 +97,7 @@ describe('InspectorFooter (WBN-03) — "Restart from this step" honesty matrix',
   })
 
   it('is RESERVED for editor_gate_1 from this footer (no paused-at-Gate-1 signal available here)', () => {
-    render(<InspectorFooter promptKey={null} agentKey="editor_gate_1" runId="run-1" />)
+    renderFooter(<InspectorFooter promptKey={null} agentKey="editor_gate_1" runId="run-1" />)
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
@@ -96,7 +105,7 @@ describe('InspectorFooter (WBN-03) — "Restart from this step" honesty matrix',
 
 describe('InspectorFooter (WBN-04, D-13 regression) — "Improve this agent →" origin params', () => {
   it('still carries fromRun/section/excerpt when promptKey + sectionName + excerpt are all present', () => {
-    render(
+    renderFooter(
       <InspectorFooter
         promptKey="game"
         agentKey="game"
@@ -114,7 +123,7 @@ describe('InspectorFooter (WBN-04, D-13 regression) — "Improve this agent →"
   })
 
   it('degrades to the plain promptHref when sectionName/excerpt are absent', () => {
-    render(<InspectorFooter promptKey="game" agentKey="game" runId="run-1" />)
+    renderFooter(<InspectorFooter promptKey="game" agentKey="game" runId="run-1" />)
     const link = screen.getByRole('link', { name: 'Improve this agent →' })
     expect(link.getAttribute('href')).toBe('/prompt-lab/game')
   })

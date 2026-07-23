@@ -117,6 +117,8 @@ import { issueFactCheckHref } from '@/lib/issueRouteResolver'
 import { RevisionFlow } from '@/components/revision/RevisionFlow'
 import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
 import type { PassageSelection } from '@/components/galley/PassageToolbar'
+import { SkeletonLine } from '@/components/ui/Skeleton'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 interface ReviewDeskRunViewProps {
   params: Promise<{ runId: string }>
@@ -215,6 +217,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
   const { getToken } = useAuth()
   const router = useRouter()
   const { openInspector, revisePassage, requestRevision, clearRevisePassage } = useInspector()
+  const confirm = useConfirm()
 
   // Phase 45 (REV-01, D-16) — "Related facts & sources" selection; local to
   // this surface (unlike revisePassage) since only ONE entry point (the
@@ -262,30 +265,29 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
   } | null>(null)
 
   /** Switches view mode, guarding an unsaved edit-mode section (D-07). */
-  function switchViewMode(next: ViewMode) {
-    if (
-      viewMode === 'edit' &&
-      next !== 'edit' &&
-      dirty[selectedSection] &&
-      !window.confirm(
-        'You have unsaved changes in this section. Leave the editor anyway? Unsaved edits will be lost.',
-      )
-    ) {
-      return
+  async function switchViewMode(next: ViewMode) {
+    if (viewMode === 'edit' && next !== 'edit' && dirty[selectedSection]) {
+      const confirmed = await confirm({
+        title: 'Unsaved changes',
+        body: 'You have unsaved changes in this section. Leave the editor anyway? Unsaved edits will be lost.',
+        confirmLabel: 'Leave anyway',
+        tone: 'danger',
+      })
+      if (!confirmed) return
     }
     if (next !== 'edit') setEditFinding(null)
     setViewMode(next)
   }
 
-  function handleChipSelect(id: string) {
-    if (
-      viewMode === 'edit' &&
-      dirty[selectedSection] &&
-      !window.confirm(
-        'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
-      )
-    ) {
-      return
+  async function handleChipSelect(id: string) {
+    if (viewMode === 'edit' && dirty[selectedSection]) {
+      const confirmed = await confirm({
+        title: 'Unsaved changes',
+        body: 'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
+        confirmLabel: 'Leave anyway',
+        tone: 'danger',
+      })
+      if (!confirmed) return
     }
     setEditFinding(null)
     setSelectedSection(id)
@@ -303,15 +305,15 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
    * the finding stored so its reason stays visible. Guards unsaved edits the
    * same way handleChipSelect does.
    */
-  function handleEditSection(sectionId: string, findingId?: string) {
-    if (
-      viewMode === 'edit' &&
-      dirty[selectedSection] &&
-      !window.confirm(
-        'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
-      )
-    ) {
-      return
+  async function handleEditSection(sectionId: string, findingId?: string) {
+    if (viewMode === 'edit' && dirty[selectedSection]) {
+      const confirmed = await confirm({
+        title: 'Unsaved changes',
+        body: 'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
+        confirmLabel: 'Leave anyway',
+        tone: 'danger',
+      })
+      if (!confirmed) return
     }
     setSelectedSection(sectionId)
     setEditFinding({ sectionId, findingId })
@@ -494,7 +496,13 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
   return (
     <div className="flex flex-1 flex-col gap-4">
       {loading && (
-        <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
+        <div className="flex flex-col gap-3" data-testid="galley-loading-skeleton">
+          <SkeletonLine className="h-6 w-40" />
+          <SkeletonLine className="h-4 w-full" />
+          <SkeletonLine className="h-4 w-5/6" />
+          <SkeletonLine className="h-4 w-3/4" />
+          <SkeletonLine className="h-4 w-2/3" />
+        </div>
       )}
       {error && (
         <p role="alert" className="text-sm text-[color:var(--color-vermilion)]">

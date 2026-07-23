@@ -35,6 +35,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { rerollAgent, publishManual } from '@/lib/pipelineControlClient'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { runKeyToPromptKey } from '@/lib/inspectorArtifact'
 import {
   runStepFor,
@@ -124,6 +125,7 @@ function RestartAction({
   isPausedAtGate1: boolean
 }) {
   const { getToken } = useAuth()
+  const confirm = useConfirm()
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [errorText, setErrorText] = useState<string | null>(null)
 
@@ -161,11 +163,14 @@ function RestartAction({
   const isPublisher = agentKey === 'publisher'
 
   async function handleRestart() {
-    const confirmed = window.confirm(
-      isPublisher
-        ? 'Restart Prepare publication? This re-renders and re-publishes from the already-written draft.'
-        : `Restart this step? This regenerates just this section; other completed sections are unchanged.`,
-    )
+    const confirmed = await confirm({
+      title: isPublisher ? 'Restart Prepare publication?' : 'Restart this step?',
+      body: isPublisher
+        ? 'This re-renders and re-publishes from the already-written draft.'
+        : 'This regenerates just this section; other completed sections are unchanged.',
+      confirmLabel: 'Restart',
+      tone: 'danger',
+    })
     if (!confirmed) return
 
     setStatus('loading')

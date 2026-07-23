@@ -37,6 +37,7 @@ import AssembledPreview from './AssembledPreview'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
 import { descriptionFor } from './promptDescriptions'
 import type { PromptOriginRef } from './promptOrigin'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 function DriftBadge() {
   return (
@@ -101,6 +102,7 @@ export default function AgentPromptEditorView({
 }: AgentPromptEditorViewProps) {
   const allowedVariables = VARIABLE_REGISTRY[agentKey] ?? []
   const { user } = useUser()
+  const confirm = useConfirm()
 
   const active = useQuery(api.promptVersions.getActive, {
     workspace_id: workspaceId,
@@ -149,12 +151,16 @@ export default function AgentPromptEditorView({
   // unsaved work on the previous prompt is being abandoned).
   useEffect(() => {
     if (prevAgentKeyRef.current !== agentKey && dirtyRef.current) {
-      window.confirm('You have unsaved changes. Leave the editor?')
+      // Fire-and-forget: the route has already navigated to the new key by
+      // the time this effect runs, so the reset below proceeds regardless of
+      // the operator's choice — this is a visible heads-up, not a gate.
+      void confirm({ title: 'Unsaved changes', body: 'You have unsaved changes. Leave the editor?' })
     }
     prevAgentKeyRef.current = agentKey
     setSeeded(false)
     setDraft('')
     setEditing(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentKey])
 
   useEffect(() => {
@@ -165,9 +171,15 @@ export default function AgentPromptEditorView({
   }, [active, seeded])
 
   // PRC-03: view-toggle guard — confirm before leaving the editor when dirty.
-  function requestStopEditing() {
-    if (dirty && !window.confirm('You have unsaved changes. Leave the editor?')) {
-      return
+  async function requestStopEditing() {
+    if (dirty) {
+      const confirmed = await confirm({
+        title: 'Unsaved changes',
+        body: 'You have unsaved changes. Leave the editor?',
+        confirmLabel: 'Leave anyway',
+        tone: 'danger',
+      })
+      if (!confirmed) return
     }
     setEditing(false)
   }

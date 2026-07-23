@@ -29,6 +29,13 @@
  * `/issues/[issueNumber]`). `<OnboardingTour>` renders once here, alongside
  * the rest of the shell, so it can overlay any dashboard route.
  *
+ * quick 260723-4a6 (Task 2): `<ConfirmProvider>` and `<CommandPaletteProvider>`
+ * are mounted here too, siblings INSIDE `<OnboardingProvider>`, wrapping the
+ * shell `<div>` — so both the Masthead (⌘K chip) and every route child (the
+ * confirm sites) share the same single dialog/palette instance. This layout
+ * stays a Server Component; both are 'use client' providers rendering
+ * server-rendered children, same pattern as every other provider here.
+ *
  * quick 260722-v01: mounts `<MobileNavDrawer />` (client) as the FIRST child,
  * before `<Masthead />` — the below-md hamburger + off-canvas nav (audit item
  * 1). This layout stays a Server Component; it may render this client child.
@@ -46,6 +53,8 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { InspectorProvider } from '@/components/inspector/InspectorProvider'
 import { OnboardingProvider } from '@/components/onboarding/OnboardingProvider'
 import OnboardingTour from '@/components/onboarding/OnboardingTour'
+import { ConfirmProvider } from '@/components/ui/ConfirmDialog'
+import { CommandPaletteProvider } from '@/components/CommandPalette'
 
 export default function DashboardLayout({
   children,
@@ -55,21 +64,25 @@ export default function DashboardLayout({
   return (
     <InspectorProvider>
       <OnboardingProvider>
-        <div className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-rail)]">
-          <MobileNavDrawer />
-          <Masthead />
-          <div className="flex flex-1 overflow-hidden">
-            <AppSidebar />
-            <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
-              {/* Persistent red banner when auto_publish is enabled — RVW-04 */}
-              <div className="mb-4 shrink-0 empty:mb-0">
-                <AutoPublishBanner workspace_id={DEFAULT_WORKSPACE_ID} />
+        <ConfirmProvider>
+          <CommandPaletteProvider>
+            <div className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-rail)]">
+              <MobileNavDrawer />
+              <Masthead />
+              <div className="flex flex-1 overflow-hidden">
+                <AppSidebar />
+                <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
+                  {/* Persistent red banner when auto_publish is enabled — RVW-04 */}
+                  <div className="mb-4 shrink-0 empty:mb-0">
+                    <AutoPublishBanner workspace_id={DEFAULT_WORKSPACE_ID} />
+                  </div>
+                  {children}
+                </main>
               </div>
-              {children}
-            </main>
-          </div>
-        </div>
-        <OnboardingTour />
+            </div>
+            <OnboardingTour />
+          </CommandPaletteProvider>
+        </ConfirmProvider>
       </OnboardingProvider>
     </InspectorProvider>
   )

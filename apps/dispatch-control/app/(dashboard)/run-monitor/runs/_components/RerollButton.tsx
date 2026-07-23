@@ -8,17 +8,19 @@
  * Disabled while run is in progress (D-04): shows grayed "Re-roll" with a
  * tooltip explaining availability.
  *
- * One-step confirmation via window.confirm() (accessible by default in all
- * browsers; no custom modal needed for this low-frequency operation).
- *
  * On success: shows "Re-rolled ✓" inline (green) for 3 seconds, then clears.
  *
  * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
  * `var(--color-*)` / bracket-pixel system — no structural change.
+ *
+ * quick 260723-4a6 (Task 2): the one-step confirmation now uses the 1c
+ * `useConfirm()` dialog (components/ui/ConfirmDialog.tsx) instead of
+ * `window.confirm()`.
  */
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { rerollAgent } from '@/lib/pipelineControlClient'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 /** The 7 section writers that can be re-rolled (D-03). */
 const SECTION_WRITERS = [
@@ -50,6 +52,7 @@ interface RerollButtonProps {
 
 export default function RerollButton({ runId, agentKey, runStatus }: RerollButtonProps) {
   const { getToken } = useAuth()
+  const confirm = useConfirm()
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -61,9 +64,12 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
   const sectionLabel = SECTION_LABELS[agentKey] ?? agentKey
 
   async function handleReroll() {
-    const confirmed = window.confirm(
-      `Re-roll ${sectionLabel}? This will regenerate just this section and rewrite the Sanity draft. All other sections are unchanged.`,
-    )
+    const confirmed = await confirm({
+      title: `Re-roll ${sectionLabel}?`,
+      body: 'This will regenerate just this section and rewrite the Sanity draft. All other sections are unchanged.',
+      confirmLabel: 'Re-roll',
+      tone: 'danger',
+    })
     if (!confirmed) return
 
     setLoading(true)

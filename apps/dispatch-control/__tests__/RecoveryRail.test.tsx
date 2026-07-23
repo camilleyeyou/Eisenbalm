@@ -15,6 +15,7 @@
  *
  * Runs in jsdom (vitest.config.ts: __tests__/*.test.tsx -> jsdom).
  */
+import type { ReactElement } from 'react'
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
@@ -41,12 +42,21 @@ vi.mock('@/lib/pipelineControlClient', () => ({
 
 import RecoveryRail from '../app/(dashboard)/run-monitor/runs/_components/RecoveryRail'
 import { restartAvailabilityFor } from '../lib/nomenclature'
+import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 
 afterEach(() => {
   cleanup()
   rerollAgentMock.mockClear()
   publishManualMock.mockClear()
 })
+
+// quick 260723-4a6 (Task 2): RecoveryRail's "Restart from this step" now
+// calls useConfirm() (the 1c ConfirmDialog) instead of window.confirm — every
+// render needs a ConfirmProvider ancestor. Clicking "Restart from this step"
+// now opens the dialog; the caller must click its Confirm button to proceed.
+function renderRail(ui: ReactElement) {
+  return render(<ConfirmProvider>{ui}</ConfirmProvider>)
+}
 
 type Row = { agentKey: string; status: string; error?: string }
 
@@ -60,7 +70,7 @@ function rows(failedKey: string, opts: { before?: string[]; error?: string } = {
 
 describe('RecoveryRail (WBN-03) — four §7 sections', () => {
   it('renders all four labeled sections, the failed step in "What happened", and its reason', () => {
-    render(
+    renderRail(
       <RecoveryRail
         runId="run-1"
         agentRuns={rows('advocate', {
@@ -86,13 +96,13 @@ describe('RecoveryRail (WBN-03) — four §7 sections', () => {
   })
 
   it('renders a fallback "What happened" when the run failed but no step is recorded as failed', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={[]} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={[]} />)
     expect(screen.getByText('What happened')).toBeTruthy()
     expect(screen.getByText(/no specific step is recorded as failed/i)).toBeTruthy()
   })
 
   it('quick 260719-w6o (F4): a genuinely paused run (no failed agent row) mounts a reachable /signal-desk recovery, not the generic failed fallback', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={[]} isPausedAtGate1 />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={[]} isPausedAtGate1 />)
     expect(screen.getByText('Paused for your decision')).toBeTruthy()
     const link = screen.getByRole('link', { name: 'Restart from this step' })
     expect(link.getAttribute('href')).toBe('/signal-desk')
@@ -100,14 +110,14 @@ describe('RecoveryRail (WBN-03) — four §7 sections', () => {
   })
 
   it('falls back to a generic reason when the failed row has no error text', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('scout')} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('scout')} />)
     expect(screen.getByText(/failed without a specific error message/i)).toBeTruthy()
   })
 })
 
 describe('RecoveryRail (WBN-03) — downstream steps dim + read "Skipped"', () => {
   it('lists every named step after the failed one, each labeled "Skipped"', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('advocate')} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('advocate')} />)
 
     // Downstream of "Make the case" (advocate): Choose recommended story,
     // Research the issue, Verify research, Draft sections, Check the draft,
@@ -127,7 +137,7 @@ describe('RecoveryRail (WBN-03) — downstream steps dim + read "Skipped"', () =
   })
 
   it('never renders a blank downstream section when this was the last step', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('publisher', { before: ['qa', 'editor_final'] })} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('publisher', { before: ['qa', 'editor_final'] })} />)
     expect(screen.getByText(/nothing downstream was skipped/i)).toBeTruthy()
   })
 })
@@ -167,14 +177,14 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
   })
 
   it('is LIVE and clickable for a failed section writer, and invokes rerollAgent', async () => {
-    window.confirm = vi.fn(() => true)
-    render(<RecoveryRail runId="run-1" agentRuns={rows('game')} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('game')} />)
 
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByText(/reused, not re-paid/i)).toBeTruthy()
 
     fireEvent.click(btn)
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }))
     await Promise.resolve()
     await Promise.resolve()
 
@@ -182,13 +192,13 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
   })
 
   it('is LIVE for a failed publisher step, and invokes publishManual', async () => {
-    window.confirm = vi.fn(() => true)
-    render(<RecoveryRail runId="run-1" agentRuns={rows('publisher', { before: ['qa', 'editor_final'] })} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('publisher', { before: ['qa', 'editor_final'] })} />)
 
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(false)
 
     fireEvent.click(btn)
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }))
     await Promise.resolve()
     await Promise.resolve()
 
@@ -196,7 +206,7 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
   })
 
   it('is RESERVED (disabled, no reuse claim) for a failed non-primitive step (qa)', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('qa', { before: ['origin_story'] })} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('qa', { before: ['origin_story'] })} />)
 
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
@@ -204,13 +214,13 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
   })
 
   it('is RESERVED for editor_gate_1 by default (a failure is not a pause)', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} />)
     const btn = screen.getByRole('button', { name: 'Restart from this step' })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('is LIVE and routes to Signal Desk for editor_gate_1 when isPausedAtGate1 is true', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} isPausedAtGate1 />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} isPausedAtGate1 />)
     const link = screen.getByRole('link', { name: 'Restart from this step' })
     expect(link.getAttribute('href')).toBe('/signal-desk')
   })
@@ -218,13 +228,13 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
 
 describe('RecoveryRail (WBN-03) — "Improve this agent"', () => {
   it('renders a live link to /prompt-lab/{agentKey} when the failed step has an externalized prompt', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('game')} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('game')} />)
     const link = screen.getByRole('link', { name: 'Improve this agent' })
     expect(link.getAttribute('href')).toBe('/prompt-lab/game')
   })
 
   it('renders a reserved control when the failed step has no externalized prompt (qa)', () => {
-    render(<RecoveryRail runId="run-1" agentRuns={rows('qa')} />)
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('qa')} />)
     const btn = screen.getByRole('button', { name: 'Improve this agent' })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
