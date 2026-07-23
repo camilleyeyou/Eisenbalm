@@ -37,6 +37,15 @@
  * below-md hamburger (`MobileNavDrawer.tsx`, mounted in the dashboard layout,
  * NOT here) doesn't overlap the wordmark. No other change — this file is
  * still not aware of the drawer.
+ *
+ * quick 260722-v01 follow-up (mobile header clipping): the single 52px row
+ * used to overflow on phones and the shell's `overflow-hidden` CLIPPED the
+ * right-side items (My Tasks + UserButton) off-screen. Now: wordmark and the
+ * right cluster are `shrink-0` bookends, and the middle readouts (issue no. /
+ * status / activity / cost / auto-publish) live in a `min-w-0 flex-1
+ * overflow-x-auto` strip — horizontally swipeable on narrow screens
+ * (scrollbar hidden), identical to before on md+ where everything fits. The
+ * wordmark drops to 13px below md. No readout is ever hidden, only scrolled.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -103,7 +112,7 @@ function IssueStatusReadout({ status }: { status: IssueStatus }) {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="flex min-h-[44px] items-center gap-[6px] rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]"
+        className="flex min-h-[44px] shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]"
       >
         <AlertTriangle size={13} aria-hidden="true" />
         State unknown — refresh
@@ -114,7 +123,7 @@ function IssueStatusReadout({ status }: { status: IssueStatus }) {
   const Icon = meta.Icon
   return (
     <span
-      className="flex items-center gap-[6px] rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
+      className="flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
       style={{ color: meta.color }}
     >
       <Icon size={13} aria-hidden="true" />
@@ -158,7 +167,7 @@ function SystemActivityReadout({ activity }: { activity: SystemActivity }) {
   const Icon = meta.Icon
   return (
     <span
-      className="flex items-center gap-[6px] rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
+      className="flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
       style={{ color: meta.color }}
     >
       <Icon size={13} aria-hidden="true" className={meta.spin ? 'animate-spin' : undefined} />
@@ -183,7 +192,7 @@ export function MyTasksTrigger({
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[44px] cursor-pointer items-center gap-[6px] rounded-[2px] px-[12px] py-[5px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em]"
+      className="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[12px] py-[5px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em]"
       style={{ color }}
     >
       <ListChecks size={14} aria-hidden="true" />
@@ -242,68 +251,77 @@ export default function Masthead() {
   const systemActivity = systemActivityFromRunStatus(latest?.status)
 
   return (
-    <header className="flex h-[52px] items-center gap-4 bg-[color:var(--color-ink)] pl-[52px] pr-[22px] text-[color:var(--color-masthead-text)] md:pl-[22px]">
-      {/* Wordmark */}
-      <span className="font-[family-name:var(--font-ui)] text-[15.5px] font-bold tracking-[.03em]">
+    <header className="flex h-[52px] items-center gap-3 bg-[color:var(--color-ink)] pl-[52px] pr-3 text-[color:var(--color-masthead-text)] md:gap-4 md:pl-[22px] md:pr-[22px]">
+      {/* Wordmark — shrink-0 bookend; compacts below md so the hamburger +
+          wordmark + right cluster all fit a phone width. */}
+      <span className="shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[13px] font-bold tracking-[.03em] md:text-[15.5px]">
         DISPATCH<span className="text-[color:var(--color-vermilion)]">/</span>CONTROL
       </span>
 
-      {/* Issue number — contextual identifier, not one of the four ISS-05 readouts */}
-      <span className="font-[family-name:var(--font-mono)] text-[color:var(--color-masthead-muted)]">
-        {issueNumber != null ? `Issue ${issueNumber}` : 'Issue —'}
-      </span>
+      {/* quick 260722-v01 follow-up: the middle readouts live in a min-w-0
+          flex-1 strip that scrolls horizontally on narrow screens (scrollbar
+          hidden) instead of pushing the right cluster off-screen into the
+          shell's overflow-hidden clip. On md+ everything fits and this
+          renders identically to the old flat row. */}
+      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4">
+        {/* Issue number — contextual identifier, not one of the four ISS-05 readouts */}
+        <span className="shrink-0 whitespace-nowrap font-[family-name:var(--font-mono)] text-[color:var(--color-masthead-muted)]">
+          {issueNumber != null ? `Issue ${issueNumber}` : 'Issue —'}
+        </span>
 
-      {/* Readout 1: Issue status (D-18) — separate node, never shares a
-          container with System activity below. */}
-      <IssueStatusReadout status={issueStatus} />
+        {/* Readout 1: Issue status (D-18) — separate node, never shares a
+            container with System activity below. */}
+        <IssueStatusReadout status={issueStatus} />
 
-      {/* Readout 2: System activity (relabel of the old blended chip) —
-          visibly distinct from Issue status; `Loader2` spin is exclusive
-          to this readout's "Running" state. */}
-      <SystemActivityReadout activity={systemActivity} />
+        {/* Readout 2: System activity (relabel of the old blended chip) —
+            visibly distinct from Issue status; `Loader2` spin is exclusive
+            to this readout's "Running" state. */}
+        <SystemActivityReadout activity={systemActivity} />
 
-      {/* Readout 4: Cost vs budget — unchanged query wiring. */}
-      {mtd !== undefined && cap !== undefined && (
-        <span className="flex items-center gap-[6px] font-[family-name:var(--font-mono)]">
-          <CircleDollarSign
-            size={13}
-            aria-hidden="true"
-            className={
-              mtd.mtdUsd >= cap
-                ? 'text-[color:var(--color-vermilion)]'
-                : 'text-[color:var(--color-ink-soft)]'
-            }
-          />
-          <span className={mtd.mtdUsd >= cap ? 'text-[color:var(--color-vermilion)]' : undefined}>
-            ${mtd.mtdUsd.toFixed(2)}
+        {/* Readout 4: Cost vs budget — unchanged query wiring. */}
+        {mtd !== undefined && cap !== undefined && (
+          <span className="flex shrink-0 items-center gap-[6px] whitespace-nowrap font-[family-name:var(--font-mono)]">
+            <CircleDollarSign
+              size={13}
+              aria-hidden="true"
+              className={
+                mtd.mtdUsd >= cap
+                  ? 'text-[color:var(--color-vermilion)]'
+                  : 'text-[color:var(--color-ink-soft)]'
+              }
+            />
+            <span className={mtd.mtdUsd >= cap ? 'text-[color:var(--color-vermilion)]' : undefined}>
+              ${mtd.mtdUsd.toFixed(2)}
+            </span>
+            {` / $${cap}`}
           </span>
-          {` / $${cap}`}
-        </span>
-      )}
+        )}
 
-      {/* Auto-publish chip — D-26 rename (Phase 40) + D-16 reframe (Phase
-          50-03). OFF is the safe/expected state ("Human approval required",
-          quiet reassurance). ON is an honest alert — never switch-framed as
-          something flipped here — pointing at where the setting actually
-          lives (Administration / Config); keeps the existing loud vermilion
-          treatment. */}
-      {autoPublish !== undefined && (
-        <span
-          className={
-            autoPublish
-              ? 'font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-vermilion)]'
-              : 'font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-green)]'
-          }
-        >
-          {autoPublish ? 'Publishing automatically — managed in Administration' : 'Human approval required'}
-        </span>
-      )}
+        {/* Auto-publish chip — D-26 rename (Phase 40) + D-16 reframe (Phase
+            50-03). OFF is the safe/expected state ("Human approval required",
+            quiet reassurance). ON is an honest alert — never switch-framed as
+            something flipped here — pointing at where the setting actually
+            lives (Administration / Config); keeps the existing loud vermilion
+            treatment. */}
+        {autoPublish !== undefined && (
+          <span
+            className={
+              autoPublish
+                ? 'shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-vermilion)]'
+                : 'shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-green)]'
+            }
+          >
+            {autoPublish ? 'Publishing automatically — managed in Administration' : 'Human approval required'}
+          </span>
+        )}
+      </div>
 
       {/* Readout 3: My Tasks (D-21/D-25) + the existing inbox dropdown —
           `relative` anchors the inbox's `absolute top-[52px]` positioning
           under this readout. A full-screen transparent backdrop below the
-          dropdown (but above page content) closes it on outside click. */}
-      <div className="relative ml-auto">
+          dropdown (but above page content) closes it on outside click.
+          shrink-0: pinned right-cluster bookend, never clipped on mobile. */}
+      <div className="relative shrink-0">
         <MyTasksTrigger count={taskCount} onClick={() => setInboxOpen(v => !v)} />
         {inboxOpen && (
           <button
@@ -316,13 +334,15 @@ export default function Masthead() {
         <AwaitingYouInbox open={inboxOpen} onClose={() => setInboxOpen(false)} />
       </div>
 
-      <UserButton
-        appearance={{
-          elements: {
-            avatarBox: 'h-8 w-8',
-          },
-        }}
-      />
+      <span className="shrink-0">
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: 'h-8 w-8',
+            },
+          }}
+        />
+      </span>
     </header>
   )
 }
