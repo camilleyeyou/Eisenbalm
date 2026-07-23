@@ -67,9 +67,12 @@ async def record_sign_off(
          b. open error-severity findings on a FACTUAL axis (not in
             VOICE_AXES; anchor-blind, D-11b) →
             409 {reason:"open_error_findings", count:n}
-      3. `kind == "sounds-human"` only (§36.7b):
-         open error-severity findings on a VOICE axis (anchor-blind) →
-            409 {reason:"open_voice_findings", count:n}
+      3. `kind == "sounds-human"` only:
+         a. role gate (§49.4) → 403 {reason:"forbidden_role"}
+         b. quick 260723-4a6 (§37.4(c)): run paused at Gate 1 (awaiting-review
+            with no completedAt) or failed → 409 {reason:"run_not_reviewable"}
+         c. (§36.7b): open error-severity findings on a VOICE axis
+            (anchor-blind) → 409 {reason:"open_voice_findings", count:n}
 
     Action:
       - signOffs:record({workspace_id, runId, kind, actorId})
@@ -165,6 +168,23 @@ async def record_sign_off(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"reason": "forbidden_role", "message": "Editor-in-chief only."},
+            )
+
+        # quick 260723-4a6 (§37.4(c)) — a run paused at Gate 1 (awaiting-review
+        # with no completedAt — editor.py writes awaiting-review WITHOUT
+        # completedAt) or a failed run has no reviewable final draft to
+        # attest. A genuine final-review run (publisher writes awaiting-review
+        # WITH completedAt) is unaffected. Named `run_status` (not `status`)
+        # to avoid shadowing the imported fastapi `status` module used below.
+        run_status = run.get("status")
+        completed_at = run.get("completedAt")
+        if run_status == "failed" or (run_status == "awaiting-review" and not completed_at):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "reason": "run_not_reviewable",
+                    "message": "This run is not in a reviewable state to sign off.",
+                },
             )
 
         # §36.7b: server-enforced prerequisite (D-12/D-14) — upgrades Phase

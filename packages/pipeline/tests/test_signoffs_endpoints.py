@@ -36,7 +36,18 @@ pytestmark = pytest.mark.anyio
 
 
 def _run(run_id: str = "run-abc") -> dict:
-    return {"status": "awaiting-review", "sanityIssueId": "issue-42", "runId": run_id}
+    # quick 260723-4a6 (§37.4(c)): carries completedAt so this fixture
+    # represents a genuine final-review run (publisher writes awaiting-review
+    # WITH completedAt) — NOT the paused-at-Gate-1 shape (awaiting-review
+    # WITHOUT completedAt), which now 409s run_not_reviewable for
+    # sounds-human. Every facts-cleared test ignores completedAt, so this is
+    # additive-only.
+    return {
+        "status": "awaiting-review",
+        "sanityIssueId": "issue-42",
+        "completedAt": 1_700_000_000_000,
+        "runId": run_id,
+    }
 
 
 def _error_finding(**overrides) -> dict:
@@ -453,6 +464,97 @@ def test_sign_off_409_no_sanity_issue(monkeypatch):
     )
     detail = response.json()["detail"]
     assert detail["reason"] == "no_sanity_issue"
+
+    record_calls = [
+        args for path, args in mutation_calls if path == "signOffs:record"
+    ]
+    assert record_calls == [], "signOffs:record must NOT be called"
+
+
+# ── quick 260723-4a6 (§37.4(c)) — run_not_reviewable status guard ──────────
+
+
+def test_sounds_human_409_run_not_reviewable_when_paused_at_gate1(monkeypatch):
+    """
+    POST sign-off {kind:"sounds-human"} for a run paused at Gate 1
+    (status="awaiting-review", completedAt None/absent, sanityIssueId
+    present so the earlier F5 no_sanity_issue guard does NOT catch it first)
+    → 409 {reason:"run_not_reviewable"}; does NOT call signOffs:record.
+    """
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return {
+                "status": "awaiting-review",
+                "sanityIssueId": "issue-42",
+                "completedAt": None,
+                "runId": "run-abc",
+            }
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
+
+    response = _client.post(
+        "/issues/run-abc/sign-off", json={"kind": "sounds-human"}
+    )
+    assert response.status_code == 409, (
+        f"Expected 409, got {response.status_code}: {response.text}"
+    )
+    detail = response.json()["detail"]
+    assert detail["reason"] == "run_not_reviewable"
+
+    record_calls = [
+        args for path, args in mutation_calls if path == "signOffs:record"
+    ]
+    assert record_calls == [], "signOffs:record must NOT be called"
+
+
+def test_sounds_human_409_run_not_reviewable_when_failed(monkeypatch):
+    """
+    POST sign-off {kind:"sounds-human"} for a FAILED run (sanityIssueId
+    present so the earlier F5 no_sanity_issue guard does NOT catch it first)
+    → 409 {reason:"run_not_reviewable"}; does NOT call signOffs:record.
+    """
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return {
+                "status": "failed",
+                "sanityIssueId": "issue-42",
+                "runId": "run-abc",
+            }
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
+
+    response = _client.post(
+        "/issues/run-abc/sign-off", json={"kind": "sounds-human"}
+    )
+    assert response.status_code == 409, (
+        f"Expected 409, got {response.status_code}: {response.text}"
+    )
+    detail = response.json()["detail"]
+    assert detail["reason"] == "run_not_reviewable"
 
     record_calls = [
         args for path, args in mutation_calls if path == "signOffs:record"
