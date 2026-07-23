@@ -224,7 +224,12 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
   const currentStageSegment = isStageSegment(lastPathSegment) ? lastPathSegment : undefined
 
   return (
-    <div className="min-h-screen bg-[color:var(--color-rail)] px-6 py-8 lg:px-8">
+    // quick 260722-n5r follow-up: the dashboard shell's <main> is the actual
+    // scroll container (h-screen minus the 52px Masthead) AND already pads
+    // p-6 — so this root uses min-h-full (min-h-screen forced ~52px of
+    // overscroll on every page) and drops its own horizontal padding
+    // (px-6 on top of main's p-6 doubled the gutters to 48px per side).
+    <div className="min-h-full bg-[color:var(--color-rail)] py-2">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-6">
         <Link
           href="/issues"
@@ -300,7 +305,11 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
         </nav>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)_320px] lg:items-start">
-          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto">
+          {/* quick 260722-n5r follow-up: the scrollport is <main> (100vh minus
+              the 52px Masthead), so the rails' max-h accounts for masthead
+              (52) + sticky-nav offset (72) + a 16px bottom gutter = 140px —
+              calc(100vh-88px) left their bottom ~36px pinned off-screen. */}
+          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
             <WorkspaceOutline />
           </div>
           <div className="min-w-0">
@@ -309,7 +318,7 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
             )}
             {children}
           </div>
-          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto">
+          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
             <ContextPanel title="Context">{panelContent}</ContextPanel>
           </div>
         </div>
@@ -336,7 +345,7 @@ export default function IssueWorkspaceLayout({ children }: { children: React.Rea
   return (
     <WorkspaceStateProvider issueNumber={n}>
       {n === null ? (
-        <div className="min-h-screen bg-[color:var(--color-rail)] px-6 py-8 lg:px-8">
+        <div className="min-h-full bg-[color:var(--color-rail)] py-2">
           <div className="mx-auto flex max-w-[900px] flex-col gap-3">
             <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
               That isn&rsquo;t a valid issue number.

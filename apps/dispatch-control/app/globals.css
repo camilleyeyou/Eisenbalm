@@ -220,6 +220,16 @@ body {
 }
 
 /**
+ * quick 260722-n5r: the Issue Workspace's stage-tab nav is sticky (~64px
+ * tall + an 8px breathing gap), so outline/chip jump-nav scrollIntoView
+ * targets need a scroll margin or their section tops land hidden underneath
+ * it. Applied to all galley section anchors (`galley-*` ids).
+ */
+[id^='galley-'] {
+  scroll-margin-top: 88px;
+}
+
+/**
  * D-04 paper background, explicit not implicit: the galley sits on the
  * console's paper background as a deliberate rule, so a future white-card
  * wrapper around the galley can never silently change the reading surface.
