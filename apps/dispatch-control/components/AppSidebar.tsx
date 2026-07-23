@@ -10,6 +10,8 @@
  * - Sign-out affordance now lives in the Masthead (Plan 30-04) — no duplicate
  *   UserButton here.
  * - Requires ≥44px tap targets + focus-visible ring on every link.
+ * - quick 260722-tv1: `h-screen` clipped the mt-auto bottom block inside the
+ *   100vh-52px overflow-hidden shell row — use `h-full` to fit the row instead.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -68,7 +70,7 @@ export default function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-[210px] flex-col border-r border-[color:var(--color-ink)]/[.13] bg-[color:var(--color-nav)] py-[14px]">
+    <aside className="flex h-full w-[210px] flex-col border-r border-[color:var(--color-ink)]/[.13] bg-[color:var(--color-nav)] py-[14px]">
       <nav className="flex flex-1 flex-col overflow-y-auto" aria-label="Main navigation">
         {NAV_GROUPS.map((group, groupIndex) => (
           <div key={group.label}>

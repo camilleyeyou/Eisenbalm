@@ -16,6 +16,9 @@
  *
  * No new npm dependency — uses the already-installed `lucide-react`
  * `HelpCircle` icon and existing CSS-variable design tokens.
+ *
+ * quick 260722-tv1: popover z-index raised `z-20` -> `z-40` — it was
+ * rendering under the workspace sticky stage nav (z-30).
  */
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { HelpCircle } from 'lucide-react'
@@ -73,7 +76,7 @@ export default function HelpTip({ text, label, className }: HelpTipProps) {
           ref={tipRef}
           id={tipId}
           role="tooltip"
-          className={`absolute top-full z-20 mt-1 max-w-[240px] whitespace-normal rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2.5 py-1.5 font-[family-name:var(--font-ui)] text-[12.5px] leading-relaxed text-[color:var(--color-ink)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] ${
+          className={`absolute top-full z-40 mt-1 max-w-[240px] whitespace-normal rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2.5 py-1.5 font-[family-name:var(--font-ui)] text-[12.5px] leading-relaxed text-[color:var(--color-ink)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] ${
             align === 'right' ? 'left-0' : 'right-0'
           }`}
         >

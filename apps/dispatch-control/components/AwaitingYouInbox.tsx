@@ -18,6 +18,9 @@
  *
  * "Current draft" = the first awaiting-review run's runId (there should
  * only ever be ~1 in flight at a time).
+ *
+ * quick 260722-tv1: dropdown width clamped to `w-[min(360px,calc(100vw-24px))]`
+ * so a fixed 360px never overflows a narrow viewport.
  */
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
@@ -120,7 +123,7 @@ export default function AwaitingYouInbox({ open, onClose }: AwaitingYouInboxProp
     <div
       role="dialog"
       aria-label="Awaiting you"
-      className="absolute top-[52px] right-0 z-50 w-[360px] border border-[color:var(--color-ink)]/[.16] border-t-[3px] border-t-[color:var(--color-vermilion)] bg-[color:var(--color-card)] shadow-[0_24px_50px_-20px_rgba(20,16,10,.5)]"
+      className="absolute top-[52px] right-0 z-50 w-[min(360px,calc(100vw-24px))] border border-[color:var(--color-ink)]/[.16] border-t-[3px] border-t-[color:var(--color-vermilion)] bg-[color:var(--color-card)] shadow-[0_24px_50px_-20px_rgba(20,16,10,.5)]"
     >
       <div className="border-b border-[color:var(--color-ink)]/[.1] px-4 py-3">
         <h2 className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.08em] text-[color:var(--color-ink)]">

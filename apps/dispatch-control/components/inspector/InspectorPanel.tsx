@@ -43,6 +43,10 @@
  * or an empty section) leaves the footer honestly reserved — an empty
  * `quotedText` would otherwise 409 `span_not_resolved` the moment a
  * direction chip is picked, since `RevisionFlow` has no passage-picker step.
+ *
+ * quick 260722-tv1: slide-over root now starts `top-[52px]` /
+ * `h-[calc(100%-52px)]` instead of `top-0`/`h-full` — it was painting over
+ * the 52px Masthead, blocking My Tasks / UserButton while open.
  */
 import { useState } from 'react'
 import {
@@ -514,7 +518,7 @@ export function InspectorPanel({
 
   return (
     <div
-      className="fixed right-0 top-0 z-40 flex h-full w-full max-w-[480px] flex-col overflow-y-auto border-l border-[color:var(--color-faint)] bg-[color:var(--color-paper)] shadow-lg"
+      className="fixed right-0 top-[52px] z-40 flex h-[calc(100%-52px)] w-full max-w-[480px] flex-col overflow-y-auto border-l border-[color:var(--color-faint)] bg-[color:var(--color-paper)] shadow-lg"
       role="complementary"
       aria-label="Inspect how this was made"
     >

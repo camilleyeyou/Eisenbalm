@@ -16,6 +16,11 @@
  * the raw `undefined` a skipped query produces — otherwise a brand-new
  * issue with no run yet would show "State unknown — refresh" forever
  * instead of "Draft".
+ *
+ * quick 260722-tv1: root swapped `min-h-screen` + `px-6/lg:px-8` for
+ * `min-h-full` + no horizontal padding — main already carries `p-6`, so the
+ * old root double-guttered (48px) and overscrolled (~100px) past the
+ * 100vh-52px shell. Held list is now client-capped to 8 with a `+N more` note.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
@@ -234,7 +239,7 @@ export default function IssuesHomePage() {
     .slice(0, 5)
 
   return (
-    <div className="min-h-screen bg-[color:var(--color-rail)] px-6 py-8 lg:px-8">
+    <div className="min-h-full bg-[color:var(--color-rail)] py-2">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-12">
         <StartHereCard inProgressIssueNumber={inProgressIssue?.issueNumber ?? null} />
 
@@ -285,9 +290,14 @@ export default function IssuesHomePage() {
             <h2 className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.08em] text-[color:var(--color-ink-soft)]">
               Held
             </h2>
-            {heldIssues.map(issue => (
+            {heldIssues.slice(0, 8).map(issue => (
               <HeldIssueRow key={issue._id} issue={issue} />
             ))}
+            {heldIssues.length > 8 && (
+              <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-ink-soft)]">
+                +{heldIssues.length - 8} more held
+              </p>
+            )}
           </div>
         )}
 
