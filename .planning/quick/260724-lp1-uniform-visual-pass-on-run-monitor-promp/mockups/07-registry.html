@@ -1,0 +1,196 @@
+<!-- @dsCard group="System Workbench" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Charity Registry — Uniform</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --masthead-text:#f4f2ec; --masthead-muted:#c9c3b5; --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+/* ── masthead + shell (uniform chrome) ── */
+.masthead{display:flex;align-items:center;gap:22px;height:52px;background:var(--ink);color:var(--masthead-text);padding:0 20px}
+.masthead .wordmark{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.02em}
+.masthead .readout{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--masthead-muted)}
+.masthead .readout b{color:var(--masthead-text);font-weight:500}
+.masthead .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.masthead .kbd{font-family:var(--mono);font-size:10px;border:1px solid rgba(244,242,236,.3);padding:3px 7px;color:var(--masthead-muted)}
+.masthead .avatar{width:24px;height:24px;border-radius:50%;background:var(--marigold)}
+.shell{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:210px;flex-shrink:0;background:var(--rail);border-right:1px solid var(--border);padding:18px 0}
+.side-group{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);padding:14px 18px 6px}
+.side-item{display:block;font-size:12.5px;font-weight:500;color:var(--ink-soft);text-decoration:none;padding:8px 18px;border-left:3px solid transparent}
+.side-item:hover{background:var(--card-alt)}
+.side-item.active{color:var(--ink);font-weight:600;border-left-color:var(--vermilion);background:var(--card-alt)}
+.content{flex:1;min-width:0;padding:30px 34px 60px}
+
+/* ── page head ── */
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+.page-head{display:flex;align-items:flex-end;gap:24px}
+.page-head h1{font-family:var(--display);font-weight:600;font-size:32px;line-height:1;margin-top:6px}
+.page-head .dek{font-family:var(--body);font-style:italic;font-size:14px;color:var(--ink-soft);margin-top:7px}
+.btn{font-family:var(--ui);font-size:12.5px;font-weight:600;padding:10px 16px;cursor:pointer;border:1px solid var(--ink)}
+.btn.primary{background:var(--ink);color:var(--card)}
+.btn.primary:hover{background:#000}
+.page-head .actions{margin-left:auto}
+
+/* ── coverage strip ── */
+.cov-cap{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:26px 0 10px}
+.coverage{display:flex;gap:22px;background:var(--card);border:1px solid var(--border);border-top:3px solid var(--cobalt);padding:16px 20px}
+.cov .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cov .v{font-family:var(--display);font-size:24px;font-weight:600;margin-top:2px}
+.cov .v em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.cov-meter{flex:1;align-self:center}
+.cov-meter .bar{height:5px;background:var(--nav);position:relative}
+.cov-meter .bar i{position:absolute;inset:0;right:34%;background:var(--green)}
+.cov-meter .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+
+/* ── table (uniform table pattern) ── */
+.filters{display:flex;gap:6px;margin:22px 0 10px}
+.f-chip{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:6px 11px;border:1px solid var(--border);background:var(--card);color:var(--ink-soft);cursor:pointer}
+.f-chip.active{background:var(--cobalt);border-color:var(--cobalt);color:#fff;font-weight:600}
+.tablecard{background:var(--card);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:left;font-weight:500;padding:12px 16px;border-bottom:1px solid var(--border)}
+td{font-size:12.5px;padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--card-alt)}
+td .name{font-family:var(--display);font-weight:600;font-size:16px}
+td .sub{font-family:var(--body);font-style:italic;font-size:12px;color:var(--ink-soft);margin-top:2px}
+td.mono{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+.chip{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border:1px solid;white-space:nowrap}
+.chip.featured{color:var(--cobalt);border-color:var(--cobalt);background:rgba(37,58,212,.06)}
+.chip.vetted{color:var(--green);border-color:var(--green);background:rgba(20,138,82,.07)}
+.chip.candidate{color:var(--marigold-text);border-color:var(--marigold);background:rgba(242,176,30,.1)}
+.chip.blocked{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+td a{color:var(--cobalt);text-decoration:none;font-weight:600;font-size:12px}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="wordmark">Dispatch Control</span>
+  <span class="readout">Issue 47 · <b>Awaiting review</b></span>
+  <span class="readout">Run <b>Complete</b></span>
+  <span class="readout">Cost <b>$4.12</b> / $6.00</span>
+  <span class="right">
+    <span class="kbd">⌘K</span>
+    <span class="readout">My Tasks · <b>3</b></span>
+    <span class="avatar"></span>
+  </span>
+</header>
+
+<div class="shell">
+  <nav class="sidebar">
+    <div class="side-group">Editorial</div>
+    <a class="side-item" href="#">Issues</a>
+    <a class="side-item" href="#">My Tasks</a>
+    <div class="side-group">System Workbench</div>
+    <a class="side-item" href="#">Run Monitor</a>
+    <a class="side-item" href="#">Prompt Lab</a>
+    <a class="side-item" href="#">Eval Center</a>
+    <a class="side-item active" href="#">Registry</a>
+    <div class="side-group">Operations</div>
+    <a class="side-item" href="#">Config</a>
+    <a class="side-item" href="#">Finance</a>
+    <a class="side-item" href="#">Settings</a>
+  </nav>
+
+  <main class="content">
+    <div class="page-head">
+      <div>
+        <span class="kicker">System Workbench</span>
+        <h1>Charity Registry</h1>
+        <p class="dek">Every organization the Dispatch has met, vetted, featured, or declined.</p>
+      </div>
+      <div class="actions"><button class="btn primary">+ Add charity</button></div>
+    </div>
+
+    <div class="cov-cap">Coverage</div>
+    <div class="coverage">
+      <div class="cov"><div class="l">On file</div><div class="v">63</div></div>
+      <div class="cov"><div class="l">Vetted</div><div class="v">41</div></div>
+      <div class="cov"><div class="l">Featured</div><div class="v">46 <em>issues</em></div></div>
+      <div class="cov"><div class="l">Blocked</div><div class="v">3</div></div>
+      <div class="cov-meter">
+        <div class="bar"><i></i></div>
+        <div class="cap">66% of file vetted · scout memory refreshed Thu 09:00</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <button class="f-chip active">All</button>
+      <button class="f-chip">Featured</button>
+      <button class="f-chip">Vetted</button>
+      <button class="f-chip">Candidates</button>
+      <button class="f-chip">Blocked</button>
+    </div>
+
+    <div class="tablecard">
+      <table>
+        <thead>
+          <tr><th>Organization</th><th>Location</th><th>Focus</th><th>Assets</th><th>Status</th><th>Last seen</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="name">The Granite Ledger Society</div><div class="sub">Restores abandoned New England burial grounds</div></td>
+            <td class="mono">Montpelier, VT</td>
+            <td class="mono">Historic preservation</td>
+            <td class="mono">&lt; $250k</td>
+            <td><span class="chip featured">Featured · 47</span></td>
+            <td class="mono">This week</td>
+            <td><a href="#">Open →</a></td>
+          </tr>
+          <tr>
+            <td><div class="name">The Bell Founders' Relief Fund</div><div class="sub">Supports retired carillon and church-bell casters</div></td>
+            <td class="mono">Loughborough, UK</td>
+            <td class="mono">Trade welfare</td>
+            <td class="mono">&lt; $100k</td>
+            <td><span class="chip featured">Featured · 46</span></td>
+            <td class="mono">2 wks ago</td>
+            <td><a href="#">Open →</a></td>
+          </tr>
+          <tr>
+            <td><div class="name">Society for Orphaned Lighthouse Lenses</div><div class="sub">Catalogues and rehouses decommissioned Fresnel lenses</div></td>
+            <td class="mono">Machias, ME</td>
+            <td class="mono">Maritime heritage</td>
+            <td class="mono">&lt; $500k</td>
+            <td><span class="chip vetted">Vetted</span></td>
+            <td class="mono">4 wks ago</td>
+            <td><a href="#">Open →</a></td>
+          </tr>
+          <tr>
+            <td><div class="name">The Prairie Seed Library Trust</div><div class="sub">Lends native seed stock to county restoration projects</div></td>
+            <td class="mono">Salina, KS</td>
+            <td class="mono">Conservation</td>
+            <td class="mono">&lt; $250k</td>
+            <td><span class="chip candidate">Candidate</span></td>
+            <td class="mono">Scouted Thu</td>
+            <td><a href="#">Open →</a></td>
+          </tr>
+          <tr>
+            <td><div class="name">Friends of the Analog Telephone Museum</div><div class="sub">Sub-scale collection; could not verify 501(c)(3) status</div></td>
+            <td class="mono">Reno, NV</td>
+            <td class="mono">Industrial heritage</td>
+            <td class="mono">Unknown</td>
+            <td><span class="chip blocked">Blocked</span></td>
+            <td class="mono">6 wks ago</td>
+            <td><a href="#">Open →</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

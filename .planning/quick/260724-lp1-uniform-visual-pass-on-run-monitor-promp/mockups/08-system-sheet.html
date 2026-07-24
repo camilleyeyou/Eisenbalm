@@ -1,0 +1,201 @@
+<!-- @dsCard group="System Sheet" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dispatch Control — Uniform System Sheet</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --masthead-text:#f4f2ec; --masthead-muted:#c9c3b5; --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;padding:34px 38px 60px}
+
+.sheet-head h1{font-family:var(--display);font-weight:600;font-size:30px}
+.sheet-head p{font-family:var(--body);font-style:italic;font-size:13.5px;color:var(--ink-soft);margin-top:6px;max-width:640px;line-height:1.5}
+.rulebox{border:1px solid var(--ink);background:var(--card);padding:14px 18px;margin-top:16px;box-shadow:4px 4px 0 var(--cobalt);max-width:760px}
+.rulebox .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cobalt)}
+.rulebox ul{margin:8px 0 0 16px}
+.rulebox li{font-size:12.5px;line-height:1.65}
+
+.spec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:28px}
+.block{background:var(--card);border:1px solid var(--border);padding:18px 20px}
+.block>.cap{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+.rowl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note{font-family:var(--body);font-style:italic;font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.45}
+
+/* type */
+.t-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+.t-h1{font-family:var(--display);font-weight:600;font-size:32px;line-height:1;margin-top:4px}
+.t-dek{font-family:var(--body);font-style:italic;font-size:14px;color:var(--ink-soft);margin-top:6px}
+.t-card-h{font-family:var(--display);font-weight:600;font-size:19px;margin-top:12px}
+.t-body{font-family:var(--body);font-size:13px;color:var(--ink);margin-top:8px}
+.t-mono{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:8px}
+
+/* chips */
+.chip{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border:1px solid;white-space:nowrap}
+.chip.clean{color:var(--green);border-color:var(--green);background:rgba(20,138,82,.07)}
+.chip.review{color:var(--marigold-text);border-color:var(--marigold);background:rgba(242,176,30,.1)}
+.chip.mustfix{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+.chip.info{color:var(--cobalt);border-color:var(--cobalt);background:rgba(37,58,212,.06)}
+.chip.neutral{color:var(--ink-soft);border-color:var(--border);background:var(--card-alt)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px}
+.dot.err{background:var(--vermilion)}
+.dot.warn{background:var(--marigold)}
+.dot.ok{background:var(--green)}
+
+/* buttons */
+.btn{font-family:var(--ui);font-size:12.5px;font-weight:600;padding:10px 16px;cursor:pointer;border:1px solid var(--ink)}
+.btn.primary{background:var(--ink);color:var(--card)}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.danger{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
+.btn.locked{background:var(--card-alt);border-color:var(--border);color:var(--faint);cursor:not-allowed}
+.link{font-family:var(--ui);font-size:12px;font-weight:600;color:var(--cobalt);text-decoration:none}
+
+/* tabs */
+.u-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border)}
+.u-tabs a{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none;padding:11px 15px 9px;border-bottom:3px solid transparent}
+.u-tabs a.active{color:var(--ink);font-weight:600;border-bottom-color:var(--cobalt)}
+.f-tabs{display:flex;gap:4px;margin-top:18px}
+.f-tab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:11px 20px 10px;border:1px solid var(--border);border-bottom:none;background:var(--rail);color:var(--ink-soft);cursor:pointer;position:relative;top:1px}
+.f-tab.active{background:var(--card);color:var(--ink);font-weight:600;border-top:3px solid var(--cobalt);padding-top:9px}
+.f-panel{border:1px solid var(--border);background:var(--card);padding:14px 16px;font-family:var(--body);font-size:13px;font-style:italic;color:var(--ink-soft)}
+
+/* cards */
+.mini-card{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--nav);padding:13px 14px;width:200px}
+.mini-card.ok{border-top-color:var(--green)}
+.mini-card.warn{border-top-color:var(--marigold)}
+.mini-card.err{border-top-color:var(--vermilion)}
+.mini-card .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cobalt)}
+.mini-card h4{font-family:var(--display);font-weight:600;font-size:16px;margin-top:3px}
+.mini-card .m{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:8px}
+
+/* table */
+.mini-table{width:100%;border-collapse:collapse;border:1px solid var(--border)}
+.mini-table th{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:left;font-weight:500;padding:10px 13px;border-bottom:1px solid var(--border);background:var(--card)}
+.mini-table td{font-size:12.5px;padding:11px 13px;border-bottom:1px solid var(--border);background:var(--card)}
+.mini-table tr:last-child td{border-bottom:none}
+.mini-table td.mono{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+
+/* meters + readouts */
+.meter{width:220px;height:5px;background:var(--nav);position:relative}
+.meter i{position:absolute;inset:0;right:44%;background:var(--green)}
+.meter-cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+.readout-tile{border:1px solid var(--border);background:var(--card-alt);padding:10px 12px;width:150px}
+.readout-tile .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.readout-tile .v{font-family:var(--display);font-size:20px;font-weight:600;margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="sheet-head">
+  <h1>Dispatch Control — Uniform System Sheet</h1>
+  <p>The shared vocabulary every page uses. If a surface needs a pattern that isn't here, extend this sheet first, then build it.</p>
+  <div class="rulebox">
+    <span class="l">House rules</span>
+    <ul>
+      <li><b>Hard edges everywhere.</b> Radius 0–2px. No <code>rounded-lg</code> cards, no <code>rounded-full</code> pills (dots are the only circles).</li>
+      <li><b>1c tokens only.</b> Never <code>text-neutral-*</code> / <code>bg-gray-*</code> / <code>text-slate-*</code>. Ink, ink-soft, faint, cobalt, vermilion, marigold, green.</li>
+      <li><b>Four fonts, four jobs.</b> Newsreader = headlines. Lora italic = deks/excerpts. Space Grotesk = UI. IBM Plex Mono caps = kickers, labels, numerals.</li>
+      <li><b>Status is never color alone.</b> Chip label + color, or dot + count.</li>
+      <li><b>Every page head:</b> mono kicker (its nav group) → display h1 → italic dek.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="spec">
+  <div class="block">
+    <div class="cap">Type stack — page head &amp; card</div>
+    <span class="t-kicker">System Workbench</span>
+    <div class="t-h1">Page Title</div>
+    <div class="t-dek">One italic sentence that says what this page is for.</div>
+    <div class="t-card-h">Card Headline in Newsreader</div>
+    <div class="t-body">Body copy in Lora at 13px for prose inside cards.</div>
+    <div class="t-mono">MONO META · 41M 12S · $4.12 · THU 09:00</div>
+  </div>
+
+  <div class="block">
+    <div class="cap">Status chips &amp; finding dots</div>
+    <div class="rowl">
+      <span class="chip clean">Clean</span>
+      <span class="chip review">Review</span>
+      <span class="chip mustfix">Must fix</span>
+      <span class="chip info">Featured · 47</span>
+      <span class="chip neutral">Stock</span>
+    </div>
+    <div class="rowl" style="margin-top:12px">
+      <span><i class="dot err"></i><i class="dot err"></i><i class="dot warn"></i></span>
+      <span class="t-mono" style="margin:0">2 MUST FIX · 1 WARNING</span>
+      <span style="margin-left:14px"><i class="dot ok"></i><span class="t-mono" style="margin:0"> CLEAR</span></span>
+    </div>
+    <p class="note">Square chips, mono caps, 1px border, tinted fill. Vermilion is the only chip allowed a solid fill. Dots: 8px circles, error → warning order.</p>
+  </div>
+
+  <div class="block">
+    <div class="cap">Buttons &amp; links</div>
+    <div class="rowl">
+      <button class="btn primary">Primary action</button>
+      <button class="btn ghost">✓ Secondary</button>
+      <button class="btn danger">Hold issue</button>
+      <button class="btn locked">Locked (role)</button>
+      <a class="link" href="#">Inline link →</a>
+    </div>
+    <p class="note">One primary ink button per view. Vermilion reserved for destructive/hold. Locked states stay visible, never hidden.</p>
+  </div>
+
+  <div class="block">
+    <div class="cap">Tabs — two kinds, two jobs</div>
+    <div class="u-tabs"><a href="#">Runs</a><a class="active" href="#">Graph</a><a href="#">History</a></div>
+    <p class="note" style="margin-top:8px">Underline tabs: navigation between peer routes (stage strip, Runs/Graph).</p>
+    <div class="f-tabs"><button class="f-tab active">Outline</button><button class="f-tab">Draft</button></div>
+    <div class="f-panel">Folder tabs: switching representations of the same object (Outline/Draft, Diff/Current).</div>
+  </div>
+
+  <div class="block">
+    <div class="cap">Card — status top-rule</div>
+    <div class="rowl">
+      <div class="mini-card ok"><span class="k">Origin Story</span><h4>Clean, reviewed</h4><div class="m">640 WORDS</div></div>
+      <div class="mini-card err"><span class="k">Problem</span><h4>Two must fix</h4><div class="m">720 WORDS</div></div>
+      <div class="mini-card warn"><span class="k">Issue 46</span><h4>Held two days</h4><div class="m">1 OPEN ITEM</div></div>
+    </div>
+    <p class="note">3px top rule carries status; nav (grey) when neutral, cobalt on hover. Kicker → headline → mono meta, always in that order.</p>
+  </div>
+
+  <div class="block">
+    <div class="cap">Table</div>
+    <table class="mini-table">
+      <thead><tr><th>Status</th><th>Item</th><th>Cost</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip clean">Complete</span></td><td>Issue 46</td><td class="mono">$3.87</td><td><a class="link" href="#">View →</a></td></tr>
+        <tr><td><span class="chip review">Awaiting</span></td><td>Issue 47</td><td class="mono">$4.12</td><td><a class="link" href="#">View →</a></td></tr>
+      </tbody>
+    </table>
+    <p class="note">White card, 1px borders, mono-caps headers, mono numerals, card-alt hover. No zebra stripes, no pill badges.</p>
+  </div>
+
+  <div class="block">
+    <div class="cap">Progress meter</div>
+    <div class="meter"><i></i></div>
+    <div class="meter-cap">5 of 9 reviewed</div>
+    <p class="note">5px bar, green fill on nav track, mono caption underneath. Used for review progress, coverage, budget burn.</p>
+  </div>
+
+  <div class="block">
+    <div class="cap">Readout tile</div>
+    <div class="rowl">
+      <div class="readout-tile"><div class="l">Cost</div><div class="v">$4.12</div></div>
+      <div class="readout-tile"><div class="l">Sections</div><div class="v">9</div></div>
+      <div class="readout-tile"><div class="l">Open items</div><div class="v">3</div></div>
+    </div>
+    <p class="note">Card-alt ground, mono label, display numeral. For at-a-glance stats in headers and summary rows.</p>
+  </div>
+</div>
+
+</body>
+</html>
