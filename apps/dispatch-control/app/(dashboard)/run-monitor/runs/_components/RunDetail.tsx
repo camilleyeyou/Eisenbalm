@@ -77,14 +77,22 @@ function formatDuration(ms: number | undefined | null): string {
   return rem > 0 ? `${m}m ${rem}s` : `${m}m`
 }
 
+// quick 260724-lp1: geometry square-off only — same color-token mapping as
+// before (running/done/failed/awaiting-review/cancelled), a matching-hue
+// border added so the rounded-full pill converts cleanly to a hard-edged
+// square chip. No hue/opacity recolor.
 const STATUS_CLASSES: Record<string, string> = {
-  running: 'bg-[color:var(--color-cobalt)]/15 text-[color:var(--color-cobalt)]',
-  queued: 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
-  done: 'bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]',
-  failed: 'bg-[color:var(--color-vermilion)]/15 text-[color:var(--color-vermilion)]',
-  'awaiting-review': 'bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
-  cancelled: 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+  running: 'border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)]/15 text-[color:var(--color-cobalt)]',
+  queued: 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+  done: 'border-[color:var(--color-green)] bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]',
+  failed: 'border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/15 text-[color:var(--color-vermilion)]',
+  'awaiting-review': 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
+  cancelled: 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
 }
+
+/** Uniform square-chip base classes (mono caps, hard edge, thin border). */
+const CHIP_BASE =
+  'inline-flex items-center border px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.09em]'
 
 // ── §7 step-state vocabulary (DERIVED-STATE-CONTRACT.md §7) ──────────────────
 // "Waiting · Running · Complete · Paused — done · Failed · Skipped." The
@@ -228,7 +236,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
 
   if (run === null) {
     return (
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
         <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
           Run{' '}
           <code className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
@@ -278,7 +286,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
       </Link>
 
       {/* Run header */}
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5 space-y-4">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5 space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
             Run Details
@@ -307,7 +315,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
               Status
             </p>
             <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${runStatusClass}`}
+              className={`${CHIP_BASE} ${runStatusClass}`}
             >
               {run.status}
             </span>
@@ -372,7 +380,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
       <CancelRunButton runId={runId} status={run.status} />
 
       {/* Per-step table (Phase 50, D-07: action-primary/agent-secondary rows) */}
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] overflow-x-auto">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] overflow-x-auto">
         <div className="px-5 py-3 border-b border-[color:var(--color-ink)]/10">
           <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
             Per-Step Status
@@ -425,7 +433,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusClass}`}
+                            className={`${CHIP_BASE} ${statusClass}`}
                           >
                             {stepStateLabel(status)}
                           </span>
@@ -468,7 +476,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                               </td>
                               <td className="px-4 py-2">
                                 <span
-                                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${arStatusClass}`}
+                                  className={`${CHIP_BASE} ${arStatusClass}`}
                                 >
                                   {stepStateLabel(ar.status)}
                                 </span>
@@ -528,7 +536,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${arStatusClass}`}
+                        className={`${CHIP_BASE} ${arStatusClass}`}
                       >
                         {stepStateLabel(ar.status)}
                       </span>
@@ -564,7 +572,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
       </div>
 
       {/* Cost reconciliation panel (OBS-04) */}
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
         <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)] mb-4">
           Cost Reconciliation
         </h3>

@@ -58,31 +58,29 @@ function AwaitingReviewRow({
     : `/run-monitor/runs/${encodeURIComponent(run.runId)}/review`
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-[color:var(--color-marigold)]/40 bg-[color:var(--color-card)] p-4 sm:flex-row sm:items-center sm:justify-between">
-      {/* Left: run info */}
+    <li className="flex flex-col gap-3 border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Left: run info — mockup-05 q-card idiom: chip -> Newsreader h3 -> mono meta */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-[color:var(--color-marigold)]/20 px-2.5 py-0.5 text-[11px] font-medium text-[color:var(--color-marigold-text)]">
-            Awaiting Review
-          </span>
-        </div>
-        <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-ink)] truncate">
+        <span className="inline-block border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase text-[color:var(--color-marigold-text)]">
+          Awaiting Review
+        </span>
+        <p className="mt-1.5 font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)] truncate">
           Run {run.runId}
         </p>
-        <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
+        <p className="mt-1 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
           Started {formatRelativeTime(run.startedAt)}
         </p>
         {cost > 0 && (
-          <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
-            <span className="font-medium">Estimated run cost</span> ${cost.toFixed(4)}
+          <p className="mt-0.5 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+            Estimated run cost ${cost.toFixed(4)}
           </p>
         )}
       </div>
 
-      {/* Right: Review link */}
+      {/* Right: Review link — hard-edged ink CTA (mockup-05 .q-card .cta) */}
       <Link
         href={href}
-        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md bg-[color:var(--color-ink)] px-4 py-2 font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-masthead-text)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 transition-colors"
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 transition-colors"
       >
         Review →
       </Link>
@@ -99,7 +97,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   // Still loading.
   if (runs === undefined) {
     return (
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
         <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
           Awaiting Review
         </h2>
@@ -114,11 +112,11 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   // Empty state.
   if (awaitingReview.length === 0) {
     return (
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
         <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
           Awaiting Review
         </h2>
-        <div className="mt-4 rounded-md bg-[color:var(--color-card-alt)] px-4 py-6 text-center">
+        <div className="mt-4 border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-4 py-6 text-center">
           <p className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]">
             No runs awaiting review
           </p>
@@ -131,7 +129,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   }
 
   return (
-    <div className="rounded-lg border border-[color:var(--color-marigold)]/40 bg-[color:var(--color-marigold)]/10 p-5">
+    <div className="border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-5">
       <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
         Awaiting Review
       </h2>

@@ -101,7 +101,7 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
 
   return (
     <div
-      className="p-3 space-y-2 bg-[color:var(--color-card)] border border-[color:var(--color-faint)] rounded-lg shadow-lg"
+      className="p-3 space-y-2 bg-[color:var(--color-card)] border border-[color:var(--color-faint)] shadow-lg"
       role="region"
       aria-label="7-writers strength expansion"
     >

@@ -256,7 +256,7 @@ export default function RecoveryRail({
     // tests — is completely unaffected.
     if (isPausedAtGate1) {
       return (
-        <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
+        <div className="space-y-4 border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
           <section>
             <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
               Paused for your decision
@@ -281,7 +281,7 @@ export default function RecoveryRail({
       )
     }
     return (
-      <div className="rounded-lg border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
+      <div className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
         <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-vermilion)]">
           What happened
         </h3>
@@ -306,7 +306,7 @@ export default function RecoveryRail({
   const reason = failedRow?.error?.trim() || 'This step failed without a specific error message.'
 
   return (
-    <div className="space-y-4 rounded-lg border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
+    <div className="space-y-4 border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
       {/* 1. What happened */}
       <section>
         <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">

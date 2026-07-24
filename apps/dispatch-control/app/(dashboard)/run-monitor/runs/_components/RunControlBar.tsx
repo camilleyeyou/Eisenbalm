@@ -16,6 +16,10 @@
  *
  * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
  * `var(--color-*)` / bracket-pixel system — no structural change.
+ *
+ * quick 260724-lp1: adds the uniform page-head kicker above the existing
+ * "Runs" heading (markup-only) and squares off the two ink primary buttons
+ * (rounded-md -> hard edge). No handler/behavior change.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -58,8 +62,15 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
   }
 
   return (
-    <div className="flex items-center justify-between">
-      <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">Runs</h1>
+    <div className="flex items-end justify-between">
+      <div>
+        <span className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.14em] text-[color:var(--color-cobalt)]">
+          System Workbench
+        </span>
+        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[32px] font-semibold leading-none text-[color:var(--color-ink)]">
+          Runs
+        </h1>
+      </div>
 
       <div className="flex items-center gap-3">
         {error && (
@@ -74,7 +85,7 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
               onClick={handleConfirm}
               disabled={loading}
               aria-busy={loading}
-              className="min-h-[44px] rounded-md bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+              className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
             >
               {loading ? (
                 <span className="flex items-center gap-1.5">
@@ -108,7 +119,7 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
                 ? 'A run is already in progress. Wait for it to complete or cancel it first.'
                 : undefined
             }
-            className="min-h-[44px] rounded-md bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+            className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             Trigger Run
           </button>

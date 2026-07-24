@@ -56,13 +56,20 @@ function formatDuration(ms: number | undefined): string {
   return rem > 0 ? `${m}m ${rem}s` : `${m}m`
 }
 
+// quick 260724-lp1 — rewritten to the uniform square-chip recipe (mockup 05
+// `.chip`): 1px matching-hue border + tinted fill, mono-caps label. Failed
+// is the only status with a solid fill (the one chip allowed a solid).
 export const STATUS_CLASSES: Record<string, string> = {
-  running: 'bg-[color:var(--color-cobalt)]/15 text-[color:var(--color-cobalt)]',
-  done: 'bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]',
-  failed: 'bg-[color:var(--color-vermilion)]/15 text-[color:var(--color-vermilion)]',
-  'awaiting-review': 'bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
-  cancelled: 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+  running: 'border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)]/[0.06] text-[color:var(--color-cobalt)]',
+  done: 'border-[color:var(--color-green)] bg-[color:var(--color-green)]/[0.07] text-[color:var(--color-green)]',
+  failed: 'border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)] text-white',
+  'awaiting-review': 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] text-[color:var(--color-marigold-text)]',
+  cancelled: 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
 }
+
+/** Uniform square-chip base classes (mockup 05 `.chip`). */
+const CHIP_BASE =
+  'inline-block border px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase whitespace-nowrap'
 
 export default function RunsTable({ workspace_id }: RunsTableProps) {
   const runs = useQuery(api.runs.listRecentForWorkspace, { workspace_id })
@@ -82,7 +89,7 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
 
   if (runs.length === 0) {
     return (
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
         <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
           No pipeline runs recorded yet. The first run will appear here once the
           dispatch pipeline is triggered.
@@ -96,60 +103,68 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
   const visibleRuns = showAll ? runs : runs.slice(0, 50)
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
+    <div className="overflow-x-auto border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
       <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
         <thead>
-          <tr className="border-b border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-left">
-            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">
+          <tr className="border-b border-[color:var(--color-faint)] text-left">
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
               <span className="flex items-center gap-1">
                 Status
                 <HelpTip text={HELP_COPY.runMonitor.runState} label="Explain run status" />
               </span>
             </th>
-            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Trigger</th>
-            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Triggered By</th>
-            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Started</th>
-            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Duration</th>
-            <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Cost</th>
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+              Trigger
+            </th>
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+              Triggered By
+            </th>
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+              Started
+            </th>
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+              Duration
+            </th>
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+              Cost
+            </th>
+            <th className="px-4 py-3" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-[color:var(--color-ink)]/10">
-          {visibleRuns.map(run => {
+        <tbody>
+          {visibleRuns.map((run, i) => {
             const cost = parseCostJson(run.cost).total
             const statusClass =
               STATUS_CLASSES[run.status] ??
-              'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
+              'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
+            const isLast = i === visibleRuns.length - 1
             return (
               <tr
                 key={run._id}
-                className="hover:bg-[color:var(--color-card-alt)] transition-colors"
+                className={`hover:bg-[color:var(--color-card-alt)] transition-colors ${isLast ? '' : 'border-b border-[color:var(--color-faint)]'}`}
               >
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusClass}`}
-                  >
-                    {run.status}
-                  </span>
+                  <span className={`${CHIP_BASE} ${statusClass}`}>{run.status}</span>
                 </td>
-                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
+                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                   {run.triggerSource}
                 </td>
-                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
+                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                   {run.triggeredBy ?? '—'}
                 </td>
-                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
+                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                   {formatTimestamp(run.startedAt)}
                 </td>
-                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
+                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                   {formatDuration(run.durationMs)}
                 </td>
-                <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
+                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                   {cost > 0 ? `$${cost.toFixed(4)}` : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/run-monitor/runs/${run.runId}`}
-                    className="text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline text-[11px] font-medium"
+                    className="text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline text-[12px] font-semibold"
                   >
                     View →
                   </Link>

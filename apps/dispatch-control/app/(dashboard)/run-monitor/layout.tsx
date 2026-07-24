@@ -20,6 +20,10 @@
  * quick 260722-v01 (audit item 9): tab-label typography migrated
  * `text-sm font-medium` -> `font-[family-name:var(--font-ui)] text-[13px]` —
  * the cobalt active-underline was already tokened, so it's unchanged.
+ *
+ * quick 260724-lp1: tab labels converted to the uniform underline-tab
+ * pattern (mockup 08 `.u-tabs` / mockup 05 `.tabs`) — mono-caps, 3px cobalt
+ * bottom border on the active tab. No structural/handler change.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -43,9 +47,9 @@ export default function RunMonitorLayout({ children }: { children: React.ReactNo
               key={tab.href}
               href={tab.href}
               className={cn(
-                'inline-flex min-h-[44px] items-center border-b-2 px-1 font-[family-name:var(--font-ui)] text-[13px] transition-colors',
+                'inline-flex min-h-[44px] items-center border-b-[3px] px-1 font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[.1em] transition-colors',
                 isActive
-                  ? 'border-[color:var(--color-cobalt)] text-[color:var(--color-ink)]'
+                  ? 'border-[color:var(--color-cobalt)] font-semibold text-[color:var(--color-ink)]'
                   : 'border-transparent text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]',
               )}
               aria-current={isActive ? 'page' : undefined}

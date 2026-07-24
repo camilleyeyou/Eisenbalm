@@ -62,10 +62,12 @@ describe('STATUS_CLASSES', () => {
   // quick 260722-v01 (audit item 9): the "neutral palette" is now expressed
   // via the app's `var(--color-*)` token system, not literal `neutral-*`
   // classes — same visual intent (dim/inactive), tokened.
+  // quick 260724-lp1: rewritten to the uniform square-chip recipe (border +
+  // tinted fill) — cancelled stays the neutral/faint variant.
   it('contains a cancelled entry with neutral (tokened) palette (RUN-04)', () => {
     expect(STATUS_CLASSES).toHaveProperty('cancelled')
     expect(STATUS_CLASSES.cancelled).toBe(
-      'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+      'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
     )
   })
 

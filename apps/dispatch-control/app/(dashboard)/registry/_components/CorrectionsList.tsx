@@ -39,11 +39,19 @@ export default function CorrectionsList({ workspace_id, charityKey }: Correction
   )
 
   if (corrections === undefined) {
-    return <p className="text-sm text-neutral-500">Loading corrections…</p>
+    return (
+      <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+        Loading corrections…
+      </p>
+    )
   }
 
   if (corrections.length === 0) {
-    return <p className="text-sm text-neutral-500">No corrections yet.</p>
+    return (
+      <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+        No corrections yet.
+      </p>
+    )
   }
 
   return (
@@ -51,10 +59,10 @@ export default function CorrectionsList({ workspace_id, charityKey }: Correction
       {corrections.map(correction => (
         <li
           key={correction._id}
-          className="rounded border border-neutral-200 bg-neutral-50 p-3 text-sm"
+          className="border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] p-3 font-[family-name:var(--font-ui)] text-[13px]"
         >
-          <p className="text-neutral-800">{correction.text}</p>
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="text-[color:var(--color-ink)]">{correction.text}</p>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
             {correction.author} · {formatRelativeTime(correction.createdAt)}
           </p>
         </li>

@@ -15,6 +15,13 @@
  * a computed diversity number. Columns for a legacy charity missing a
  * sanityCharityId (or missing an individual chip) render an explicit
  * empty-chip affordance ("—"), never crash and never render "undefined".
+ *
+ * quick 260724-lp1: geometry/typography brought onto the uniform
+ * status-rule-card idiom (mockup 07 `.coverage` — 3px cobalt top border,
+ * mono-caps section caption). Same self-fetch behavior, same data shape —
+ * this strip's per-charity cause/geo/signal columns are a different feature
+ * from mockup 07's on-file/vetted/featured/blocked stat tiles + meter, so
+ * only the card geometry/typography idiom carries over, not that layout.
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -89,9 +96,9 @@ export function CoverageStrip() {
   return (
     <section
       aria-label="Recent coverage"
-      className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
+      className="border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-cobalt)] bg-[color:var(--color-card)] p-4"
     >
-      <h2 className="font-[family-name:var(--font-ui)] text-[9.5px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-ink-soft)]">
+      <h2 className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
         Recent coverage — last 8
       </h2>
 

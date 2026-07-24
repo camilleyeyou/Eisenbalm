@@ -87,7 +87,7 @@ export function AgentNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border-2 p-3 w-44 cursor-pointer select-none',
+        'border-2 p-3 w-44 cursor-pointer select-none',
         borderClass,
         isDisabled && !nodeData.status && 'opacity-40',
         selected && 'ring-2 ring-[color:var(--color-ink)] ring-offset-1',

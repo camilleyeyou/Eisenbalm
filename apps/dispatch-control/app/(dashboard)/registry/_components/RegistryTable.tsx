@@ -18,6 +18,11 @@
  * quick 260722-v01 (audit item 5): client-capped to the latest 50 filtered
  * rows with a "Show all" toggle, mirroring RunsTable.tsx's exemplar — an
  * unbounded table grew unusably long on a workspace with a large registry.
+ *
+ * quick 260724-lp1: uniform-system restyle (mockup 07) — hard-edged table,
+ * mono-caps headers + numerals, square filter chips (rounded-full -> mockup
+ * `.f-chip`), off the generic Tailwind grey palette and onto 1c tokens.
+ * className/markup only — same query, mutation, handlers, testids.
  */
 import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
@@ -98,7 +103,9 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
 
   if (charities === undefined) {
     return (
-      <div className="text-sm text-neutral-500 py-4">Loading registry…</div>
+      <div className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] py-4">
+        Loading registry…
+      </div>
     )
   }
 
@@ -145,18 +152,18 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Filter pills */}
-      <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Filter charities by status">
+      {/* Filter pills — mockup-07 .f-chip: square, mono-caps, cobalt active fill */}
+      <div className="flex items-center gap-1.5 flex-wrap" role="group" aria-label="Filter charities by status">
         {FILTER_LABELS.map(({ value, label }) => (
           <button
             key={value}
             type="button"
             onClick={() => setActiveFilter(value)}
             aria-pressed={activeFilter === value}
-            className={`min-h-[44px] rounded-full px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 ${
+            className={`min-h-[44px] border px-3 font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 ${
               activeFilter === value
-                ? 'bg-neutral-900 text-white'
-                : 'border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
+                ? 'border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)] text-white font-semibold'
+                : 'border-[color:var(--color-faint)] bg-[color:var(--color-card)] text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)]'
             }`}
           >
             {label}
@@ -165,62 +172,78 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
       </div>
 
       {filtered.length > 50 && !showAll && (
-        <p className="text-xs text-neutral-500">
+        <p className="font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-faint)]">
           Showing latest 50 of {filtered.length}
         </p>
       )}
 
       {actionError && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]">
           {actionError}
         </p>
       )}
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
-          <p className="text-sm font-semibold text-neutral-900">No charities yet</p>
-          <p className="mt-1 text-sm text-neutral-500">
+        <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
+          <p className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink)]">
+            No charities yet
+          </p>
+          <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             Charities appear here as the Scout pitches candidates. You can also add entries manually.
           </p>
         </div>
       )}
 
-      {/* Table */}
+      {/* Table — uniform pattern: hard edges, mono-caps faint th, mono numerals */}
       {filtered.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
+          <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
             <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-                <th className="px-4 py-3 text-xs font-medium text-neutral-600">Name</th>
-                <th className="px-4 py-3 text-xs font-medium text-neutral-600">Website</th>
-                <th className="px-4 py-3 text-xs font-medium text-neutral-600">Status</th>
-                <th className="px-4 py-3 text-xs font-medium text-neutral-600 text-right">Featured</th>
-                <th className="px-4 py-3 text-xs font-medium text-neutral-600">Last Featured</th>
-                <th className="px-4 py-3 text-xs font-medium text-neutral-600">Actions</th>
+              <tr className="border-b border-[color:var(--color-faint)] text-left">
+                <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+                  Name
+                </th>
+                <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+                  Website
+                </th>
+                <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-right font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+                  Featured
+                </th>
+                <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+                  Last Featured
+                </th>
+                <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {visibleCharities.map(charity => {
+            <tbody>
+              {visibleCharities.map((charity, i) => {
                 const isConfirmingThisBlocklist = confirmingBlocklistId === charity._id
                 const isPendingThisAction = pendingAction === charity._id
+                const isExpanded = expandedCharityId === charity._id
+                const isLastVisibleRow = i === visibleCharities.length - 1 && !isExpanded
 
                 return (
                   <Fragment key={charity._id}>
                   <tr
-                    className="hover:bg-neutral-50 transition-colors"
+                    className={`hover:bg-[color:var(--color-card-alt)] transition-colors ${isLastVisibleRow ? '' : 'border-b border-[color:var(--color-faint)]'}`}
                   >
-                    <td className="px-4 py-3 text-sm text-neutral-800">
+                    <td className="px-4 py-3 font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
                       {charity.name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500 max-w-[200px]">
+                    <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)] max-w-[200px]">
                       {charity.website ? (
                         <a
                           href={charity.website}
                           target="_blank"
                           rel="noopener noreferrer"
                           title={charity.website}
-                          className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded"
+                          className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
                         >
                           {truncateUrl(charity.website)}
                         </a>
@@ -231,12 +254,12 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                     <td className="px-4 py-3">
                       <CharityStatusBadge status={charity.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-700 text-right">
+                    <td className="px-4 py-3 text-right font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                       {charity.timesFeatured != null && charity.timesFeatured > 0
                         ? pluralizeFeatured(charity.timesFeatured)
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-neutral-500">
+                    <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                       {formatRelativeTime(charity.lastFeaturedAt)}
                     </td>
                     <td className="px-4 py-3">
@@ -249,7 +272,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                             onClick={() => handleUnblocklist(charity._id)}
                             disabled={isPendingThisAction}
                             aria-busy={isPendingThisAction}
-                            className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
+                            className="min-h-[44px] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 px-1"
                           >
                             {isPendingThisAction ? 'Updating…' : 'Restore to consideration'}
                           </button>
@@ -259,16 +282,16 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                              Phase 43 reason-only confirm. The confirm button
                              stays disabled until BOTH the typed name matches
                              the charity's exact name AND reason is non-empty. */
-                          <div className="space-y-2 rounded border border-neutral-200 bg-neutral-50 p-3 text-sm">
-                            <p className="font-semibold text-neutral-900">Mark Do not use?</p>
-                            <p className="text-neutral-600">
+                          <div className="space-y-2 border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] p-3 text-[13px]">
+                            <p className="font-semibold text-[color:var(--color-ink)]">Mark Do not use?</p>
+                            <p className="text-[color:var(--color-ink-soft)]">
                               The Scout will skip{' '}
                               <span className="font-medium">{charity.name}</span> in all
                               future runs.
                             </p>
                             <label
                               htmlFor={`blocklist-typed-name-${charity._id}`}
-                              className="block text-xs font-medium text-neutral-700"
+                              className="block font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]"
                             >
                               Type the organization&rsquo;s name to confirm: {charity.name}
                             </label>
@@ -280,11 +303,11 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                               disabled={isPendingThisAction}
                               required
                               placeholder={charity.name}
-                              className="w-full min-h-[44px] rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                              className="w-full min-h-[44px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2 py-1 text-[13px] text-[color:var(--color-ink)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
                             />
                             <label
                               htmlFor={`blocklist-reason-${charity._id}`}
-                              className="block text-xs font-medium text-neutral-700"
+                              className="block font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]"
                             >
                               Why mark Do not use?
                             </label>
@@ -296,7 +319,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                               required
                               rows={2}
                               placeholder="Required — this reason is recorded in the Decision Log."
-                              className="w-full min-h-[44px] rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                              className="w-full min-h-[44px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2 py-1 text-[13px] text-[color:var(--color-ink)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
                             />
                             <div className="flex items-center gap-2">
                               <button
@@ -308,7 +331,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                                   typedName.trim() !== charity.name.trim()
                                 }
                                 aria-busy={isPendingThisAction}
-                                className="min-h-[44px] rounded bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                                className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)] px-3 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
                               >
                                 {isPendingThisAction ? 'Marking…' : 'Mark Do not use'}
                               </button>
@@ -320,7 +343,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                                   setTypedName('')
                                 }}
                                 disabled={isPendingThisAction}
-                                className="min-h-[44px] rounded border border-neutral-300 px-3 text-sm text-neutral-700 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+                                className="min-h-[44px] border border-[color:var(--color-faint)] px-3 text-[13px] text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
                               >
                                 Cancel
                               </button>
@@ -339,7 +362,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                                 setBlocklistReason('')
                                 setTypedName('')
                               }}
-                              className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
+                              className="min-h-[44px] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 px-1"
                             >
                               Mark Do not use
                             </button>
@@ -355,7 +378,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                             )
                           }
                           aria-expanded={expandedCharityId === charity._id}
-                          className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded px-1"
+                          className="min-h-[44px] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 px-1"
                         >
                           {expandedCharityId === charity._id ? 'Hide corrections' : 'Add correction'}
                         </button>
@@ -365,7 +388,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
 
                   {/* Phase 39 (MEM-02): expanded row — add correction + chronological log */}
                   {expandedCharityId === charity._id && (
-                    <tr className="bg-neutral-50">
+                    <tr className={`bg-[color:var(--color-card-alt)] ${i === visibleCharities.length - 1 ? '' : 'border-b border-[color:var(--color-faint)]'}`}>
                       <td colSpan={6} className="px-4 py-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                           <AddCorrectionDialog workspace_id={workspace_id} charity={charity} />
@@ -386,7 +409,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="w-full border-t border-neutral-200 px-4 py-3 text-xs font-medium text-blue-600 hover:bg-neutral-50"
+              className="w-full border-t border-[color:var(--color-faint)] px-4 py-3 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
             >
               Show all ({filtered.length})
             </button>

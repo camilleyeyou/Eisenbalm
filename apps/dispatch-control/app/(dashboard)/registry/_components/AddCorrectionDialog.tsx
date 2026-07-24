@@ -54,7 +54,7 @@ export default function AddCorrectionDialog({ workspace_id, charity }: AddCorrec
 
   if (!hasKey) {
     return (
-      <p className="text-xs italic text-neutral-500">
+      <p className="font-[family-name:var(--font-ui)] text-[12px] italic text-[color:var(--color-ink-soft)]">
         This charity predates dedup keys; corrections unavailable.
       </p>
     )
@@ -62,7 +62,10 @@ export default function AddCorrectionDialog({ workspace_id, charity }: AddCorrec
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <label htmlFor={`correction-text-${charity.name}`} className="text-sm font-medium text-neutral-700">
+      <label
+        htmlFor={`correction-text-${charity.name}`}
+        className="font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-ink-soft)]"
+      >
         Add correction
       </label>
       <textarea
@@ -71,10 +74,10 @@ export default function AddCorrectionDialog({ workspace_id, charity }: AddCorrec
         onChange={e => setText(e.target.value)}
         placeholder="Describe the correction…"
         rows={3}
-        className="w-full rounded border border-neutral-300 px-3 py-2 text-sm text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+        className="w-full border border-[color:var(--color-faint)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
       />
       {error && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]">
           {error}
         </p>
       )}
@@ -82,7 +85,7 @@ export default function AddCorrectionDialog({ workspace_id, charity }: AddCorrec
         type="submit"
         disabled={!text.trim() || submitting}
         aria-busy={submitting}
-        className="min-h-[44px] rounded bg-neutral-900 px-4 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
+        className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
       >
         {submitting ? 'Saving…' : 'Add correction'}
       </button>

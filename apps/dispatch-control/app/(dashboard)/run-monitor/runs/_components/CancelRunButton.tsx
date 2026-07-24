@@ -69,7 +69,7 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             onClick={handleConfirm}
             disabled={loading}
             aria-busy={loading}
-            className="min-h-[44px] rounded-md border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+            className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             {loading ? (
               <span className="flex items-center gap-1.5">
@@ -97,7 +97,7 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             setError(null)
             setConfirming(true)
           }}
-          className="min-h-[44px] rounded-md border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+          className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
         >
           Cancel Run
         </button>

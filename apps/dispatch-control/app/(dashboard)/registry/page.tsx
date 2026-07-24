@@ -24,10 +24,18 @@ export default async function RegistryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold text-neutral-900">
-          {WORKBENCH_NAV_LABELS.registry}
-        </h1>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <span className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.14em] text-[color:var(--color-cobalt)]">
+            System Workbench
+          </span>
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-[32px] font-semibold leading-none text-[color:var(--color-ink)]">
+            {WORKBENCH_NAV_LABELS.registry}
+          </h1>
+          <p className="mt-1.5 font-[family-name:var(--font-body)] text-[14px] italic text-[color:var(--color-ink-soft)]">
+            Every organization the Dispatch has met, vetted, featured, or declined.
+          </p>
+        </div>
         <AddCharityDialogTrigger workspace_id={workspace_id} />
       </div>
 

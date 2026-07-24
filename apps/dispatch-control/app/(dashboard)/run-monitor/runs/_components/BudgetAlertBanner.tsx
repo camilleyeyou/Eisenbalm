@@ -57,7 +57,7 @@ export default function BudgetAlertBanner({ workspace_id }: BudgetAlertBannerPro
   return (
     <div
       role="alert"
-      className="flex items-start justify-between gap-3 rounded-md border border-[color:var(--color-marigold)]/40 bg-[color:var(--color-marigold)]/10 px-4 py-3 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-marigold-text)]"
+      className="flex items-start justify-between gap-3 border border-[color:var(--color-marigold)] border-l-[3px] bg-[color:var(--color-marigold)]/10 px-4 py-3 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-marigold-text)]"
     >
       <div className="flex items-start gap-2">
         <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
@@ -70,7 +70,7 @@ export default function BudgetAlertBanner({ workspace_id }: BudgetAlertBannerPro
         type="button"
         onClick={() => setDismissed(true)}
         aria-label="Dismiss budget alert"
-        className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center rounded text-[color:var(--color-marigold-text)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+        className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center text-[color:var(--color-marigold-text)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
       >
         <X size={16} aria-hidden="true" />
       </button>

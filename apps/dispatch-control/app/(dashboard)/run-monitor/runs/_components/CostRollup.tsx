@@ -30,7 +30,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
 
   if (runs === undefined) {
     return (
-      <div className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
         Loading cost data…
       </div>
     )
@@ -52,7 +52,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
     .slice(0, 5)
 
   return (
-    <details className="rounded-lg border border-[color:var(--color-faint)] bg-[color:var(--color-card)]" open>
+    <details className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)]" open>
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3 select-none">
         <span className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]">
           Spend Summary
