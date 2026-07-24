@@ -1,0 +1,238 @@
+<!-- @dsCard group="Review Desk" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story View — Outline Tab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+/* ── shared chrome ── */
+.topbar{display:flex;align-items:center;gap:20px;background:var(--card);border-bottom:1px solid var(--border);padding:12px 28px}
+.topbar .back{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none}
+.topbar .issue-id{font-size:13.5px;font-weight:600}
+.topbar .issue-id em{font-style:normal;color:var(--ink-soft);font-weight:500}
+.topbar .status-chip{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--marigold-text);border:1px solid var(--marigold);background:rgba(242,176,30,.12);padding:4px 9px}
+.stages{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--border);padding:0 28px}
+.stages a{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none;padding:13px 16px 11px;border-bottom:3px solid transparent}
+.stages a.active{color:var(--ink);font-weight:600;border-bottom-color:var(--cobalt)}
+
+/* ── story frame ── */
+.story{max-width:1080px;margin:0 auto;padding:26px 28px 60px}
+.crumbs{display:flex;align-items:center;gap:16px}
+.crumbs .back{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none}
+.crumbs .pos{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.crumbs .stepper{margin-left:auto;display:flex;gap:6px}
+.stepper button{font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--border);color:var(--ink);padding:7px 12px;cursor:pointer}
+.stepper button:hover{background:var(--card-alt)}
+
+.story-head{display:flex;align-items:flex-end;gap:24px;margin-top:18px}
+.story-head .left{flex:1;min-width:0}
+.kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cobalt)}
+.story-head h1{font-family:var(--display);font-weight:600;font-size:33px;line-height:1.05;margin-top:6px}
+.story-head .meta{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:10px}
+.story-head .meta b{color:var(--vermilion);font-weight:600}
+.actions{display:flex;gap:8px;flex-shrink:0}
+.btn{font-family:var(--ui);font-size:12.5px;font-weight:600;padding:10px 16px;cursor:pointer;border:1px solid var(--ink)}
+.btn.primary{background:var(--ink);color:var(--card)}
+.btn.primary:hover{background:#000}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.ghost:hover{background:var(--card-alt)}
+
+/* ── tabs ── */
+.tabs{display:flex;gap:4px;margin-top:26px}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px 11px;border:1px solid var(--border);border-bottom:none;background:var(--rail);color:var(--ink-soft);cursor:pointer;position:relative;top:1px}
+.tab.active{background:var(--card);color:var(--ink);font-weight:600;border-top:3px solid var(--cobalt);padding-top:10px}
+.tab .count{display:inline-flex;min-width:16px;justify-content:center;margin-left:8px;background:var(--vermilion);color:#fff;border-radius:99px;font-size:9.5px;padding:2px 5px;letter-spacing:0}
+.tabpanel{background:var(--card);border:1px solid var(--border);padding:30px 34px 34px}
+
+/* ── outline ── */
+.outline-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:36px}
+.o-cap{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+.beat{display:flex;gap:18px;padding:15px 0;border-bottom:1px solid var(--border)}
+.beat:first-of-type{padding-top:0}
+.beat:last-of-type{border-bottom:none}
+.beat .n{font-family:var(--mono);font-size:11px;color:var(--faint);width:26px;flex-shrink:0;padding-top:4px}
+.beat .b-main{flex:1;min-width:0}
+.beat h3{font-family:var(--display);font-weight:600;font-size:19px;line-height:1.15}
+.beat h3 .tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:400;margin-left:8px;vertical-align:2px}
+.beat p{font-family:var(--body);font-style:italic;font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin-top:5px}
+.beat .b-meta{flex-shrink:0;text-align:right;padding-top:4px}
+.beat .wc{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.beat .flags{display:flex;gap:4px;justify-content:flex-end;margin-top:7px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.err{background:var(--vermilion)}
+.dot.warn{background:var(--marigold)}
+.derived{font-family:var(--body);font-style:italic;font-size:12px;color:var(--faint);margin-top:18px}
+
+/* ── side rail ── */
+.side .panel{border:1px solid var(--border);background:var(--card-alt);padding:16px 18px;margin-bottom:14px}
+.side .panel.brief{border-left:3px solid var(--cobalt)}
+.p-cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.field{margin-top:12px}
+.field .f-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--cobalt)}
+.field p{font-family:var(--body);font-size:13px;line-height:1.5;color:var(--ink);margin-top:3px}
+.claims-row{display:flex;align-items:baseline;gap:8px;margin-top:12px}
+.claims-row .big{font-family:var(--display);font-size:24px;font-weight:600}
+.claims-row .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.claims-row.sourced .big{color:var(--marigold-text)}
+.claims-row.unsourced .big{color:var(--vermilion)}
+.findings-list{margin-top:10px}
+.finding{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--border);font-size:12px;line-height:1.45;color:var(--ink)}
+.finding:first-child{border-top:none}
+.finding .sev{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.finding .sev.err{background:var(--vermilion)}
+.finding .sev.warn{background:var(--marigold)}
+.finding a{color:var(--cobalt);text-decoration:none;font-weight:600}
+
+/* ── footer nav ── */
+.footer-nav{display:flex;justify-content:space-between;margin-top:16px}
+.footer-nav a{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none;background:var(--card);border:1px solid var(--border);padding:11px 16px}
+.footer-nav a:hover{background:var(--card-alt)}
+.footer-nav a b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="back" href="#">← Issues</a>
+  <div class="issue-id">Issue 47 · <em>The Granite Ledger Society</em></div>
+  <span class="status-chip">Awaiting review</span>
+</header>
+<nav class="stages">
+  <a href="#">Story</a><a class="active" href="#">Draft</a><a href="#">Fact check</a><a href="#">Voice</a><a href="#">Approval</a>
+</nav>
+
+<main class="story">
+  <div class="crumbs">
+    <a class="back" href="#">← Draft desk</a>
+    <span class="pos">Story 2 of 9</span>
+    <div class="stepper">
+      <button>← Origin Story</button>
+      <button>Founder Bio →</button>
+    </div>
+  </div>
+
+  <div class="story-head">
+    <div class="left">
+      <span class="kicker">Problem</span>
+      <h1>Four Thousand Cemeteries, No One on Payroll</h1>
+      <div class="meta">720 words &nbsp;·&nbsp; <b>2 must fix</b> · 1 warning &nbsp;·&nbsp; QA pass 14:32 &nbsp;·&nbsp; unreviewed</div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost">✓ Mark reviewed</button>
+      <button class="btn primary">Edit story</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active">Outline</button>
+    <button class="tab">Draft<span class="count">3</span></button>
+  </div>
+
+  <div class="tabpanel">
+    <div class="outline-grid">
+      <div class="beats">
+        <div class="o-cap">The shape of the piece</div>
+
+        <div class="beat">
+          <span class="n">—</span>
+          <div class="b-main">
+            <h3>There are more dead Vermonters than living ones<span class="tag">Lede</span></h3>
+            <p>Opens on the census arithmetic: 4,100 known burial grounds, 251 town clerks, zero full-time maintainers.</p>
+          </div>
+          <div class="b-meta"><span class="wc">120 w</span></div>
+        </div>
+
+        <div class="beat">
+          <span class="n">01</span>
+          <div class="b-main">
+            <h3>The Arithmetic of Neglect</h3>
+            <p>A cemetery requires roughly $400 a year to keep from disappearing. Multiplied out, the state's entire backlog costs less than one highway interchange.</p>
+          </div>
+          <div class="b-meta">
+            <span class="wc">210 w</span>
+            <div class="flags"><i class="dot err"></i></div>
+          </div>
+        </div>
+
+        <div class="beat">
+          <span class="n">02</span>
+          <div class="b-main">
+            <h3>Perpetual Care, Briefly</h3>
+            <p>The trusts that were supposed to fund mowing in perpetuity ran out of perpetuity around 1974.</p>
+          </div>
+          <div class="b-meta">
+            <span class="wc">190 w</span>
+            <div class="flags"><i class="dot warn"></i></div>
+          </div>
+        </div>
+
+        <div class="beat">
+          <span class="n">03</span>
+          <div class="b-main">
+            <h3>What the State Will Not Do</h3>
+            <p>Vermont statute is very clear about whose problem an abandoned cemetery is: nobody's. Closes on the Society as the only entity that volunteered.</p>
+          </div>
+          <div class="b-meta">
+            <span class="wc">200 w</span>
+            <div class="flags"><i class="dot err"></i></div>
+          </div>
+        </div>
+
+        <p class="derived">The outline is read from the draft's structure — headline, subheads, and paragraph leads. To change it, edit the draft.</p>
+      </div>
+
+      <aside class="side">
+        <div class="panel brief">
+          <div class="p-cap">From the brief</div>
+          <div class="field">
+            <div class="f-label">Central claim</div>
+            <p>Cemetery neglect is an accounting failure, not a moral one.</p>
+          </div>
+          <div class="field">
+            <div class="f-label">Reader effect</div>
+            <p>The reader should finish convinced that mowing is governance.</p>
+          </div>
+          <div class="field">
+            <div class="f-label">Known risks</div>
+            <p>Statute citations must be verified; do not invent Vermont law.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="p-cap">Claims in this story</div>
+          <div class="claims-row sourced"><span class="big">6</span><span class="lbl">sourced</span></div>
+          <div class="claims-row unsourced"><span class="big">1</span><span class="lbl">unsourced</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="p-cap">Open findings · 3</div>
+          <div class="findings-list">
+            <div class="finding"><span class="sev err"></span><span>Statute citation 18 V.S.A. § 5361 not found in research doc. <a href="#">Jump to line</a></span></div>
+            <div class="finding"><span class="sev err"></span><span>"$400 a year" conflicts with research figure ($460). <a href="#">Jump to line</a></span></div>
+            <div class="finding"><span class="sev warn"></span><span>"stopped keeping track" reads sentimental; Jesse does not mourn. <a href="#">Jump to line</a></span></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="footer-nav">
+    <a href="#">← 01 · Origin Story</a>
+    <a href="#">Next unreviewed: <b>03 · Founder Bio</b> →</a>
+  </div>
+</main>
+
+</body>
+</html>

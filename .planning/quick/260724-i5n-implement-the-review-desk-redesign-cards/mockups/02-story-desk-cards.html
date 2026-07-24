@@ -1,0 +1,157 @@
+<!-- @dsCard group="Review Desk" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story Desk — Contact Sheet</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+/* ── shared chrome ── */
+.topbar{display:flex;align-items:center;gap:20px;background:var(--card);border-bottom:1px solid var(--border);padding:12px 28px}
+.topbar .back{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none}
+.topbar .issue-id{font-size:13.5px;font-weight:600}
+.topbar .issue-id em{font-style:normal;color:var(--ink-soft);font-weight:500}
+.topbar .status-chip{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--marigold-text);border:1px solid var(--marigold);background:rgba(242,176,30,.12);padding:4px 9px}
+.stages{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--border);padding:0 28px}
+.stages a{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none;padding:13px 16px 11px;border-bottom:3px solid transparent}
+.stages a.active{color:var(--ink);font-weight:600;border-bottom-color:var(--cobalt)}
+
+/* ── desk ── */
+.desk{max-width:1180px;margin:0 auto;padding:34px 28px 60px}
+.desk-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px}
+.desk-head h1{font-family:var(--display);font-weight:600;font-size:34px;line-height:1}
+.desk-head .sub{font-family:var(--body);font-style:italic;font-size:14.5px;color:var(--ink-soft);margin-top:8px}
+.tally{text-align:right}
+.tally .nums{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
+.tally .nums b{color:var(--ink);font-weight:600}
+.meter{margin-top:8px;width:220px;height:5px;background:var(--nav);position:relative;margin-left:auto}
+.meter i{position:absolute;inset:0;right:56%;background:var(--green)}
+.tally .cap{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.story{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-top:3px solid var(--nav);padding:18px 18px 14px;min-height:190px;cursor:pointer;text-decoration:none;color:inherit;position:relative}
+.story:hover{background:var(--card-alt);border-top-color:var(--cobalt)}
+.story.mustfix{border-top-color:var(--vermilion)}
+.story.review{border-top-color:var(--marigold)}
+.story.done{border-top-color:var(--green)}
+.story .head{display:flex;justify-content:space-between;align-items:baseline}
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--cobalt)}
+.num{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.story h2{font-family:var(--display);font-weight:600;font-size:21px;line-height:1.12;margin-top:8px}
+.story .excerpt{font-family:var(--body);font-style:italic;font-size:13px;line-height:1.5;color:var(--ink-soft);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.story .foot{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:14px}
+.chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;padding:3px 7px;border:1px solid;white-space:nowrap}
+.chip.clean{color:var(--green);border-color:var(--green);background:rgba(20,138,82,.07)}
+.chip.review{color:var(--marigold-text);border-color:var(--marigold);background:rgba(242,176,30,.1)}
+.chip.mustfix{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+.findings{display:flex;gap:4px}
+.dot{width:7px;height:7px;border-radius:50%}
+.dot.err{background:var(--vermilion)}
+.dot.warn{background:var(--marigold)}
+.words{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:auto}
+.tick{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:10.5px;color:var(--green)}
+.desk-foot{font-family:var(--body);font-style:italic;font-size:13px;color:var(--faint);margin-top:20px;text-align:center}
+.desk-foot b{font-style:normal;font-family:var(--ui);font-weight:600;color:var(--ink-soft)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="back" href="#">← Issues</a>
+  <div class="issue-id">Issue 47 · <em>The Granite Ledger Society</em></div>
+  <span class="status-chip">Awaiting review</span>
+</header>
+<nav class="stages">
+  <a href="#">Story</a><a class="active" href="#">Draft</a><a href="#">Fact check</a><a href="#">Voice</a><a href="#">Approval</a>
+</nav>
+
+<main class="desk">
+  <div class="desk-head">
+    <div>
+      <h1>The Draft Desk</h1>
+      <p class="sub">Nine stories this week. Read them one at a time.</p>
+    </div>
+    <div class="tally">
+      <div class="nums"><b>4 of 9</b> reviewed &nbsp;·&nbsp; 2 must fix &nbsp;·&nbsp; 2 in review</div>
+      <div class="meter"><i></i></div>
+      <div class="cap">Review progress</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <a class="story done" href="#">
+      <span class="tick">✓ Reviewed</span>
+      <span class="head"><span class="kicker">Origin Story</span><span class="num">01</span></span>
+      <h2>The Ledger That Would Not Close</h2>
+      <p class="excerpt">In 1987, a town clerk in Calais, Vermont, noticed that the cemetery fund had been empty for forty years.</p>
+      <span class="foot"><span class="chip clean">Clean</span><span class="words">640 words</span></span>
+    </a>
+    <a class="story mustfix" href="#">
+      <span class="head"><span class="kicker">Problem</span><span class="num">02</span></span>
+      <h2>Four Thousand Cemeteries, No One on Payroll</h2>
+      <p class="excerpt">There are more dead Vermonters than living ones, and the living have stopped keeping track.</p>
+      <span class="foot"><span class="chip mustfix">Must fix</span><span class="findings"><i class="dot err"></i><i class="dot err"></i><i class="dot warn"></i></span><span class="words">720 words</span></span>
+    </a>
+    <a class="story review" href="#">
+      <span class="head"><span class="kicker">Founder Bio</span><span class="num">03</span></span>
+      <h2>Marion Tewksbury Counts the Dead So You Don't Have To</h2>
+      <p class="excerpt">She has personally transcribed 11,204 headstones. She does not consider this remarkable.</p>
+      <span class="foot"><span class="chip review">Review</span><span class="findings"><i class="dot warn"></i><i class="dot warn"></i></span><span class="words">580 words</span></span>
+    </a>
+    <a class="story done" href="#">
+      <span class="tick">✓ Reviewed</span>
+      <span class="head"><span class="kicker">Case Study</span><span class="num">04</span></span>
+      <h2>What Happened in Starksboro</h2>
+      <p class="excerpt">A town of 1,777 people voted to tax itself to mow a field of strangers. The measure passed by six votes.</p>
+      <span class="foot"><span class="chip clean">Clean</span><span class="words">610 words</span></span>
+    </a>
+    <a class="story review" href="#">
+      <span class="head"><span class="kicker">Bonus</span><span class="num">05</span></span>
+      <h2>A Field Guide to Reading Slate</h2>
+      <p class="excerpt">The winged skull means exactly what you think it means. The willow does not.</p>
+      <span class="foot"><span class="chip review">Review</span><span class="findings"><i class="dot warn"></i></span><span class="words">340 words</span></span>
+    </a>
+    <a class="story mustfix" href="#">
+      <span class="head"><span class="kicker">Game</span><span class="num">06</span></span>
+      <h2>Headstone Triage</h2>
+      <p class="excerpt">Interactive — allocate a restoration budget across a failing cemetery before winter.</p>
+      <span class="foot"><span class="chip mustfix">Must fix</span><span class="findings"><i class="dot err"></i></span><span class="words">Structured</span></span>
+    </a>
+    <a class="story done" href="#">
+      <span class="tick">✓ Reviewed</span>
+      <span class="head"><span class="kicker">Deliberation</span><span class="num">07</span></span>
+      <h2>The Board Convenes</h2>
+      <p class="excerpt">Scout brought four candidates. The Advocate fought hardest for the one with the smallest bank account.</p>
+      <span class="foot"><span class="chip clean">Clean</span><span class="words">890 words</span></span>
+    </a>
+    <a class="story done" href="#">
+      <span class="tick">✓ Reviewed</span>
+      <span class="head"><span class="kicker">Podcast</span><span class="num">08</span></span>
+      <h2>Episode 47: Perpetual Care</h2>
+      <p class="excerpt">Twenty-one minutes on trust funds, lichen, and the administrative afterlife.</p>
+      <span class="foot"><span class="chip clean">Clean</span><span class="words">Transcript</span></span>
+    </a>
+    <a class="story" href="#">
+      <span class="head"><span class="kicker">Theme</span><span class="num">09</span></span>
+      <h2>Slate &amp; Lichen</h2>
+      <p class="excerpt">Charcoal ground, bone paper, a single oxidized-copper accent. Newsreader over Lora.</p>
+      <span class="foot"><span class="chip clean">Clean</span><span class="words">Structured</span></span>
+    </a>
+  </div>
+
+  <p class="desk-foot">Open a story to review it in focus — <b>Outline</b> and <b>Draft</b> tabs inside. Publishing still happens in the Approval stage.</p>
+</main>
+
+</body>
+</html>

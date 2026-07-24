@@ -1,0 +1,167 @@
+<!-- @dsCard group="Review Desk" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story View — Draft Tab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+/* ── shared chrome ── */
+.topbar{display:flex;align-items:center;gap:20px;background:var(--card);border-bottom:1px solid var(--border);padding:12px 28px}
+.topbar .back{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none}
+.topbar .issue-id{font-size:13.5px;font-weight:600}
+.topbar .issue-id em{font-style:normal;color:var(--ink-soft);font-weight:500}
+.topbar .status-chip{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--marigold-text);border:1px solid var(--marigold);background:rgba(242,176,30,.12);padding:4px 9px}
+.stages{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--border);padding:0 28px}
+.stages a{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none;padding:13px 16px 11px;border-bottom:3px solid transparent}
+.stages a.active{color:var(--ink);font-weight:600;border-bottom-color:var(--cobalt)}
+
+/* ── story frame ── */
+.story{max-width:1080px;margin:0 auto;padding:26px 28px 60px}
+.crumbs{display:flex;align-items:center;gap:16px}
+.crumbs .back{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none}
+.crumbs .pos{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.crumbs .stepper{margin-left:auto;display:flex;gap:6px}
+.stepper button{font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--border);color:var(--ink);padding:7px 12px;cursor:pointer}
+.stepper button:hover{background:var(--card-alt)}
+
+.story-head{display:flex;align-items:flex-end;gap:24px;margin-top:18px}
+.story-head .left{flex:1;min-width:0}
+.kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cobalt)}
+.story-head h1{font-family:var(--display);font-weight:600;font-size:33px;line-height:1.05;margin-top:6px}
+.story-head .meta{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:10px}
+.story-head .meta b{color:var(--vermilion);font-weight:600}
+.actions{display:flex;gap:8px;flex-shrink:0}
+.btn{font-family:var(--ui);font-size:12.5px;font-weight:600;padding:10px 16px;cursor:pointer;border:1px solid var(--ink)}
+.btn.primary{background:var(--ink);color:var(--card)}
+.btn.primary:hover{background:#000}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.ghost:hover{background:var(--card-alt)}
+
+/* ── tabs ── */
+.tabs{display:flex;gap:4px;margin-top:26px}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px 11px;border:1px solid var(--border);border-bottom:none;background:var(--rail);color:var(--ink-soft);cursor:pointer;position:relative;top:1px}
+.tab.active{background:var(--card);color:var(--ink);font-weight:600;border-top:3px solid var(--cobalt);padding-top:10px}
+.tab .count{display:inline-flex;min-width:16px;justify-content:center;margin-left:8px;background:var(--vermilion);color:#fff;border-radius:99px;font-size:9.5px;padding:2px 5px;letter-spacing:0}
+.tabpanel{background:var(--card);border:1px solid var(--border);padding:44px 34px 52px}
+
+/* ── galley ── */
+.galley{max-width:660px;margin:0 auto}
+.galley .g-kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+.galley h2.headline{font-family:var(--display);font-weight:600;font-size:44px;line-height:.98;margin-top:12px}
+.galley .deck{font-family:var(--display);font-style:italic;font-size:22px;line-height:1.3;color:var(--ink-soft);margin-top:14px}
+.galley .rule{height:1px;background:var(--border);margin:26px 0}
+.galley p{font-family:var(--body);font-size:16.5px;line-height:1.7;margin-top:18px}
+.galley h3{font-family:var(--display);font-weight:600;font-size:28px;line-height:1.1;margin-top:34px}
+
+/* annotation treatments (mirrors .galley-anno) */
+.anno{cursor:pointer;position:relative}
+.anno.err{background:rgba(232,71,29,.13);border-bottom:2px solid var(--vermilion)}
+.anno.warn{border-bottom:2px solid var(--marigold)}
+.claim.sourced{background:linear-gradient(transparent 60%, rgba(242,176,30,.5) 60%)}
+
+/* inline finding popover (shown open for the mock) */
+.popover-wrap{position:relative}
+.popover{position:absolute;z-index:40;top:calc(100% + 8px);left:24px;max-width:340px;background:var(--card);border:1px solid var(--ink);box-shadow:5px 5px 0 var(--cobalt);padding:14px;font-family:var(--ui);font-size:12.5px}
+.popover .sev{text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:600;color:var(--vermilion)}
+.popover .axis{text-transform:uppercase;letter-spacing:.06em;font-size:10px;color:var(--cobalt);margin-top:6px}
+.popover .reason{margin-top:6px;line-height:1.45;font-family:var(--ui)}
+.popover .fix{margin-top:8px;color:var(--ink-soft);font-style:italic}
+.popover .p-actions{display:flex;gap:6px;margin-top:12px}
+.popover .p-actions button{font-family:var(--ui);font-size:11px;font-weight:600;padding:6px 10px;border:1px solid var(--ink);background:var(--card);cursor:pointer}
+.popover .p-actions button.accept{background:var(--ink);color:#fff}
+
+/* ── footer nav ── */
+.footer-nav{display:flex;justify-content:space-between;margin-top:16px}
+.footer-nav a{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none;background:var(--card);border:1px solid var(--border);padding:11px 16px}
+.footer-nav a:hover{background:var(--card-alt)}
+.footer-nav a b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="back" href="#">← Issues</a>
+  <div class="issue-id">Issue 47 · <em>The Granite Ledger Society</em></div>
+  <span class="status-chip">Awaiting review</span>
+</header>
+<nav class="stages">
+  <a href="#">Story</a><a class="active" href="#">Draft</a><a href="#">Fact check</a><a href="#">Voice</a><a href="#">Approval</a>
+</nav>
+
+<main class="story">
+  <div class="crumbs">
+    <a class="back" href="#">← Draft desk</a>
+    <span class="pos">Story 2 of 9</span>
+    <div class="stepper">
+      <button>← Origin Story</button>
+      <button>Founder Bio →</button>
+    </div>
+  </div>
+
+  <div class="story-head">
+    <div class="left">
+      <span class="kicker">Problem</span>
+      <h1>Four Thousand Cemeteries, No One on Payroll</h1>
+      <div class="meta">720 words &nbsp;·&nbsp; <b>2 must fix</b> · 1 warning &nbsp;·&nbsp; QA pass 14:32 &nbsp;·&nbsp; unreviewed</div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost">✓ Mark reviewed</button>
+      <button class="btn primary">Edit story</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab">Outline</button>
+    <button class="tab active">Draft<span class="count">3</span></button>
+  </div>
+
+  <div class="tabpanel">
+    <article class="galley">
+      <span class="g-kicker">Problem · Issue 47</span>
+      <h2 class="headline">Four Thousand Cemeteries, No One on Payroll</h2>
+      <p class="deck">The state has four thousand burial grounds and a maintenance plan for none of them.</p>
+      <div class="rule"></div>
+
+      <p>There are more dead Vermonters than living ones, and <span class="anno warn">the living have stopped keeping track</span>. The state maintains a registry of <span class="claim sourced">4,100 known burial grounds</span>, a number its own historians describe as an undercount. Responsibility for these sites is distributed among 251 town clerks, an unknown number of church boards, and several hundred families who no longer exist.</p>
+
+      <h3>The Arithmetic of Neglect</h3>
+
+      <p class="popover-wrap">A cemetery requires roughly <span class="anno err">$400 a year</span> to keep from disappearing — mowing, fence repair, the occasional resetting of a stone that frost has pushed over. Multiplied across the full backlog, the cost of maintaining every abandoned cemetery in Vermont is less than the state spends on one highway interchange.</p>
+      <span class="popover-wrap" style="display:block">
+        <span class="popover">
+          <span class="sev">Must fix</span>
+          <span class="axis" style="display:block">Accuracy · Fact Guard</span>
+          <span class="reason" style="display:block">Research doc cites $460/yr (VOCA 2024 survey), not $400. Figure appears once more in the case study.</span>
+          <span class="fix" style="display:block">Suggested: "roughly $460 a year"</span>
+          <span class="p-actions"><button class="accept">Accept fix</button><button>Dismiss</button><button>Edit myself</button></span>
+        </span>
+      </span>
+
+      <p style="margin-top:120px">The Society's own books, published annually since 1989, list every dollar. Last year it spent <span class="claim sourced">$61,000</span> across 214 sites and apologized, in print, for the overhead of a single part-time bookkeeper.</p>
+
+      <h3>Perpetual Care, Briefly</h3>
+
+      <p>The trusts that were supposed to fund mowing in perpetuity ran out of perpetuity around 1974. A perpetual-care fund established in 1911 with $200 now yields approximately $3.80 a year, which at current rates purchases eleven minutes of professional mowing.</p>
+    </article>
+  </div>
+
+  <div class="footer-nav">
+    <a href="#">← 01 · Origin Story</a>
+    <a href="#">Next unreviewed: <b>03 · Founder Bio</b> →</a>
+  </div>
+</main>
+
+</body>
+</html>
