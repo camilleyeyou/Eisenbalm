@@ -289,11 +289,13 @@ export default function EvalDrawer({
   const avgDelta = average(pairedDeltas)
 
   return (
-    <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
+    <div className="space-y-3 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-neutral-900">Quality test scoreboard</h2>
+        <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
+          Quality test scoreboard
+        </h2>
         {targetVersion && (
-          <span className="rounded bg-[color:var(--color-cobalt,#253ad4)]/10 px-1.5 py-0.5 text-[11px] font-medium text-[color:var(--color-cobalt,#253ad4)]">
+          <span className="inline-block border border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)]/[0.06] px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase text-[color:var(--color-cobalt)]">
             Scoring v{targetVersion.version} for activation
           </span>
         )}
@@ -302,19 +304,21 @@ export default function EvalDrawer({
       {fetchError && (
         <div
           role="alert"
-          className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800"
+          className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/[0.08] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]"
         >
           {fetchError}
         </div>
       )}
 
       {scenarios === null && !fetchError && (
-        <p className="text-xs text-neutral-400">Loading scenarios…</p>
+        <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-faint)]">
+          Loading scenarios…
+        </p>
       )}
 
       {scenarios !== null && scenarioCount === 0 && (
-        <p className="text-xs text-neutral-400">
-          No standard test cases for <span className="font-mono">{agentKey}</span> yet.
+        <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-faint)]">
+          No standard test cases for <span className="font-[family-name:var(--font-mono)]">{agentKey}</span> yet.
         </p>
       )}
 
@@ -323,18 +327,18 @@ export default function EvalDrawer({
           {/* Aggregate target-metric summary (D-05) — sits ABOVE the rows. */}
           <div
             data-testid="eval-aggregate"
-            className="rounded border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs"
+            className="border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px]"
           >
-            <span className="font-semibold text-neutral-900">
+            <span className="font-semibold text-[color:var(--color-ink)]">
               {scenarioCount} scenario{scenarioCount !== 1 ? 's' : ''}
             </span>
             {avgDraft != null && (
-              <span data-testid="eval-aggregate-draft" className="ml-2 text-neutral-600">
+              <span data-testid="eval-aggregate-draft" className="ml-2 text-[color:var(--color-ink-soft)]">
                 avg draft {avgDraft.toFixed(1)}
               </span>
             )}
             {avgActive != null && (
-              <span data-testid="eval-aggregate-active" className="ml-2 text-neutral-600">
+              <span data-testid="eval-aggregate-active" className="ml-2 text-[color:var(--color-ink-soft)]">
                 avg active {avgActive.toFixed(1)}
               </span>
             )}
@@ -352,14 +356,14 @@ export default function EvalDrawer({
             type="button"
             onClick={handleRunEvals}
             disabled={running}
-            className="min-h-[44px] rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-2"
           >
             {running
               ? 'Testing changes…'
               : `Test changes (${scenarioCount} scenario${scenarioCount !== 1 ? 's' : ''} · ~${scenarioCount * 4} model calls)`}
           </button>
 
-          <ul className="divide-y divide-neutral-100 rounded border border-neutral-200 bg-white">
+          <ul className="divide-y divide-[color:var(--color-faint)] border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
             {scenarioList.map(scenario => {
               const row = rows[scenario.id]
               const delta =
@@ -370,23 +374,23 @@ export default function EvalDrawer({
                 <li
                   key={scenario.id}
                   data-testid={`eval-row-${scenario.id}`}
-                  className="px-3 py-2 text-xs"
+                  className="px-3 py-2 font-[family-name:var(--font-ui)] text-[12px]"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-neutral-900">
+                    <span className="font-medium text-[color:var(--color-ink)]">
                       {scenario.whatItCatches}
                     </span>
                     {row?.status === 'running' && (
-                      <span className="text-neutral-400">running…</span>
+                      <span className="text-[color:var(--color-faint)]">running…</span>
                     )}
                   </div>
                   {row?.error && (
-                    <p role="alert" className="mt-1 text-[11px] text-red-700">
+                    <p role="alert" className="mt-1 text-[11px] text-[color:var(--color-vermilion)]">
                       {row.error}
                     </p>
                   )}
                   {row?.status === 'done' && (
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-neutral-600">
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-[color:var(--color-ink-soft)]">
                       <span data-testid={`eval-row-draft-${scenario.id}`}>
                         draft {row.draftOverall!.toFixed(1)}
                       </span>

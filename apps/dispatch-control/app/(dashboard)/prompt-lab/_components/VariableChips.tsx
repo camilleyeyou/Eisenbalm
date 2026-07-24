@@ -28,7 +28,7 @@ export default function VariableChips({
 }: VariableChipsProps) {
   if (allowed.length === 0) {
     return (
-      <p className="text-xs text-neutral-400">
+      <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-faint)]">
         No variables for this prompt.
       </p>
     )
@@ -51,10 +51,10 @@ export default function VariableChips({
               title={description}
               aria-label={description ? `${name}: ${description}` : name}
               className={
-                'min-h-[44px] rounded px-1.5 py-0.5 font-mono text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ' +
+                'min-h-[44px] border px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] ' +
                 (isUnused
-                  ? 'border border-dashed border-neutral-300 bg-white text-neutral-400'
-                  : 'bg-green-50 text-green-800 hover:bg-green-100')
+                  ? 'border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] text-[color:var(--color-faint)]'
+                  : 'border-[color:var(--color-green)] bg-[color:var(--color-green)]/[0.07] text-[color:var(--color-green)] hover:bg-[color:var(--color-green)]/[0.15]')
               }
             >
               {`{${name}}`}
@@ -63,7 +63,7 @@ export default function VariableChips({
         })}
       </div>
       {unused.length > 0 && (
-        <p className="text-[11px] text-neutral-400">
+        <p className="font-[family-name:var(--font-mono)] text-[10.5px] text-[color:var(--color-faint)]">
           Allowed but not used: {unused.join(', ')}
         </p>
       )}

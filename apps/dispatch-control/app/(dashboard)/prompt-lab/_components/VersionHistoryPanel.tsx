@@ -43,6 +43,11 @@
  * quick 260722-tv1: the version list caps to the latest 20 (`versions` is
  * newest-first, so `slice(0, 20)`) with a "Show older" toggle — an unbounded
  * list ran indefinitely long for an agent with a long version history.
+ *
+ * quick 260724-lp1: token/radius hygiene — off the generic Tailwind grey/
+ * amber/red/green/blue palette and onto 1c tokens, hard edges (no
+ * rounded-lg / rounded-full). Same subscriptions, mutations, handlers, and
+ * state.
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
@@ -162,7 +167,9 @@ export default function VersionHistoryPanel({
 
   if (versions === undefined) {
     return (
-      <div className="text-sm text-neutral-500 py-4">Loading versions…</div>
+      <div className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] py-4">
+        Loading versions…
+      </div>
     )
   }
 
@@ -173,12 +180,12 @@ export default function VersionHistoryPanel({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <h2 className="text-base font-semibold text-neutral-900">
+          <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
             Version history
           </h2>
           <HelpTip text={HELP_COPY.promptLab.activate} label="Explain make active / restore" />
         </div>
-        <span className="text-xs text-neutral-400">
+        <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
           {versions.length === 0
             ? 'No versions'
             : `${versions.length} version${versions.length !== 1 ? 's' : ''}`}
@@ -188,7 +195,7 @@ export default function VersionHistoryPanel({
       {runInProgress && (
         <div
           role="status"
-          className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          className="border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-marigold-text)]"
         >
           A run is in progress — activation will be available when it finishes.
         </div>
@@ -197,7 +204,7 @@ export default function VersionHistoryPanel({
       {blockedReason && (
         <div
           role="alert"
-          className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          className="border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-marigold-text)]"
         >
           {blockedReason}
         </div>
@@ -207,19 +214,21 @@ export default function VersionHistoryPanel({
           NEVER shown while a run is in progress: that guard is unbypassable,
           so no override is offered for it (D-02 stays a hard block). */}
       {blockedReason && blockedVersion !== null && !runInProgress && (
-        <div className="space-y-2 rounded border border-red-200 bg-red-50 px-3 py-2">
+        <div className="space-y-2 border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/[0.06] px-3 py-2">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-red-900">Quality-test override</span>
+            <span className="font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-vermilion)]">
+              Quality-test override
+            </span>
             <HelpTip text={HELP_COPY.promptLab.evalGate} label="Explain the eval gate" />
           </div>
-          <label className="block text-xs font-medium text-red-900">
+          <label className="block font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-vermilion)]">
             Override reason (required to make active anyway)
             <input
               type="text"
               value={overrideReason}
               onChange={e => setOverrideReason(e.target.value)}
               placeholder="Why activate despite the failing quality test?"
-              className="mt-1 block w-full min-h-[44px] rounded border border-red-300 bg-white px-2 py-1.5 text-xs text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              className="mt-1 block w-full min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-2 py-1.5 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
             />
           </label>
           <button
@@ -228,7 +237,7 @@ export default function VersionHistoryPanel({
               handleActivate(blockedVersion, { reason: overrideReason.trim() })
             }
             disabled={overrideReason.trim().length === 0 || activating !== null}
-            className="min-h-[44px] rounded border border-red-700 bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-1"
+            className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)] px-3 py-1 font-[family-name:var(--font-ui)] text-[12px] font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             {activating === blockedVersion
               ? 'Making active anyway…'
@@ -238,37 +247,39 @@ export default function VersionHistoryPanel({
       )}
 
       {versions.length === 0 ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-6 text-center">
-          <p className="text-sm text-neutral-500">
+        <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-6 text-center">
+          <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
             No versions yet — save the current draft to create version 1.
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white">
+        <ul className="divide-y divide-[color:var(--color-faint)] border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
           {visibleVersions.map(v => (
             <li key={v._id} className="px-4 py-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-neutral-900">
+                <span className="font-[family-name:var(--font-mono)] text-[11px] font-semibold text-[color:var(--color-ink)]">
                   v{v.version}
                 </span>
                 {v.isActive && (
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                  <span className="inline-block border border-[color:var(--color-green)] bg-[color:var(--color-green)]/[0.07] px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase text-[color:var(--color-green)]">
                     Active
                   </span>
                 )}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-neutral-500">
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 font-[family-name:var(--font-mono)] text-[10.5px] text-[color:var(--color-ink-soft)]">
                 <span className="whitespace-nowrap">
                   {formatTimestamp(v.createdAt)}
                 </span>
                 {v.createdBy && (
-                  <span className="font-mono whitespace-nowrap">
+                  <span className="whitespace-nowrap">
                     {v.createdBy}
                   </span>
                 )}
               </div>
               {v.note && (
-                <p className="mt-1 text-xs text-neutral-600">{v.note}</p>
+                <p className="mt-1 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
+                  {v.note}
+                </p>
               )}
               {/* Activate / restore control (PRM-04, Phase 50 WBN-05: "Make
                   active" / "Restore version"). Restore == activate of an
@@ -278,7 +289,7 @@ export default function VersionHistoryPanel({
                 className="mt-2"
               >
                 {v.isActive ? (
-                  <span className="text-xs text-neutral-400">
+                  <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-[color:var(--color-faint)]">
                     Currently active
                   </span>
                 ) : (
@@ -297,7 +308,7 @@ export default function VersionHistoryPanel({
                             ? `Restore v${v.version}`
                             : `Make active v${v.version}`
                       }
-                      className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px]"
+                      className="min-h-[44px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2.5 py-1 font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {activating === v.version
                         ? 'Making active…'
@@ -319,7 +330,7 @@ export default function VersionHistoryPanel({
                     onClick={() =>
                       setEvalOpenVersion(prev => (prev === v.version ? null : v.version))
                     }
-                    className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 min-h-[44px]"
+                    className="min-h-[44px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2.5 py-1 font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
                   >
                     {evalOpenVersion === v.version
                       ? 'Hide quality test'
@@ -347,7 +358,7 @@ export default function VersionHistoryPanel({
         <button
           type="button"
           onClick={() => setShowAllVersions(true)}
-          className="text-xs font-medium text-blue-600 hover:underline"
+          className="font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-cobalt)] hover:underline"
         >
           Show older ({versions.length})
         </button>
@@ -355,15 +366,15 @@ export default function VersionHistoryPanel({
 
       {/* ── Compare two versions (PRM-04 side-by-side diff) ──────────────── */}
       {versions.length >= 2 && (
-        <div className="space-y-2 rounded-lg border border-neutral-200 bg-white p-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <div className="space-y-2 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-3">
+          <h3 className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-faint)]">
             Compare versions
           </h3>
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 font-[family-name:var(--font-ui)] text-[12px]">
             <label className="flex items-center gap-1">
-              <span className="text-neutral-500">A</span>
+              <span className="text-[color:var(--color-ink-soft)]">A</span>
               <select
-                className="rounded border border-neutral-300 px-1.5 py-1"
+                className="border border-[color:var(--color-faint)] px-1.5 py-1"
                 value={effectiveA ?? ''}
                 onChange={e => setCompareA(Number(e.target.value))}
                 aria-label="Compare version A"
@@ -376,11 +387,11 @@ export default function VersionHistoryPanel({
                 ))}
               </select>
             </label>
-            <span className="text-neutral-400">vs</span>
+            <span className="text-[color:var(--color-faint)]">vs</span>
             <label className="flex items-center gap-1">
-              <span className="text-neutral-500">B</span>
+              <span className="text-[color:var(--color-ink-soft)]">B</span>
               <select
-                className="rounded border border-neutral-300 px-1.5 py-1"
+                className="border border-[color:var(--color-faint)] px-1.5 py-1"
                 value={effectiveB ?? ''}
                 onChange={e => setCompareB(Number(e.target.value))}
                 aria-label="Compare version B"
@@ -401,7 +412,7 @@ export default function VersionHistoryPanel({
               right={{ label: `v${rowB.version}`, content: rowB.content }}
             />
           ) : (
-            <p className="text-xs text-neutral-400">
+            <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-faint)]">
               Pick two different versions to see a side-by-side diff.
             </p>
           )}

@@ -24,6 +24,11 @@
  *     side-by-side with the score delta (D-08).
  *
  * Output display reuses the AgentIOPanel metrics/output style.
+ *
+ * quick 260724-lp1: token/radius hygiene — 1c tokens throughout, hard edges
+ * (no rounded-lg). The one h-2 w-2 status dot (pass/flag) stays round per
+ * house rules (small circles are the one allowed exception). Same handlers,
+ * same state, same testRunClient/scoreClient calls.
  */
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -193,17 +198,19 @@ export default function TestRunPanel({
   const sideBySide = activeResult != null
 
   return (
-    <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
+    <div className="space-y-3 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-neutral-900">Test changes</h2>
-        <span className="text-xs text-neutral-400">
+        <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
+          Test changes
+        </h2>
+        <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
           Tests the unsaved draft — does not run the pipeline
         </span>
       </div>
 
       {/* Input-mode selector (four modes; (4) unsaved-draft is implicit). */}
       <div
-        className="flex flex-wrap gap-2 text-xs"
+        className="flex flex-wrap gap-2"
         role="radiogroup"
         aria-label="Test-run input mode"
       >
@@ -220,24 +227,28 @@ export default function TestRunPanel({
             role="radio"
             aria-checked={mode === m}
             onClick={() => setMode(m)}
-            className={`rounded border px-2.5 py-1 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 ${
+            className={`min-h-[44px] border px-2.5 py-1 font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.06em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] ${
               mode === m
-                ? 'border-neutral-900 bg-neutral-900 text-white'
-                : 'border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
+                ? 'border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)] text-white'
+                : 'border-[color:var(--color-faint)] bg-[color:var(--color-card)] text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)]'
             }`}
           >
             {label}
           </button>
         ))}
       </div>
-      <p className="text-[11px] text-neutral-400">{MODE_DESCRIPTORS[mode]}</p>
+      <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
+        {MODE_DESCRIPTORS[mode]}
+      </p>
 
       {/* Mode 1: prior-real run picker → prior_run_id */}
       {mode === 'prior' && (
         <div className="space-y-1">
-          <label className="text-xs text-neutral-500">Prior run</label>
+          <label className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
+            Prior run
+          </label>
           <select
-            className="w-full rounded border border-neutral-300 px-2 py-1 text-xs"
+            className="w-full border border-[color:var(--color-faint)] px-2 py-1 font-[family-name:var(--font-ui)] text-[12px]"
             value={priorRunId}
             onChange={e => setPriorRunId(e.target.value)}
             aria-label="Prior run"
@@ -249,7 +260,7 @@ export default function TestRunPanel({
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-neutral-400">
+          <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
             Loads this run&apos;s real inputs for {agentKey} (prior_run_id).
           </p>
         </div>
@@ -259,20 +270,20 @@ export default function TestRunPanel({
       {mode === 'manual' && (
         <div className="space-y-2">
           {allowedVariables.length === 0 ? (
-            <p className="text-xs text-neutral-400">
+            <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-faint)]">
               This agent has no template variables — use a fixture or prior run.
             </p>
           ) : (
             allowedVariables.map(name => (
               <div key={name} className="space-y-0.5">
-                <label className="font-mono text-[11px] text-neutral-600">
+                <label className="font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
                   {`{${name}}`}
                 </label>
                 <input
                   type="text"
                   value={variables[name] ?? ''}
                   onChange={e => setVar(name, e.target.value)}
-                  className="w-full rounded border border-neutral-300 px-2 py-1 text-xs"
+                  className="w-full border border-[color:var(--color-faint)] px-2 py-1 font-[family-name:var(--font-ui)] text-[12px]"
                   placeholder={`value for ${name}`}
                 />
               </div>
@@ -283,9 +294,9 @@ export default function TestRunPanel({
 
       {/* Mode 3: Sample week — server fills SAMPLE_FIXTURES when empty. */}
       {mode === 'fixture' && (
-        <p className="text-xs text-neutral-500">
+        <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
           Uses the stored sample input for{' '}
-          <span className="font-mono">{agentKey}</span> (no variables or prior
+          <span className="font-[family-name:var(--font-mono)]">{agentKey}</span> (no variables or prior
           run needed).
         </p>
       )}
@@ -295,7 +306,7 @@ export default function TestRunPanel({
           type="button"
           onClick={handleRun}
           disabled={!canRun}
-          className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+          className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-2"
         >
           {running ? 'Running…' : 'Run'}
         </button>
@@ -312,19 +323,19 @@ export default function TestRunPanel({
                 ? 'Run the draft first, then compare'
                 : 'Run the active version and compare side-by-side'
           }
-          className="rounded border border-neutral-900 bg-white px-3 py-2 text-sm font-medium text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px] hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+          className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-card)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-2"
         >
           {comparing ? 'Comparing…' : 'Compare results'}
         </button>
       </div>
-      <p className="text-[11px] text-neutral-400">
+      <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
         Runs both on the same input, side by side. Answers: did my edit help?
       </p>
 
       {error && (
         <div
           role="alert"
-          className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800"
+          className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/[0.08] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]"
         >
           {error}
         </div>
@@ -332,7 +343,7 @@ export default function TestRunPanel({
       {compareError && (
         <div
           role="alert"
-          className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800"
+          className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/[0.08] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]"
         >
           Compare failed: {compareError}
         </div>
@@ -340,17 +351,17 @@ export default function TestRunPanel({
 
       {/* Score delta headline (D-08) — only when BOTH sides scored. */}
       {scoreDelta != null && (
-        <div className="rounded border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs">
-          <span className="font-semibold text-neutral-900">Voice score Δ </span>
+        <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px]">
+          <span className="font-semibold text-[color:var(--color-ink)]">Voice score Δ </span>
           <span
             className={
-              scoreDelta >= 0 ? 'text-emerald-700' : 'text-amber-700'
+              scoreDelta >= 0 ? 'text-[color:var(--color-green)]' : 'text-[color:var(--color-marigold-text)]'
             }
           >
             {scoreDelta >= 0 ? '+' : ''}
             {scoreDelta.toFixed(1)} vs active
           </span>
-          <span className="ml-1 text-neutral-400">
+          <span className="ml-1 text-[color:var(--color-faint)]">
             (draft {draftScore!.overall.toFixed(1)} · active{' '}
             {activeScore!.overall.toFixed(1)})
           </span>
@@ -406,39 +417,41 @@ function ResultColumn({
   return (
     <div className="space-y-3">
       {label && (
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
+        <h3 className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-ink)]">
           {label}
         </h3>
       )}
 
       <section>
-        <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <h4 className="mb-1 font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-faint)]">
           Output
         </h4>
-        <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap break-words rounded border border-neutral-200 bg-neutral-50 p-2 text-[11px] text-neutral-700">
+        <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap break-words border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] p-2 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
           {result.output}
         </pre>
       </section>
 
       <section>
-        <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <h4 className="mb-1 font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-faint)]">
           Cost
         </h4>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <dt className="text-neutral-500">Cost</dt>
-          <dd className="text-neutral-800">${result.cost_usd.toFixed(4)}</dd>
-          <dt className="text-neutral-500">Model</dt>
-          <dd className="font-mono text-neutral-800">{result.model}</dd>
-          <dt className="text-neutral-500">Tokens in</dt>
-          <dd className="text-neutral-800">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 font-[family-name:var(--font-ui)] text-[12px]">
+          <dt className="text-[color:var(--color-ink-soft)]">Cost</dt>
+          <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
+            ${result.cost_usd.toFixed(4)}
+          </dd>
+          <dt className="text-[color:var(--color-ink-soft)]">Model</dt>
+          <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">{result.model}</dd>
+          <dt className="text-[color:var(--color-ink-soft)]">Tokens in</dt>
+          <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
             {result.tokens_in.toLocaleString()}
           </dd>
-          <dt className="text-neutral-500">Tokens out</dt>
-          <dd className="text-neutral-800">
+          <dt className="text-[color:var(--color-ink-soft)]">Tokens out</dt>
+          <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
             {result.tokens_out.toLocaleString()}
           </dd>
-          <dt className="text-neutral-500">Duration</dt>
-          <dd className="text-neutral-800">
+          <dt className="text-[color:var(--color-ink-soft)]">Duration</dt>
+          <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
             {(result.duration_ms / 1000).toFixed(1)}s
           </dd>
         </dl>
@@ -446,52 +459,57 @@ function ResultColumn({
 
       {/* Voice-rubric score (PRC-09). Advisory only — never gates (D-05/D-06). */}
       <section>
-        <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <h4 className="mb-1 font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.1em] text-[color:var(--color-faint)]">
           Voice score
         </h4>
         {score ? (
-          <div className="space-y-2 rounded border border-neutral-200 p-2">
+          <div className="space-y-2 border border-[color:var(--color-faint)] p-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-semibold text-neutral-900">
+              <span className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)]">
                 {score.overall.toFixed(1)}
               </span>
-              <span className="text-[11px] text-neutral-400">/ 10 overall</span>
+              <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                / 10 overall
+              </span>
             </div>
             <ul className="space-y-1">
               {score.axes.map(a => (
                 <li
                   key={a.axis}
-                  className="flex items-start gap-2 text-[11px] text-neutral-700"
+                  className="flex items-start gap-2 font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-ink-soft)]"
                 >
+                  {/* 8px status dot — the one circle house rules allow. */}
                   <span
                     aria-hidden
                     className={`mt-1 inline-block h-2 w-2 shrink-0 rounded-full ${
-                      a.pass ? 'bg-emerald-500' : 'bg-amber-500'
+                      a.pass ? 'bg-[color:var(--color-green)]' : 'bg-[color:var(--color-marigold)]'
                     }`}
                   />
                   <span>
-                    <span className="font-medium text-neutral-900">
+                    <span className="font-medium text-[color:var(--color-ink)]">
                       {a.axis}
                     </span>{' '}
                     · {a.score.toFixed(1)}{' '}
-                    <span className="text-neutral-400">
+                    <span className="text-[color:var(--color-faint)]">
                       ({a.pass ? 'pass' : 'flag'})
                     </span>
                     {a.note ? (
-                      <span className="text-neutral-500"> — {a.note}</span>
+                      <span className="text-[color:var(--color-ink-soft)]"> — {a.note}</span>
                     ) : null}
                   </span>
                 </li>
               ))}
             </ul>
-            <p className="text-[11px] text-neutral-600">{score.rationale}</p>
-            <p className="text-[10px] text-neutral-400">
+            <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-ink-soft)]">
+              {score.rationale}
+            </p>
+            <p className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
               rubric: {score.rubric_source} · advisory — does not gate
             </p>
           </div>
         ) : (
           scored && (
-            <p className="text-[11px] text-neutral-400">
+            <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
               scoring unavailable — output still shown
             </p>
           )

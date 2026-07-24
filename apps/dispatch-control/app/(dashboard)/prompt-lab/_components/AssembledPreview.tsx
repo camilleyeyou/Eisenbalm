@@ -39,18 +39,18 @@ export default function AssembledPreview({ draft, allowed }: AssembledPreviewPro
     <details
       open={open}
       onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-      className="rounded-lg border border-neutral-200 bg-neutral-50"
+      className="border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)]"
     >
-      <summary className="cursor-pointer select-none px-4 py-2 text-xs font-medium text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400">
+      <summary className="cursor-pointer select-none px-4 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]">
         What the agent sees
       </summary>
-      <div className="border-t border-neutral-200 px-4 py-3">
-        <p className="mb-2 text-[11px] text-neutral-400">
+      <div className="border-t border-[color:var(--color-faint)] px-4 py-3">
+        <p className="mb-2 font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
           The final assembled text — your prompt plus filled variables —
           exactly as the model receives it. Readability aid only — not a
           test-run.
         </p>
-        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded border border-neutral-200 bg-white p-3 font-mono text-xs text-neutral-800">
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-3 font-[family-name:var(--font-mono)] text-[12px] text-[color:var(--color-ink)]">
           {assembled}
         </pre>
       </div>

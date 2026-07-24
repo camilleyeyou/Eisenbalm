@@ -47,18 +47,18 @@ export default function PromptMarkerExport({ content }: { content: string }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+        <span className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.1em] text-[color:var(--color-faint)]">
           .md export (copy → check into repo)
         </span>
         <button
           type="button"
           onClick={handleCopy}
-          className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+          className="min-h-[44px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2.5 py-1 font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
         >
           {copied ? 'Copied' : 'Copy .md'}
         </button>
       </div>
-      <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-200 bg-neutral-50 p-4 font-mono text-xs text-neutral-700">
+      <pre className="max-h-64 overflow-auto whitespace-pre-wrap border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] p-4 font-[family-name:var(--font-mono)] text-[12px] text-[color:var(--color-ink-soft)]">
         {md}
       </pre>
     </div>

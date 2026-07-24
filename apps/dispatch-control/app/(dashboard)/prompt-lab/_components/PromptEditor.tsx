@@ -28,7 +28,7 @@ import type { PromptOriginRef } from './promptOrigin'
 const CodeMirrorEditor = dynamic(() => import('./_CodeMirrorInner'), {
   ssr: false,
   loading: () => (
-    <div className="h-64 bg-neutral-100 animate-pulse rounded" aria-hidden />
+    <div className="h-64 bg-[color:var(--color-card-alt)] animate-pulse" aria-hidden />
   ),
 })
 
@@ -79,12 +79,12 @@ export function PromptEditor({
       {hasUnknown && (
         <div
           role="alert"
-          className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/[0.08] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)]"
         >
           <ul className="mt-1 space-y-1">
             {unknown.map(name => (
               <li key={name}>
-                <span className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
+                <span className="border border-[color:var(--color-vermilion)] px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[11px]">
                   {`{${name}}`}
                 </span>{' '}
                 {
@@ -103,7 +103,7 @@ export function PromptEditor({
               type="button"
               onClick={() => setShowSave(true)}
               disabled={!canSave}
-              className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
+              className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] disabled:opacity-40 disabled:cursor-not-allowed"
               title={
                 hasUnknown
                   ? `{${unknown[0]}} isn't supplied by the pipeline — remove it or ask your developer to wire it`

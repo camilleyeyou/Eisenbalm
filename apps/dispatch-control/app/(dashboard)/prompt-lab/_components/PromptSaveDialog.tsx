@@ -86,19 +86,19 @@ export function PromptSaveDialog({
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-neutral-900">
+    <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4 space-y-3">
+      <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
         {nextVersion != null
           ? `Save draft as v${nextVersion}`
           : 'Save draft as new version'}
       </h3>
-      <p className="text-xs text-neutral-500">
-        Creates a new immutable version of <span className="font-mono">{agentKey}</span>.
+      <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
+        Creates a new immutable version of <span className="font-[family-name:var(--font-mono)]">{agentKey}</span>.
         Prior versions are never overwritten and the new version is not activated
         until you roll forward.
       </p>
       <label className="block space-y-1">
-        <span className="text-xs font-medium text-neutral-600">
+        <span className="font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-ink-soft)]">
           Note (required) — what changed and why
         </span>
         <input
@@ -106,21 +106,25 @@ export function PromptSaveDialog({
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="What changed and why"
-          className="w-full rounded border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
+          className="w-full border border-[color:var(--color-faint)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-vermilion)]"
         />
       </label>
       {noteEmpty && (
-        <p className="text-xs text-neutral-500">
+        <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
           A note is required — record what changed and why.
         </p>
       )}
-      {error && <p className="text-xs text-red-700">{error}</p>}
+      {error && (
+        <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]">
+          {error}
+        </p>
+      )}
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={handleConfirm}
           disabled={disabled || saving || noteEmpty}
-          className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
+          className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving…' : 'Confirm save'}
         </button>
@@ -128,7 +132,7 @@ export function PromptSaveDialog({
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="rounded border border-neutral-300 px-3 py-2 text-sm text-neutral-700 min-h-[44px]"
+          className="min-h-[44px] border border-[color:var(--color-faint)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]"
         >
           Cancel
         </button>

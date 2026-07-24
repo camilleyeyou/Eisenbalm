@@ -49,19 +49,19 @@ function DiffColumn({
 }) {
   return (
     <div data-side={side} className="min-w-0">
-      <div className="sticky top-0 border-b border-neutral-200 bg-neutral-50 px-2 py-1 text-[11px] font-semibold text-neutral-600">
+      <div className="sticky top-0 border-b border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-2 py-1 font-[family-name:var(--font-mono)] text-[10.5px] font-semibold text-[color:var(--color-ink-soft)]">
         {label}
       </div>
       <div>
         {lines.map((line, i) => {
           const bg =
             line.type === 'removed'
-              ? 'bg-red-50 text-red-900'
+              ? 'bg-[color:var(--color-vermilion)]/[0.08] text-[color:var(--color-vermilion)]'
               : line.type === 'added'
-                ? 'bg-green-50 text-green-900'
+                ? 'bg-[color:var(--color-green)]/[0.08] text-[color:var(--color-green)]'
                 : line.type === 'empty'
-                  ? 'bg-neutral-50'
-                  : 'text-neutral-700'
+                  ? 'bg-[color:var(--color-card-alt)]'
+                  : 'text-[color:var(--color-ink-soft)]'
           return (
             <div
               key={i}
@@ -103,7 +103,7 @@ export function DiffViewer({ left, right }: DiffViewerProps) {
   }
 
   return (
-    <div className="grid max-h-[480px] grid-cols-2 divide-x divide-neutral-200 overflow-auto rounded border border-neutral-200 font-mono text-xs">
+    <div className="grid max-h-[480px] grid-cols-2 divide-x divide-[color:var(--color-faint)] overflow-auto border border-[color:var(--color-faint)] font-[family-name:var(--font-mono)] text-[12px]">
       <DiffColumn label={left.label} lines={leftLines} side="left" />
       <DiffColumn label={right.label} lines={rightLines} side="right" />
     </div>

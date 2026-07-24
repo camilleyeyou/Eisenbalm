@@ -21,6 +21,12 @@
  * value wins once it exists — the deep-link params are the pre-save preview
  * of the same fact. No origin from either source => renders nothing (D-13:
  * a stored reference, never a guess).
+ *
+ * quick 260724-lp1: restyled to the mockup-06 editor-card idiom (bg card,
+ * 1px faint border, mono kicker + Newsreader heading, hard-edged
+ * ghost/primary buttons, card-alt code pane, square chips for
+ * drift/unsaved/variable badges). Same save/test/history handlers, same
+ * effects, same state.
  */
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
@@ -39,9 +45,14 @@ import { descriptionFor } from './promptDescriptions'
 import type { PromptOriginRef } from './promptOrigin'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 
+const CHIP_BASE =
+  'inline-block border px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase whitespace-nowrap'
+
 function DriftBadge() {
   return (
-    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-800">
+    <span
+      className={`${CHIP_BASE} border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] text-[color:var(--color-marigold-text)]`}
+    >
       edited since seed
     </span>
   )
@@ -60,17 +71,17 @@ export function OriginBanner({ originRef }: { originRef?: PromptOriginRef }) {
   return (
     <div
       aria-label="why this draft exists"
-      className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+      className="border border-[color:var(--color-marigold)] border-l-[3px] bg-[color:var(--color-marigold)]/10 p-3 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-marigold-text)]"
     >
-      <p className="font-medium">why this draft exists</p>
+      <p className="font-semibold">why this draft exists</p>
       <p className="mt-1">
         This draft exists because of {originRef.sectionName} in run{' '}
-        <span className="font-mono">{originRef.runId}</span>:{' '}
+        <span className="font-[family-name:var(--font-mono)]">{originRef.runId}</span>:{' '}
         <span className="italic">&ldquo;{originRef.excerpt}&rdquo;</span>
       </p>
       <Link
         href={`/run-monitor/runs/${encodeURIComponent(originRef.runId)}`}
-        className="mt-1 inline-block font-medium text-amber-900 underline underline-offset-2"
+        className="mt-1 inline-block font-semibold underline underline-offset-2"
       >
         View the motivating output →
       </Link>
@@ -189,22 +200,31 @@ export default function AgentPromptEditorView({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-semibold text-neutral-900 font-mono">
-            {agentKey}
-          </h1>
-          {allowedVariables.length > 0 ? (
-            <span className="text-xs text-neutral-400">
-              {allowedVariables.length} known variable
-              {allowedVariables.length !== 1 ? 's' : ''}
-            </span>
-          ) : (
-            <span className="text-xs text-neutral-400">no variables</span>
-          )}
+        <div>
+          <span className="font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.1em] text-[color:var(--color-cobalt)]">
+            Agent instruction
+          </span>
+          <div className="mt-0.5 flex flex-wrap items-center gap-2">
+            <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">
+              {agentKey}
+            </h1>
+            {allowedVariables.length > 0 ? (
+              <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                {allowedVariables.length} known variable
+                {allowedVariables.length !== 1 ? 's' : ''}
+              </span>
+            ) : (
+              <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                no variables
+              </span>
+            )}
+          </div>
         </div>
 
         {description && (
-          <p className="text-sm text-neutral-500">{description}</p>
+          <p className="font-[family-name:var(--font-body)] italic text-[13px] text-[color:var(--color-ink-soft)]">
+            {description}
+          </p>
         )}
 
         {/* Phase 50 (WBN-04, D-13) — the Flow-C bridge: renders ONLY when a
@@ -217,7 +237,7 @@ export default function AgentPromptEditorView({
             {allowedVariables.map(name => (
               <span
                 key={name}
-                className="rounded bg-green-50 px-1.5 py-0.5 font-mono text-xs text-green-800"
+                className={`${CHIP_BASE} border-[color:var(--color-green)] bg-[color:var(--color-green)]/[0.07] text-[color:var(--color-green)]`}
               >
                 {`{${name}}`}
               </span>
@@ -226,17 +246,19 @@ export default function AgentPromptEditorView({
         )}
 
         {loading ? (
-          <div className="h-64 bg-neutral-100 animate-pulse rounded" />
+          <div className="h-64 bg-[color:var(--color-card-alt)] animate-pulse" />
         ) : editing ? (
           <>
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-xs text-neutral-500">
+            <div className="flex items-center justify-between gap-2 border-b border-[color:var(--color-faint)] pb-2">
+              <span className="flex items-center gap-2 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
                 {active
                   ? `Editing — active v${active.version} · updated ${formatTimestamp(active.createdAt)}`
                   : 'Editing — no active version yet'}
                 {drifted && <DriftBadge />}
                 {dirty && (
-                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
+                  <span
+                    className={`${CHIP_BASE} border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] text-[color:var(--color-marigold-text)]`}
+                  >
                     unsaved changes
                   </span>
                 )}
@@ -244,7 +266,7 @@ export default function AgentPromptEditorView({
               <button
                 type="button"
                 onClick={requestStopEditing}
-                className="rounded border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+                className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-card)] px-3 py-1 font-[family-name:var(--font-ui)] text-[12px] font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
               >
                 Done / View
               </button>
@@ -307,8 +329,8 @@ export default function AgentPromptEditorView({
           </>
         ) : active ? (
           <>
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-xs text-neutral-500">
+            <div className="flex items-center justify-between gap-2 border-b border-[color:var(--color-faint)] pb-2">
+              <span className="flex items-center gap-2 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
                 active v{active.version} · updated{' '}
                 {formatTimestamp(active.createdAt)}
                 {drifted && <DriftBadge />}
@@ -316,13 +338,13 @@ export default function AgentPromptEditorView({
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="rounded border border-neutral-900 bg-neutral-900 px-3 py-1 text-xs font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+                className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-1 font-[family-name:var(--font-ui)] text-[12px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
               >
                 Edit
               </button>
             </div>
 
-            <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-200 bg-white p-4 font-mono text-sm text-neutral-800">
+            <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] p-4 font-[family-name:var(--font-mono)] text-[13px] text-[color:var(--color-ink)]">
               {active.content}
             </pre>
 
@@ -330,14 +352,14 @@ export default function AgentPromptEditorView({
           </>
         ) : (
           /* EMPTY / no starting version yet: loaded with no active version. */
-          <div className="space-y-3 rounded-lg border border-neutral-200 bg-white p-6 text-center">
-            <p className="text-sm text-neutral-500">
+          <div className="space-y-3 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-6 text-center">
+            <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
               This prompt has no starting version yet.
             </p>
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="rounded border border-neutral-900 bg-neutral-900 px-3 py-1 text-xs font-medium text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 min-h-[44px]"
+              className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-1 font-[family-name:var(--font-ui)] text-[12px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
             >
               Create first version
             </button>

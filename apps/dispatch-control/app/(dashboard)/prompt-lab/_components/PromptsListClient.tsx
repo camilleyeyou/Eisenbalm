@@ -10,6 +10,12 @@
  *
  * Grouping stays server-side: the parent (page.tsx) passes pre-grouped key
  * lists in GROUP_ORDER; this component only renders + overlays live data.
+ *
+ * quick 260724-lp1: cards restyled to the mockup-06 status-rule "agent" card
+ * (bg card, 1px faint border, 3px top border — nav at rest / cobalt on hover
+ * / marigold when edited-since-launch; mono kicker -> Newsreader h3 -> Lora
+ * italic description -> footer Stock/Edited chip + mono version meta). Same
+ * subscription, same filters, same links — className/markup only.
  */
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
@@ -136,7 +142,7 @@ export default function PromptsListClient({
           onChange={e => setQuery(e.target.value)}
           placeholder="Search prompts…"
           aria-label="Search prompts by name"
-          className="min-h-[44px] flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+          className="min-h-[44px] flex-1 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink)] placeholder:text-[color:var(--color-faint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
         />
         <select
           value={groupFilter}
@@ -144,7 +150,7 @@ export default function PromptsListClient({
             setGroupFilter(e.target.value as 'all' | EditableAgentGroup)
           }
           aria-label="Filter by group"
-          className="min-h-[44px] rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+          className="min-h-[44px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
         >
           <option value="all">All groups</option>
           {GROUP_FILTER_OPTIONS.map(g => (
@@ -157,10 +163,10 @@ export default function PromptsListClient({
           type="button"
           aria-pressed={driftOnly}
           onClick={() => setDriftOnly(v => !v)}
-          className={`min-h-[44px] rounded-lg border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+          className={`min-h-[44px] border px-3 py-2 font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.08em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] ${
             driftOnly
-              ? 'border-amber-300 bg-amber-50 text-amber-800'
-              : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50'
+              ? 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] text-[color:var(--color-marigold-text)]'
+              : 'border-[color:var(--color-faint)] bg-[color:var(--color-card)] text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)]'
           }`}
         >
           Edits only
@@ -168,21 +174,21 @@ export default function PromptsListClient({
       </div>
 
       {!anyVisible ? (
-        <p className="rounded-lg border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+        <p className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-4 py-6 text-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
           No prompts match.
         </p>
       ) : (
         visibleGroups.map(({ group, keys }) => (
           <section key={group} className="space-y-2">
             <div className="space-y-0.5">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <h2 className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
                 {GROUP_LABELS[group]}
               </h2>
-              <p className="text-xs text-neutral-500">
+              <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
                 {GROUP_DESCRIPTORS[group]}
               </p>
             </div>
-            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {keys.map(key => {
                 const active = byKey.get(key)
                 const drifted = isDrifted(key)
@@ -191,41 +197,50 @@ export default function PromptsListClient({
                   <li key={key}>
                     <Link
                       href={`/prompt-lab/${encodeURIComponent(key)}`}
-                      className="flex min-h-[44px] flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white px-4 py-3 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                      className={`flex min-h-[44px] flex-col gap-1.5 border border-[color:var(--color-faint)] border-t-[3px] bg-[color:var(--color-card)] px-4 py-3.5 transition-colors hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] ${
+                        drifted
+                          ? 'border-t-[color:var(--color-marigold)]'
+                          : 'border-t-[color:var(--color-nav)] hover:border-t-[color:var(--color-cobalt)]'
+                      }`}
                     >
-                      <div className="space-y-0.5">
-                        <span className="flex items-center gap-1.5">
-                          <span className="block text-sm font-medium text-neutral-900">
-                            {displayNameForAgentKey(key)}
-                          </span>
-                          {drifted && (
-                            <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-800">
-                              edited since launch
-                            </span>
-                          )}
+                      <span className="font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.1em] text-[color:var(--color-cobalt)]">
+                        {GROUP_LABELS[group]}
+                      </span>
+                      <span className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-[color:var(--color-ink)]">
+                        {displayNameForAgentKey(key)}
+                      </span>
+                      <span className="block font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                        {key}
+                      </span>
+                      {description && (
+                        <span className="block font-[family-name:var(--font-body)] italic text-[12.5px] leading-snug text-[color:var(--color-ink-soft)]">
+                          {description}
                         </span>
-                        <span className="block font-mono text-xs text-neutral-400">
-                          {key}
-                        </span>
-                        {description && (
-                          <span className="block truncate text-xs text-neutral-500">
-                            {description}
-                          </span>
-                        )}
-                      </div>
+                      )}
 
                       {active && (
-                        <p className="text-xs leading-snug text-neutral-600">
+                        <p className="font-[family-name:var(--font-ui)] text-[11.5px] leading-snug text-[color:var(--color-ink-soft)]">
                           {buildPreview(active.content)}
                         </p>
                       )}
 
-                      <span className="mt-auto text-xs text-neutral-500">
-                        {loading
-                          ? '…'
-                          : active
-                            ? `active v${active.version} · updated ${formatDate(active.updatedAt)}`
-                            : 'no starting version'}
+                      <span className="mt-auto flex items-center gap-2 pt-1">
+                        <span
+                          className={`inline-block border px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase ${
+                            drifted
+                              ? 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] text-[color:var(--color-marigold-text)]'
+                              : 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
+                          }`}
+                        >
+                          {drifted ? 'Edited' : 'Stock'}
+                        </span>
+                        <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                          {loading
+                            ? '…'
+                            : active
+                              ? `active v${active.version} · updated ${formatDate(active.updatedAt)}`
+                              : 'no starting version'}
+                        </span>
                       </span>
                     </Link>
                   </li>

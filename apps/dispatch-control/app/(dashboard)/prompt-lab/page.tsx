@@ -52,13 +52,15 @@ export default async function PromptsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-neutral-900">
+      <div>
+        <span className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.14em] text-[color:var(--color-cobalt)]">
+          System Workbench
+        </span>
+        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[32px] font-semibold leading-none text-[color:var(--color-ink)]">
           {WORKBENCH_NAV_LABELS.prompt_lab}
         </h1>
-        <p className="text-sm text-neutral-500">
-          Edit any agent prompt, user template, or shared asset with live
-          variable hints and immutable versioning. Choose an asset to begin.
+        <p className="mt-1.5 font-[family-name:var(--font-body)] text-[14px] italic text-[color:var(--color-ink-soft)]">
+          The standing instructions each agent works from. Edit with care; version everything.
         </p>
       </div>
 

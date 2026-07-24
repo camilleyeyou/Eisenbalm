@@ -39,7 +39,7 @@ export default function CodeMirrorInner({
       onChange={onChange}
       extensions={extensions}
       theme="light"
-      className="cm-prompt-editor border border-neutral-200 rounded font-mono text-sm"
+      className="cm-prompt-editor border border-[color:var(--color-faint)] font-[family-name:var(--font-mono)] text-sm"
       basicSetup={{ lineNumbers: true, foldGutter: false }}
     />
   )
