@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Dispatch Control v3 — The Editorial Workspace
 status: Milestone complete
-stopped_at: Completed quick 260722-v01 (mobile-responsive nav drawer + graph/banner height chain, My Tasks severity grouping, single Story Decision log, portaled HelpTip, Registry/Finance table caps, dead ClaimsChecklist deletion, additive listRecentForWorkspace Convex query, Draft-stage preview iframe fix, Run Monitor token migration)
-last_updated: "2026-07-23T06:06:46.000Z"
+stopped_at: Completed quick 260724-lp1 (uniform visual pass on Run Monitor/Prompt Lab/Registry + Review CTAs routed to the Draft stage)
+last_updated: "2026-07-24T23:50:00.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -1048,6 +1048,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-24T21:09:21.000Z
-Stopped at: Completed quick 260724-i5n (Review Desk redesign — Story Desk card grid + per-story Outline/Draft focus view, replacing the single scrolling all-sections galley)
+Last session: 2026-07-24T23:50:00.000Z
+Stopped at: Completed quick 260724-lp1 (uniform visual pass — Run Monitor/Prompt Lab/Registry onto the 1c hard-edge system + Review CTAs now land on the Draft stage)
 Resume file: None
