@@ -2,118 +2,68 @@
 /**
  * Review Desk screen (Phase 31 D-02, Plan 31-04 Task 2).
  *
- * Phase 32 (GLY-01, GLY-05, Plan 32-07 Task 2) re-composes this screen
- * around the native galley as the DEFAULT view (D-01): a `viewMode` state
- * drives three mutually-exclusive bodies — `'galley'` (the Plan 32-06
- * `<Galley>`, default), `'edit'` (the Phase 31 `SectionEditorPanel`, entered
- * via the Edit-section affordance), and `'iframe'` (the Phase 31
- * `PreviewIframe` toggle, kept mounted as the soak-cycle fallback per D-02).
- * The `SectionChipList` (upgraded Plan 32-07 Task 1 with `counts`) serves as
- * jump-nav in galley mode (click -> scrollIntoView) and as the section
- * selector in edit mode — one chip strip, two roles (D-03).
+ * Quick 260724-i5n (LD-1..LD-8) — this component is now the Story Desk
+ * orchestrator: a URL-driven (`?story=&tab=`) switch between the CARDS-variant
+ * desk grid (`StoryDeskGrid`, all 9 editable sections) and a per-story focus
+ * view (`StoryFocusView`, folder Outline/Draft tabs). It owns:
+ *   - the draft load + `reloadDraft` (unchanged since Phase 32/45)
+ *   - the `qaCorrections`/`claimChecks` Convex subscriptions
+ *   - the FACTUAL_AXES-scoped `chipCounts` memo (unchanged resolution —
+ *     `findingsByGalleyId`/`bonusRows` were pulled into their own memos so
+ *     the per-section `resolveSectionFindings` call below can reuse them)
+ *   - a NEW per-selected-section `resolveSectionFindings` call, so the
+ *     Outline tab's beat dots and "Open findings" list read the SAME
+ *     resolution the single-section Draft-tab galley lights (LD-3/LD-4)
+ *   - `useReviewedSections(runId)` — the LD-5 localStorage-only "Mark
+ *     reviewed" nav aid; it changes no publish gate
+ *   - the `revisePassage`/`relatedFacts` panels and `showProvenance` state
+ *     (unchanged)
+ *   - deep links (LD-8): the existing `?edit=<sectionId>[&finding=]` one-shot
+ *     now translates into `?story=<id>&tab=draft` + local `editing` state,
+ *     and a `hashchange`-and-mount listener replaces the old one-shot
+ *     `#galley-<id>` scroll receiver — both DecisionRail's and
+ *     WorkspaceOutline's "jump to finding"/jump-nav land on the story's
+ *     Draft tab (their own fallback still routes to `issueDraftHref(n)#anchor`
+ *     unchanged; this component is what now interprets that hash).
  *
- * Chip counts are computed client-side (D-13) from the live `qaCorrections`
- * feed (open findings only, D-08) resolved per-section via the Plan 32-03/
- * 32-05 span resolver — the same resolution the galley itself performs, so
- * the chip badges and the galley's inline annotations always agree.
+ * The single-section galley (`StoryFocusView`'s Draft tab, non-editing) is
+ * the SAME `<Galley>` every other surface mounts, scoped via its new
+ * `sections` prop (LD-4) — never a forked annotation renderer. The iframe
+ * preview toggle (Phase 31 D-02's soak-cycle fallback) is retired by this
+ * quick task's explicit "replace the viewMode galley/edit/iframe body"
+ * instruction — `PreviewIframe`/the preview-url route are untouched but no
+ * longer mounted from this page.
  *
- * Data: fetches the draft via getDraft(runId, token) from contentPatchClient
- * (token from useAuth().getToken()). The signed preview URL is resolved via a
- * tiny server Route Handler (app/api/review-desk/[runId]/preview-url) since
- * lib/previewToken.ts is server-only (PREVIEW_SECRET + node:crypto) and this
- * page is a Client Component (it owns selectedSection/viewMode state).
- *
- * §31.9 rerun-clobber ordering rule: a static advisory note is shown near the
- * header — re-rolling a section after an operator edit overwrites the console
- * change (rerun rebuilds from the LangGraph checkpoint and calls the full
- * write_issue_draft). v1 position: documented ordering rule, not a code guard.
- *
- * Phase 36 (VOX-02, D-09, Plan 36-07 Task 1): the page also reads an
- * `?edit=<sectionId>[&finding=<findingId>]` deep-link so a second surface
- * (Voice Pass's "Write my own" action) can route straight into the section
- * editor without duplicating any editor machinery. A `deepLinkAppliedRef`
- * guard fires it at most once per mount — after that, normal in-page nav
- * (chip clicks, "Back to galley") behaves exactly as before.
- *
- * Phase 40 (ISS-02, D-07, Plan 40-06 Task 1): this component was copied
- * verbatim out of `page.tsx` into this co-located non-route file so
- * `page.tsx` could become a redirect-only Server Component (Task 3) while
- * `/issues/[issueNumber]/review` (Task 2) mounts THIS file directly. Every
- * relative import below is unchanged — this file lives in the SAME
- * directory `page.tsx` used to occupy.
- *
- * Phase 41 (WSP-04, WSP-07, D-06/D-07/D-13, Plan 41-08 Task 1): this is now
- * the Stage 2 (Draft) canvas mounted from `issues/[issueNumber]/draft/
- * page.tsx`. The standalone page-level heading + the rerun-clobber advisory
- * paragraph, and the decision-rail mount (moved to Stage 5, D-13, see the
- * Approval stage's own rail import) were removed — the frame (`layout.tsx`)
- * now supplies the page chrome, and the rail lives in the Approval stage
- * instead. An optional `issueNumber` prop lets the galley's unchecked-claim
- * click-through route to the Fact Check tab (D-12); it is undefined for any
- * other caller of this component (none currently exist beyond the Draft
- * mount).
- *
- * Phase 44 (INS-01, Plan 44-07 Task 1): the mounted `<Galley>` now gets
- * `onInspect` — the draft passage entry point into the shared "Inspect how
- * this was made" panel (`useInspector().openInspector`, mounted once at the
- * `(dashboard)` root layout). Opens on the section's `founder` artifact.
- *
- * Phase 45 (REV-01/REV-04, D-18, Plan 45-05 Task 2): the mounted `<Galley>`
- * now also gets `onRevise`/`onRelatedFacts` — wired to the SAME
- * `revisePassage`/`requestRevision`/`clearRevisePassage` channel the
- * `InspectorProvider` context exposes (shared with the Phase-44 inspector
- * footer's "Ask agent to revise", Plan 45-05 Task 3), not new local state —
- * this is what makes the galley toolbar AND the inspector footer open the
- * SAME `RevisionFlow` regardless of which one triggered it (D-18's "one
- * component, every surface"). Applying reloads the draft (`reloadDraft`),
- * re-fetching from Sanity so the reset claims and any revoked Voice
- * sign-off surface immediately. "Related facts & sources" looks up a
- * tracked `claim_checks` row intersecting the selected block from the SAME
- * `claimChecks.listByRunId` query the shared galley already subscribes to
- * internally (Convex dedupes the identical subscription — no new backend
- * query) and renders the shared `ClaimProvenanceCard`, or an honest "No
- * tracked claims in this passage."
- *
- * quick 260722-n5r (Draft nav de-duplication): dropped the nested
- * `lg:w-64` `SectionChipList` column that used to sit beside the canvas —
- * in galley mode it duplicated the frame's `WorkspaceOutline` jump-nav
- * (both render the same 9 `EDITABLE_SECTIONS`), and it starved the galley's
- * width badly enough that headlines wrapped one word per line. The chip
- * list now renders ONLY in edit mode, as a horizontal strip (new
- * `orientation="horizontal"` prop) above the editor — its section-selector
- * role there has no `WorkspaceOutline` equivalent.
- *
- * quick 260722-tv1: dropped the root's viewport-sized `min-h-[70vh]` (this
- * stage canvas already sizes to its content inside the frame). Added a
- * one-shot `#galley-*` hash-scroll receiver so jump-nav controls on stages
- * with no galley mounted (Story/Fact Check/Approval) can route here and land
- * on the right section.
- *
- * quick 260722-v01 (item 2g, user-reported): the `'iframe'` mode's mount
- * wrapper gained a DEFINITE height (`h-[max(560px,calc(100vh-280px))]`,
- * replacing `min-h-[500px] flex-1`) so `PreviewIframe`'s internal `h-full`
- * chain resolves instead of collapsing to the ~150px UA default — see the
- * inline comment at the mount site.
+ * Phase 40/41 history: this component was copied out of `page.tsx` (Task 1)
+ * so `page.tsx` could become a redirect-only Server Component, and is now
+ * mounted ONLY from `/issues/[issueNumber]/draft` (the standalone
+ * `/review-desk/[runId]` route is redirect-only) — this is why it can safely
+ * call `useWorkspaceState()` for the Brief (LD-3's side rail) without a
+ * fallback path; it always mounts inside the Issue Workspace frame.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import SectionChipList, {
-  EDITABLE_SECTIONS,
-  type SectionChipCounts,
-} from './_components/SectionChipList'
-import SectionEditorPanel from './_components/SectionEditorPanel'
-import Galley from '@/components/galley/Galley'
+import { EDITABLE_SECTIONS, type SectionChipCounts } from './_components/SectionChipList'
+import StoryDeskGrid from './_components/StoryDeskGrid'
+import StoryFocusView from './_components/StoryFocusView'
+import { useReviewedSections } from './_components/useReviewedSections'
+import type { OutlineOpenFinding } from './_components/StoryOutlineTab'
 import { useInspector } from '@/components/inspector/InspectorProvider'
-import PreviewIframe from '../../run-monitor/runs/[runId]/review/_components/PreviewIframe'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
-import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
+import {
+  resolveSectionFindings,
+  type QaFinding,
+  type ResolvedAnnotation,
+  type UnresolvedFinding,
+} from '@/lib/galley/spanResolver'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
 import { issueFactCheckHref } from '@/lib/issueRouteResolver'
+import { useWorkspaceState } from '@/app/(dashboard)/issues/_components/WorkspaceStateProvider'
 import { RevisionFlow } from '@/components/revision/RevisionFlow'
 import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
 import type { PassageSelection } from '@/components/galley/PassageToolbar'
@@ -125,8 +75,6 @@ interface ReviewDeskRunViewProps {
   /** Phase 41 (D-12): lets the Draft mount route an unchecked-claim click to Fact Check. */
   issueNumber?: number
 }
-
-type ViewMode = 'galley' | 'edit' | 'iframe'
 
 /** Minimal shape needed from a live `qaCorrections` row. */
 interface QaCorrectionRow {
@@ -160,19 +108,6 @@ interface ClaimCheckRow {
   blockIndexHint?: number
   importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
   context?: string
-}
-
-/**
- * Maps a chip's section id to the galley's DOM anchor. `theme` has no galley
- * anchor (D-04: theme is applied globally, not rendered as its own section)
- * and `deliberation-conversation` renders under the shorter `galley-
- * deliberation` id (see `Galley.tsx`) -- both intentional exceptions to the
- * otherwise-uniform `galley-{id}` pattern.
- */
-function galleyAnchorFor(sectionId: string): string | null {
-  if (sectionId === 'theme') return null
-  if (sectionId === 'deliberation-conversation') return 'galley-deliberation'
-  return `galley-${sectionId}`
 }
 
 /**
@@ -210,169 +145,32 @@ function tallyForSection(
   return counts
 }
 
+/** Reverse of `galleyAnchorFor`/`qaSectionToGalleyId`'s anchor convention — `#galley-<id>` -> section id. */
+function sectionIdFromHash(hash: string): string | null {
+  const raw = hash.replace(/^#/, '')
+  if (!raw.startsWith('galley-')) return null
+  if (raw === 'galley-deliberation') return 'deliberation-conversation'
+  const id = raw.slice('galley-'.length)
+  return id.length > 0 ? id : null
+}
+
 export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProps) {
   const { runId: rawRunId } = use(params)
   const runId = decodeURIComponent(rawRunId)
 
   const { getToken } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { openInspector, revisePassage, requestRevision, clearRevisePassage } = useInspector()
   const confirm = useConfirm()
+  const { brief } = useWorkspaceState()
 
-  // Phase 45 (REV-01, D-16) — "Related facts & sources" selection; local to
-  // this surface (unlike revisePassage) since only ONE entry point (the
-  // galley toolbar) can ever set it.
-  const [relatedFacts, setRelatedFacts] = useState<PassageSelection | null>(null)
-  // The SAME claim_checks query Galley.tsx already subscribes to
-  // internally — Convex dedupes the identical subscription, so this is not
-  // a new backend query, just a second reader of the existing one.
-  const claimRows =
-    (useQuery(api.claimChecks.listByRunId, { runId }) as ClaimCheckRow[] | undefined) ?? []
-  const relatedClaim = relatedFacts
-    ? claimRows.find(
-        (row) => row.sectionName === relatedFacts.sectionId && row.blockIndexHint === relatedFacts.blockIndex,
-      )
-    : undefined
-
+  // ── Draft load (unchanged) ────────────────────────────────────────────────
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [selectedSection, setSelectedSection] = useState<string>(
-    EDITABLE_SECTIONS[0]?.id ?? 'originStory',
-  )
-
-  // D-01: the galley is the default view. 'edit' is the Phase 31
-  // SectionEditorPanel (entered via the Edit-section affordance); 'iframe'
-  // is the Phase 31 preview toggle, kept as the soak-cycle fallback (D-02).
-  const [viewMode, setViewMode] = useState<ViewMode>('galley')
-
-  // Phase 35 (PRV-03, D-10): the provenance wash layer is ON by default;
-  // the toolbar toggle below lets the operator switch it off for clean
-  // reading.
-  const [showProvenance, setShowProvenance] = useState(true)
-
-  // D-07 dirty-state map, bubbled up from SectionEditorPanel so the
-  // section-chip list can paint the unsaved dot and in-app nav can guard
-  // against silently discarding unsaved edits when switching sections.
-  const [dirty, setDirty] = useState<Record<string, boolean>>({})
-
-  // D-08 edit-inline deep-link context: which finding sent the operator into
-  // the editor, so SectionEditorPanel can keep its reason visible.
-  const [editFinding, setEditFinding] = useState<{
-    sectionId: string
-    findingId?: string
-  } | null>(null)
-
-  /** Switches view mode, guarding an unsaved edit-mode section (D-07). */
-  async function switchViewMode(next: ViewMode) {
-    if (viewMode === 'edit' && next !== 'edit' && dirty[selectedSection]) {
-      const confirmed = await confirm({
-        title: 'Unsaved changes',
-        body: 'You have unsaved changes in this section. Leave the editor anyway? Unsaved edits will be lost.',
-        confirmLabel: 'Leave anyway',
-        tone: 'danger',
-      })
-      if (!confirmed) return
-    }
-    if (next !== 'edit') setEditFinding(null)
-    setViewMode(next)
-  }
-
-  async function handleChipSelect(id: string) {
-    if (viewMode === 'edit' && dirty[selectedSection]) {
-      const confirmed = await confirm({
-        title: 'Unsaved changes',
-        body: 'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
-        confirmLabel: 'Leave anyway',
-        tone: 'danger',
-      })
-      if (!confirmed) return
-    }
-    setEditFinding(null)
-    setSelectedSection(id)
-    if (viewMode === 'galley') {
-      const anchor = galleyAnchorFor(id)
-      if (anchor) {
-        document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    }
-  }
-
-  /**
-   * D-08 Edit-inline deep-link: flips the page into the section editor for
-   * the finding's section (galley section ids ARE editable section ids) with
-   * the finding stored so its reason stays visible. Guards unsaved edits the
-   * same way handleChipSelect does.
-   */
-  async function handleEditSection(sectionId: string, findingId?: string) {
-    if (viewMode === 'edit' && dirty[selectedSection]) {
-      const confirmed = await confirm({
-        title: 'Unsaved changes',
-        body: 'You have unsaved changes in this section. Switch sections anyway? Unsaved edits will be lost.',
-        confirmLabel: 'Leave anyway',
-        tone: 'danger',
-      })
-      if (!confirmed) return
-    }
-    setSelectedSection(sectionId)
-    setEditFinding({ sectionId, findingId })
-    setViewMode('edit')
-  }
-
-  /**
-   * Phase 44 (INS-01) — the draft passage entry point. Opens the shared
-   * inspector on this section's `founder` artifact. The locator is the
-   * galley/draft camelCase section id; `resolveInspectorStep`
-   * (`lib/inspectorArtifact.ts`) normalizes it via `galleyIdToQaSection`.
-   */
-  function handleInspect(sectionId: string) {
-    openInspector({ type: 'founder', runId, locator: sectionId })
-  }
-
-  // Phase 36 (VOX-02, D-09, Plan 36-07 Task 1): ?edit=<sectionId>[&finding=
-  // <findingId>] deep-link entry — fires handleEditSection once the draft is
-  // loaded (so the section is valid), and at most once per mount via the ref
-  // guard. Later in-page navigation (chip clicks, "Back to galley") is
-  // unaffected — this effect never re-fires after its first successful run.
-  const searchParams = useSearchParams()
-  const deepLinkAppliedRef = useRef(false)
-
-  useEffect(() => {
-    if (deepLinkAppliedRef.current) return
-    if (!draft) return
-    const editSection = searchParams.get('edit')
-    if (!editSection) return
-    deepLinkAppliedRef.current = true
-    handleEditSection(editSection, searchParams.get('finding') ?? undefined)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, searchParams])
-
-  // quick 260722-tv1: one-shot hash-scroll receiver for jump-nav controls
-  // (WorkspaceOutline / DecisionRail / SourceIndex) that route here with a
-  // `#galley-*` hash when their own stage has no galley mounted. Mirrors the
-  // deepLinkAppliedRef one-shot pattern above; `[id^='galley-']` already
-  // carries `scroll-margin-top: 88px` for the sticky stage-nav offset.
-  const hashScrollAppliedRef = useRef(false)
-
-  useEffect(() => {
-    if (hashScrollAppliedRef.current) return
-    if (!draft) return
-    if (typeof window === 'undefined') return
-    const hash = window.location.hash
-    if (!hash.startsWith('#galley-')) return
-    hashScrollAppliedRef.current = true
-    document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft])
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-  /**
-   * Loads (or re-loads) the draft. Extracted from the mount effect so the
-   * galley can refetch after a successful accept — or on a revision_mismatch
-   * 409 — so span re-resolution runs against fresh text (EDT-06, Pitfall 1).
-   */
   const reloadDraft = useCallback(async () => {
     setError(null)
     try {
@@ -388,17 +186,9 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
             : 'Failed to load draft.',
       )
     }
-    // getToken (Clerk) is a stable accessor called FRESH inside the try block
-    // and always returns a current token regardless of which reference was
-    // captured; including its identity here caused an infinite
-    // refetch/re-render loop on CONTENT runs when getToken's reference
-    // churns — quick 260721-ohu. CHOSEN APPROACH: drop getToken from THIS
-    // useCallback's deps (rather than the mount effect below, which depends
-    // on [reloadDraft]) — the churn enters through reloadDraft's identity, so
-    // stabilizing reloadDraft per-runId both breaks the loop AND preserves
-    // Pitfall 1 (reloadDraft is reused as a prop after accept /
-    // revision_mismatch — see reloadDraft={reloadDraft} / onApplied={reloadDraft}
-    // below). Depend on runId ONLY.
+    // See historical note (quick 260721-ohu): getToken is intentionally
+    // excluded from this dependency array to avoid a refetch loop when its
+    // reference churns; depend on runId only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId])
 
@@ -415,45 +205,166 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
     }
   }, [reloadDraft])
 
-  useEffect(() => {
-    if (viewMode !== 'iframe' || previewUrl) return
-    let cancelled = false
-    async function loadPreview() {
-      try {
-        const res = await fetch(`/api/review-desk/${encodeURIComponent(runId)}/preview-url`)
-        const body = await res.json()
-        if (!cancelled) setPreviewUrl(body.previewUrl ?? null)
-      } catch {
-        if (!cancelled) setPreviewUrl(null)
-      }
-    }
-    void loadPreview()
-    return () => {
-      cancelled = true
-    }
-  }, [viewMode, previewUrl, runId])
+  // ── URL-driven desk<->story state ─────────────────────────────────────────
+  const storySectionId = searchParams.get('story')
+  const activeTab: 'outline' | 'draft' = searchParams.get('tab') === 'draft' ? 'draft' : 'outline'
 
-  // D-13: chip counts resolved client-side from the live `qaCorrections`
-  // feed -- open findings only (D-08), grouped via `qaSectionToGalleyId`.
+  const [editing, setEditing] = useState(false)
+  const [dirty, setDirty] = useState<Record<string, boolean>>({})
+  const [editFinding, setEditFinding] = useState<{ sectionId: string; findingId?: string } | null>(null)
+  // Phase 35 (PRV-03, D-10): the provenance wash layer is ON by default.
+  const [showProvenance, setShowProvenance] = useState(true)
+
+  const { reviewed: reviewedIds, isReviewed, toggle: toggleReviewed } = useReviewedSections(runId)
+
+  function buildHref(next: { story: string | null; tab?: 'outline' | 'draft' }): string {
+    const sp = new URLSearchParams()
+    if (next.story) {
+      sp.set('story', next.story)
+      sp.set('tab', next.tab ?? 'outline')
+    }
+    const qs = sp.toString()
+    return qs ? `${pathname}?${qs}` : pathname
+  }
+
+  /** Confirms before an action that would abandon unsaved edits (D-07). */
+  async function guardDirty(action: () => void) {
+    if (editing && storySectionId && dirty[storySectionId]) {
+      const confirmed = await confirm({
+        title: 'Unsaved changes',
+        body: 'You have unsaved changes in this section. Leave the editor anyway? Unsaved edits will be lost.',
+        confirmLabel: 'Leave anyway',
+        tone: 'danger',
+      })
+      if (!confirmed) return
+    }
+    action()
+  }
+
+  function goToDesk() {
+    void guardDirty(() => {
+      setEditing(false)
+      setEditFinding(null)
+      router.push(buildHref({ story: null }))
+    })
+  }
+
+  function navToStory(id: string) {
+    void guardDirty(() => {
+      setEditing(false)
+      setEditFinding(null)
+      router.push(buildHref({ story: id, tab: activeTab }))
+    })
+  }
+
+  function openStory(id: string, tab: 'outline' | 'draft' = 'draft') {
+    void guardDirty(() => {
+      setEditing(false)
+      setEditFinding(null)
+      router.push(buildHref({ story: id, tab }))
+    })
+  }
+
+  function setTab(tab: 'outline' | 'draft') {
+    if (!storySectionId) return
+    // Switching FROM the Draft tab while editing would unmount
+    // SectionEditorPanel (its working state lives there, not lifted up) —
+    // guard that specific transition; entering/staying on Draft is always safe.
+    if (tab === 'outline' && editing) {
+      void guardDirty(() => {
+        setEditing(false)
+        setEditFinding(null)
+        router.replace(buildHref({ story: storySectionId, tab }))
+      })
+      return
+    }
+    router.replace(buildHref({ story: storySectionId, tab }))
+  }
+
+  function handleExitEdit() {
+    void guardDirty(() => {
+      setEditing(false)
+      setEditFinding(null)
+    })
+  }
+
+  function handleEdit() {
+    setEditing(true)
+  }
+
+  /**
+   * D-08 edit-inline entry (from the galley toolbar/inline annotation, or
+   * the `?edit=` deep link below) — always for the CURRENTLY open story.
+   */
+  function handleEditSection(sectionId: string, findingId?: string) {
+    setEditFinding({ sectionId, findingId })
+    setEditing(true)
+    if (sectionId !== storySectionId) {
+      router.replace(buildHref({ story: sectionId, tab: 'draft' }))
+    }
+  }
+
+  /**
+   * Phase 44 (INS-01) — the draft passage entry point. Opens the shared
+   * inspector on this section's `founder` artifact.
+   */
+  function handleInspect(sectionId: string) {
+    openInspector({ type: 'founder', runId, locator: sectionId })
+  }
+
+  // Phase 36 (VOX-02, D-09) / quick 260724-i5n (LD-8): ?edit=<sectionId>
+  // [&finding=<findingId>] one-shot deep link — now translates into
+  // ?story=<id>&tab=draft + local editing=true.
+  const deepLinkAppliedRef = useRef(false)
+
+  useEffect(() => {
+    if (deepLinkAppliedRef.current) return
+    if (!draft) return
+    const editSection = searchParams.get('edit')
+    if (!editSection) return
+    deepLinkAppliedRef.current = true
+    setEditFinding({ sectionId: editSection, findingId: searchParams.get('finding') ?? undefined })
+    setEditing(true)
+    router.replace(buildHref({ story: editSection, tab: 'draft' }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, searchParams])
+
+  // quick 260724-i5n (LD-8): replaces the old one-shot `#galley-*` scroll
+  // receiver — a hashchange-and-mount listener that routes DecisionRail's/
+  // WorkspaceOutline's jump-nav (which fall back to `issueDraftHref(n)#anchor`
+  // when no galley element is present in the current DOM) onto the target
+  // story's Draft tab, then clears the hash so a repeat click re-fires.
+  useEffect(() => {
+    function handleHash() {
+      if (typeof window === 'undefined') return
+      const id = sectionIdFromHash(window.location.hash)
+      if (!id) return
+      router.replace(buildHref({ story: id, tab: 'draft' }))
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+    if (draft) handleHash()
+    window.addEventListener('hashchange', handleHash)
+    return () => window.removeEventListener('hashchange', handleHash)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft])
+
+  // ── Findings / chip counts (unchanged resolution, refactored into memos) ──
   const rawFindings =
     (useQuery(api.qaCorrections.byRunId, { runId }) as QaCorrectionRow[] | undefined) ?? []
-  // Pitfall 9: the ONE shared open-finding predicate — dismissed/accepted
-  // findings drop from chip counts the moment their resolution lands.
+  // Pitfall 9: the ONE shared open-finding predicate.
   const openFindings = rawFindings.filter(isOpenFinding)
 
-  const chipCounts = useMemo<Record<string, SectionChipCounts>>(() => {
-    // Phase 36 (§36.3, Task 2): Review Desk's Galley mount is scoped to
-    // FACTUAL_AXES below — the chip tally applies the SAME scoping rule
-    // (axis present AND in FACTUAL_AXES) so badge counts never disagree
-    // with what the galley actually lights.
+  const findingsByGalleyId = useMemo(() => {
+    // Phase 36 (§36.3): Review Desk's Galley mount is scoped to
+    // FACTUAL_AXES — chip/outline/story resolution all apply the SAME rule.
     const factualOpenFindings = openFindings.filter(
       row => row.axis !== undefined && FACTUAL_AXES.has(row.axis),
     )
-    const findingsByGalleyId = new Map<string, QaFinding[]>()
+    const map = new Map<string, QaFinding[]>()
     for (const row of factualOpenFindings) {
       const galleyId = qaSectionToGalleyId(row.sectionName)
       if (!galleyId) continue
-      const list = findingsByGalleyId.get(galleyId) ?? []
+      const list = map.get(galleyId) ?? []
       list.push({
         _id: row._id,
         severity: row.severity,
@@ -465,33 +376,87 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
         accepted: row.accepted,
         resolution: row.resolution,
       })
-      findingsByGalleyId.set(galleyId, list)
+      map.set(galleyId, list)
     }
+    return map
+  }, [openFindings])
 
-    const bonusRows: Array<{ type: string; text: string }> =
-      draft?.bonusType === 'specAd' && Array.isArray(draft.bonus?.body) ? draft.bonus.body : []
+  const bonusRows = useMemo<Array<{ type: string; text: string }>>(
+    () => (draft?.bonusType === 'specAd' && Array.isArray(draft.bonus?.body) ? draft.bonus.body : []),
+    [draft],
+  )
 
+  const chipCounts = useMemo<Record<string, SectionChipCounts>>(() => {
     const result: Record<string, SectionChipCounts> = {}
     for (const section of EDITABLE_SECTIONS) {
       const findings = findingsByGalleyId.get(section.id) ?? []
-      const rows =
-        section.id === 'bonus'
-          ? bonusRows
-          : (draft?.sections[section.id]?.blocks ?? [])
+      const rows = section.id === 'bonus' ? bonusRows : (draft?.sections[section.id]?.blocks ?? [])
       result[section.id] = tallyForSection(section.id, rows, findings)
     }
     return result
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openFindings, draft])
+  }, [findingsByGalleyId, bonusRows, draft])
 
-  const selectedLabel =
-    EDITABLE_SECTIONS.find(s => s.id === selectedSection)?.label ?? selectedSection
+  // quick 260724-i5n (LD-3) — the currently-open story's resolved/unresolved
+  // findings, via the SAME `resolveSectionFindings` call the single-section
+  // galley makes — the Outline tab's beat dots and open-findings list never
+  // drift from what opening the Draft tab actually shows.
+  const selectedResolution = useMemo<{
+    resolved: ResolvedAnnotation[]
+    unresolved: UnresolvedFinding[]
+  }>(() => {
+    if (!draft || !storySectionId) return { resolved: [], unresolved: [] }
+    const rows =
+      storySectionId === 'bonus' ? bonusRows : (draft.sections[storySectionId]?.blocks ?? [])
+    const findings = findingsByGalleyId.get(storySectionId) ?? []
+    return resolveSectionFindings(rows, findings, storySectionId)
+  }, [draft, storySectionId, bonusRows, findingsByGalleyId])
 
-  // D-08: the reason text for the finding that deep-linked into the editor,
-  // kept visible above the editing surface for reference.
+  const outlineOpenFindings = useMemo<OutlineOpenFinding[]>(() => {
+    const fromResolved = selectedResolution.resolved.map(r => ({
+      id: r.findingId,
+      severity: r.severity,
+      reason: r.reason,
+    }))
+    const fromUnresolved = selectedResolution.unresolved.map(u => ({
+      id: u.findingId,
+      severity: u.severity,
+      reason: u.reason,
+    }))
+    return [...fromResolved, ...fromUnresolved]
+  }, [selectedResolution])
+
+  // ── Claims (Phase 45, D-16 "Related facts & sources" + LD-3 claim counts) ─
+  const [relatedFacts, setRelatedFacts] = useState<PassageSelection | null>(null)
+  const claimRows =
+    (useQuery(api.claimChecks.listByRunId, { runId }) as ClaimCheckRow[] | undefined) ?? []
+  const relatedClaim = relatedFacts
+    ? claimRows.find(
+        (row) => row.sectionName === relatedFacts.sectionId && row.blockIndexHint === relatedFacts.blockIndex,
+      )
+    : undefined
+
+  const claimRowsForStory = useMemo(
+    () => (storySectionId ? claimRows.filter(row => row.sectionName === storySectionId) : []),
+    [claimRows, storySectionId],
+  )
+  const sourcedCount = claimRowsForStory.filter(row => Boolean(row.claimId)).length
+  const unsourcedCount = claimRowsForStory.length - sourcedCount
+
+  // D-08: the reason text for the finding that deep-linked into the editor.
   const editFindingReason = editFinding?.findingId
     ? rawFindings.find(row => row._id === editFinding.findingId)?.reason
     : undefined
+
+  // "Next unreviewed" — first EDITABLE_SECTIONS entry AFTER the current one
+  // that isn't in the reviewed set (no wraparound).
+  function nextUnreviewedAfter(currentId: string): { id: string; label: string } | null {
+    const idx = EDITABLE_SECTIONS.findIndex(s => s.id === currentId)
+    for (let i = idx + 1; i < EDITABLE_SECTIONS.length; i++) {
+      const candidate = EDITABLE_SECTIONS[i]
+      if (candidate && !isReviewed(candidate.id)) return candidate
+    }
+    return null
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -510,193 +475,120 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
         </p>
       )}
 
-      {!loading && !error && (
+      {!loading && !error && draft && (
         <div className="flex flex-1 flex-col gap-4">
-          {/* Galley (default) | editor | iframe fallback — full-width canvas.
-              quick 260722-n5r: the LEFT chip column that used to sit here
-              was removed (galley mode already gets jump-nav from the
-              frame's WorkspaceOutline); the chip strip now renders inline
-              below, horizontally, and edit-mode only. */}
-          <div className="flex flex-1 flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
-                {viewMode === 'edit' ? selectedLabel : 'Galley'}
-              </h2>
-              <div className="flex items-center gap-2">
-                {viewMode === 'edit' ? (
-                  <button
-                    type="button"
-                    onClick={() => switchViewMode('galley')}
-                    className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
-                  >
-                    Back to galley
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => switchViewMode('edit')}
-                    className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
-                  >
-                    Edit {selectedLabel}
-                  </button>
-                )}
+          {!storySectionId ? (
+            <StoryDeskGrid
+              draft={draft}
+              chipCounts={chipCounts}
+              reviewedIds={reviewedIds}
+              onOpen={id => openStory(id, 'draft')}
+              issueNumber={issueNumber}
+            />
+          ) : (
+            <StoryFocusView
+              runId={runId}
+              draft={draft}
+              sectionId={storySectionId}
+              activeTab={activeTab}
+              onTab={setTab}
+              onBack={goToDesk}
+              onNav={navToStory}
+              reviewed={isReviewed(storySectionId)}
+              onToggleReviewed={() => toggleReviewed(storySectionId)}
+              chipCounts={chipCounts}
+              resolved={selectedResolution.resolved}
+              unresolved={selectedResolution.unresolved}
+              openFindings={outlineOpenFindings}
+              sourcedCount={sourcedCount}
+              unsourcedCount={unsourcedCount}
+              brief={brief}
+              editing={editing}
+              onEdit={handleEdit}
+              onExitEdit={handleExitEdit}
+              onDirtyChange={setDirty}
+              focusFindingId={editFinding?.findingId}
+              findingReason={editFindingReason}
+              revisionId={draft.revisionId}
+              reloadDraft={reloadDraft}
+              onEditSection={handleEditSection}
+              onInspect={handleInspect}
+              onRevise={requestRevision}
+              onRelatedFacts={setRelatedFacts}
+              showProvenance={showProvenance}
+              onToggleProvenance={() => setShowProvenance(prev => !prev)}
+              onUnsourcedClaimClick={() => {
+                if (issueNumber != null) router.push(issueFactCheckHref(issueNumber))
+              }}
+              nextUnreviewed={nextUnreviewedAfter(storySectionId)}
+            />
+          )}
+
+          {/* Phase 45 (REV-01/REV-04, D-18) — the shared "Ask agent to
+              revise" flow, scoped to whichever passage was selected. */}
+          {revisePassage && (
+            <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
+                  Ask agent to revise — {revisePassage.sectionName}
+                </h3>
                 <button
                   type="button"
-                  onClick={() => switchViewMode(viewMode === 'iframe' ? 'galley' : 'iframe')}
-                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+                  onClick={clearRevisePassage}
+                  className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
                 >
-                  {viewMode === 'iframe' ? 'Hide preview' : 'Show preview'}
-                </button>
-                {/* Phase 35 (PRV-03, D-10): default-ON provenance wash toggle. */}
-                <button
-                  type="button"
-                  onClick={() => setShowProvenance((prev) => !prev)}
-                  aria-pressed={showProvenance}
-                  className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-medium uppercase tracking-[.04em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
-                >
-                  {showProvenance ? 'Provenance on' : 'Provenance off'}
+                  Close
                 </button>
               </div>
-            </div>
-
-            {/* quick 260722-n5r: section SELECTOR, edit mode only — a
-                horizontal chip strip; galley mode's jump-nav lives entirely
-                in the frame's WorkspaceOutline (left rail), so no duplicate
-                renders here. */}
-            {viewMode === 'edit' && (
-              <SectionChipList
-                orientation="horizontal"
-                sections={EDITABLE_SECTIONS}
-                selected={selectedSection}
-                onSelect={handleChipSelect}
-                dirty={dirty}
-                counts={chipCounts}
+              <RevisionFlow
+                runId={runId}
+                passage={revisePassage}
+                onApplied={reloadDraft}
+                onClose={clearRevisePassage}
               />
-            )}
+            </div>
+          )}
 
-            {viewMode === 'galley' &&
-              (draft ? (
-                <Galley
-                  runId={runId}
-                  draft={draft}
-                  revisionId={draft.revisionId}
-                  reloadDraft={reloadDraft}
-                  onEditSection={handleEditSection}
-                  onInspect={handleInspect}
-                  onRevise={requestRevision}
-                  onRelatedFacts={setRelatedFacts}
-                  showProvenance={showProvenance}
-                  includeAxes={FACTUAL_AXES}
-                  onUnsourcedClaimClick={() => {
-                    if (issueNumber != null) router.push(issueFactCheckHref(issueNumber))
+          {/* Phase 45 (REV-01, D-16) — "Related facts & sources". */}
+          {relatedFacts && (
+            <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
+                  Related facts &amp; sources
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setRelatedFacts(null)}
+                  className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
+                >
+                  Close
+                </button>
+              </div>
+              {relatedClaim ? (
+                <ClaimProvenanceCard
+                  claim={{
+                    text: relatedClaim.text,
+                    importance: relatedClaim.importance,
+                    status: relatedClaim.status,
+                    sourceUrl: relatedClaim.sourceUrl,
+                    supportingPassage: relatedClaim.context,
+                    retrievedAt: relatedClaim.retrievedAt,
+                    sectionName: relatedClaim.sectionName,
                   }}
                 />
               ) : (
-                <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
-                  <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
-                </div>
-              ))}
+                <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
+                  No tracked claims in this passage.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
-            {viewMode === 'edit' &&
-              (draft ? (
-                <SectionEditorPanel
-                  runId={runId}
-                  selectedSection={selectedSection}
-                  draft={draft}
-                  onDirtyChange={setDirty}
-                  focusFindingId={editFinding?.findingId}
-                  findingReason={editFindingReason}
-                />
-              ) : (
-                <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
-                  <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
-                </div>
-              ))}
-
-            {viewMode === 'iframe' &&
-              (previewUrl ? (
-                // quick 260722-v01 (item 2g): `min-h-[500px] flex-1` never
-                // yields a DEFINITE height, so PreviewIframe's internal
-                // `h-full` chain resolved to auto and the iframe collapsed to
-                // the UA default ~150px strip. A definite height here lets
-                // that chain resolve; the border frames the preview against
-                // the rail background.
-                <div className="h-[max(560px,calc(100vh-280px))] w-full border border-[color:var(--color-faint)] bg-white">
-                  <PreviewIframe previewUrl={previewUrl} />
-                </div>
-              ) : (
-                <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
-                  <p className="text-sm text-[color:var(--color-ink-soft)]">
-                    Preview unavailable.
-                  </p>
-                </div>
-              ))}
-
-            {/* Phase 45 (REV-01/REV-04, D-18) — the shared "Ask agent to
-                revise" flow, scoped to whichever passage was selected
-                (galley toolbar) OR requested (inspector footer). Rendered
-                regardless of viewMode so an inspector-footer-triggered
-                request is never silently dropped. */}
-            {revisePassage && (
-              <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
-                    Ask agent to revise — {revisePassage.sectionName}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={clearRevisePassage}
-                    className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
-                  >
-                    Close
-                  </button>
-                </div>
-                <RevisionFlow
-                  runId={runId}
-                  passage={revisePassage}
-                  onApplied={reloadDraft}
-                  onClose={clearRevisePassage}
-                />
-              </div>
-            )}
-
-            {/* Phase 45 (REV-01, D-16) — "Related facts & sources": the
-                shared ClaimProvenanceCard for a tracked claim intersecting
-                the selected block, or an honest "no tracked claims" state. */}
-            {relatedFacts && (
-              <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <h3 className="font-[family-name:var(--font-ui)] text-[13px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)]">
-                    Related facts &amp; sources
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setRelatedFacts(null)}
-                    className="font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]"
-                  >
-                    Close
-                  </button>
-                </div>
-                {relatedClaim ? (
-                  <ClaimProvenanceCard
-                    claim={{
-                      text: relatedClaim.text,
-                      importance: relatedClaim.importance,
-                      status: relatedClaim.status,
-                      sourceUrl: relatedClaim.sourceUrl,
-                      supportingPassage: relatedClaim.context,
-                      retrievedAt: relatedClaim.retrievedAt,
-                      sectionName: relatedClaim.sectionName,
-                    }}
-                  />
-                ) : (
-                  <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
-                    No tracked claims in this passage.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+      {!loading && !error && !draft && (
+        <div className="flex min-h-[300px] flex-1 items-center justify-center border border-dashed border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8">
+          <p className="text-sm text-[color:var(--color-ink-soft)]">Loading draft…</p>
         </div>
       )}
     </div>

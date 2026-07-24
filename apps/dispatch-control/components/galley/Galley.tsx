@@ -173,6 +173,16 @@ interface GalleyProps {
    * it to route into the Fact Check tab (D-12).
    */
   onUnsourcedClaimClick?: (claimIndex: number) => void
+  /**
+   * Quick 260724-i5n (LD-4) — an optional section-id whitelist. When
+   * provided, ONLY the sections whose id is a member render (every render
+   * branch below is additionally gated on membership); `undefined` renders
+   * everything, exactly as before (back-compat — Voice Pass and any other
+   * full-galley mount are unaffected). This is what lets the Story Desk's
+   * per-story Draft tab reuse this SAME Galley for a single section instead
+   * of forking the annotation/claim rendering.
+   */
+  sections?: ReadonlyArray<string>
 }
 
 // D-05 reader order for the four long-read sections.
@@ -210,8 +220,13 @@ export default function Galley({
   includeAxes,
   labels,
   onUnsourcedClaimClick,
+  sections,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Quick 260724-i5n (LD-4) — `undefined` sections = render everything
+  // (back-compat); otherwise membership-only.
+  const included = (id: string): boolean => sections === undefined || sections.includes(id)
 
   // Live findings — undefined while loading (default to []); resolved
   // (accepted/dismissed) findings are excluded via the ONE shared
@@ -342,7 +357,7 @@ export default function Galley({
         onInspect={onInspect}
       />
 
-      {LONG_READ_SECTIONS.map(({ id, label }) => {
+      {LONG_READ_SECTIONS.filter(({ id }) => included(id)).map(({ id, label }) => {
         const section = draft.sections[id]
         const rows = section?.blocks ?? []
         // WSP-07 lockstep check — byte-identical to draftSectionIdsFromDraft's
@@ -378,16 +393,16 @@ export default function Galley({
         )
       })}
 
-      <GalleryGameSlot game={draft.game ?? {}} />
+      {included('game') && <GalleryGameSlot game={draft.game ?? {}} />}
 
-      {draft.bonusType === 'specAd' && bonusRows.length === 0 && (
+      {included('bonus') && draft.bonusType === 'specAd' && bonusRows.length === 0 && (
         <section id="galley-bonus" className="galley-section">
           <h2 className="galley-headline">{draft.bonus?.headline ?? 'Bonus'}</h2>
           <NotGeneratedBlock label="Bonus" />
         </section>
       )}
 
-      {draft.bonusType === 'specAd' && bonusRows.length > 0 && bonusResolution && (
+      {included('bonus') && draft.bonusType === 'specAd' && bonusRows.length > 0 && bonusResolution && (
         <GallerySection
           sectionId="bonus"
           headline={draft.bonus?.headline}
@@ -406,7 +421,7 @@ export default function Galley({
         />
       )}
 
-      {draft.bonusType === 'bigBudget' && (
+      {included('bonus') && draft.bonusType === 'bigBudget' && (
         <section id="galley-bonus" className="galley-section">
           {draft.bonus?.headline && <h2 className="galley-headline">{draft.bonus.headline}</h2>}
           {(draft.bonus?.storyboards ?? []).map(
@@ -426,7 +441,7 @@ export default function Galley({
         </section>
       )}
 
-      {draft.bonusType === 'jingle' && (
+      {included('bonus') && draft.bonusType === 'jingle' && (
         <section id="galley-bonus" className="galley-section">
           {draft.bonus?.headline && <h2 className="galley-headline">{draft.bonus.headline}</h2>}
           <p className="galley-body" style={{ whiteSpace: 'pre-wrap' }}>
@@ -435,24 +450,28 @@ export default function Galley({
         </section>
       )}
 
-      <section id="galley-podcast" className="galley-section">
-        <h2 className="galley-h2">Podcast</h2>
-        {draft.podcast?.audioUrl ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption
-          <audio controls src={draft.podcast.audioUrl} />
-        ) : (
-          <p className="galley-body">{draft.podcast?.transcript}</p>
-        )}
-      </section>
+      {included('podcast') && (
+        <section id="galley-podcast" className="galley-section">
+          <h2 className="galley-h2">Podcast</h2>
+          {draft.podcast?.audioUrl ? (
+            // eslint-disable-next-line jsx-a11y/media-has-caption
+            <audio controls src={draft.podcast.audioUrl} />
+          ) : (
+            <p className="galley-body">{draft.podcast?.transcript}</p>
+          )}
+        </section>
+      )}
 
-      <section id="galley-deliberation" className="galley-section">
-        <h2 className="galley-h2">Deliberation</h2>
-        {(draft.conversation ?? []).map((turn, i) => (
-          <p key={i} className="galley-body">
-            {turn.speaker}: {turn.text}
-          </p>
-        ))}
-      </section>
+      {included('deliberation-conversation') && (
+        <section id="galley-deliberation" className="galley-section">
+          <h2 className="galley-h2">Deliberation</h2>
+          {(draft.conversation ?? []).map((turn, i) => (
+            <p key={i} className="galley-body">
+              {turn.speaker}: {turn.text}
+            </p>
+          ))}
+        </section>
+      )}
     </div>
   )
 }
