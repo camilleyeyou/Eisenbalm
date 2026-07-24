@@ -1,14 +1,14 @@
 'use client'
 /**
  * Phase 26 (RVW-01/RVW-02) — Awaiting-review queue panel.
- * finish-phase-34-retirement (quick 260718-00i Task 3): the "Review →" CTA
- * now resolves to the Approval stage (`issueApprovalHref`), not the retired
- * `/run-monitor/runs/[runId]/review` panel. `runs.listForWorkspace` rows
- * carry NO `issueNumber` field (schema.ts), so each row resolves its own
+ * Quick 260724-lp1: the "Review →" CTA now resolves to the Draft/Story Desk
+ * stage (`issueDraftHref`), not Approval — reviewers land where the work
+ * happens instead of dead-ending at the sign-off gate. `runs.listForWorkspace`
+ * rows carry NO `issueNumber` field (schema.ts), so each row resolves its own
  * issueNumber via `api.pipelineRuns.byRunId` in the extracted
  * `AwaitingReviewRow` child component below; while that query is loading (or
- * unresolvable) the link falls back to the legacy run-keyed URL, which now
- * itself redirects to Approval — never a dead end.
+ * unresolvable) the link falls back to the legacy run-keyed URL, which
+ * redirects to Approval — never a dead end.
  *
  * Displays runs with status "awaiting-review" above the run history table.
  *
@@ -22,7 +22,7 @@ import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
-import { issueApprovalHref } from '@/lib/issueRouteResolver'
+import { issueDraftHref } from '@/lib/issueRouteResolver'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface ReviewQueueProps {
@@ -41,10 +41,10 @@ function formatRelativeTime(ms: number): string {
 
 /**
  * One Awaiting Review card. Resolves its own issueNumber (runs rows have
- * none) so the "Review →" CTA can target the Approval stage directly. While
- * `pipelineRuns.byRunId` is loading/unresolved, the CTA falls back to the
- * legacy run-keyed URL — that route now redirects to Approval itself, so
- * this is a safe loading fallback, never a dead end.
+ * none) so the "Review →" CTA can target the Draft/Story Desk stage
+ * directly. While `pipelineRuns.byRunId` is loading/unresolved, the CTA
+ * falls back to the legacy run-keyed URL — that route redirects to
+ * Approval, so this is a safe loading fallback, never a dead end.
  */
 function AwaitingReviewRow({
   run,
@@ -54,7 +54,7 @@ function AwaitingReviewRow({
   const pRun = useQuery(api.pipelineRuns.byRunId, { runId: run.runId })
   const cost = parseCostJson(run.cost).total
   const href = pRun?.issueNumber
-    ? issueApprovalHref(pRun.issueNumber)
+    ? issueDraftHref(pRun.issueNumber)
     : `/run-monitor/runs/${encodeURIComponent(run.runId)}/review`
 
   return (

@@ -655,10 +655,10 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     expect(claimTask?.primary.href).toBe('/issues/7/fact-check')
   })
 
-  it('TSK-03 (Pitfall 1 fix): the signoff-facts task deep-links to /issues/7/approval, not /draft', () => {
+  it('quick 260724-lp1: the signoff-facts task deep-links to /issues/7/draft (Story Desk), not /approval', () => {
     const tasks = deriveTasks(baseInputs({ runStatus: 'complete', signOffs: {} }))
     const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
-    expect(factsTask?.primary.href).toBe('/issues/7/approval')
+    expect(factsTask?.primary.href).toBe('/issues/7/draft')
   })
 
   it('signoff-voice href is unchanged: still resolves via issueVoiceHref, not /draft or /approval', () => {

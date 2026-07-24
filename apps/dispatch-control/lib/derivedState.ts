@@ -19,7 +19,6 @@ import {
   issueDraftHref,
   issueVoiceHref,
   issueFactCheckHref,
-  issueApprovalHref,
   issueStoryHref,
 } from './issueRouteResolver'
 import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
@@ -517,10 +516,10 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
 
   const runningOrDone = i.runId !== null && i.runStatus !== 'running'
   if (runningOrDone && i.signOffs !== undefined) {
-    // §43.5b (Pitfall 1 fix) — the facts sign-off task deep-links to
-    // Approval, not Draft. signoff-voice's href is unchanged (already
-    // correct per §40.6 — verified against issueVoiceHref, §43.5b).
-    const href = fallbackHref ?? issueApprovalHref(n as number)
+    // Quick 260724-lp1 — the facts sign-off task now deep-links to the
+    // Draft/Story Desk stage (where the work happens), not Approval.
+    // signoff-voice's href is unchanged (still issueVoiceHref, §43.5b).
+    const href = fallbackHref ?? issueDraftHref(n as number)
     if (i.signOffs['facts-cleared'] === undefined) {
       tasks.push({
         id: 'signoff-facts',
