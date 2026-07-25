@@ -36,6 +36,7 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
 import { runStepFor } from '@/lib/nomenclature'
+import { issueHref, issueDraftHref } from '@/lib/issueRouteResolver'
 import { PIPELINE_NODES } from '../../graph/_components/pipelineTopology'
 import CancelRunButton from './CancelRunButton'
 import RerollButton from './RerollButton'
@@ -224,6 +225,11 @@ function sumTokens(members: AgentRunRow[], field: 'tokensIn' | 'tokensOut'): num
 export default function RunDetail({ runId }: RunDetailProps) {
   const run = useQuery(api.runs.byRunId, { runId })
   const agentRuns = useQuery(api.agentRuns.byRunId, { runId })
+  // Quick 260724-x4b (LD-4) — the `runs` row does NOT carry issueNumber
+  // (only `pipelineRuns` does); resolves runId -> issueNumber for the "Open
+  // issue →" link below.
+  const pipelineRun = useQuery(api.pipelineRuns.byRunId, { runId })
+  const issueNumber = pipelineRun?.issueNumber
   const [draftSectionsExpanded, setDraftSectionsExpanded] = useState(false)
 
   if (run === undefined || agentRuns === undefined) {
@@ -277,13 +283,27 @@ export default function RunDetail({ runId }: RunDetailProps) {
 
   return (
     <div className="space-y-6">
-      {/* Back link */}
-      <Link
-        href="/run-monitor/runs"
-        className="inline-block font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline"
-      >
-        ← Back to all runs
-      </Link>
+      {/* Back link + Open issue link (LD-4: connects this run back to the issue workspace) */}
+      <div className="flex flex-wrap items-center gap-4">
+        <Link
+          href="/run-monitor/runs"
+          className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline"
+        >
+          ← Back to all runs
+        </Link>
+        {issueNumber != null && (
+          <Link
+            href={
+              run.status === 'awaiting-review' || run.status === 'complete'
+                ? issueDraftHref(issueNumber)
+                : issueHref(issueNumber)
+            }
+            className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
+          >
+            Open issue →
+          </Link>
+        )}
+      </div>
 
       {/* Run header */}
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5 space-y-4">

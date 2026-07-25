@@ -22,11 +22,13 @@
  * (rounded-md -> hard edge). No handler/behavior change.
  */
 import { useState } from 'react'
+import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { triggerRun } from '@/lib/pipelineControlClient'
+import { issueHref } from '@/lib/issueRouteResolver'
 
 interface RunControlBarProps {
   workspace_id: string
@@ -39,6 +41,15 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Quick 260724-x4b (LD-4b) — post-launch navigation. `triggerRun` only
+  // returns `runId` (no issueNumber), so the started issue is resolved via
+  // the SAME pipelineRuns.byRunId query Masthead/RunDetail already use.
+  const [startedRunId, setStartedRunId] = useState<string | null>(null)
+  const startedRun = useQuery(
+    api.pipelineRuns.byRunId,
+    startedRunId ? { runId: startedRunId } : 'skip',
+  )
+  const startedIssueNumber = startedRun?.issueNumber
 
   const isRunning = latest?.status === 'running'
 
@@ -47,7 +58,8 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
     setError(null)
     try {
       const token = await getToken()
-      await triggerRun({}, token)
+      const result = await triggerRun({}, token)
+      setStartedRunId(result.runId)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -75,6 +87,27 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
       <div className="flex items-center gap-3">
         {error && (
           <span className="text-[11px] text-[color:var(--color-vermilion)]">{error}</span>
+        )}
+
+        {/* Quick 260724-x4b (LD-4b) — post-launch navigation. Never a
+            broken link: while the issueNumber is still resolving this
+            renders a plain span, only becoming a Link once it's known. */}
+        {startedRunId && (
+          <span className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+            {startedIssueNumber != null ? (
+              <>
+                Run started &middot;{' '}
+                <Link
+                  href={issueHref(startedIssueNumber)}
+                  className="ml-1 font-semibold text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
+                >
+                  Open Issue {startedIssueNumber} &rarr;
+                </Link>
+              </>
+            ) : (
+              'Run started — resolving issue…'
+            )}
+          </span>
         )}
 
         {confirming ? (

@@ -150,4 +150,17 @@ describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
     expect(content).toMatch(/'draft-sections'/)
     expect(content).toMatch(/isDraftSections/)
   })
+
+  // ── Quick 260724-x4b (LD-4): Run Monitor connects back to the work ────────
+
+  it('RunDetail.tsx resolves issueNumber and renders an "Open issue" affordance', () => {
+    const filePath = path.resolve(
+      __dirname,
+      '../app/(dashboard)/run-monitor/runs/_components/RunDetail.tsx',
+    )
+    const content = fs.readFileSync(filePath, 'utf-8')
+    expect(content).toMatch(/issueDraftHref/)
+    expect(content).toMatch(/issueHref/)
+    expect(content).toMatch(/Open issue/)
+  })
 })

@@ -13,7 +13,7 @@
  * Runs in jsdom (environmentMatchGlobs *.test.tsx → jsdom).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
@@ -29,6 +29,11 @@ vi.mock('@convex/_generated/api', () => ({
     runs: {
       latest: 'runs:latest',
       monthToDateCost: 'runs:monthToDateCost',
+    },
+    // Quick 260724-x4b (LD-4b) — RunControlBar now resolves the just-started
+    // run's issueNumber via this query for its post-launch success link.
+    pipelineRuns: {
+      byRunId: 'pipelineRuns:byRunId',
     },
     pipelineConfig: {
       getAll: 'pipelineConfig:getAll',
@@ -129,6 +134,28 @@ describe('RunControlBar', () => {
     const text = container.textContent ?? ''
     // Exclude SR-only "Loading…" and screen reader spans
     expect(text).not.toMatch(/[a-zA-Z]!/)
+  })
+
+  // ── Quick 260724-x4b (Fix 4b): post-launch navigation ─────────────────────
+  it('shows an inline "Open Issue N" link after a successful launch', async () => {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation(
+      (queryRef: string, args: unknown) => {
+        if (queryRef === 'runs:latest') return null // idle — Trigger Run enabled
+        if (queryRef === 'pipelineRuns:byRunId') {
+          return args === 'skip' ? undefined : { issueNumber: 12 }
+        }
+        return undefined
+      },
+    )
+
+    render(<RunControlBar workspace_id="eisenbalm" />)
+    fireEvent.click(screen.getByRole('button', { name: /trigger run/i }))
+    fireEvent.click(screen.getByRole('button', { name: /confirm run\?/i }))
+
+    await waitFor(() => {
+      const link = screen.getByRole('link', { name: /open issue 12/i })
+      expect(link.getAttribute('href')).toBe('/issues/12')
+    })
   })
 })
 
