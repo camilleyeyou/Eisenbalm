@@ -19,6 +19,8 @@ interface StoryDeskGridProps {
   chipCounts: Record<string, SectionChipCounts>
   reviewedIds: ReadonlySet<string>
   onOpen: (sectionId: string) => void
+  /** Quick 260724-x4b (LD-3) — the per-card secondary Edit shortcut. */
+  onOpenEdit: (sectionId: string) => void
   issueNumber?: number
 }
 
@@ -116,7 +118,13 @@ function chipToneFor(status: CardStatus): ChipTone {
   return 'clean'
 }
 
-export default function StoryDeskGrid({ draft, chipCounts, reviewedIds, onOpen }: StoryDeskGridProps) {
+export default function StoryDeskGrid({
+  draft,
+  chipCounts,
+  reviewedIds,
+  onOpen,
+  onOpenEdit,
+}: StoryDeskGridProps) {
   const total = EDITABLE_SECTIONS.length
   const reviewedCount = EDITABLE_SECTIONS.filter(s => reviewedIds.has(s.id)).length
 
@@ -170,60 +178,86 @@ export default function StoryDeskGrid({ draft, chipCounts, reviewedIds, onOpen }
           const errorDots = counts?.error ?? 0
           const warningDots = counts?.warning ?? 0
 
+          const headline = headlineFor(draft, section.id, section.label)
+
           return (
-            <button
+            <div
               key={section.id}
-              type="button"
-              data-testid={`story-card-${section.id}`}
-              onClick={() => onOpen(section.id)}
               className={`relative flex min-h-[190px] flex-col rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-[18px] pb-3.5 text-left hover:bg-[color:var(--color-card-alt)] ${TOP_RULE[status]}`}
             >
-              {reviewed && (
-                <span className="absolute right-3.5 top-3 font-[family-name:var(--font-mono)] text-[10.5px] text-[color:var(--color-green)]">
-                  &#10003; Reviewed
-                </span>
-              )}
-              <span className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[.12em] text-[color:var(--color-cobalt)]">
-                  {section.label}
-                </span>
-                <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-              </span>
-              <h2 className="mt-2 font-[family-name:var(--font-display)] text-[21px] font-semibold leading-[1.12] text-[color:var(--color-ink)]">
-                {headlineFor(draft, section.id, section.label)}
-              </h2>
-              <p className="mt-2 line-clamp-2 font-[family-name:var(--font-body)] text-[13px] italic leading-[1.5] text-[color:var(--color-ink-soft)]">
-                {excerptFor(draft, section.id)}
-              </p>
-              <span className="mt-auto flex items-center gap-2.5 pt-3.5">
-                <span
-                  className={`rounded-[2px] border px-[7px] py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[.09em] ${CHIP_CLASS[chipTone]}`}
-                >
-                  {CHIP_LABEL[chipTone]}
-                </span>
-                {(errorDots > 0 || warningDots > 0) && (
-                  <span className="flex gap-1">
-                    {Array.from({ length: errorDots }).map((_, i) => (
-                      <span
-                        key={`e${i}`}
-                        className="h-[7px] w-[7px] rounded-full bg-[color:var(--color-vermilion)]"
-                      />
-                    ))}
-                    {Array.from({ length: warningDots }).map((_, i) => (
-                      <span
-                        key={`w${i}`}
-                        className="h-[7px] w-[7px] rounded-full bg-[color:var(--color-marigold)]"
-                      />
-                    ))}
+              {/* Quick 260724-x4b (LD-3): the stretched primary button —
+                  a normal click anywhere on the card still opens the
+                  section read-only on its Draft tab. Two REAL sibling
+                  buttons (never a button nested inside a button). */}
+              <button
+                type="button"
+                data-testid={`story-card-${section.id}`}
+                onClick={() => onOpen(section.id)}
+                aria-label={`Open ${headline}`}
+                className="absolute inset-0 z-0 rounded-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
+              />
+              <div className="pointer-events-none relative z-[1] flex flex-1 flex-col">
+                {reviewed && (
+                  <span className="absolute right-3.5 top-3 font-[family-name:var(--font-mono)] text-[10.5px] text-[color:var(--color-green)]">
+                    &#10003; Reviewed
                   </span>
                 )}
-                <span className="ml-auto font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
-                  {wordCountLabelFor(draft, section.id)}
+                <span className="flex items-baseline justify-between">
+                  <span className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[.12em] text-[color:var(--color-cobalt)]">
+                    {section.label}
+                  </span>
+                  <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
                 </span>
-              </span>
-            </button>
+                <h2 className="mt-2 font-[family-name:var(--font-display)] text-[21px] font-semibold leading-[1.12] text-[color:var(--color-ink)]">
+                  {headline}
+                </h2>
+                <p className="mt-2 line-clamp-2 font-[family-name:var(--font-body)] text-[13px] italic leading-[1.5] text-[color:var(--color-ink-soft)]">
+                  {excerptFor(draft, section.id)}
+                </p>
+                <span className="mt-auto flex items-center gap-2.5 pt-3.5">
+                  <span
+                    className={`rounded-[2px] border px-[7px] py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[.09em] ${CHIP_CLASS[chipTone]}`}
+                  >
+                    {CHIP_LABEL[chipTone]}
+                  </span>
+                  {(errorDots > 0 || warningDots > 0) && (
+                    <span className="flex gap-1">
+                      {Array.from({ length: errorDots }).map((_, i) => (
+                        <span
+                          key={`e${i}`}
+                          className="h-[7px] w-[7px] rounded-full bg-[color:var(--color-vermilion)]"
+                        />
+                      ))}
+                      {Array.from({ length: warningDots }).map((_, i) => (
+                        <span
+                          key={`w${i}`}
+                          className="h-[7px] w-[7px] rounded-full bg-[color:var(--color-marigold)]"
+                        />
+                      ))}
+                    </span>
+                  )}
+                  <span className="ml-auto font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+                    {wordCountLabelFor(draft, section.id)}
+                  </span>
+                </span>
+                <div className="mt-2.5 flex justify-end pointer-events-none">
+                  <button
+                    type="button"
+                    data-testid={`story-card-edit-${section.id}`}
+                    onClick={e => {
+                      e.stopPropagation()
+                      onOpenEdit(section.id)
+                    }}
+                    aria-label={`Edit ${headline}`}
+                    className="pointer-events-auto relative z-[2] min-h-[36px] inline-flex items-center font-[family-name:var(--font-ui)] text-[12px] font-semibold text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
+                  >
+                    Edit &rarr;
+                  </button>
+                </div>
+              </div>
+            </div>
           )
         })}
       </div>

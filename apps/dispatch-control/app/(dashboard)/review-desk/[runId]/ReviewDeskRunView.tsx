@@ -265,6 +265,23 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
     })
   }
 
+  /**
+   * Quick 260724-x4b (LD-3) — the Story Desk card's secondary "Edit →"
+   * shortcut: sets editing synchronously and navigates straight to the
+   * story's Draft tab, skipping the "open card -> Edit story" two-click
+   * tax. Reuses the exact machinery `handleEdit` + `openStory` already
+   * provide — StoryFocusView mounts SectionEditorPanel identically to
+   * clicking a card then "Edit story", including for structured
+   * game/theme/podcast sections.
+   */
+  function openStoryEditing(id: string) {
+    void guardDirty(() => {
+      setEditFinding(null)
+      setEditing(true)
+      router.push(buildHref({ story: id, tab: 'draft' }))
+    })
+  }
+
   function setTab(tab: 'outline' | 'draft') {
     if (!storySectionId) return
     // Switching FROM the Draft tab while editing would unmount
@@ -483,6 +500,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
               chipCounts={chipCounts}
               reviewedIds={reviewedIds}
               onOpen={id => openStory(id, 'draft')}
+              onOpenEdit={openStoryEditing}
               issueNumber={issueNumber}
             />
           ) : (
