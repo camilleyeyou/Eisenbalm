@@ -83,6 +83,7 @@ import WorkspaceOutline from '../_components/WorkspaceOutline'
 import ContextPanel from '../_components/ContextPanel'
 import WorkspaceControls from '../_components/WorkspaceControls'
 import IssueComments from './_components/IssueComments'
+import DraftReadyBanner from './_components/DraftReadyBanner'
 import StageHintStrip from '@/components/onboarding/StageHintStrip'
 import HelpTip from '@/components/ui/HelpTip'
 import ScrollHintRow from '@/components/ui/ScrollHintRow'
@@ -363,6 +364,8 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
           })}
           </ScrollHintRow>
         </nav>
+
+        <DraftReadyBanner issueNumber={n} currentStageSegment={currentStageSegment} />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)_320px] lg:items-start">
           {/* quick 260722-n5r follow-up: the scrollport is <main> (100vh minus

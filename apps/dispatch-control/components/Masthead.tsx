@@ -48,6 +48,7 @@
  * wordmark drops to 13px below md. No readout is ever hidden, only scrolled.
  */
 import { useState } from 'react'
+import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { UserButton } from '@clerk/nextjs'
 import {
@@ -64,6 +65,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
+import { issueDraftHref } from '@/lib/issueRouteResolver'
 import {
   deriveIssueStatus,
   deriveTasks,
@@ -164,16 +166,37 @@ function systemActivityFromRunStatus(status: string | undefined | null): SystemA
   return 'idle'
 }
 
-function SystemActivityReadout({ activity }: { activity: SystemActivity }) {
+// `href` (Fix 1, LD-1): when the run is awaiting-review and its issueNumber
+// has resolved, this readout becomes a door to the run's Draft desk instead
+// of a plain status label — the signal IS the shortcut. Undefined for every
+// other status/resolution state, which keeps the identical plain `<span>`.
+function SystemActivityReadout({ activity, href }: { activity: SystemActivity; href?: string }) {
   const meta = SYSTEM_ACTIVITY_META[activity]
   const Icon = meta.Icon
+  const content = (
+    <>
+      <Icon size={13} aria-hidden="true" className={meta.spin ? 'animate-spin' : undefined} />
+      {meta.label}
+    </>
+  )
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label="The draft is ready — go to the Draft desk"
+        className="flex min-h-[44px] shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
+        style={{ color: meta.color }}
+      >
+        {content}
+      </Link>
+    )
+  }
   return (
     <span
       className="flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[2px] px-[9px] py-[3px] font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.06em]"
       style={{ color: meta.color }}
     >
-      <Icon size={13} aria-hidden="true" className={meta.spin ? 'animate-spin' : undefined} />
-      {meta.label}
+      {content}
     </span>
   )
 }
@@ -252,6 +275,12 @@ export default function Masthead() {
   const issueStatus = deriveIssueStatus(derivationInputs)
   const taskCount = deriveTasks(derivationInputs).length
   const systemActivity = systemActivityFromRunStatus(latest?.status)
+  // Fix 1 (LD-1): the signal becomes a door — only when the run is genuinely
+  // paused for the operator AND its issue has resolved.
+  const draftDeskHref =
+    systemActivity === 'paused-for-you' && issueNumber != null
+      ? issueDraftHref(issueNumber)
+      : undefined
 
   return (
     <header className="flex h-[52px] items-center gap-3 bg-[color:var(--color-ink)] pl-[52px] pr-3 text-[color:var(--color-masthead-text)] md:gap-4 md:pl-[22px] md:pr-[22px]">
@@ -284,7 +313,7 @@ export default function Masthead() {
         {/* Readout 2: System activity (relabel of the old blended chip) —
             visibly distinct from Issue status; `Loader2` spin is exclusive
             to this readout's "Running" state. */}
-        <SystemActivityReadout activity={systemActivity} />
+        <SystemActivityReadout activity={systemActivity} href={draftDeskHref} />
 
         {/* Readout 4: Cost vs budget — unchanged query wiring. */}
         {mtd !== undefined && cap !== undefined && (

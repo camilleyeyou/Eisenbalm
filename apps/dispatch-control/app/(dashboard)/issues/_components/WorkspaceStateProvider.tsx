@@ -67,6 +67,16 @@ export interface WorkspaceStateValue {
   held: boolean
   published: boolean
   status: IssueStatus
+  /**
+   * Quick 260724-x4b (LD-2) — the raw `runs`/`pipelineRuns` status string
+   * (e.g. `'awaiting-review'`), the SAME value already threaded into
+   * `derivationInputs.runStatus` below. Exposed verbatim (not the derived
+   * `IssueStatus` above) so `DraftReadyBanner` can gate on the precise
+   * "paused at the Andrew gate" run state. A primitive string — referentially
+   * stable across renders, so exposing it carries no render-loop risk (see
+   * the quick 260721-pmn memoization notes throughout this file).
+   */
+  runStatus?: string
   stages: ReturnType<typeof deriveStageStates>
   /**
    * `undefined` while the authoritative draft is loading OR the fetch failed
@@ -386,6 +396,7 @@ export function WorkspaceStateProvider({
     held: issue?.held ?? false,
     published: issue?.published ?? false,
     status,
+    runStatus: runRow?.status ?? run?.status,
     stages,
     sectionStates,
     draftContentAbsent,

@@ -290,6 +290,28 @@ describe('Masthead', () => {
     fireEvent.click(trigger)
     expect(screen.getByRole('dialog', { name: /awaiting you/i })).toBeDefined()
   })
+
+  // ── Quick 260724-x4b (Fix 1, LD-1): the signal becomes a door ────────────
+  it('"Paused for you" becomes a link to the run\'s Draft desk when awaiting-review + issueNumber resolved', () => {
+    mockMasthead({
+      latest: { status: 'awaiting-review', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+    })
+
+    renderMasthead()
+    const link = screen.getByRole('link', { name: /draft desk/i })
+    expect(link.getAttribute('href')).toBe('/issues/42/draft')
+  })
+
+  it('stays a plain readout (never a Draft-desk link) for any other run status', () => {
+    mockMasthead({
+      latest: { status: 'complete', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 42 },
+    })
+
+    renderMasthead()
+    expect(screen.queryByRole('link', { name: /draft desk/i })).toBeNull()
+  })
 })
 
 describe('MyTasksTrigger', () => {
