@@ -1,0 +1,194 @@
+<!-- @dsCard group="The Run" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Run — states &amp; the selection fix</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;padding:32px 36px 60px}
+
+.head h1{font-family:var(--display);font-weight:600;font-size:29px}
+.head p{font-family:var(--body);font-style:italic;font-size:13.5px;color:var(--ink-soft);margin-top:6px;max-width:700px;line-height:1.5}
+
+/* the bug diagram */
+.bug{margin-top:24px;border:1px solid var(--ink);background:var(--card);box-shadow:5px 5px 0 var(--vermilion);padding:18px 20px}
+.bug .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vermilion)}
+.bug h2{font-family:var(--display);font-size:19px;font-weight:600;margin-top:5px}
+.cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
+.cmp .c{border:1px solid var(--border);background:var(--card-alt);padding:13px 15px}
+.cmp .c .w{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cmp .c .how{font-family:var(--mono);font-size:11px;color:var(--ink);margin-top:7px;line-height:1.6}
+.cmp .c .got{font-family:var(--display);font-size:21px;font-weight:600;margin-top:9px}
+.cmp .c.bad .got{color:var(--vermilion)}
+.cmp .c.good .got{color:var(--green)}
+.cmp .c .sub{font-family:var(--body);font-style:italic;font-size:11.5px;color:var(--ink-soft);margin-top:4px}
+.fix{margin-top:14px;border-left:3px solid var(--green);background:var(--card-alt);padding:11px 14px}
+.fix .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--green)}
+.fix p{font-family:var(--body);font-size:12.5px;line-height:1.6;margin-top:5px}
+
+/* states */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:30px}
+.state{background:var(--card);border:1px solid var(--border);padding:0}
+.state .sh{padding:11px 15px;border-bottom:1px solid var(--border);background:var(--card-alt)}
+.state .sh .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cobalt)}
+.state .sb{padding:18px 18px 20px}
+
+.runline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:9px;border-bottom:2px solid var(--ink)}
+.runline .issue{font-family:var(--display);font-size:19px;font-weight:600}
+.chip{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;padding:3px 7px;border:1px solid}
+.chip.rev{border-color:var(--marigold);background:rgba(242,176,30,.12);color:var(--marigold-text)}
+.chip.run{border-color:var(--cobalt);background:rgba(37,58,212,.07);color:var(--cobalt)}
+.chip.ok{border-color:var(--green);background:rgba(20,138,82,.07);color:var(--green)}
+.chip.err{border-color:var(--vermilion);background:var(--vermilion);color:#fff}
+.sub{font-family:var(--body);font-style:italic;font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+
+.mini{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-top:none;padding:9px 11px}
+.mini:first-of-type{border-top:1px solid var(--border);margin-top:12px}
+.mini .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cobalt);width:74px;flex-shrink:0}
+.mini .h{font-family:var(--display);font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini .s{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);flex-shrink:0}
+.mini.dim .h{color:var(--faint);font-style:italic;font-weight:400}
+.mini .s.g{color:var(--green)} .mini .s.r{color:var(--vermilion)} .mini .s.b{color:var(--cobalt)}
+
+.empty{border:1px solid var(--border);background:var(--card-alt);padding:24px 20px;text-align:center;margin-top:12px}
+.empty h4{font-family:var(--display);font-size:17px;font-weight:600}
+.empty p{font-family:var(--body);font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.55}
+.empty .row{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.btn{font-family:var(--ui);font-size:12px;font-weight:600;padding:8px 14px;border:1px solid var(--ink);background:var(--card);color:var(--ink);text-decoration:none}
+.btn.primary{background:var(--ink);color:var(--card)}
+
+.bar{height:5px;background:var(--nav);margin-top:12px;position:relative}
+.bar i{position:absolute;inset:0;right:56%;background:var(--cobalt)}
+.barcap{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin-top:5px}
+
+.rulebox{border:1px solid var(--ink);background:var(--card);padding:15px 18px;margin-top:26px;box-shadow:4px 4px 0 var(--marigold)}
+.rulebox .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--marigold-text)}
+.rulebox ul{margin:9px 0 0 17px}
+.rulebox li{font-size:12.5px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>The Run — every state, told honestly</h1>
+  <p>The last front door showed “Nothing needs you” about an issue that did not exist, while the masthead said “paused for you.” These are the states that have to be right.</p>
+</div>
+
+<div class="bug">
+  <span class="l">Root cause</span>
+  <h2>Two surfaces, two definitions of “the current issue”</h2>
+  <div class="cmp">
+    <div class="c bad">
+      <div class="w">The Desk asked</div>
+      <div class="how">issues<br>&nbsp;&nbsp;.filter(!published &amp;&amp; !held)<br>&nbsp;&nbsp;.sort(by issueNumber desc)[0]</div>
+      <div class="got">Issue 999720</div>
+      <div class="sub">An empty slot auto-created by /issues. Nothing generated. Zero tasks.</div>
+    </div>
+    <div class="c good">
+      <div class="w">The masthead asked</div>
+      <div class="how">runs.latest<br>&nbsp;&nbsp;→ pipelineRuns.byRunId<br>&nbsp;&nbsp;→ issueNumber</div>
+      <div class="got">Issue 999717</div>
+      <div class="sub">The run that actually exists. Needs review, paused for you, 1 open task.</div>
+    </div>
+  </div>
+  <div class="fix">
+    <span class="l">The fix</span>
+    <p>One resolution, used everywhere: <b>follow the run, never the issue number.</b> A reserved slot with no run is not “the current issue” — it is a future slot, and it belongs in Archive, not on the front door.</p>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- RUNNING -->
+  <div class="state">
+    <div class="sh"><span class="l">State · running</span></div>
+    <div class="sb">
+      <div class="runline"><span class="issue">Issue 999718</span><span class="chip run">Running</span></div>
+      <p class="sub">Sections appear here as each agent finishes. Nothing to review yet.</p>
+      <div class="bar"><i></i></div>
+      <div class="barcap">4 of 9 written · researcher → case study</div>
+      <div class="mini"><span class="k">Origin</span><span class="h">The Ledger Nobody Kept</span><span class="s g">Done</span></div>
+      <div class="mini"><span class="k">Problem</span><span class="h">Four Hundred Pages, No Reply</span><span class="s g">Done</span></div>
+      <div class="mini"><span class="k">Founder</span><span class="h">The Accountant Who Wouldn’t Retire</span><span class="s g">Done</span></div>
+      <div class="mini"><span class="k">Case Study</span><span class="h">Writing…</span><span class="s b">Now</span></div>
+      <div class="mini dim"><span class="k">Bonus</span><span class="h">Queued</span><span class="s">Wait</span></div>
+    </div>
+  </div>
+
+  <!-- NO RUN -->
+  <div class="state">
+    <div class="sh"><span class="l">State · no run yet</span></div>
+    <div class="sb">
+      <div class="runline"><span class="issue">No run in progress</span></div>
+      <p class="sub">This is what should have shown instead of a phantom issue.</p>
+      <div class="empty">
+        <h4>Nothing is running.</h4>
+        <p>The last issue published on Thursday. The next discovery is scheduled for <b>Thursday 14:00 UTC</b>.</p>
+        <div class="row">
+          <a class="btn primary" href="#">Start a run now</a>
+          <a class="btn" href="#">Archive →</a>
+        </div>
+      </div>
+      <p class="sub">No invented issue number. No “0 open items.” No “Nothing needs you” about a thing that does not exist.</p>
+    </div>
+  </div>
+
+  <!-- READY -->
+  <div class="state">
+    <div class="sh"><span class="l">State · all clear</span></div>
+    <div class="sb">
+      <div class="runline"><span class="issue">Issue 999717</span><span class="chip ok">Ready to publish</span></div>
+      <p class="sub">Nine sections written, every finding resolved, both gates signed.</p>
+      <div class="mini"><span class="k">Origin</span><span class="h">The Ledger Nobody Kept</span><span class="s g">Clean</span></div>
+      <div class="mini"><span class="k">Problem</span><span class="h">Four Hundred Pages, No Reply</span><span class="s g">Clean</span></div>
+      <div class="mini"><span class="k">Founder</span><span class="h">The Accountant Who Wouldn’t Retire</span><span class="s g">Clean</span></div>
+      <div class="empty" style="text-align:left">
+        <h4>Ready.</h4>
+        <p>Facts cleared by Andrew · Voice approved by Andrew · 19/19 claims sourced.</p>
+        <div class="row" style="justify-content:flex-start"><a class="btn primary" href="#">Publish Issue 999717</a><a class="btn" href="#">Read it through first</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAILED -->
+  <div class="state">
+    <div class="sh"><span class="l">State · failed</span></div>
+    <div class="sb">
+      <div class="runline"><span class="issue">Issue 999719</span><span class="chip err">Run failed</span></div>
+      <p class="sub">A failed run cannot be driven to publish. The only real next step is a re-run — so no sign-off buttons are offered.</p>
+      <div class="mini"><span class="k">Origin</span><span class="h">The Ledger Nobody Kept</span><span class="s g">Done</span></div>
+      <div class="mini"><span class="k">Problem</span><span class="h">Four Hundred Pages, No Reply</span><span class="s g">Done</span></div>
+      <div class="mini dim"><span class="k">Founder</span><span class="h">Researcher timed out</span><span class="s r">Failed</span></div>
+      <div class="mini dim"><span class="k">Case Study</span><span class="h">Never started</span><span class="s">—</span></div>
+      <div class="empty" style="text-align:left">
+        <h4>Stopped after 12m at the Researcher.</h4>
+        <p>Two sections survived and are kept. Re-running starts from the failed agent.</p>
+        <div class="row" style="justify-content:flex-start"><a class="btn primary" href="#">Re-run from Researcher</a><a class="btn" href="#">Run details →</a></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="rulebox">
+  <span class="l">Rules this surface must keep</span>
+  <ul>
+    <li><b>Never invent an issue.</b> If <code>runs.latest</code> resolves to nothing, say “nothing is running” — do not fall back to a reserved slot.</li>
+    <li><b>Never contradict the masthead.</b> Both read the same resolution, so they cannot disagree in front of the operator again.</li>
+    <li><b>Never claim clean while loading.</b> “Nothing needs you” is only truthful once findings, claims and sign-offs have all actually loaded — otherwise show the loading state (the existing ISS-06 discipline).</li>
+    <li><b>Preserve every issue.</b> The 999xxx issues are real; nothing is deleted. Reserved future slots simply stop being treated as the current run.</li>
+  </ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!-- @dsCard group="The Run" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Run — produced sections</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --masthead-text:#f4f2ec; --masthead-muted:#c9c3b5; --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+.masthead{display:flex;align-items:center;gap:16px;background:var(--ink);color:var(--masthead-text);padding:0 24px;height:52px}
+.masthead .wordmark{font-family:var(--display);font-weight:600;font-size:16px}
+.masthead .sep{color:var(--masthead-muted);font-size:12px}
+.masthead .where{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--masthead-muted)}
+.masthead .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.masthead .kbd{font-family:var(--mono);font-size:10px;border:1px solid rgba(244,242,236,.28);padding:4px 8px;color:var(--masthead-muted)}
+.masthead .avatar{width:26px;height:26px;background:var(--masthead-muted);color:var(--ink);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center}
+
+.shell{display:grid;grid-template-columns:208px minmax(0,1fr)}
+/* ── nav, consolidated ── */
+.side{background:var(--nav);border-right:1px solid var(--border);min-height:860px;padding:16px 0}
+.side .grp{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 18px;margin:18px 0 7px}
+.side .grp:first-child{margin-top:0}
+.side a{display:block;font-size:13.5px;padding:10px 18px;color:var(--ink);text-decoration:none}
+.side a:hover{background:var(--card-alt)}
+.side a.on{background:var(--ink);color:var(--masthead-text);font-weight:600}
+.side .gone{display:block;font-size:13px;padding:7px 18px;color:var(--faint);text-decoration:line-through}
+.side .goneNote{font-family:var(--body);font-style:italic;font-size:10.5px;color:var(--faint);padding:4px 18px 0;line-height:1.45}
+
+.main{padding:30px 34px 70px;max-width:1080px}
+
+/* ── run identity: the TITLE leads, the number is metadata ── */
+.titleline{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.titleline .num{font-family:var(--mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.titleline .chip{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;padding:4px 9px;border:1px solid var(--marigold);background:rgba(242,176,30,.12);color:var(--marigold-text)}
+.titleline .switch{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;background:var(--card);border:1px solid var(--border);color:var(--ink-soft);padding:5px 10px;cursor:pointer}
+.titleline .switch:hover{background:var(--card-alt);color:var(--ink)}
+.titleline .facts{margin-left:auto;display:flex;gap:18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
+.titleline .facts b{color:var(--ink);font-weight:600}
+.issuetitle{font-family:var(--display);font-size:34px;font-weight:600;line-height:1.08;margin-top:8px;padding-bottom:13px;border-bottom:2px solid var(--ink)}
+.subline{font-family:var(--body);font-style:italic;font-size:13px;color:var(--ink-soft);margin-top:10px}
+.subline a{color:var(--cobalt);text-decoration:none;font-family:var(--ui);font-style:normal;font-weight:600;font-size:12.5px}
+
+/* ── issue switcher ── */
+.switchpanel{margin-top:14px;border:1px solid var(--ink);background:var(--card);box-shadow:4px 4px 0 var(--cobalt)}
+.sp-head{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding:10px 15px;border-bottom:1px solid var(--border);background:var(--card-alt)}
+.sp-row{display:flex;align-items:baseline;gap:14px;padding:11px 15px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit}
+.sp-row:last-child{border-bottom:none}
+.sp-row:hover{background:var(--card-alt)}
+.sp-row.on{background:var(--card-alt);box-shadow:inset 3px 0 0 var(--cobalt)}
+.sp-n{font-family:var(--mono);font-size:10.5px;color:var(--faint);width:62px;flex-shrink:0}
+.sp-t{font-family:var(--display);font-size:16px;font-weight:600;flex:1;min-width:0}
+.sp-m{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);flex-shrink:0}
+.sp-row.dim .sp-t{color:var(--faint);font-style:italic;font-weight:400}
+
+/* ── THE WORK ── */
+.seclabel{display:flex;align-items:baseline;gap:10px;margin-top:30px;margin-bottom:2px}
+.seclabel h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink)}
+.seclabel .n{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-left:auto}
+
+.row{display:flex;align-items:flex-start;gap:18px;background:var(--card);border:1px solid var(--border);border-top:none;padding:16px 18px;text-decoration:none;color:inherit}
+.row:first-of-type{border-top:1px solid var(--border)}
+.row:hover{background:var(--card-alt)}
+.row .kick{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--cobalt);width:118px;flex-shrink:0;padding-top:5px}
+.row .mid{flex:1;min-width:0}
+.row h3{font-family:var(--display);font-size:20px;font-weight:600;line-height:1.2}
+.row .ex{font-family:var(--body);font-style:italic;font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.row .meta{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:8px;letter-spacing:.04em}
+.row .state{width:150px;flex-shrink:0;text-align:right;padding-top:3px}
+.st{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;padding:4px 8px;border:1px solid}
+.st.clean{color:var(--green);border-color:var(--green);background:rgba(20,138,82,.07)}
+.st.flag{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+.st.voice{color:var(--marigold-text);border-color:var(--marigold);background:rgba(242,176,30,.12)}
+.st.pending{color:var(--faint);border-color:var(--border);background:var(--card-alt)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.g{background:var(--green)} .dot.r{background:var(--vermilion)} .dot.y{background:var(--marigold)} .dot.n{background:var(--nav)}
+.row.dim{background:var(--card-alt)}
+.row.dim h3{color:var(--faint);font-style:italic;font-weight:400;font-size:17px}
+
+/* ── gates ── */
+.gates{margin-top:32px;border:1px solid var(--ink);background:var(--card)}
+.gates .gh{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--card-alt)}
+.gates .gh h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase}
+.gate{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.gate:last-child{border-bottom:none}
+.gate .gi{width:20px;flex-shrink:0;font-family:var(--mono);font-size:13px;text-align:center}
+.gate .gt{flex:1;min-width:0}
+.gate .gt .t{font-size:13.5px;font-weight:500}
+.gate .gt .s{font-family:var(--body);font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.5}
+.btn{font-family:var(--ui);font-size:12.5px;font-weight:600;padding:9px 15px;cursor:pointer;border:1px solid var(--ink);background:var(--card);color:var(--ink);text-decoration:none;white-space:nowrap}
+.btn.primary{background:var(--ink);color:var(--card)}
+.btn.locked{background:var(--card-alt);border-color:var(--border);color:var(--faint);cursor:not-allowed}
+
+.note{font-family:var(--body);font-style:italic;font-size:11.5px;color:var(--faint);margin-top:26px;line-height:1.55;max-width:720px}
+.tag{position:fixed;right:14px;bottom:12px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:var(--card);border:1px solid var(--border);padding:5px 9px}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="wordmark">Dispatch Control</span>
+  <span class="sep">/</span>
+  <span class="where">The Run</span>
+  <div class="right"><span class="kbd">⌘K</span><span class="avatar">AN</span></div>
+</div>
+
+<div class="shell">
+  <nav class="side">
+    <div class="grp">Editorial</div>
+    <a class="on" href="#">The Run</a>
+    <a href="#">Archive</a>
+    <span class="gone">Desk</span>
+    <span class="gone">Issues</span>
+    <span class="gone">Issue Workspace</span>
+    <span class="gone">My Tasks</span>
+    <p class="goneNote">Four surfaces become one. Issues and Issue Workspace pointed at the same URL.</p>
+    <div class="grp">System Workbench</div>
+    <a href="#">Run Details</a>
+    <a href="#">Agent Instructions</a>
+    <a href="#">Quality Tests</a>
+    <a href="#">Editorial Memory</a>
+    <div class="grp">Operations</div>
+    <a href="#">Config</a>
+    <a href="#">Finance</a>
+    <a href="#">Settings</a>
+  </nav>
+
+  <div class="main">
+
+    <div class="titleline">
+      <span class="num">Issue 999717</span>
+      <span class="chip">Needs review</span>
+      <button class="switch">Switch issue ▾</button>
+      <div class="facts">
+        <span>41m 12s</span>
+        <span><b>$4.12</b> / $8.00</span>
+        <span>Claims <b>15</b>/19</span>
+      </div>
+    </div>
+    <h1 class="issuetitle">The Kumasi Roofless Schools Audit</h1>
+    <p class="subline">
+      Seven of nine sections written. Three need you.
+      &nbsp;<a href="#">Run details →</a>
+    </p>
+
+    <!-- the switcher, open — this is why titles matter -->
+    <div class="switchpanel">
+      <div class="sp-head">Issues with drafts you can edit</div>
+      <a class="sp-row on" href="#">
+        <span class="sp-n">999717</span>
+        <span class="sp-t">The Kumasi Roofless Schools Audit</span>
+        <span class="sp-m">This week · 3 need you</span>
+      </a>
+      <a class="sp-row" href="#">
+        <span class="sp-n">999716</span>
+        <span class="sp-t">The Bicycle Ambulance Corps of Rukungiri</span>
+        <span class="sp-m">Last week · published</span>
+      </a>
+      <a class="sp-row" href="#">
+        <span class="sp-n">999715</span>
+        <span class="sp-t">Nine Women Who Rebuilt a Seed Bank</span>
+        <span class="sp-m">2 weeks ago · published</span>
+      </a>
+      <a class="sp-row dim" href="#">
+        <span class="sp-n">999720</span>
+        <span class="sp-t">Not yet chosen</span>
+        <span class="sp-m">Scheduled Thu 14:00 · no drafts</span>
+      </a>
+    </div>
+
+    <div class="seclabel">
+      <h2>The work</h2>
+      <span class="n">7 written · 2 pending</span>
+    </div>
+
+    <a class="row" href="#">
+      <span class="kick">Origin Story</span>
+      <span class="mid">
+        <h3>The Ledger Nobody Kept</h3>
+        <span class="ex">Margaret Osei spent thirty-one years reconciling other people’s ledgers. At sixty-two she started keeping her own.</span>
+        <span class="meta">842 WORDS · EDITED 11 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st flag"><span class="dot" style="background:#fff"></span>1 must fix</span></span>
+    </a>
+
+    <a class="row" href="#">
+      <span class="kick">Problem</span>
+      <span class="mid">
+        <h3>Four Hundred Pages, No Reply</h3>
+        <span class="ex">The ministry received the audit in March. It has not been acknowledged.</span>
+        <span class="meta">610 WORDS · EDITED 34 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st clean"><span class="dot g"></span>Clean</span></span>
+    </a>
+
+    <a class="row" href="#">
+      <span class="kick">Founder Bio</span>
+      <span class="mid">
+        <h3>The Accountant Who Wouldn’t Retire</h3>
+        <span class="ex">There is no origin myth here, no moment of conversion — only a woman who noticed, slowly.</span>
+        <span class="meta">738 WORDS · EDITED 12 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st flag"><span class="dot" style="background:#fff"></span>2 must fix</span></span>
+    </a>
+
+    <a class="row" href="#">
+      <span class="kick">Case Study</span>
+      <span class="mid">
+        <h3>Eleven Districts, Counted By Hand</h3>
+        <span class="ex">She walked them herself, over four months, with a notebook and a folding chair.</span>
+        <span class="meta">905 WORDS · EDITED 41 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st voice"><span class="dot y"></span>1 voice</span></span>
+    </a>
+
+    <a class="row" href="#">
+      <span class="kick">Bonus</span>
+      <span class="mid">
+        <h3>A Field Guide to Roof Types</h3>
+        <span class="ex">Corrugate, thatch, tarpaulin, and the absence of any of them.</span>
+        <span class="meta">320 WORDS · EDITED 41 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st clean"><span class="dot g"></span>Clean</span></span>
+    </a>
+
+    <a class="row" href="#">
+      <span class="kick">Game</span>
+      <span class="mid">
+        <h3>Count the Roofs</h3>
+        <span class="ex">An interactive tally the reader plays against the real district figures.</span>
+        <span class="meta">INTERACTIVE · EDITED 39 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st clean"><span class="dot g"></span>Clean</span></span>
+    </a>
+
+    <a class="row" href="#">
+      <span class="kick">Deliberation</span>
+      <span class="mid">
+        <h3>Why This One, Over Eleven Others</h3>
+        <span class="ex">Advocate and Editor disagreed twice before settling on Kumasi.</span>
+        <span class="meta">1,204 WORDS · EDITED 44 MIN AGO</span>
+      </span>
+      <span class="state"><span class="st clean"><span class="dot g"></span>Clean</span></span>
+    </a>
+
+    <a class="row dim" href="#">
+      <span class="kick">Podcast</span>
+      <span class="mid">
+        <h3>Not generated</h3>
+        <span class="meta">AWAITING TRANSCRIPT UPLOAD</span>
+      </span>
+      <span class="state"><span class="st pending"><span class="dot n"></span>Pending</span></span>
+    </a>
+
+    <a class="row dim" href="#">
+      <span class="kick">Theme</span>
+      <span class="mid">
+        <h3>Not generated</h3>
+        <span class="meta">DESIGN AGENT DID NOT RUN</span>
+      </span>
+      <span class="state"><span class="st pending"><span class="dot n"></span>Pending</span></span>
+    </a>
+
+    <!-- gates: what Approval used to be -->
+    <div class="gates">
+      <div class="gh"><h2>Before it can publish</h2></div>
+      <div class="gate">
+        <span class="gi">○</span>
+        <span class="gt">
+          <span class="t">Clear the facts</span>
+          <span class="s">4 of 19 claims still unchecked. This gate stays closed until they are signed off.</span>
+        </span>
+        <a class="btn" href="#">Check claims →</a>
+      </div>
+      <div class="gate">
+        <span class="gi">○</span>
+        <span class="gt">
+          <span class="t">Sounds human</span>
+          <span class="s">One voice finding open on Case Study.</span>
+        </span>
+        <a class="btn" href="#">Voice pass →</a>
+      </div>
+      <div class="gate">
+        <span class="gi">○</span>
+        <span class="gt">
+          <span class="t">Approve &amp; publish</span>
+          <span class="s">Opens when both gates above are signed and no must-fix findings remain.</span>
+        </span>
+        <span class="btn locked">Locked</span>
+      </div>
+    </div>
+
+    <p class="note">The run <b>is</b> the page. You land on what the agents produced — real headlines you can read and edit — with state on each, not a task inbox for an issue that has nothing in it. <b>The title leads and the number becomes metadata</b>, so last week&rsquo;s issue is recognisable at a glance; the title is the run&rsquo;s chosen subject, already stored in <code>pitchLog</code> (<code>selected: true</code>) and joined server-side, so no schema change and no pipeline change is needed. The switcher lists only issues that <b>have drafts to edit</b> — a scheduled slot with no run is shown greyed and unselectable, never as the current issue. The five stage tabs collapse: reading a section <i>is</i> the Draft stage, and Fact Check / Voice / Approval become the three gates at the bottom.</p>
+
+  </div>
+</div>
+
+<span class="tag">The Run · populated</span>
+</body>
+</html>

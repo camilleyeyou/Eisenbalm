@@ -1,0 +1,179 @@
+<!-- @dsCard group="The Run" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Archive — issues have titles</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --masthead-text:#f4f2ec; --masthead-muted:#c9c3b5; --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+.masthead{display:flex;align-items:center;gap:16px;background:var(--ink);color:var(--masthead-text);padding:0 24px;height:52px}
+.masthead .wordmark{font-family:var(--display);font-weight:600;font-size:16px}
+.masthead .sep{color:var(--masthead-muted);font-size:12px}
+.masthead .where{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--masthead-muted)}
+/* the masthead carries the TITLE now, not a bare number */
+.masthead .live{margin-left:14px;display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid rgba(244,242,236,.22)}
+.masthead .live .t{font-family:var(--display);font-size:14px;color:var(--masthead-text)}
+.masthead .live .c{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--marigold);border:1px solid var(--marigold);padding:2px 6px}
+.masthead .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.masthead .avatar{width:26px;height:26px;background:var(--masthead-muted);color:var(--ink);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center}
+
+.wrap{max-width:1040px;margin:0 auto;padding:32px 28px 70px}
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+h1{font-family:var(--display);font-weight:600;font-size:31px;line-height:1.05;margin-top:5px}
+.dek{font-family:var(--body);font-style:italic;font-size:13.5px;color:var(--ink-soft);margin-top:6px}
+
+.tools{display:flex;gap:8px;margin-top:20px;padding-bottom:12px;border-bottom:1px solid var(--ink)}
+.search{flex:1;font-family:var(--ui);font-size:13px;padding:9px 12px;border:1px solid var(--border);background:var(--card);color:var(--ink)}
+.filt{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;background:var(--card);border:1px solid var(--border);color:var(--ink-soft);padding:9px 12px;cursor:pointer}
+.filt.on{background:var(--ink);color:var(--masthead-text);border-color:var(--ink)}
+
+.grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:24px;margin-bottom:7px}
+
+.row{display:flex;align-items:baseline;gap:16px;background:var(--card);border:1px solid var(--border);border-top:none;padding:15px 17px;text-decoration:none;color:inherit}
+.row:first-of-type{border-top:1px solid var(--border)}
+.row:hover{background:var(--card-alt)}
+.row .n{font-family:var(--mono);font-size:10.5px;color:var(--faint);width:64px;flex-shrink:0}
+.row .body{flex:1;min-width:0}
+.row .t{font-family:var(--display);font-size:19px;font-weight:600;line-height:1.22}
+.row .d{font-family:var(--body);font-style:italic;font-size:12.5px;color:var(--ink-soft);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .when{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);width:112px;flex-shrink:0;text-align:right}
+.row .st{width:132px;flex-shrink:0;text-align:right}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;padding:3px 7px;border:1px solid}
+.chip.pub{color:var(--green);border-color:var(--green);background:rgba(20,138,82,.07)}
+.chip.rev{color:var(--marigold-text);border-color:var(--marigold);background:rgba(242,176,30,.12)}
+.chip.held{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+.chip.sched{color:var(--faint);border-color:var(--border);background:var(--card-alt)}
+.dot{width:7px;height:7px;border-radius:50%}
+.dot.g{background:var(--green)}
+.row.dim .t{color:var(--faint);font-style:italic;font-weight:400;font-size:17px}
+
+.before{margin-top:34px;border:1px solid var(--border);background:var(--card);padding:18px 20px}
+.before .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vermilion)}
+.before .strip{display:flex;gap:0;margin-top:12px;border:1px solid var(--border)}
+.before .strip div{flex:1;padding:11px 14px;border-right:1px solid var(--border);font-family:var(--display);font-size:17px;font-weight:600;color:var(--faint)}
+.before .strip div:last-child{border-right:none}
+.before p{font-family:var(--body);font-style:italic;font-size:12px;color:var(--ink-soft);margin-top:10px;line-height:1.55}
+
+.note{font-family:var(--body);font-style:italic;font-size:11.5px;color:var(--faint);margin-top:24px;line-height:1.55;max-width:720px}
+.tag{position:fixed;right:14px;bottom:12px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:var(--card);border:1px solid var(--border);padding:5px 9px}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="wordmark">Dispatch Control</span>
+  <span class="sep">/</span>
+  <span class="where">Archive</span>
+  <span class="live">
+    <span class="t">The Kumasi Roofless Schools Audit</span>
+    <span class="c">Needs review · 3</span>
+  </span>
+  <div class="right"><span class="avatar">AN</span></div>
+</div>
+
+<div class="wrap">
+
+  <div class="kicker">Editorial</div>
+  <h1>Archive</h1>
+  <p class="dek">Every issue this workspace has produced, by title.</p>
+
+  <div class="tools">
+    <input class="search" placeholder="Search titles — “bicycle”, “seed bank”, “Kumasi”…">
+    <button class="filt on">All</button>
+    <button class="filt">Published</button>
+    <button class="filt">Held</button>
+    <button class="filt">Has drafts</button>
+  </div>
+
+  <div class="grp">In progress</div>
+  <a class="row" href="#">
+    <span class="n">999717</span>
+    <span class="body">
+      <span class="t">The Kumasi Roofless Schools Audit</span>
+      <span class="d">An accountant retired, walked eleven districts, and counted the schools with no roof.</span>
+    </span>
+    <span class="when">This week</span>
+    <span class="st"><span class="chip rev">Needs review · 3</span></span>
+  </a>
+
+  <div class="grp">Published</div>
+  <a class="row" href="#">
+    <span class="n">999716</span>
+    <span class="body">
+      <span class="t">The Bicycle Ambulance Corps of Rukungiri</span>
+      <span class="d">Forty volunteers, twelve bicycles, and a district hospital eleven kilometres away.</span>
+    </span>
+    <span class="when">Last week</span>
+    <span class="st"><span class="chip pub"><span class="dot g"></span>Published</span></span>
+  </a>
+  <a class="row" href="#">
+    <span class="n">999715</span>
+    <span class="body">
+      <span class="t">Nine Women Who Rebuilt a Seed Bank</span>
+      <span class="d">After the flood took the store, they rebuilt it from what was in their kitchens.</span>
+    </span>
+    <span class="when">2 weeks ago</span>
+    <span class="st"><span class="chip pub"><span class="dot g"></span>Published</span></span>
+  </a>
+  <a class="row" href="#">
+    <span class="n">999603</span>
+    <span class="body">
+      <span class="t">The Night Bus That Became a Clinic</span>
+      <span class="d">It runs the same route it always did. It just stops for longer now.</span>
+    </span>
+    <span class="when">3 weeks ago</span>
+    <span class="st"><span class="chip pub"><span class="dot g"></span>Published</span></span>
+  </a>
+
+  <div class="grp">Held</div>
+  <a class="row" href="#">
+    <span class="n">999714</span>
+    <span class="body">
+      <span class="t">A Library Kept in Four Suitcases</span>
+      <span class="d">Held — the founder asked us to wait until the trial concludes.</span>
+    </span>
+    <span class="when">4 weeks ago</span>
+    <span class="st"><span class="chip held">Held</span></span>
+  </a>
+
+  <div class="grp">Scheduled</div>
+  <a class="row dim" href="#">
+    <span class="n">999720</span>
+    <span class="body">
+      <span class="t">Not yet chosen</span>
+      <span class="d">Discovery runs Thursday 14:00 UTC. No drafts yet.</span>
+    </span>
+    <span class="when">Thu 14:00</span>
+    <span class="st"><span class="chip sched">Scheduled</span></span>
+  </a>
+
+  <div class="before">
+    <span class="l">What this replaced</span>
+    <div class="strip">
+      <div>Issue 999717</div>
+      <div>Issue 999716</div>
+      <div>Issue 999715</div>
+      <div>Issue 999603</div>
+      <div>Issue 999714</div>
+    </div>
+    <p>Five identical rows. Nothing to recognise, nothing to search, nothing to tell last week from a month ago — you had to open each one to find out what it was.</p>
+  </div>
+
+  <p class="note">Titles come from the run&rsquo;s chosen subject — already stored in <code>pitchLog</code> with <code>selected: true</code> and joined server-side in one query, so there is no schema migration, no pipeline change, and no backfill. An issue whose run never cleared Gate 1 has no subject yet and says so plainly (&ldquo;Not yet chosen&rdquo;) rather than being hidden or faked. The same title is what the masthead now shows, so the chrome names the issue you are working on instead of a number.</p>
+
+</div>
+
+<span class="tag">Archive · titles</span>
+</body>
+</html>
