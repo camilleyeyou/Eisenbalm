@@ -13,16 +13,22 @@
  * file stays `.ts` (node environment, no DOM) and only asserts the NAV_GROUPS
  * data shape.
  *
+ * Updated quick 260730-ldn (Task 5) — Editorial collapses to exactly TWO
+ * items: The Run (/run) and Archive (/issues). Desk, Issues, Issue Workspace,
+ * and My Tasks all leave the nav (My Tasks' signal is absorbed by The Run's
+ * per-section finding chips and its three gates; /my-tasks itself is
+ * unchanged and still reachable via AwaitingYouInbox's "See all" link).
+ *
  * Asserts:
  *   1. The 3 group labels exist, in order (Editorial, System Workbench, Operations).
- *   2. quick 260730-i4j: Desk is now the FIRST item of the Editorial group
- *      (the front door), with Issues second (the archive, D-31 superseded).
- *   3. None of the removed desk items (Review Desk, Signal Desk, Voice Pass)
+ *   2. Editorial is exactly [The Run, Archive].
+ *   3. None of Desk / Issues / Issue Workspace / My Tasks survive anywhere
+ *      in the nav, by label OR by the retired /desk href.
+ *   4. None of the removed desk items (Review Desk, Signal Desk, Voice Pass)
  *      appear anywhere in the nav.
- *   4. Every nav href across all 3 groups, plus NAV_PINNED, has a corresponding
- *      real page file on disk (no dead links) — this now requires
- *      `/issues/page.tsx`, which Plan 40-05 created.
- *   5. (Phase 50) The System Workbench group's 4 items read the renamed
+ *   5. Every nav href across all 3 groups, plus NAV_PINNED, has a corresponding
+ *      real page file on disk (no dead links).
+ *   6. (Phase 50) The System Workbench group's 4 items read the renamed
  *      labels over unchanged hrefs, and none of the old labels survive.
  *
  * If a nav item is added without a page, or a page is deleted without removing
@@ -34,11 +40,11 @@ import * as path from 'node:path'
 import { NAV_GROUPS, NAV_PINNED } from '../lib/nav'
 
 const EXPECTED_GROUP_LABELS = ['Editorial', 'System Workbench', 'Operations']
-const REMOVED_HREFS = ['/review-desk', '/signal-desk', '/voice-pass']
+const REMOVED_HREFS = ['/review-desk', '/signal-desk', '/voice-pass', '/desk']
 // Phase 41 (WSP-01) — the three collapsed desks must not reappear as nav
-// LABELS either (they left as hrefs in Phase 40; WSP-01 replaces them with the
-// single "Issue Workspace" item).
-const REMOVED_LABELS = ['Review Desk', 'Signal Desk', 'Voice Pass']
+// LABELS either. quick 260730-ldn — Desk/Issues/Issue Workspace/My Tasks
+// join the removed-label list (The Run + Archive replace all four).
+const REMOVED_LABELS = ['Review Desk', 'Signal Desk', 'Voice Pass', 'Desk', 'Issues', 'Issue Workspace', 'My Tasks']
 
 // Phase 50 (WBN-01) — the renamed System Workbench labels, in nav order, over
 // UNCHANGED hrefs (D-02: rename-without-reroute).
@@ -62,13 +68,13 @@ describe('NAV_GROUPS', () => {
     expect(labels).toEqual(EXPECTED_GROUP_LABELS)
   })
 
-  it('has Desk as the first item and Issues as the second item of the Editorial group (quick 260730-i4j — the front door)', () => {
+  it('Editorial is exactly [The Run, Archive] (quick 260730-ldn — four entries pointed at three surfaces, two of them at the same URL)', () => {
     const editorial = NAV_GROUPS.find((g) => g.label === 'Editorial')
-    const [first, second] = editorial?.items ?? []
-    expect(first?.label).toBe('Desk')
-    expect(first?.href).toBe('/desk')
-    expect(second?.label).toBe('Issues')
-    expect(second?.href).toBe('/issues')
+    const items = editorial?.items ?? []
+    expect(items).toEqual([
+      { label: 'The Run', href: '/run' },
+      { label: 'Archive', href: '/issues' },
+    ])
   })
 
   it('Run Details (nee Run Monitor) is under System Workbench (D-08 — survives, but is no longer the editorial object; Phase 50 WBN-01 renamed the label)', () => {
@@ -102,25 +108,14 @@ describe('NAV_GROUPS', () => {
     }
   })
 
-  it('none of Review Desk / Signal Desk / Voice Pass hrefs appear anywhere in the nav (they left the nav — now issue sub-routes)', () => {
+  it('none of Review Desk / Signal Desk / Voice Pass / Desk hrefs appear anywhere in the nav', () => {
     const allHrefs = NAV_GROUPS.flatMap((group) => group.items.map((i) => i.href))
     for (const removed of REMOVED_HREFS) {
       expect(allHrefs).not.toContain(removed)
     }
   })
 
-  it('has exactly one "Issue Workspace" item, in the Editorial group (WSP-01, D-22)', () => {
-    const allItems = NAV_GROUPS.flatMap((group) => group.items)
-    const workspaceItems = allItems.filter((i) => i.label === 'Issue Workspace')
-    expect(workspaceItems).toHaveLength(1)
-    expect(workspaceItems[0]?.href).toBe('/issues')
-
-    const editorial = NAV_GROUPS.find((g) => g.label === 'Editorial')
-    const editorialLabels = editorial?.items.map((i) => i.label) ?? []
-    expect(editorialLabels).toContain('Issue Workspace')
-  })
-
-  it('none of Review Desk / Signal Desk / Voice Pass LABELS appear anywhere in the nav (WSP-01 — replaced by Issue Workspace)', () => {
+  it('none of Desk / Issues / Issue Workspace / My Tasks / Review Desk / Signal Desk / Voice Pass LABELS appear anywhere in the nav (quick 260730-ldn — The Run + Archive replace all four)', () => {
     const allLabels = NAV_GROUPS.flatMap((group) => group.items.map((i) => i.label))
     for (const removed of REMOVED_LABELS) {
       expect(allLabels).not.toContain(removed)
