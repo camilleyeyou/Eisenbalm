@@ -274,3 +274,96 @@ export const setLastVisitedStage = mutation({
     return null
   },
 })
+
+// ── listWithTitles (public query, additive — quick 260730-ldn Task 1) ──────
+//
+// The server-side "issues -> latest pipelineRun -> selected pitchLog" join
+// that lets The Run's switcher and the Archive subscribe to ONE query
+// instead of N+1ing per row (the pattern `RecentlyPublishedRowContainer`
+// already accepts for its bounded 5-row list — unacceptable for the full
+// archive). Every read below is index-backed; no new index, no schema
+// change, no existing export touched.
+//
+// HONESTY CONTRACT (load-bearing): `title: null` means the run has NEVER
+// chosen a subject — either no run exists for this issue at all, or a run
+// exists but Gate 1 has not (yet) recorded a `pitchLog` row with
+// `selected: true`. This query must NEVER substitute the issue number, the
+// charity's location, an unselected candidate's name, or any other stand-in
+// for a missing `charityName`. The client renders `issueTitleLabel(null)`
+// ('Not yet chosen').
+//
+// "Most recent run for this issue" reuses the EXACT rule
+// `pipelineRuns.byIssueNumber` already uses (sort by `startedAt` desc, take
+// the first) — do not invent a second definition of "the issue's run".
+export const listWithTitles = query({
+  args: { workspace_id: v.string() },
+  handler: async (ctx, { workspace_id }) => {
+    const issueRows = await ctx.db
+      .query('issues')
+      .withIndex('by_workspace', q => q.eq('workspace_id', workspace_id))
+      .collect()
+
+    const results = await Promise.all(
+      issueRows.map(async issue => {
+        const runRows = await ctx.db
+          .query('pipelineRuns')
+          .withIndex('by_issueNumber', q => q.eq('issueNumber', issue.issueNumber))
+          .collect()
+        const run = runRows.sort((a, b) => b.startedAt - a.startedAt)[0] ?? null
+
+        let title: string | null = null
+        let subtitle: string | null = null
+        let hasDrafts = false
+
+        if (run) {
+          const selectedPitch = await ctx.db
+            .query('pitchLog')
+            .withIndex('by_runId_and_selected', q =>
+              q.eq('runId', run.runId).eq('selected', true),
+            )
+            .first()
+          if (selectedPitch) {
+            title = selectedPitch.charityName
+            subtitle = selectedPitch.scoutSummary
+          }
+
+          // "Has drafts to edit" — the presence of at least one section-draft
+          // event (emitted by origin_story/problem/founder_bio/case_study/
+          // game/bonus/design/researcher via @agent_node(emit_event=
+          // 'section-draft')) is the honest "sections were produced" signal.
+          // .first(), never .collect() — a boolean needs one row.
+          const draftEvent = await ctx.db
+            .query('deliberationEvents')
+            .withIndex('by_runId_and_type', q =>
+              q.eq('runId', run.runId).eq('eventType', 'section-draft'),
+            )
+            .first()
+          hasDrafts = draftEvent !== null
+        }
+
+        return {
+          _id: issue._id,
+          issueNumber: issue.issueNumber,
+          held: issue.held,
+          heldReason: issue.heldReason,
+          heldBy: issue.heldBy,
+          heldAt: issue.heldAt,
+          published: issue.published,
+          publishedAt: issue.publishedAt,
+          scheduledFor: issue.scheduledFor,
+          createdAt: issue.createdAt,
+          lastVisitedStage: issue.lastVisitedStage,
+          runId: run ? run.runId : null,
+          runStatus: run ? run.status : null,
+          runStartedAt: run ? run.startedAt : null,
+          runCompletedAt: run?.completedAt ?? null,
+          title,
+          subtitle,
+          hasDrafts,
+        }
+      }),
+    )
+
+    return results.sort((a, b) => b.issueNumber - a.issueNumber)
+  },
+})
