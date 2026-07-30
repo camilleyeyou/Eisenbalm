@@ -11,6 +11,12 @@
  * Mirrors WorkspaceLayout.test.tsx's mock block verbatim (same 5 vi.mock
  * calls + fixture) so the REAL provider + REAL layout render end-to-end.
  *
+ * quick 260730-i4j: the mocked pathname moved from `/issues/7/draft` to
+ * `/issues/7/fact-check` — Draft Focus (`layout.tsx`'s `draftFocus` branch)
+ * no longer mounts a `ContextPanel` on the Draft stage at all, so this
+ * slot's contract is now a non-Draft-stage one. Every assertion below is
+ * unchanged; only the stage under test moved.
+ *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { useEffect } from 'react'
@@ -23,7 +29,9 @@ import { render, screen, cleanup } from '@testing-library/react'
 // target's galley anchor isn't in the DOM.
 vi.mock('next/navigation', () => ({
   useParams: () => ({ issueNumber: '7' }),
-  usePathname: () => '/issues/7/draft',
+  // quick 260730-i4j — the ContextPanel no longer mounts on Draft; Fact
+  // Check keeps the unchanged 3-column frame, so it stands in as witness.
+  usePathname: () => '/issues/7/fact-check',
   useRouter: () => ({ push: vi.fn() }),
 }))
 

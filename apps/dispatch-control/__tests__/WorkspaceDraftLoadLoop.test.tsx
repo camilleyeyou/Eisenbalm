@@ -38,6 +38,17 @@
  *     exactly once; the single resulting `setDraft(content)` re-render does
  *     not refire it (getToken is no longer a dep) -> `getDraft` called
  *     exactly once -> PASSES.
+ *
+ * quick 260730-i4j (deviation, Rule 3) — the mocked pathname moved from
+ * `/issues/7/draft` to `/issues/7/fact-check`. The draft-load effect lives
+ * in `WorkspaceStateProvider`, ABOVE the frame's per-stage rail branching —
+ * this test's loop-avoidance behavior is unrelated to which stage is
+ * active. But its sanity check (`outline-row-originStory`, proving the
+ * CONTENT path was exercised) reads a `WorkspaceOutline` node, and Draft
+ * Focus (`layout.tsx`'s `draftFocus` branch) no longer mounts that rail on
+ * Draft at all. Fact Check keeps the unchanged 3-column frame, so it stands
+ * in as witness — same fix pattern as `WorkspaceContextPanelSlot.test.tsx`
+ * / `WorkspaceOutlineEmptyState.test.tsx`.
  */
 import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
@@ -48,7 +59,8 @@ import { render, screen, cleanup } from '@testing-library/react'
 // target's galley anchor isn't in the DOM.
 vi.mock('next/navigation', () => ({
   useParams: () => ({ issueNumber: '7' }),
-  usePathname: () => '/issues/7/draft',
+  // quick 260730-i4j — moved off Draft; see file header note.
+  usePathname: () => '/issues/7/fact-check',
   useRouter: () => ({ push: vi.fn() }),
 }))
 

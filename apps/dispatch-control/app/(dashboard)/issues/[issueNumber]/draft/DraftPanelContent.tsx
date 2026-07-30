@@ -12,6 +12,12 @@
  * Honesty rule (never-blank): `undefined` (not loaded yet) renders a loading
  * line; zero open findings renders "No open QA items — this draft is
  * clean" — never the generic ContextPanel placeholder.
+ *
+ * quick 260730-i4j (Task 3c) — the default-export `DraftPanelPublisher` is no
+ * longer MOUNTED (see `../draft/page.tsx`): Draft Focus drops the frame's
+ * `ContextPanel` entirely on this stage, so `setPanelContent` would publish
+ * into nothing. This file and `buildDraftPanelContent` are left in place,
+ * unchanged, and still exercised directly by `StageContextPanels.test.tsx`.
  */
 import { useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'

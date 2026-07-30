@@ -11,10 +11,20 @@
  * tab's non-editing body reuses the SAME `<Galley>` every other surface
  * uses, scoped to this one section via its `sections` prop (LD-4) — never a
  * forked annotation renderer.
+ *
+ * quick 260730-i4j (Task 3a/3e) — Draft Focus. The frame's `layout.tsx` now
+ * drops BOTH its rails on the Draft stage (`draftFocus` branch), so the two
+ * capabilities `WorkspaceOutline` used to provide — jump to any of the 9
+ * `EDITABLE_SECTIONS`, and a per-section state mark — move INTO this crumb
+ * row as a `Stories` disclosure (Task 3a), at zero extra clicks. The
+ * story-scoped `StoryFindingsRail` (Task 3d) renders inside the Draft tab's
+ * panel, in its own 292px column, ONLY when the open story has open findings
+ * AND is not mid-edit (the editor already takes the full width).
  */
 import { EDITABLE_SECTIONS, type SectionChipCounts } from './SectionChipList'
 import StoryOutlineTab, { type OutlineBriefFields, type OutlineOpenFinding } from './StoryOutlineTab'
 import SectionEditorPanel from './SectionEditorPanel'
+import StoryFindingsRail from './StoryFindingsRail'
 import Galley from '@/components/galley/Galley'
 import { sectionWordCount } from './storyOutline'
 import type { ContentBlock, DraftResponse } from '@/lib/contentPatchClient'
@@ -97,6 +107,32 @@ function headlineFor(draft: DraftResponse, sectionId: string, fallback: string):
 const CRUMB_BTN =
   'font-[family-name:var(--font-mono)] text-[11px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]'
 
+// quick 260730-i4j (Task 3a) — the outline's per-section state mark, ported
+// into the Stories picker. Label + color together — never color alone.
+function StoriesPickerMark({ counts }: { counts: SectionChipCounts | undefined }) {
+  const errorCount = counts?.error ?? 0
+  const openCount = counts?.open ?? 0
+  if (errorCount > 0) {
+    return (
+      <span className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-vermilion)]">
+        {errorCount} must fix
+      </span>
+    )
+  }
+  if (openCount > 0) {
+    return (
+      <span className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-marigold-text)]">
+        {openCount} open
+      </span>
+    )
+  }
+  return (
+    <span className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-green)]">
+      Clean
+    </span>
+  )
+}
+
 export default function StoryFocusView({
   runId: _runId,
   draft,
@@ -145,6 +181,27 @@ export default function StoryFocusView({
   const blocks = sectionBlocksFor(draft, sectionId)
   const canShowGalley = sectionId !== 'theme'
 
+  // quick 260730-i4j (Task 3e) — the story-scoped findings rail, only inside
+  // the (non-editing) Draft tab panel, and only when this story has open
+  // findings. The Outline tab keeps its own open-findings list; the editor
+  // takes the full width regardless.
+  const hasFindings = resolved.length + unresolved.length > 0
+  const showRail = activeTab === 'draft' && !editing && hasFindings
+
+  function handleJump(findingId: string) {
+    const el = document.getElementById(`finding-${findingId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // The mark IS the popover trigger (AnnotationMark) — clicking it opens
+      // Accept/Edit/Dismiss at the same anchor, never a forked jump target.
+      el.click()
+    }
+  }
+
+  function handleFixInEditor(findingId: string) {
+    onEditSection(sectionId, findingId)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Crumbs */}
@@ -155,7 +212,7 @@ export default function StoryFocusView({
         <span className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[.08em] text-[color:var(--color-faint)]">
           {index >= 0 ? `Story ${index + 1} of ${EDITABLE_SECTIONS.length}` : label}
         </span>
-        <div className="ml-auto flex gap-1.5">
+        <div className="ml-auto flex items-center gap-1.5">
           {prev && (
             <button type="button" onClick={() => onNav(prev.id)} className={CRUMB_BTN}>
               &larr; {prev.label}
@@ -166,6 +223,29 @@ export default function StoryFocusView({
               {next.label} &rarr;
             </button>
           )}
+          {/* quick 260730-i4j (Task 3a) — the outline's jump + state-mark
+              capability, restored here now the left rail is gone on Draft. */}
+          <details className="relative">
+            <summary
+              className={`${CRUMB_BTN} inline-flex cursor-pointer list-none select-none items-center [&::-webkit-details-marker]:hidden`}
+            >
+              Stories
+            </summary>
+            <div className="absolute right-0 z-20 mt-1.5 w-72 border border-[color:var(--color-ink)]/[.15] bg-[color:var(--color-card)] shadow-[4px_4px_0_var(--color-ink)]">
+              {EDITABLE_SECTIONS.map(section => (
+                <button
+                  key={section.id}
+                  type="button"
+                  aria-current={section.id === sectionId ? 'true' : undefined}
+                  onClick={() => onNav(section.id)}
+                  className="flex min-h-[44px] w-full items-center justify-between gap-2 px-3 py-2 text-left font-[family-name:var(--font-ui)] text-[12.5px] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
+                >
+                  <span>{section.label}</span>
+                  <StoriesPickerMark counts={chipCounts[section.id]} />
+                </button>
+              ))}
+            </div>
+          </details>
         </div>
       </div>
 
@@ -240,6 +320,12 @@ export default function StoryFocusView({
         </button>
       </div>
 
+      {/* quick 260730-i4j (Task 3e) — the story-scoped findings rail lives in
+          its own grid column beside the tab panel, ONLY when the Draft tab
+          is showing a clean (non-editing) story with open findings. Every
+          other combination (Outline tab, editing, or a clean story) keeps
+          the panel's previous full-width markup, unchanged. */}
+      <div className={showRail ? 'grid grid-cols-1 items-start lg:grid-cols-[minmax(0,1fr)_292px]' : ''}>
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-6 sm:p-8">
         {activeTab === 'outline' ? (
           <StoryOutlineTab
@@ -329,6 +415,15 @@ export default function StoryFocusView({
             )}
           </>
         )}
+      </div>
+      {showRail && (
+        <StoryFindingsRail
+          resolved={resolved}
+          unresolved={unresolved}
+          onJump={handleJump}
+          onFixInEditor={handleFixInEditor}
+        />
+      )}
       </div>
 
       <div className="flex justify-between">

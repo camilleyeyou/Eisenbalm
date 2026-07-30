@@ -28,6 +28,12 @@
  * firing fall through to the mock's default (`undefined`), silently
  * resetting `draftContentAbsent` after the assertion's `findBy*` resolves.
  *
+ * quick 260730-i4j: the mocked pathname moved from `/issues/7/draft` to
+ * `/issues/7/story` — Draft Focus (`layout.tsx`'s `draftFocus` branch) no
+ * longer mounts `WorkspaceOutline` on the Draft stage at all, so this
+ * empty-state contract is now a non-Draft-stage one. Every assertion below
+ * is unchanged; only the stage under test moved.
+ *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, afterEach, beforeEach, vi, type Mock } from 'vitest'
@@ -39,7 +45,9 @@ import { render, screen, cleanup } from '@testing-library/react'
 // target's galley anchor isn't in the DOM.
 vi.mock('next/navigation', () => ({
   useParams: () => ({ issueNumber: '7' }),
-  usePathname: () => '/issues/7/draft',
+  // quick 260730-i4j — the outline no longer mounts on Draft; Story keeps
+  // the unchanged 3-column frame, so it stands in as witness.
+  usePathname: () => '/issues/7/story',
   useRouter: () => ({ push: vi.fn() }),
 }))
 

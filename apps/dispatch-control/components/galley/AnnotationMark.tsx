@@ -49,6 +49,11 @@
  * right-edge annotation could otherwise clip against main's `overflow-y-auto`
  * (no `overflow-x` escape hatch). Mirrors `HelpTip`'s existing self-clamp;
  * jsdom returns a zero-width rect, so this no-ops safely in tests.
+ *
+ * quick 260730-i4j: the `<mark>` now carries `id="finding-{findingId}"` +
+ * `data-finding-id` — the anchor `StoryFindingsRail`'s "Jump to it" action
+ * scrolls to and clicks (opening this popover) rather than forking a second
+ * jump mechanism.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
@@ -262,8 +267,10 @@ export default function AnnotationMark({
   return (
     <span ref={wrapperRef} style={{ position: 'relative', display: 'inline' }}>
       <mark
+        id={`finding-${value.findingId}`}
         className="galley-anno"
         data-severity={value.severity}
+        data-finding-id={value.findingId}
         tabIndex={0}
         role="button"
         aria-label={`QA ${value.severity} finding`}

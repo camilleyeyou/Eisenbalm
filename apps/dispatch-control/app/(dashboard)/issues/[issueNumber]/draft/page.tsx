@@ -27,13 +27,20 @@
  *   `StoryBriefScreen`'s Empty/CreatePanel state, no further redirect) —
  *   redirecting here breaks the cycle at its source. Mirrors the index
  *   page's own D-04 fallback: "no run at all also lands on Story."
+ *
+ * quick 260730-i4j (Task 3c) — `<DraftPanelPublisher />` (from
+ * `./DraftPanelContent`) is UNMOUNTED here: the frame no longer renders a
+ * `ContextPanel` on the Draft stage (Draft Focus, `layout.tsx`'s
+ * `draftFocus` branch), so `setPanelContent` would publish into nothing.
+ * `DraftPanelContent.tsx` and its `buildDraftPanelContent` export are left
+ * on disk, unchanged and still covered by `StageContextPanels.test.tsx` —
+ * only the mount point here is removed.
  */
 import { redirect } from 'next/navigation'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@convex/_generated/api'
 import { parseIssueNumber, issueStoryHref } from '@/lib/issueRouteResolver'
 import ReviewDeskRunView from '../../../review-desk/[runId]/ReviewDeskRunView'
-import DraftPanelPublisher from './DraftPanelContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,10 +59,5 @@ export default async function IssueDraftPage({ params }: IssueDraftPageProps) {
     : null
   if (!run) redirect(issueStoryHref(n))
 
-  return (
-    <>
-      <DraftPanelPublisher />
-      <ReviewDeskRunView params={Promise.resolve({ runId: run.runId })} issueNumber={n} />
-    </>
-  )
+  return <ReviewDeskRunView params={Promise.resolve({ runId: run.runId })} issueNumber={n} />
 }

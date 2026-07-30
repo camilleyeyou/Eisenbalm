@@ -265,6 +265,13 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
   const lastPathSegment = pathSegments[pathSegments.length - 1]
   const currentStageSegment = isStageSegment(lastPathSegment) ? lastPathSegment : undefined
 
+  // quick 260730-i4j — Draft is the one stage that IS the story. The frame's
+  // two rails re-imposed the very columns the story design removed; on Draft
+  // the canvas takes the page and findings live in ONE story-scoped rail
+  // rendered inside the canvas (StoryFocusView). Every other stage keeps the
+  // 3-column frame verbatim.
+  const draftFocus = currentStageSegment === 'draft'
+
   // quick 260723-4a6 (Task 1e): the per-stage browser-tab title — "Issue 12 ·
   // Draft — Dispatch Control". Derived from the SAME STAGE_TABS labels the
   // tab row above renders; the bare overview route (no stage segment) falls
@@ -367,24 +374,37 @@ function FrameChrome({ issueNumber: n, children }: { issueNumber: number; childr
 
         <DraftReadyBanner issueNumber={n} currentStageSegment={currentStageSegment} />
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)_320px] lg:items-start">
-          {/* quick 260722-n5r follow-up: the scrollport is <main> (100vh minus
-              the 52px Masthead), so the rails' max-h accounts for masthead
-              (52) + sticky-nav offset (72) + a 16px bottom gutter = 140px —
-              calc(100vh-88px) left their bottom ~36px pinned off-screen. */}
-          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
-            <WorkspaceOutline />
-          </div>
+        {draftFocus ? (
+          // quick 260730-i4j — Draft Focus: no left outline rail, no right
+          // ContextPanel. The story canvas (`{children}` — StoryFocusView)
+          // takes the full width; a story's open findings render in their
+          // OWN story-scoped rail INSIDE that canvas, not here.
           <div className="min-w-0">
             {currentStageSegment && (
               <StageHintStrip issueNumber={n} stage={currentStageSegment} />
             )}
             {children}
           </div>
-          <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
-            <ContextPanel title="Context">{panelContent}</ContextPanel>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)_320px] lg:items-start">
+            {/* quick 260722-n5r follow-up: the scrollport is <main> (100vh minus
+                the 52px Masthead), so the rails' max-h accounts for masthead
+                (52) + sticky-nav offset (72) + a 16px bottom gutter = 140px —
+                calc(100vh-88px) left their bottom ~36px pinned off-screen. */}
+            <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
+              <WorkspaceOutline />
+            </div>
+            <div className="min-w-0">
+              {currentStageSegment && (
+                <StageHintStrip issueNumber={n} stage={currentStageSegment} />
+              )}
+              {children}
+            </div>
+            <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto">
+              <ContextPanel title="Context">{panelContent}</ContextPanel>
+            </div>
           </div>
-        </div>
+        )}
 
         {/*
           Phase 49 Plan 08 (ROL-04) — a PERSISTENT region, separate from
