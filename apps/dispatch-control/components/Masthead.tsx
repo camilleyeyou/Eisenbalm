@@ -1,5 +1,15 @@
 'use client'
 /**
+ * quick 260730-ldn (Task 2c) — now consumes `useCurrentRun()` for the ENTIRE
+ * run/issue resolution (issue status, system activity's runStatus, the My
+ * Tasks count, and the new title identity node below) instead of assembling
+ * its own `runs.latest -> pipelineRuns.byRunId -> ...` chain. This closes the
+ * root cause of the selection bug at its source: a second surface can now
+ * only ever obtain "the current issue" from the SAME resolution The Run
+ * uses (`lib/currentRun.ts`'s `resolveCurrentRun` — follow the run, never
+ * `max(issueNumber)`). `runs.monthToDateCost` and the `auto_publish` config
+ * read stay here unchanged (a workspace readout, not a run readout).
+ *
  * Persistent 52px ink masthead (CHR-02, Plan 30-04).
  * Rebuilt Phase 40 Plan 40-08 (ISS-05 / D-24..D-27, 40-UI-SPEC State & Icon
  * Contract) — the single blended "pipeline-state" chip is split into FOUR
@@ -66,12 +76,9 @@ import type { LucideIcon } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { issueDraftHref } from '@/lib/issueRouteResolver'
-import {
-  deriveIssueStatus,
-  deriveTasks,
-  type DerivationInputs,
-  type IssueStatus,
-} from '@/lib/derivedState'
+import { deriveTasks, type IssueStatus } from '@/lib/derivedState'
+import { useCurrentRun } from '@/lib/useCurrentRun'
+import { issueTitleLabel } from '@/lib/issueTitle'
 import AwaitingYouInbox from './AwaitingYouInbox'
 import ScrollHintRow from './ui/ScrollHintRow'
 import { useCommandPalette } from './CommandPalette'
@@ -229,52 +236,16 @@ export function MyTasksTrigger({
 export default function Masthead() {
   const [inboxOpen, setInboxOpen] = useState(false)
   const { open: openCommandPalette } = useCommandPalette()
-  const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
-  const pipelineRun = useQuery(
-    api.pipelineRuns.byRunId,
-    latest ? { runId: latest.runId } : 'skip',
-  )
+  const currentRun = useCurrentRun()
   const mtd = useQuery(api.runs.monthToDateCost, { workspace_id: DEFAULT_WORKSPACE_ID })
   const configRows = useQuery(api.pipelineConfig.getAll, { workspace_id: DEFAULT_WORKSPACE_ID })
 
   const cap = readConfigValue<number>(configRows, 'monthly_cap_usd')
   const autoPublish = readConfigValue<boolean>(configRows, 'auto_publish')
 
-  const issueNumber = pipelineRun?.issueNumber
-  const runId: string | null = latest?.runId ?? null
-
-  // ── Issue-status derivation inputs (D-18, same shape /issues/page.tsx assembles) ──
-  const issueRow = useQuery(
-    api.issues.byIssueNumber,
-    issueNumber != null ? { workspace_id: DEFAULT_WORKSPACE_ID, issueNumber } : 'skip',
-  )
-  const signOffs = useQuery(api.signOffs.activeByRunId, runId ? { runId } : 'skip')
-  const claimRowsRaw = useQuery(api.claimChecks.listByRunId, runId ? { runId } : 'skip')
-  const qaFindings = useQuery(api.qaCorrections.byRunId, runId ? { runId } : 'skip')
-  const pitchRows = useQuery(api.pitchLog.byRunId, runId ? { runId } : 'skip')
-
-  const claimRows = claimRowsRaw?.map(row => ({
-    _id: row._id,
-    status: row.status,
-    sourceUrl: row.sourceUrl,
-    sectionName: row.sectionName,
-    claimText: row.text,
-  }))
-
-  const derivationInputs: DerivationInputs = {
-    issueNumber: issueNumber ?? null,
-    runId,
-    issue: issueRow === undefined ? undefined : issueRow ? { held: issueRow.held, published: issueRow.published } : null,
-    signOffs,
-    claimRows,
-    qaFindings,
-    pitchRows,
-    runStatus: latest?.status,
-  }
-
-  const issueStatus = deriveIssueStatus(derivationInputs)
+  const { issueNumber, issueStatus, derivationInputs, title: issueTitle, state: runState } = currentRun
   const taskCount = deriveTasks(derivationInputs).length
-  const systemActivity = systemActivityFromRunStatus(latest?.status)
+  const systemActivity = systemActivityFromRunStatus(derivationInputs.runStatus)
   // Fix 1 (LD-1): the signal becomes a door — only when the run is genuinely
   // paused for the operator AND its issue has resolved.
   const draftDeskHref =
@@ -301,10 +272,36 @@ export default function Masthead() {
         chevronClassName="text-[color:var(--color-masthead-text)]"
         className="flex items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
       >
-        {/* Issue number — contextual identifier, not one of the four ISS-05 readouts */}
+        {/* Issue number — demoted mono metadata, not one of the four ISS-05
+            readouts. quick 260730-ldn: the TITLE now leads (below) — the
+            number stays as the compact identifier next to it. */}
         <span className="shrink-0 whitespace-nowrap font-[family-name:var(--font-mono)] text-[color:var(--color-masthead-muted)]">
           {issueNumber != null ? `Issue ${issueNumber}` : 'Issue —'}
         </span>
+
+        {/* The issue TITLE — quick 260730-ldn Task 2c. Branching mirrors the
+            ISS-06 discipline applied to a title:
+              - runState.kind === 'none' -> no title node at all (nothing IS
+                running, there is no subject to name).
+              - issueTitle === undefined -> render NOTHING (still loading —
+                never a premature "Not yet chosen").
+              - issueTitle === null (loaded-and-absent, a run exists) ->
+                issueTitleLabel(null) = 'Not yet chosen', muted.
+              - otherwise -> the real title. */}
+        {runState.kind !== 'none' && issueTitle !== undefined && (
+          <span
+            className="max-w-[280px] shrink-0 truncate font-[family-name:var(--font-display)] text-[14px] text-[color:var(--color-masthead-text)]"
+            title={issueTitleLabel(issueTitle)}
+          >
+            {issueTitle === null ? (
+              <span className="text-[color:var(--color-masthead-muted)]">
+                {issueTitleLabel(null)}
+              </span>
+            ) : (
+              issueTitle
+            )}
+          </span>
+        )}
 
         {/* Readout 1: Issue status (D-18) — separate node, never shares a
             container with System activity below. */}

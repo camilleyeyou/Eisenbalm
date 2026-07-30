@@ -16,6 +16,15 @@
  * (`issues:byIssueNumber`, `signOffs:activeByRunId`,
  * `claimChecks:listByRunId`, `pitchLog:byRunId`) feed `deriveIssueStatus` /
  * `deriveTasks` for the Issue-status and My-Tasks readouts.
+ *
+ * Updated quick 260730-ldn (Task 2) — the masthead now resolves its ENTIRE
+ * run/issue state through `useCurrentRun()` (`lib/useCurrentRun.ts`), which
+ * issues a few additional query refs beyond what Masthead used to assemble
+ * itself: `pitchLog:selectedByRunId` (the title), `claimChecks:allSignedOff`,
+ * `runs:byRunId`, and `agentRuns:byRunId`. All are mocked below (unmocked
+ * defaults resolve conservatively — `undefined` while a dependent runId is
+ * 'skip'd, `null`/`{}`/`[]` once loaded) so every pre-existing assertion
+ * keeps passing unmodified.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
@@ -30,6 +39,7 @@ vi.mock('@convex/_generated/api', () => ({
       latest: 'runs:latest',
       monthToDateCost: 'runs:monthToDateCost',
       listForWorkspace: 'runs:listForWorkspace',
+      byRunId: 'runs:byRunId',
     },
     pipelineRuns: {
       byRunId: 'pipelineRuns:byRunId',
@@ -52,6 +62,10 @@ vi.mock('@convex/_generated/api', () => ({
     },
     pitchLog: {
       byRunId: 'pitchLog:byRunId',
+      selectedByRunId: 'pitchLog:selectedByRunId',
+    },
+    agentRuns: {
+      byRunId: 'agentRuns:byRunId',
     },
   },
 }))
@@ -89,6 +103,12 @@ interface MastheadMocks {
   signOffs?: unknown
   claimRows?: unknown[]
   pitchRows?: unknown[]
+  // quick 260730-ldn (Task 2) — additive: feed useCurrentRun()'s extra queries.
+  // `selectedPitch` explicitly supports `undefined` (still loading) as a
+  // meaningful, distinct-from-"not passed" value — see its own ternary below.
+  selectedPitch?: { charityName: string } | null
+  runRow?: unknown
+  agentRunsRows?: unknown[]
 }
 
 function mockMasthead(mocks: MastheadMocks) {
@@ -118,6 +138,18 @@ function mockMasthead(mocks: MastheadMocks) {
         return args === 'skip' ? undefined : (mocks.signOffs ?? {})
       case 'pitchLog:byRunId':
         return args === 'skip' ? undefined : (mocks.pitchRows ?? [])
+      // `selectedPitch` defaults to `null` (loaded, no selection) once its
+      // dependent runId resolves — 'undefined' is reserved for the explicit
+      // still-loading test cases, which pass `selectedPitch: undefined`
+      // ('in' check distinguishes "key omitted" from "key explicitly set to
+      // undefined" so both meanings stay reachable from the same mock shape).
+      case 'pitchLog:selectedByRunId':
+        if (args === 'skip') return undefined
+        return 'selectedPitch' in mocks ? mocks.selectedPitch : null
+      case 'runs:byRunId':
+        return args === 'skip' ? undefined : (mocks.runRow ?? null)
+      case 'agentRuns:byRunId':
+        return args === 'skip' ? undefined : (mocks.agentRunsRows ?? [])
       default:
         return undefined
     }
@@ -311,6 +343,43 @@ describe('Masthead', () => {
 
     renderMasthead()
     expect(screen.queryByRole('link', { name: /draft desk/i })).toBeNull()
+  })
+
+  // ── quick 260730-ldn (Task 2c): the title leads, next to the demoted mono
+  // issue number, via useCurrentRun() ────────────────────────────────────────
+  it('renders the issue TITLE from the selected pitch, alongside the mono issue number', () => {
+    mockMasthead({
+      latest: { status: 'awaiting-review', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 999717 },
+      selectedPitch: { charityName: 'The Kumasi Roofless Schools Audit' },
+    })
+
+    renderMasthead()
+    expect(screen.getByText('The Kumasi Roofless Schools Audit')).toBeDefined()
+    expect(screen.getByText('Issue 999717')).toBeDefined()
+  })
+
+  it('renders NEITHER the title NOR "Not yet chosen" while the selected pitch is still loading', () => {
+    mockMasthead({
+      latest: { status: 'awaiting-review', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 999717 },
+      selectedPitch: undefined,
+    })
+
+    renderMasthead()
+    expect(screen.queryByText('Not yet chosen')).toBeNull()
+    expect(screen.queryByText(/kumasi/i)).toBeNull()
+  })
+
+  it('renders "Not yet chosen" once the run has loaded-and-confirmed no selected pitch', () => {
+    mockMasthead({
+      latest: { status: 'awaiting-review', runId: 'run-1', startedAt: 1 },
+      pipelineRun: { issueNumber: 999717 },
+      selectedPitch: null,
+    })
+
+    renderMasthead()
+    expect(screen.getByText('Not yet chosen')).toBeDefined()
   })
 })
 
