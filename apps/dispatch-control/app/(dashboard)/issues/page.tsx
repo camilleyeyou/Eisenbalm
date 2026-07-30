@@ -37,6 +37,10 @@ import {
 } from '@/lib/derivedState'
 import { fetchRepetitionNote } from '@/lib/repetitionNoteClient'
 import { parseCostJson } from '@/lib/costRollup'
+// quick 260730-i4j (Task 1b) — extracted to lib/scheduleLabel.ts so the new
+// /desk route can reuse the exact same "next scheduled slot" logic instead
+// of reimplementing it. This page's rendered output is unchanged.
+import { DEFAULT_CADENCE, readConfigValue, formatScheduledForLabel, type Cadence } from '@/lib/scheduleLabel'
 import IssueCard from './_components/IssueCard'
 import ScheduledSlotCard from './_components/ScheduledSlotCard'
 import HeldIssueRow from './_components/HeldIssueRow'
@@ -44,41 +48,6 @@ import RecentlyPublishedRow from './_components/RecentlyPublishedRow'
 import CreatePanel from './_components/CreatePanel'
 import StartHereCard from './_components/StartHereCard'
 import DocumentTitle from '@/components/ui/DocumentTitle'
-
-type ConfigRow = { key: string; value: string }
-
-function readConfigValue<T>(rows: ConfigRow[] | undefined, key: string): T | undefined {
-  const row = rows?.find(r => r.key === key)
-  if (!row) return undefined
-  try {
-    return JSON.parse(row.value) as T
-  } catch {
-    return undefined
-  }
-}
-
-type Cadence = { dayOfWeek: number; hourUtc: number; minuteUtc: number }
-
-// Same default AutomationPanel.tsx falls back to when no schedule_cadence
-// row exists yet (Thu 14:00 UTC) — reused here for parity, not reinvented.
-const DEFAULT_CADENCE: Cadence = { dayOfWeek: 4, hourUtc: 14, minuteUtc: 0 }
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
-function pad2(n: number): string {
-  return String(n).padStart(2, '0')
-}
-
-/** `{weekday} {HH:MM}` — prefers the concrete `schedule_next_run_at` Unix-ms
- * timestamp when set; falls back to the recurring cadence otherwise. Both
- * read the SAME `pipelineConfig` keys AutomationPanel.tsx already parses. */
-function formatScheduledForLabel(nextRunAt: number | undefined, cadence: Cadence): string {
-  if (nextRunAt) {
-    const d = new Date(nextRunAt)
-    return `${DAY_NAMES[d.getUTCDay()] ?? 'Unknown'} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
-  }
-  return `${DAY_NAMES[cadence.dayOfWeek] ?? 'Unknown'} ${pad2(cadence.hourUtc)}:${pad2(cadence.minuteUtc)}`
-}
 
 /** Recently-published rows resolve their OWN run + verification record —
  * each list item owns its Convex subscriptions (rules-of-hooks: a `.map`

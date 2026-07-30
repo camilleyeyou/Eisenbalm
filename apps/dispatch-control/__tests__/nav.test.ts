@@ -15,8 +15,8 @@
  *
  * Asserts:
  *   1. The 3 group labels exist, in order (Editorial, System Workbench, Operations).
- *   2. Issues is the first (and only) item in the Editorial group (the new
- *      editorial home, D-31).
+ *   2. quick 260730-i4j: Desk is now the FIRST item of the Editorial group
+ *      (the front door), with Issues second (the archive, D-31 superseded).
  *   3. None of the removed desk items (Review Desk, Signal Desk, Voice Pass)
  *      appear anywhere in the nav.
  *   4. Every nav href across all 3 groups, plus NAV_PINNED, has a corresponding
@@ -62,11 +62,13 @@ describe('NAV_GROUPS', () => {
     expect(labels).toEqual(EXPECTED_GROUP_LABELS)
   })
 
-  it('has Issues as the first item of the Editorial group (the new editorial home, D-31)', () => {
+  it('has Desk as the first item and Issues as the second item of the Editorial group (quick 260730-i4j — the front door)', () => {
     const editorial = NAV_GROUPS.find((g) => g.label === 'Editorial')
-    const first = editorial?.items[0]
-    expect(first?.label).toBe('Issues')
-    expect(first?.href).toBe('/issues')
+    const [first, second] = editorial?.items ?? []
+    expect(first?.label).toBe('Desk')
+    expect(first?.href).toBe('/desk')
+    expect(second?.label).toBe('Issues')
+    expect(second?.href).toBe('/issues')
   })
 
   it('Run Details (nee Run Monitor) is under System Workbench (D-08 — survives, but is no longer the editorial object; Phase 50 WBN-01 renamed the label)', () => {

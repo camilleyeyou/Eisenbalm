@@ -47,6 +47,7 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import {
   deriveTasks,
   formatTaskAge,
+  TASK_SEVERITY_RENDER_ORDER,
   type DerivationInputs,
   type DerivedTask,
   type TaskSeverity,
@@ -100,8 +101,8 @@ const ROW_TITLE_LINE_THROUGH = 'line-through'
 const MICRO_LABEL =
   'font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]'
 
-// Section render order — matches the sort order `deriveTasks` already produces.
-const SEVERITY_SECTION_ORDER: TaskSeverity[] = ['must-fix', 'review-recommended', 'information']
+// quick 260730-i4j (Task 1c) — imported from lib/derivedState.ts so the Desk
+// ledger and My Tasks share ONE render-order array, never two divergent ones.
 
 // ── MyTasksList (pure — no Convex, unit-testable directly) ──────────────────
 
@@ -242,7 +243,7 @@ export function MyTasksList({
 
   return (
     <div className="flex flex-col gap-6">
-      {SEVERITY_SECTION_ORDER.filter(sev => buckets[sev].length > 0).map(sev => (
+      {TASK_SEVERITY_RENDER_ORDER.filter(sev => buckets[sev].length > 0).map(sev => (
         <section key={sev} aria-label={SEVERITY_META[sev].label}>
           <h2 className={`${MICRO_LABEL} mb-2`}>
             {SEVERITY_META[sev].label} · {buckets[sev].length}

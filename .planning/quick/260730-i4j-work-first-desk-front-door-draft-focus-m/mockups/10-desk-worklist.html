@@ -1,0 +1,223 @@
+<!-- @dsCard group="Front Door" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Front Door B — Worklist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --masthead-text:#f4f2ec; --masthead-muted:#c9c3b5; --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+.masthead{display:flex;align-items:center;gap:18px;background:var(--ink);color:var(--masthead-text);padding:0 26px;height:52px}
+.masthead .wordmark{font-family:var(--display);font-weight:600;font-size:16px}
+.masthead .sep{color:var(--masthead-muted);font-size:12px}
+.masthead .where{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--masthead-muted)}
+.masthead .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.masthead .kbd{font-family:var(--mono);font-size:10px;border:1px solid rgba(244,242,236,.28);padding:4px 8px;color:var(--masthead-muted)}
+.masthead .avatar{width:26px;height:26px;background:var(--masthead-muted);color:var(--ink);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center}
+
+.wrap{max-width:1000px;margin:0 auto;padding:32px 28px 70px}
+
+.page-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+.page-h1{font-family:var(--display);font-weight:600;font-size:31px;line-height:1.05;margin-top:5px}
+.page-dek{font-family:var(--body);font-style:italic;font-size:13.5px;color:var(--ink-soft);margin-top:6px}
+
+/* ── run readout: the "run details" the client asks for, one band ── */
+.runband{margin-top:22px;background:var(--card);border:1px solid var(--ink);padding:0}
+.runband .top{display:flex;align-items:center;gap:18px;padding:15px 20px;border-bottom:1px solid var(--border)}
+.runband .issue{font-family:var(--display);font-size:20px;font-weight:600}
+.runband .statuschip{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--marigold-text);border:1px solid var(--marigold);background:rgba(242,176,30,.12);padding:4px 9px}
+.runband .metrics{margin-left:auto;display:flex;gap:20px}
+.runband .metrics div{text-align:right}
+.runband .metrics .l{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.runband .metrics .v{font-family:var(--mono);font-size:12.5px;margin-top:3px}
+.runband .open a{font-family:var(--ui);font-size:12px;font-weight:600;color:var(--cobalt);text-decoration:none}
+
+/* stage strip */
+.stagestrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.stagestrip .st{padding:12px 16px;border-right:1px solid var(--border)}
+.stagestrip .st:last-child{border-right:none}
+.stagestrip .st .n{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.stagestrip .st .s{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--green)} .dot.warn{background:var(--marigold)} .dot.err{background:var(--vermilion)} .dot.idle{background:var(--nav)}
+.stagestrip .st.active{background:var(--card-alt);box-shadow:inset 0 3px 0 var(--cobalt)}
+
+/* ── ledger ── */
+.group{margin-top:30px}
+.group-head{display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--ink)}
+.group-head h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+.group-head .n{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-left:auto}
+.group-head.mf h3{color:var(--vermilion)}
+.group-head.rv h3{color:var(--marigold-text)}
+.group-head.nf h3{color:var(--cobalt)}
+
+table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-top:none}
+td{padding:13px 15px;border-bottom:1px solid var(--border);background:var(--card);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--card-alt)}
+td.what .title{font-size:13.5px;font-weight:500;line-height:1.35}
+td.what .why{font-family:var(--body);font-size:12px;color:var(--ink-soft);margin-top:5px;line-height:1.5}
+td.where{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);white-space:nowrap;width:150px}
+td.stage{width:96px}
+td.act{width:96px;text-align:right}
+.stagechip{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--border);background:var(--card-alt);color:var(--ink-soft);padding:3px 7px;white-space:nowrap}
+.go{font-family:var(--ui);font-size:12px;font-weight:600;color:var(--cobalt);text-decoration:none;white-space:nowrap}
+.btn{font-family:var(--ui);font-size:12px;font-weight:600;padding:8px 13px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--card);text-decoration:none;white-space:nowrap}
+
+/* ── quiet footer: everything the old Issues page led with ── */
+.quiet{margin-top:38px;border-top:1px solid var(--border);padding-top:16px;display:flex;flex-wrap:wrap;gap:0}
+.quiet .cell{padding-right:22px;margin-right:22px;border-right:1px solid var(--border)}
+.quiet .cell:last-child{border-right:none}
+.quiet .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.quiet .v{font-family:var(--mono);font-size:13px;margin-top:4px}
+.quiet .v a{color:var(--cobalt);text-decoration:none}
+
+.footnote{font-family:var(--body);font-style:italic;font-size:11.5px;color:var(--faint);margin-top:28px;line-height:1.5;max-width:660px}
+.tag{position:fixed;right:14px;bottom:12px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:var(--card);border:1px solid var(--border);padding:5px 9px}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="wordmark">Dispatch Control</span>
+  <span class="sep">/</span>
+  <span class="where">Desk</span>
+  <div class="right"><span class="kbd">⌘K</span><span class="avatar">AN</span></div>
+</div>
+
+<div class="wrap">
+
+  <div class="page-kicker">Thursday 30 July</div>
+  <h1 class="page-h1">Your desk</h1>
+  <p class="page-dek">Seven open items on the run in progress. Roughly thirty-five minutes of judgment.</p>
+
+  <!-- RUN DETAILS -->
+  <div class="runband">
+    <div class="top">
+      <span class="issue">Issue 12</span>
+      <span class="statuschip">Needs review</span>
+      <span class="open"><a href="#">Open the draft →</a></span>
+      <div class="metrics">
+        <div><div class="l">Elapsed</div><div class="v">41m 12s</div></div>
+        <div><div class="l">Cost</div><div class="v">$4.12 / $8.00</div></div>
+        <div><div class="l">Claims</div><div class="v">15 / 19</div></div>
+      </div>
+    </div>
+    <div class="stagestrip">
+      <div class="st"><div class="n">1 · Story</div><div class="s"><span class="dot ok"></span>Clean</div></div>
+      <div class="st active"><div class="n">2 · Draft</div><div class="s"><span class="dot err"></span>Needs you · 3</div></div>
+      <div class="st"><div class="n">3 · Fact Check</div><div class="s"><span class="dot warn"></span>Needs you · 2</div></div>
+      <div class="st"><div class="n">4 · Voice</div><div class="s"><span class="dot warn"></span>Needs you · 1</div></div>
+      <div class="st"><div class="n">5 · Approval</div><div class="s"><span class="dot idle"></span>Locked</div></div>
+    </div>
+  </div>
+
+  <!-- MUST FIX -->
+  <div class="group">
+    <div class="group-head mf"><h3>Must fix</h3><span class="n">3 · blocks publish</span></div>
+    <table>
+      <tr>
+        <td class="what">
+          <div class="title">Founder&rsquo;s date of birth contradicts the source interview</div>
+          <div class="why">Draft says 1961; the linked Guardian profile says 1963. Load-bearing fact in the opening paragraph.</div>
+        </td>
+        <td class="where">Founder Bio</td>
+        <td class="stage"><span class="stagechip">Draft</span></td>
+        <td class="act"><a class="btn" href="#">Open</a></td>
+      </tr>
+      <tr>
+        <td class="what">
+          <div class="title">Clear the facts</div>
+          <div class="why">4 of 19 claims still unchecked. The publish gate stays closed until they are signed off.</div>
+        </td>
+        <td class="where">Approval gate</td>
+        <td class="stage"><span class="stagechip">Fact Check</span></td>
+        <td class="act"><a class="go" href="#">Review →</a></td>
+      </tr>
+      <tr>
+        <td class="what">
+          <div class="title">Statistic has no source attached</div>
+          <div class="why">&ldquo;Eleven districts&rdquo; appears in the case study with no citation in the claim ledger.</div>
+        </td>
+        <td class="where">Case Study</td>
+        <td class="stage"><span class="stagechip">Fact Check</span></td>
+        <td class="act"><a class="go" href="#">Review →</a></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- REVIEW RECOMMENDED -->
+  <div class="group">
+    <div class="group-head rv"><h3>Review recommended</h3><span class="n">3</span></div>
+    <table>
+      <tr>
+        <td class="what">
+          <div class="title">Sentence drifts into promotional register</div>
+          <div class="why">&ldquo;a truly remarkable organisation&rdquo; — the voice guard flags this as outside house register.</div>
+        </td>
+        <td class="where">Origin Story</td>
+        <td class="stage"><span class="stagechip">Voice</span></td>
+        <td class="act"><a class="go" href="#">Review →</a></td>
+      </tr>
+      <tr>
+        <td class="what">
+          <div class="title">Check claim: &ldquo;founded in a converted bakery&rdquo;</div>
+          <div class="why">Single-source detail, colour rather than load-bearing. Your call whether it stays.</div>
+        </td>
+        <td class="where">Origin Story</td>
+        <td class="stage"><span class="stagechip">Fact Check</span></td>
+        <td class="act"><a class="go" href="#">Review →</a></td>
+      </tr>
+      <tr>
+        <td class="what">
+          <div class="title">Two paragraphs open with the same construction</div>
+          <div class="why">Rhythm flag from the voice pass — cosmetic, not blocking.</div>
+        </td>
+        <td class="where">Problem Statement</td>
+        <td class="stage"><span class="stagechip">Voice</span></td>
+        <td class="act"><a class="go" href="#">Review →</a></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- INFORMATION -->
+  <div class="group">
+    <div class="group-head nf"><h3>Worth knowing</h3><span class="n">1</span></div>
+    <table>
+      <tr>
+        <td class="what">
+          <div class="title">Bonus section reuses a format from Issue 9</div>
+          <div class="why">Not a defect — flagged so the run doesn&rsquo;t repeat itself two issues running.</div>
+        </td>
+        <td class="where">Bonus</td>
+        <td class="stage"><span class="stagechip">Draft</span></td>
+        <td class="act"><a class="go" href="#">Review →</a></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- DEMOTED -->
+  <div class="quiet">
+    <div class="cell"><div class="l">Next discovery</div><div class="v">Thu 14:00 UTC</div></div>
+    <div class="cell"><div class="l">Held</div><div class="v"><a href="#">1 issue</a></div></div>
+    <div class="cell"><div class="l">Recently published</div><div class="v"><a href="#">Issue 11 · Issue 10</a></div></div>
+    <div class="cell"><div class="l">Start something new</div><div class="v"><a href="#">New issue →</a></div></div>
+  </div>
+
+  <p class="footnote">Variant B — <b>Worklist.</b> Run details up top in one band (status, elapsed, cost, claim coverage, all five stages), then every open task as a ledger grouped by severity, each row deep-linking to the exact stage. The scheduled slot, held list, recently-published and create panel — the four things the current Issues home leads with — drop to a single quiet strip at the bottom.</p>
+
+</div>
+
+<span class="tag">Front Door · Variant B</span>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!-- @dsCard group="Front Door" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Click path — before &amp; after</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;padding:34px 38px 60px}
+
+.head h1{font-family:var(--display);font-weight:600;font-size:30px}
+.head p{font-family:var(--body);font-style:italic;font-size:13.5px;color:var(--ink-soft);margin-top:6px;max-width:680px;line-height:1.5}
+
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:28px}
+.col{background:var(--card);border:1px solid var(--border);padding:20px 22px}
+.col.after{border:1px solid var(--ink);box-shadow:5px 5px 0 var(--cobalt)}
+.col .cap{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+.col.before .cap{color:var(--vermilion)}
+.col.after .cap{color:var(--cobalt)}
+
+.step{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.step:last-of-type{border-bottom:none}
+.step .n{font-family:var(--mono);font-size:10px;color:var(--faint);width:18px;flex-shrink:0;padding-top:2px}
+.step .b{min-width:0}
+.step .t{font-size:13.5px;font-weight:500;line-height:1.35}
+.step .s{font-family:var(--body);font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.5}
+.step .s em{color:var(--vermilion);font-style:normal;font-weight:600}
+.step.dead .t{color:var(--faint);text-decoration:line-through}
+
+.tally{margin-top:16px;border-top:1px solid var(--ink);padding-top:12px;display:flex;gap:26px}
+.tally .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.tally .v{font-family:var(--display);font-size:24px;font-weight:600;margin-top:2px}
+.tally .v.bad{color:var(--vermilion)}
+.tally .v.good{color:var(--green)}
+
+.panel{margin-top:30px;background:var(--card);border:1px solid var(--border);padding:20px 22px}
+.panel .cap{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+table{width:100%;border-collapse:collapse;border:1px solid var(--border)}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:left;font-weight:500;padding:10px 13px;border-bottom:1px solid var(--border)}
+td{font-size:12.5px;padding:11px 13px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:var(--mono);font-size:11px;color:var(--ink-soft);white-space:nowrap}
+.verdict{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;padding:3px 7px;border:1px solid;white-space:nowrap}
+.verdict.keep{color:var(--green);border-color:var(--green);background:rgba(20,138,82,.07)}
+.verdict.move{color:var(--cobalt);border-color:var(--cobalt);background:rgba(37,58,212,.06)}
+.verdict.cut{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+
+.rulebox{border:1px solid var(--ink);background:var(--card);padding:15px 18px;margin-top:26px;box-shadow:4px 4px 0 var(--marigold)}
+.rulebox .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--marigold-text)}
+.rulebox ul{margin:9px 0 0 17px}
+.rulebox li{font-size:12.5px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Getting to the work</h1>
+  <p>What the operator actually does between opening Dispatch Control and touching a sentence — today, and after the front-door change.</p>
+</div>
+
+<div class="cols">
+
+  <div class="col before">
+    <div class="cap">Today · 5 clicks, 3 pages</div>
+
+    <div class="step">
+      <span class="n">01</span>
+      <div class="b">
+        <div class="t">Open Dispatch Control</div>
+        <div class="s">Root redirects to <b>/issues</b>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">02</span>
+      <div class="b">
+        <div class="t">Read the Issues home</div>
+        <div class="s">Start-here card, issue card, scheduled slot, held list, recently published, create panel. <em>Six blocks, none of them the work.</em></div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">03</span>
+      <div class="b">
+        <div class="t">Click into Issue 12</div>
+        <div class="s">Lands on whichever stage was last visited.</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">04</span>
+      <div class="b">
+        <div class="t">Find the Draft stage tab</div>
+        <div class="s">Five stage tabs, no indication which one holds the open item.</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">05</span>
+      <div class="b">
+        <div class="t">Pick the story off the desk grid</div>
+        <div class="s">Nine cards. The operator has to remember which one was flagged.</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">06</span>
+      <div class="b">
+        <div class="t">Read the sentence — in a 1fr column between two rails</div>
+        <div class="s"><em>232px outline + 320px context</em> flank a story that wanted the page.</div>
+      </div>
+    </div>
+
+    <div class="tally">
+      <div><div class="l">Clicks to a sentence</div><div class="v bad">5</div></div>
+      <div><div class="l">Pages read first</div><div class="v bad">3</div></div>
+      <div><div class="l">Story width @1440</div><div class="v bad">~820px</div></div>
+    </div>
+  </div>
+
+  <div class="col after">
+    <div class="cap">After · 1 click, 1 page</div>
+
+    <div class="step">
+      <span class="n">01</span>
+      <div class="b">
+        <div class="t">Open Dispatch Control</div>
+        <div class="s">Root lands on <b>the Desk</b> — run details and every open task, already sorted.</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">02</span>
+      <div class="b">
+        <div class="t">Click the task</div>
+        <div class="s">Deep-links to the exact story and the exact finding. <b>The stage, the story and the scroll position are in the href.</b></div>
+      </div>
+    </div>
+    <div class="step dead">
+      <span class="n">03</span>
+      <div class="b"><div class="t">Read the Issues home</div></div>
+    </div>
+    <div class="step dead">
+      <span class="n">04</span>
+      <div class="b"><div class="t">Find the stage tab</div></div>
+    </div>
+    <div class="step dead">
+      <span class="n">05</span>
+      <div class="b"><div class="t">Pick the story off the grid</div></div>
+    </div>
+    <div class="step">
+      <span class="n">03</span>
+      <div class="b">
+        <div class="t">Read the sentence — full width</div>
+        <div class="s">Rails gone. Findings sit in the story&rsquo;s own margin, or in one rail scoped to this story.</div>
+      </div>
+    </div>
+
+    <div class="tally">
+      <div><div class="l">Clicks to a sentence</div><div class="v good">1</div></div>
+      <div><div class="l">Pages read first</div><div class="v good">1</div></div>
+      <div><div class="l">Story width @1440</div><div class="v good">~1180px</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="panel">
+  <div class="cap">What happens to the six blocks currently on the Issues home</div>
+  <table>
+    <tr><th>Block</th><th>Where it is today</th><th>Proposal</th><th>Verdict</th></tr>
+    <tr>
+      <td><b>Issue card</b> — status, stages, open count, cost</td>
+      <td class="mono">Issues home, block 2</td>
+      <td>Becomes the run band at the top of the Desk. This is the &ldquo;run details&rdquo; the client is asking for.</td>
+      <td><span class="verdict move">Promote</span></td>
+    </tr>
+    <tr>
+      <td><b>Open tasks</b> — derived, severity-ranked</td>
+      <td class="mono">/my-tasks (separate nav item)</td>
+      <td>Becomes the body of the Desk. Merges the two surfaces into the one the operator lands on.</td>
+      <td><span class="verdict move">Promote</span></td>
+    </tr>
+    <tr>
+      <td><b>Start-here card</b></td>
+      <td class="mono">Issues home, block 1</td>
+      <td>Redundant once the Desk states the next action in plain language.</td>
+      <td><span class="verdict cut">Cut</span></td>
+    </tr>
+    <tr>
+      <td><b>Scheduled slot card</b></td>
+      <td class="mono">Issues home, block 3</td>
+      <td>One cell in the quiet strip: &ldquo;Next discovery · Thu 14:00 UTC&rdquo;.</td>
+      <td><span class="verdict move">Demote</span></td>
+    </tr>
+    <tr>
+      <td><b>Held list · recently published</b></td>
+      <td class="mono">Issues home, blocks 4–5</td>
+      <td>Two cells in the quiet strip, linking to a full <b>/issues</b> archive that still exists for when it is wanted.</td>
+      <td><span class="verdict move">Demote</span></td>
+    </tr>
+    <tr>
+      <td><b>Create panel</b></td>
+      <td class="mono">Issues home, block 6</td>
+      <td>One link in the quiet strip; the full panel lives on <b>/issues</b>.</td>
+      <td><span class="verdict move">Demote</span></td>
+    </tr>
+    <tr>
+      <td><b>/issues archive</b></td>
+      <td class="mono">— (is the front door)</td>
+      <td>Stays, in full, as a nav destination. It stops being the thing you are forced through.</td>
+      <td><span class="verdict keep">Keep</span></td>
+    </tr>
+  </table>
+</div>
+
+<div class="rulebox">
+  <span class="l">Why this is cheap to build</span>
+  <ul>
+    <li><b>No new data.</b> <code>deriveTasks()</code>, <code>deriveIssueStatus()</code> and <code>deriveStageStates()</code> already produce every field on the Desk — they power the issue card and /my-tasks today.</li>
+    <li><b>No new routes.</b> The root redirect changes target; <code>/issues</code> keeps its current page unchanged.</li>
+    <li><b>No pipeline change.</b> Nothing here touches an agent, a schema, or a Convex table.</li>
+    <li><b>The rails are one grid line.</b> The Draft stage&rsquo;s two rails come from a single <code>grid-cols-[232px_1fr_320px]</code> in the workspace frame — the story mockup was always rails-free.</li>
+  </ul>
+</div>
+
+</body>
+</html>

@@ -583,6 +583,40 @@ export function estimateWorkMinutes(tasks: DerivedTask[]): number {
   return tasks.reduce((sum, t) => sum + SEVERITY_MINUTES[t.sev], 0)
 }
 
+// ── TASK_SEVERITY_RENDER_ORDER + formatElapsed (quick 260730-i4j, Task 1c) ──
+//
+// The three severity buckets in render order — ONE source of truth for the
+// Desk ledger's groups and My Tasks' sections (never two divergent arrays).
+export const TASK_SEVERITY_RENDER_ORDER: readonly TaskSeverity[] = [
+  'must-fix',
+  'review-recommended',
+  'information',
+] as const
+
+/**
+ * Run elapsed as `41m 12s` / `2h 04m`. `now` is passed in, never read from
+ * the clock inside a selector. Returns 'unknown' when startedAt is absent —
+ * never a fabricated 0 (never-blank honesty, D-15).
+ */
+export function formatElapsed(
+  startedAt: number | undefined,
+  now: number,
+  completedAt?: number,
+): string {
+  if (startedAt === undefined) return 'unknown'
+  const end = completedAt ?? now
+  const diffMs = Math.max(0, end - startedAt)
+  const totalSeconds = Math.floor(diffMs / 1000)
+  if (totalSeconds < 3600) {
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes}m ${String(seconds).padStart(2, '0')}s`
+  }
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  return `${hours}h ${String(minutes).padStart(2, '0')}m`
+}
+
 // ── deriveRunCostUsd + deriveRunCapUsd (Phase 45 Plan 45-06, REV-05, D-12/D-13/D-15) ─
 //
 // The header cost-vs-budget readout's pure derivation pair. Spend is summed

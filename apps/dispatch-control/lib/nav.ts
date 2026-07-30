@@ -15,6 +15,13 @@
  *                       object, not that it becomes unreachable.
  *   Operations       → Config · Finance · Settings — unchanged.
  *
+ * quick 260730-i4j — the Desk (`/desk`) is now the FRONT DOOR: it supersedes
+ * the Issues-home-as-front-door decision above (root redirect now points at
+ * `/desk`, not `/issues`). Desk is the FIRST Editorial item — a work-first
+ * landing that states the run and lists every open task in one place.
+ * `/issues` survives unchanged, one slot down, as the full archive (every
+ * issue, held/published lists, the create panel) — reachable, not forced.
+ *
  * Review Desk, Signal Desk, and Voice Pass LEFT the nav — they are now issue
  * sub-routes reachable from `/issues/[issueNumber]` (D-07/D-09): thin
  * issue→run param translations around the already-shipped screens, at
@@ -55,6 +62,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Editorial',
     items: [
+      // quick 260730-i4j — the front door. Ahead of Issues: a work-first
+      // landing (run band + every open task) rather than the archive.
+      { label: 'Desk', href: '/desk' },
       { label: 'Issues', href: '/issues' },
       // Phase 41 (WSP-01, D-22) — the single "Issue Workspace" entry that
       // completes WSP-01's "replace the three desks" (Review/Signal/Voice

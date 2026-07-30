@@ -1,0 +1,190 @@
+<!-- @dsCard group="Draft Focus" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Draft B — One conditional rail</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#17140e; --ink-soft:#55514a; --faint:#8b8778; --paper:#e9eaec; --nav:#e3e5e8;
+  --rail:#f1f0ea; --card:#ffffff; --card-alt:#fbfaf6; --cobalt:#253ad4; --cobalt-dark:#1b2ba6;
+  --vermilion:#e8471d; --marigold:#f2b01e; --marigold-text:#9a6f04; --green:#148a52;
+  --masthead-text:#f4f2ec; --masthead-muted:#c9c3b5; --border:rgba(20,20,26,0.13);
+  --display:'Newsreader',Georgia,serif; --body:'Lora',Georgia,serif;
+  --ui:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+.masthead{display:flex;align-items:center;gap:16px;background:var(--ink);color:var(--masthead-text);padding:0 24px;height:52px}
+.masthead .wordmark{font-family:var(--display);font-weight:600;font-size:16px}
+.masthead .sep{color:var(--masthead-muted);font-size:12px}
+.masthead .where{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--masthead-muted)}
+.masthead .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.masthead .kbd{font-family:var(--mono);font-size:10px;border:1px solid rgba(244,242,236,.28);padding:4px 8px;color:var(--masthead-muted)}
+
+.bar{display:flex;align-items:center;gap:14px;background:var(--card);border-bottom:1px solid var(--border);padding:9px 24px;position:sticky;top:0;z-index:20}
+.bar .back{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-decoration:none}
+.bar .pos{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.bar .step{display:flex;gap:4px}
+.bar .step button{font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--border);color:var(--ink);padding:6px 10px;cursor:pointer}
+.bar .right{margin-left:auto;display:flex;gap:8px}
+.toggle{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:var(--card);border:1px solid var(--border);color:var(--ink-soft);padding:7px 11px;cursor:pointer}
+.toggle:hover{background:var(--card-alt);color:var(--ink)}
+
+/* ── story + ONE rail, and the rail exists only when this story has findings ── */
+.stage{max-width:1240px;margin:0 auto;padding:22px 28px 80px}
+.story-head{display:flex;align-items:flex-end;gap:24px}
+.story-head .left{flex:1;min-width:0}
+.kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cobalt)}
+.story-head h1{font-family:var(--display);font-weight:600;font-size:32px;line-height:1.05;margin-top:6px}
+.story-head .meta{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:9px}
+.story-head .meta b{color:var(--vermilion);font-weight:600}
+.actions{display:flex;gap:8px;flex-shrink:0}
+.btn{font-family:var(--ui);font-size:12.5px;font-weight:600;padding:10px 16px;cursor:pointer;border:1px solid var(--ink)}
+.btn.primary{background:var(--ink);color:var(--card)}
+.btn.ghost{background:var(--card);color:var(--ink)}
+
+.tabs{display:flex;gap:4px;margin-top:22px}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px 11px;border:1px solid var(--border);border-bottom:none;background:var(--rail);color:var(--ink-soft);cursor:pointer;position:relative;top:1px}
+.tab.active{background:var(--card);color:var(--ink);font-weight:600;border-top:3px solid var(--cobalt);padding-top:10px}
+.tab .count{display:inline-flex;min-width:16px;justify-content:center;margin-left:8px;background:var(--vermilion);color:#fff;font-size:9.5px;padding:2px 5px;letter-spacing:0}
+
+.split{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:0;align-items:start}
+.tabpanel{background:var(--card);border:1px solid var(--border);padding:48px 40px 60px}
+
+.galley{max-width:660px;margin:0 auto}
+.g-kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
+.galley h2.headline{font-family:var(--display);font-weight:600;font-size:42px;line-height:.99;margin-top:12px}
+.galley .deck{font-family:var(--display);font-style:italic;font-size:21px;line-height:1.32;color:var(--ink-soft);margin-top:14px}
+.galley .rule{height:1px;background:var(--border);margin:26px 0}
+.galley p{font-family:var(--body);font-size:16.5px;line-height:1.72;margin-top:18px}
+.galley h3{font-family:var(--display);font-weight:600;font-size:27px;line-height:1.1;margin-top:34px}
+.galley mark{background:rgba(232,71,29,.13);border-bottom:2px solid var(--vermilion);padding:0 1px}
+.galley mark.warn{background:rgba(242,176,30,.18);border-bottom-color:var(--marigold)}
+
+/* the single rail — findings for THIS story only */
+.rail{border:1px solid var(--border);border-left:none;background:var(--card-alt);position:sticky;top:56px}
+.rail .rhead{display:flex;align-items:center;gap:8px;padding:13px 15px;border-bottom:1px solid var(--border);background:var(--card)}
+.rail .rhead .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.rail .rhead .n{font-family:var(--mono);font-size:9.5px;color:var(--vermilion);margin-left:auto}
+.finding{padding:14px 15px;border-bottom:1px solid var(--border)}
+.finding:last-child{border-bottom:none}
+.finding .sev{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border:1px solid}
+.sev.mf{color:#fff;border-color:var(--vermilion);background:var(--vermilion)}
+.sev.vc{color:var(--marigold-text);border-color:var(--marigold);background:rgba(242,176,30,.12)}
+.finding .quote{font-family:var(--body);font-style:italic;font-size:12px;line-height:1.5;color:var(--ink);margin-top:8px;border-left:2px solid var(--border);padding-left:9px}
+.finding .why{font-family:var(--body);font-size:11.5px;line-height:1.5;color:var(--ink-soft);margin-top:8px}
+.finding .acts{display:flex;gap:10px;margin-top:9px}
+.finding .acts a{font-family:var(--ui);font-size:11px;font-weight:600;color:var(--cobalt);text-decoration:none}
+.railfoot{padding:12px 15px;border-top:1px solid var(--border);background:var(--card)}
+.railfoot a{font-family:var(--ui);font-size:11.5px;font-weight:600;color:var(--cobalt);text-decoration:none}
+
+/* the zero-state: rail collapses to nothing */
+.zero{margin-top:34px;border-top:1px solid var(--ink);padding-top:16px}
+.zero .zl{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.zerobox{display:grid;grid-template-columns:minmax(0,1fr) 292px;margin-top:10px}
+.zerobox .z-story{background:var(--card);border:1px solid var(--border);padding:20px 22px}
+.zerobox .z-story .t{font-family:var(--display);font-size:17px;font-weight:600}
+.zerobox .z-story .s{font-family:var(--body);font-style:italic;font-size:12px;color:var(--ink-soft);margin-top:5px}
+.zerobox .z-rail{border:1px dashed var(--border);border-left:none;display:flex;align-items:center;justify-content:center;padding:14px}
+.zerobox .z-rail span{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:center;line-height:1.6}
+
+.note{max-width:760px;margin:26px 0 0;font-family:var(--body);font-style:italic;font-size:11.5px;color:var(--faint);line-height:1.55}
+.tag{position:fixed;left:14px;bottom:12px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:var(--card);border:1px solid var(--border);padding:5px 9px}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="wordmark">Dispatch Control</span>
+  <span class="sep">/</span>
+  <span class="where">Issue 12 · Draft</span>
+  <div class="right"><span class="kbd">⌘K</span></div>
+</div>
+
+<div class="bar">
+  <a class="back" href="#">← All stories</a>
+  <span class="pos">Story 4 of 9</span>
+  <div class="step"><button>← Prev</button><button>Next →</button></div>
+  <div class="right">
+    <button class="toggle">Stories</button>
+    <button class="toggle">Stages</button>
+  </div>
+</div>
+
+<div class="stage">
+
+  <div class="story-head">
+    <div class="left">
+      <span class="kicker">Founder Bio</span>
+      <h1>The Accountant Who Wouldn&rsquo;t Retire</h1>
+      <div class="meta">842 words · <b>2 open findings</b> · last edited 11 min ago</div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost">Mark reviewed</button>
+      <button class="btn primary">Edit story</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab">Outline</div>
+    <div class="tab active">Draft <span class="count">2</span></div>
+  </div>
+
+  <div class="split">
+    <div class="tabpanel">
+      <div class="galley">
+        <div class="g-kicker">Founder Bio</div>
+        <h2 class="headline">The Accountant Who Wouldn&rsquo;t Retire</h2>
+        <p class="deck">Margaret Osei spent thirty-one years reconciling other people&rsquo;s ledgers. At sixty-two she started keeping her own.</p>
+        <div class="rule"></div>
+        <p>Margaret Osei was born in <mark>1961</mark> in Kumasi, the fourth of six children, and by her own account was the only one who enjoyed arithmetic. Her father kept the accounts for a timber concern; she learned double-entry bookkeeping at the kitchen table before she learned to ride a bicycle.</p>
+        <p>She qualified in 1986, joined a mid-tier firm in Accra, and stayed for three decades. Colleagues describe a person who was never once late and never once loud. There is no origin myth here, no moment of conversion — only a woman who noticed, slowly, that the audits she signed off were describing places she had never been.</p>
+        <h3>The ledger nobody kept</h3>
+        <p>In 2019 she took early retirement and spent four months doing what she called <mark class="warn">a truly remarkable piece of work</mark> — walking eleven districts and counting, by hand, the number of village schools with no roof.</p>
+        <p>The resulting document ran to four hundred pages. It was, in form and in temperament, an audit. She sent it to the district assembly, who thanked her, and to the ministry, who did not reply. So she began raising the money herself, and has not stopped since.</p>
+      </div>
+    </div>
+
+    <aside class="rail">
+      <div class="rhead">
+        <span class="l">Open on this story</span>
+        <span class="n">2</span>
+      </div>
+      <div class="finding">
+        <span class="sev mf">Must fix</span>
+        <div class="quote">&ldquo;was born in 1961 in Kumasi&rdquo;</div>
+        <p class="why">The source interview gives 1963. Load-bearing — the same year appears again in paragraph six.</p>
+        <div class="acts"><a href="#">Jump to it →</a><a href="#">Source</a></div>
+      </div>
+      <div class="finding">
+        <span class="sev vc">Voice</span>
+        <div class="quote">&ldquo;a truly remarkable piece of work&rdquo;</div>
+        <p class="why">Promotional register. House voice states the fact and lets it land.</p>
+        <div class="acts"><a href="#">Jump to it →</a><a href="#">Dismiss</a></div>
+      </div>
+      <div class="railfoot"><a href="#">Next story with findings →</a></div>
+    </aside>
+  </div>
+
+  <!-- the point of the variant -->
+  <div class="zero">
+    <div class="zl">And when the story is clean —</div>
+    <div class="zerobox">
+      <div class="z-story">
+        <div class="t">Case Study · 0 open findings</div>
+        <div class="s">The rail isn&rsquo;t collapsed, it isn&rsquo;t rendered. The story runs the full width of the page.</div>
+      </div>
+      <div class="z-rail"><span>No rail<br>0 px</span></div>
+    </div>
+  </div>
+
+  <p class="note">Variant B — <b>One conditional rail.</b> Keeps a single 292px rail, but it is scoped to the story you are reading and only exists when that story has open findings — so seven of nine stories render full width. The left 232px outline rail is gone entirely; story navigation moved into the bar (prev/next + &ldquo;Stories&rdquo;), which is where the operator was already clicking.</p>
+
+</div>
+
+<span class="tag">Draft · Variant B</span>
+</body>
+</html>
