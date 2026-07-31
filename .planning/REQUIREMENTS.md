@@ -903,6 +903,42 @@ Added 2026-07-14 during v4.0 roadmap creation. All 62 v4.0 requirements mapped t
 - Mapped to phases: 62
 - Unmapped: 0 ✓
 
+## v5.0 Traceability
+
+Added 2026-07-31 during v5.0 roadmap creation. All 24 v5.0 requirements mapped to Phases 51-54 (continuing numbering from v4.0, which ended at Phase 50). One requirement block maps to exactly one phase.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| READ-01 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-02 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-03 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-04 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-05 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-06 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-07 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-08 | Phase 51: Section — Read and Fix in Place | Planned |
+| HOME-01 | Phase 52: Issue — The Front Door | Planned |
+| HOME-02 | Phase 52: Issue — The Front Door | Planned |
+| HOME-03 | Phase 52: Issue — The Front Door | Planned |
+| HOME-04 | Phase 52: Issue — The Front Door | Planned |
+| HOME-05 | Phase 52: Issue — The Front Door | Planned |
+| HOME-06 | Phase 52: Issue — The Front Door | Planned |
+| HOME-07 | Phase 52: Issue — The Front Door | Planned |
+| HOME-08 | Phase 52: Issue — The Front Door | Planned |
+| HOME-09 | Phase 52: Issue — The Front Door | Planned |
+| DOOR-01 | Phase 53: Admin — The Door | Planned |
+| DOOR-02 | Phase 53: Admin — The Door | Planned |
+| DOOR-03 | Phase 53: Admin — The Door | Planned |
+| DOOR-04 | Phase 53: Admin — The Door | Planned |
+| PAST-01 | Phase 54: Archive — Past Issues | Planned |
+| PAST-02 | Phase 54: Archive — Past Issues | Planned |
+| PAST-03 | Phase 54: Archive — Past Issues | Planned |
+
+**Coverage (v5.0):**
+- v5.0 requirements: 24 total (READ:8, HOME:9, DOOR:4, PAST:3)
+- Mapped to phases: 24
+- Unmapped: 0 ✓
+
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-07-14 — added v4.0 Traceability (ISS/WSP/FCT/TSK/INS/REV/SGE/BRF/ENT/ROL/WBN → Phases 40-50)*
+*Last updated: 2026-07-31 — added v5.0 Traceability (READ/HOME/DOOR/PAST → Phases 51-54)*

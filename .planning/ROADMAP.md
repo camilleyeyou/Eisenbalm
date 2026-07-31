@@ -63,6 +63,13 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v4.0 complete (shipped 2026-07-17). Binding spec: `docs/design/dispatch-control-v3/`.**
 
+**v4.0 complete (shipped 2026-07-17). v5.0: The Editorial App (Phases 51–54)**
+
+- [ ] **Phase 51: Section — Read and Fix in Place** - `/s/[section]` full-width prose with fact/voice/unsourced-claim problems marked in the sentence and fixed inline, reusing the galley/annotations/finding-resolution system wholesale
+- [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine sections as a derived table of contents, and the three publish gates as the page footer
+- [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
+- [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
+
 ## Phase Details
 
 ### Phase 1: Sanity Foundation
@@ -468,6 +475,10 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
 | 50. Workbench & Nomenclature | 7/7 | Complete    | 2026-07-17 |
+| 51. Section — Read and Fix in Place | TBD | Not started | - |
+| 52. Issue — The Front Door | TBD | Not started | - |
+| 53. Admin — The Door | TBD | Not started | - |
+| 54. Archive — Past Issues | TBD | Not started | - |
 
 ## Backlog
 
@@ -1103,4 +1114,58 @@ Plans:
 - [x] 50-04-why-this-draft-exists-origin-ref-PLAN.md — WBN-04: contract-first prompt_versions.originRef additive field + Convex sync; "Improve this agent" carries origin; editor renders "why this draft exists" (Wave 1)
 - [x] 50-05-failed-run-recovery-rail-honest-restart-PLAN.md — WBN-03: 4-part recovery rail + Skipped dimming; honest 3-of-11 Restart matrix (writers/Gate-1/Publisher-Clerk-bridge live, 8 reserved); Improve-this-agent (Wave 2)
 - [x] 50-06-nomenclature-sweep-tripwire-green-PLAN.md — WBN-05: sweep how-to-use glossary + Prompt Lab/Eval Center + 260710-k8y conflict terms (Rehearsal/Make live/Draft vs. live); un-skip the nomenclature tripwire green; phase gate (Wave 3)
+**UI hint**: yes
+## v5.0 Phase Details — The Editorial App
+
+Derived 2026-07-31 from PROJECT.md's Current Milestone (goal, locked decisions, reconciliation facts), the Claude Design architecture/Section/Issue mockups (project `38e48d39-1983-4178-a622-b21299a6ca0c`, previews 20/21/22), and 24 v5.0 requirements (READ/HOME/DOOR/PAST). One requirement block maps to exactly one phase, across 4 phases numbered 51–54, continuing from v4.0 (which ended at Phase 50). The phase sequence is client-agreed, not purely dependency-derived: **Phase 51** (Section) ships first — deliberately — because it is where 90% of editor time goes, it is the surface that must feel right after three rejected UI passes, it re-tests the riskiest assumption (fact/voice/sourcing problems marked in the sentence, fixed without leaving the paragraph) at the lowest possible risk since it reuses the existing galley/annotation/finding-resolution system wholesale, and it must produce something the client can react to before the milestone ends, not at its end. **Phase 52** (Issue front door) follows because its table of contents composes Phase 51's per-section derived state and links directly into it, and because publish moves to the page footer — the same gate, role check, and server enforcement Phase 34/41 already built, not a fourth page. **Phase 53** (Admin door) follows because operational tooling can only be fully removed from the editor's path once the two editorial surfaces it is being removed from (51, 52) are real. **Phase 54** (Archive) is last, matching its own least-used-of-four billing in the design contract.
+
+**Reuse discipline (do not rebuild):** the galley + inline span annotations + finding resolution (Phase 32/33), the claim ledger + provenance card (Phase 35/42), the two-sign-off publish gate + role-gated actions (Phase 34/41/49), the issue-keyed routing + derived-state selectors (Phase 40/41), and the `runs.latest → pipelineRuns.byRunId → issueNumber` current-run resolution (quick 260730-ldn) are v5.0's foundation, not v5.0's work — no phase below forks or re-implements them. The backend (pipeline, the 9 agents / 20 nodes, Convex, Sanity, the content-patch API) is untouched by every phase in this milestone; zero schema changes are anticipated. The v4.0 console (today's `/run`, `/issues/[n]/*`, `/review-desk/*`, `/voice-pass/*`, and its System Workbench nav items under their current names) keeps running at its current URLs throughout — this milestone is additive; retiring those old routes is explicitly out of scope for all four phases below and belongs to a later milestone. There is no bookkeeping anywhere in this milestone: the `useReviewedSections` localStorage layer is deleted, and every section/issue state below is derived from open findings, never a manual mark.
+
+### Phase 51: Section — Read and Fix in Place
+**Goal**: An editor can read any section of the current issue as full-width prose and fix a factual, voice, or unsourced-claim problem without leaving the paragraph — the riskiest assumption in the redesign, tested first, reusing the galley/annotation/finding-resolution system wholesale.
+**Depends on**: Phase 50 (v4.0 substrate this composes into a new reading surface: the native galley + span-resolver [Phase 32], accept-fix wiring [Phase 33], claim/finding data [Phase 35/42], role-gated apply [Phase 49] — nothing new within v5.0; first phase of the milestone)
+**Requirements**: READ-01, READ-02, READ-03, READ-04, READ-05, READ-06, READ-07, READ-08
+**Success Criteria** (what must be TRUE):
+  1. Editor opens `/s/[section]` and reads the section as full-width prose (~760px reading measure, Lora body type, no side rails, no form fields) — a page to read, not a workspace to navigate.
+  2. Editor sees every fact, voice, and unsourced-claim problem marked directly inside the sentence it affects, each distinguishable by a text label as well as by colour (never colour alone).
+  3. Editor can open a marked problem in place and read the agent's reasoning and its evidence without leaving the paragraph.
+  4. Editor can accept a suggested correction in one action — including every place the same correction recurs in the section — edit the passage themselves instead, or dismiss a finding that isn't a problem with the reason the existing annotation system already requires.
+  5. Editor can move to the previous or next section without returning to the issue, and sees how many sections still need them, computed from open findings and never from a manual mark.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 52: Issue — The Front Door
+**Goal**: An editor lands on the current issue's real title and subject, sees the nine sections as a table of contents with derived state, and can publish from the page footer through the unchanged gate.
+**Depends on**: Phase 51 (the Section surface the table of contents links into and whose per-section derived state it reads); the existing `runs.latest → pipelineRuns.byRunId → issueNumber` resolution and the two-sign-off publish gate (Phase 34/41) this phase composes at `/`, never re-implements
+**Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, HOME-06, HOME-07, HOME-08, HOME-09
+**Success Criteria** (what must be TRUE):
+  1. Editor lands on `/` and sees the current issue's real title and subject — never an invented, empty, or reserved-slot issue — resolved the locked way (`runs.latest → pipelineRuns.byRunId → issueNumber`, never `max(issueNumber)`).
+  2. Editor sees all nine sections as a table of contents, each showing its actual produced headline and a state derived from its open findings — nothing to tick, nothing to maintain.
+  3. Editor sees one plain-language sentence describing what needs doing and can go straight from it into the first thing that needs them.
+  4. Editor sees the three publish gates as the page footer, each naming what's blocking it and linking to the work that unblocks it, and can publish once both sign-offs are recorded and no must-fix findings remain — through the existing gate, role check, and server enforcement, never a parallel path.
+  5. Editor sees an honest state when nothing is running, when a run is running, and when a run failed (a failed run offers no sign-off action it can't honour), and is never shown "clean" or "nothing needs you" while findings, claims, or sign-offs are still loading.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 53: Admin — The Door
+**Goal**: Every operational surface is reachable from one admin entrance with its capability unchanged, and never appears in the editor's reading-and-fixing path — while the v4.0 console remains reachable as the publish fallback.
+**Depends on**: Phase 52 (the front-door corner link this door is reached from); the existing Run Details [Phase 50], Agent Instructions [Phase 24/28/50], Quality Tests [Phase 38/50], Editorial Memory [Phase 39/50], Signal Desk [Phase 37], Finance [Phase 27], Config [Phase 22], and Settings screens this phase relocates behind one entrance without modifying them
+**Requirements**: DOOR-01, DOOR-02, DOOR-03, DOOR-04
+**Success Criteria** (what must be TRUE):
+  1. Operator reaches every operational surface (Run Details, Agent Instructions, Quality Tests, Editorial Memory, Signal Desk, Finance, Config, Settings) from one `/admin` entrance.
+  2. Every relocated operational page performs exactly as it did before the move — no capability lost, dropped, or degraded by the relocation.
+  3. Editor reading or fixing an issue at `/` or `/s/[section]` never encounters operational nav or tooling.
+  4. Operator can still reach and publish through the existing v4.0 console at its current URL — there is no week this milestone leaves without a way to publish.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 54: Archive — Past Issues
+**Goal**: An editor recognizes and finds a past issue by its title and subject rather than its number, and can tell published, held, and scheduled issues apart at a glance — the least-used of the four surfaces, built last.
+**Depends on**: Phase 52 (the issue-title/derived-state resolution this reuses for archive rows); Phase 53 (completes the four-surface set before the milestone closes)
+**Requirements**: PAST-01, PAST-02, PAST-03
+**Success Criteria** (what must be TRUE):
+  1. Editor sees past issues listed by their real title, not by issue number.
+  2. Editor can search past issues by subject and find the one they mean without knowing its number or date.
+  3. Editor can tell published, held, and scheduled issues apart at a glance, each carrying a distinct label (never colour alone).
+**Plans**: TBD
 **UI hint**: yes
