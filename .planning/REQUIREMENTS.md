@@ -425,6 +425,44 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **WBN-05**: Product vocabulary follows the nomenclature table throughout — deterministic check (not gate), step / Restart from this step (not node / re-run from node), Make active / Restore version (not commit / rollback), Quality test / Standard test case (not eval / golden scenario), Preview next run (not shadow run), Do not use (not blocklisted), Must fix (not blocking), Human approval required (not Auto-publish OFF).
 - [x] **WBN-06**: Typed confirmation is reserved for Mark Do-not-use (organization name + required reason); the automation toggle leaves the operator surface for Administration.
 
+## Milestone v5.0 Requirements — The Editorial App
+
+**Goal:** Rebuild the dispatch-control frontend around one editor's job. 31 routes → 4, 10 nav items → 0. Backend untouched; the galley, annotations, finding resolution, claim ledger, sign-off gates, role permissions and publish enforcement are reused, not rebuilt.
+
+**Design contract:** Claude Design project `38e48d39-1983-4178-a622-b21299a6ca0c` — previews 20 (architecture + 31-route disposition), 21 (Section), 22 (Issue).
+
+### Section — read and fix in place (READ)
+- [ ] **READ-01**: Editor reads a section as full-width prose with no side rails and a reading measure, not a form.
+- [ ] **READ-02**: Editor sees factual, voice and unsourced-claim problems marked **in the sentence they affect**, distinguishable by label as well as colour.
+- [ ] **READ-03**: Editor can open a marked problem and see the agent's reasoning and its evidence without leaving the paragraph.
+- [ ] **READ-04**: Editor can accept the agent's suggested correction in one action, including when the same correction applies in more than one place.
+- [ ] **READ-05**: Editor can edit the passage themselves instead of accepting the suggestion.
+- [ ] **READ-06**: Editor can dismiss a finding that is not a problem, with the reason the existing annotation system already requires.
+- [ ] **READ-07**: Editor can move to the previous or next section without returning to the issue.
+- [ ] **READ-08**: Editor sees how many sections still need them, derived from open findings and never from a manual mark.
+
+### Issue — the front door (HOME)
+- [ ] **HOME-01**: Editor lands on the current issue's real title and subject, and never on an invented, empty or reserved issue.
+- [ ] **HOME-02**: Editor sees all nine sections as a table of contents showing each section's actual produced headline.
+- [ ] **HOME-03**: Editor sees each section's state derived from its open findings, with nothing to tick and nothing to maintain.
+- [ ] **HOME-04**: Editor sees one plain-language statement of what needs doing.
+- [ ] **HOME-05**: Editor can go straight from the front door into the first thing that needs them.
+- [ ] **HOME-06**: Editor sees the three publish gates as the page footer, each naming what is blocking it and linking to the work that unblocks it.
+- [ ] **HOME-07**: Editor can publish from the footer when both sign-offs are recorded and no must-fix findings remain — through the existing gate, role check and server enforcement, never a parallel path.
+- [ ] **HOME-08**: Editor sees an honest state when nothing is running, when a run is still running, and when a run failed — including a failed run offering no sign-off actions it cannot honour.
+- [ ] **HOME-09**: Editor is never shown "clean" or "nothing needs you" while findings, claims or sign-offs are still loading.
+
+### Admin — the door (DOOR)
+- [ ] **DOOR-01**: Operator reaches every operational surface (Run Details, Agent Instructions, Quality Tests, Editorial Memory, Signal Desk, Finance, Config, Settings) from one admin entrance.
+- [ ] **DOOR-02**: Every relocated operational page keeps its current capability unchanged.
+- [ ] **DOOR-03**: Editor never encounters operational tooling while reading or fixing an issue.
+- [ ] **DOOR-04**: Operator can still reach the v4.0 console until the new app is proven — no week without a way to publish.
+
+### Archive — past issues (PAST)
+- [ ] **PAST-01**: Editor recognises a past issue by its title, not its number.
+- [ ] **PAST-02**: Editor can search past issues by subject.
+- [ ] **PAST-03**: Editor can tell published, held and scheduled issues apart at a glance.
+
 ## Future Requirements (deferred beyond v2.0)
 
 Tracked but not in the current roadmap.
