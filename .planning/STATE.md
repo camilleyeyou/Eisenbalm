@@ -1,30 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Dispatch Control v3 — The Editorial Workspace
-status: Milestone complete
-stopped_at: Completed quick 260730-ldn (The Run — issue titles + nav consolidation; /desk retired)
-last_updated: "2026-07-30T23:56:33.000Z"
+milestone: v5.0
+milestone_name: The Editorial App
+status: Defining requirements
+stopped_at: Milestone v5.0 started — PROJECT.md updated, defining requirements
+last_updated: "2026-07-31T00:00:00.000Z"
 progress:
-  total_phases: 11
-  completed_phases: 11
-  total_plans: 92
-  completed_plans: 92
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-14)
+See: .planning/PROJECT.md (updated 2026-07-31)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** v4.0 (Dispatch Control v3 — The Editorial Workspace) shipped 2026-07-17 — planning next milestone (run `/gsd:new-milestone`)
+**Current focus:** v5.0 (The Editorial App) — rebuilding the dispatch-control frontend around one editor's job. 31 routes → 4, 10 nav items → 0. Backend untouched.
 
 ## Current Position
 
-Phase: 50 (complete — final phase of milestone v4.0, shipped 2026-07-17)
-Plan: All v4.0 plans complete — next: /gsd:new-milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-31 — Milestone v5.0 started
 
 ## Performance Metrics
 
