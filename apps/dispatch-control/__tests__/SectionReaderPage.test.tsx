@@ -19,6 +19,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { useQuery } from 'convex/react'
 import { ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import type { DerivationInputs } from '@/lib/derivedState'
 import { InspectorProvider } from '@/components/inspector/InspectorProvider'
@@ -192,6 +193,26 @@ beforeEach(() => {
   hoisted.acceptFinding.mockReset()
   hoisted.dismissFinding.mockReset()
   hoisted.routerPush.mockReset()
+
+  // Plan 51-05 (Rule 3 fix — flagged by 51-04's own SUMMARY): `Galley`'s
+  // internal `useQuery(api.qaCorrections.byRunId)` / `useQuery(api.
+  // claimChecks.listByRunId)` subscriptions are separate from the mocked
+  // `useCurrentRun()` above, so they resolved to `undefined` -> `[]` in
+  // every spec in this file until wired here — `openFirstFinding()` could
+  // never find a mark to click regardless of what the page did. Reads the
+  // SAME `mockCurrentRun.derivationInputs` fixture each test already
+  // configures, mirroring Galley.test.tsx's own `mockImplementation`
+  // pattern (queryRef string comparison against the `@convex/_generated/api`
+  // mock's literal values).
+  ;(useQuery as ReturnType<typeof vi.fn>).mockReset().mockImplementation((queryRef: unknown) => {
+    if (queryRef === 'qaCorrections:byRunId') {
+      return (mockCurrentRun.derivationInputs as DerivationInputs).qaFindings
+    }
+    if (queryRef === 'claimChecks:listByRunId') {
+      return (mockCurrentRun.derivationInputs as DerivationInputs).claimRows
+    }
+    return undefined
+  })
 })
 
 afterEach(() => {
@@ -419,7 +440,7 @@ d('in-place edit', () => {
       ...defaultCurrentRun(),
       derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(1) },
     }
-    await renderSection('originStory')
+    const { container } = await renderSection('originStory')
     await openFirstFinding()
     fireEvent.click(screen.getByRole('button', { name: 'Edit myself' }))
 
@@ -429,7 +450,18 @@ d('in-place edit', () => {
 
     expect(hoisted.patchSection).not.toHaveBeenCalled()
     expect(hoisted.patchBonus).not.toHaveBeenCalled()
-    expect(screen.getByText('The founder started in a garage in 1974.')).toBeDefined()
+    // The flagged span renders inside a real `<mark>` PLUS a D-07 axis tag
+    // ("Fact") immediately after it — the sentence is legitimately split
+    // across several DOM nodes (RTL's `getNodeText` only joins an element's
+    // OWN direct text-node children, never nested elements' text; see
+    // 51-04-SUMMARY.md's identical finding for the header arrow), so no
+    // single exact-string match of the full original sentence is possible
+    // here. Assert the meaningful thing instead: the edited value was
+    // discarded (never left in the document), and the untouched portions of
+    // the original sentence — both outside the marked span — are still there.
+    expect(container.textContent).not.toContain('A completely different sentence.')
+    expect(container.textContent).toContain('The founder started')
+    expect(container.textContent).toContain('in 1974.')
   })
 })
 

@@ -36,7 +36,15 @@ import { useCurrentRun } from '@/lib/useCurrentRun'
 import { useInspector } from '@/components/inspector/InspectorProvider'
 import { EDITABLE_SECTIONS } from '@/lib/editableSections'
 import { deriveSectionStates, draftSectionIdsFromDraft } from '@/lib/derivedState'
-import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
+import {
+  getDraft,
+  ContentPatchError,
+  type ContentBlock,
+  type DraftResponse,
+} from '@/lib/contentPatchClient'
+import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
+import { isOpenFinding } from '@/lib/galley/findingState'
+import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import Galley from '@/components/galley/Galley'
 import { RevisionFlow } from '@/components/revision/RevisionFlow'
 import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
@@ -45,6 +53,7 @@ import { SkeletonLine } from '@/components/ui/Skeleton'
 import SectionHeader from './_components/SectionHeader'
 import SectionEndNav from './_components/SectionEndNav'
 import ExemptSectionNote, { type ExemptSectionKind } from './_components/ExemptSectionNote'
+import InPlaceBlockEditor from './_components/InPlaceBlockEditor'
 
 interface SectionParams {
   section: string
@@ -74,6 +83,35 @@ interface ClaimCheckRow {
   blockIndexHint?: number
   importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
   context?: string
+}
+
+/** Minimal shape needed from a live `qaCorrections` row (mirrors Galley.tsx's
+ * own internal `QaCorrectionRow` — same duplication convention as
+ * `ClaimCheckRow` above). `derivationInputs.qaFindings`'s own declared type
+ * (`lib/derivedState.ts`) is a narrower view that omits `quotedSpan`/
+ * `blockIndexHint`; the live Convex rows carry them, so this widens the read
+ * for the one call site (Task 1's block-index resolution, Task 3's
+ * grouping) that needs them. */
+interface QaCorrectionRow {
+  _id: string
+  sectionName: string
+  severity: 'info' | 'warning' | 'error'
+  axis?: string
+  reason: string
+  suggestedFix?: string
+  quotedSpan?: string
+  blockIndexHint?: number
+  accepted?: boolean
+  resolution?: 'accepted' | 'dismissed' | null
+}
+
+/** Phase 51 (READ-05) — the one in-place editor open at a time on this page. */
+interface EditingTarget {
+  sectionId: string
+  findingId?: string
+  blockIndex: number
+  /** True when `blockIndex` is a fallback default, not a resolved target. */
+  isFallback: boolean
 }
 
 function isThenable<T>(value: unknown): value is Promise<T> {
@@ -166,6 +204,10 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [revisePassage, setRevisePassage] = useState<RevisionPassageFromSelection | null>(null)
   const [relatedFacts, setRelatedFacts] = useState<PassageSelection | null>(null)
+  // Phase 51 (READ-05) — the in-place block editor's open target, if any.
+  const [editingTarget, setEditingTarget] = useState<EditingTarget | null>(null)
+  // Phase 51 (READ-04, D-13) — the group-accept partial-failure sentence.
+  const [groupNote, setGroupNote] = useState<string | null>(null)
 
   const reloadDraft = useCallback(async () => {
     if (!runId) return
@@ -266,11 +308,69 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
   const showCleanLine = isAnnotated && thisSectionState?.state === 'clean'
   const exemptKind = exemptKindFor(sectionId, draft.bonusType)
 
-  // TODO(51-05): replace this no-op stub with the real in-place editor
-  // (a textarea with Save edit / Cancel edit). This plan only needs
-  // Galley's required onEditSection prop satisfied.
-  function openInPlaceEditor(_sectionId: string, _findingId?: string) {
-    // no-op — plan 51-05 wires the real in-place editor here.
+  // Phase 51 (READ-05, D-18) — the section's current blocks, for the
+  // in-place editor's Save-edit payload. `bonus` is not one of `draft.
+  // sections`'s four keys — its blocks live at the top-level `draft.bonus.
+  // body` instead (Pitfall 5), so this is the one place that bridges both
+  // shapes into a single `ContentBlock[]` read.
+  function blocksForSection(id: string): ContentBlock[] {
+    if (id === 'bonus') {
+      return Array.isArray(draft.bonus?.body) ? (draft.bonus.body as ContentBlock[]) : []
+    }
+    return draft.sections[id]?.blocks ?? []
+  }
+
+  // The open QA findings for ONE section, mapped from the QA sectionName
+  // vocabulary to the galley id and filtered through the ONE shared
+  // isOpenFinding predicate (Pitfall 9) — never re-derived inline anywhere
+  // else on this page. `derivationInputs.qaFindings`'s declared type omits
+  // quotedSpan/blockIndexHint (lib/derivedState.ts's narrower view); the
+  // live rows carry them, hence the QaCorrectionRow widen-cast.
+  function qaFindingsForSection(id: string): QaFinding[] {
+    const rawFindings = (derivationInputs.qaFindings ?? []) as unknown as QaCorrectionRow[]
+    return rawFindings
+      .filter((row) => isOpenFinding(row) && qaSectionToGalleyId(row.sectionName) === id)
+      .map((row) => ({
+        _id: row._id,
+        severity: row.severity,
+        axis: row.axis,
+        reason: row.reason,
+        suggestedFix: row.suggestedFix,
+        quotedSpan: row.quotedSpan,
+        blockIndexHint: row.blockIndexHint,
+        accepted: row.accepted,
+        resolution: row.resolution,
+      }))
+  }
+
+  /** Which block a finding's flagged span resolves to — the SAME resolver
+   * Galley itself uses internally (`lib/galley/spanResolver.ts`), never a
+   * second one. `null` when the finding never resolved onto this section's
+   * blocks (an orphaned anchor, or the finding isn't in this section at
+   * all). */
+  function resolveBlockIndex(id: string, findingId: string): number | null {
+    const { resolved } = resolveSectionFindings(blocksForSection(id), qaFindingsForSection(id), id)
+    const match = resolved.find((r) => r.findingId === findingId)
+    return match ? match.blockIndex : null
+  }
+
+  // Phase 51 (READ-05, D-18/D-19) — the in-place block editor entry point,
+  // replacing plan 51-04's no-op stub. Opens on the flagged block's exact
+  // blockIndex when a finding resolved one; falls back to the first block
+  // (plainly noted, never a silent guess) when no findingId reaches this
+  // call — the PassageToolbar "Edit text" path, whose selection carries a
+  // blockIndex that Galley's existing `onEditText={(sel) =>
+  // onEditSection(sel.sectionId)}` wiring does not forward — or when the
+  // finding's span never resolved (an UnresolvedFindingCard's own "Edit
+  // inline" action).
+  function openInPlaceEditor(targetSectionId: string, findingId?: string) {
+    const resolvedIndex = findingId ? resolveBlockIndex(targetSectionId, findingId) : null
+    setEditingTarget({
+      sectionId: targetSectionId,
+      findingId,
+      blockIndex: resolvedIndex ?? 0,
+      isFallback: resolvedIndex === null,
+    })
   }
 
   return (
@@ -295,6 +395,19 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
           onInspect={(id) => openInspector({ type: 'founder', runId, locator: id })}
           onRevise={setRevisePassage}
           onRelatedFacts={setRelatedFacts}
+        />
+      )}
+
+      {editingTarget && editingTarget.sectionId === sectionId && (
+        <InPlaceBlockEditor
+          runId={runId}
+          sectionId={editingTarget.sectionId}
+          blocks={blocksForSection(editingTarget.sectionId)}
+          blockIndex={editingTarget.blockIndex}
+          revisionId={draft.revisionId}
+          reloadDraft={reloadDraft}
+          onClose={() => setEditingTarget(null)}
+          isFallbackBlock={editingTarget.isFallback}
         />
       )}
 
