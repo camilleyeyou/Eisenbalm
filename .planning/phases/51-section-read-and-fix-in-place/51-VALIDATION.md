@@ -1,9 +1,9 @@
 ---
 phase: 51
 slug: section-read-and-fix-in-place
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: automated-gates-passed / human-demo-path-pending
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-31
 ---
 
@@ -42,29 +42,30 @@ created: 2026-07-31
 
 | Req | Behavior | Test Type | Automated Command | File Exists | Status |
 |-----|----------|-----------|-------------------|-------------|--------|
-| READ-01 | `/s/[section]` renders one section as prose — no rails, tabs, or form fields | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "renders"` | ❌ W0 | ⬜ pending |
-| READ-02 | Fact/Voice/Source text tag renders adjacent to every marked span, readable without opening the popover | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/AnnotationMark.test.tsx` | ✅ extend | ⬜ pending |
-| READ-03 | Popover shows agent reasoning + `ClaimProvenanceCard` evidence as valid phrasing content | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/ClaimProvenanceCard.test.tsx __tests__/ClaimMark.test.tsx` | ✅ extend | ⬜ pending |
-| READ-04 | Group-accept applies to all sibling findings sharing axis+fix; partial-failure copy | component (jsdom) / pure-fn | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "group accept"` | ❌ W0 | ⬜ pending |
-| READ-05 | In-place edit Save/Cancel patches the block (incl. `patchBonus` branch for specAd); 409 recovery copy | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "in-place edit"` | ❌ W0 | ⬜ pending |
-| READ-06 | Dismiss requires a reason — existing annotation flow reused verbatim | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/AnnotationMark.test.tsx -t "dismiss"` | ✅ existing | ⬜ pending |
-| READ-07 | Prev/next section nav; first/last omit the missing side | pure-fn + component | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "nav"` | ❌ W0 | ⬜ pending |
-| READ-08 | "N of 9 sections still need you" derived from `deriveSectionStates`, never from `useReviewedSections` | pure-fn unit | `pnpm --filter dispatch-control vitest run __tests__/derivedState.test.ts` | ✅ extend | ⬜ pending |
-| Pitfall 2 | Voice Pass on-demand rewrite survives D-08's neutral labels (label-independent `generateFixOnAccept`) | component regression | `pnpm --filter dispatch-control vitest run __tests__/AnnotationMark.test.tsx -t "rewrite"` | ❌ W0 case | ⬜ pending |
-| Pitfall 3 | `useInspector()` does not throw on `/s/[section]` (provider mounted in the new route group) | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "inspect"` | ❌ W0 | ⬜ pending |
-| D-17 | `EDITABLE_SECTIONS` promoted + re-exported; Review Desk importers unaffected | existing regression | `pnpm --filter dispatch-control vitest run __tests__/SectionChipList.test.tsx __tests__/derivedState.test.ts __tests__/runSections.test.ts __tests__/WorkspaceOutline.test.tsx` | ✅ gate | ⬜ pending |
-| D-25 | `useReviewedSections` deleted; `StoryDeskGrid`/`StoryFocusView` compile and render on derived state | **strict build** | `pnpm --filter dispatch-control build` | N/A | ⬜ pending |
+| READ-01 | `/s/[section]` renders one section as prose — no rails, tabs, or form fields | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "renders"` | ✅ | ✅ green (8 passed) |
+| READ-02 | Fact/Voice/Source text tag renders adjacent to every marked span, readable without opening the popover | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/AnnotationMark.test.tsx` | ✅ extend | ✅ green (25 passed) |
+| READ-03 | Popover shows agent reasoning + `ClaimProvenanceCard` evidence as valid phrasing content | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/ClaimProvenanceCard.test.tsx __tests__/ClaimMark.test.tsx` | ✅ extend | ✅ green (43 passed) |
+| READ-04 | Group-accept applies to all sibling findings sharing axis+fix; partial-failure copy | component (jsdom) / pure-fn | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "group accept"` | ✅ | ✅ green (4 passed) |
+| READ-05 | In-place edit Save/Cancel patches the block (incl. `patchBonus` branch for specAd); 409 recovery copy | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "in-place edit"` | ✅ | ✅ green (5 passed) |
+| READ-06 | Dismiss requires a reason — existing annotation flow reused verbatim | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/AnnotationMark.test.tsx -t "dismiss"` | ✅ existing | ✅ green (1 passed) |
+| READ-07 | Prev/next section nav; first/last omit the missing side | pure-fn + component | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "nav"` | ✅ | ✅ green (4 passed) |
+| READ-08 | "N of 9 sections still need you" derived from `deriveSectionStates`, never from `useReviewedSections` | pure-fn unit | `pnpm --filter dispatch-control vitest run __tests__/derivedState.test.ts` | ✅ extend | ✅ green (79 passed) |
+| Pitfall 2 | Voice Pass on-demand rewrite survives D-08's neutral labels (label-independent `generateFixOnAccept`) | component regression | `pnpm --filter dispatch-control vitest run __tests__/AnnotationMark.test.tsx -t "rewrite"` | ✅ W0 case | ✅ green (3 passed) |
+| Pitfall 3 | `useInspector()` does not throw on `/s/[section]` (provider mounted in the new route group) | component (jsdom) | `pnpm --filter dispatch-control vitest run __tests__/SectionReaderPage.test.tsx -t "inspect"` | ✅ | ✅ green (1 passed) |
+| D-17 | `EDITABLE_SECTIONS` promoted + re-exported; Review Desk importers unaffected | existing regression | `pnpm --filter dispatch-control vitest run __tests__/SectionChipList.test.tsx __tests__/derivedState.test.ts __tests__/runSections.test.ts __tests__/WorkspaceOutline.test.tsx` | ✅ gate | ✅ green (110 passed) |
+| D-25 | `useReviewedSections` deleted; `StoryDeskGrid`/`StoryFocusView` compile and render on derived state | **strict build** | `pnpm --filter dispatch-control build` | N/A | ✅ green (exit 0) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*All rows independently re-run and confirmed by 51-06 (integration gate), 2026-08-01 — see 51-06-SUMMARY.md for the full command transcript. Full suite: 148 files / 1245 tests passed, 0 failed. `pnpm --filter dispatch-control build` exit 0.*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `__tests__/SectionReaderPage.test.tsx` — new file covering READ-01, READ-04, READ-05, READ-07, Pitfall 3. Copy the mock scaffold **verbatim** from `__tests__/Galley.test.tsx` (`vi.mock('convex/react')`, `vi.mock('@clerk/nextjs')`, `vi.mock('@convex/_generated/api')`) plus its draft fixture; add mocks for `useCurrentRun`, `getDraft`/`patchSection`/`patchBonus`, `acceptFinding`.
-- [ ] Extend `__tests__/AnnotationMark.test.tsx` — Fact/Voice/Source tag cases (READ-02) and a `generateFixOnAccept` regression case (Pitfall 2: a test that does not exist today and would not fail today, but must exist to prove the fix is safe).
-- [ ] Extend `__tests__/ClaimMark.test.tsx` / `__tests__/ClaimProvenanceCard.test.tsx` — phrasing-safe-mode structural assertion (Pitfall 1). jsdom will NOT flag invalid nesting; use an explicit structural proxy, e.g. `expect(container.querySelector('.galley-popover div')).toBeNull()`.
-- [ ] No framework install needed — Vitest + Testing Library + jsdom already configured and exercised by six existing galley test files.
+- [x] `__tests__/SectionReaderPage.test.tsx` — new file covering READ-01, READ-04, READ-05, READ-07, Pitfall 3. Copy the mock scaffold **verbatim** from `__tests__/Galley.test.tsx` (`vi.mock('convex/react')`, `vi.mock('@clerk/nextjs')`, `vi.mock('@convex/_generated/api')`) plus its draft fixture; add mocks for `useCurrentRun`, `getDraft`/`patchSection`/`patchBonus`, `acceptFinding`. — the `existsSync` guard now resolves live (18/18 tests, 0 skipped); confirmed by 51-06.
+- [x] Extend `__tests__/AnnotationMark.test.tsx` — Fact/Voice/Source tag cases (READ-02) and a `generateFixOnAccept` regression case (Pitfall 2: a test that does not exist today and would not fail today, but must exist to prove the fix is safe). — 25/25 green, confirmed by 51-06.
+- [x] Extend `__tests__/ClaimMark.test.tsx` / `__tests__/ClaimProvenanceCard.test.tsx` — phrasing-safe-mode structural assertion (Pitfall 1). jsdom will NOT flag invalid nesting; use an explicit structural proxy, e.g. `expect(container.querySelector('.galley-popover div')).toBeNull()`. — 9/9 + 34/34 green, confirmed by 51-06.
+- [x] No framework install needed — Vitest + Testing Library + jsdom already configured and exercised by six existing galley test files. — confirmed: `git diff --name-only origin/master -- apps/dispatch-control/package.json pnpm-lock.yaml package-lock.json` empty.
 
 ---
 
@@ -80,12 +81,12 @@ created: 2026-07-31
 
 ## Validation Sign-Off
 
-- [ ] All tasks have an `<automated>` verify or a Wave 0 dependency
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all ❌ MISSING references above
-- [ ] No watch-mode flags in any command
-- [ ] Feedback latency < 90s
-- [ ] `pnpm --filter dispatch-control build` green (mandatory — catches the D-25/Pitfall 4 class)
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have an `<automated>` verify or a Wave 0 dependency
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all ❌ MISSING references above
+- [x] No watch-mode flags in any command
+- [x] Feedback latency < 90s (full suite 48.95s, build ~2min)
+- [x] `pnpm --filter dispatch-control build` green (mandatory — catches the D-25/Pitfall 4 class) — exit 0, confirmed by 51-06
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** automated gates passed 2026-08-01 (51-06 integration gate). Human demo-path checkpoint (Task 2 of 51-06-PLAN.md) still pending — see 51-06-SUMMARY.md.
