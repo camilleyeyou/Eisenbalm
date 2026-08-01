@@ -439,7 +439,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **READ-05**: Editor can edit the passage themselves instead of accepting the suggestion.
 - [ ] **READ-06**: Editor can dismiss a finding that is not a problem, with the reason the existing annotation system already requires.
 - [ ] **READ-07**: Editor can move to the previous or next section without returning to the issue.
-- [ ] **READ-08**: Editor sees how many sections still need them, derived from open findings and never from a manual mark.
+- [x] **READ-08**: Editor sees how many sections still need them, derived from open findings and never from a manual mark.
 
 ### Issue — the front door (HOME)
 - [ ] **HOME-01**: Editor lands on the current issue's real title and subject, and never on an invented, empty or reserved issue.
