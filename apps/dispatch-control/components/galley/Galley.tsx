@@ -183,6 +183,25 @@ interface GalleyProps {
    * of forking the annotation/claim rendering.
    */
   sections?: ReadonlyArray<string>
+  /**
+   * Phase 51 (D-08, Pitfall 2) — forwarded unmodified to every GallerySection.
+   * Set true on /s/[section] so a rule-only voice tell stays acceptable under
+   * D-08's neutral labels. Undefined leaves today's render unaffected.
+   */
+  generateFixOnAccept?: boolean
+  /**
+   * Phase 51 (D-07) — Fact/Voice/Source text tags adjacent to every marked
+   * span. Undefined (Review Desk / Voice Pass) leaves today's render unaffected.
+   */
+  showAxisTag?: boolean
+  /**
+   * Phase 51 (D-09) — when false, sourced/checked claims are NOT resolved at
+   * all, so they render as genuinely plain prose: no <mark> element, nothing in
+   * the accessibility tree. A CSS-only override would leave the mark in the DOM
+   * and would not satisfy "render as plain prose." Default true = today's
+   * behaviour, bit-for-bit, for Review Desk and Voice Pass (D-24).
+   */
+  markSourcedClaims?: boolean
 }
 
 // D-05 reader order for the four long-read sections.
@@ -221,6 +240,9 @@ export default function Galley({
   labels,
   onUnsourcedClaimClick,
   sections,
+  generateFixOnAccept,
+  showAxisTag,
+  markSourcedClaims = true,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -337,11 +359,32 @@ export default function Galley({
     })
   }
 
+  // Phase 51 (D-09) — `provenance` is already derived inside resolveClaimsFor
+  // as `row.claimId ? 'sourced' : 'unsourced'`, so filtering the RESOLVED
+  // output on that field is the same predicate, and resolution is per-row
+  // independent (resolveSectionFindings resolves each row against the block
+  // text on its own), so the resulting set is identical to filtering the
+  // input.
+  //
+  // TWO ARRAYS, ON PURPOSE. `markSourcedClaims` answers a RENDER question
+  // ("does this claim get its own <mark> wash?"). It must NOT be allowed to
+  // also answer the unrelated LOOKUP question plan 51-07 asks ("does this
+  // finding overlap any tracked claim?") — if it did, a finding sitting on a
+  // SOURCED claim could never find its evidence, which is the exact case
+  // where source + retrieved date exist (convex/schema.ts:481-483 —
+  // claimId/sourceUrl/retrievedAt are additive TOGETHER; absent => unsourced,
+  // so an unsourced claim has no source and no date by construction). Keep
+  // the unfiltered array; 51-07 consumes it.
+  const claimsForRender = (all: ResolvedClaim[]) =>
+    markSourcedClaims ? all : all.filter((c) => c.provenance === 'unsourced')
+
   const bonusRows: Array<{ type: string; text: string }> = Array.isArray(draft.bonus?.body)
     ? draft.bonus.body
     : []
   const bonusResolution = draft.bonusType === 'specAd' ? resolveFor('bonus', bonusRows) : null
-  const bonusClaimResolved = draft.bonusType === 'specAd' ? resolveClaimsFor('bonus', bonusRows) : []
+  // unfiltered — 51-07's lookup input
+  const claimResolvedAll: ResolvedClaim[] =
+    draft.bonusType === 'specAd' ? resolveClaimsFor('bonus', bonusRows) : []
 
   return (
     <div ref={containerRef} className="galley-root">
@@ -371,7 +414,7 @@ export default function Galley({
           )
         }
         const { resolved, unresolved } = resolveFor(id, rows)
-        const claimResolved = resolveClaimsFor(id, rows)
+        const claimResolvedAll = resolveClaimsFor(id, rows) // unfiltered — 51-07's lookup input
         return (
           <GallerySection
             key={id}
@@ -380,7 +423,7 @@ export default function Galley({
             rows={rows}
             resolved={resolved}
             unresolved={unresolved}
-            claimResolved={claimResolved}
+            claimResolved={claimsForRender(claimResolvedAll)} // render path only
             showProvenance={showProvenance}
             runId={runId}
             revisionId={revisionId}
@@ -389,6 +432,8 @@ export default function Galley({
             onInspect={onInspect}
             labels={labels}
             onUnsourcedClaimClick={onUnsourcedClaimClick}
+            generateFixOnAccept={generateFixOnAccept}
+            showAxisTag={showAxisTag}
           />
         )
       })}
@@ -409,7 +454,7 @@ export default function Galley({
           rows={bonusRows}
           resolved={bonusResolution.resolved}
           unresolved={bonusResolution.unresolved}
-          claimResolved={bonusClaimResolved}
+          claimResolved={claimsForRender(claimResolvedAll)}
           showProvenance={showProvenance}
           runId={runId}
           revisionId={revisionId}
@@ -418,6 +463,8 @@ export default function Galley({
           onInspect={onInspect}
           labels={labels}
           onUnsourcedClaimClick={onUnsourcedClaimClick}
+          generateFixOnAccept={generateFixOnAccept}
+          showAxisTag={showAxisTag}
         />
       )}
 

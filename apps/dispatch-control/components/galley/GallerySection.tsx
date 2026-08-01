@@ -94,6 +94,10 @@ interface GallerySectionProps {
   // claim, forwarded unmodified into every ClaimMark this section mounts.
   // Undefined leaves today's toggle-popover-only behavior intact.
   onUnsourcedClaimClick?: (claimIndex: number) => void
+  // Phase 51 (D-08, Pitfall 2) — forwarded unmodified into every AnnotationMark.
+  generateFixOnAccept?: boolean
+  // Phase 51 (D-07) — forwarded into every AnnotationMark AND ClaimMark.
+  showAxisTag?: boolean
 }
 
 export default function GallerySection({
@@ -112,6 +116,8 @@ export default function GallerySection({
   showProvenance = true,
   labels,
   onUnsourcedClaimClick,
+  generateFixOnAccept,
+  showAxisTag,
 }: GallerySectionProps) {
   // toSyntheticBlocks groups `resolved`/`claimResolved` by blockIndex
   // internally (it filters the flat lists per-row), so the flat arrays are
@@ -164,6 +170,8 @@ export default function GallerySection({
             onEditSection={onEditSection}
             onInspect={onInspect}
             labels={labels}
+            generateFixOnAccept={generateFixOnAccept}
+            showAxisTag={showAxisTag}
           >
             {children}
           </AnnotationMark>
@@ -173,6 +181,7 @@ export default function GallerySection({
             value={value as ClaimSpanMarkDef}
             runId={runId}
             onUnsourcedClaimClick={onUnsourcedClaimClick}
+            showAxisTag={showAxisTag}
           >
             {children}
           </ClaimMark>
@@ -188,6 +197,8 @@ export default function GallerySection({
       onInspect,
       labels,
       onUnsourcedClaimClick,
+      generateFixOnAccept,
+      showAxisTag,
     ],
   )
 

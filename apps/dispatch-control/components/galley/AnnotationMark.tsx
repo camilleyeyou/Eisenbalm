@@ -59,6 +59,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { acceptFinding, dismissFinding, FindingsError } from '@/lib/findingsClient'
 import { rewrite } from '@/lib/voicePassClient'
+import { FACTUAL_AXES, VOICE_AXES } from '@/lib/galley/axisPartition'
 
 export interface AnnotationMarkDef {
   findingId: string
@@ -94,6 +95,20 @@ interface AnnotationMarkProps {
     dismiss?: string
     dismissReasonDefault?: string
   }
+  /**
+   * Phase 51 (D-08, Pitfall 2) — label-INDEPENDENT trigger for the on-demand
+   * voice rewrite. Was keyed off `labels?.accept === 'Accept rewrite'`, which
+   * silently breaks the moment a caller uses a neutral label vocabulary.
+   * When true, Accept is offered even with no stored `suggestedFix` and
+   * `handleAccept` generates one via voicePassClient.rewrite first.
+   */
+  generateFixOnAccept?: boolean
+  /**
+   * Phase 51 (D-07) — render a small always-visible Fact/Voice text tag
+   * adjacent to the marked span, readable WITHOUT opening the popover.
+   * Undefined (Review Desk / Voice Pass) renders no tag — unchanged.
+   */
+  showAxisTag?: boolean
 }
 
 const actionButtonStyle: React.CSSProperties = {
@@ -121,6 +136,8 @@ export default function AnnotationMark({
   onEditSection,
   onInspect,
   labels,
+  generateFixOnAccept,
+  showAxisTag,
 }: AnnotationMarkProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
@@ -143,7 +160,23 @@ export default function AnnotationMark({
   const acceptLabel = labels?.accept ?? 'Accept fix'
   const editInlineLabel = labels?.editInline ?? 'Edit inline'
   const dismissLabel = labels?.dismiss ?? 'Dismiss'
-  const isRewriteVariant = labels?.accept === 'Accept rewrite'
+  // Phase 51 (D-08, Pitfall 2) — label-independent: a caller may opt into the
+  // on-demand rewrite trigger via `generateFixOnAccept` regardless of what it
+  // names the Accept button. The literal string match stays for Voice Pass's
+  // existing 'Accept rewrite' label, bit-for-bit unchanged.
+  const isRewriteVariant = generateFixOnAccept === true || labels?.accept === 'Accept rewrite'
+
+  // Phase 51 (D-07) — Fact/Voice tag: FACTUAL_AXES -> 'Fact', VOICE_AXES ->
+  // 'Voice', undefined axis -> 'Fact' (conservative default, matching
+  // axisPartition's own convention). Never blank, never a third catch-all
+  // label.
+  const axisTag = value.axis === undefined
+    ? 'Fact'
+    : VOICE_AXES.has(value.axis)
+      ? 'Voice'
+      : FACTUAL_AXES.has(value.axis)
+        ? 'Fact'
+        : 'Fact'
 
   function toggle() {
     setOpen(prev => {
@@ -280,6 +313,24 @@ export default function AnnotationMark({
       >
         {children}
       </mark>
+      {showAxisTag && (
+        <span
+          className="galley-anno-tag"
+          aria-hidden="false"
+          style={{
+            marginLeft: 4,
+            fontFamily: 'var(--font-ui)',
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '.04em',
+            textTransform: 'uppercase',
+            color: 'var(--color-ink-soft)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {axisTag}
+        </span>
+      )}
       {open && (
         <span
           ref={popoverRef}
