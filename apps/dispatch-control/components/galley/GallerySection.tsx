@@ -98,6 +98,13 @@ interface GallerySectionProps {
   generateFixOnAccept?: boolean
   // Phase 51 (D-07) — forwarded into every AnnotationMark AND ClaimMark.
   showAxisTag?: boolean
+  // Phase 51 (READ-04, D-10..D-13) — forwarded unmodified into every
+  // AnnotationMark. Undefined (Review Desk / Voice Pass) leaves today's
+  // single-accept behaviour unchanged.
+  findingGroup?: {
+    sizeFor: (findingId: string) => number
+    acceptGroup: (findingId: string) => Promise<void>
+  }
 }
 
 export default function GallerySection({
@@ -118,6 +125,7 @@ export default function GallerySection({
   onUnsourcedClaimClick,
   generateFixOnAccept,
   showAxisTag,
+  findingGroup,
 }: GallerySectionProps) {
   // toSyntheticBlocks groups `resolved`/`claimResolved` by blockIndex
   // internally (it filters the flat lists per-row), so the flat arrays are
@@ -172,6 +180,7 @@ export default function GallerySection({
             labels={labels}
             generateFixOnAccept={generateFixOnAccept}
             showAxisTag={showAxisTag}
+            findingGroup={findingGroup}
           >
             {children}
           </AnnotationMark>
@@ -199,6 +208,7 @@ export default function GallerySection({
       onUnsourcedClaimClick,
       generateFixOnAccept,
       showAxisTag,
+      findingGroup,
     ],
   )
 

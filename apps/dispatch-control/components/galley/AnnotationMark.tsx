@@ -109,6 +109,17 @@ interface AnnotationMarkProps {
    * Undefined (Review Desk / Voice Pass) renders no tag — unchanged.
    */
   showAxisTag?: boolean
+  /**
+   * Phase 51 (READ-04, D-10..D-13) — recurring-correction group accept.
+   * `sizeFor` returns how many sibling findings share this finding's fix (1
+   * when it is alone); `acceptGroup` runs the caller's sequential accept
+   * loop. Undefined (Review Desk / Voice Pass) leaves today's single-accept
+   * behaviour byte-identical — neither prop is ever read.
+   */
+  findingGroup?: {
+    sizeFor: (findingId: string) => number
+    acceptGroup: (findingId: string) => Promise<void>
+  }
 }
 
 const actionButtonStyle: React.CSSProperties = {
@@ -138,6 +149,7 @@ export default function AnnotationMark({
   labels,
   generateFixOnAccept,
   showAxisTag,
+  findingGroup,
 }: AnnotationMarkProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
@@ -150,6 +162,10 @@ export default function AnnotationMark({
   const [note, setNote] = useState<string | null>(null)
   const [dismissing, setDismissing] = useState(false)
   const [dismissReason, setDismissReason] = useState('')
+  // Phase 51 (READ-04) — group-accept busy state, separate from the
+  // single-accept `busy` above (both disable the button; only one is ever
+  // active for a given finding, gated on `groupSize`).
+  const [groupBusy, setGroupBusy] = useState(false)
 
   const canAct = Boolean(runId && revisionId)
 
@@ -165,6 +181,13 @@ export default function AnnotationMark({
   // names the Accept button. The literal string match stays for Voice Pass's
   // existing 'Accept rewrite' label, bit-for-bit unchanged.
   const isRewriteVariant = generateFixOnAccept === true || labels?.accept === 'Accept rewrite'
+
+  // Phase 51 (READ-04, D-10..D-13) — group size for THIS finding, from the
+  // caller's already-loaded section rows. Undefined `findingGroup` (Review
+  // Desk / Voice Pass) or a group of one both fall back to 1, which keeps
+  // the accept label and click handler byte-identical to today's behaviour.
+  const groupSize = findingGroup?.sizeFor(value.findingId) ?? 1
+  const acceptText = groupSize >= 2 ? `${acceptLabel} (applies to ${groupSize} places)` : acceptLabel
 
   // Phase 51 (D-07) — Fact/Voice tag: FACTUAL_AXES -> 'Fact', VOICE_AXES ->
   // 'Voice', undefined axis -> 'Fact' (conservative default, matching
@@ -281,6 +304,25 @@ export default function AnnotationMark({
     }
   }
 
+  /**
+   * Phase 51 (READ-04, D-10..D-13) — group accept: one click applies this
+   * finding's fix to every sibling that shares its axis + suggestedFix. The
+   * sequential loop (accept -> fresh revisionId -> next accept) and the
+   * partial-failure sentence live in the caller's `acceptGroup` (page.tsx) —
+   * this component only owns the button's busy/disabled state and label.
+   * There is deliberately no separate confirmation dialog: the count already
+   * in the button's own label discloses the scope (UI-SPEC, locked).
+   */
+  async function handleGroupAccept() {
+    if (!findingGroup || groupBusy) return
+    setGroupBusy(true)
+    try {
+      await findingGroup.acceptGroup(value.findingId)
+    } finally {
+      setGroupBusy(false)
+    }
+  }
+
   /** Dismiss: reason required (D-11). Convex reactivity removes the span. */
   async function handleDismissSubmit() {
     const reason = dismissReason.trim()
@@ -362,10 +404,10 @@ export default function AnnotationMark({
               <button
                 type="button"
                 style={actionButtonStyle}
-                disabled={busy}
-                onClick={() => void handleAccept()}
+                disabled={busy || groupBusy}
+                onClick={groupSize >= 2 ? () => void handleGroupAccept() : () => void handleAccept()}
               >
-                {acceptLabel}
+                {groupBusy ? `Applying ${groupSize} places…` : acceptText}
               </button>
             )}
             {!isRewriteVariant && !value.suggestedFix && (

@@ -202,6 +202,18 @@ interface GalleyProps {
    * behaviour, bit-for-bit, for Review Desk and Voice Pass (D-24).
    */
   markSourcedClaims?: boolean
+  /**
+   * Phase 51 (READ-04, D-10..D-13) — recurring-correction group accept.
+   * `sizeFor` returns how many sibling findings share this finding's fix (1
+   * when it is alone); `acceptGroup` runs the sequential accept loop.
+   * Undefined (Review Desk / Voice Pass) leaves the single-accept behaviour
+   * unchanged. Forwarded unmodified into every GallerySection this Galley
+   * mounts.
+   */
+  findingGroup?: {
+    sizeFor: (findingId: string) => number
+    acceptGroup: (findingId: string) => Promise<void>
+  }
 }
 
 // D-05 reader order for the four long-read sections.
@@ -243,6 +255,7 @@ export default function Galley({
   generateFixOnAccept,
   showAxisTag,
   markSourcedClaims = true,
+  findingGroup,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -434,6 +447,7 @@ export default function Galley({
             onUnsourcedClaimClick={onUnsourcedClaimClick}
             generateFixOnAccept={generateFixOnAccept}
             showAxisTag={showAxisTag}
+            findingGroup={findingGroup}
           />
         )
       })}
@@ -465,6 +479,7 @@ export default function Galley({
           onUnsourcedClaimClick={onUnsourcedClaimClick}
           generateFixOnAccept={generateFixOnAccept}
           showAxisTag={showAxisTag}
+          findingGroup={findingGroup}
         />
       )}
 

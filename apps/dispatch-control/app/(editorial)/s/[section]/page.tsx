@@ -45,6 +45,8 @@ import {
 import { resolveSectionFindings, type QaFinding } from '@/lib/galley/spanResolver'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
+import { groupForFinding } from '@/lib/galley/findingGroups'
+import { acceptFinding } from '@/lib/findingsClient'
 import Galley from '@/components/galley/Galley'
 import { RevisionFlow } from '@/components/revision/RevisionFlow'
 import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
@@ -373,6 +375,46 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
     })
   }
 
+  // Phase 51 (READ-04, D-10..D-13) — group-aware Accept. Scoped to THIS
+  // section only (the route only ever renders one), reusing the same
+  // isOpenFinding-filtered rows `resolveBlockIndex` above already builds.
+  const sectionOpenFindings = qaFindingsForSection(sectionId)
+
+  function sizeFor(findingId: string): number {
+    return groupForFinding(sectionOpenFindings, findingId).findingIds.length
+  }
+
+  /**
+   * Sequential accept loop (D-12): each call carries the PREVIOUS call's
+   * freshly-returned revisionId, never a stale closure value and never the
+   * same value twice — firing the group in parallel against one revisionId
+   * would 409 most of the group against the Phase 33 D-06 guard. Keeps
+   * going through a failure (D-13) rather than stopping at the first one;
+   * failed members stay marked and individually openable — no rollback, no
+   * batch-retry control.
+   */
+  async function acceptGroup(findingId: string) {
+    const group = groupForFinding(sectionOpenFindings, findingId)
+    let currentRevisionId = draft.revisionId
+    let applied = 0
+    const failed: string[] = []
+    for (const id of group.findingIds) {
+      try {
+        const res = await acceptFinding(runId, id, { ifRevisionID: currentRevisionId }, await getToken())
+        currentRevisionId = res.revisionId // D-12 — fresh revision for the NEXT call
+        applied += 1
+      } catch {
+        failed.push(id) // D-13 — keep going, never stop at first failure
+      }
+    }
+    await reloadDraft()
+    setGroupNote(
+      failed.length > 0
+        ? `${applied} of ${group.findingIds.length} applied — ${failed.length} still need you.`
+        : null,
+    )
+  }
+
   return (
     <div className="section-reader">
       <SectionHeader title={title} />
@@ -395,7 +437,14 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
           onInspect={(id) => openInspector({ type: 'founder', runId, locator: id })}
           onRevise={setRevisePassage}
           onRelatedFacts={setRelatedFacts}
+          findingGroup={{ sizeFor, acceptGroup }}
         />
+      )}
+
+      {groupNote && (
+        <p role="status" className="galley-body">
+          {groupNote}
+        </p>
       )}
 
       {editingTarget && editingTarget.sectionId === sectionId && (
