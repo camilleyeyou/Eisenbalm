@@ -14,8 +14,9 @@
  *   - a NEW per-selected-section `resolveSectionFindings` call, so the
  *     Outline tab's beat dots and "Open findings" list read the SAME
  *     resolution the single-section Draft-tab galley lights (LD-3/LD-4)
- *   - `useReviewedSections(runId)` — the LD-5 localStorage-only "Mark
- *     reviewed" nav aid; it changes no publish gate
+ *   - quick/Phase 51 D-25: the localStorage-backed manual review-toggle
+ *     hook was deleted — every section state here derives from open
+ *     findings, never a hand-ticked flag.
  *   - the `revisePassage`/`relatedFacts` panels and `showProvenance` state
  *     (unchanged)
  *   - deep links (LD-8): the existing `?edit=<sectionId>[&finding=]` one-shot
@@ -49,7 +50,6 @@ import { api } from '@convex/_generated/api'
 import { EDITABLE_SECTIONS, type SectionChipCounts } from './_components/SectionChipList'
 import StoryDeskGrid from './_components/StoryDeskGrid'
 import StoryFocusView from './_components/StoryFocusView'
-import { useReviewedSections } from './_components/useReviewedSections'
 import type { OutlineOpenFinding } from './_components/StoryOutlineTab'
 import { useInspector } from '@/components/inspector/InspectorProvider'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
@@ -214,8 +214,6 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
   const [editFinding, setEditFinding] = useState<{ sectionId: string; findingId?: string } | null>(null)
   // Phase 35 (PRV-03, D-10): the provenance wash layer is ON by default.
   const [showProvenance, setShowProvenance] = useState(true)
-
-  const { reviewed: reviewedIds, isReviewed, toggle: toggleReviewed } = useReviewedSections(runId)
 
   function buildHref(next: { story: string | null; tab?: 'outline' | 'draft' }): string {
     const sp = new URLSearchParams()
@@ -464,13 +462,15 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
     ? rawFindings.find(row => row._id === editFinding.findingId)?.reason
     : undefined
 
-  // "Next unreviewed" — first EDITABLE_SECTIONS entry AFTER the current one
-  // that isn't in the reviewed set (no wraparound).
-  function nextUnreviewedAfter(currentId: string): { id: string; label: string } | null {
+  // "Next that needs you" — first EDITABLE_SECTIONS entry AFTER the current
+  // one that still has an open finding (no wraparound). Reuses the same
+  // `chipCounts` object already passed to StoryDeskGrid/StoryFocusView —
+  // never a second counts source (D-25).
+  function nextNeedsYouAfter(currentId: string): { id: string; label: string } | null {
     const idx = EDITABLE_SECTIONS.findIndex(s => s.id === currentId)
     for (let i = idx + 1; i < EDITABLE_SECTIONS.length; i++) {
       const candidate = EDITABLE_SECTIONS[i]
-      if (candidate && !isReviewed(candidate.id)) return candidate
+      if (candidate && (chipCounts[candidate.id]?.open ?? 0) > 0) return candidate
     }
     return null
   }
@@ -498,7 +498,6 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
             <StoryDeskGrid
               draft={draft}
               chipCounts={chipCounts}
-              reviewedIds={reviewedIds}
               onOpen={id => openStory(id, 'draft')}
               onOpenEdit={openStoryEditing}
               issueNumber={issueNumber}
@@ -512,8 +511,6 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
               onTab={setTab}
               onBack={goToDesk}
               onNav={navToStory}
-              reviewed={isReviewed(storySectionId)}
-              onToggleReviewed={() => toggleReviewed(storySectionId)}
               chipCounts={chipCounts}
               resolved={selectedResolution.resolved}
               unresolved={selectedResolution.unresolved}
@@ -538,7 +535,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
               onUnsourcedClaimClick={() => {
                 if (issueNumber != null) router.push(issueFactCheckHref(issueNumber))
               }}
-              nextUnreviewed={nextUnreviewedAfter(storySectionId)}
+              nextNeedsYou={nextNeedsYouAfter(storySectionId)}
             />
           )}
 

@@ -3,8 +3,12 @@
  * Quick 260724-i5n (LD-2) — the per-story focus view (mockups
  * `03-story-outline-tab.html` / `04-story-draft-tab.html`): crumbs
  * (back-to-desk, "Story X of 9", prev/next steppers), a story header (kicker,
- * headline, meta line, Mark reviewed + Edit story actions), folder
- * Outline/Draft tabs, and a footer prev/next-unreviewed nav.
+ * headline, meta line, Edit story action), folder Outline/Draft tabs, and a
+ * footer prev/next-that-needs-you nav.
+ *
+ * Phase 51 (D-25): there is no manual review-toggle affordance here — the
+ * meta line, the Draft-tab badge count and the footer's next-story link all
+ * derive from `chipCounts[...].open`, never a hand-ticked flag.
  *
  * Presentational — `ReviewDeskRunView` owns all URL/dirty/editing state and
  * passes callbacks down; this component only ever calls them. The Draft
@@ -40,8 +44,6 @@ interface StoryFocusViewProps {
   onTab: (tab: 'outline' | 'draft') => void
   onBack: () => void
   onNav: (sectionId: string) => void
-  reviewed: boolean
-  onToggleReviewed: () => void
   chipCounts: Record<string, SectionChipCounts>
   resolved: ResolvedAnnotation[]
   unresolved: ReadonlyArray<OutlineUnresolvedFinding>
@@ -64,7 +66,7 @@ interface StoryFocusViewProps {
   showProvenance: boolean
   onToggleProvenance?: () => void
   onUnsourcedClaimClick?: (claimIndex: number) => void
-  nextUnreviewed: { id: string; label: string } | null
+  nextNeedsYou: { id: string; label: string } | null
 }
 
 function wordCountLabelFor(draft: DraftResponse, sectionId: string): string {
@@ -141,8 +143,6 @@ export default function StoryFocusView({
   onTab,
   onBack,
   onNav,
-  reviewed,
-  onToggleReviewed,
   chipCounts,
   resolved,
   unresolved,
@@ -165,7 +165,7 @@ export default function StoryFocusView({
   showProvenance,
   onToggleProvenance,
   onUnsourcedClaimClick,
-  nextUnreviewed,
+  nextNeedsYou,
 }: StoryFocusViewProps) {
   const index = EDITABLE_SECTIONS.findIndex(s => s.id === sectionId)
   const meta = EDITABLE_SECTIONS[index]
@@ -268,17 +268,10 @@ export default function StoryFocusView({
             )}
             {warningCount > 0 && <> &middot; {warningCount} warning{warningCount === 1 ? '' : 's'}</>}
             {' '}
-            &middot; {reviewed ? 'reviewed' : 'unreviewed'}
+            &middot; {openCount > 0 ? `${openCount} open` : 'Clean'}
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button
-            type="button"
-            onClick={onToggleReviewed}
-            className="min-h-[44px] border border-[color:var(--color-ink)] bg-white px-4 py-2.5 font-[family-name:var(--font-ui)] text-[12.5px] font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]"
-          >
-            {reviewed ? 'Reviewed' : '✓ Mark reviewed'}
-          </button>
           <button
             type="button"
             onClick={editing ? onExitEdit : onEdit}
@@ -434,9 +427,9 @@ export default function StoryFocusView({
         ) : (
           <span />
         )}
-        {nextUnreviewed ? (
-          <button type="button" onClick={() => onNav(nextUnreviewed.id)} className={CRUMB_BTN}>
-            Next unreviewed: <b className="font-semibold text-[color:var(--color-ink)]">{nextUnreviewed.label}</b> &rarr;
+        {nextNeedsYou ? (
+          <button type="button" onClick={() => onNav(nextNeedsYou.id)} className={CRUMB_BTN}>
+            Next that needs you: <b className="font-semibold text-[color:var(--color-ink)]">{nextNeedsYou.label}</b> &rarr;
           </button>
         ) : (
           <button type="button" onClick={onBack} className={CRUMB_BTN}>
