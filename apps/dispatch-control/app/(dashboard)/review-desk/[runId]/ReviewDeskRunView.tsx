@@ -14,7 +14,7 @@
  *   - a NEW per-selected-section `resolveSectionFindings` call, so the
  *     Outline tab's beat dots and "Open findings" list read the SAME
  *     resolution the single-section Draft-tab galley lights (LD-3/LD-4)
- *   - quick/Phase 51 D-25: the localStorage-backed manual review-toggle
+ *   - quick/Phase 51 D-25: the browser-storage-backed manual review-toggle
  *     hook was deleted — every section state here derives from open
  *     findings, never a hand-ticked flag.
  *   - the `revisePassage`/`relatedFacts` panels and `showProvenance` state
