@@ -432,7 +432,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 **Design contract:** Claude Design project `38e48d39-1983-4178-a622-b21299a6ca0c` — previews 20 (architecture + 31-route disposition), 21 (Section), 22 (Issue).
 
 ### Section — read and fix in place (READ)
-- [ ] **READ-01**: Editor reads a section as full-width prose with no side rails and a reading measure, not a form.
+- [x] **READ-01**: Editor reads a section as full-width prose with no side rails and a reading measure, not a form.
 - [ ] **READ-02**: Editor sees factual, voice and unsourced-claim problems marked **in the sentence they affect**, distinguishable by label as well as colour.
 - [ ] **READ-03**: Editor can open a marked problem and see the agent's reasoning and its evidence without leaving the paragraph.
 - [ ] **READ-04**: Editor can accept the agent's suggested correction in one action, including when the same correction applies in more than one place.

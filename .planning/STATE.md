@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 51-01-shared-primitives-editable-sections-phrasing-safe-generate-fix-PLAN.md
-last_updated: "2026-08-01T05:39:01.491Z"
+stopped_at: Completed 51-02-editorial-route-group-shell-scoped-typography-PLAN.md
+last_updated: "2026-08-01T05:48:16.679Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-31)
 ## Current Position
 
 Phase: 51 (section-read-and-fix-in-place) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 
 ## Performance Metrics
 
@@ -360,6 +360,7 @@ Plan: 3 of 8
 | Phase 50 P06 | 35 | 3 tasks | 23 files |
 | Phase 51 P00 | 25min | 2 tasks | 5 files |
 | Phase 51 P01 | 17min | 3 tasks | 8 files |
+| Phase 51 P02 | 8min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -949,6 +950,8 @@ Recent decisions affecting current work:
 - [Phase 51]: SectionReaderPage.test.tsx dynamic-imports the not-yet-existing page via a non-literal specifier + /* @vite-ignore */ to avoid Vite's import-analysis hard-failing a describe.skip'd suite
 - [Phase 51]: Wave 0 red/green status reported honestly per-case rather than forced: negative assertions (no card/no block elements) that are trivially true pre-feature are documented as green-today in 51-00-SUMMARY.md, not artificially failed
 - [Phase 51]: 51-01: shipped 4 additive shared primitives (EDITABLE_SECTIONS relocation, ClaimProvenanceCard phrasingSafe, AnnotationMark generateFixOnAccept + Fact/Voice/Source tags, Galley markSourcedClaims); READ-02/03/07/08 left unchecked since none are user-observable until plan 51-04 turns them on
+- [Phase 51]: Editorial route-group layout doc comment paraphrases chrome-component names to avoid conflicting with the Task 1 acceptance-criteria grep for those exact tokens
+- [Phase 51]: middleware.ts left unchanged for /s/[section] — existing Clerk catch-all matcher already covers it
 
 ### Pending Todos
 
@@ -1057,6 +1060,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-01T05:39:01.475Z
-Stopped at: Completed 51-01-shared-primitives-editable-sections-phrasing-safe-generate-fix-PLAN.md
+Last session: 2026-08-01T05:48:16.663Z
+Stopped at: Completed 51-02-editorial-route-group-shell-scoped-typography-PLAN.md
 Resume file: None
