@@ -22,10 +22,13 @@
  * frame's `WorkspaceOutline` already provides galley jump-nav).
  */
 
-export interface SectionMeta {
-  id: string
-  label: string
-}
+// Phase 51 (D-17) — EDITABLE_SECTIONS/SectionMeta promoted to lib/editableSections.ts
+// so shared, non-route-scoped modules can import them without reaching into
+// this route-private _components folder. Re-exported here so every existing
+// importer of this file keeps compiling with zero edits.
+import { EDITABLE_SECTIONS, type SectionMeta } from '@/lib/editableSections'
+export { EDITABLE_SECTIONS }
+export type { SectionMeta }
 
 /**
  * Per-section open-finding tally (D-08: accepted findings are excluded
@@ -41,19 +44,6 @@ export interface SectionChipCounts {
   warning?: number
   info?: number
 }
-
-/** The 9 editable surfaces, in reading order (RESEARCH Field Inventory). */
-export const EDITABLE_SECTIONS: SectionMeta[] = [
-  { id: 'originStory', label: 'Origin Story' },
-  { id: 'problemStatement', label: 'Problem' },
-  { id: 'founderBio', label: 'Founder Bio' },
-  { id: 'caseStudy', label: 'Case Study' },
-  { id: 'bonus', label: 'Bonus' },
-  { id: 'game', label: 'Game' },
-  { id: 'deliberation-conversation', label: 'Deliberation' },
-  { id: 'podcast', label: 'Podcast' },
-  { id: 'theme', label: 'Theme' },
-]
 
 interface SectionChipListProps {
   sections?: SectionMeta[]

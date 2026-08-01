@@ -21,7 +21,7 @@ import {
   issueFactCheckHref,
   issueStoryHref,
 } from './issueRouteResolver'
-import { EDITABLE_SECTIONS } from '../app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
+import { EDITABLE_SECTIONS } from './editableSections'
 import type { DraftResponse } from './contentPatchClient'
 // Phase 44 Plan 44-08 (INS-01, §44.1) — the string-encoded artifact-key
 // form `DerivedTask.insp` carries. Populated ONLY for qa-finding and claim
