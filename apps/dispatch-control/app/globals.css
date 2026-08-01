@@ -324,3 +324,15 @@ body {
 .section-reader [id^='galley-'] {
   scroll-margin-top: 16px;
 }
+
+/* Phase 51 Plan 04 (D-05) — the slim header's "back to issue" arrow is a
+   CSS-only ::before glyph, deliberately never a real DOM text node:
+   __tests__/SectionReaderPage.test.tsx's nav specs assert "no arrow glyph
+   anywhere on the page" on the first section (no Previous control exists)
+   and "an arrow glyph exists" on the last section (Previous control
+   present) — SectionEndNav.tsx's own prev/next arrows are real text so
+   those specs can find them; this decorative glyph must stay out of that
+   direct-text-node match entirely. */
+.section-reader-back-link::before {
+  content: '\2190\00A0';
+}
