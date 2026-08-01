@@ -60,6 +60,9 @@ import { useAuth } from '@clerk/nextjs'
 import { acceptFinding, dismissFinding, FindingsError } from '@/lib/findingsClient'
 import { rewrite } from '@/lib/voicePassClient'
 import { FACTUAL_AXES, VOICE_AXES } from '@/lib/galley/axisPartition'
+import ClaimProvenanceCard, {
+  type ClaimProvenanceView,
+} from '@/components/provenance/ClaimProvenanceCard'
 
 export interface AnnotationMarkDef {
   findingId: string
@@ -120,6 +123,14 @@ interface AnnotationMarkProps {
     sizeFor: (findingId: string) => number
     acceptGroup: (findingId: string) => Promise<void>
   }
+  /**
+   * Phase 51 (READ-03, D-20) — the tracked claim this finding sits on, when
+   * one exists. Rendered as the SHARED ClaimProvenanceCard beneath the
+   * reason, in phrasing-safe mode, so evidence is read IN the paragraph
+   * (SC-3). Undefined (Review Desk / Voice Pass) leaves today's popover
+   * unchanged.
+   */
+  claim?: ClaimProvenanceView
 }
 
 const actionButtonStyle: React.CSSProperties = {
@@ -150,6 +161,7 @@ export default function AnnotationMark({
   generateFixOnAccept,
   showAxisTag,
   findingGroup,
+  claim,
 }: AnnotationMarkProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
@@ -391,6 +403,23 @@ export default function AnnotationMark({
           <span className="galley-popover__reason" style={{ display: 'block' }}>
             {value.reason}
           </span>
+          {/* Phase 51 (READ-03, D-20): evidence for the tracked claim this
+              finding sits on, when one exists — read-only (no `actions`),
+              phrasing-safe (Pitfall 1: this popover is phrasing content).
+              D-09's markSourcedClaims={false} stops sourced claims being
+              MARKED as spans, but must NOT stop them being FOUND: a finding
+              on a SOURCED claim is the load-bearing case here — sourceUrl/
+              retrievedAt exist only on sourced rows, and once D-09
+              suppresses that claim's own wash and popover, this finding
+              popover is the only place left to read them. A finding on an
+              UNSOURCED claim is the redundant case — the editor already has
+              an always-visible ClaimMark wash+popover on that same span
+              saying "no source" (D-09 suppresses only the SOURCED mark). */}
+          {claim && (
+            <span className="galley-popover__evidence" style={{ display: 'block', marginTop: 8 }}>
+              <ClaimProvenanceCard claim={claim} phrasingSafe />
+            </span>
+          )}
           {value.suggestedFix && (
             <span className="galley-popover__fix" style={{ display: 'block' }}>
               {isRewriteVariant ? 'Suggested house voice:' : 'Suggested:'} {value.suggestedFix}

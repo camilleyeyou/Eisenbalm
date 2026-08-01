@@ -441,6 +441,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
           showAxisTag
           showProvenance
           markSourcedClaims={false}
+          showClaimEvidenceInFindings
           onEditSection={openInPlaceEditor}
           onInspect={(id) => openInspector({ type: 'founder', runId, locator: id })}
           onRevise={setRevisePassage}

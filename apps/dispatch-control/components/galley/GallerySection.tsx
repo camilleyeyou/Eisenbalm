@@ -45,6 +45,15 @@
  * `PassageToolbar` (mounted by `Galley.tsx`) needs to resolve an arbitrary
  * `window.getSelection()` back to a block index; this file itself performs
  * no selection handling.
+ *
+ * Phase 51 (READ-03, D-20, Plan 51-07): when `showClaimEvidenceInFindings`
+ * is set, `buildFindingClaimMap` links every open finding to a tracked claim
+ * it overlaps, sourced from `claimResolvedForLookup` — the UNFILTERED claim
+ * resolution — NEVER the `claimResolved` render array above (that one is
+ * already filtered by Galley's `markSourcedClaims`, D-09). Each linked
+ * claim is mapped into a `ClaimProvenanceView` (field-for-field identical to
+ * ClaimMark.tsx's own mapping) and passed to `AnnotationMark` as `claim`, to
+ * render read-only, phrasing-safe evidence beneath the finding's reason.
  */
 import { useMemo } from 'react'
 import { PortableText, type PortableTextReactComponents } from '@portabletext/react'
@@ -55,6 +64,8 @@ import {
 } from '@/lib/galley/syntheticPortableText'
 import type { ResolvedAnnotation, UnresolvedFinding } from '@/lib/galley/spanResolver'
 import { blockIndexFromKey } from '@/lib/blockIndexFromKey'
+import { buildFindingClaimMap } from '@/lib/galley/findingClaimLink'
+import type { ClaimProvenanceView } from '@/components/provenance/ClaimProvenanceCard'
 import AnnotationMark from './AnnotationMark'
 import ClaimMark from './ClaimMark'
 import UnresolvedFindingCard from './UnresolvedFindingCard'
@@ -105,6 +116,15 @@ interface GallerySectionProps {
     sizeFor: (findingId: string) => number
     acceptGroup: (findingId: string) => Promise<void>
   }
+  /** Phase 51 (READ-03, D-20) — mount claim evidence inside finding popovers. */
+  showClaimEvidenceInFindings?: boolean
+  /**
+   * Phase 51 (READ-03, D-20) — the UNFILTERED resolved claims for this
+   * section, used ONLY for finding->claim lookup. `claimResolved` above is
+   * the D-09 render array and may exclude sourced claims. Falls back to
+   * `claimResolved` when absent, so existing callers are unaffected.
+   */
+  claimResolvedForLookup?: ResolvedClaim[]
 }
 
 export default function GallerySection({
@@ -126,6 +146,8 @@ export default function GallerySection({
   generateFixOnAccept,
   showAxisTag,
   findingGroup,
+  showClaimEvidenceInFindings,
+  claimResolvedForLookup,
 }: GallerySectionProps) {
   // toSyntheticBlocks groups `resolved`/`claimResolved` by blockIndex
   // internally (it filters the flat lists per-row), so the flat arrays are
@@ -135,6 +157,22 @@ export default function GallerySection({
     resolved,
     sectionId,
     showProvenance ? claimResolved : [],
+  )
+
+  // LOOKUP path — `claimResolvedForLookup`, NOT `claimResolved`.
+  // `claimResolved` is the D-09 RENDER array, already filtered by
+  // `markSourcedClaims` in Galley (plan 51-01 Task 3f). Using it here would
+  // mean a finding could only ever link to an UNSOURCED claim — inverting
+  // D-20's own field list, since sourceUrl and retrievedAt exist only on
+  // SOURCED rows. The render question ("does this claim get a wash?") and
+  // the lookup question ("does this finding overlap any tracked claim?")
+  // are independent.
+  const findingClaimMap = useMemo(
+    () =>
+      showClaimEvidenceInFindings
+        ? buildFindingClaimMap(resolved, claimResolvedForLookup ?? claimResolved ?? [])
+        : new Map<string, ResolvedClaim>(),
+    [showClaimEvidenceInFindings, resolved, claimResolvedForLookup, claimResolved],
   )
 
   // Built per-render (memoized on the action context) because
@@ -168,23 +206,40 @@ export default function GallerySection({
         ),
       },
       marks: {
-        annotation: ({ value, children }) => (
-          <AnnotationMark
-            value={value}
-            runId={runId}
-            sectionId={sectionId}
-            revisionId={revisionId}
-            reloadDraft={reloadDraft}
-            onEditSection={onEditSection}
-            onInspect={onInspect}
-            labels={labels}
-            generateFixOnAccept={generateFixOnAccept}
-            showAxisTag={showAxisTag}
-            findingGroup={findingGroup}
-          >
-            {children}
-          </AnnotationMark>
-        ),
+        annotation: ({ value, children }) => {
+          // Phase 51 (READ-03, D-20) — same field mapping ClaimMark.tsx:107-114
+          // uses, so the two popovers can never disagree about the same claim.
+          const c = findingClaimMap.get(value.findingId)
+          const claimView: ClaimProvenanceView | undefined = c
+            ? {
+                text: c.text,
+                importance: c.importance,
+                status: c.status,
+                sourceUrl: c.sourceUrl,
+                supportingPassage: c.context,
+                retrievedAt: c.retrievedAt,
+                sectionName: sectionId,
+              }
+            : undefined
+          return (
+            <AnnotationMark
+              value={value}
+              runId={runId}
+              sectionId={sectionId}
+              revisionId={revisionId}
+              reloadDraft={reloadDraft}
+              onEditSection={onEditSection}
+              onInspect={onInspect}
+              labels={labels}
+              generateFixOnAccept={generateFixOnAccept}
+              showAxisTag={showAxisTag}
+              findingGroup={findingGroup}
+              claim={claimView}
+            >
+              {children}
+            </AnnotationMark>
+          )
+        },
         claimSpan: ({ value, children }) => (
           <ClaimMark
             value={value as ClaimSpanMarkDef}
@@ -209,6 +264,8 @@ export default function GallerySection({
       generateFixOnAccept,
       showAxisTag,
       findingGroup,
+      findingClaimMap,
+      showClaimEvidenceInFindings,
     ],
   )
 

@@ -262,6 +262,24 @@ export default function ClaimProvenanceCard({
           {sourcePublisher}
           {claim.sourceUrl && retrievedLabel !== '—' ? ` · retrieved ${retrievedLabel}` : null}
         </Txt>
+        {/*
+         * Phase 51 (READ-03, D-20) — the raw source URL as its own visible
+         * text line, not just the derived-host `sourcePublisher` above and
+         * not just an `href` attribute buried in "Open source" below (an
+         * attribute value is invisible to `textContent` and to a reader who
+         * doesn't hover/click). D-20's own truth is "shows that claim's
+         * source URL" — this is the ONE shared card (D-09/D-16), so every
+         * caller (Stage 3, Stage 5, ClaimMark, this popover) gains it
+         * identically rather than a per-caller fork.
+         */}
+        {claim.sourceUrl && (
+          <Txt
+            className="mt-0.5 break-all text-[12px] text-[color:var(--color-ink-soft)]"
+            style={boxStyle}
+          >
+            {claim.sourceUrl}
+          </Txt>
+        )}
       </Box>
 
       <Box style={boxStyle}>

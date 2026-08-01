@@ -214,6 +214,14 @@ interface GalleyProps {
     sizeFor: (findingId: string) => number
     acceptGroup: (findingId: string) => Promise<void>
   }
+  /**
+   * Phase 51 (READ-03, D-20) — mount claim evidence inside finding popovers.
+   * Forwarded unmodified into every GallerySection, alongside the UNFILTERED
+   * `claimResolvedAll` local (see the D-09/D-20 note above `claimsForRender`)
+   * as `claimResolvedForLookup`. Undefined (Review Desk / Voice Pass) leaves
+   * today's render byte-identical (D-24).
+   */
+  showClaimEvidenceInFindings?: boolean
 }
 
 // D-05 reader order for the four long-read sections.
@@ -256,6 +264,7 @@ export default function Galley({
   showAxisTag,
   markSourcedClaims = true,
   findingGroup,
+  showClaimEvidenceInFindings,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -437,6 +446,7 @@ export default function Galley({
             resolved={resolved}
             unresolved={unresolved}
             claimResolved={claimsForRender(claimResolvedAll)} // render path only
+            claimResolvedForLookup={claimResolvedAll} // unfiltered — 51-07's lookup input
             showProvenance={showProvenance}
             runId={runId}
             revisionId={revisionId}
@@ -448,6 +458,7 @@ export default function Galley({
             generateFixOnAccept={generateFixOnAccept}
             showAxisTag={showAxisTag}
             findingGroup={findingGroup}
+            showClaimEvidenceInFindings={showClaimEvidenceInFindings}
           />
         )
       })}
@@ -469,6 +480,7 @@ export default function Galley({
           resolved={bonusResolution.resolved}
           unresolved={bonusResolution.unresolved}
           claimResolved={claimsForRender(claimResolvedAll)}
+          claimResolvedForLookup={claimResolvedAll}
           showProvenance={showProvenance}
           runId={runId}
           revisionId={revisionId}
@@ -480,6 +492,7 @@ export default function Galley({
           generateFixOnAccept={generateFixOnAccept}
           showAxisTag={showAxisTag}
           findingGroup={findingGroup}
+          showClaimEvidenceInFindings={showClaimEvidenceInFindings}
         />
       )}
 
