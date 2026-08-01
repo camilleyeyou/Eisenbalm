@@ -1131,7 +1131,15 @@ Derived 2026-07-31 from PROJECT.md's Current Milestone (goal, locked decisions, 
   3. Editor can open a marked problem in place and read the agent's reasoning and its evidence without leaving the paragraph.
   4. Editor can accept a suggested correction in one action — including every place the same correction recurs in the section — edit the passage themselves instead, or dismiss a finding that isn't a problem with the reason the existing annotation system already requires.
   5. Editor can move to the previous or next section without returning to the issue, and sees how many sections still need them, computed from open findings and never from a manual mark.
-**Plans**: TBD
+**Plans**: 7 plans (5 waves)
+Plans:
+- [ ] 51-00-wave0-test-scaffolds-PLAN.md — Wave 0: new __tests__/SectionReaderPage.test.tsx (skip-guarded) + Pitfall-1/Pitfall-2/READ-02 cases in AnnotationMark/ClaimMark/ClaimProvenanceCard tests (Wave 1)
+- [ ] 51-01-shared-primitives-editable-sections-phrasing-safe-generate-fix-PLAN.md — D-17 EDITABLE_SECTIONS promotion + re-export; ClaimProvenanceCard phrasingSafe mode; label-independent generateFixOnAccept + Fact/Voice/Source showAxisTag threaded Galley -> GallerySection -> mark (Wave 2)
+- [ ] 51-02-editorial-route-group-shell-scoped-typography-PLAN.md — app/(editorial)/layout.tsx with its own Confirm/CommandPalette/Inspector stack (Pitfall 3) + .section-reader 760px/17.5px/16px scoped CSS (Wave 2)
+- [ ] 51-03-delete-reviewed-bookkeeping-derive-story-desk-PLAN.md — D-25: delete useReviewedSections + drive StoryDeskGrid/StoryFocusView/ReviewDeskRunView from open-finding counts (Wave 2)
+- [ ] 51-04-section-reader-page-honest-states-nav-count-PLAN.md — /s/[section]: current-run + draft + single-section Galley (all axes, neutral labels), three honest states, exempt-section notes, end-of-prose prev/next + derived count (Wave 3)
+- [ ] 51-05-in-place-editor-group-accept-PLAN.md — in-place textarea block editor (patchSection/patchBonus branch, 409 copy) + pure findingGroups selector + group-aware sequential Accept with honest partial failure (Wave 4)
+- [ ] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan + human read-through checkpoint (Wave 5)
 **UI hint**: yes
 
 ### Phase 52: Issue — The Front Door
