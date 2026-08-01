@@ -475,7 +475,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
 | 50. Workbench & Nomenclature | 7/7 | Complete    | 2026-07-17 |
-| 51. Section — Read and Fix in Place | TBD | Not started | - |
+| 51. Section — Read and Fix in Place | 1/8 | In Progress|  |
 | 52. Issue — The Front Door | TBD | Not started | - |
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
@@ -1133,7 +1133,7 @@ Derived 2026-07-31 from PROJECT.md's Current Milestone (goal, locked decisions, 
   5. Editor can move to the previous or next section without returning to the issue, and sees how many sections still need them, computed from open findings and never from a manual mark.
 **Plans**: 7 plans (5 waves)
 Plans:
-- [ ] 51-00-wave0-test-scaffolds-PLAN.md — Wave 0: new __tests__/SectionReaderPage.test.tsx (skip-guarded) + Pitfall-1/Pitfall-2/READ-02 cases in AnnotationMark/ClaimMark/ClaimProvenanceCard tests (Wave 1)
+- [x] 51-00-wave0-test-scaffolds-PLAN.md — Wave 0: new __tests__/SectionReaderPage.test.tsx (skip-guarded) + Pitfall-1/Pitfall-2/READ-02 cases in AnnotationMark/ClaimMark/ClaimProvenanceCard tests (Wave 1)
 - [ ] 51-01-shared-primitives-editable-sections-phrasing-safe-generate-fix-PLAN.md — D-17 EDITABLE_SECTIONS promotion + re-export; ClaimProvenanceCard phrasingSafe mode; label-independent generateFixOnAccept + Fact/Voice/Source showAxisTag + D-09 markSourcedClaims opt-out, threaded Galley -> GallerySection -> mark (Wave 2)
 - [ ] 51-02-editorial-route-group-shell-scoped-typography-PLAN.md — app/(editorial)/layout.tsx with its own Confirm/CommandPalette/Inspector stack (Pitfall 3) + .section-reader 760px/17.5px/16px scoped CSS (Wave 2)
 - [ ] 51-03-delete-reviewed-bookkeeping-derive-story-desk-PLAN.md — D-25: delete useReviewedSections + drive StoryDeskGrid/StoryFocusView/ReviewDeskRunView from open-finding counts (Wave 2)

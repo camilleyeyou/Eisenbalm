@@ -2,15 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: "Roadmap created, ready for /gsd:plan-phase 51"
-stopped_at: Phase 51 context gathered
-last_updated: "2026-08-01T00:13:45.586Z"
-last_activity: 2026-07-31 — v5.0 roadmap created (Phases 51-54)
+status: Ready to execute
+stopped_at: Completed 51-00-wave0-test-scaffolds-PLAN.md
+last_updated: "2026-08-01T05:17:57.565Z"
 progress:
-  total_phases: 54
-  completed_phases: 49
-  total_plans: 337
-  completed_plans: 335
+  total_phases: 29
+  completed_phases: 28
+  total_plans: 183
+  completed_plans: 181
 ---
 
 # Project State
@@ -20,14 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-31)
 
 **Core value:** Every Thursday, ship a complete, on-voice issue: one obscure charity, eight original sections, and a working shop callout — published only after Andrew's manual review.
-**Current focus:** v5.0 (The Editorial App) — rebuilding the dispatch-control frontend around one editor's job. 31 routes → 4, 10 nav items → 0. Backend untouched.
+**Current focus:** Phase 51 — section-read-and-fix-in-place
 
 ## Current Position
 
-Phase: Not started (roadmap created — Phase 51 next)
-Plan: —
-Status: Roadmap created, ready for /gsd:plan-phase 51
-Last activity: 2026-07-31 — v5.0 roadmap created (Phases 51-54)
+Phase: 51 (section-read-and-fix-in-place) — EXECUTING
+Plan: 2 of 8
 
 ## Performance Metrics
 
@@ -361,6 +358,7 @@ Last activity: 2026-07-31 — v5.0 roadmap created (Phases 51-54)
 | Phase 50 P04 | 35min | 2 tasks | 10 files |
 | Phase 50 P05 | 33min | 3 tasks | 13 files |
 | Phase 50 P06 | 35 | 3 tasks | 23 files |
+| Phase 51 P00 | 25min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -947,6 +945,8 @@ Recent decisions affecting current work:
 - [Phase 50]: restartAvailabilityFor is the single honesty-matrix source of truth (lib/nomenclature.ts), consumed by both RecoveryRail and InspectorFooter — editor_gate_1's paused case is an explicit caller-supplied flag, never inferred
 - [Phase 50]: WEEKLY_LOOP screen labels term-swapped to current names (Fact Check, WORKBENCH_NAV_LABELS-sourced Run Details/Agent Instructions/Quality Tests); House Rule 4 corrected to match the already-tripwired D-15 fact that Publish carries no typed confirmation
 - [Phase 50]: Stored eval_scores 'commit' enum literal left byte-unchanged (D-14) while all operator-facing labels around it were swept to Quality test/Test changes/Make active vocabulary
+- [Phase 51]: SectionReaderPage.test.tsx dynamic-imports the not-yet-existing page via a non-literal specifier + /* @vite-ignore */ to avoid Vite's import-analysis hard-failing a describe.skip'd suite
+- [Phase 51]: Wave 0 red/green status reported honestly per-case rather than forced: negative assertions (no card/no block elements) that are trivially true pre-feature are documented as green-today in 51-00-SUMMARY.md, not artificially failed
 
 ### Pending Todos
 
@@ -1055,6 +1055,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-01T00:13:45.564Z
-Stopped at: Phase 51 context gathered
-Resume file: .planning/phases/51-section-read-and-fix-in-place/51-CONTEXT.md
+Last session: 2026-08-01T05:17:57.550Z
+Stopped at: Completed 51-00-wave0-test-scaffolds-PLAN.md
+Resume file: None
