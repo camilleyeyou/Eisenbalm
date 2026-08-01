@@ -475,7 +475,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
 | 50. Workbench & Nomenclature | 7/7 | Complete    | 2026-07-17 |
-| 51. Section — Read and Fix in Place | 5/8 | In Progress|  |
+| 51. Section — Read and Fix in Place | 6/8 | In Progress|  |
 | 52. Issue — The Front Door | TBD | Not started | - |
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
@@ -1138,7 +1138,7 @@ Plans:
 - [x] 51-02-editorial-route-group-shell-scoped-typography-PLAN.md — app/(editorial)/layout.tsx with its own Confirm/CommandPalette/Inspector stack (Pitfall 3) + .section-reader 760px/17.5px/16px scoped CSS (Wave 2)
 - [x] 51-03-delete-reviewed-bookkeeping-derive-story-desk-PLAN.md — D-25: delete useReviewedSections + drive StoryDeskGrid/StoryFocusView/ReviewDeskRunView from open-finding counts (Wave 2)
 - [x] 51-04-section-reader-page-honest-states-nav-count-PLAN.md — /s/[section]: current-run + draft + single-section Galley (all axes, neutral labels), three honest states, exempt-section notes, end-of-prose prev/next + derived count (Wave 3)
-- [ ] 51-05-in-place-editor-group-accept-PLAN.md — in-place textarea block editor (patchSection/patchBonus branch, 409 copy) + pure findingGroups selector + group-aware sequential Accept with honest partial failure (Wave 4)
+- [x] 51-05-in-place-editor-group-accept-PLAN.md — in-place textarea block editor (patchSection/patchBonus branch, 409 copy) + pure findingGroups selector + group-aware sequential Accept with honest partial failure (Wave 4)
 - [ ] 51-07-evidence-in-the-finding-popover-PLAN.md — READ-03/D-20: pure findingClaimLink intersection selector + ClaimProvenanceCard mounted phrasingSafe inside AnnotationMark's popover (client-derived link, zero schema change) (Wave 5)
 - [ ] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan + human read-through checkpoint (Wave 6)
 **UI hint**: yes
