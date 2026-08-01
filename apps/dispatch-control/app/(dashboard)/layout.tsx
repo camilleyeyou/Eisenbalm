@@ -13,11 +13,13 @@
  *
  * Phase 44 Plan 44-06 (INS-01, D-06, docs/API_CONTRACTS.md §44.6): the
  * shell is wrapped in the single <InspectorProvider> instance here — the
- * ONE place it is ever mounted app-wide — so every route under
- * (dashboard)/, including /my-tasks (which is NOT under the Issue
+ * ONE place it is mounted for the (dashboard) route group — so every route
+ * under (dashboard)/, including /my-tasks (which is NOT under the Issue
  * Workspace frame), shares the same openInspector/closeInspector opener and
  * the same single panel. Do NOT add a second <InspectorProvider> anywhere
- * else. This layout stays a Server Component; wrapping its children in the
+ * else within this route group; the sibling (editorial) group mounts its
+ * own independent instance in app/(editorial)/layout.tsx (Phase 51, D-01).
+ * This layout stays a Server Component; wrapping its children in the
  * 'use client' InspectorProvider is fine — the children remain
  * server-rendered.
  *
