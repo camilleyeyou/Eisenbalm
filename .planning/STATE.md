@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 51-03-delete-reviewed-bookkeeping-derive-story-desk-PLAN.md
-last_updated: "2026-08-01T06:05:22.472Z"
+stopped_at: Completed 51-04-section-reader-page-honest-states-nav-count-PLAN.md
+last_updated: "2026-08-01T06:36:39.782Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-31)
 ## Current Position
 
 Phase: 51 (section-read-and-fix-in-place) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 
 ## Performance Metrics
 
@@ -362,6 +362,7 @@ Plan: 5 of 8
 | Phase 51 P01 | 17min | 3 tasks | 8 files |
 | Phase 51 P02 | 8min | 2 tasks | 3 files |
 | Phase 51 P03 | 10min | 2 tasks | 4 files |
+| Phase 51 P04 | 30min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -954,6 +955,8 @@ Recent decisions affecting current work:
 - [Phase 51]: Editorial route-group layout doc comment paraphrases chrome-component names to avoid conflicting with the Task 1 acceptance-criteria grep for those exact tokens
 - [Phase 51]: middleware.ts left unchanged for /s/[section] — existing Clerk catch-all matcher already covers it
 - [Phase 51]: [Phase 51-03]: useReviewedSections.ts deleted (D-25) — StoryDeskGrid/StoryFocusView/ReviewDeskRunView all derive card status, progress header, badge and footer nav from chipCounts[...].open/.error; statusFor's 'done' now means 'no open findings', not 'hand-ticked'; nextUnreviewedAfter renamed nextNeedsYouAfter, walking the same chipCounts memo (no second counts source)
+- [Phase 51]: Header's back-arrow is a CSS ::before glyph (never real DOM text) so it can't collide with SectionEndNav's real prev/next arrow text under RTL's direct-text-node query matching
+- [Phase 51]: Fixed a Wave-0 test scaffold gap: SectionReaderPage.test.tsx's renderSection() now wraps the page in InspectorProvider, since the page's onInspect wiring calls the shared useInspector() hook
 
 ### Pending Todos
 
@@ -1062,6 +1065,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-01T06:05:22.456Z
-Stopped at: Completed 51-03-delete-reviewed-bookkeeping-derive-story-desk-PLAN.md
+Last session: 2026-08-01T06:36:39.766Z
+Stopped at: Completed 51-04-section-reader-page-honest-states-nav-count-PLAN.md
 Resume file: None
