@@ -242,3 +242,30 @@ describe('ClaimProvenanceCard — six actions + Open source + Inspect (D-11, non
     expect(openSource.getAttribute('href')).toBe('https://example.org/a')
   })
 })
+
+// ── Phase 51 (READ-03, D-20, Pitfall 1, section-read-and-fix-in-place) ──────
+//
+// Written before its implementation lands (plan 51-01 Task 2). This card's
+// current markup returns nested block-level <div>/<p>/<h3> elements
+// throughout, so it cannot legally mount inside AnnotationMark's popover
+// (which renders as phrasing content only, inside the galley's <p>
+// elements — 51-UI-SPEC.md "Popover Evidence Rendering"). RED until then.
+
+describe('Phase 51 — phrasingSafe mode', () => {
+  it('phrasingSafe renders no div, p, h3, ul or li', () => {
+    const { container } = render(<ClaimProvenanceCard claim={BASE_CLAIM} phrasingSafe />)
+    expect(container.querySelector('div')).toBeNull()
+    expect(container.querySelector('p')).toBeNull()
+    expect(container.querySelector('h3')).toBeNull()
+    expect(container.querySelector('ul')).toBeNull()
+    expect(container.querySelector('li')).toBeNull()
+  })
+
+  it('default mode is unchanged', () => {
+    // GREEN before AND after 51-01 — proves the default branch keeps
+    // today's block markup byte-for-byte (Stage 3 Fact Check / Approval
+    // callers are unaffected by the new phrasingSafe mode).
+    const { container } = render(<ClaimProvenanceCard claim={BASE_CLAIM} />)
+    expect(container.querySelector('div')).not.toBeNull()
+  })
+})

@@ -60,6 +60,10 @@ import { rewrite } from '@/lib/voicePassClient'
 import AnnotationMark, {
   type AnnotationMarkDef,
 } from '../components/galley/AnnotationMark'
+// Phase 51 (READ-03, D-20) — the shared claim shape the evidence card will be
+// fed once it mounts inside this popover (plan 51-07). Imported here purely
+// for fixture typing; AnnotationMark does not accept a `claim` prop yet.
+import type { ClaimProvenanceView } from '@/components/provenance/ClaimProvenanceCard'
 
 const value: AnnotationMarkDef = {
   findingId: 'f1',
@@ -331,5 +335,158 @@ describe('AnnotationMark voice-tell variant (VOX-02, D-10)', () => {
         'tok-clerk',
       )
     })
+  })
+})
+
+// ── Phase 51 (READ-01..08, section-read-and-fix-in-place) — Wave 0 scaffolds ──
+//
+// The three describe blocks below are written BEFORE their implementations
+// land (plans 51-01 and 51-07). Per 51-VALIDATION.md, some cases here are
+// intentionally RED today and turn GREEN once the referenced plan ships; the
+// Voice Pass regression case is the opposite — it documents CURRENT behavior
+// and must stay GREEN throughout, proving the coming fix doesn't break it.
+
+/** A finding with a warning severity, so it doesn't collide with the base
+ * `value` fixture's 'error' severity aria-label used by `openPopover()`
+ * above. `suggestedFix` is explicitly `undefined` (not merely absent) — the
+ * spread in `renderMark` (`{ ...value, ...overrides }`) only overwrites keys
+ * PRESENT in `overrides`, so an absent key would silently leak the base
+ * fixture's `suggestedFix` through. That is the whole point of this fixture
+ * (Pitfall 2): no stored suggestedFix. */
+const pitfall2Value: AnnotationMarkDef = {
+  findingId: 'v1',
+  severity: 'warning',
+  axis: 'machine-tell',
+  reason: 'Machine tell.',
+  suggestedFix: undefined,
+  quotedSpan: 'in a garage',
+}
+
+function openWarningPopover() {
+  fireEvent.click(screen.getByRole('button', { name: /qa warning finding/i }))
+}
+
+describe('Phase 51 — label-independent accept trigger (Pitfall 2)', () => {
+  it('Voice Pass regression: Accept rewrite label still offers Accept with no stored suggestedFix', () => {
+    // GREEN BEFORE 51-01 — this is the regression guard for Phase 36's
+    // existing string-matched isRewriteVariant, not a new feature.
+    renderMark(pitfall2Value, {
+      labels: { accept: 'Accept rewrite', editInline: 'Write my own', dismiss: 'Keep (not a tell)' },
+    })
+    openWarningPopover()
+
+    expect(screen.getByRole('button', { name: 'Accept rewrite' })).toBeDefined()
+    expect(screen.queryByText(/Accept unavailable/)).toBeNull()
+  })
+
+  it('neutral label plus generateFixOnAccept still offers Accept with no stored suggestedFix', () => {
+    // RED until plan 51-01 Task 3 threads a label-independent trigger.
+    renderMark(
+      pitfall2Value,
+      {
+        labels: { accept: 'Accept suggestion', editInline: 'Edit myself', dismiss: 'Dismiss' },
+        generateFixOnAccept: true,
+      },
+    )
+    openWarningPopover()
+
+    expect(screen.getByRole('button', { name: 'Accept suggestion' })).toBeDefined()
+    expect(screen.queryByText(/Accept unavailable/)).toBeNull()
+  })
+
+  it('neutral label without generateFixOnAccept keeps the Review Desk unavailable message', () => {
+    renderMark(pitfall2Value, { labels: { accept: 'Accept suggestion' } })
+    openWarningPopover()
+
+    expect(screen.getByText('Accept unavailable — no suggested fix.')).toBeDefined()
+  })
+})
+
+describe('Phase 51 — Fact/Voice tag (READ-02, D-07)', () => {
+  // The tag must be assertable WITHOUT opening the popover — every assertion
+  // below runs immediately after render, never after a click. That is
+  // literally what READ-02 requires ("readable without opening the popover").
+
+  it('showAxisTag with a FACTUAL_AXES axis renders "Fact"', () => {
+    renderMark({ axis: 'precision' }, { showAxisTag: true })
+    expect(screen.getByText('Fact')).toBeDefined()
+  })
+
+  it('showAxisTag with a VOICE_AXES axis renders "Voice"', () => {
+    renderMark({ axis: 'machine-tell' }, { showAxisTag: true })
+    expect(screen.getByText('Voice')).toBeDefined()
+  })
+
+  it('showAxisTag with axis undefined renders "Fact" (conservative default)', () => {
+    renderMark({ axis: undefined }, { showAxisTag: true })
+    expect(screen.getByText('Fact')).toBeDefined()
+  })
+
+  it('no showAxisTag renders neither Fact nor Voice', () => {
+    renderMark({ axis: 'precision' })
+    expect(screen.queryByText('Fact')).toBeNull()
+    expect(screen.queryByText('Voice')).toBeNull()
+  })
+})
+
+describe('Phase 51 — evidence in the finding popover (READ-03, D-20)', () => {
+  const claim: ClaimProvenanceView = {
+    text: 'Demand outpaces supply four to one.',
+    importance: 'Load-bearing',
+    status: 'checked',
+    sourceUrl: 'https://example.org/report',
+    supportingPassage: 'as documented by the founding trust records',
+    retrievedAt: 1751328000000,
+    sectionName: 'originStory',
+  }
+
+  function renderMarkForEvidence(
+    overrides: Partial<AnnotationMarkDef> = {},
+    props: Record<string, unknown> = {},
+  ) {
+    const reloadDraft = vi.fn(async () => {})
+    const onEditSection = vi.fn()
+    return render(
+      <AnnotationMark
+        value={{ ...value, ...overrides }}
+        runId="run-1"
+        sectionId="originStory"
+        revisionId="rev-1"
+        reloadDraft={reloadDraft}
+        onEditSection={onEditSection}
+        {...props}
+      >
+        in a garage
+      </AnnotationMark>,
+    )
+  }
+
+  it('renders the claim provenance card beneath the reason when the finding links to a claim', () => {
+    // RED until plan 51-07 mounts the evidence card in this popover.
+    const { container } = renderMarkForEvidence({}, { claim })
+    openPopover()
+
+    expect(screen.getByText(value.reason)).toBeDefined()
+    expect(container.textContent).toContain(claim.text)
+    expect(container.textContent).toContain(claim.sourceUrl as string)
+  })
+
+  it('renders no card when no claim is supplied', () => {
+    const { container } = renderMarkForEvidence()
+    openPopover()
+
+    expect(screen.getByText(value.reason)).toBeDefined()
+    expect(container.textContent).not.toContain(claim.text)
+  })
+
+  it('the evidence card inside the popover contains no block-level elements (phrasingSafe, Pitfall 1)', () => {
+    const { container } = renderMarkForEvidence({}, { claim })
+    openPopover()
+
+    const popover = container.querySelector('.galley-popover')
+    expect(popover).not.toBeNull()
+    expect(popover!.querySelector('div')).toBeNull()
+    expect(popover!.querySelector('p')).toBeNull()
+    expect(popover!.querySelector('h3')).toBeNull()
   })
 })

@@ -20,7 +20,7 @@
  * `components/galley/` so both Review Desk and Voice Pass can import it.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import type { DraftResponse } from '@/lib/contentPatchClient'
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
@@ -396,5 +396,157 @@ describe('Galley includeAxes filter (Phase 36, Task 2)', () => {
       />,
     )
     expect(container.querySelectorAll('mark.galley-anno').length).toBe(0)
+  })
+})
+
+// ── Phase 51 (READ-01..08, section-read-and-fix-in-place) — Wave 0 scaffolds ──
+//
+// Written before their implementations land (plan 51-01 for markSourcedClaims,
+// plan 51-07 for showClaimEvidenceInFindings). `Galley` does not destructure
+// either prop today, so passing them is a harmless no-op until then — that is
+// exactly what makes the RED/GREEN split below meaningful. Both new provenance
+// props are additive; every existing test above is untouched.
+
+describe('Phase 51 — D-09 only unsourced claims are marked', () => {
+  // One section, two claim rows: one sourced (claimId present), one
+  // unsourced (claimId absent) — unlike the top-level `claimRows` fixture,
+  // BOTH rows live in the SAME section so a single render exercises both
+  // provenance states side by side.
+  const twoClaimRowsSameSection = [
+    {
+      claimIndex: 0,
+      text: 'in a garage',
+      status: 'pending',
+      claimId: 'c-0',
+      sourceUrl: 'https://example.com/history',
+      retrievedAt: 1700000000000,
+      sectionName: 'originStory',
+      blockIndexHint: 0,
+    },
+    {
+      claimIndex: 1,
+      text: '1974',
+      status: 'pending',
+      sectionName: 'originStory',
+      blockIndexHint: 0,
+    },
+  ]
+
+  function mockTwoClaimRowsSameSection() {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') return []
+      if (queryRef === 'claimChecks:listByRunId') return twoClaimRowsSameSection
+      return undefined
+    })
+  }
+
+  it('markSourcedClaims false renders no mark element for a sourced claim', () => {
+    // RED until plan 51-01 Task 3f wires markSourcedClaims through Galley.
+    mockTwoClaimRowsSameSection()
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        showProvenance
+        markSourcedClaims={false}
+      />,
+    )
+
+    expect(container.querySelector('.galley-claim[data-provenance="sourced"]')).toBeNull()
+    expect(container.querySelector('.galley-claim[data-provenance="unsourced"]')).not.toBeNull()
+  })
+
+  it('Review Desk default still marks both provenances', () => {
+    // GREEN BEFORE 51-01 — the D-24 regression guard proving the default is
+    // bit-for-bit today's behavior (no markSourcedClaims prop at all).
+    mockTwoClaimRowsSameSection()
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        showProvenance
+      />,
+    )
+
+    expect(container.querySelector('.galley-claim[data-provenance="sourced"]')).not.toBeNull()
+    expect(container.querySelector('.galley-claim[data-provenance="unsourced"]')).not.toBeNull()
+  })
+})
+
+// ── Real-pipeline chain (not AnnotationMark-in-isolation) ───────────────────
+//
+// Every other evidence case in this suite passes a bare `claim` prop straight
+// to AnnotationMark in isolation, which cannot catch a wiring bug between the
+// D-09 render filter and the D-20 evidence lookup. This case goes through the
+// whole Galley -> resolveClaimsFor -> buildFindingClaimMap -> AnnotationMark
+// chain instead, so a lookup accidentally routed through the D-09-filtered
+// array would fail here even though it might pass a mocked-component test.
+
+describe('Phase 51 — D-09 and D-20 are independent (real pipeline)', () => {
+  // A claim_checks row that IS sourced, and a qaCorrections row whose
+  // quotedSpan overlaps the SAME phrase in the SAME block.
+  const sourcedClaimRow = {
+    claimIndex: 0,
+    text: 'in a garage',
+    status: 'pending',
+    claimId: 'c_1',
+    sourceUrl: 'https://example.org/report',
+    retrievedAt: 1751328000000, // -> 2025-07-01
+    sectionName: 'originStory',
+    blockIndexHint: 0,
+  }
+
+  const overlappingFinding = {
+    _id: 'qa-overlap',
+    runId: 'r1',
+    sectionName: 'origin_story',
+    severity: 'warning',
+    axis: 'precision',
+    reason: 'Verify this detail.',
+    accepted: false,
+    quotedSpan: 'in a garage',
+    blockIndexHint: 0,
+  }
+
+  it('D-09 suppresses the sourced wash while D-20 still surfaces its evidence in the finding popover', () => {
+    // RED until BOTH 51-01 (markSourcedClaims) and 51-07
+    // (showClaimEvidenceInFindings) land — assertion 1 alone already fails
+    // today, which is the point: suppressing the wash and finding the
+    // evidence are independent behaviors that must both hold in ONE render.
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') return [overlappingFinding]
+      if (queryRef === 'claimChecks:listByRunId') return [sourcedClaimRow]
+      return undefined
+    })
+
+    const { container } = render(
+      <Galley
+        runId="r1"
+        draft={draft}
+        revisionId="rev-1"
+        reloadDraft={noop}
+        onEditSection={noop}
+        showProvenance
+        markSourcedClaims={false}
+        showClaimEvidenceInFindings
+      />,
+    )
+
+    // D-09: the sourced claim carries no wash.
+    expect(container.querySelector('.galley-claim[data-provenance="sourced"]')).toBeNull()
+
+    // D-20: readable in the finding popover — source URL + retrieved date.
+    const mark = container.querySelector('mark.galley-anno')
+    expect(mark).not.toBeNull()
+    fireEvent.click(mark as Element)
+
+    expect(container.textContent).toContain('https://example.org/report')
+    expect(container.textContent).toContain('2025-07-01')
   })
 })

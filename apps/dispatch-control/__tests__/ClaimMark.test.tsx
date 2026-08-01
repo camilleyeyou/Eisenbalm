@@ -174,3 +174,58 @@ describe('ClaimMark shared provenance card (FCT-04, Plan 42-07)', () => {
     expect(screen.getByRole('button', { name: 'Skip' })).toBeDefined()
   })
 })
+
+// ── Phase 51 (READ-02/READ-03, D-07/D-09, section-read-and-fix-in-place) ────
+//
+// Written before their implementations land (plan 51-01). Case 1 is
+// intentionally RED today (ClaimMark's popover currently mounts the
+// block-markup `ClaimProvenanceCard`, not a phrasing-safe variant); case 2
+// is RED today (no `showAxisTag` prop exists yet).
+
+describe('Phase 51 — phrasing-safe popover (Pitfall 1)', () => {
+  it('the open claim popover contains no block-level elements', () => {
+    // jsdom does NOT validate HTML content models (it will happily nest a
+    // <div> inside a <span> with no parse error) — this structural assertion
+    // is only a PROXY for DOM validity, not a proof of it. The real check is
+    // manual: open a claim popover in Chrome DevTools and confirm no <p>
+    // auto-close/reparent occurs in the rendered tree (51-VALIDATION.md
+    // Manual-Only Verifications row 3).
+    const { container } = render(
+      <ClaimMark value={checkedValue} runId="run-1">
+        the claim text
+      </ClaimMark>,
+    )
+    fireEvent.click(getMark())
+
+    const popover = container.querySelector('.galley-popover')
+    expect(popover).not.toBeNull()
+    expect(popover!.querySelector('div')).toBeNull()
+    expect(popover!.querySelector('p')).toBeNull()
+    expect(popover!.querySelector('h3')).toBeNull()
+  })
+
+  it('Source tag renders for an unsourced claim only when showAxisTag is set', () => {
+    render(
+      <ClaimMark value={pendingValue} runId="run-1" showAxisTag>
+        the claim text
+      </ClaimMark>,
+    )
+    expect(screen.getByText('Source')).toBeDefined()
+    cleanup()
+
+    render(
+      <ClaimMark value={checkedValue} runId="run-1" showAxisTag>
+        the claim text
+      </ClaimMark>,
+    )
+    expect(screen.queryByText('Source')).toBeNull()
+    cleanup()
+
+    render(
+      <ClaimMark value={pendingValue} runId="run-1">
+        the claim text
+      </ClaimMark>,
+    )
+    expect(screen.queryByText('Source')).toBeNull()
+  })
+})
