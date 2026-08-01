@@ -310,6 +310,14 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
   const showCleanLine = isAnnotated && thisSectionState?.state === 'clean'
   const exemptKind = exemptKindFor(sectionId, draft.bonusType)
 
+  // TS does not narrow an outer `let`-backed state variable's null-check
+  // into a NESTED function declaration's body (the closure could in
+  // principle run after `draft`/`runId` change) — capture both in a `const`
+  // once so `blocksForSection`/`acceptGroup` below read the
+  // already-narrowed types.
+  const currentDraft = draft
+  const currentRunId = runId
+
   // Phase 51 (READ-05, D-18) — the section's current blocks, for the
   // in-place editor's Save-edit payload. `bonus` is not one of `draft.
   // sections`'s four keys — its blocks live at the top-level `draft.bonus.
@@ -317,9 +325,9 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
   // shapes into a single `ContentBlock[]` read.
   function blocksForSection(id: string): ContentBlock[] {
     if (id === 'bonus') {
-      return Array.isArray(draft.bonus?.body) ? (draft.bonus.body as ContentBlock[]) : []
+      return Array.isArray(currentDraft.bonus?.body) ? (currentDraft.bonus.body as ContentBlock[]) : []
     }
-    return draft.sections[id]?.blocks ?? []
+    return currentDraft.sections[id]?.blocks ?? []
   }
 
   // The open QA findings for ONE section, mapped from the QA sectionName
@@ -341,7 +349,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
         quotedSpan: row.quotedSpan,
         blockIndexHint: row.blockIndexHint,
         accepted: row.accepted,
-        resolution: row.resolution,
+        resolution: row.resolution ?? undefined,
       }))
   }
 
@@ -395,12 +403,12 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
    */
   async function acceptGroup(findingId: string) {
     const group = groupForFinding(sectionOpenFindings, findingId)
-    let currentRevisionId = draft.revisionId
+    let currentRevisionId = currentDraft.revisionId
     let applied = 0
     const failed: string[] = []
     for (const id of group.findingIds) {
       try {
-        const res = await acceptFinding(runId, id, { ifRevisionID: currentRevisionId }, await getToken())
+        const res = await acceptFinding(currentRunId, id, { ifRevisionID: currentRevisionId }, await getToken())
         currentRevisionId = res.revisionId // D-12 — fresh revision for the NEXT call
         applied += 1
       } catch {
