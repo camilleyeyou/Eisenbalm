@@ -51,6 +51,24 @@ interface ClaimMarkProps {
    * only.
    */
   onUnsourcedClaimClick?: (claimIndex: number) => void
+  /**
+   * Phase 51 (D-07) — render a small always-visible "Source" text tag
+   * adjacent to the marked span for an UNSOURCED claim, readable WITHOUT
+   * opening the popover. A sourced claim renders no tag (D-09). Undefined
+   * (Review Desk / Voice Pass) renders no tag — unchanged.
+   */
+  showAxisTag?: boolean
+}
+
+const axisTagStyle: React.CSSProperties = {
+  marginLeft: 4,
+  fontFamily: 'var(--font-ui)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '.04em',
+  textTransform: 'uppercase',
+  color: 'var(--color-ink-soft)',
+  whiteSpace: 'nowrap',
 }
 
 const actionButtonStyle: React.CSSProperties = {
@@ -82,6 +100,7 @@ export default function ClaimMark({
   children,
   runId,
   onUnsourcedClaimClick,
+  showAxisTag,
 }: ClaimMarkProps) {
   const [open, setOpen] = useState(false)
   // Phase 41 (WSP-04) — keyboard-focus reveal, independent of `open` so a
@@ -186,6 +205,11 @@ export default function ClaimMark({
       >
         {children}
       </mark>
+      {showAxisTag && value.provenance === 'unsourced' && (
+        <span className="galley-claim-tag" aria-hidden="false" style={axisTagStyle}>
+          Source
+        </span>
+      )}
       {(open || focusOpen) && (
         <span className="galley-popover" role="dialog">
           {/*
@@ -201,6 +225,7 @@ export default function ClaimMark({
             claim={claimView}
             busy={busy}
             actions={{ onConfirm: () => void handleSetStatus('checked') }}
+            phrasingSafe
           />
           <span className="galley-popover__actions" style={{ display: 'block', marginTop: 8 }}>
             <button

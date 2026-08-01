@@ -135,6 +135,15 @@ interface ClaimProvenanceCardProps {
   claim: ClaimProvenanceView
   actions?: ClaimCardActions
   busy?: boolean
+  /**
+   * Phase 51 (D-20, Pitfall 1) — render every container as
+   * `<span style={{ display: 'block' }}>` instead of `<div>`/`<p>`/`<h3>` so
+   * this card can legally mount inside a galley popover, which is PHRASING
+   * CONTENT (it renders inside the galley's <p> elements). Visual output is
+   * unchanged — only the element types change. Default false = today's
+   * block markup, byte-identical for every existing caller.
+   */
+  phrasingSafe?: boolean
 }
 
 export type ClaimChipState = 'checked' | 'must-fix' | 'unchecked' | 'review-recommended' | 'changed'
@@ -175,7 +184,17 @@ const ACTION_BUTTON =
 const INLINE_INPUT =
   'min-h-[44px] w-full rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 text-xs text-[color:var(--color-ink)]'
 
-export default function ClaimProvenanceCard({ claim, actions, busy }: ClaimProvenanceCardProps) {
+export default function ClaimProvenanceCard({
+  claim,
+  actions,
+  busy,
+  phrasingSafe,
+}: ClaimProvenanceCardProps) {
+  // Phase 51 (D-20, Pitfall 1) — element-type aliases only; no visual,
+  // className, copy, or handler change. See prop doc-comment above.
+  const Box = phrasingSafe ? 'span' : 'div'
+  const Txt = phrasingSafe ? 'span' : 'p'
+  const boxStyle = phrasingSafe ? ({ display: 'block' } as React.CSSProperties) : undefined
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(claim.text)
   const [replacingSource, setReplacingSource] = useState(false)
@@ -200,16 +219,24 @@ export default function ClaimProvenanceCard({ claim, actions, busy }: ClaimProve
   const retrievedLabel = formatRetrievedAt(claim.retrievedAt)
 
   return (
-    <div
+    <Box
       className="flex flex-col gap-3 border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
+      style={boxStyle}
       data-testid="claim-provenance-card"
     >
-      <div>
-        <h3 className={FIELD_LABEL}>Claim</h3>
-        <p className="mt-1 text-[14px] leading-snug text-[color:var(--color-ink)]">{claim.text}</p>
-      </div>
+      <Box style={boxStyle}>
+        <Txt className={FIELD_LABEL} style={boxStyle}>
+          Claim
+        </Txt>
+        <Txt
+          className="mt-1 text-[14px] leading-snug text-[color:var(--color-ink)]"
+          style={boxStyle}
+        >
+          {claim.text}
+        </Txt>
+      </Box>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <Box className="flex flex-wrap items-center gap-x-4 gap-y-2" style={boxStyle}>
         <span className={`${FIELD_LABEL} text-[color:var(--color-ink)]`}>
           <span aria-hidden="true">{chipMeta.icon}</span> {chipMeta.label}
         </span>
@@ -225,30 +252,44 @@ export default function ClaimProvenanceCard({ claim, actions, busy }: ClaimProve
             {confidenceLabel}
           </span>
         </span>
-      </div>
+      </Box>
 
-      <div>
-        <h3 className={FIELD_LABEL}>Source</h3>
-        <p className="mt-1 text-[13px] text-[color:var(--color-ink)]">
+      <Box style={boxStyle}>
+        <Txt className={FIELD_LABEL} style={boxStyle}>
+          Source
+        </Txt>
+        <Txt className="mt-1 text-[13px] text-[color:var(--color-ink)]" style={boxStyle}>
           {sourcePublisher}
           {claim.sourceUrl && retrievedLabel !== '—' ? ` · retrieved ${retrievedLabel}` : null}
-        </p>
-      </div>
+        </Txt>
+      </Box>
 
-      <div>
-        <h3 className={FIELD_LABEL}>Supporting passage</h3>
-        <p className="mt-1 text-[13px] italic text-[color:var(--color-ink-soft)]">
+      <Box style={boxStyle}>
+        <Txt className={FIELD_LABEL} style={boxStyle}>
+          Supporting passage
+        </Txt>
+        <Txt
+          className="mt-1 text-[13px] italic text-[color:var(--color-ink-soft)]"
+          style={boxStyle}
+        >
           {claim.supportingPassage || 'No supporting passage recorded.'}
-        </p>
-      </div>
+        </Txt>
+      </Box>
 
-      <div>
-        <h3 className={FIELD_LABEL}>Agent</h3>
-        <p className="mt-1 text-[13px] text-[color:var(--color-ink)]">{agent}</p>
-      </div>
+      <Box style={boxStyle}>
+        <Txt className={FIELD_LABEL} style={boxStyle}>
+          Agent
+        </Txt>
+        <Txt className="mt-1 text-[13px] text-[color:var(--color-ink)]" style={boxStyle}>
+          {agent}
+        </Txt>
+      </Box>
 
       {/* ── Action controls (D-11 — isolated, none hidden; Phase 49 wraps) ── */}
-      <div className="flex flex-wrap gap-2 border-t border-[color:var(--color-faint)] pt-3">
+      <Box
+        className="flex flex-wrap gap-2 border-t border-[color:var(--color-faint)] pt-3"
+        style={boxStyle}
+      >
         <button
           type="button"
           className={ACTION_BUTTON}
@@ -453,8 +494,8 @@ export default function ClaimProvenanceCard({ claim, actions, busy }: ClaimProve
         >
           Inspect
         </button>
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 
