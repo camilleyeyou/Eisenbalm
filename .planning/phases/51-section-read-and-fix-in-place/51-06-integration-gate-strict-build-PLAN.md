@@ -92,6 +92,8 @@ Do not weaken, skip or `--filter` past any failing assertion to reach green. If 
     - `grep -rn "includeAxes\|lucide-react\|localStorage\|Math.max" "apps/dispatch-control/app/(editorial)/"` returns NO matches
     - `grep -n "markSourcedClaims={false}" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches (D-09)
     - `grep -n "ClaimProvenanceCard" apps/dispatch-control/components/galley/AnnotationMark.tsx` matches (D-20 / READ-03)
+    - `grep -n "buildFindingClaimMap(resolved, claimResolved ??" apps/dispatch-control/components/galley/GallerySection.tsx` returns NO matches
+    - `cd apps/dispatch-control && npx vitest run __tests__/Galley.test.tsx -t 'D-09 and D-20 are independent'` exits 0
     - `test ! -f "apps/dispatch-control/app/(editorial)/page.tsx"` succeeds
     - `git status --porcelain packages/pipeline convex schemas` returns NO lines
     - `git status --porcelain apps/dispatch-control/package.json pnpm-lock.yaml` returns NO lines

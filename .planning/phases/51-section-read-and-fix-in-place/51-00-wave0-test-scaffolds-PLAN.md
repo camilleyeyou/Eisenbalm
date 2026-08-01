@@ -18,6 +18,7 @@ must_haves:
     - "Every Phase 51 requirement has an automated command that exists before its implementation lands"
     - "A Voice-Pass regression case for the label-independent accept trigger exists and is green today"
     - "A sourced claim renders no mark at all when the caller opts out, and still renders one on Review Desk"
+    - "A test exercises the real Galley -> resolveClaimsFor -> buildFindingClaimMap chain, not just AnnotationMark in isolation"
     - "The full existing Vitest suite is still green after the scaffolds land"
   artifacts:
     - path: "apps/dispatch-control/__tests__/SectionReaderPage.test.tsx"
@@ -160,6 +161,20 @@ Add a comment in the file stating that jsdom does NOT validate HTML content mode
 1. `'markSourcedClaims false renders no mark element for a sourced claim'` — render `<Galley … showProvenance markSourcedClaims={false} />` and assert `container.querySelector('.galley-claim[data-provenance="sourced"]')` is null while `container.querySelector('.galley-claim[data-provenance="unsourced"]')` is NOT null. The sourced claim must be plain prose — no `<mark>` in the DOM and none in the accessibility tree, not merely an invisible one. (Fails until 51-01 Task 3f.)
 2. `'Review Desk default still marks both provenances'` — render `<Galley … showProvenance />` with NO `markSourcedClaims` and assert BOTH `.galley-claim[data-provenance="sourced"]` and `.galley-claim[data-provenance="unsourced"]` are present. **This case must be GREEN before 51-01 lands** — it is the D-24 regression guard proving the default is bit-for-bit today's behaviour.
 
+
+**`__tests__/Galley.test.tsx` — also add a `describe('Phase 51 — D-09 and D-20 are independent (real pipeline)')` block with ONE case that goes through the whole `Galley -> resolveClaimsFor -> buildFindingClaimMap -> AnnotationMark` chain.** Every other evidence case in this suite passes a bare `claim` prop straight to `AnnotationMark` in isolation, which cannot catch a wiring bug between the D-09 render filter and the D-20 lookup — this case exists precisely to catch it.
+
+Fixture, one section with one paragraph:
+- a `claim_checks` row that IS sourced — `claimId: 'c_1'`, `sourceUrl: 'https://example.org/report'`, `retrievedAt: 1751328000000`, `text` matching a phrase in the paragraph
+- a `qaCorrections` row whose `quotedSpan` **overlaps that same phrase** in the same block
+
+Render `<Galley … showProvenance markSourcedClaims={false} showClaimEvidenceInFindings />` and assert all three, in ONE test:
+1. `container.querySelector('.galley-claim[data-provenance="sourced"]')` is **null** — D-09: the sourced claim carries no wash.
+2. After opening the finding's popover, the source URL `https://example.org/report` is present in it — D-20: readable in the finding popover.
+3. The formatted `retrievedAt` date (`2025-07-01`) is present in that same popover — D-20's "retrieved date", the second field that exists only on sourced rows.
+
+Assertions 1 and 2/3 must BOTH hold in the same render. That is the whole point: suppressing the wash and finding the evidence are independent behaviours, and a lookup routed through the D-09-filtered array would pass (1) and fail (2)/(3).
+
 **`__tests__/AnnotationMark.test.tsx` — also add a `describe('Phase 51 — evidence in the finding popover (READ-03, D-20)')` block with three cases** (all fail until plan 51-07 lands):
 - `'renders the claim provenance card beneath the reason when the finding links to a claim'` — pass a `claim` prop shaped as `ClaimProvenanceView` (`{ text, importance, status, sourceUrl, supportingPassage, retrievedAt, sectionName }`), open the popover, assert the claim's `text` and its `sourceUrl` are both visible in the same popover as `value.reason`.
 - `'renders no card when no claim is supplied'` — omit the prop, assert the reason renders and the claim text does not.
@@ -178,6 +193,8 @@ Use `@ts-expect-error` on the not-yet-existing props ONLY if TypeScript blocks t
     - `grep -n "phrasingSafe" apps/dispatch-control/__tests__/ClaimProvenanceCard.test.tsx` matches
     - `grep -n "markSourcedClaims" apps/dispatch-control/__tests__/Galley.test.tsx` matches at least twice
     - `grep -n 'data-provenance="sourced"' apps/dispatch-control/__tests__/Galley.test.tsx` matches
+    - `grep -n 'showClaimEvidenceInFindings' apps/dispatch-control/__tests__/Galley.test.tsx` matches (the real-pipeline case)
+    - `grep -n 'example.org/report' apps/dispatch-control/__tests__/Galley.test.tsx` matches
     - `grep -n "ClaimProvenanceView\|supportingPassage" apps/dispatch-control/__tests__/AnnotationMark.test.tsx` matches
     - `cd apps/dispatch-control && npx vitest run __tests__/Galley.test.tsx -t "Review Desk default still marks both"` exits 0 (green BEFORE 51-01)
     - `cd apps/dispatch-control && npx vitest run __tests__/AnnotationMark.test.tsx -t "Voice Pass regression"` exits 0 (this case is green BEFORE 51-01)

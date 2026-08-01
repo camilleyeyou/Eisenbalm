@@ -288,6 +288,7 @@ In `ClaimMark.tsx`: pass `phrasingSafe` on the `<ClaimProvenanceCard …>` mount
     - With `showAxisTag`, a `ClaimMark` whose `provenance === 'unsourced'` renders the visible text "Source" adjacent to the span; a `sourced` claim renders no tag.
     - Without `showAxisTag` (Review Desk / Voice Pass), no tag renders anywhere.
     - With `markSourcedClaims={false}`, a sourced claim produces NO `.galley-claim` element at all (not an invisible one), while unsourced claims still mark.
+    - The unfiltered resolution result is still computed and bound to a local at both call sites, so plan 51-07 can use it for finding→claim lookup independently of the render filter.
     - Without `markSourcedClaims` (Review Desk / Voice Pass default), both provenances mark exactly as they do today.
   </behavior>
   <read_first>
@@ -394,17 +395,36 @@ Destructure them, pass `generateFixOnAccept={generateFixOnAccept}` and `showAxis
 markSourcedClaims?: boolean
 ```
 
-Destructure it as `markSourcedClaims = true` and apply it inside `resolveClaimsFor`, at the point the section's rows are selected — BEFORE they are mapped into `claimFindings` and handed to `resolveSectionFindings`:
+Destructure it as `markSourcedClaims = true`. Apply it as a filter on the **output** of `resolveClaimsFor`, NOT inside it — one resolution pass, two arrays:
 
 ```typescript
-let rowsForSection = claimsBySection.get(sectionId) ?? []
-// D-09: `provenance` is derived below as `row.claimId ? 'sourced' : 'unsourced'`,
-// so filtering on `claimId` here is that same predicate, applied earlier.
-if (!markSourcedClaims) rowsForSection = rowsForSection.filter(row => !row.claimId)
-if (rowsForSection.length === 0) return []
+// D-09: `provenance` is already derived inside resolveClaimsFor as
+// `row.claimId ? 'sourced' : 'unsourced'`, so filtering the RESOLVED output on
+// that field is the same predicate, and resolution is per-row independent
+// (resolveSectionFindings resolves each row against the block text on its own),
+// so the resulting set is identical to filtering the input.
+//
+// TWO ARRAYS, ON PURPOSE. `markSourcedClaims` answers a RENDER question ("does
+// this claim get its own <mark> wash?"). It must NOT be allowed to also answer
+// the unrelated LOOKUP question plan 51-07 asks ("does this finding overlap any
+// tracked claim?") — if it did, a finding sitting on a SOURCED claim could never
+// find its evidence, which is the exact case where source + retrieved date exist
+// (convex/schema.ts:481-483 — claimId/sourceUrl/retrievedAt are additive
+// TOGETHER; absent => unsourced, so an unsourced claim has no source and no date
+// by construction). Keep the unfiltered array; 51-07 consumes it.
+const claimsForRender = (all: ResolvedClaim[]) =>
+  markSourcedClaims ? all : all.filter(c => c.provenance === 'unsourced')
 ```
 
-Suppress at resolution — never with CSS, never inside `ClaimMark`. A mark that is merely invisible is still a mark in the DOM and in the accessibility tree, and is not "plain prose". Do not change what `showProvenance` means, do not edit either globals.css wash rule, and do not add a toggle control to any surface.
+At BOTH claim call sites — the `LONG_READ_SECTIONS` map (~line 372) and the `bonus`/specAd resolution (~line 344) — bind the full resolution to a named local and pass only the render-filtered array down:
+
+```typescript
+const claimResolvedAll = resolveClaimsFor(id, rows)   // unfiltered — 51-07's lookup input
+// …
+claimResolved={claimsForRender(claimResolvedAll)}     // render path only
+```
+
+Do NOT add a `markSourcedClaims` filter inside `resolveClaimsFor` itself, and do NOT drop `claimResolvedAll` — plan 51-07 needs it. A sourced claim that is filtered out of `claimsForRender` never reaches `toSyntheticBlocks`, so no `claimSpan` mark is created and no `<mark>` element exists: a genuine DOM-level removal, not a CSS suppression. Suppress here — never with CSS, never inside `ClaimMark`. A mark that is merely invisible is still a mark in the DOM and in the accessibility tree, and is not "plain prose". Do not change what `showProvenance` means, do not edit either globals.css wash rule, and do not add a toggle control to any surface.
 
 **3e — `Galley.tsx`, thread both props.** Add to `GalleyProps`:
 ```typescript
@@ -426,7 +446,10 @@ Destructure both in the component signature and pass them on BOTH `<GallerySecti
     <automated>cd apps/dispatch-control && npx vitest run __tests__/AnnotationMark.test.tsx __tests__/ClaimMark.test.tsx __tests__/Galley.test.tsx</automated>
   </verify>
   <acceptance_criteria>
-    - `grep -n 'markSourcedClaims' apps/dispatch-control/components/galley/Galley.tsx` matches at least 3 times (prop declaration, destructure, filter)
+    - `grep -n 'markSourcedClaims' apps/dispatch-control/components/galley/Galley.tsx` matches at least 3 times (prop declaration, destructure, `claimsForRender`)
+    - `grep -n 'claimsForRender' apps/dispatch-control/components/galley/Galley.tsx` matches at least 3 times (definition + both call sites)
+    - `grep -n 'claimResolvedAll' apps/dispatch-control/components/galley/Galley.tsx` matches at least 2 times (both call sites keep the unfiltered array for plan 51-07)
+    - `grep -n 'markSourcedClaims' apps/dispatch-control/components/galley/Galley.tsx` shows NO occurrence inside the `resolveClaimsFor` function body (lines ~300-340) — the filter is on the output, not the input
     - `grep -n 'markSourcedClaims = true' apps/dispatch-control/components/galley/Galley.tsx` matches — the default preserves Review Desk / Voice Pass
     - `grep -n 'markSourcedClaims' apps/dispatch-control/components/galley/ClaimMark.tsx apps/dispatch-control/components/galley/GallerySection.tsx` returns NO matches (suppression happens at resolution, not at render)
     - `git diff apps/dispatch-control/app/globals.css` shows NO change to either `.galley-claim[data-provenance=...]` rule
