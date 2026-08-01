@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
 status: Ready to execute
-stopped_at: Completed 51-05-in-place-editor-group-accept-PLAN.md
-last_updated: "2026-08-01T07:16:32.358Z"
+stopped_at: Completed 51-07-evidence-in-the-finding-popover-PLAN.md
+last_updated: "2026-08-01T07:36:38.451Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-07-31)
 ## Current Position
 
 Phase: 51 (section-read-and-fix-in-place) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 
 ## Performance Metrics
 
@@ -364,6 +364,7 @@ Plan: 7 of 8
 | Phase 51 P03 | 10min | 2 tasks | 4 files |
 | Phase 51 P04 | 30min | 3 tasks | 6 files |
 | Phase 51 P05 | 35min | 3 tasks | 8 files |
+| Phase 51 P07 | 20min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -961,6 +962,8 @@ Recent decisions affecting current work:
 - [Phase 51]: Fixed SectionReaderPage.test.tsx's bare useQuery mock (Rule 3, flagged by 51-04) so Galley's internal qaCorrections/claimChecks subscriptions return real fixture data -- required for all 9 in-place-edit/group-accept specs to be exercisable at all
 - [Phase 51]: InPlaceBlockEditor branches to patchBonus for the bonus section and patchSection for the four long-reads (bonus is not in patchSection's allow-list); openInPlaceEditor resolves the flagged block's index via the same resolveSectionFindings Galley uses internally, never a second resolver
 - [Phase 51]: Group accept runs sequentially, each acceptFinding call carrying the previous call's fresh revisionId (never parallel against one revisionId); partial failure reports the locked '{X} of {Y} applied -- {Z} still need you.' sentence and leaves failed members marked and individually openable
+- [Phase 51]: 51-07: buildFindingClaimMap consumes the UNFILTERED claimResolvedForLookup, never the D-09-filtered claimResolved render array -- pinned by the real-pipeline D-09/D-20-independence test
+- [Phase 51]: 51-07: extended the shared ClaimProvenanceCard's Source field to render the raw sourceUrl as visible text (additive, D-09/D-16 one-shared-card rule) so every caller including the new finding popover literally shows the source URL
 
 ### Pending Todos
 
@@ -1069,6 +1072,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-01T07:16:32.342Z
-Stopped at: Completed 51-05-in-place-editor-group-accept-PLAN.md
+Last session: 2026-08-01T07:36:38.435Z
+Stopped at: Completed 51-07-evidence-in-the-finding-popover-PLAN.md
 Resume file: None

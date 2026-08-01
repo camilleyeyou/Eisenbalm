@@ -434,7 +434,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Section — read and fix in place (READ)
 - [x] **READ-01**: Editor reads a section as full-width prose with no side rails and a reading measure, not a form.
 - [x] **READ-02**: Editor sees factual, voice and unsourced-claim problems marked **in the sentence they affect**, distinguishable by label as well as colour.
-- [ ] **READ-03**: Editor can open a marked problem and see the agent's reasoning and its evidence without leaving the paragraph.
+- [x] **READ-03**: Editor can open a marked problem and see the agent's reasoning and its evidence without leaving the paragraph.
 - [x] **READ-04**: Editor can accept the agent's suggested correction in one action, including when the same correction applies in more than one place.
 - [x] **READ-05**: Editor can edit the passage themselves instead of accepting the suggestion.
 - [x] **READ-06**: Editor can dismiss a finding that is not a problem, with the reason the existing annotation system already requires.
