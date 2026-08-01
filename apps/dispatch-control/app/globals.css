@@ -298,3 +298,29 @@ body {
     flex-shrink: 0;
   }
 }
+
+/* ── Phase 51 (D-04) — the Section reading surface, scoped ──────────────────
+   Every rule below is scoped under .section-reader so Review Desk and Voice
+   Pass are untouched. NEVER edit .galley-body or the bare [id^='galley-']
+   rule — both are shared with the v4.0 console.                             */
+
+.section-reader {
+  max-width: 760px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* D-04: 17.5px reading body, scoped. .galley-body stays 16.5px globally. */
+.section-reader .galley-body {
+  font-size: 17.5px;
+  line-height: 1.7;
+}
+
+/* Pitfall 6: the shared [id^='galley-'] { scroll-margin-top: 88px } was tuned
+   for the v4 sticky stage-tab nav. This surface's header is not sticky (D-05),
+   so this compound selector wins on specificity and corrects the offset. It
+   ONLY takes effect if the page's wrapper element literally carries the
+   .section-reader class — assert that in the render test, never assume it. */
+.section-reader [id^='galley-'] {
+  scroll-margin-top: 16px;
+}
