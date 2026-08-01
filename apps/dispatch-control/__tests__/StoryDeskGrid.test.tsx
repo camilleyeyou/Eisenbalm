@@ -40,7 +40,6 @@ describe('StoryDeskGrid (LD-3)', () => {
       <StoryDeskGrid
         draft={buildDraft()}
         chipCounts={{}}
-        reviewedIds={new Set()}
         onOpen={onOpen}
         onOpenEdit={onOpenEdit}
       />,
@@ -58,7 +57,6 @@ describe('StoryDeskGrid (LD-3)', () => {
       <StoryDeskGrid
         draft={buildDraft()}
         chipCounts={{}}
-        reviewedIds={new Set()}
         onOpen={onOpen}
         onOpenEdit={onOpenEdit}
       />,

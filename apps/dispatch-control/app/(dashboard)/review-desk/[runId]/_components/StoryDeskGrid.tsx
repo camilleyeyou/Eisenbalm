@@ -2,13 +2,17 @@
 /**
  * Quick 260724-i5n (LD-1) — the CARDS-variant Story Desk (mockup
  * `02-story-desk-cards.html`): the Draft stage's default landing, a 3-up
- * grid of the 9 editable sections plus a "N of 9 reviewed" progress header.
+ * grid of the 9 editable sections plus a "N of 9 clean" progress header.
  *
  * Presentational only — the parent (`ReviewDeskRunView`) owns `story`/`tab`
- * URL state, the localStorage-backed reviewed set, and passes both plus the
- * SAME FACTUAL_AXES-scoped chip counts the single-section galley resolves
- * against, so a card's status/dots always agree with what opening it will
- * show (never a second, drifting resolution).
+ * URL state and passes the SAME FACTUAL_AXES-scoped chip counts the
+ * single-section galley resolves against, so a card's status/dots always
+ * agree with what opening it will show (never a second, drifting
+ * resolution).
+ *
+ * Phase 51 (D-25): no manual "mark reviewed" bookkeeping exists anywhere —
+ * every card's status, the progress header and the "Clean" badge all derive
+ * from `chipCounts[...].open`/`.error`, never from a hand-ticked flag.
  */
 import { EDITABLE_SECTIONS, type SectionChipCounts } from './SectionChipList'
 import { sectionExcerpt, sectionWordCount } from './storyOutline'
@@ -17,7 +21,6 @@ import type { DraftResponse, ContentBlock } from '@/lib/contentPatchClient'
 interface StoryDeskGridProps {
   draft: DraftResponse
   chipCounts: Record<string, SectionChipCounts>
-  reviewedIds: ReadonlySet<string>
   onOpen: (sectionId: string) => void
   /** Quick 260724-x4b (LD-3) — the per-card secondary Edit shortcut. */
   onOpenEdit: (sectionId: string) => void
@@ -105,11 +108,10 @@ function wordCountLabelFor(draft: DraftResponse, sectionId: string): string {
   return `${sectionWordCount(draft.sections[sectionId]?.blocks ?? [])} words`
 }
 
-function statusFor(counts: SectionChipCounts | undefined, reviewed: boolean): CardStatus {
-  if (reviewed) return 'done'
+function statusFor(counts: SectionChipCounts | undefined): CardStatus {
   if ((counts?.error ?? 0) > 0) return 'mustfix'
-  if ((counts?.warning ?? 0) > 0) return 'review'
-  return 'clean'
+  if ((counts?.open ?? 0) > 0) return 'review'
+  return 'done'
 }
 
 function chipToneFor(status: CardStatus): ChipTone {
@@ -121,23 +123,21 @@ function chipToneFor(status: CardStatus): ChipTone {
 export default function StoryDeskGrid({
   draft,
   chipCounts,
-  reviewedIds,
   onOpen,
   onOpenEdit,
 }: StoryDeskGridProps) {
   const total = EDITABLE_SECTIONS.length
-  const reviewedCount = EDITABLE_SECTIONS.filter(s => reviewedIds.has(s.id)).length
+  const cleanCount = EDITABLE_SECTIONS.filter(s => (chipCounts[s.id]?.open ?? 0) === 0).length
 
   let mustFixCount = 0
   let reviewCount = 0
   for (const section of EDITABLE_SECTIONS) {
-    if (reviewedIds.has(section.id)) continue
     const counts = chipCounts[section.id]
     if ((counts?.error ?? 0) > 0) mustFixCount += 1
     else if ((counts?.warning ?? 0) > 0) reviewCount += 1
   }
 
-  const progressPercent = total > 0 ? Math.round((reviewedCount / total) * 100) : 0
+  const progressPercent = total > 0 ? Math.round((cleanCount / total) * 100) : 0
 
   return (
     <div className="flex flex-col gap-6">
@@ -153,9 +153,9 @@ export default function StoryDeskGrid({
         <div className="w-full sm:w-auto sm:text-right">
           <p className="font-[family-name:var(--font-mono)] text-[11.5px] text-[color:var(--color-ink-soft)]">
             <b className="font-semibold text-[color:var(--color-ink)]">
-              {reviewedCount} of {total}
+              {cleanCount} of {total}
             </b>{' '}
-            reviewed &middot; {mustFixCount} must fix &middot; {reviewCount} in review
+            clean &middot; {mustFixCount} must fix &middot; {reviewCount} in review
           </p>
           <div className="relative mt-2 h-[5px] w-full bg-[color:var(--color-nav)] sm:ml-auto sm:w-[220px]">
             <i
@@ -171,9 +171,8 @@ export default function StoryDeskGrid({
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
         {EDITABLE_SECTIONS.map((section, index) => {
-          const reviewed = reviewedIds.has(section.id)
           const counts = chipCounts[section.id]
-          const status = statusFor(counts, reviewed)
+          const status = statusFor(counts)
           const chipTone = chipToneFor(status)
           const errorDots = counts?.error ?? 0
           const warningDots = counts?.warning ?? 0
@@ -197,9 +196,9 @@ export default function StoryDeskGrid({
                 className="absolute inset-0 z-0 rounded-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
               />
               <div className="pointer-events-none relative z-[1] flex flex-1 flex-col">
-                {reviewed && (
+                {status === 'done' && (
                   <span className="absolute right-3.5 top-3 font-[family-name:var(--font-mono)] text-[10.5px] text-[color:var(--color-green)]">
-                    &#10003; Reviewed
+                    &#10003; Clean
                   </span>
                 )}
                 <span className="flex items-baseline justify-between">
