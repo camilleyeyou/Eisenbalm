@@ -1022,7 +1022,7 @@ Derived 2026-07-14 from `docs/design/dispatch-control-v3/` (Annotations, DERIVED
   3. A `verify_candidates` deterministic check runs after Scout and produces a verification record per organization (domain live, registration ID, obscurity/press scan), killing candidates that fail.
   4. The pipeline graph runs 20 nodes end-to-end — `signal_editor` before `scout`, `verify_candidates` between `scout` and `advocate` — and the Postgres checkpointer resumes correctly across a pause/resume cycle that spans the new nodes.
   5. The Signal Editor reads Editorial Memory (recent coverage, avoid-list) and surfaces a repetition warning alongside a lead rather than silently suppressing it.
-**Plans**: 7 plans (5 waves)
+**Plans**: 8 plans (6 waves)
 - [x] 46-01-contract-convex-store-and-wave0-tests-PLAN.md — API_CONTRACTS §46 (StoryLead + VerificationRecord + 2 DispatchState fields) + story_leads/verification_records Convex tables & functions + secret-guard + 3 Wave-0 test scaffolds (Wave 1)
 - [x] 46-02-dispatchstate-contract-and-repetition-helper-PLAN.md — state.py StoryLead/VerificationRecord TypedDicts + JSON-safe fields + lib/registry_repetition.compute_repetition_note extraction (Wave 2)
 - [x] 46-03-signal-editor-prompt-and-model-registration-PLAN.md — llm_config/config_loader signal_editor (Sonnet) registration + signal_editor.md/signal_editor_user.md prompts + seed script (Wave 1)
@@ -1134,12 +1134,13 @@ Derived 2026-07-31 from PROJECT.md's Current Milestone (goal, locked decisions, 
 **Plans**: 7 plans (5 waves)
 Plans:
 - [ ] 51-00-wave0-test-scaffolds-PLAN.md — Wave 0: new __tests__/SectionReaderPage.test.tsx (skip-guarded) + Pitfall-1/Pitfall-2/READ-02 cases in AnnotationMark/ClaimMark/ClaimProvenanceCard tests (Wave 1)
-- [ ] 51-01-shared-primitives-editable-sections-phrasing-safe-generate-fix-PLAN.md — D-17 EDITABLE_SECTIONS promotion + re-export; ClaimProvenanceCard phrasingSafe mode; label-independent generateFixOnAccept + Fact/Voice/Source showAxisTag threaded Galley -> GallerySection -> mark (Wave 2)
+- [ ] 51-01-shared-primitives-editable-sections-phrasing-safe-generate-fix-PLAN.md — D-17 EDITABLE_SECTIONS promotion + re-export; ClaimProvenanceCard phrasingSafe mode; label-independent generateFixOnAccept + Fact/Voice/Source showAxisTag + D-09 markSourcedClaims opt-out, threaded Galley -> GallerySection -> mark (Wave 2)
 - [ ] 51-02-editorial-route-group-shell-scoped-typography-PLAN.md — app/(editorial)/layout.tsx with its own Confirm/CommandPalette/Inspector stack (Pitfall 3) + .section-reader 760px/17.5px/16px scoped CSS (Wave 2)
 - [ ] 51-03-delete-reviewed-bookkeeping-derive-story-desk-PLAN.md — D-25: delete useReviewedSections + drive StoryDeskGrid/StoryFocusView/ReviewDeskRunView from open-finding counts (Wave 2)
 - [ ] 51-04-section-reader-page-honest-states-nav-count-PLAN.md — /s/[section]: current-run + draft + single-section Galley (all axes, neutral labels), three honest states, exempt-section notes, end-of-prose prev/next + derived count (Wave 3)
 - [ ] 51-05-in-place-editor-group-accept-PLAN.md — in-place textarea block editor (patchSection/patchBonus branch, 409 copy) + pure findingGroups selector + group-aware sequential Accept with honest partial failure (Wave 4)
-- [ ] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan + human read-through checkpoint (Wave 5)
+- [ ] 51-07-evidence-in-the-finding-popover-PLAN.md — READ-03/D-20: pure findingClaimLink intersection selector + ClaimProvenanceCard mounted phrasingSafe inside AnnotationMark's popover (client-derived link, zero schema change) (Wave 5)
+- [ ] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan + human read-through checkpoint (Wave 6)
 **UI hint**: yes
 
 ### Phase 52: Issue — The Front Door

@@ -22,6 +22,7 @@ must_haves:
     - "ClaimProvenanceCard can render without any block-level element, so it may legally mount inside a galley popover"
     - "A voice finding with no stored suggestedFix still offers Accept when the caller passes generateFixOnAccept, regardless of the accept label string"
     - "Voice Pass's existing 'Accept rewrite' behaviour is unchanged"
+    - "A caller can suppress the sourced-claim wash entirely, so a sourced claim renders as plain prose with no mark element at all"
   artifacts:
     - path: "apps/dispatch-control/lib/editableSections.ts"
       provides: "EDITABLE_SECTIONS + SectionMeta canonical home"
@@ -32,6 +33,9 @@ must_haves:
     - path: "apps/dispatch-control/components/galley/AnnotationMark.tsx"
       provides: "generateFixOnAccept prop + axis tag"
       contains: "generateFixOnAccept"
+    - path: "apps/dispatch-control/components/galley/Galley.tsx"
+      provides: "markSourcedClaims opt-out so sourced claims are not resolved at all (D-09)"
+      contains: "markSourcedClaims"
   key_links:
     - from: "apps/dispatch-control/lib/derivedState.ts"
       to: "apps/dispatch-control/lib/editableSections.ts"
@@ -52,7 +56,7 @@ Land the four shared, additive primitives every other Phase 51 plan depends on, 
 
 Purpose: `/s/[section]` cannot be built until (a) `EDITABLE_SECTIONS` lives somewhere a non-`(dashboard)` route may import from, (b) `ClaimProvenanceCard` can legally nest inside a galley popover, (c) `AnnotationMark`'s Accept no longer depends on the literal string `'Accept rewrite'`, and (d) the Fact/Voice/Source tag exists on the marks.
 
-Output: `lib/editableSections.ts` (new), a `phrasingSafe` mode on `ClaimProvenanceCard`, a `generateFixOnAccept` prop + `showAxisTag` prop on `AnnotationMark`, a `showAxisTag` prop on `ClaimMark`, and both threaded `Galley` → `GallerySection` → mark.
+Output: `lib/editableSections.ts` (new), a `phrasingSafe` mode on `ClaimProvenanceCard`, a `generateFixOnAccept` prop + `showAxisTag` prop on `AnnotationMark`, a `showAxisTag` prop on `ClaimMark`, and both threaded `Galley` → `GallerySection` → mark, and a `markSourcedClaims` opt-out on `Galley` so D-09's “only unsourced claims are marked” is literally true rather than merely styled.
 </objective>
 
 <execution_context>
@@ -274,7 +278,7 @@ In `ClaimMark.tsx`: pass `phrasingSafe` on the `<ClaimProvenanceCard …>` mount
 </task>
 
 <task type="auto" tdd="true">
-  <name>Task 3: Re-base the voice-rewrite trigger onto generateFixOnAccept and add the Fact/Voice/Source tag (Pitfall 2, D-07, D-08)</name>
+  <name>Task 3: Re-base the voice-rewrite trigger onto generateFixOnAccept, add the Fact/Voice/Source tag, and add the markSourcedClaims opt-out (Pitfall 2, D-07, D-08, D-09)</name>
   <files>apps/dispatch-control/components/galley/AnnotationMark.tsx, apps/dispatch-control/components/galley/ClaimMark.tsx, apps/dispatch-control/components/galley/GallerySection.tsx, apps/dispatch-control/components/galley/Galley.tsx</files>
   <behavior>
     - A finding with `axis: 'machine-tell'` and NO `suggestedFix`, rendered with `labels={{ accept: 'Accept rewrite' }}` and no `generateFixOnAccept`, still shows a working Accept button (Voice Pass regression — unchanged).
@@ -283,12 +287,15 @@ In `ClaimMark.tsx`: pass `phrasingSafe` on the `<ClaimProvenanceCard …>` mount
     - With `showAxisTag`, a finding whose axis is in `FACTUAL_AXES` renders the visible text "Fact" adjacent to the span; an axis in `VOICE_AXES` renders "Voice"; an `undefined` axis renders "Fact".
     - With `showAxisTag`, a `ClaimMark` whose `provenance === 'unsourced'` renders the visible text "Source" adjacent to the span; a `sourced` claim renders no tag.
     - Without `showAxisTag` (Review Desk / Voice Pass), no tag renders anywhere.
+    - With `markSourcedClaims={false}`, a sourced claim produces NO `.galley-claim` element at all (not an invisible one), while unsourced claims still mark.
+    - Without `markSourcedClaims` (Review Desk / Voice Pass default), both provenances mark exactly as they do today.
   </behavior>
   <read_first>
     - apps/dispatch-control/components/galley/AnnotationMark.tsx (full — `isRewriteVariant` at ~line 146, `handleAccept` at ~219, the action row at ~305-320, and the `<mark>` element at ~270)
     - apps/dispatch-control/components/galley/ClaimMark.tsx (full — the `<mark className="galley-claim">` element and the `provenance` value)
     - apps/dispatch-control/components/galley/GallerySection.tsx lines 60-200 (props interface, the `useMemo` components object at ~157, and its dep array at ~182-191)
-    - apps/dispatch-control/components/galley/Galley.tsx lines 119-190 (GalleyProps) and 360-425 (the two `<GallerySection …>` mounts that must both receive the new props)
+    - apps/dispatch-control/components/galley/Galley.tsx lines 119-190 (GalleyProps), 300-340 (`resolveClaimsFor` — where `provenance` is derived as `row.claimId ? 'sourced' : 'unsourced'`) and 360-425 (the two `<GallerySection …>` mounts that must both receive the new props)
+    - apps/dispatch-control/app/globals.css lines 266-271 (`.galley-claim[data-provenance="sourced"]` marigold wash / `"unsourced"` rust wash — proof that BOTH provenances are visibly marked today, only in different colours)
     - apps/dispatch-control/lib/galley/axisPartition.ts (FACTUAL_AXES / VOICE_AXES membership)
     - apps/dispatch-control/__tests__/AnnotationMark.test.tsx and apps/dispatch-control/__tests__/Galley.test.tsx (must keep passing)
   </read_first>
@@ -374,6 +381,31 @@ showAxisTag?: boolean
 ```
 Destructure them, pass `generateFixOnAccept={generateFixOnAccept}` and `showAxisTag={showAxisTag}` on the `<AnnotationMark>` mount and `showAxisTag={showAxisTag}` on the `<ClaimMark>` mount inside the `useMemo` components object, and ADD both names to that `useMemo`'s dependency array (currently `[runId, sectionId, revisionId, reloadDraft, onEditSection, onInspect, labels, onUnsourcedClaimClick]`) — omitting them means the memo never re-renders when they change.
 
+**3f — `Galley.tsx`, the D-09 sourced-claim opt-out.** D-09 is locked: "Only unsourced claims are marked. Sourced / checked claims render as plain prose." That is NOT today's behaviour — `app/globals.css:266-271` gives `data-provenance='sourced'` a marigold wash and `'unsourced'` a rust wash, so `showProvenance` marks BOTH, only in different colours. Add a third additive prop:
+
+```typescript
+/**
+ * Phase 51 (D-09) — when false, sourced/checked claims are NOT resolved at
+ * all, so they render as genuinely plain prose: no <mark> element, nothing in
+ * the accessibility tree. A CSS-only override would leave the mark in the DOM
+ * and would not satisfy "render as plain prose." Default true = today's
+ * behaviour, bit-for-bit, for Review Desk and Voice Pass (D-24).
+ */
+markSourcedClaims?: boolean
+```
+
+Destructure it as `markSourcedClaims = true` and apply it inside `resolveClaimsFor`, at the point the section's rows are selected — BEFORE they are mapped into `claimFindings` and handed to `resolveSectionFindings`:
+
+```typescript
+let rowsForSection = claimsBySection.get(sectionId) ?? []
+// D-09: `provenance` is derived below as `row.claimId ? 'sourced' : 'unsourced'`,
+// so filtering on `claimId` here is that same predicate, applied earlier.
+if (!markSourcedClaims) rowsForSection = rowsForSection.filter(row => !row.claimId)
+if (rowsForSection.length === 0) return []
+```
+
+Suppress at resolution — never with CSS, never inside `ClaimMark`. A mark that is merely invisible is still a mark in the DOM and in the accessibility tree, and is not "plain prose". Do not change what `showProvenance` means, do not edit either globals.css wash rule, and do not add a toggle control to any surface.
+
 **3e — `Galley.tsx`, thread both props.** Add to `GalleyProps`:
 ```typescript
 /**
@@ -388,12 +420,17 @@ generateFixOnAccept?: boolean
  */
 showAxisTag?: boolean
 ```
-Destructure both in the component signature and pass them on BOTH `<GallerySection …>` mounts (the `LONG_READ_SECTIONS` map at ~line 360 and the `bonus`/specAd mount at ~line 405). Do not touch any other Galley behaviour.
+Destructure both in the component signature and pass them on BOTH `<GallerySection …>` mounts (the `LONG_READ_SECTIONS` map at ~line 360 and the `bonus`/specAd mount at ~line 405). `markSourcedClaims` from 3f is NOT threaded into `GallerySection` — it is consumed entirely inside `Galley.resolveClaimsFor`. Do not touch any other Galley behaviour.
   </action>
   <verify>
     <automated>cd apps/dispatch-control && npx vitest run __tests__/AnnotationMark.test.tsx __tests__/ClaimMark.test.tsx __tests__/Galley.test.tsx</automated>
   </verify>
   <acceptance_criteria>
+    - `grep -n 'markSourcedClaims' apps/dispatch-control/components/galley/Galley.tsx` matches at least 3 times (prop declaration, destructure, filter)
+    - `grep -n 'markSourcedClaims = true' apps/dispatch-control/components/galley/Galley.tsx` matches — the default preserves Review Desk / Voice Pass
+    - `grep -n 'markSourcedClaims' apps/dispatch-control/components/galley/ClaimMark.tsx apps/dispatch-control/components/galley/GallerySection.tsx` returns NO matches (suppression happens at resolution, not at render)
+    - `git diff apps/dispatch-control/app/globals.css` shows NO change to either `.galley-claim[data-provenance=...]` rule
+    - `cd apps/dispatch-control && npx vitest run __tests__/Galley.test.tsx -t 'D-09'` exits 0
     - `grep -n "generateFixOnAccept" apps/dispatch-control/components/galley/AnnotationMark.tsx apps/dispatch-control/components/galley/GallerySection.tsx apps/dispatch-control/components/galley/Galley.tsx` matches in all three files
     - `grep -n "generateFixOnAccept === true || labels?.accept === 'Accept rewrite'" apps/dispatch-control/components/galley/AnnotationMark.tsx` matches exactly once
     - `grep -n "showAxisTag" apps/dispatch-control/components/galley/AnnotationMark.tsx apps/dispatch-control/components/galley/ClaimMark.tsx apps/dispatch-control/components/galley/GallerySection.tsx apps/dispatch-control/components/galley/Galley.tsx` matches in all four files
@@ -402,7 +439,7 @@ Destructure both in the component signature and pass them on BOTH `<GallerySecti
     - `grep -rn "lucide-react" apps/dispatch-control/components/galley/` returns NO matches
     - `cd apps/dispatch-control && npx vitest run __tests__/AnnotationMark.test.tsx __tests__/ClaimMark.test.tsx __tests__/Galley.test.tsx` exits 0, including the Wave-0 `generateFixOnAccept` regression cases and the Fact/Voice/Source tag cases
   </acceptance_criteria>
-  <done>Accept for a fix-less voice finding is driven by an explicit prop, not a label string; Voice Pass unchanged; Fact/Voice/Source tags render only when the caller opts in; both props are threaded Galley → GallerySection → mark with correct memo deps.</done>
+  <done>Accept for a fix-less voice finding is driven by an explicit prop, not a label string; Voice Pass unchanged; Fact/Voice/Source tags render only when the caller opts in; sourced claims can be suppressed at resolution so they emit no mark element at all; every new prop is threaded with correct memo deps.</done>
 </task>
 
 </tasks>
@@ -418,6 +455,7 @@ Destructure both in the component signature and pass them on BOTH `<GallerySecti
 - `ClaimProvenanceCard` has a `phrasingSafe` mode that emits zero block-level elements, and `ClaimMark` uses it.
 - `AnnotationMark` offers Accept for a fix-less voice finding based on `generateFixOnAccept`, not on the string `'Accept rewrite'`.
 - Fact/Voice/Source tags exist behind `showAxisTag` and are off by default.
+- `markSourcedClaims={false}` suppresses sourced-claim resolution entirely; the default still marks both provenances and both globals.css wash rules are untouched.
 - Every touched existing test file passes unmodified.
 </success_criteria>
 

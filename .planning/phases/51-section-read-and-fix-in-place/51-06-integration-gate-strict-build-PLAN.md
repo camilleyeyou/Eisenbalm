@@ -2,8 +2,8 @@
 phase: 51-section-read-and-fix-in-place
 plan: 06
 type: execute
-wave: 5
-depends_on: ["51-03", "51-05"]
+wave: 6
+depends_on: ["51-03", "51-07"]
 files_modified:
   - apps/dispatch-control/__tests__/SectionReaderPage.test.tsx
 autonomous: false
@@ -90,6 +90,8 @@ Do not weaken, skip or `--filter` past any failing assertion to reach green. If 
     - `cd apps/dispatch-control && npx vitest run __tests__/SectionReaderPage.test.tsx` reports 0 skipped tests (the `existsSync` guard now resolves true)
     - `grep -rn "useReviewedSections\|reviewDesk:reviewed\|Mark reviewed" apps/dispatch-control --include=*.ts --include=*.tsx` returns NO matches
     - `grep -rn "includeAxes\|lucide-react\|localStorage\|Math.max" "apps/dispatch-control/app/(editorial)/"` returns NO matches
+    - `grep -n "markSourcedClaims={false}" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches (D-09)
+    - `grep -n "ClaimProvenanceCard" apps/dispatch-control/components/galley/AnnotationMark.tsx` matches (D-20 / READ-03)
     - `test ! -f "apps/dispatch-control/app/(editorial)/page.tsx"` succeeds
     - `git status --porcelain packages/pipeline convex schemas` returns NO lines
     - `git status --porcelain apps/dispatch-control/package.json pnpm-lock.yaml` returns NO lines

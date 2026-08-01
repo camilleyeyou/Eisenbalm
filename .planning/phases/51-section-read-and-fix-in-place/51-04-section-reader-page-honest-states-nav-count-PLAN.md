@@ -16,6 +16,7 @@ must_haves:
   truths:
     - "Editor opens /s/originStory and reads the section as full-width prose with no rails, tabs or form fields"
     - "Fact, voice and unsourced-claim problems all appear in one read, each carrying a text label"
+    - "A sourced claim renders as plain prose — no mark element in the DOM or the accessibility tree"
     - "Opening a marked problem shows the agent's reasoning and, when the finding links to a tracked claim, its evidence — without leaving the paragraph"
     - "Dismissing a finding still requires the one-line reason the existing annotation system enforces"
     - "Editor moves to the previous or next section from the end of the prose and sees how many sections still need them"
@@ -214,6 +215,7 @@ Mount `Galley` inside the `.section-reader` wrapper with EXACTLY this prop set:
   generateFixOnAccept
   showAxisTag
   showProvenance
+  markSourcedClaims={false}          /* D-09 — sourced claims render as plain prose, not a marigold wash */
   onEditSection={openInPlaceEditor}         /* TODO(51-05) stub for now */
   onInspect={(id) => openInspector({ type: 'founder', runId, locator: id })}
   onRevise={setRevisePassage}               /* page-local useState, NOT the shared context */
@@ -223,7 +225,7 @@ Mount `Galley` inside the `.section-reader` wrapper with EXACTLY this prop set:
 
 Notes that are load-bearing:
 - `labels.dismissReasonDefault` stays UNSET (UI-SPEC: a single fixed reason cannot fit both factual and voice findings). The one-line dismiss reason remains required — READ-06 is satisfied by reusing `AnnotationMark`'s shipped dismiss flow verbatim; write no new dismiss code.
-- `showProvenance` is on so unsourced claims are marked; D-09 means only unsourced claims carry a mark — that is already `ClaimMark`'s behaviour, add no toggle control to this surface.
+- `showProvenance` is on so claims resolve at all, and `markSourcedClaims={false}` (added in plan 51-01 Task 3f) is what makes D-09 literally true. **This is NOT already the default behaviour:** `app/globals.css:266-271` gives `data-provenance='sourced'` a marigold wash and `'unsourced'` a rust wash, so today `showProvenance` marks BOTH. Passing `markSourcedClaims={false}` stops sourced claims being resolved at all, so they emit no `<mark>` element and nothing in the accessibility tree — genuinely plain prose, not merely un-styled. Add no provenance toggle control to this surface (D-09).
 - `onRevise` / `onRelatedFacts` are driven by page-local `useState`, exactly like `ReviewDeskRunView` does for related facts. Mount `<RevisionFlow runId={runId} passage={revisePassage} onApplied={reloadDraft} onClose={() => setRevisePassage(null)} />` when a passage is set. Do NOT route these through the inspector context.
 - `onInspect` uses `useInspector()`, which is safe now that 51-02 mounted a provider in `app/(editorial)/layout.tsx`.
 
@@ -252,12 +254,13 @@ Zero new icons — `lucide-react` must not appear anywhere under `app/(editorial
     - `grep -n "Edit myself" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches
     - `grep -n "generateFixOnAccept" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches
     - `grep -n "showAxisTag" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches
+    - `grep -n "markSourcedClaims={false}" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches (D-09)
     - `grep -n "dismissReasonDefault" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` returns NO matches
     - `grep -c "it carries no inline findings to review here." "apps/dispatch-control/app/(editorial)/s/[section]/_components/ExemptSectionNote.tsx"` returns at least 5
     - `grep -rn "lucide-react" "apps/dispatch-control/app/(editorial)/"` returns NO matches
     - `grep -n "RevisionFlow" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` matches
   </acceptance_criteria>
-  <done>One `Galley` renders the single section with fact, voice and unsourced-claim marks merged, neutral action labels, axis tags on, provenance on; the four exempt sections and both non-specAd bonus variants state plainly what they are; theme renders swatches rather than nothing.</done>
+  <done>One `Galley` renders the single section with fact, voice and unsourced-claim marks merged, neutral action labels, axis tags on, provenance on and sourced claims suppressed to plain prose; the four exempt sections and both non-specAd bonus variants state plainly what they are; theme renders swatches rather than nothing.</done>
 </task>
 
 <task type="auto">

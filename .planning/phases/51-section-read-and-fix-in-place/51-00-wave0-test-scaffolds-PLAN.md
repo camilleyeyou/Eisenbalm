@@ -9,6 +9,7 @@ files_modified:
   - apps/dispatch-control/__tests__/AnnotationMark.test.tsx
   - apps/dispatch-control/__tests__/ClaimMark.test.tsx
   - apps/dispatch-control/__tests__/ClaimProvenanceCard.test.tsx
+  - apps/dispatch-control/__tests__/Galley.test.tsx
 autonomous: true
 requirements: [READ-01, READ-02, READ-03, READ-04, READ-05, READ-07]
 
@@ -16,6 +17,7 @@ must_haves:
   truths:
     - "Every Phase 51 requirement has an automated command that exists before its implementation lands"
     - "A Voice-Pass regression case for the label-independent accept trigger exists and is green today"
+    - "A sourced claim renders no mark at all when the caller opts out, and still renders one on Review Desk"
     - "The full existing Vitest suite is still green after the scaffolds land"
   artifacts:
     - path: "apps/dispatch-control/__tests__/SectionReaderPage.test.tsx"
@@ -110,14 +112,16 @@ FACTUAL_AXES = precision, cross-section-consistency, structural-variety, hard-ru
 
 <task type="auto">
   <name>Task 1: Add the Pitfall-1 and Pitfall-2 cases to the three existing galley test files</name>
-  <files>apps/dispatch-control/__tests__/AnnotationMark.test.tsx, apps/dispatch-control/__tests__/ClaimMark.test.tsx, apps/dispatch-control/__tests__/ClaimProvenanceCard.test.tsx</files>
+  <files>apps/dispatch-control/__tests__/AnnotationMark.test.tsx, apps/dispatch-control/__tests__/ClaimMark.test.tsx, apps/dispatch-control/__tests__/ClaimProvenanceCard.test.tsx, apps/dispatch-control/__tests__/Galley.test.tsx</files>
   <read_first>
     - apps/dispatch-control/__tests__/AnnotationMark.test.tsx (full — reuse its existing mock scaffold, fixture shape and render helper verbatim; do not re-derive a mocking strategy)
     - apps/dispatch-control/__tests__/ClaimMark.test.tsx (full)
     - apps/dispatch-control/__tests__/ClaimProvenanceCard.test.tsx (full)
     - apps/dispatch-control/components/galley/AnnotationMark.tsx (the `isRewriteVariant` line, the accept-availability gate and the "Accept unavailable — no suggested fix." branch)
     - apps/dispatch-control/components/galley/ClaimMark.tsx (the `<span role="dialog" className="galley-popover">` popover)
-    - apps/dispatch-control/components/provenance/ClaimProvenanceCard.tsx (the block-level markup that gains a `phrasingSafe` mode in 51-01)
+    - apps/dispatch-control/components/provenance/ClaimProvenanceCard.tsx (the block-level markup that gains a `phrasingSafe` mode in 51-01, and its `ClaimProvenanceView` prop shape)
+    - apps/dispatch-control/__tests__/Galley.test.tsx (its `showProvenance` / claim-row fixtures — the sourced-vs-unsourced cases below extend them)
+    - apps/dispatch-control/app/globals.css lines 266-271 (`.galley-claim[data-provenance="sourced"]` marigold wash and `[data-provenance="unsourced"]` rust wash — BOTH are visible marks today, which is what D-09 forbids on the new surface)
   </read_first>
   <action>
 Add cases to the three existing files. Do NOT restructure or rename anything already there — every existing test must keep passing byte-for-byte.
@@ -152,6 +156,15 @@ Add a comment in the file stating that jsdom does NOT validate HTML content mode
 1. `'phrasingSafe renders no div, p, h3, ul or li'` — render with `phrasingSafe` and assert each of `container.querySelector('div' | 'p' | 'h3' | 'ul' | 'li')` is null. (Fails until 51-01 Task 2.)
 2. `'default mode is unchanged'` — render WITHOUT `phrasingSafe` and assert `container.querySelector('div')` is NOT null, proving the default branch keeps today's block markup. (Green today and after.)
 
+**`__tests__/Galley.test.tsx` — add a `describe('Phase 51 — D-09 only unsourced claims are marked')` block with two cases.** Fixture: one section carrying two claim rows, one WITH a `claimId` (→ `provenance: 'sourced'`) and one WITHOUT (→ `provenance: 'unsourced'`).
+1. `'markSourcedClaims false renders no mark element for a sourced claim'` — render `<Galley … showProvenance markSourcedClaims={false} />` and assert `container.querySelector('.galley-claim[data-provenance="sourced"]')` is null while `container.querySelector('.galley-claim[data-provenance="unsourced"]')` is NOT null. The sourced claim must be plain prose — no `<mark>` in the DOM and none in the accessibility tree, not merely an invisible one. (Fails until 51-01 Task 3f.)
+2. `'Review Desk default still marks both provenances'` — render `<Galley … showProvenance />` with NO `markSourcedClaims` and assert BOTH `.galley-claim[data-provenance="sourced"]` and `.galley-claim[data-provenance="unsourced"]` are present. **This case must be GREEN before 51-01 lands** — it is the D-24 regression guard proving the default is bit-for-bit today's behaviour.
+
+**`__tests__/AnnotationMark.test.tsx` — also add a `describe('Phase 51 — evidence in the finding popover (READ-03, D-20)')` block with three cases** (all fail until plan 51-07 lands):
+- `'renders the claim provenance card beneath the reason when the finding links to a claim'` — pass a `claim` prop shaped as `ClaimProvenanceView` (`{ text, importance, status, sourceUrl, supportingPassage, retrievedAt, sectionName }`), open the popover, assert the claim's `text` and its `sourceUrl` are both visible in the same popover as `value.reason`.
+- `'renders no card when no claim is supplied'` — omit the prop, assert the reason renders and the claim text does not.
+- `'the evidence card inside the popover contains no block-level elements'` — with the claim supplied, assert `container.querySelector('.galley-popover')!.querySelector('div')`, `'p'` and `'h3'` are all null (the `phrasingSafe` mount, Pitfall 1).
+
 Use `@ts-expect-error` on the not-yet-existing props ONLY if TypeScript blocks the file from running — Vitest does not type-check, so plain prop passing normally works fine; prefer no suppression comments so the strict build catches a mis-spelled prop.
   </action>
   <verify>
@@ -163,10 +176,14 @@ Use `@ts-expect-error` on the not-yet-existing props ONLY if TypeScript blocks t
     - `grep -n "showAxisTag" apps/dispatch-control/__tests__/AnnotationMark.test.tsx apps/dispatch-control/__tests__/ClaimMark.test.tsx` matches in both files
     - `grep -n "galley-popover" apps/dispatch-control/__tests__/ClaimMark.test.tsx` matches
     - `grep -n "phrasingSafe" apps/dispatch-control/__tests__/ClaimProvenanceCard.test.tsx` matches
+    - `grep -n "markSourcedClaims" apps/dispatch-control/__tests__/Galley.test.tsx` matches at least twice
+    - `grep -n 'data-provenance="sourced"' apps/dispatch-control/__tests__/Galley.test.tsx` matches
+    - `grep -n "ClaimProvenanceView\|supportingPassage" apps/dispatch-control/__tests__/AnnotationMark.test.tsx` matches
+    - `cd apps/dispatch-control && npx vitest run __tests__/Galley.test.tsx -t "Review Desk default still marks both"` exits 0 (green BEFORE 51-01)
     - `cd apps/dispatch-control && npx vitest run __tests__/AnnotationMark.test.tsx -t "Voice Pass regression"` exits 0 (this case is green BEFORE 51-01)
     - `cd apps/dispatch-control && npx vitest run __tests__/ClaimProvenanceCard.test.tsx -t "default mode is unchanged"` exits 0
   </acceptance_criteria>
-  <done>Three existing test files carry the Pitfall-1/Pitfall-2/READ-02 cases; the Voice-Pass regression case and the default-mode case are green today; the rest are red and will go green in plan 51-01.</done>
+  <done>Four existing test files carry the Pitfall-1/Pitfall-2/READ-02/READ-03/D-09 cases; the Voice-Pass regression case, the default-mode case and the Review-Desk-marks-both case are green today; the rest are red and go green in plans 51-01 and 51-07.</done>
 </task>
 
 <task type="auto">
