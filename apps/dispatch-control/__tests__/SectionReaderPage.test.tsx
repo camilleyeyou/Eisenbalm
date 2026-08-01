@@ -21,6 +21,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import type { DerivationInputs } from '@/lib/derivedState'
+import { InspectorProvider } from '@/components/inspector/InspectorProvider'
 
 // Wave 0 (51-VALIDATION): these specs are written BEFORE the page exists.
 // They skip cleanly until app/(editorial)/s/[section]/page.tsx lands (plan
@@ -207,7 +208,18 @@ const SECTION_PAGE_SPECIFIER = '../app/(editorial)/s/[section]/page'
 
 async function renderSection(section: string) {
   const { default: Page } = await import(/* @vite-ignore */ SECTION_PAGE_SPECIFIER)
-  return render(<Page params={{ section }} />)
+  // Plan 51-04: the page calls useInspector() (the shared "Inspect how this
+  // was made" entry point, Pitfall 3) — a leaf render needs the same
+  // InspectorProvider ancestor the real app/(editorial)/layout.tsx mounts.
+  // ConfirmProvider/CommandPaletteProvider are NOT needed here: the
+  // Inspector panel itself (the only descendant that calls useConfirm) only
+  // mounts once openInspector sets a non-null activeKey, which none of
+  // these specs trigger.
+  return render(
+    <InspectorProvider>
+      <Page params={{ section }} />
+    </InspectorProvider>,
+  )
 }
 
 async function openFirstFinding() {
