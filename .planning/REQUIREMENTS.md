@@ -909,14 +909,14 @@ Added 2026-07-31 during v5.0 roadmap creation. All 24 v5.0 requirements mapped t
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| READ-01 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-02 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-03 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-04 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-05 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-06 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-07 | Phase 51: Section — Read and Fix in Place | Planned |
-| READ-08 | Phase 51: Section — Read and Fix in Place | Planned |
+| READ-01 | Phase 51: Section — Read and Fix in Place | Complete* |
+| READ-02 | Phase 51: Section — Read and Fix in Place | Complete* |
+| READ-03 | Phase 51: Section — Read and Fix in Place | Complete* |
+| READ-04 | Phase 51: Section — Read and Fix in Place | Complete |
+| READ-05 | Phase 51: Section — Read and Fix in Place | Complete |
+| READ-06 | Phase 51: Section — Read and Fix in Place | Complete |
+| READ-07 | Phase 51: Section — Read and Fix in Place | Complete |
+| READ-08 | Phase 51: Section — Read and Fix in Place | Complete |
 | HOME-01 | Phase 52: Issue — The Front Door | Planned |
 | HOME-02 | Phase 52: Issue — The Front Door | Planned |
 | HOME-03 | Phase 52: Issue — The Front Door | Planned |
@@ -938,7 +938,8 @@ Added 2026-07-31 during v5.0 roadmap creation. All 24 v5.0 requirements mapped t
 - v5.0 requirements: 24 total (READ:8, HOME:9, DOOR:4, PAST:3)
 - Mapped to phases: 24
 - Unmapped: 0 ✓
+- *READ-01/02/03 marked Complete on automated (Vitest + strict build) verification only — each also has a human perceptual/manual-only check (reading measure & typography, label-not-colour-alone in greyscale, popover DOM validity in DevTools) that was **not performed**: the plan 51-06 checkpoint was blocked by a pre-existing local-dev CORS gap (production Railway pipeline's `DASHBOARD_ALLOWED_ORIGINS` excludes all `localhost` origins) and the user chose to close the phase without it. See `51-06-SUMMARY.md` for the blocker, evidence, and two recorded unblock routes.
 
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-07-31 — added v5.0 Traceability (READ/HOME/DOOR/PAST → Phases 51-54)*
+*Last updated: 2026-08-01 — READ-01..08 marked Complete (Phase 51, plan 51-06 integration gate); READ-01/02/03 carry an asterisk pending human perceptual verification blocked by a local-dev CORS gap, see 51-06-SUMMARY.md*

@@ -65,7 +65,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 **v4.0 complete (shipped 2026-07-17). v5.0: The Editorial App (Phases 51–54)**
 
-- [ ] **Phase 51: Section — Read and Fix in Place** - `/s/[section]` full-width prose with fact/voice/unsourced-claim problems marked in the sentence and fixed inline, reusing the galley/annotations/finding-resolution system wholesale
+- [x] **Phase 51: Section — Read and Fix in Place** - `/s/[section]` full-width prose with fact/voice/unsourced-claim problems marked in the sentence and fixed inline, reusing the galley/annotations/finding-resolution system wholesale (completed 2026-08-01; automated gates green — full suite + strict build + all invariant scans — but the plan's own human read-through was NOT performed, blocked by a pre-existing local-dev CORS gap and closed on the user's explicit decision to skip; see `51-06-SUMMARY.md`)
 - [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine sections as a derived table of contents, and the three publish gates as the page footer
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
@@ -475,7 +475,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 48. Brief Entry Point | 7/7 | Complete    | 2026-07-16 |
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
 | 50. Workbench & Nomenclature | 7/7 | Complete    | 2026-07-17 |
-| 51. Section — Read and Fix in Place | 7/8 | In Progress|  |
+| 51. Section — Read and Fix in Place | 8/8 | Complete   | 2026-08-01 |
 | 52. Issue — The Front Door | TBD | Not started | - |
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
@@ -1140,8 +1140,8 @@ Plans:
 - [x] 51-04-section-reader-page-honest-states-nav-count-PLAN.md — /s/[section]: current-run + draft + single-section Galley (all axes, neutral labels), three honest states, exempt-section notes, end-of-prose prev/next + derived count (Wave 3)
 - [x] 51-05-in-place-editor-group-accept-PLAN.md — in-place textarea block editor (patchSection/patchBonus branch, 409 copy) + pure findingGroups selector + group-aware sequential Accept with honest partial failure (Wave 4)
 - [x] 51-07-evidence-in-the-finding-popover-PLAN.md — READ-03/D-20: pure findingClaimLink intersection selector + ClaimProvenanceCard mounted phrasingSafe inside AnnotationMark's popover (client-derived link, zero schema change) (Wave 5)
-- [ ] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan + human read-through checkpoint (Wave 6)
-**UI hint**: yes
+- [x] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan green and independently re-verified; the human read-through checkpoint was **NOT performed** (blocked by production pipeline CORS excluding all localhost origins — see `51-06-SUMMARY.md`); user chose to close the phase without it after being offered two unblock routes (Wave 6)
+**UI hint**: yes — **human visual/UX sign-off outstanding**: SC-1 (reading measure/typography), SC-2 (label-not-colour-alone), the popover DOM-validity check, and the `ClaimProvenanceCard` shared-card raw-URL question (affects Review Desk/Voice Pass/Fact Check too) are all unverified by a human; revisit once one of the two CORS unblock routes in `51-06-SUMMARY.md` is completed.
 
 ### Phase 52: Issue — The Front Door
 **Goal**: An editor lands on the current issue's real title and subject, sees the nine sections as a table of contents with derived state, and can publish from the page footer through the unchanged gate.

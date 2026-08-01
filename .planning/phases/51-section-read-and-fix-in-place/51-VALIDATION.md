@@ -71,11 +71,13 @@ created: 2026-07-31
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| ~760px reading measure, Lora 16.5px/1.7, no side rails — "a page to read, not a workspace" | READ-01 (SC-1) | Visual/typographic judgement; jsdom has no layout engine | Run dev server, open `/s/origin-story`, confirm measure ≈760px, body is Lora, no rail/tab/form chrome present |
-| Label-not-colour-alone distinguishability | READ-02 (SC-2) | Perceptual check | Open a section with fact + voice + source findings; confirm each span carries a readable text label independent of its colour; verify in greyscale |
-| DOM validity of the popover (no block-in-phrasing) | READ-03 (Pitfall 1) | jsdom does not validate content models; browsers silently reparent | Open a claim popover in Chrome DevTools, confirm no `<p>` auto-close/reparent in the rendered tree; the Vitest structural assertion is only a proxy |
+| Behavior | Requirement | Why Manual | Test Instructions | Status |
+|----------|-------------|------------|-------------------|--------|
+| ~760px reading measure, Lora 16.5px/1.7, no side rails — "a page to read, not a workspace" | READ-01 (SC-1) | Visual/typographic judgement; jsdom has no layout engine | Run dev server, open `/s/origin-story`, confirm measure ≈760px, body is Lora, no rail/tab/form chrome present | ⬜ **NOT PERFORMED — blocked** |
+| Label-not-colour-alone distinguishability | READ-02 (SC-2) | Perceptual check | Open a section with fact + voice + source findings; confirm each span carries a readable text label independent of its colour; verify in greyscale | ⬜ **NOT PERFORMED — blocked** |
+| DOM validity of the popover (no block-in-phrasing) | READ-03 (Pitfall 1) | jsdom does not validate content models; browsers silently reparent | Open a claim popover in Chrome DevTools, confirm no `<p>` auto-close/reparent in the rendered tree; the Vitest structural assertion is only a proxy | ⬜ **NOT PERFORMED — blocked** |
+
+**Blocked 2026-08-01:** the production pipeline's `DASHBOARD_ALLOWED_ORIGINS` CORS allowlist has no `localhost` entry (verified live: an OPTIONS preflight against `https://eisenbalm-pipeline-production.up.railway.app` returns no `Access-Control-Allow-Origin` header for `http://localhost:3000` or `http://localhost:3001`), and `apps/dispatch-control`'s dev server runs on port 3001 while `.env.local` points `NEXT_PUBLIC_PIPELINE_URL` at that same production Railway host. Every `/issues/{runId}/draft` fetch fails from a local browser, so no draft prose renders and none of the three rows above (nor the 8-item checkpoint in `51-06-PLAN.md`) could be exercised. User was offered two unblock routes and elected to close the plan without running them — see `51-06-SUMMARY.md` for full detail and the recorded decision. Full detail and open follow-ups also in `51-06-SUMMARY.md`.
 
 ---
 
@@ -89,4 +91,4 @@ created: 2026-07-31
 - [x] `pnpm --filter dispatch-control build` green (mandatory — catches the D-25/Pitfall 4 class) — exit 0, confirmed by 51-06
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** automated gates passed 2026-08-01 (51-06 integration gate). Human demo-path checkpoint (Task 2 of 51-06-PLAN.md) still pending — see 51-06-SUMMARY.md.
+**Approval:** automated gates passed 2026-08-01 (51-06 integration gate). Human demo-path checkpoint (Task 2 of 51-06-PLAN.md) **NOT performed** — blocked by a pre-existing local-dev CORS gap (see Manual-Only Verifications above), and the user elected to close the plan without running it after being offered both unblock routes. This is NOT a full sign-off; see `51-06-SUMMARY.md` for the complete record.

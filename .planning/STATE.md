@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Ready to execute
-stopped_at: Completed 51-07-evidence-in-the-finding-popover-PLAN.md
-last_updated: "2026-08-01T07:36:38.451Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 51-06-integration-gate-strict-build-PLAN.md — automated gates green, human read-through blocked by CORS gap, closed on user's explicit decision to skip
+last_updated: "2026-08-01T09:15:44.468Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-07-31)
 
 ## Current Position
 
-Phase: 51 (section-read-and-fix-in-place) — EXECUTING
-Plan: 8 of 8
+Phase: 51 (section-read-and-fix-in-place) — ALL PLANS EXECUTED, automated gates green; human read-through NOT performed (blocked by local-dev CORS gap, user chose to close without it — see 51-06-SUMMARY.md). Next: Phase 52 (Issue — The Front Door), or revisit Phase 51's outstanding human verification once one of the two CORS unblock routes is completed.
+Plan: 8 of 8 (complete)
 
 ## Performance Metrics
 
@@ -365,6 +365,7 @@ Plan: 8 of 8
 | Phase 51 P04 | 30min | 3 tasks | 6 files |
 | Phase 51 P05 | 35min | 3 tasks | 8 files |
 | Phase 51 P07 | 20min | 2 tasks | 7 files |
+| Phase 51 P06 | ~50min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -964,6 +965,8 @@ Recent decisions affecting current work:
 - [Phase 51]: Group accept runs sequentially, each acceptFinding call carrying the previous call's fresh revisionId (never parallel against one revisionId); partial failure reports the locked '{X} of {Y} applied -- {Z} still need you.' sentence and leaves failed members marked and individually openable
 - [Phase 51]: 51-07: buildFindingClaimMap consumes the UNFILTERED claimResolvedForLookup, never the D-09-filtered claimResolved render array -- pinned by the real-pipeline D-09/D-20-independence test
 - [Phase 51]: 51-07: extended the shared ClaimProvenanceCard's Source field to render the raw sourceUrl as visible text (additive, D-09/D-16 one-shared-card rule) so every caller including the new finding popover literally shows the source URL
+- [Phase 51]: Human-verification checkpoint (51-06 Task 2) NOT self-approved despite workflow.auto_advance=true; plan's autonomous:false + orchestrator's explicit instruction honored, since the checkpoint exists to get a real human reaction after three prior UI passes were rejected
+- [Phase 51]: Phase 51 closed WITHOUT its required human read-through: production Railway pipeline's DASHBOARD_ALLOWED_ORIGINS CORS allowlist has no localhost entry (independently verified via live preflight), blocking every /issues/{runId}/draft fetch from dispatch-control's local dev server (port 3001). User offered two unblock routes, chose to skip after reaffirming; 3 Manual-Only Verifications + the ClaimProvenanceCard raw-URL question remain open follow-ups for a future phase
 
 ### Pending Todos
 
@@ -979,6 +982,7 @@ None yet.
 - [Phase 8] Legal pages at `apps/web/app/legal/privacy/page.tsx` and `apps/web/app/legal/terms/page.tsx` contain TODO(Andrew) placeholder copy. The pages exist with no 404 (CMR-07 + CMR-08 satisfied for code-completeness), but the prose has not been reviewed by counsel. Andrew must replace with reviewed copy covering: (privacy) data collected/shared/retained, EU/UK/CA subject rights, contact email; (terms) refund/return policy, IP notice, limitation of liability, governing law. Tracked at `.planning/phases/08-stripe-commerce/08-07-thank-you-and-legal-pages-SUMMARY.md`.
 - [Phase 42] Manual demo-leg UAT (8-step live walkthrough: My Tasks -> Fact Check claim detail -> Ask agent for better evidence -> Confirm -> live counters/header/My-Tasks/Approval update, plus FCT-07 changed-since-check flip and Draft/Approval card parity) pending human verification before Phase 42 is fully signed off — see 42-08-SUMMARY.md 'Deferred Item'
 - [Quick 260721-qdx] ~~RESOLVED 2026-07-22 (same session)~~ — the `user_onboarding` sync blocker was cleared from the main checkout: `pnpm --filter @eisenbalm/convex codegen` (zero diff vs the hand-written api.d.ts) + `dev:once` deployed to dev:modest-magpie-797; smoke-verified via `npx convex run userOnboarding:byClerkUserId` (exit 0, null for unknown user). No pending Convex drift from this task.
+- Phase 51 human read-through (51-06 Task 2) blocked by production pipeline CORS: DASHBOARD_ALLOWED_ORIGINS on Railway has no localhost entry, so apps/dispatch-control (port 3001) cannot fetch drafts locally. Unblock via either (a) run pipeline locally with DASHBOARD_ALLOWED_ORIGINS=http://localhost:3001 + NEXT_PUBLIC_PIPELINE_URL=http://localhost:8000, or (b) add http://localhost:3001 to Railway's DASHBOARD_ALLOWED_ORIGINS. 3 Manual-Only Verifications + ClaimProvenanceCard raw-URL question still open.
 
 ### Quick Tasks Completed
 
@@ -1072,6 +1076,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-01T07:36:38.435Z
-Stopped at: Completed 51-07-evidence-in-the-finding-popover-PLAN.md
+Last session: 2026-08-01T09:15:44.455Z
+Stopped at: Completed 51-06-integration-gate-strict-build-PLAN.md — automated gates green, human read-through blocked by CORS gap, closed on user's explicit decision to skip
 Resume file: None
