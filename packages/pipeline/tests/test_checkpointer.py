@@ -1,6 +1,6 @@
 """AsyncPostgresSaver checkpointer (PIP-09).
 
-Two test functions:
+Three test functions:
 
   test_setup_idempotent
     Calls cli.setup_checkpointer() twice; both must succeed (CONTEXT D-12 +
@@ -15,6 +15,10 @@ Two test functions:
     cursor so it needs no live database (the to_regclass query returns None,
     mirroring a fresh Supabase project before setup-checkpointer has run).
 
+  test_create_pool_hardened_against_stale_connections
+    DB-free: pins the pool's check / max_idle / TCP keepalive settings that
+    guard against Railway's proxy silently closing idle connections.
+
 NOTE: Requires SUPABASE_POSTGRES_URL set to the session pooler (port 5432) per
 research §7. Will fail with InvalidSqlStatementName if pointed at port 6543
 transaction pooler — that's the canonical "you used the wrong pooler" signal.
@@ -27,8 +31,10 @@ import os
 from contextlib import asynccontextmanager
 
 import pytest
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
-from eisenbalm_pipeline.graph.checkpointer import assert_tables_exist
+from eisenbalm_pipeline.graph.checkpointer import assert_tables_exist, create_pool
 
 
 # ── setup() idempotency — needs the graph DB (Plan 12) ────────────────────
@@ -111,3 +117,25 @@ async def test_assert_tables_exist_raises_on_empty_db():
     assert "setup-checkpointer" in msg, (
         f"error must name the CLI fix command; got {msg!r}"
     )
+
+
+# ── create_pool stale-connection hardening — no live DB needed ────────────
+
+
+def test_create_pool_hardened_against_stale_connections(monkeypatch):
+    """Pool checks connections before lending, caps idle time, enables keepalives."""
+    monkeypatch.setenv("SUPABASE_POSTGRES_URL", "postgresql://user:pw@localhost:5432/db")
+    pool = create_pool()
+
+    assert pool._check is AsyncConnectionPool.check_connection, (
+        "pool must probe connections before lending them out"
+    )
+    assert pool.max_idle == 120, f"max_idle must be 120s; got {pool.max_idle!r}"
+    assert pool.kwargs["keepalives"] == 1, "TCP keepalives must be enabled"
+    assert pool.kwargs["keepalives_idle"] == 30, "keepalives_idle must be 30"
+    assert pool.kwargs["keepalives_interval"] == 10, "keepalives_interval must be 10"
+    assert pool.kwargs["keepalives_count"] == 3, "keepalives_count must be 3"
+    assert pool.kwargs["autocommit"] is True, "autocommit must be kept"
+    assert pool.kwargs["prepare_threshold"] is None, "prepare_threshold must stay None"
+    assert pool.kwargs["row_factory"] is dict_row, "row_factory must stay dict_row"
+    assert pool.closed is True, "open=False must be kept (no connection attempted)"

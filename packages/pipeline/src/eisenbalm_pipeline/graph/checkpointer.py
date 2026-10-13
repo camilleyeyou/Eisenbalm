@@ -54,14 +54,34 @@ def create_pool(max_size: int = 10) -> AsyncConnectionPool:
       - autocommit=True         -> required by AsyncPostgresSaver.
       - row_factory=dict_row    -> required for AsyncPostgresSaver internal queries
                                    AND for assert_tables_exist's dict-style lookup.
+
+    Stale-connection hardening: run df6e982935b94f10ad15c81311c6445e failed on
+    2026-10-13 with `psycopg.OperationalError: consuming input failed: SSL
+    error: unexpected eof while reading` inside AsyncPostgresSaver.aget_tuple.
+    Railway's Postgres proxy had silently closed an idle pooled connection and
+    the pool lent it out anyway.
+      - check=check_connection -> cheap liveness probe on each connection before
+        it is lent out; dead connections are discarded and replaced, never
+        returned to the caller.
+      - max_idle=120           -> close connections idle longer than 2 minutes,
+        before the proxy idle-kills them.
+      - keepalives*            -> libpq TCP keepalives (first probe after 30s
+        idle, every 10s, 3 failures) so dead peers are detected at the socket
+        level.
     """
     return AsyncConnectionPool(
         conninfo=_conn_string(),
         max_size=max_size,
+        check=AsyncConnectionPool.check_connection,
+        max_idle=120,
         kwargs={
             "autocommit": True,
             "prepare_threshold": None,
             "row_factory": dict_row,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 3,
         },
         open=False,
     )
