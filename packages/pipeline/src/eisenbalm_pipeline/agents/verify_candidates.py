@@ -18,12 +18,20 @@ transient/ambiguous failure (timeout, 5xx, SSL/DNS blip, rate-limit) marks
 that check ``None``/unverified and NEVER kills the candidate. False
 negatives (an obscure, legitimate org marked unverified) are acceptable;
 false positives (killing a good org on a network blip) are not.
+
+Bug-fix (quick 261013-j6s): only a 404/410 domain answer is a definitive kill.
+Other 4xx (401/403/405/406/429) are typical bot/WAF blocks on small-org sites
+and say nothing about whether the org exists, so they mark the check
+unverified (None). The press scan also counts only genuine third-party
+mentions (see the OBSCURITY constants comment).
 """
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Optional
+from urllib.parse import urlparse
 
 import httpx
 from slugify import slugify
@@ -46,6 +54,15 @@ _USER_AGENT: str = "Mozilla/5.0 (compatible; EisenbalmBot/1.0)"
 # short of the cap while a mainstream org fills it. Only a near-total 9-of-10
 # saturation is a DEFINITIVE "not obscure enough" kill (D-12: false negatives OK,
 # false positives are not). The old 4-of-5 hair-trigger is gone.
+#
+# Bug-fix (quick 261013-j6s): Tavily returns ~10 results for almost any query
+# (the wrapper is constructed with max_results=10 and the per-call cap is
+# ignored), so raw len(results) saturated 10/10 even for a fabricated name and
+# killed every candidate. The scan now uses an exact-phrase query and counts
+# only results whose title/content contain the normalized org name and whose
+# host is not the org's own site. Thresholds are deliberately unchanged: after
+# relevance filtering, 9/10 genuine third-party mentions is a meaningful
+# "not obscure" signal.
 OBSCURITY_SCAN_MAX_RESULTS: int = 10
 OBSCURITY_PASS_MAX_HITS: int = 3     # <=3/10 ⇒ genuinely obscure (advisory verdict only)
 OBSCURITY_FAIL_MIN_HITS: int = 9     # >=9/10 ⇒ definitive not-obscure (the ONLY obscurity kill)
@@ -66,7 +83,7 @@ def _charity_id_for(name: str) -> str:
 
 async def _check_domain_live(url: Optional[str]) -> Optional[bool]:
     """GET the candidate's website. DNS-resolves + 2xx/3xx (after redirects)
-    => True (live). A definitive 4xx => False. ANY other exception (timeout,
+    => True (live). A 404/410 => False. Any other 4xx/5xx => None. ANY other exception (timeout,
     5xx, SSL, DNS blip, connection error) => None (unverified — D-12).
 
     Mirrors verify.py::_fetch_text's try/except shape exactly.
@@ -80,9 +97,11 @@ async def _check_domain_live(url: Optional[str]) -> Optional[bool]:
             r = await client.get(url, headers={"User-Agent": _USER_AGENT})
         if 200 <= r.status_code < 400:
             return True
-        if 400 <= r.status_code < 500:
-            # Definitive: the server answered and said "not found"/"denied".
+        if r.status_code in (404, 410):
+            # Definitive: the server answered and said "not found"/"gone".
             return False
+        # Other 4xx (401/403/405/406/429) are typical bot/WAF blocks and say
+        # nothing about whether the org exists (D-12) — unverified, not a kill.
         # 5xx and anything else unexpected — transient, not definitive.
         return None
     except Exception as exc:  # noqa: BLE001 — never let fetch failures break the pipeline
@@ -126,15 +145,49 @@ async def _check_registration(candidate: dict) -> tuple[Optional[str], bool]:
     return None, False
 
 
-async def _obscurity_press_scan(name: Optional[str]) -> Optional[int]:
-    """Bounded Tavily search on the org name (D-11). Returns the hit count;
-    ANY exception => None (unverified — never a kill on a search blip).
+def _normalize(text: str) -> str:
+    return re.sub(r"[\W_]+", " ", text or "").casefold().strip()
+
+
+def _mentions_org(name: str, text: str) -> bool:
+    n = _normalize(name)
+    if not n:
+        return False
+    return f" {n} " in f" {_normalize(text)} "
+
+
+def _host(url: Optional[str]) -> str:
+    try:
+        if not url:
+            return ""
+        if "://" not in url:
+            url = "https://" + url
+        host = (urlparse(url).hostname or "").casefold()
+        return host[4:] if host.startswith("www.") else host
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+async def _obscurity_press_scan(
+    name: Optional[str], website: Optional[str] = None,
+) -> Optional[int]:
+    """Bounded exact-phrase Tavily search on the org name (D-11). Returns the
+    count of genuine third-party mentions only (title/content names the org and
+    the host is not the org's own site); ANY exception => None (unverified —
+    never a kill on a search blip).
     """
     if not name:
         return None
     try:
-        results = await web_search(name, max_results=OBSCURITY_SCAN_MAX_RESULTS)
-        return len(results)
+        results = await web_search(f'"{name}"', max_results=OBSCURITY_SCAN_MAX_RESULTS)
+        own = _host(website)
+        count = sum(
+            1
+            for r in results
+            if _mentions_org(name, f"{r.title} {r.content}")
+            and (not own or _host(r.url) != own)
+        )
+        return min(count, OBSCURITY_SCAN_MAX_RESULTS)
     except Exception as exc:  # noqa: BLE001
         log.warning("verify_candidates: press scan failed name=%r err=%r", name, exc)
         return None
@@ -150,7 +203,7 @@ def _apply_kill_rule(
     non-existence; it only fails to upgrade confidence. None values (transient
     errors) never contribute to a kill."""
     if domain_live is False:
-        return True, "domain does not resolve / returned a definitive 4xx"
+        return True, "domain does not resolve / returned 404 or 410"
     if press_hits is not None and press_hits >= OBSCURITY_FAIL_MIN_HITS:
         return True, f"clearly not obscure enough — {press_hits} of {OBSCURITY_SCAN_MAX_RESULTS} press hits found"
     return False, None
@@ -201,7 +254,7 @@ async def verify_candidates(state: DispatchState) -> dict:
         name = c.get("name") or ""
         domain_live = await _check_domain_live(c.get("website"))
         registration = await _check_registration(c)
-        press_hits = await _obscurity_press_scan(name)
+        press_hits = await _obscurity_press_scan(name, c.get("website"))
 
         killed, kill_reason = _apply_kill_rule(domain_live, registration, press_hits)
         registration_id, registration_verified = registration
