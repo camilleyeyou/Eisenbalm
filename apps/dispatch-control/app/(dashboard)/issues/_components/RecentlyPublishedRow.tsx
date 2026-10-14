@@ -3,6 +3,9 @@
  * verification record. The quietest region on the page — a record, not a
  * call to action.
  *
+ * Phase 51.1: the claims line states the agent verdict outcome (total and
+ * contradicted count), still never blank.
+ *
  * D-29 (load-bearing): renders the REAL verification record from
  * `sign_offs`/`claim_checks` — claim coverage and both sign-off lines are
  * ALWAYS rendered, never omitted. An absent actor/time renders its labeled
@@ -30,8 +33,8 @@ export interface RecentlyPublishedRowProps {
     publishedAt?: number
   }
   verification: {
-    checked: number
     total: number
+    contradicted: number
     factsClearedBy?: string
     factsClearedAt?: number
     voiceApprovedBy?: string
@@ -44,7 +47,7 @@ export default function RecentlyPublishedRow({ issue, verification }: RecentlyPu
   const factsAt = relativeTime(verification.factsClearedAt)
   const voiceBy = verification.voiceApprovedBy ?? '—'
   const voiceAt = relativeTime(verification.voiceApprovedAt)
-  const claimsComplete = verification.total > 0 && verification.checked === verification.total
+  const claimsComplete = verification.total > 0 && verification.contradicted === 0
 
   return (
     <div className="flex min-h-[44px] flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-[color:var(--color-ink)]/[.06] py-2">
@@ -57,7 +60,11 @@ export default function RecentlyPublishedRow({ issue, verification }: RecentlyPu
         {claimsComplete && (
           <CheckCircle2 size={12} className="text-[color:var(--color-green)]" aria-hidden="true" />
         )}
-        {verification.checked} of {verification.total} claims checked
+        {verification.total === 0
+          ? 'No claims extracted'
+          : `${verification.total} claim${verification.total === 1 ? '' : 's'} · ${
+              verification.contradicted === 0 ? 'none contradicted' : `${verification.contradicted} contradicted`
+            }`}
       </span>
 
       <span className="flex items-center gap-[4px] font-[family-name:var(--font-ui)] text-[12.5px] text-[color:var(--color-ink-soft)]">

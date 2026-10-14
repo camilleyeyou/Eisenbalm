@@ -137,8 +137,8 @@ function baseGates(overrides: Partial<RunGateInputs> = {}): RunGateInputs {
     factsSignedAt: null,
     voiceSignedBy: null,
     voiceSignedAt: null,
-    claimsUnchecked: 4,
-    claimsTotal: 19,
+    claimsContradicted: 0,
+    claimsFlagged: 0,
     voiceOpenCount: 1,
     mustFixTotal: 3,
     held: false,
@@ -184,8 +184,7 @@ function baseProps(overrides: Partial<RunBodyProps> = {}): RunBodyProps {
     elapsedLabel: '41m 12s',
     runCostUsd: 4.12,
     capUsd: 8,
-    claimsChecked: 15,
-    claimsTotal: 19,
+    claimsContradicted: 0,
     sections: baseSections(),
     draftError: null,
     switcher: baseSwitcher(),
@@ -352,11 +351,28 @@ describe('RunBody — the work', () => {
 })
 
 describe('RunBody — gates', () => {
-  it('facts gate unsigned reads the unchecked-claim count and links to fact-check', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ claimsUnchecked: 4, claimsTotal: 19 }) })} />)
-    expect(screen.getByText(/4 of 19 claims still unchecked/)).toBeDefined()
-    const link = screen.getByRole('link', { name: /check claims/i })
+  it('facts gate unsigned names the contradicted-claim count and links to fact-check', () => {
+    render(<RunBody {...baseProps({ gates: baseGates({ claimsContradicted: 2 }) })} />)
+    expect(
+      screen.getByText('2 claims contradicted by sources. Fix or dismiss them before clearing the facts.'),
+    ).toBeDefined()
+    const link = screen.getByRole('link', { name: /review contradicted claims/i })
     expect(link.getAttribute('href')).toBe('/issues/999717/fact-check')
+    expect(screen.queryByText(/still unchecked/)).toBeNull()
+  })
+
+  it('facts gate singular copy for one contradicted claim', () => {
+    render(<RunBody {...baseProps({ gates: baseGates({ claimsContradicted: 1 }) })} />)
+    expect(
+      screen.getByText('1 claim contradicted by sources. Fix or dismiss it before clearing the facts.'),
+    ).toBeDefined()
+  })
+
+  it('facts gate with no contradicted claims shows no claim to-do', () => {
+    render(<RunBody {...baseProps({ gates: baseGates({ claimsContradicted: 0 }) })} />)
+    expect(screen.getByText('No claim is contradicted by its sources.')).toBeDefined()
+    expect(screen.queryByRole('link', { name: /check claims|review contradicted/i })).toBeNull()
+    expect(screen.queryByText(/still unchecked/)).toBeNull()
   })
 
   it('voice gate unsigned reads the open voice-finding count and links to voice', () => {

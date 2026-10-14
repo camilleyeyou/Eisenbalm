@@ -89,7 +89,7 @@ describe('AwaitingYouInbox', () => {
       runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
       qaFindings: [],
-      claimStatus: { total: 0, signedOff: 0, allSignedOff: false },
+      claimStatus: { total: 0, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
@@ -111,7 +111,7 @@ describe('AwaitingYouInbox', () => {
           accepted: false,
         },
       ],
-      claimStatus: { total: 0, signedOff: 0, allSignedOff: false },
+      claimStatus: { total: 0, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
@@ -124,16 +124,28 @@ describe('AwaitingYouInbox', () => {
     expect(qaLink?.getAttribute('href')).toBe('/run-monitor/runs/r1/review')
   })
 
-  it('lists an open sign-offs item when claim checks are incomplete', () => {
+  it('lists a contradicted-claims item only when blocking > 0', () => {
     mockQueries({
       runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
       qaFindings: [],
-      claimStatus: { total: 3, signedOff: 1, allSignedOff: false },
+      claimStatus: { total: 3, signedOff: 0, blocking: 2, flagged: 2, allSignedOff: false },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
-    expect(screen.getByText(/sign-offs open \(1\/3\)/i)).toBeDefined()
+    expect(screen.getByText(/2 contradicted claims/i)).toBeDefined()
+  })
+
+  it('pending unverdicted claims produce no inbox item', () => {
+    mockQueries({
+      runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
+      latestRun: { runId: 'r1', status: 'awaiting-review' },
+      qaFindings: [],
+      claimStatus: { total: 3, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
+    })
+    render(<AwaitingYouInbox open onClose={vi.fn()} />)
+
+    expect(screen.queryByText(/contradicted|sign-offs open/i)).toBeNull()
   })
 
   it('lists a failed-run item linking to /run-monitor/runs/rf', () => {
@@ -168,7 +180,7 @@ describe('AwaitingYouInbox', () => {
       runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
       qaFindings: [],
-      claimStatus: { total: 0, signedOff: 0, allSignedOff: false },
+      claimStatus: { total: 0, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
     })
     render(<AwaitingYouInbox open onClose={onClose} />)
 

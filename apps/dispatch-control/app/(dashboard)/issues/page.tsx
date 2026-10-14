@@ -306,8 +306,8 @@ function RecentlyPublishedRowContainer({
     <RecentlyPublishedRow
       issue={{ issueNumber: issue.issueNumber, publishedAt: issue.publishedAt }}
       verification={{
-        checked: claimSummary?.signedOff ?? 0,
         total: claimSummary?.total ?? 0,
+        contradicted: claimSummary?.blocking ?? 0,
         factsClearedBy: signOffs?.['facts-cleared']?.actorId,
         factsClearedAt: signOffs?.['facts-cleared']?.signedAt,
         voiceApprovedBy: signOffs?.['sounds-human']?.actorId,

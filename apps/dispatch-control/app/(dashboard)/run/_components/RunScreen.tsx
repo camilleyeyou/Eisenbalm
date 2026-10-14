@@ -71,8 +71,10 @@ export interface RunGateInputs {
   factsSignedAt: number | null
   voiceSignedBy: string | null
   voiceSignedAt: number | null
-  claimsUnchecked: number
-  claimsTotal: number
+  /** Open agent-contradicted claims (allSignedOff.blocking) — the only claim state that gates. */
+  claimsContradicted: number
+  /** Editor-flagged claims (allSignedOff.flagged). */
+  claimsFlagged: number
   voiceOpenCount: number
   mustFixTotal: number
   held: boolean
@@ -90,8 +92,7 @@ export interface RunBodyProps {
   elapsedLabel: string
   runCostUsd: number | undefined
   capUsd: number
-  claimsChecked: number
-  claimsTotal: number
+  claimsContradicted: number
   sections: RunSectionRow[]
   draftError: string | null
   switcher: RunSwitcherRow[]
@@ -278,17 +279,18 @@ function GatesPanel({ gates, issueNumber }: { gates: RunGateInputs; issueNumber:
             </span>
           ) : (
             <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              {gates.claimsUnchecked} of {gates.claimsTotal} claims still unchecked. This gate stays closed
-              until they are signed off.
+              {gates.claimsContradicted > 0
+                ? `${gates.claimsContradicted} claim${gates.claimsContradicted === 1 ? '' : 's'} contradicted by sources. Fix or dismiss ${gates.claimsContradicted === 1 ? 'it' : 'them'} before clearing the facts.`
+                : 'No claim is contradicted by its sources.'}
             </span>
           )}
         </span>
-        {gates.loaded && !factsSigned && (
+        {gates.loaded && !factsSigned && gates.claimsContradicted > 0 && (
           <Link
             href={issueFactCheckHref(issueNumber)}
             className="whitespace-nowrap font-[family-name:var(--font-ui)] text-[12.5px] font-semibold text-[color:var(--color-cobalt)]"
           >
-            Check claims →
+            Review contradicted claims →
           </Link>
         )}
       </div>
@@ -370,8 +372,7 @@ export function RunBody(props: RunBodyProps) {
     elapsedLabel,
     runCostUsd,
     capUsd,
-    claimsChecked,
-    claimsTotal,
+    claimsContradicted,
     sections,
     draftError,
     switcher,
@@ -443,7 +444,7 @@ export function RunBody(props: RunBodyProps) {
               : `$${runCostUsd.toFixed(2)} / $${capUsd.toFixed(2)}`}
           </span>
           <span>
-            Claims {claimsChecked}/{claimsTotal}
+            {claimsContradicted} contradicted
           </span>
         </div>
       </div>
@@ -652,9 +653,8 @@ export default function RunScreen() {
   const gatesLoaded = run.signOffs !== undefined && run.claimRows !== undefined && run.qaFindings !== undefined
   const factsSignOff = run.signOffs?.['facts-cleared']
   const voiceSignOff = run.signOffs?.['sounds-human']
-  const claimsTotal = run.claimSummary?.total ?? 0
-  const claimsChecked = run.claimSummary?.signedOff ?? 0
-  const claimsUnchecked = Math.max(0, claimsTotal - claimsChecked)
+  const claimsContradicted = run.claimSummary?.blocking ?? 0
+  const claimsFlagged = run.claimSummary?.flagged ?? 0
   const voiceOpenCount = (run.qaFindings ?? []).filter(
     row => isOpenFinding(row) && VOICE_AXES.has(row.axis ?? ''),
   ).length
@@ -669,8 +669,8 @@ export default function RunScreen() {
     factsSignedAt: factsSignOff?.signedAt ?? null,
     voiceSignedBy: voiceSignOff?.actorId ?? null,
     voiceSignedAt: voiceSignOff?.signedAt ?? null,
-    claimsUnchecked,
-    claimsTotal,
+    claimsContradicted,
+    claimsFlagged,
     voiceOpenCount,
     mustFixTotal,
     held,
@@ -698,8 +698,7 @@ export default function RunScreen() {
       elapsedLabel={formatElapsed(run.runRow?.startedAt, now, run.runRow?.completedAt ?? undefined)}
       runCostUsd={run.runCostUsd}
       capUsd={run.capUsd}
-      claimsChecked={claimsChecked}
-      claimsTotal={claimsTotal}
+      claimsContradicted={claimsContradicted}
       sections={sections}
       draftError={draftError}
       switcher={switcher}

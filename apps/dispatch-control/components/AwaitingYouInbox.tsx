@@ -63,7 +63,7 @@ export default function AwaitingYouInbox({ open, onClose }: AwaitingYouInboxProp
     api.claimChecks.allSignedOff,
     currentDraftRunId ? { runId: currentDraftRunId } : 'skip',
   )
-  const openSignOffs = Boolean(claimStatus && !claimStatus.allSignedOff && claimStatus.total > 0)
+  const openContradicted = Boolean(claimStatus && claimStatus.blocking > 0)
 
   if (!open) return null
 
@@ -88,13 +88,13 @@ export default function AwaitingYouInbox({ open, onClose }: AwaitingYouInboxProp
     })
   }
 
-  // 2. Open claim-check sign-offs.
-  if (openSignOffs && claimStatus && currentDraftRunId) {
+  // 2. Open agent-contradicted claims (Phase 51.1 — the only claim state that blocks).
+  if (openContradicted && claimStatus && currentDraftRunId) {
     items.push({
-      key: `signoff-${currentDraftRunId}`,
-      label: `Claim sign-offs open (${claimStatus.signedOff}/${claimStatus.total})`,
-      href: reviewHref(currentDraftRunId),
-      dotColor: 'var(--color-marigold)',
+      key: `contradicted-${currentDraftRunId}`,
+      label: `${claimStatus.blocking} contradicted claim${claimStatus.blocking === 1 ? '' : 's'}`,
+      href: editHref(currentDraftRunId),
+      dotColor: 'var(--color-vermilion)',
     })
   }
 
