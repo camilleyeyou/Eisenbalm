@@ -103,6 +103,8 @@ interface FullClaimRow extends FactCheckClaimRow, FactCheckFilterRow {
   sectionName?: string
   blockIndexHint?: number
   importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  verdictEvidence?: string
+  verdictSources?: string[]
   changedSinceCheck?: boolean
   conflict?: boolean
   checkedAt?: number
@@ -165,6 +167,7 @@ function chipStateForRow(row: FullClaimRow) {
     importance: row.importance,
     sourceUrl: row.sourceUrl,
     changedSinceCheck: row.changedSinceCheck,
+    verdict: row.verdict as ClaimProvenanceView['verdict'],
   })
 }
 
@@ -264,7 +267,7 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
   // explicitly below (never a fake verified state).
   const rows = useQuery(api.claimChecks.listByRunId, { runId }) as FullClaimRow[] | undefined
 
-  const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [activeFilters, setActiveFilters] = useState<string[]>(['flagged'])
   const [selectedClaimIndex, setSelectedClaimIndex] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -409,6 +412,9 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
       retrievedAt: selectedRow.retrievedAt,
       sectionName: selectedRow.sectionName,
       changedSinceCheck: selectedRow.changedSinceCheck,
+      verdict: selectedRow.verdict as ClaimProvenanceView['verdict'],
+      verdictEvidence: selectedRow.verdictEvidence,
+      verdictSources: selectedRow.verdictSources,
     }
 
     setPanelContent(
@@ -455,6 +461,8 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
 
   const summary = rows ? deriveFactCheckSummary(rows) : null
   const filteredRows = rows ? applyFilters(rows, activeFilters) : []
+  const flaggedView = activeFilters.length === 1 && activeFilters[0] === 'flagged'
+  const auditMode = activeFilters.length === 0
   // quick 260722-n5r — grouped-by-section claim list (reading order, "Other"
   // trailing). Purely a render reorganization of the same `filteredRows`.
   const claimGroups = buildClaimGroups(filteredRows)
@@ -506,9 +514,15 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
         ) : (
           summary && (
             <div className="mt-1 flex flex-col gap-0.5 text-[13px] text-[color:var(--color-ink)]">
-              <p>checked {summary.factCoverage}</p>
+              <p>
+                {summary.flaggedCount} need you · {summary.contradictedCount} contradicted
+              </p>
+              {auditMode ? (
+                <p className="text-[color:var(--color-ink-soft)]">
+                  Audit: {summary.checked} of {summary.total} claims have an editor action
+                </p>
+              ) : null}
               <p className="text-[color:var(--color-ink-soft)]">
-                {summary.mustFixCount} must fix · {summary.uncheckedCount} unchecked ·{' '}
                 {summary.conflictsCount} conflicting sources · {summary.checksNotRunCount} checks
                 not run · {summary.changedCount} changed since check
               </p>
@@ -529,6 +543,17 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
           <div className="flex items-center gap-1.5">
             <h2 className={MICRO_LABEL}>Claims</h2>
             <HelpTip text={HELP_COPY.factCheck.claimMark} label="Explain claim marks" />
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setActiveFilters(flaggedView ? [] : ['flagged'])}
+              className={ACTION_BUTTON}
+            >
+              {flaggedView
+                ? `Show all ${rows.length} claims (audit)`
+                : 'Show only claims that need you'}
+            </button>
           </div>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Claim filters">
             {FACT_CHECK_FILTERS.map(f => {
@@ -554,7 +579,9 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
           <section aria-label="Claims" className="flex flex-col gap-3">
             {filteredRows.length === 0 ? (
               <p className="text-[13px] italic text-[color:var(--color-ink-soft)]">
-                No claims match the active filters.
+                {flaggedView
+                  ? 'Nothing needs you. No claim is contradicted by its sources, and no load-bearing claim is unresolved.'
+                  : 'No claims match the active filters.'}
               </p>
             ) : (
               claimGroups.map(group => {
@@ -578,19 +605,13 @@ export default function FactCheckScreen({ runId }: FactCheckScreenProps) {
                         <span className={MICRO_LABEL}>{group.label}</span>
                       </span>
                       <span className="text-[12px] text-[color:var(--color-ink-soft)]">
-                        {group.rows.length} claims · {mustFix} must fix · {unchecked} unchecked
+                        {group.rows.length} claims · {mustFix} contradicted
                       </span>
                     </button>
                     {!collapsed && (
                       <ul className="flex flex-col gap-1.5">
                         {group.rows.map(row => {
-                          const chip = deriveClaimChipState({
-                            text: row.text,
-                            status: row.status,
-                            importance: row.importance,
-                            sourceUrl: row.sourceUrl,
-                            changedSinceCheck: row.changedSinceCheck,
-                          })
+                          const chip = chipStateForRow(row)
                           const selected = row.claimIndex === selectedClaimIndex
                           return (
                             <li key={row.claimIndex}>

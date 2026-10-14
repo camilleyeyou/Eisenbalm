@@ -18,7 +18,7 @@
  * reads.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, within } from '@testing-library/react'
+import { render, screen, cleanup, within, fireEvent } from '@testing-library/react'
 import { useQuery } from 'convex/react'
 import { InspectorProvider } from '../components/inspector/InspectorProvider'
 
@@ -103,8 +103,7 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
     // "0 unchecked" in its own counts line, so an unscoped getByText would
     // now match two elements.
     const summary = within(screen.getByRole('region', { name: 'Fact check summary' }))
-    expect(summary.getByText(/checked 1 of 1/i)).toBeDefined()
-    expect(summary.getByText(/0 must fix/i)).toBeDefined()
+    expect(summary.getByText(/0 need you · 0 contradicted/i)).toBeDefined()
     expect(summary.getByText(/0 conflicting sources/i)).toBeDefined()
     expect(summary.getByText(/0 checks not run/i)).toBeDefined()
     expect(summary.getByText(/0 changed since check/i)).toBeDefined()
@@ -128,7 +127,7 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
     expect(screen.getByText(/not yet verified/i)).toBeDefined()
   })
 
-  it('renders the 7 filter chips once claims have loaded', () => {
+  it('renders the 8 filter chips once claims have loaded', () => {
     ;(useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue([
       {
         _id: 'cc1',
@@ -143,12 +142,49 @@ describe('FactCheckScreen — never-blank summary (D-08/D-11, supersedes FactChe
 
     renderScreen()
 
-    expect(screen.getByRole('button', { name: 'Must fix' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'Unchecked' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Needs you' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Contradicted' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'No editor action (audit)' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Changed' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Numbers & dates' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'People & titles' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Organization claims' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Weak source' })).toBeDefined()
+  })
+})
+
+describe('FactCheckScreen — flagged by default with audit toggle (Phase 51.1)', () => {
+  const base = { claimType: 'number', context: 'c', importance: 'Supporting' }
+  const rows = [
+    { ...base, _id: 'a', claimIndex: 0, text: 'Contradicted claim.', status: 'pending', verdict: 'contradicted', verdictEvidence: 'Source says otherwise.' },
+    { ...base, _id: 'b', claimIndex: 1, text: 'Load-bearing unverifiable claim.', status: 'pending', verdict: 'unverifiable', importance: 'Load-bearing' },
+    { ...base, _id: 'c', claimIndex: 2, text: 'Verified claim.', status: 'pending', verdict: 'verified' },
+    { ...base, _id: 'd', claimIndex: 3, text: 'Legacy claim.', status: 'pending' },
+  ]
+
+  it('opens on the 2 claims that need the editor and toggles to the audit list', () => {
+    ;(useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue(rows)
+    renderScreen()
+    expect(screen.getAllByTestId(/^fact-check-row-/)).toHaveLength(2)
+    expect(
+      within(screen.getByRole('region', { name: 'Fact check summary' })).getByText(
+        /2 need you · 1 contradicted/i,
+      ),
+    ).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all 4 claims (audit)' }))
+    expect(screen.getAllByTestId(/^fact-check-row-/)).toHaveLength(4)
+    expect(screen.getByText(/Audit: \d of 4 claims have an editor action/)).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show only claims that need you' }))
+    expect(screen.getAllByTestId(/^fact-check-row-/)).toHaveLength(2)
+  })
+
+  it('says nothing needs the editor when no claim is flagged', () => {
+    ;(useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue([rows[2], rows[3]])
+    renderScreen()
+    expect(screen.getByText(/^Nothing needs you\./)).toBeDefined()
+    expect(screen.queryByText(/no claims match the active filters/i)).toBeNull()
+    expect(document.body.textContent).not.toMatch(/checked \d+ of \d+/i)
   })
 })

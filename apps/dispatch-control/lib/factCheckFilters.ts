@@ -26,10 +26,13 @@
  * `"number" | "date" | "proper_noun"` in storage; no new stored subtype is
  * introduced here.
  */
-import { isMustFix } from './derivedState'
+import { isMustFix, isEditorFlagged } from './derivedState'
 
 export interface FactCheckFilterRow {
   status: string
+  verdict?: string
+  verdictEvidence?: string
+  verdictSources?: string[]
   importance?: string
   sourceUrl?: string
   changedSinceCheck?: boolean
@@ -77,10 +80,11 @@ export interface FactCheckFilterDef {
   predicate: (row: FactCheckFilterRow) => boolean
 }
 
-/** The 7 filter chips, in the order they render (D-12). */
+/** The 8 filter chips, in render order (D-12). Phase 51.1: 'flagged' is the default editor view; the rest are audit lenses. */
 export const FACT_CHECK_FILTERS: FactCheckFilterDef[] = [
-  { id: 'must-fix', label: 'Must fix', predicate: row => isMustFix(row) },
-  { id: 'unchecked', label: 'Unchecked', predicate: row => row.status === 'pending' },
+  { id: 'flagged', label: 'Needs you', predicate: row => isEditorFlagged(row) },
+  { id: 'must-fix', label: 'Contradicted', predicate: row => isMustFix(row) },
+  { id: 'unchecked', label: 'No editor action (audit)', predicate: row => row.status === 'pending' },
   { id: 'changed', label: 'Changed', predicate: row => row.changedSinceCheck === true },
   {
     id: 'numbers-dates',

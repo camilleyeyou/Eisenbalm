@@ -26,18 +26,29 @@ function findFilter(id: string) {
   return f
 }
 
-describe('FACT_CHECK_FILTERS — the 7 predicates', () => {
-  it('registers exactly 7 filters', () => {
-    expect(FACT_CHECK_FILTERS).toHaveLength(7)
+describe('FACT_CHECK_FILTERS — the 8 predicates', () => {
+  it('registers exactly 8 filters, flagged first', () => {
+    expect(FACT_CHECK_FILTERS).toHaveLength(8)
+    expect(FACT_CHECK_FILTERS[0]).toMatchObject({ id: 'flagged', label: 'Needs you' })
   })
 
-  it('must fix: matches an unsourced Load-bearing pending claim', () => {
-    const r = row({ importance: 'Load-bearing', sourceUrl: undefined })
+  it('flagged: open contradicted and open Load-bearing unverifiable only; legacy excluded', () => {
+    const f = findFilter('flagged').predicate
+    expect(f(row({ verdict: 'contradicted' }))).toBe(true)
+    expect(f(row({ verdict: 'unverifiable', importance: 'Load-bearing' }))).toBe(true)
+    expect(f(row({ verdict: 'unverifiable', importance: 'Supporting' }))).toBe(false)
+    expect(f(row({ verdict: 'verified' }))).toBe(false)
+    expect(f(row({ importance: 'Load-bearing' }))).toBe(false)
+    expect(f(row({ verdict: 'contradicted', status: 'checked' }))).toBe(false)
+  })
+
+  it('contradicted: matches an open contradicted claim', () => {
+    const r = row({ verdict: 'contradicted' })
     expect(findFilter('must-fix').predicate(r)).toBe(true)
   })
 
-  it('must fix: does not match an unsourced Supporting pending claim', () => {
-    const r = row({ importance: 'Supporting', sourceUrl: undefined })
+  it('contradicted: does not match a legacy unsourced Load-bearing pending claim', () => {
+    const r = row({ importance: 'Load-bearing', sourceUrl: undefined })
     expect(findFilter('must-fix').predicate(r)).toBe(false)
   })
 
@@ -112,6 +123,7 @@ describe('applyFilters', () => {
   const rows: FactCheckFilterRow[] = [
     {
       status: 'pending',
+      verdict: 'contradicted',
       importance: 'Load-bearing',
       claimType: 'number',
       text: 'Demand outpaces supply four to one.',
@@ -130,6 +142,7 @@ describe('applyFilters', () => {
     },
     {
       status: 'removed',
+      verdict: 'contradicted',
       importance: 'Load-bearing',
       claimType: 'number',
       text: 'A withdrawn claim.',
