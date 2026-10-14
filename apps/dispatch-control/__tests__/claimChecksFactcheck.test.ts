@@ -14,10 +14,8 @@
  *   6. remove sets status:'removed', guarded.
  *   7. setStatus clears changedSinceCheck when flipping to 'checked'/'skipped'
  *      (D-20 — the marker is cleared the next time the claim is checked).
- *   8. allSignedOff regression: a run with one must-fix (Load-bearing, no
- *      sourceUrl, pending) row returns false; after Confirm/keep/remove it
- *      returns true — the removed/kept row satisfies the `!== 'pending'` gate
- *      with zero code change to allSignedOff itself (42-RESEARCH Pitfall 4).
+ *   8. allSignedOff (Phase 51.1): unverdicted pending rows never block; only an
+ *      open contradicted verdict does (see claimChecksVerdict.test.ts).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { convexTest, schema } from './setup'
@@ -231,41 +229,19 @@ describe('Phase 42 — claimChecks Fact Check Stage additions (42-01)', () => {
     expect(typeof row?.checkedAt).toBe('number')
   })
 
-  it('allSignedOff regression: an unsourced Load-bearing pending row blocks; Confirm/keep/remove unblocks', async () => {
+  it('allSignedOff (Phase 51.1): an unverdicted Load-bearing pending row does NOT block', async () => {
     const t = convexTest({ schema, modules })
     await seedClaims(t)
-    const asOperator = t.withIdentity({ subject: 'user_operator' })
 
-    // claimIndex 1 (no importance -> Supporting fallback, has no sourceUrl but
-    // is not Load-bearing) still starts pending, so allSignedOff is false with
-    // BOTH rows pending regardless of severity — the gate is purely
-    // "no pending rows", not importance-aware itself (severity/mustFix is a
-    // client-side derived concern, D-05).
-    let gate = await t.query(api.claimChecks.allSignedOff, { runId: RUN_ID })
-    expect(gate.allSignedOff).toBe(false)
-    expect(gate.total).toBe(2)
-
-    // Confirm the must-fix claim (claimIndex 0) via the existing operator path.
-    await asOperator.mutation(api.claimChecks.setStatus, {
-      runId: RUN_ID,
-      claimIndex: 0,
-      status: 'checked',
-    })
-    gate = await t.query(api.claimChecks.allSignedOff, { runId: RUN_ID })
-    expect(gate.allSignedOff).toBe(false) // claimIndex 1 still pending
-
-    // Keep-as-written the second row.
-    await t.mutation(api.claimChecks.keepAsWritten, {
-      runId: RUN_ID,
-      claimIndex: 1,
-      pipelineSecret: TEST_SECRET,
-    })
-    gate = await t.query(api.claimChecks.allSignedOff, { runId: RUN_ID })
+    // Legacy/unverdicted rows are neutral: pending never blocks, only an open
+    // contradicted verdict does (API_CONTRACTS §51.1.3).
+    const gate = await t.query(api.claimChecks.allSignedOff, { runId: RUN_ID })
     expect(gate.allSignedOff).toBe(true)
-    expect(gate.signedOff).toBe(2)
+    expect(gate.total).toBe(2)
+    expect(gate.blocking).toBe(0)
   })
 
-  it('allSignedOff regression variant: remove() also satisfies the gate without touching allSignedOff/listByRunId', async () => {
+  it('allSignedOff (Phase 51.1): remove() leaves the gate open', async () => {
     const t = convexTest({ schema, modules })
     await seedClaims(t)
     const asOperator = t.withIdentity({ subject: 'user_operator' })

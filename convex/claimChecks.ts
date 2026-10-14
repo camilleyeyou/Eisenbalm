@@ -1,22 +1,23 @@
 /**
- * Phase 26 — RVW-05: Factual-claims storage + sign-off mutations/queries.
+ * Phase 26 / 51.1 — Factual-claims storage + gate mutations/queries.
  *
- * The claims extraction step runs at pipeline run-end and persists a flat list
- * of factual claims (numbers, dates, proper nouns) to this table. The operator
- * checks or skips each claim before the approve action is enabled.
+ * The claims extraction step runs at pipeline run-end and persists assertion
+ * claims to this table. Since Phase 51.1 each row carries an agent verdict
+ * (verified | contradicted | unverifiable) plus evidence; `status` records the
+ * editor's action only. Only open contradicted claims block facts-cleared
+ * (convex/lib/claimGate.ts). Legacy rows without a verdict are neutral.
  *
- * API_CONTRACTS §26.6 — all exported function signatures match exactly.
+ * API_CONTRACTS §26.6 as amended by §51.1.
  *
- * Approve gate: `allSignedOff` returns false when NO claims exist (conservative —
- * prevents the race window where the dashboard approve button is briefly enabled
- * before claims load from Convex, per Pitfall 5). The dashboard must distinguish
- * "claims not loaded yet" (query.status !== 'success') from "all signed off"
- * (allSignedOff === true) — only enable approve when both conditions are met.
+ * Approve gate: `allSignedOff` is true when no open contradicted claim exists;
+ * an empty claim list is TRUE. Dashboard callers must still treat an unresolved
+ * query (undefined) as not-loaded.
  */
 import { mutation, query } from './_generated/server'
 import type { MutationCtx } from './_generated/server'
 import { v } from 'convex/values'
 import { requireOperator, requirePipelineSecret } from './lib/auth'
+import { summarizeClaimGate } from './lib/claimGate'
 
 // ── insertBatch ─────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ export const insertBatch = mutation({
       v.object({
         claimIndex: v.number(),
         text: v.string(),
-        claimType: v.string(), // "number" | "date" | "proper_noun"
+        claimType: v.string(), // "sourced" | "number" | "date" | "proper_noun"
         context: v.string(),
         // Phase 35 provenance (PRV-01/03/04) — additive optional; absent => legacy/unsourced shape
         claimId: v.optional(v.string()),
@@ -48,6 +49,14 @@ export const insertBatch = mutation({
         importance: v.optional(v.union(
           v.literal('Load-bearing'), v.literal('Supporting'), v.literal('Incidental'),
         )),
+        // Phase 51.1 (VRD-01) — agent verdict; additive optional. §51.1.1/§51.1.4
+        verdict: v.optional(v.union(
+          v.literal('verified'), v.literal('contradicted'), v.literal('unverifiable'),
+        )),
+        verdictEvidence: v.optional(v.string()),
+        verdictSources: v.optional(v.array(v.string())),
+        verdictAt: v.optional(v.number()),
+        verdictModel: v.optional(v.string()),
       }),
     ),
     // Phase 29 D-1: pipeline-lane secret (injected centrally by
@@ -82,6 +91,12 @@ export const insertBatch = mutation({
           sectionName: claim.sectionName,
           blockIndexHint: claim.blockIndexHint,
           importance: claim.importance,
+          // Phase 51.1 verdict passthrough — Convex omits undefined optionals
+          verdict: claim.verdict,
+          verdictEvidence: claim.verdictEvidence,
+          verdictSources: claim.verdictSources,
+          verdictAt: claim.verdictAt,
+          verdictModel: claim.verdictModel,
         }),
       ),
     )
@@ -246,8 +261,8 @@ export const keepAsWritten = mutation({
 
 /**
  * Phase 42 §42.3 (D-14/D-15, 42-RESEARCH.md Pitfall 4) — soft-delete via a
- * terminal 'removed' status. Satisfies allSignedOff's `status !== 'pending'`
- * gate with zero code change to that function or to listByRunId.
+ * terminal 'removed' status; a removed claim is never open/blocking
+ * (convex/lib/claimGate.ts).
  */
 export const remove = mutation({
   args: {
@@ -266,7 +281,7 @@ export const remove = mutation({
 
 /**
  * Returns all claim_checks for a run, sorted by claimIndex ascending.
- * Used by the dashboard review screen to render the sign-off checklist.
+ * Claim rows carry agent verdict + editor action.
  */
 export const listByRunId = query({
   args: { runId: v.string() },
@@ -282,18 +297,11 @@ export const listByRunId = query({
 // ── allSignedOff ────────────────────────────────────────────────────────────
 
 /**
- * Returns {total, signedOff, allSignedOff} for the approve gate.
+ * Returns {total, signedOff, blocking, flagged, allSignedOff} for the approve gate.
  *
- * allSignedOff = total > 0 AND every row status !== "pending"
- *
- * IMPORTANT: Empty list → {total:0, signedOff:0, allSignedOff:false}
- * This is intentionally conservative: if no claims have been extracted yet,
- * the gate treats it as "not ready" rather than "trivially satisfied".
- * The dashboard distinguishes "no claims" separately — the server gate
- * treats no-claims-yet conservatively.
- *
- * The FastAPI publish endpoint also calls this server-side check before
- * patching Sanity status (Pitfall 6 guard).
+ * allSignedOff = blocking === 0 (zero rows => true). Pending/unreviewed/legacy
+ * rows never block; only open contradicted claims do. API_CONTRACTS §51.1.3.
+ * Predicates live in convex/lib/claimGate.ts — do not re-implement here.
  */
 export const allSignedOff = query({
   args: { runId: v.string() },
@@ -302,15 +310,6 @@ export const allSignedOff = query({
       .query('claim_checks')
       .withIndex('by_runId', q => q.eq('runId', runId))
       .collect()
-
-    const total = rows.length
-    const signedOff = rows.filter(r => r.status !== 'pending').length
-
-    return {
-      total,
-      signedOff,
-      // Conservative: empty list → false (extraction hasn't run yet)
-      allSignedOff: total > 0 && signedOff === total,
-    }
+    return summarizeClaimGate(rows)
   },
 })
