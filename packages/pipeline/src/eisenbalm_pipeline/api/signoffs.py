@@ -63,7 +63,8 @@ async def record_sign_off(
     Guards (in order):
       1. run must exist → 404 if not
       2. `kind == "facts-cleared"` only:
-         a. claimChecks:allSignedOff → 409 {reason:"claims_not_signed_off"}
+         a. claimChecks:allSignedOff (Phase 51.1: false only while an agent-contradicted
+            claim is open) → 409 {reason:"claims_not_signed_off", count:<open contradicted>}
          b. open error-severity findings on a FACTUAL axis (not in
             VOICE_AXES; anchor-blind, D-11b) →
             409 {reason:"open_error_findings", count:n}
@@ -111,18 +112,33 @@ async def record_sign_off(
         )
 
     if body.kind == "facts-cleared":
-        # 2a. Claims signoff gate — relocated verbatim from review.py (D-04).
+        # 2a. Claims gate (Phase 51.1, API_CONTRACTS section 51.1.8). Convex owns
+        # the predicate (convex/lib/claimGate.ts via claimChecks:allSignedOff):
+        # allSignedOff is false ONLY while an agent-contradicted claim is still
+        # open. Unreviewed/pending, unverifiable, legacy (no verdict) rows and
+        # zero-claim runs never block. Do NOT re-implement the predicate here.
         signoff = await _cc.convex_query(
             http, "claimChecks:allSignedOff", {"runId": run_id}
-        ) or {}
-        if not signoff.get("allSignedOff"):
+        )
+        if not signoff:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={
                     "reason": "claims_not_signed_off",
+                    "count": 0,
+                    "message": "Claim status could not be read. Try again.",
+                },
+            )
+        if not signoff.get("allSignedOff"):
+            blocking = int(signoff.get("blocking") or 0)
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "reason": "claims_not_signed_off",
+                    "count": blocking,
                     "message": (
-                        "All claim checks must be signed off before "
-                        "clearing facts."
+                        f"{blocking} claim(s) contradicted by sources must be "
+                        "fixed or dismissed before clearing facts."
                     ),
                 },
             )

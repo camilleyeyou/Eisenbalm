@@ -405,8 +405,9 @@ async def remove_claim(
     claims: dict = Depends(_require_clerk_jwt_control),
 ) -> dict:
     """Remove claim — soft-delete via ``status: 'removed'`` (D-15,
-    42-RESEARCH.md Pitfall 4 — satisfies allSignedOff's ``status !== 'pending'``
-    gate with zero code change to that function). NO Sanity write."""
+    sets a terminal editor-action status, which resolves the claim for the
+    Phase 51.1 gate (convex/lib/claimGate.ts - a non-pending status is never
+    open/blocking); verdict fields are never touched). NO Sanity write."""
     convex_http = getattr(request.app.state, "convex_http", None)
     actor = claims.get("sub") or "unknown"
     reason = (body.reason if body else None) or ""
