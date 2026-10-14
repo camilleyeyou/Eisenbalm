@@ -135,7 +135,7 @@ def test_facts_cleared_409_claims_not_signed_off(monkeypatch):
         if path == "pipelineRuns:byRunId":
             return _run()
         if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 1, "allSignedOff": False}
+            return {"total": 3, "signedOff": 1, "blocking": 2, "flagged": 2, "allSignedOff": False}
         return None
 
     async def mock_convex_mutation(http, path, args):
@@ -157,11 +157,86 @@ def test_facts_cleared_409_claims_not_signed_off(monkeypatch):
     )
     detail = response.json()["detail"]
     assert detail["reason"] == "claims_not_signed_off"
+    assert detail["count"] == 2
 
     record_calls = [
         args for path, args in mutation_calls if path == "signOffs:record"
     ]
     assert record_calls == [], "signOffs:record must NOT be called"
+
+
+# ── Phase 51.1 gate: only open contradicted claims block ────────────────────
+
+
+def _gate_client(monkeypatch, gate_result):
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _run()
+        if path == "claimChecks:allSignedOff":
+            return gate_result
+        if path == "qaCorrections:byRunId":
+            return []
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
+    return mutation_calls
+
+
+def test_facts_cleared_200_zero_claims(monkeypatch):
+    calls = _gate_client(
+        monkeypatch,
+        {"total": 0, "signedOff": 0, "blocking": 0, "flagged": 0, "allSignedOff": True},
+    )
+    r = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert r.status_code == 200, r.text
+    assert any(p == "signOffs:record" for p, _ in calls)
+
+
+def test_facts_cleared_200_with_unreviewed_pending_claims(monkeypatch):
+    _gate_client(
+        monkeypatch,
+        {"total": 40, "signedOff": 0, "blocking": 0, "flagged": 3, "allSignedOff": True},
+    )
+    r = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert r.status_code == 200, r.text
+
+
+def test_facts_cleared_409_contradicted_count(monkeypatch):
+    calls = _gate_client(
+        monkeypatch,
+        {"total": 12, "signedOff": 2, "blocking": 2, "flagged": 4, "allSignedOff": False},
+    )
+    r = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert r.status_code == 409, r.text
+    detail = r.json()["detail"]
+    assert detail["reason"] == "claims_not_signed_off"
+    assert detail["count"] == 2
+    assert detail["message"] == (
+        "2 claim(s) contradicted by sources must be fixed or dismissed "
+        "before clearing facts."
+    )
+    assert not any(p == "signOffs:record" for p, _ in calls)
+
+
+def test_facts_cleared_409_when_gate_unreadable(monkeypatch):
+    _gate_client(monkeypatch, None)
+    r = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert r.status_code == 409, r.text
+    detail = r.json()["detail"]
+    assert detail["reason"] == "claims_not_signed_off"
+    assert detail["count"] == 0
+    assert detail["message"] == "Claim status could not be read. Try again."
 
 
 # ── test_facts_cleared_409_open_error_findings ──────────────────────────────
