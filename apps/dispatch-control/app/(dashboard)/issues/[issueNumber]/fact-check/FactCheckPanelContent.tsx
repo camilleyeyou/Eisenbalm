@@ -10,12 +10,16 @@
  * vocabulary (Pending/Checked/Skipped) — read-only, no Check/Skip write
  * actions belong here.
  *
+ * Phase 51.1: exceptions only, no ledger (§51.1.9) — lists editor-flagged
+ * claims (contradicted, or unverified load-bearing) and nothing else.
+ *
  * Honesty rule (never-blank): `undefined` (not loaded yet) renders a loading
  * line; zero claims renders "No claims extracted yet" — the empty case never
  * asserts a fake done/checked-off state the data doesn't back.
  */
 import { useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { isEditorFlagged, isOpenBlocking } from '@/lib/derivedState'
 import {
   useWorkspaceState,
   type WorkspaceStateValue,
@@ -24,10 +28,8 @@ import {
 const MICRO_LABEL =
   'font-[family-name:var(--font-ui)] text-[10px] font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]'
 
-function statusLabel(status: string): string {
-  if (status === 'checked') return 'Checked'
-  if (status === 'skipped') return 'Skipped'
-  return 'Pending'
+function verdictLabel(verdict: string | undefined): string {
+  return verdict === 'contradicted' ? 'Contradicted by source' : 'Unverified — load-bearing'
 }
 
 export function buildFactCheckPanelContent(
@@ -45,23 +47,35 @@ export function buildFactCheckPanelContent(
     )
   }
 
-  const done = claimRows.filter(row => row.status !== 'pending')
-  const openCount = claimRows.length - done.length
+  const flagged = claimRows.filter(isEditorFlagged)
+  const contradicted = flagged.filter(isOpenBlocking).length
+
+  if (flagged.length === 0) {
+    return (
+      <p className="text-[13px] text-[color:var(--color-ink)]">
+        Nothing needs you. No claim is contradicted by its sources.
+      </p>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[13px] text-[color:var(--color-ink)]">
-        checked {done.length} of {claimRows.length}
-        <span className="text-[color:var(--color-ink-soft)]"> · {openCount} unchecked</span>
+        {flagged.length} need you · {contradicted} contradicted
       </p>
       <ul className="flex flex-col gap-1.5">
-        {claimRows.map(row => (
+        {flagged.map(row => (
           <li key={row._id} className="border border-[color:var(--color-faint)] bg-white p-2">
             <p className="text-[13px] leading-snug text-[color:var(--color-ink)]">
               {row.claimText ?? '(no claim text)'}
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className={MICRO_LABEL}>{statusLabel(row.status)}</span>
+              <span className={MICRO_LABEL}>{verdictLabel(row.verdict)}</span>
+              {row.verdictEvidence && (
+                <p className="mt-1 w-full text-[12px] text-[color:var(--color-ink-soft)]">
+                  {row.verdictEvidence}
+                </p>
+              )}
               {row.sourceUrl && (
                 <a
                   href={row.sourceUrl}

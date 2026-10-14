@@ -81,27 +81,32 @@ describe('Stage 2 Draft panel', () => {
 })
 
 describe('Stage 3 Fact Check panel', () => {
-  it('renders claim detail when populated', () => {
+  it('lists only editor-flagged claims with their verdict label', () => {
     const claimRows: WorkspaceStateValue['claimRows'] = [
-      {
-        _id: 'cc1',
-        status: 'checked',
-        sourceUrl: 'https://example.org/source',
-        sectionName: 'originStory',
-        claimText: 'Founded in 1998 with three volunteers.',
-      },
-      {
-        _id: 'cc2',
-        status: 'pending',
-        sectionName: 'problemStatement',
-        claimText: 'Serves over 400 families annually.',
-      },
+      { _id: 'cc1', status: 'pending', verdict: 'contradicted', sectionName: 'originStory', claimText: 'Claim A founded in 1998.', sourceUrl: 'https://example.org/source', verdictEvidence: 'Registry says 2004.' },
+      { _id: 'cc2', status: 'pending', verdict: 'unverifiable', importance: 'Load-bearing', sectionName: 'caseStudy', claimText: 'Claim B serves 400 families.' },
+      { _id: 'cc3', status: 'pending', verdict: 'verified', sectionName: 'caseStudy', claimText: 'Claim C verified.' },
+      { _id: 'cc4', status: 'pending', sectionName: 'caseStudy', claimText: 'Claim D legacy.' },
     ]
 
-    render(<>{buildFactCheckPanelContent(claimRows)}</>)
+    const { container } = render(<>{buildFactCheckPanelContent(claimRows)}</>)
 
-    expect(screen.getByText(/founded in 1998 with three volunteers/i)).toBeDefined()
-    expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
+    expect(screen.getByText(/claim a founded/i)).toBeDefined()
+    expect(screen.getByText(/claim b serves/i)).toBeDefined()
+    expect(screen.queryByText(/claim c verified/i)).toBeNull()
+    expect(screen.queryByText(/claim d legacy/i)).toBeNull()
+    expect(screen.getByText('Contradicted by source')).toBeDefined()
+    expect(screen.getByText('Unverified — load-bearing')).toBeDefined()
+    expect(screen.getByText('2 need you · 1 contradicted')).toBeDefined()
+    expect(container.textContent).not.toMatch(/checked \d+ of \d+|unchecked/)
+  })
+
+  it('says nothing needs you when no claim is flagged', () => {
+    const { container } = render(
+      <>{buildFactCheckPanelContent([{ _id: 'cc1', status: 'pending', verdict: 'verified', claimText: 'Fine.' }])}</>,
+    )
+    expect(screen.getByText('Nothing needs you. No claim is contradicted by its sources.')).toBeDefined()
+    expect(container.querySelector('ul')).toBeNull()
   })
 
   it('renders an honest empty state when there are no claims', () => {
@@ -162,7 +167,7 @@ describe('Stage 5 Approval panel', () => {
       signOffs: { 'facts-cleared': { actorId: 'op-1', signedAt: Date.now() } },
       claimRows: [
         { _id: 'cc1', status: 'checked' },
-        { _id: 'cc2', status: 'pending' },
+        { _id: 'cc2', status: 'pending', verdict: 'contradicted' },
       ],
       tasks: [
         {
@@ -215,9 +220,45 @@ describe('Stage 5 Approval panel', () => {
       </>,
     )
     expect(screen.getByText('not signed')).toBeDefined()
-    expect(screen.getByText('no claims yet')).toBeDefined()
+    expect(screen.getByText('no claims extracted')).toBeDefined()
     expect(screen.getByText('none')).toBeDefined()
     expect(screen.queryByText(/nothing to show for this stage yet/i)).toBeNull()
+  })
+})
+
+describe('Stage 5 Approval panel — fact check line', () => {
+  const base = { tasks: [], held: false }
+  it('counts contradicted claims when facts are unsigned', () => {
+    const { container } = render(
+      <>
+        {buildApprovalPanelContent({
+          ...base,
+          signOffs: {},
+          claimRows: [
+            { _id: 'a', status: 'pending', verdict: 'contradicted' },
+            { _id: 'b', status: 'pending', verdict: 'verified' },
+          ],
+        })}
+      </>,
+    )
+    expect(screen.getByText('1 contradicted')).toBeDefined()
+    expect(container.textContent).not.toMatch(/checked \d+ of \d+|unchecked/)
+  })
+
+  it('reads no contradicted claims for verified or legacy rows', () => {
+    render(
+      <>
+        {buildApprovalPanelContent({
+          ...base,
+          signOffs: {},
+          claimRows: [
+            { _id: 'a', status: 'pending', verdict: 'verified' },
+            { _id: 'b', status: 'pending' },
+          ],
+        })}
+      </>,
+    )
+    expect(screen.getByText('no contradicted claims')).toBeDefined()
   })
 })
 

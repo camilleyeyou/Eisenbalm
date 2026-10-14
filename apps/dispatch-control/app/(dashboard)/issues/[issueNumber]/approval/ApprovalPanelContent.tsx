@@ -32,6 +32,7 @@
 import { useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import DecisionLog from '@/components/decision-log/DecisionLog'
+import { isOpenBlocking } from '@/lib/derivedState'
 import {
   useWorkspaceState,
   type WorkspaceStateValue,
@@ -59,7 +60,7 @@ export function buildApprovalPanelContent({
   }
 
   const rows = claimRows ?? []
-  const done = rows.filter(row => row.status !== 'pending')
+  const contradicted = rows.filter(isOpenBlocking).length
   const totalClaims = rows.length
   const mustFixCount = tasks.filter(t => t.sev === 'must-fix').length
 
@@ -73,8 +74,10 @@ export function buildApprovalPanelContent({
         {factsSigned
           ? 'signed'
           : totalClaims === 0
-            ? 'no claims yet'
-            : `checked ${done.length} of ${totalClaims}`}
+            ? 'no claims extracted'
+            : contradicted > 0
+              ? `${contradicted} contradicted`
+              : 'no contradicted claims'}
       </dd>
       <dt className="text-[color:var(--color-ink-soft)]">Voice</dt>
       <dd>{voiceSigned ? 'signed' : 'not signed'}</dd>

@@ -40,8 +40,8 @@ export interface RecordSignOffResult {
 
 /**
  * Structured error for 4xx responses from the sign-off endpoint.
- * `reason` maps to the server's 409 reason ("claims_not_signed_off",
- * "open_error_findings").
+ * `reason` maps to the server's 409 reason ("claims_not_signed_off" — now
+ * meaning open contradicted claims, Phase 51.1 — and "open_error_findings").
  */
 export class SignOffApiError extends Error {
   constructor(
@@ -100,7 +100,8 @@ async function _signOffFetch<T>(
  *
  * On success: returns `{ runId, kind, signedAt }`.
  * On 409 `claims_not_signed_off` (facts-cleared only): SignOffApiError — show
- *   "All claim checks must be signed off before clearing facts."
+ *   the server message: "<n> claim(s) contradicted by sources must be fixed or
+ *   dismissed before clearing facts." (reason string unchanged; detail.count = n)
  * On 409 `open_error_findings` (facts-cleared only): SignOffApiError — show
  *   "{n} error finding(s) must be accepted or dismissed before clearing facts."
  *
