@@ -157,6 +157,7 @@ const claimRows = [
     claimId: 'c-0',
     sourceUrl: 'https://example.com/history',
     retrievedAt: 1700000000000,
+    verdict: 'contradicted',
     sectionName: 'originStory',
     blockIndexHint: 0,
   },
@@ -164,6 +165,8 @@ const claimRows = [
     claimIndex: 1,
     text: 'the regional bank closed',
     status: 'pending',
+    verdict: 'unverifiable',
+    importance: 'Load-bearing',
     sectionName: 'problemStatement',
     blockIndexHint: 0,
   },
@@ -420,6 +423,7 @@ describe('Phase 51 — D-09 only unsourced claims are marked', () => {
       claimId: 'c-0',
       sourceUrl: 'https://example.com/history',
       retrievedAt: 1700000000000,
+      verdict: 'contradicted',
       sectionName: 'originStory',
       blockIndexHint: 0,
     },
@@ -427,6 +431,8 @@ describe('Phase 51 — D-09 only unsourced claims are marked', () => {
       claimIndex: 1,
       text: '1974',
       status: 'pending',
+      verdict: 'unverifiable',
+      importance: 'Load-bearing',
       sectionName: 'originStory',
       blockIndexHint: 0,
     },
@@ -440,26 +446,26 @@ describe('Phase 51 — D-09 only unsourced claims are marked', () => {
     })
   }
 
-  it('markSourcedClaims false renders no mark element for a sourced claim', () => {
-    // RED until plan 51-01 Task 3f wires markSourcedClaims through Galley.
-    mockTwoClaimRowsSameSection()
-    const { container } = render(
-      <Galley
-        runId="r1"
-        draft={draft}
-        revisionId="rev-1"
-        reloadDraft={noop}
-        onEditSection={noop}
-        showProvenance
-        markSourcedClaims={false}
-      />,
+  it('a sourced claim WITHOUT a flagging verdict renders no mark regardless of markSourcedClaims; a sourced contradicted claim renders one', () => {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') return []
+      if (queryRef === 'claimChecks:listByRunId')
+        return [{ ...twoClaimRowsSameSection[0], verdict: 'verified' }]
+      return undefined
+    })
+    const a = render(
+      <Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} showProvenance markSourcedClaims={false} />,
     )
-
-    expect(container.querySelector('.galley-claim[data-provenance="sourced"]')).toBeNull()
-    expect(container.querySelector('.galley-claim[data-provenance="unsourced"]')).not.toBeNull()
+    expect(a.container.querySelector('.galley-claim')).toBeNull()
+    a.unmount()
+    mockTwoClaimRowsSameSection()
+    const b = render(
+      <Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} showProvenance markSourcedClaims={false} />,
+    )
+    expect(b.container.querySelector('.galley-claim[data-provenance="sourced"][data-verdict="contradicted"]')).not.toBeNull()
   })
 
-  it('Review Desk default still marks both provenances', () => {
+  it('flagged claims of both provenances are marked by default', () => {
     // GREEN BEFORE 51-01 — the D-24 regression guard proving the default is
     // bit-for-bit today's behavior (no markSourcedClaims prop at all).
     mockTwoClaimRowsSameSection()
@@ -498,6 +504,7 @@ describe('Phase 51 — D-09 and D-20 are independent (real pipeline)', () => {
     claimId: 'c_1',
     sourceUrl: 'https://example.org/report',
     retrievedAt: 1751328000000, // -> 2025-07-01
+    verdict: 'verified', // unmarked: lookup array must still see it
     sectionName: 'originStory',
     blockIndexHint: 0,
   }
@@ -538,7 +545,7 @@ describe('Phase 51 — D-09 and D-20 are independent (real pipeline)', () => {
       />,
     )
 
-    // D-09: the sourced claim carries no wash.
+    // Verified claim carries no wash (Phase 51.1 verdict-driven).
     expect(container.querySelector('.galley-claim[data-provenance="sourced"]')).toBeNull()
 
     // D-20: readable in the finding popover — source URL + retrieved date.
@@ -548,5 +555,71 @@ describe('Phase 51 — D-09 and D-20 are independent (real pipeline)', () => {
 
     expect(container.textContent).toContain('https://example.org/report')
     expect(container.textContent).toContain('2025-07-01')
+  })
+})
+
+describe('Phase 51.1 — verdict-driven claim washes (VRD-03/06)', () => {
+  const sentences = [
+    'Alpha contradicted open sentence.',
+    'Bravo load bearing unverifiable sentence.',
+    'Charlie supporting unverifiable sentence.',
+    'Delta verified sentence.',
+    'Echo contradicted but checked sentence.',
+    'Foxtrot contradicted but changed sentence.',
+    'Golf legacy sentence without verdict.',
+  ]
+  const verdictDraft: DraftResponse = {
+    ...draft,
+    sections: {
+      ...draft.sections,
+      originStory: {
+        headline: 'H',
+        blocks: sentences.map((t) => ({ type: 'paragraph', text: t })),
+        lossy: false,
+      },
+    },
+  }
+  const base = (i: number, extra: Record<string, unknown>) => ({
+    claimIndex: i,
+    text: sentences[i],
+    status: 'pending',
+    sectionName: 'originStory',
+    blockIndexHint: i,
+    ...extra,
+  })
+  const rows = [
+    base(0, { verdict: 'contradicted' }),
+    base(1, { verdict: 'unverifiable', importance: 'Load-bearing' }),
+    base(2, { verdict: 'unverifiable', importance: 'Supporting' }),
+    base(3, { verdict: 'verified' }),
+    base(4, { verdict: 'contradicted', status: 'checked' }),
+    base(5, { verdict: 'contradicted', changedSinceCheck: true }),
+    base(6, {}),
+  ]
+  it('marks only the contradicted-open and Load-bearing-unverifiable claims', () => {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') return []
+      if (queryRef === 'claimChecks:listByRunId') return rows
+      return undefined
+    })
+    const { container } = render(
+      <Galley runId="r1" draft={verdictDraft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} showProvenance />,
+    )
+    const marks = container.querySelectorAll('mark.galley-claim')
+    expect(marks.length).toBe(2)
+    expect(container.querySelector('mark.galley-claim[data-verdict="contradicted"]')).not.toBeNull()
+    expect(container.querySelector('mark.galley-claim[data-verdict="unverifiable"]')).not.toBeNull()
+  })
+
+  it('a sourced contradicted claim is marked even with markSourcedClaims false', () => {
+    ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation((queryRef: string) => {
+      if (queryRef === 'qaCorrections:byRunId') return []
+      if (queryRef === 'claimChecks:listByRunId') return [base(0, { verdict: 'contradicted', claimId: 'c-9' })]
+      return undefined
+    })
+    const { container } = render(
+      <Galley runId="r1" draft={verdictDraft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} showProvenance markSourcedClaims={false} />,
+    )
+    expect(container.querySelector('mark.galley-claim[data-provenance="sourced"]')).not.toBeNull()
   })
 })

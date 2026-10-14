@@ -78,6 +78,7 @@ import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { ensureThemeFont, applyThemeAccent } from '@/lib/galley/googleFontLoader'
 import type { ResolvedClaim } from '@/lib/galley/syntheticPortableText'
+import { isEditorFlagged } from '@/lib/derivedState'
 import GallerySection from './GallerySection'
 import GalleryGameSlot from './GalleryGameSlot'
 import { PassageToolbar, type PassageSelection, type RevisionPassageFromSelection } from './PassageToolbar'
@@ -114,6 +115,11 @@ interface ClaimCheckRow {
    */
   importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
   context?: string
+  /** Phase 51.1 — agent verdict fields (absent on legacy rows). */
+  verdict?: 'verified' | 'contradicted' | 'unverifiable'
+  verdictEvidence?: string
+  verdictSources?: string[]
+  changedSinceCheck?: boolean
 }
 
 interface GalleyProps {
@@ -195,11 +201,8 @@ interface GalleyProps {
    */
   showAxisTag?: boolean
   /**
-   * Phase 51 (D-09) — when false, sourced/checked claims are NOT resolved at
-   * all, so they render as genuinely plain prose: no <mark> element, nothing in
-   * the accessibility tree. A CSS-only override would leave the mark in the DOM
-   * and would not satisfy "render as plain prose." Default true = today's
-   * behaviour, bit-for-bit, for Review Desk and Voice Pass (D-24).
+   * @deprecated Phase 51.1 — washes are verdict-driven (isEditorFlagged,
+   * API_CONTRACTS §51.1.9); this prop no longer narrows rendering.
    */
   markSourcedClaims?: boolean
   /**
@@ -262,7 +265,6 @@ export default function Galley({
   sections,
   generateFixOnAccept,
   showAxisTag,
-  markSourcedClaims = true,
   findingGroup,
   showClaimEvidenceInFindings,
 }: GalleyProps) {
@@ -377,6 +379,10 @@ export default function Galley({
         text: row?.text ?? '',
         importance: row?.importance,
         context: row?.context,
+        verdict: row?.verdict,
+        verdictEvidence: row?.verdictEvidence,
+        verdictSources: row?.verdictSources,
+        changedSinceCheck: row?.changedSinceCheck,
       }
     })
   }
@@ -388,7 +394,10 @@ export default function Galley({
   // text on its own), so the resulting set is identical to filtering the
   // input.
   //
-  // TWO ARRAYS, ON PURPOSE. `markSourcedClaims` answers a RENDER question
+  // Phase 51.1 — rendering is verdict-driven: only `isEditorFlagged` claims
+  // (open contradicted / open Load-bearing unverifiable) get a wash.
+  //
+  // TWO ARRAYS, ON PURPOSE. The render filter answers a RENDER question
   // ("does this claim get its own <mark> wash?"). It must NOT be allowed to
   // also answer the unrelated LOOKUP question plan 51-07 asks ("does this
   // finding overlap any tracked claim?") — if it did, a finding sitting on a
@@ -397,8 +406,7 @@ export default function Galley({
   // claimId/sourceUrl/retrievedAt are additive TOGETHER; absent => unsourced,
   // so an unsourced claim has no source and no date by construction). Keep
   // the unfiltered array; 51-07 consumes it.
-  const claimsForRender = (all: ResolvedClaim[]) =>
-    markSourcedClaims ? all : all.filter((c) => c.provenance === 'unsourced')
+  const claimsForRender = (all: ResolvedClaim[]) => all.filter((c) => isEditorFlagged(c))
 
   const bonusRows: Array<{ type: string; text: string }> = Array.isArray(draft.bonus?.body)
     ? draft.bonus.body

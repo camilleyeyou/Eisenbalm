@@ -62,7 +62,7 @@ export interface ResolvedClaim {
   provenance: 'sourced' | 'unsourced'
   sourceUrl?: string
   retrievedAt?: number
-  /** claim_checks.status — "pending" | "checked" | "skipped". */
+  /** claim_checks.status — "pending" | "checked" | "skipped" | "removed". */
   status: string
   /**
    * Phase 42 (FCT-04, Plan 42-07) — the claim's own extracted text, threaded
@@ -73,6 +73,14 @@ export interface ResolvedClaim {
   importance?: ClaimImportance
   /** Phase 42 — the 60-char surrounding window (`claim_checks.context`); feeds the card's "Supporting passage". */
   context?: string
+  /** Phase 51.1 (§51.1.1) — agent verdict; absent on legacy rows (neutral). */
+  verdict?: 'verified' | 'contradicted' | 'unverifiable'
+  /** Phase 51.1 — agent rationale (<=400 chars). */
+  verdictEvidence?: string
+  /** Phase 51.1 — real URLs the verdict cites (code-mapped, never LLM-emitted). */
+  verdictSources?: string[]
+  /** Phase 51.1 — block edited after the verdict => verdict stale, not flagged. */
+  changedSinceCheck?: boolean
 }
 
 export interface SyntheticRow {
@@ -113,6 +121,14 @@ export interface ClaimSpanMarkDef {
   context?: string
   /** Phase 42 — ResolvedClaim.sectionId, passed through so the card's `sectionName` prop resolves an agent label. */
   sectionId?: string
+  /** Phase 51.1 (§51.1.1) — agent verdict; absent on legacy rows (neutral). */
+  verdict?: 'verified' | 'contradicted' | 'unverifiable'
+  /** Phase 51.1 — agent rationale (<=400 chars). */
+  verdictEvidence?: string
+  /** Phase 51.1 — real URLs the verdict cites (code-mapped, never LLM-emitted). */
+  verdictSources?: string[]
+  /** Phase 51.1 — block edited after the verdict => verdict stale, not flagged. */
+  changedSinceCheck?: boolean
 }
 
 export type SyntheticMarkDef = AnnotationMarkDef | ClaimSpanMarkDef
@@ -178,6 +194,10 @@ export function toSyntheticBlocks(
       importance: c.importance,
       context: c.context,
       sectionId: c.sectionId,
+      verdict: c.verdict,
+      verdictEvidence: c.verdictEvidence,
+      verdictSources: c.verdictSources,
+      changedSinceCheck: c.changedSinceCheck,
     }))
     const markDefs: SyntheticMarkDef[] = [...annMarkDefs, ...claimMarkDefs]
 
