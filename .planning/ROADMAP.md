@@ -1158,7 +1158,7 @@ Plans:
   6. Legacy `claim_checks` rows written before this phase still load and resolve without error on every surface that reads them.
 **Plans**: 10 plans
 Plans:
-- [ ] 51.1-01-contract-schema-shared-gate-PLAN.md — API_CONTRACTS §51.1 first; additive verdict fields on claim_checks; ONE shared predicate `convex/lib/claimGate.ts`; `allSignedOff` re-semanticized (blocking===0, true on empty) + parity tests (Wave 1)
+- [x] 51.1-01-contract-schema-shared-gate-PLAN.md — API_CONTRACTS §51.1 first; additive verdict fields on claim_checks; ONE shared predicate `convex/lib/claimGate.ts`; `allSignedOff` re-semanticized (blocking===0, true on empty) + parity tests (Wave 1)
 - [ ] 51.1-02-sentence-level-extraction-PLAN.md — `extract_assertions_by_block`: one row per assertion sentence, no bare tokens (Wave 1)
 - [ ] 51.1-03-research-sources-verdict-module-PLAN.md — persist `research_sources`; `lib/claim_verdicts.py` one batched Haiku `fact_check` call, index-bound sources, uncited-contradiction downgrade (Wave 1)
 - [ ] 51.1-04-publisher-verdict-wiring-PLAN.md — publisher seeds sentence rows with verdicts BEFORE `end_run()`; failure degrades; CostCapExceeded propagates (Wave 2)
