@@ -8,7 +8,7 @@
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import StoryFindingsRail from '../app/(dashboard)/review-desk/[runId]/_components/StoryFindingsRail'
 import type { ResolvedAnnotation } from '../lib/galley/spanResolver'
 
@@ -87,7 +87,7 @@ describe('StoryFindingsRail — unresolved finding with no quotedSpan', () => {
 
     expect(screen.getByText('Unsourced statistic.')).toBeDefined()
     expect(screen.queryByRole('button', { name: /jump to it/i })).toBeNull()
-    const fixButton = screen.getByRole('button', { name: /fix in editor/i })
+    const fixButton = screen.getByRole('button', { name: /fix it in the editor/i })
     fixButton.click()
     expect(onFixInEditor).toHaveBeenCalledWith('u1')
   })
@@ -112,5 +112,64 @@ describe('StoryFindingsRail — non-voice warning axis', () => {
       />,
     )
     expect(screen.getByText('Review')).toBeDefined()
+  })
+})
+
+describe('StoryFindingsRail — grouped cards (quick 261014-lbr)', () => {
+  const dup = [
+    { findingId: 'g1', sectionId: 'game', severity: 'error' as const, reason: 'Unsourced year.', quotedSpan: 'operating in that watershed since 2009' },
+    { findingId: 'g2', sectionId: 'game', severity: 'error' as const, reason: 'Conflicts with research.', quotedSpan: 'Operating in that watershed since 2009' },
+  ]
+  it('collapses duplicate spans into one card with bulleted reasons', () => {
+    render(<StoryFindingsRail resolved={[]} unresolved={dup} canAnnotate={false} onJump={vi.fn()} onFixInEditor={vi.fn()} />)
+    expect(screen.getAllByText('Must fix')).toHaveLength(1)
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getByText(/from 2 findings/)).toBeDefined()
+  })
+  it('canAnnotate=false shows Fix it in the editor, no Jump', () => {
+    const onFix = vi.fn()
+    render(<StoryFindingsRail resolved={[]} unresolved={dup} canAnnotate={false} onJump={vi.fn()} onFixInEditor={onFix} />)
+    expect(screen.queryByRole('button', { name: /jump to it/i })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /fix it in the editor/i }))
+    expect(onFix).toHaveBeenCalledWith('g1')
+  })
+  it('anchored group jumps to the anchored id; no anchor falls back to editor', () => {
+    const onJump = vi.fn()
+    const { unmount } = render(
+      <StoryFindingsRail resolved={[resolvedFixture()]} unresolved={[]} onJump={onJump} onFixInEditor={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /jump to it/i }))
+    expect(onJump).toHaveBeenCalledWith('f1')
+    unmount()
+    render(<StoryFindingsRail resolved={[]} unresolved={dup} onJump={onJump} onFixInEditor={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /fix it in the editor/i })).toBeDefined()
+  })
+  it('Apply fix only with suggestedFix + canAnnotate; passes all members', async () => {
+    const withFix = dup.map(d => ({ ...d, suggestedFix: 'since 2011' }))
+    const onApplyFix = vi.fn().mockResolvedValue({ note: null })
+    const { unmount } = render(
+      <StoryFindingsRail resolved={[]} unresolved={withFix} onJump={vi.fn()} onFixInEditor={vi.fn()} onApplyFix={onApplyFix} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /apply fix/i }))
+    await waitFor(() => expect(onApplyFix).toHaveBeenCalled())
+    expect(onApplyFix.mock.calls[0][0].map((m: { findingId: string }) => m.findingId)).toEqual(['g1', 'g2'])
+    unmount()
+    render(
+      <StoryFindingsRail resolved={[]} unresolved={withFix} canAnnotate={false} onJump={vi.fn()} onFixInEditor={vi.fn()} onApplyFix={onApplyFix} />,
+    )
+    expect(screen.queryByRole('button', { name: /apply fix/i })).toBeNull()
+    cleanup()
+    render(<StoryFindingsRail resolved={[]} unresolved={dup} onJump={vi.fn()} onFixInEditor={vi.fn()} onApplyFix={onApplyFix} />)
+    expect(screen.queryByRole('button', { name: /apply fix/i })).toBeNull()
+  })
+  it('Dismiss needs a reason and dismisses every id', async () => {
+    const onDismiss = vi.fn().mockResolvedValue({ note: null })
+    render(<StoryFindingsRail resolved={[]} unresolved={dup} onJump={vi.fn()} onFixInEditor={vi.fn()} onDismiss={onDismiss} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    const confirm = screen.getByRole('button', { name: /confirm dismiss/i }) as HTMLButtonElement
+    expect(confirm.disabled).toBe(true)
+    fireEvent.change(screen.getByPlaceholderText(/why\?/i), { target: { value: 'fine as is' } })
+    fireEvent.click(confirm)
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(['g1', 'g2'], 'fine as is'))
   })
 })
