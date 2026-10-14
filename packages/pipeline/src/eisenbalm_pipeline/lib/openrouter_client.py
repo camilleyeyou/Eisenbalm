@@ -24,8 +24,10 @@ one-regenerate retry on OutputParserException. Second failure propagates;
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
+import random
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -64,6 +66,32 @@ from eisenbalm_pipeline.stubs.fake_openrouter import FakeOpenRouterClient  # noq
 
 
 # ── Real-mode helpers ───────────────────────────────────────────────────
+
+_RATE_LIMIT_MAX_RETRIES = 2
+
+
+def _is_grammar_rate_limit(exc: BaseException) -> bool:
+    return "grammar compilation" in str(exc).lower()
+
+
+def _is_rate_limited(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    return (
+        _is_grammar_rate_limit(exc)
+        or getattr(exc, "status_code", None) == 429
+        or type(exc).__name__ == "RateLimitError"
+        or "rate limit" in msg
+        or "error code: 429" in msg
+    )
+
+
+def _backoff_delay(attempt: int) -> float:
+    """Jittered exponential backoff, 1-based attempt, capped at 10s."""
+    return min(10.0, 2.0 * (2 ** (attempt - 1)) + random.uniform(0.0, 1.0))
+
+
+async def _rate_limit_sleep(seconds: float) -> None:
+    await asyncio.sleep(seconds)
 
 
 def _build_chat_model(agent_id: str) -> Any:
@@ -195,12 +223,42 @@ async def acomplete(
         # regenerate-retry signal in the pipeline, surfaced into agent_runs.
         retries = 0
         structured = llm.with_structured_output(response_format, include_raw=True)
-        try:
-            result = await structured.ainvoke(messages)
-        except Exception as exc:  # transport/transient only (schema misses don't raise now)
-            log.warning("acomplete %s: invoke error, retrying once: %r", agent_id, exc)
-            retries = 1
-            result = await structured.ainvoke(messages)
+        rate_limit_retries = 0
+        transient_retried = False
+        used_function_calling = False
+        while True:
+            try:
+                result = await structured.ainvoke(messages)
+                break
+            except Exception as exc:
+                if _is_rate_limited(exc):
+                    if rate_limit_retries >= _RATE_LIMIT_MAX_RETRIES:
+                        raise
+                    rate_limit_retries += 1
+                    retries = 1
+                    if _is_grammar_rate_limit(exc) and not used_function_calling:
+                        log.warning(
+                            "acomplete %s: grammar compilation rate limit; falling back to "
+                            "method='function_calling' (no strict grammar): %r",
+                            agent_id, exc,
+                        )
+                        structured = llm.with_structured_output(
+                            response_format, include_raw=True, method="function_calling"
+                        )
+                        used_function_calling = True
+                    else:
+                        delay = _backoff_delay(rate_limit_retries)
+                        log.warning(
+                            "acomplete %s: rate limited, backing off %.1fs (retry %d/%d): %r",
+                            agent_id, delay, rate_limit_retries, _RATE_LIMIT_MAX_RETRIES, exc,
+                        )
+                        await _rate_limit_sleep(delay)
+                    continue
+                if transient_retried:
+                    raise
+                transient_retried = True
+                log.warning("acomplete %s: invoke error, retrying once: %r", agent_id, exc)
+                retries = 1
         if result["parsed"] is None:  # schema/refusal miss — corrective retry (D-14)
             log.warning(
                 "acomplete %s: schema miss, retrying once: %r",
