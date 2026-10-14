@@ -46,6 +46,9 @@ export default defineConfig({
       ['__tests__/issues.test.ts', 'edge-runtime'],
       // Phase 42 Plan 42-01 claimChecks fact-check-stage convex-test file
       ['__tests__/claimChecksFactcheck.test.ts', 'edge-runtime'],
+      // Phase 51.1 Plan 51.1-01 claim verdict + shared gate convex-test files
+      ['__tests__/claimChecksVerdict.test.ts', 'edge-runtime'],
+      ['__tests__/claimGateParity.test.ts', 'edge-runtime'],
       // Phase 43 Plan 43-02 audit_log decision substrate convex-test file
       ['__tests__/auditLogDecision.test.ts', 'edge-runtime'],
       // Phase 43 Plan 43-08 Do-not-use reason-capture convex-test file

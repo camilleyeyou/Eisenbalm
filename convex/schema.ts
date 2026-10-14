@@ -466,16 +466,16 @@ export default defineSchema({
 
   // ── claim_checks: per-claim factual sign-off checklist (Phase 26 RVW-05) ─────
   // One row per extracted factual claim from an issue run (number/date/proper_noun).
-  // The operator checks or skips each before the approve action is enabled.
+  // Each row carries an agent verdict (Phase 51.1); `status` records the editor's action. Only open contradicted claims block facts-cleared (convex/lib/claimGate.ts).
   // API_CONTRACTS §26.2
   claim_checks: defineTable({
     workspace_id: v.string(),
     runId: v.string(),
     claimIndex: v.number(),       // stable ordinal position from extraction
     text: v.string(),             // extracted claim text
-    claimType: v.string(),        // "number" | "date" | "proper_noun"
+    claimType: v.string(),        // "sourced" | "number" | "date" | "proper_noun"
     context: v.string(),          // 60-char surrounding window for review
-    status: v.string(),           // "pending" | "checked" | "skipped"
+    status: v.string(),           // "pending" | "checked" | "skipped" | "removed" — editor action record
     checkedAt: v.optional(v.number()), // Phase 33 D-13: stamped by setStatus on checked/skipped
     // ── Phase 35 provenance (PRV-01/03/04) — additive optional; legacy rows omit all five ──
     claimId: v.optional(v.string()),        // present only for writer-bound (sourced) rows
@@ -490,6 +490,12 @@ export default defineSchema({
     )),
     changedSinceCheck: v.optional(v.boolean()), // set by markChanged/_reset_touched_claims (D-20)
     conflict: v.optional(v.boolean()),          // set only by Replace-source/Ask-agent flows (D-07)
+    // ── Phase 51.1 verdicts (VRD-01) — additive optional; legacy rows omit all five. API_CONTRACTS §51.1.1 ──
+    verdict: v.optional(v.union(v.literal('verified'), v.literal('contradicted'), v.literal('unverifiable'))),
+    verdictEvidence: v.optional(v.string()),         // agent rationale, <= 400 chars (code-clipped)
+    verdictSources: v.optional(v.array(v.string())), // real URLs mapped from cited source indexes; never LLM-emitted URLs
+    verdictAt: v.optional(v.number()),               // Unix ms, stamped by the pipeline
+    verdictModel: v.optional(v.string()),            // resolved OpenRouter model id (AGT-17); omitted when no LLM call was made
   })
     .index('by_runId', ['runId'])
     .index('by_workspace', ['workspace_id']),
