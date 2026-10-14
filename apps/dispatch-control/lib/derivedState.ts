@@ -12,6 +12,7 @@
  * returns `'unknown'` for any not-loaded/failed input by construction — see
  * the `undefined` checks at the top of that function.
  */
+import { isOpenBlocking, isEditorFlagged } from '@convex/lib/claimGate'
 import { isOpenFinding } from './galley/findingState'
 import { VOICE_AXES } from './galley/axisPartition'
 import { qaSectionToGalleyId } from './galley/sectionIdMap'
@@ -103,6 +104,10 @@ export interface DerivationInputs {
         // row's creation time (mapped from Convex's implicit `_creationTime`
         // by callers), used as the claim task's `openedAt`.
         createdAt?: number
+        // Phase 51.1 (§51.1.1) — agent verdict; absent on legacy rows => neutral.
+        verdict?: string
+        verdictEvidence?: string
+        verdictSources?: string[]
       }>
     | undefined
   qaFindings:
@@ -211,7 +216,9 @@ function deriveFactCheckStage(i: DerivationInputs): StageStateResult {
   if (i.runId === null) return { state: 'not-generated', openCount: 0 }
   if (i.claimRows === undefined) return { state: 'in-progress', openCount: 0 }
   if (i.claimRows.length === 0) return { state: 'not-generated', openCount: 0 }
-  const u = i.claimRows.filter((row) => row.status === 'pending').length
+  // Phase 51.1 — counts only editor-flagged claims; unreviewed/legacy rows
+  // are not work.
+  const u = i.claimRows.filter(isEditorFlagged).length
   return u > 0 ? { state: 'needs-you', openCount: u } : { state: 'clean', openCount: 0 }
 }
 
@@ -354,6 +361,48 @@ export function draftSectionIdsFromDraft(draft: DraftResponse): ReadonlySet<stri
   return ids
 }
 
+/** Phase 51.1 — THE lean claim-row projection. Every dashboard surface that
+ * slims claimChecks.listByRunId rows MUST use this (Pitfall 2: a projection
+ * that drops `verdict` makes a contradicted row look legacy => client shows
+ * nothing while the server blocks — the 9-day-outage drift class). */
+export interface ClaimCheckDocLike {
+  _id: string
+  _creationTime?: number
+  status: string
+  text: string
+  sourceUrl?: string
+  sectionName?: string
+  claimIndex?: number
+  claimId?: string
+  importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
+  changedSinceCheck?: boolean
+  conflict?: boolean
+  checkedAt?: number
+  verdict?: string
+  verdictEvidence?: string
+  verdictSources?: string[]
+}
+export type DerivationClaimRow = NonNullable<DerivationInputs['claimRows']>[number]
+export function projectClaimRow(row: ClaimCheckDocLike): DerivationClaimRow {
+  return {
+    _id: row._id,
+    status: row.status,
+    sourceUrl: row.sourceUrl,
+    sectionName: row.sectionName,
+    claimText: row.text,
+    claimIndex: row.claimIndex,
+    claimId: row.claimId,
+    importance: row.importance,
+    changedSinceCheck: row.changedSinceCheck,
+    conflict: row.conflict,
+    checkedAt: row.checkedAt,
+    createdAt: row._creationTime,
+    verdict: row.verdict,
+    verdictEvidence: row.verdictEvidence,
+    verdictSources: row.verdictSources,
+  }
+}
+
 // ── isMustFix + deriveFactCheckSummary (Phase 42 Plan 42-05, FCT-02, D-04..D-08) ─
 //
 // The pure derived-selector pair for Stage 3 Fact Check. `isMustFix` is the
@@ -367,10 +416,13 @@ export function draftSectionIdsFromDraft(draft: DraftResponse): ReadonlySet<stri
 // "Blank never means verified" (D-08): every counter below is always
 // present in the returned object, even when zero.
 
+export { isOpenBlocking, isEditorFlagged }
+
 export type ClaimImportance = 'Load-bearing' | 'Supporting' | 'Incidental'
 
 export interface FactCheckClaimRow {
   status: string
+  verdict?: string
   importance?: string
   sourceUrl?: string
   changedSinceCheck?: boolean
@@ -383,6 +435,8 @@ export interface FactCheckSummary {
   total: number
   checked: number
   mustFixCount: number
+  contradictedCount: number
+  flaggedCount: number
   changedCount: number
   uncheckedCount: number
   conflictsCount: number
@@ -390,16 +444,20 @@ export interface FactCheckSummary {
   lastVerifiedAt: number | null
 }
 
+// Phase 51.1 — must-fix == an open agent-contradicted claim, the SAME
+// predicate the server's facts-cleared gate uses (API_CONTRACTS §51.1.2);
+// severity no longer derives from importance/sourceUrl.
 export function isMustFix(row: FactCheckClaimRow): boolean {
-  return (
-    row.status === 'pending' && (row.importance ?? 'Supporting') === 'Load-bearing' && !row.sourceUrl
-  )
+  return isOpenBlocking(row)
 }
 
 export function deriveFactCheckSummary(rows: FactCheckClaimRow[]): FactCheckSummary {
   const total = rows.length
   const checked = rows.filter((r) => r.status !== 'pending').length
   const mustFixCount = rows.filter(isMustFix).length
+  // audit counts — never a gate
+  const contradictedCount = rows.filter(isOpenBlocking).length
+  const flaggedCount = rows.filter(isEditorFlagged).length
   const changedCount = rows.filter((r) => r.changedSinceCheck).length
   const uncheckedCount = rows.filter((r) => r.status === 'pending').length
   const conflictsCount = rows.filter((r) => r.conflict).length
@@ -413,6 +471,8 @@ export function deriveFactCheckSummary(rows: FactCheckClaimRow[]): FactCheckSumm
     total,
     checked,
     mustFixCount,
+    contradictedCount,
+    flaggedCount,
     changedCount,
     uncheckedCount,
     conflictsCount,
@@ -495,16 +555,20 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   }
 
   for (const row of i.claimRows ?? []) {
-    if (row.status !== 'pending') continue
-    const sev: TaskSeverity = isMustFix(row) ? 'must-fix' : 'review-recommended'
+    if (!isEditorFlagged(row)) continue
+    const blocking = isOpenBlocking(row)
+    const sev: TaskSeverity = blocking ? 'must-fix' : 'review-recommended'
+    const text60 = (row.claimText ?? '').slice(0, 60)
     // §43.5b (Pitfall 1 fix) — claim tasks deep-link to Fact Check, not Draft.
     const href = fallbackHref ?? issueFactCheckHref(n as number)
     tasks.push({
       id: `claim-${row._id}`,
       sev,
-      title: `Check claim: ${(row.claimText ?? '').slice(0, 60)}`,
+      title: blocking ? `Contradicted claim: ${text60}` : `Unverified load-bearing claim: ${text60}`,
       where: row.sectionName ?? '',
-      why: 'Unverified claim requires human judgment',
+      why: blocking
+        ? 'A source the agents retrieved contradicts this claim'
+        : 'No retrieved source could confirm this load-bearing claim',
       primary: { label: 'Review', href },
       // §44.1/§44.3 — a claim anchors to `claim` with the claimId as locator
       // (resolves to `researcher`, per §44.RECONCILIATION).

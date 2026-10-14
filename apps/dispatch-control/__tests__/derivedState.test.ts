@@ -14,6 +14,7 @@ import {
   draftSectionIdsFromDraft,
   estimateWorkMinutes,
   isMustFix,
+  projectClaimRow,
   deriveFactCheckSummary,
   formatTaskAge,
   SEVERITY_MINUTES,
@@ -145,13 +146,13 @@ describe('deriveIssueStatus — failed run is terminal (quick 260718-51o)', () =
 })
 
 describe('deriveStageStates (§40.6, D-19)', () => {
-  it('completed run with zero checked claims is NOT clean', () => {
+  it('completed run with open contradicted claims is needs-you (Phase 51.1: flagged claims only)', () => {
     const result = deriveStageStates(
       baseInputs({
         runStatus: 'complete',
         claimRows: [
-          { _id: 'c1', status: 'pending' },
-          { _id: 'c2', status: 'pending' },
+          { _id: 'c1', status: 'pending', verdict: 'contradicted' },
+          { _id: 'c2', status: 'pending', verdict: 'contradicted' },
         ],
       }),
     )
@@ -554,14 +555,16 @@ describe('deriveTasks (§40.6, D-21)', () => {
       },
     ]
     const claimRows = [
-      { _id: 'c1', status: 'pending', claimText: 'a claim without a source' },
+      { _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a contradicted claim' },
       {
         _id: 'c2',
         status: 'pending',
-        sourceUrl: 'https://example.org',
-        claimText: 'a sourced claim',
+        verdict: 'unverifiable',
+        importance: 'Load-bearing' as const,
+        claimText: 'an unverifiable load-bearing claim',
       },
       { _id: 'c3', status: 'checked' },
+      { _id: 'c4', status: 'pending', claimText: 'legacy pending - no task' },
     ]
     const tasks = deriveTasks(
       baseInputs({
@@ -571,19 +574,19 @@ describe('deriveTasks (§40.6, D-21)', () => {
         signOffs: {},
       }),
     )
-    // 2 open findings + 2 pending claims + 2 missing sign-offs (facts-cleared, sounds-human) = 6
+    // 2 open findings + 2 flagged claims (legacy pending c4 and checked c3 excluded) + 2 missing sign-offs (facts-cleared, sounds-human) = 6
     expect(tasks).toHaveLength(6)
   })
 
-  it('an unsourced Load-bearing pending claim is must-fix; a sourced Load-bearing claim is review-recommended', () => {
+  it('Phase 51.1: a contradicted claim is must-fix; an unverifiable Load-bearing claim is review-recommended', () => {
     const claimRows = [
-      { _id: 'c1', status: 'pending', importance: 'Load-bearing' as const, claimText: 'no source claim' },
+      { _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'contradicted claim' },
       {
         _id: 'c2',
         status: 'pending',
+        verdict: 'unverifiable',
         importance: 'Load-bearing' as const,
-        sourceUrl: 'https://example.org',
-        claimText: 'has source claim',
+        claimText: 'unverifiable claim',
       },
     ]
     const tasks = deriveTasks(
@@ -596,27 +599,35 @@ describe('deriveTasks (§40.6, D-21)', () => {
         },
       }),
     )
-    const withoutSource = tasks.find((t: DerivedTask) => t.title.includes('no source claim'))
-    const withSource = tasks.find((t: DerivedTask) => t.title.includes('has source claim'))
-    expect(withoutSource?.sev).toBe('must-fix')
-    expect(withSource?.sev).toBe('review-recommended')
+    const c = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
+    const u = tasks.find((t: DerivedTask) => t.id === 'claim-c2')
+    expect(c?.sev).toBe('must-fix')
+    expect(c?.title.startsWith('Contradicted claim: ')).toBe(true)
+    expect(c?.why).toBe('A source the agents retrieved contradicts this claim')
+    expect(u?.sev).toBe('review-recommended')
+    expect(u?.title.startsWith('Unverified load-bearing claim: ')).toBe(true)
+    expect(u?.why).toBe('No retrieved source could confirm this load-bearing claim')
   })
 
-  it('42-RESEARCH REQUIRED CORRECTION (D-05): an unsourced Incidental pending claim is review-recommended, NOT must-fix — severity is importance-aware, not sourceUrl-presence-alone', () => {
+  it('Phase 51.1: 40 pending legacy rows (no verdict) produce zero claim tasks (VRD-03/06)', () => {
+    const claimRows = Array.from({ length: 40 }, (_, k) => ({
+      _id: `l${k}`,
+      status: 'pending',
+      claimText: 'legacy',
+    }))
+    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    expect(tasks.filter((t: DerivedTask) => t.id.startsWith('claim-'))).toHaveLength(0)
+    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-facts')).toBe(true)
+  })
+
+  it('Phase 51.1: an unverifiable Incidental/Supporting pending claim produces no task', () => {
     const claimRows = [
-      { _id: 'c1', status: 'pending', importance: 'Incidental' as const, claimText: 'unsourced atmospheric detail' },
+      { _id: 'c1', status: 'pending', verdict: 'unverifiable', importance: 'Incidental' as const, claimText: 'x' },
+      { _id: 'c2', status: 'pending', verdict: 'unverifiable', claimText: 'y' },
+      { _id: 'c3', status: 'pending', verdict: 'verified', importance: 'Load-bearing' as const, claimText: 'z' },
     ]
     const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
-    const task = tasks.find((t: DerivedTask) => t.title.includes('unsourced atmospheric detail'))
-    expect(task?.sev).toBe('review-recommended')
-    expect(task?.sev).not.toBe('must-fix')
-  })
-
-  it('a legacy unsourced pending claim with NO importance field defaults to Supporting and is review-recommended, not must-fix', () => {
-    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'legacy unsourced claim' }]
-    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
-    const task = tasks.find((t: DerivedTask) => t.title.includes('legacy unsourced claim'))
-    expect(task?.sev).toBe('review-recommended')
+    expect(tasks.filter((t: DerivedTask) => t.id.startsWith('claim-'))).toHaveLength(0)
   })
 })
 
@@ -631,7 +642,7 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
         reason: 'unsourced number',
       },
     ]
-    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'a claim without a source' }]
+    const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a claim without a source' }]
     const tasks = deriveTasks(
       baseInputs({
         runStatus: 'complete',
@@ -649,7 +660,7 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
   })
 
   it('TSK-03 (Pitfall 1 fix): a pending-claim task deep-links to /issues/7/fact-check, not /draft', () => {
-    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'a claim' }]
+    const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a claim' }]
     const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
     const claimTask = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
     expect(claimTask?.primary.href).toBe('/issues/7/fact-check')
@@ -693,7 +704,7 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
   })
 
   it('TSK-02: a claim task carries openedAt from the row createdAt', () => {
-    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'x', createdAt: 1700000001000 }]
+    const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'x', createdAt: 1700000001000 }]
     const tasks = deriveTasks(
       baseInputs({
         runStatus: 'complete',
@@ -780,7 +791,7 @@ describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)
   })
 
   it('a claim task carries an `insp` key that decodes to a claim artifact anchored to the claimId', () => {
-    const claimRows = [{ _id: 'c1', status: 'pending', claimText: 'a claim without a source' }]
+    const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a claim without a source' }]
     const tasks = deriveTasks(
       baseInputs({
         runId: 'run-9',
@@ -834,34 +845,22 @@ describe('isMustFix + deriveFactCheckSummary (Phase 42 Plan 42-05, FCT-02, D-04.
   }
 
   describe('isMustFix', () => {
-    it('true for a pending, unsourced, Load-bearing claim', () => {
-      expect(isMustFix(claimRow({ importance: 'Load-bearing' }))).toBe(true)
+    it('true for an open contradicted claim', () => {
+      expect(isMustFix(claimRow({ verdict: 'contradicted' }))).toBe(true)
     })
-
-    it('false for a pending, unsourced, Incidental claim', () => {
-      expect(isMustFix(claimRow({ importance: 'Incidental' }))).toBe(false)
+    it('false once the contradicted row is signed off (checked/skipped/removed)', () => {
+      for (const status of ['checked', 'skipped', 'removed']) {
+        expect(isMustFix(claimRow({ verdict: 'contradicted', status }))).toBe(false)
+      }
     })
-
-    it('false for a pending, unsourced, Supporting claim', () => {
-      expect(isMustFix(claimRow({ importance: 'Supporting' }))).toBe(false)
+    it('false when changedSinceCheck (non-blocking, avoids orphan deadlock)', () => {
+      expect(isMustFix(claimRow({ verdict: 'contradicted', changedSinceCheck: true }))).toBe(false)
     })
-
-    it('false for a pending, unsourced claim with NO importance field (defaults to Supporting, D-03)', () => {
-      expect(isMustFix(claimRow({}))).toBe(false)
+    it('false for a legacy unsourced Load-bearing pending row (no verdict)', () => {
+      expect(isMustFix(claimRow({ importance: 'Load-bearing' }))).toBe(false)
     })
-
-    it('false for a Load-bearing claim that HAS a sourceUrl', () => {
-      expect(isMustFix(claimRow({ importance: 'Load-bearing', sourceUrl: 'https://example.org' }))).toBe(
-        false,
-      )
-    })
-
-    it('false for any non-pending row, even Load-bearing and unsourced', () => {
-      expect(isMustFix(claimRow({ importance: 'Load-bearing', status: 'checked' }))).toBe(false)
-    })
-
-    it('false for a "removed" (soft-deleted) row, even Load-bearing and unsourced', () => {
-      expect(isMustFix(claimRow({ importance: 'Load-bearing', status: 'removed' }))).toBe(false)
+    it('false for an unverifiable Load-bearing row', () => {
+      expect(isMustFix(claimRow({ verdict: 'unverifiable', importance: 'Load-bearing' }))).toBe(false)
     })
   })
 
@@ -873,6 +872,8 @@ describe('isMustFix + deriveFactCheckSummary (Phase 42 Plan 42-05, FCT-02, D-04.
         total: 0,
         checked: 0,
         mustFixCount: 0,
+        contradictedCount: 0,
+        flaggedCount: 0,
         changedCount: 0,
         uncheckedCount: 0,
         conflictsCount: 0,
@@ -890,14 +891,18 @@ describe('isMustFix + deriveFactCheckSummary (Phase 42 Plan 42-05, FCT-02, D-04.
       expect(deriveFactCheckSummary(rows).factCoverage).toBe('1 of 3')
     })
 
-    it('mustFixCount counts only unsourced pending Load-bearing rows', () => {
+    it('mustFixCount === contradictedCount counts only open contradicted rows; flaggedCount adds LB unverifiable', () => {
       const rows = [
-        claimRow({ importance: 'Load-bearing' }), // must-fix
-        claimRow({ importance: 'Load-bearing', sourceUrl: 'https://x.org' }), // sourced, not must-fix
-        claimRow({ importance: 'Incidental' }), // not must-fix
-        claimRow({ importance: 'Load-bearing', status: 'checked' }), // not pending
+        claimRow({ verdict: 'contradicted' }),
+        claimRow({ verdict: 'contradicted', status: 'checked' }),
+        claimRow({ verdict: 'unverifiable', importance: 'Load-bearing' }),
+        claimRow({ verdict: 'unverifiable', importance: 'Incidental' }),
+        claimRow({ importance: 'Load-bearing' }), // legacy
       ]
-      expect(deriveFactCheckSummary(rows).mustFixCount).toBe(1)
+      const summary = deriveFactCheckSummary(rows)
+      expect(summary.mustFixCount).toBe(1)
+      expect(summary.contradictedCount).toBe(1)
+      expect(summary.flaggedCount).toBe(2)
     })
 
     it('changedCount counts rows with changedSinceCheck:true regardless of status', () => {
@@ -1028,5 +1033,26 @@ describe('deriveRunCostUsd + deriveRunCapUsd (Phase 45 Plan 45-06, REV-05, D-12/
     it('defaults to 10.0 when the per_run_cap_usd key is absent', () => {
       expect(deriveRunCapUsd([{ key: 'schedule_enabled', value: 'true' }])).toBe(10.0)
     })
+  })
+})
+
+describe('projectClaimRow (Phase 51.1)', () => {
+  it('maps doc.text to claimText, _creationTime to createdAt, and carries verdict fields', () => {
+    const out = projectClaimRow({
+      _id: 'c1',
+      _creationTime: 99,
+      status: 'pending',
+      text: 'the claim',
+      verdict: 'contradicted',
+      verdictEvidence: 'ev',
+      verdictSources: ['https://a.org'],
+      importance: 'Load-bearing',
+      changedSinceCheck: false,
+    })
+    expect(out.claimText).toBe('the claim')
+    expect(out.createdAt).toBe(99)
+    expect(out.verdict).toBe('contradicted')
+    expect(out.verdictSources).toEqual(['https://a.org'])
+    expect(out.importance).toBe('Load-bearing')
   })
 })
