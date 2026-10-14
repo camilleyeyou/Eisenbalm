@@ -461,7 +461,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 ### Claims carry verdicts (VRD) — Phase 51.1 (inserted 2026-10-14)
 - [x] **VRD-01**: Every extracted claim carries an agent-written verdict (verified / contradicted / unverifiable), the agent's evidence and the source URL(s) it used — written by ONE batched cheap-model call per run against already-retrieved sources.
 - [x] **VRD-02**: Claim extraction emits sentence-level assertions that can be true or false, never bare noun phrases or numerals ("Rare Disease Day", "2015", "Tameka Diaz").
-- [ ] **VRD-03**: Editor sees only open contradicted claims and open load-bearing unverifiable claims, marked in the sentence via the Phase 51 surface — never a ledger of every extracted claim.
+- [x] **VRD-03**: Editor sees only open contradicted claims and open load-bearing unverifiable claims, marked in the sentence via the Phase 51 surface — never a ledger of every extracted claim.
 - [x] **VRD-04**: Facts-cleared (and therefore publish) is blocked by open contradicted claims and never by unreviewed ones; no per-claim click is required; one shared predicate enforces it client and server side.
 - [x] **VRD-05**: An issue with zero claims can clear facts and publish.
 - [x] **VRD-06**: Legacy claim rows (written before Phase 51.1, no verdict) load and resolve on every surface and never block.
