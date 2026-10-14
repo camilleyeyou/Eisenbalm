@@ -465,7 +465,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [x] **VRD-04**: Facts-cleared (and therefore publish) is blocked by open contradicted claims and never by unreviewed ones; no per-claim click is required; one shared predicate enforces it client and server side.
 - [x] **VRD-05**: An issue with zero claims can clear facts and publish.
 - [x] **VRD-06**: Legacy claim rows (written before Phase 51.1, no verdict) load and resolve on every surface and never block.
-- [ ] **VRD-07**: A verdict-call failure or timeout degrades to unverdicted (non-blocking) rows and never fails the run; the verdict call's cost is recorded under the run's cost.
+- [x] **VRD-07**: A verdict-call failure or timeout degrades to unverdicted (non-blocking) rows and never fails the run; the verdict call's cost is recorded under the run's cost.
 
 ### Archive — past issues (PAST)
 - [ ] **PAST-01**: Editor recognises a past issue by its title, not its number.
