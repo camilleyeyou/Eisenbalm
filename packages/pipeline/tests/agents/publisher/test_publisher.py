@@ -480,9 +480,9 @@ async def test_publisher_upsert_skipped_when_no_charity_name(
 async def test_publisher_seeds_sourced_and_unsourced_claim_checks_rows(monkeypatch):
     """Publisher resolves writer claimSpans into sourced claim_checks rows
     (claimId + sourceUrl + retrievedAt + sectionName + blockIndexHint) and
-    runs the per-block regex catch-all for everything else as unsourced rows
-    (no claimId) — excluding any regex span whose normalized text matches an
-    already-sourced span in the SAME (section, block).
+    emits sentence-level unsourced rows (Phase 51.1, no claimId) for everything
+    else — excluding any sentence containing an already-sourced span in the
+    SAME (section, block).
     """
     captured_calls: list[tuple[str, dict]] = []
 
@@ -510,6 +510,10 @@ async def test_publisher_seeds_sourced_and_unsourced_claim_checks_rows(monkeypat
                 {
                     "type": "paragraph",
                     "text": "The charity had a $2.3M budget, founded in 1998.",
+                },
+                {
+                    "type": "paragraph",
+                    "text": "Volunteers have staffed the hotline every night since 2004.",
                 },
             ],
             "claimSpans": [{"claimId": "a-0", "asWritten": "$2.3M"}],
@@ -553,16 +557,13 @@ async def test_publisher_seeds_sourced_and_unsourced_claim_checks_rows(monkeypat
     assert sourced_row["sectionName"] == "originStory"
     assert sourced_row["blockIndexHint"] == 0
 
-    # The bound "$2.3M" span must NOT also appear as an unsourced row.
-    assert not any(r["text"] == "$2.3M" for r in unsourced), (
-        f"bound span leaked into unsourced rows: {unsourced}"
-    )
-
-    # The unbound "1998" date claim IS present, unsourced.
-    assert any(
-        r["text"] == "1998" and r["sectionName"] == "originStory"
-        for r in unsourced
-    ), f"expected unbound '1998' date claim in unsourced rows: {unsourced}"
+    # Phase 51.1 (sentence-level): the sentence containing the bound "$2.3M"
+    # span is covered by the sourced row, so it must NOT also appear as an
+    # unsourced row; the second paragraph is one full-sentence unsourced row.
+    assert len(unsourced) == 1, f"expected one unsourced sentence row: {unsourced}"
+    assert unsourced[0]["text"] == "Volunteers have staffed the hotline every night since 2004."
+    assert unsourced[0]["sectionName"] == "originStory"
+    assert unsourced[0]["blockIndexHint"] == 1
 
     # Every row (sourced + unsourced) carries a unique claimIndex ordinal.
     indices = [r["claimIndex"] for r in rows]
@@ -596,7 +597,7 @@ async def test_publisher_claims_seeding_defensive_when_no_claimspans_or_research
         "issue_number": 43,
         "origin_story": {
             "headline": "H",
-            "body": [{"type": "paragraph", "text": "Founded in 1998."}],
+            "body": [{"type": "paragraph", "text": "The founders opened the first clinic in 1998."}],
         },
         "problem_statement": None,
         "founder_bio": None,
