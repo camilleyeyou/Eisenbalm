@@ -384,13 +384,14 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
                 "awaitingHumanAt": int(time.time() * 1000),
             },
         )
+        # Candidates can be emptied by Scout dedup OR verify_candidates.
         # Suspend. interrupt() raises GraphInterrupt; the @agent_node
         # wrapper re-raises it without writing the success-path event.
         resume_value: Any = interrupt(
             {
                 "prompt": (
-                    "verify_candidates killed every candidate — supply a "
-                    "charity to proceed or restart."
+                    "No candidates survived Scout dedup and verification — "
+                    "supply a charity to proceed or restart."
                 ),
                 "reason": "all-candidates-killed",
                 "candidates": [],
@@ -438,14 +439,13 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
         transcript = (
             f"# Eisenbalm Dispatch — Issue #{issue_number} Deliberation\n\n"
             "## Decision\n\n"
-            "No candidates survived verification — verify_candidates killed "
-            "every candidate this run. A human supplied a charity directly "
-            "to recover the run.\n\n"
+            "No candidates survived Scout dedup and verification this run. "
+            "A human supplied a charity directly to recover the run.\n\n"
             f"**Winner:** {human_name}\n"
         )
         editor_decision_text = (
-            "Degraded recovery path (D-14): verify_candidates killed "
-            "every candidate, so no deterministic ranking or LLM call "
+            "Degraded recovery path (D-14): no candidates survived Scout "
+            "dedup and verification, so no deterministic ranking or LLM call "
             "was made. A human supplied a charity directly via the "
             "all-candidates-killed interrupt."
         )

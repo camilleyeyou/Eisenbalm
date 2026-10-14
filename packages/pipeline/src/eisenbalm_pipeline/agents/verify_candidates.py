@@ -246,6 +246,9 @@ async def verify_candidates(state: DispatchState) -> dict:
     """
     run_id = state.get("run_id")
     candidates = state.get("candidates") or []
+    log.info(
+        "verify_candidates: start run=%s input_candidates=%d", run_id, len(candidates)
+    )
 
     survivors: list[dict] = []
     records: list[VerificationRecord] = []
@@ -301,4 +304,10 @@ async def verify_candidates(state: DispatchState) -> dict:
         else:
             survivors.append(c)
 
+    log.info(
+        "verify_candidates: done run=%s survivors=%d killed=%d",
+        run_id,
+        len(survivors),
+        len(candidates) - len(survivors),
+    )
     return {"candidates": survivors, "verification_records": records}

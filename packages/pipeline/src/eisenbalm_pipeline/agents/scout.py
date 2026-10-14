@@ -150,11 +150,59 @@ def _domain_of(url: str) -> str:
     return domain[4:] if domain.startswith("www.") else domain
 
 
+# Directory/aggregator/social hosts are never an organisation's own identity.
+# Scout's own SCOUT_QUERIES target guidestar profiles, so using these as dedup
+# keys collapses unrelated charities into one key (live run 1614184a…, 2026-10-14).
+_NON_IDENTITY_HOSTS: frozenset[str] = frozenset(
+    {
+        "guidestar.org",
+        "charitynavigator.org",
+        "candid.org",
+        "causeiq.com",
+        "projects.propublica.org",
+        "propublica.org",
+        "give.org",
+        "greatnonprofits.org",
+        "idealist.org",
+        "gofundme.com",
+        "facebook.com",
+        "instagram.com",
+        "linkedin.com",
+        "x.com",
+        "twitter.com",
+        "youtube.com",
+        "linktr.ee",
+        "google.com",
+        "sites.google.com",
+        "wikipedia.org",
+        "en.wikipedia.org",
+        "reddit.com",
+        "medium.com",
+    }
+)
+
+
+def _is_usable_domain(domain: str) -> bool:
+    """True if ``domain`` can identify a single organisation (dedup-safe)."""
+    d = (domain or "").strip().lower()
+    if not d:
+        return False
+    labels = d.split(".")
+    if len(labels) < 2 or any(not lab for lab in labels):
+        return False
+    if d in _NON_IDENTITY_HOSTS:
+        return False
+    return not any(d.endswith("." + h) for h in _NON_IDENTITY_HOSTS)
+
+
 def _candidate_keys(c: CharityCandidate) -> set[str]:
-    """Lowercase name + lowercase domain — match keys used in featured set."""
+    """Lowercase name + usable lowercase domain — match keys used in featured set.
+
+    Aggregator/degenerate domains are omitted (see ``_is_usable_domain``).
+    """
     keys: set[str] = {c.name.strip().lower()}
     d = _domain_of(c.website)
-    if d:
+    if _is_usable_domain(d):
         keys.add(d)
     return keys
 
@@ -169,6 +217,7 @@ async def _load_registry_keys(http) -> list[str]:
     blocklisted rows (API_CONTRACTS §26.6). Each row carries a ``dedupKey``
     of the form ``"name_lower|domain"`` — we split on ``"|"`` to get both
     components, matching the flat key set that ``_candidate_keys()`` produces.
+    Aggregator/degenerate domain parts (guidestar.org, ".") are dropped.
 
     On any Convex exception (cold environment, missing CONVEX_DEPLOY_KEY,
     transient network) returns [] — first-run safety. Scout still runs; the
@@ -190,10 +239,17 @@ async def _load_registry_keys(http) -> list[str]:
         # rows: list of {dedupKey, name, domain, status}
         keys: set[str] = set()
         for r in rows or []:
-            if r.get("dedupKey"):
-                for part in r["dedupKey"].split("|"):
-                    if part:
-                        keys.add(part)
+            dk = r.get("dedupKey")
+            if not dk:
+                continue
+            if "|" not in dk:
+                keys.add(dk)
+                continue
+            name, _, domain = dk.partition("|")
+            if name.strip():
+                keys.add(name.strip())
+            if _is_usable_domain(domain):
+                keys.add(domain.strip().lower())
         return sorted(keys)  # deterministic order for testing + JSON-safe
     except Exception as exc:  # noqa: BLE001
         log.warning(
@@ -412,6 +468,7 @@ async def discover_candidates(
 
     # 4. Python-side dedup (defensive — model may ignore the system rule).
     surviving: list[dict] = []
+    removed: list[tuple[str, list[str]]] = []
     for cand in candidates_raw:
         c = (
             cand
@@ -419,9 +476,25 @@ async def discover_candidates(
             else CharityCandidate(**cand)
         )
         keys = _candidate_keys(c)
-        if keys & featured_set:
+        matched = keys & featured_set
+        if matched:
+            removed.append((c.name, sorted(matched)))
+            log.info(
+                "Scout dedup: removed candidate=%r matched_keys=%s (run %s)",
+                c.name,
+                sorted(matched),
+                run_id,
+            )
             continue
         surviving.append(c.model_dump())
+
+    if removed and not surviving:
+        log.warning(
+            "Scout dedup removed ALL %d candidates (run %s): %s",
+            len(removed),
+            run_id,
+            removed,
+        )
 
     return surviving, featured_keys, usage
 
