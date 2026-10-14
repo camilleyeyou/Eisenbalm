@@ -1161,7 +1161,7 @@ Plans:
 - [x] 51.1-01-contract-schema-shared-gate-PLAN.md — API_CONTRACTS §51.1 first; additive verdict fields on claim_checks; ONE shared predicate `convex/lib/claimGate.ts`; `allSignedOff` re-semanticized (blocking===0, true on empty) + parity tests (Wave 1)
 - [x] 51.1-02-sentence-level-extraction-PLAN.md — `extract_assertions_by_block`: one row per assertion sentence, no bare tokens (Wave 1)
 - [x] 51.1-03-research-sources-verdict-module-PLAN.md — persist `research_sources`; `lib/claim_verdicts.py` one batched Haiku `fact_check` call, index-bound sources, uncited-contradiction downgrade (Wave 1)
-- [ ] 51.1-04-publisher-verdict-wiring-PLAN.md — publisher seeds sentence rows with verdicts BEFORE `end_run()`; failure degrades; CostCapExceeded propagates (Wave 2)
+- [x] 51.1-04-publisher-verdict-wiring-PLAN.md — publisher seeds sentence rows with verdicts BEFORE `end_run()`; failure degrades; CostCapExceeded propagates (Wave 2)
 - [ ] 51.1-05-server-gate-signoffs-PLAN.md — facts-cleared 409 only on open contradicted claims, with count; zero-claims passes (Wave 2)
 - [ ] 51.1-06-dashboard-derivation-projections-PLAN.md — derivedState tasks/stage flagged-only via shared predicate; one lossless `projectClaimRow` for all lean projections (Wave 2)
 - [ ] 51.1-07-gate-summary-readers-PLAN.md — Run screen, inbox, archive, Approval/Fact Check panels speak "contradicted", never "unchecked" (Wave 3)
