@@ -18,6 +18,12 @@ Implementation target (Plan 26-02):
 
 import pytest
 
+from eisenbalm_pipeline.lib.claims import (
+    extract_assertions_by_block,
+    extract_claims_by_block,
+    split_sentences,
+)
+
 # ── Import guard ──────────────────────────────────────────────────────────────
 
 try:
@@ -634,3 +640,108 @@ def test_extract_all_claim_types_context_is_word_bounded():
                 f"context {context!r} ends mid-word (followed by "
                 f"{source_text[end_pos]!r})"
             )
+
+
+# ── Phase 51.1 (VRD-02) — sentence-level assertion extraction ─────────────
+
+
+def _sec(*blocks, key="origin_story"):
+    return {key: {"body": [{"type": t, "text": x} for t, x in blocks]}}
+
+
+def test_assertion_bare_tokens_never_emitted_alone():
+    sections = _sec(("paragraph", "Rare Disease Day."), ("paragraph", "2015"), ("paragraph", "Tameka Diaz"))
+    assert extract_assertions_by_block(sections) == []
+
+
+def test_assertion_sentence_containing_tokens_is_one_row():
+    text = "Tameka Diaz founded the program in 2015 to mark Rare Disease Day. She still runs it every spring."
+    rows = extract_assertions_by_block(_sec(("paragraph", text)))
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["text"] == "Tameka Diaz founded the program in 2015 to mark Rare Disease Day."
+    assert row["claimType"] == "proper_noun"
+    assert row["sectionName"] == "originStory"
+    assert row["blockIndexHint"] == 0
+
+
+def test_assertion_text_is_exact_block_substring():
+    text = (
+        "Ana Ruiz opened the clinic in 2019 for local families. "
+        "It served 400 families in its first year. "
+        "The Riverside Trust funded the second wing."
+    )
+    rows = extract_assertions_by_block(_sec(("paragraph", text)))
+    assert len(rows) == 3
+    for r in rows:
+        assert r["text"] in text
+
+
+def test_assertion_headings_and_blockquotes_skipped():
+    sections = _sec(
+        ("h2", "The Riverside Trust Was Founded In 1998 By Ana Ruiz"),
+        ("blockquote", "In 2019 the Riverside Trust served 400 families."),
+    )
+    assert extract_assertions_by_block(sections) == []
+
+
+def test_assertion_abbreviation_does_not_split():
+    text = "Dr. Ana Ruiz opened the clinic in 2019 with $40,000 from the county."
+    rows = extract_assertions_by_block(_sec(("paragraph", text)))
+    assert [r["text"] for r in rows] == [text]
+
+
+def test_assertion_decimal_does_not_split():
+    text = "The budget grew to $2.3M in 2021 and then held steady."
+    rows = extract_assertions_by_block(_sec(("paragraph", text)))
+    assert [r["text"] for r in rows] == [text]
+
+
+def test_assertion_known_entity_only_sentence_dropped():
+    ents = ["Tameka Diaz"]
+    assert extract_assertions_by_block(
+        _sec(("paragraph", "Tameka Diaz runs the clinic with quiet discipline.")), ents
+    ) == []
+    rows = extract_assertions_by_block(
+        _sec(("paragraph", "Tameka Diaz has run the clinic since 2015.")), ents
+    )
+    assert len(rows) == 1
+
+
+def test_assertion_short_fragment_dropped():
+    assert extract_assertions_by_block(_sec(("paragraph", "In 2015, briefly."))) == []
+
+
+def test_assertion_dedup_within_block_only():
+    s = "The clinic opened in 2015 on a borrowed street."
+    one = extract_assertions_by_block(_sec(("paragraph", f"{s} {s}")))
+    assert len(one) == 1
+    sections = {
+        "origin_story": {"body": [{"type": "paragraph", "text": s}]},
+        "founder_bio": {"body": [{"type": "paragraph", "text": s}]},
+    }
+    assert len(extract_assertions_by_block(sections)) == 2
+
+
+def test_assertion_rows_have_no_claimindex_and_carry_context():
+    rows = extract_assertions_by_block(
+        _sec(("paragraph", "The clinic opened in 2015 on a borrowed street."))
+    )
+    assert rows
+    for r in rows:
+        assert set(r) == {"sectionName", "blockIndexHint", "text", "claimType", "context"}
+        assert r["context"] == r["text"][:300]
+
+
+def test_assertion_old_token_extractor_unchanged():
+    text = "Tameka Diaz founded the program in 2015 to mark Rare Disease Day."
+    rows = extract_claims_by_block(_sec(("paragraph", text)))
+    assert any(r["text"] == "2015" for r in rows)
+
+
+def test_split_sentences_basic():
+    assert split_sentences("One fact here. Two facts here! Three? ") == [
+        "One fact here.",
+        "Two facts here!",
+        "Three?",
+    ]
