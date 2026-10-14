@@ -1806,6 +1806,9 @@ export async function POST(request: Request) {
 
 ## 7. LangGraph State Contract (inter-agent)
 
+> **Amended by §51.1 (Phase 51.1):** `DispatchState` gains `research_sources: NotRequired[list[dict]]` per §51.1.7 (kept out of `state['research']`).
+
+
 This is the internal data contract between all pipeline agents.
 Every agent reads from `DispatchState` and writes its outputs back to it.
 Do not add fields to this TypedDict without updating this document.
@@ -2114,6 +2117,9 @@ The `|` separator makes the two components clearly distinct.
 
 ### §26.2 — claim_checks table (NEW)
 
+> **Amended by §51.1 (Phase 51.1):** `claim_checks` gains five optional verdict fields per §51.1.1; `status` is now the editor-action record only.
+
+
 ```typescript
 claim_checks: defineTable({
   workspace_id: v.string(),
@@ -2235,6 +2241,9 @@ allSignedOff({ runId }): Promise<{total: number, signedOff: number, allSignedOff
   // Empty list → {total:0, signedOff:0, allSignedOff:false} (conservative — prevents race at dashboard load)
 ```
 
+> **Amended by §51.1 (Phase 51.1):** New return shape `{total, signedOff, blocking, flagged, allSignedOff}`; `allSignedOff = blocking === 0` and an empty list is TRUE (§51.1.3). The conservative empty=false rule above is retired.
+
+
 **convex/reviewActions.ts:**
 
 ```typescript
@@ -2281,6 +2290,9 @@ setAutoPublish({ workspace_id, enabled: boolean, actorId: string }): Promise<voi
 ---
 
 ### §26.7 — FastAPI endpoints (review gate)
+
+> **Amended by §51.1 (Phase 51.1):** The `claims_not_signed_off` 409 now fires only for open contradicted claims, with count/message per §51.1.8. The approve gate (§26.2) is §51.1.3: blocking===0, empty list => true.
+
 
 These endpoints live in `packages/pipeline/src/eisenbalm_pipeline/api/review.py`
 (or extend `api/control.py`). Auth guard: `Depends(require_clerk_jwt)`.
@@ -3306,6 +3318,9 @@ unsourced by default.
 
 ### §35.4 — `claim_checks` additive fields (D-03) — amends §26.2 in place
 
+> **Amended by §51.1 (Phase 51.1):** Verdict fields per §51.1.1.
+
+
 `claim_checks` (§26.2) gains five additive optional fields, mirroring the
 `qaCorrections` `sectionName`/`blockIndexHint` precedent (§32/§33) exactly:
 
@@ -3337,6 +3352,9 @@ pre-Phase-35 runs) degrade honestly to unsourced with zero migration — the abs
 `claimId` alone is sufficient, no backfill script, no schema version flag.
 
 ### §35.5 — `insertBatch` signature change (§26.6 amendment) + one-row-per-occurrence (D-13)
+
+> **Amended by §51.1 (Phase 51.1):** `insertBatch` args accept the verdict fields (§51.1.4); unsourced rows are one row per assertion sentence, not per occurrence (§51.1.5).
+
 
 Each object in the `claims: v.array(v.object({...}))` validator gains the same five
 optional fields as §35.4, and the handler's `ctx.db.insert('claim_checks', {...})`
@@ -4389,6 +4407,9 @@ endpoint path, or row shape may be invented later.
 
 ### §42.1 — `claim_checks` additive fields (amends §26.2/§35.4 in place)
 
+> **Amended by §51.1 (Phase 51.1):** Verdict fields per §51.1.1; legacy rows are neutral.
+
+
 `claim_checks` (§26.2, amended §35.4) gains three additive optional fields:
 
 ```typescript
@@ -4468,6 +4489,9 @@ setStatus: UNCHANGED signature (Confirm keeps calling this directly, requireOper
   // 'checked' or 'skipped' (D-20: cleared when the claim is next checked).
 ```
 
+> **Amended by §51.1 (Phase 51.1):** `remove`/`keepAsWritten`/`setStatus` resolve a flagged claim by `status`; they never touch `verdict*`. A removed claim is never open/blocking (§51.1.2).
+
+
 All five new functions resolve the target row via the `by_runId` index + `claimIndex` filter
 (mirroring `byRunIdAndIndex`'s own lookup) and throw if the row is not found — matching
 `setStatus`'s existing "Claim not found" error shape.
@@ -4521,6 +4545,9 @@ designed to generalize to arbitrary passage revision so Phase 45 extends this SA
 than forking a second one.
 
 ### §42.5 — `_reset_touched_claims` hook (amends §31 `patch_section`/`patch_bonus` in place)
+
+> **Amended by §51.1 (Phase 51.1):** `markChanged` now also marks the agent verdict stale: `changedSinceCheck === true` makes a claim non-blocking and non-flagged (§51.1.2).
+
 
 `patch_section` (all 4 long-reads) and `patch_bonus` (specAd branch's `blocks` payload only —
 bigBudget/jingle `bonus.body` is a plain string, exempt per §35.3 D-06) each gain a call to
@@ -6165,3 +6192,69 @@ are the ONLY three of the 11 §7 steps with a real "completed steps are reused, 
 The other 8 step-types (`signal_editor`, `scout`, `verify_candidates`, `advocate`, `researcher`,
 `verify_research`, `qa`, `editor_final`) have no reuse primitive and MUST render reserved-with-
 explanation — no blanket "Restart from this step" claim across all 11 steps.
+
+---
+
+## §51.1 — Claims Carry Verdicts (Phase 51.1)
+
+Agents fact-check; the editor edits. Every extracted claim carries an agent verdict and its evidence. Only open `contradicted` claims block `facts-cleared`; zero claims is publishable.
+
+### §51.1.1 — `claim_checks` additive fields (amends §26.2/§35.4/§42.1)
+
+```ts
+verdict: v.optional(v.union(v.literal('verified'), v.literal('contradicted'), v.literal('unverifiable'))),
+verdictEvidence: v.optional(v.string()),         // agent rationale, <= 400 chars (code-clipped)
+verdictSources: v.optional(v.array(v.string())), // real URLs mapped from cited source indexes; never LLM-emitted URLs
+verdictAt: v.optional(v.number()),               // Unix ms, stamped by the pipeline
+verdictModel: v.optional(v.string()),            // resolved OpenRouter model id (AGT-17); omitted when no LLM call was made
+```
+
+Written ONLY by the pipeline via `insertBatch`; no editor mutation writes or clears them. `status` is kept unchanged as the EDITOR-ACTION record (`pending` = no editor action; `checked`/`skipped`/`removed` = editor resolved). Legacy rows (verdict absent) are NEUTRAL everywhere: never blocking, never flagged, never washed, never a task.
+
+### §51.1.2 — Shared gate predicates (`convex/lib/claimGate.ts`)
+
+```
+isOpenBlocking(r)  = r.verdict === 'contradicted' && r.status === 'pending' && r.changedSinceCheck !== true
+isEditorFlagged(r) = r.status === 'pending' && r.changedSinceCheck !== true &&
+                     (r.verdict === 'contradicted' || (r.verdict === 'unverifiable' && (r.importance ?? 'Supporting') === 'Load-bearing'))
+```
+
+Convex queries AND dispatch-control import these from the one module (`./lib/claimGate` / `@convex/lib/claimGate`). No other file may re-implement a claim gate expression. Known trade-off (orchestrator decision 1): `changedSinceCheck === true` on a contradicted claim is NON-blocking: a block edit marks the agent verdict stale, avoiding an unclickable-orphan deadlock. Residual risk: an unrelated edit in the same block clears a contradiction.
+
+### §51.1.3 — `claimChecks:allSignedOff` new semantics (amends §26.6)
+
+`allSignedOff({ runId }): Promise<{ total: number, signedOff: number, blocking: number, flagged: number, allSignedOff: boolean }>`
+
+`blocking` = count(isOpenBlocking); `flagged` = count(isEditorFlagged); `signedOff` = count(status !== 'pending') (display-only, legacy); `allSignedOff = blocking === 0`, so zero rows => true. The name is kept for back-compat with its 4 readers; its meaning is now "no open contradicted claim". Callers must still treat `useQuery === undefined` as not-loaded (never green while loading).
+
+### §51.1.4 — `insertBatch` args (amends §35.5)
+
+Each claim object additionally accepts the 5 optional verdict fields above, passed through unchanged; omitted when absent (never `null`).
+
+### §51.1.5 — Extraction unit (amends §35.5 "one-row-per-occurrence")
+
+Unsourced rows are one row per ASSERTION SENTENCE (`lib/claims.py::extract_assertions_by_block`), never a bare noun phrase or numeral. A sentence is emitted only if it contains >=1 number/date/proper-noun match, has >=4 words, and has >=2 alphabetic words outside the matched spans. A sentence containing a writer-bound `claimSpans.asWritten` in the same (section, block) is dropped (the sourced row covers it). A sentence whose only matches are known entity names (charity/founder/subject) is dropped. `claimType` for these rows = type of the first match (`number`|`date`|`proper_noun`).
+
+### §51.1.6 — Verdict step (pipeline)
+
+`lib/claim_verdicts.py::attach_verdicts(run_id, claim_rows, sources, research)`, agent id `fact_check` (`MODEL_BY_AGENT["fact_check"] = "anthropic/claude-haiku-4-5"`, temperature 0.0, max_tokens 8000), called inside the publisher BEFORE `end_run()` so its cost lands in the run cost payload. ONE batched structured call per <=120 claims (in practice one per run); no web search. The prompt receives numbered passages `[S0..]` and numbered claims `[C0..]`; returns `{verdicts:[{claimIndex, verdict, evidence, sourceIndexes}]}`.
+
+Code guards (mandatory):
+- `contradicted` or `verified` with no valid in-range `sourceIndexes` is downgraded to `unverifiable`.
+- Claims the model omits get no verdict (neutral).
+- Unknown/duplicate claimIndex ignored (first wins).
+- Evidence clipped to 400 chars.
+
+Zero retrieved sources => every row `unverifiable` with evidence "No retrieved source passages were available to check this claim." and `verdictSources: []`, no LLM call, `verdictModel` omitted. Failure semantics: any exception other than `CostCapExceeded` => rows inserted without verdicts (neutral, non-blocking), warning logged, run still lands; `CostCapExceeded` propagates (cap semantics).
+
+### §51.1.7 — DispatchState addition (amends §7)
+
+`research_sources: NotRequired[list[dict]]` is `[{index:int, url:str, title:str, content:str (<=1500 chars), retrievedAt:int}]`, written by `researcher()`, kept OUT of `state['research']` (every writer prompt embeds `research`). Absent on old checkpoints => treated as `[]`.
+
+### §51.1.8 — Server gate (amends §26.7 / §34 facts-cleared)
+
+`POST /signoffs/{run_id}` kind `facts-cleared` still reads `claimChecks:allSignedOff`; 409 detail `{reason:"claims_not_signed_off", count:<blocking>, message:"<n> claim(s) contradicted by sources must be fixed or dismissed before clearing facts."}`. When the query returns nothing, 409 with `count:0` and message "Claim status could not be read. Try again." The reason string is unchanged (client branches on it). The facts-cleared human sign-off click is KEPT; it is satisfiable with zero per-claim actions. Publish endpoints still do not consult claims (single enforcement point). Pre-existing hole documented: re-opening a claim after sign-off does not revoke the sign-off.
+
+### §51.1.9 — Editor surface
+
+The galley washes ONLY `isEditorFlagged` claims; the Fact Check screen defaults to flagged-only with an explicit "Show all N claims (audit)" toggle; DecisionRail no longer mounts the full SourceIndex ledger.
