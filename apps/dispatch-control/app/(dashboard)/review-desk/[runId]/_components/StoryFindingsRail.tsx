@@ -180,7 +180,7 @@ export default function StoryFindingsRail({
               ) : (
                 // Not marked up in the galley (game/theme/anchor failure) —
                 // never a blank row, always a live action.
-                <button type="button" onClick={() => onFixInEditor(group.findingIds[0])} className={linkCls}>
+                <button type="button" onClick={() => onFixInEditor(group.findingIds[0]!)} className={linkCls}>
                   Fix it in the editor →
                 </button>
               )}

@@ -24,7 +24,15 @@
  * story-scoped `StoryFindingsRail` (Task 3d) renders inside the Draft tab's
  * panel, in its own 292px column, ONLY when the open story has open findings
  * AND is not mid-edit (the editor already takes the full width).
+ *
+ * quick 261014-lbr — findings are fixable: "Jump to it" never silently fails
+ * (falls back to the editor), rail cards offer Apply fix / Dismiss through the
+ * AnnotationMark helpers, and the editor focuses the field holding the quote.
+ * The duplicate "QA finding" box here was removed; SectionEditorPanel renders
+ * it once, next to the editor fields.
  */
+import { useAuth } from '@clerk/nextjs'
+import { jumpToFinding, applyFixToGroup, dismissGroup, type FindingGroup } from './storyFindingActions'
 import { EDITABLE_SECTIONS, type SectionChipCounts } from './SectionChipList'
 import StoryOutlineTab, { type OutlineBriefFields, type OutlineOpenFinding } from './StoryOutlineTab'
 import SectionEditorPanel from './SectionEditorPanel'
@@ -57,6 +65,8 @@ interface StoryFocusViewProps {
   onDirtyChange: (dirty: Record<string, boolean>) => void
   focusFindingId?: string
   findingReason?: string
+  /** quick 261014-lbr: the finding's quoted span; the editor focuses the field holding it. */
+  focusQuote?: string
   revisionId: string
   reloadDraft: () => Promise<void> | void
   onEditSection: (sectionId: string, findingId?: string) => void
@@ -156,6 +166,7 @@ export default function StoryFocusView({
   onDirtyChange,
   focusFindingId,
   findingReason,
+  focusQuote,
   revisionId,
   reloadDraft,
   onEditSection,
@@ -188,14 +199,36 @@ export default function StoryFocusView({
   const hasFindings = resolved.length + unresolved.length > 0
   const showRail = activeTab === 'draft' && !editing && hasFindings
 
+  const { getToken } = useAuth()
+
+  // Mirrors wordCountLabelFor's 'Structured' rule and the server's
+  // accept_unavailable branches: game/theme/non-specAd bonus have no
+  // annotatable prose, so no in-prose marks and no Apply fix.
+  const canAnnotate = !(
+    sectionId === 'game' ||
+    sectionId === 'theme' ||
+    (sectionId === 'bonus' && draft.bonusType !== 'specAd')
+  )
+
   function handleJump(findingId: string) {
-    const el = document.getElementById(`finding-${findingId}`)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      // The mark IS the popover trigger (AnnotationMark) — clicking it opens
-      // Accept/Edit/Dismiss at the same anchor, never a forked jump target.
-      el.click()
+    // The mark IS the popover trigger (AnnotationMark); with no mark, open the
+    // editor instead — never a silent no-op.
+    jumpToFinding(findingId, handleFixInEditor)
+  }
+
+  async function handleApplyFix(members: FindingGroup['members']) {
+    try {
+      const r = await applyFixToGroup({ runId: _runId, revisionId, members, getToken })
+      await reloadDraft()
+      return { note: r.note }
+    } catch (e) {
+      return { note: e instanceof Error ? e.message : 'Apply fix failed.' }
     }
+  }
+
+  async function handleDismiss(ids: string[], reason: string) {
+    const failed = await dismissGroup(_runId, ids, reason, getToken)
+    return { note: failed.length ? `${failed.length} could not be dismissed — try again.` : null }
   }
 
   function handleFixInEditor(findingId: string) {
@@ -334,17 +367,6 @@ export default function StoryFocusView({
           />
         ) : editing ? (
           <>
-            {findingReason && (
-              <div
-                data-finding-id={focusFindingId}
-                className="mb-4 flex flex-col gap-1 border-l-2 border-[color:var(--color-marigold)] bg-[color:var(--color-card-alt)] p-3"
-              >
-                <span className="text-[10px] font-semibold uppercase tracking-[.08em] text-[color:var(--color-marigold-text,var(--color-ink-soft))]">
-                  QA finding
-                </span>
-                <p className="text-xs text-[color:var(--color-ink)]">{findingReason}</p>
-              </div>
-            )}
             <SectionEditorPanel
               runId={_runId}
               selectedSection={sectionId}
@@ -352,6 +374,7 @@ export default function StoryFocusView({
               onDirtyChange={onDirtyChange}
               focusFindingId={focusFindingId}
               findingReason={findingReason}
+              focusQuote={focusQuote}
             />
           </>
         ) : (
@@ -415,6 +438,9 @@ export default function StoryFocusView({
           unresolved={unresolved}
           onJump={handleJump}
           onFixInEditor={handleFixInEditor}
+          canAnnotate={canAnnotate}
+          onApplyFix={handleApplyFix}
+          onDismiss={handleDismiss}
         />
       )}
       </div>

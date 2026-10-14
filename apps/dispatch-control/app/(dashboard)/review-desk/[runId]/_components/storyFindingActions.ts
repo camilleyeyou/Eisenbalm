@@ -80,7 +80,7 @@ export function groupFindingRows(
         reasons.push(row.reason)
       }
     }
-    const top = sorted[0].row
+    const top = sorted[0]!.row
     groups.push({
       key,
       findingIds: sorted.map(e => e.row.findingId),
@@ -170,7 +170,7 @@ export async function applyFixToGroup(args: {
   const withFix = members.filter(m => m.suggestedFix?.trim())
 
   for (let i = 0; i < withFix.length; i++) {
-    const id = withFix[i].findingId
+    const id = withFix[i]!.findingId
     try {
       const res = await acceptFinding(runId, id, { ifRevisionID: current }, await getToken())
       current = res.revisionId

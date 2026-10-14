@@ -465,6 +465,10 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
   const editFindingReason = editFinding?.findingId
     ? rawFindings.find(row => row._id === editFinding.findingId)?.reason
     : undefined
+  // quick 261014-lbr: the quoted span, so the editor can focus the field holding it.
+  const editFindingQuote = editFinding?.findingId
+    ? rawFindings.find(row => row._id === editFinding.findingId)?.quotedSpan
+    : undefined
 
   // "Next that needs you" — first EDITABLE_SECTIONS entry AFTER the current
   // one that still has an open finding (no wraparound). Reuses the same
@@ -528,6 +532,7 @@ export function ReviewDeskRunView({ params, issueNumber }: ReviewDeskRunViewProp
               onDirtyChange={setDirty}
               focusFindingId={editFinding?.findingId}
               findingReason={editFindingReason}
+              focusQuote={editFindingQuote}
               revisionId={draft.revisionId}
               reloadDraft={reloadDraft}
               onEditSection={handleEditSection}

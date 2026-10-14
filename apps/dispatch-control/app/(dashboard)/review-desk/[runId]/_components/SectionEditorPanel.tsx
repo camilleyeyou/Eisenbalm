@@ -26,7 +26,7 @@
  *     section dirty; `onDirtyChange` bubbles the dirty map up to the parent
  *     page so it can guard the section-chip nav and paint the unsaved dot.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import {
   getDraft,
@@ -47,6 +47,7 @@ import {
   type UploadAssetResult,
 } from '@/lib/contentPatchClient'
 import BlockEditor from './BlockEditor'
+import { focusFieldContainingQuote } from './storyFindingActions'
 import TurnListEditor from './TurnListEditor'
 import AssetUploadSlot from './AssetUploadSlot'
 import {
@@ -212,6 +213,8 @@ interface SectionEditorPanelProps {
   focusFindingId?: string
   /** D-08: the finding's reason, kept visible above the editor for reference. */
   findingReason?: string
+  /** quick 261014-lbr: the finding's quoted span; the panel focuses the field that contains it. */
+  focusQuote?: string
 }
 
 export default function SectionEditorPanel({
@@ -221,8 +224,10 @@ export default function SectionEditorPanel({
   onDirtyChange,
   focusFindingId,
   findingReason,
+  focusQuote,
 }: SectionEditorPanelProps) {
   const { getToken } = useAuth()
+  const rootRef = useRef<HTMLDivElement>(null)
 
   const [working, setWorking] = useState<WorkingState>(() => buildWorkingState(draft))
   const [loaded, setLoaded] = useState<WorkingState>(() => buildWorkingState(draft))
@@ -248,6 +253,16 @@ export default function SectionEditorPanel({
     onDirtyChange?.(dirtyMap)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dirtyMap])
+
+  // quick 261014-lbr: land the editor ON the field holding the quoted text.
+  // Once per deep-link (deps exclude `working`, so not on every keystroke).
+  useEffect(() => {
+    if (!focusQuote || !rootRef.current) return
+    const id = requestAnimationFrame(() => {
+      if (rootRef.current) focusFieldContainingQuote(rootRef.current, focusQuote)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [focusQuote, selectedSection])
 
   // D-07 unsaved-changes warning on browser close/refresh/navigation away.
   useEffect(() => {
@@ -465,7 +480,7 @@ export default function SectionEditorPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={rootRef} className="flex flex-col gap-4">
       {/* D-08: non-intrusive finding-context banner — the operator edits with
           the QA finding's reason in view (edit-inline deep-link). */}
       {findingReason && (
