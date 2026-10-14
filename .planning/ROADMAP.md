@@ -1164,7 +1164,7 @@ Plans:
 - [x] 51.1-04-publisher-verdict-wiring-PLAN.md — publisher seeds sentence rows with verdicts BEFORE `end_run()`; failure degrades; CostCapExceeded propagates (Wave 2)
 - [x] 51.1-05-server-gate-signoffs-PLAN.md — facts-cleared 409 only on open contradicted claims, with count; zero-claims passes (Wave 2)
 - [x] 51.1-06-dashboard-derivation-projections-PLAN.md — derivedState tasks/stage flagged-only via shared predicate; one lossless `projectClaimRow` for all lean projections (Wave 2)
-- [ ] 51.1-07-gate-summary-readers-PLAN.md — Run screen, inbox, archive, Approval/Fact Check panels speak "contradicted", never "unchecked" (Wave 3)
+- [x] 51.1-07-gate-summary-readers-PLAN.md — Run screen, inbox, archive, Approval/Fact Check panels speak "contradicted", never "unchecked" (Wave 3)
 - [ ] 51.1-08-galley-in-sentence-verdicts-PLAN.md — galley washes only flagged claims; verdict + evidence + sources in the Phase 51 popover (Wave 3)
 - [ ] 51.1-09-ledger-demotion-decision-rail-fact-check-PLAN.md — SourceIndex out of the rail; facts button pre-check; Fact Check screen flagged-by-default + audit toggle (Wave 4)
 - [ ] 51.1-10-ops-sync-deploy-live-acceptance-PLAN.md — full gate + drift scans, Convex sync BEFORE Railway deploy, live-run measurement + zero-click acceptance (Wave 5, non-autonomous)
