@@ -458,6 +458,15 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **DOOR-03**: Editor never encounters operational tooling while reading or fixing an issue.
 - [ ] **DOOR-04**: Operator can still reach the v4.0 console until the new app is proven — no week without a way to publish.
 
+### Claims carry verdicts (VRD) — Phase 51.1 (inserted 2026-10-14)
+- [ ] **VRD-01**: Every extracted claim carries an agent-written verdict (verified / contradicted / unverifiable), the agent's evidence and the source URL(s) it used — written by ONE batched cheap-model call per run against already-retrieved sources.
+- [ ] **VRD-02**: Claim extraction emits sentence-level assertions that can be true or false, never bare noun phrases or numerals ("Rare Disease Day", "2015", "Tameka Diaz").
+- [ ] **VRD-03**: Editor sees only open contradicted claims and open load-bearing unverifiable claims, marked in the sentence via the Phase 51 surface — never a ledger of every extracted claim.
+- [ ] **VRD-04**: Facts-cleared (and therefore publish) is blocked by open contradicted claims and never by unreviewed ones; no per-claim click is required; one shared predicate enforces it client and server side.
+- [ ] **VRD-05**: An issue with zero claims can clear facts and publish.
+- [ ] **VRD-06**: Legacy claim rows (written before Phase 51.1, no verdict) load and resolve on every surface and never block.
+- [ ] **VRD-07**: A verdict-call failure or timeout degrades to unverdicted (non-blocking) rows and never fails the run; the verdict call's cost is recorded under the run's cost.
+
 ### Archive — past issues (PAST)
 - [ ] **PAST-01**: Editor recognises a past issue by its title, not its number.
 - [ ] **PAST-02**: Editor can search past issues by subject.
@@ -917,6 +926,13 @@ Added 2026-07-31 during v5.0 roadmap creation. All 24 v5.0 requirements mapped t
 | READ-06 | Phase 51: Section — Read and Fix in Place | Complete |
 | READ-07 | Phase 51: Section — Read and Fix in Place | Complete |
 | READ-08 | Phase 51: Section — Read and Fix in Place | Complete |
+| VRD-01 | Phase 51.1: Claims Carry Verdicts | Planned |
+| VRD-02 | Phase 51.1: Claims Carry Verdicts | Planned |
+| VRD-03 | Phase 51.1: Claims Carry Verdicts | Planned |
+| VRD-04 | Phase 51.1: Claims Carry Verdicts | Planned |
+| VRD-05 | Phase 51.1: Claims Carry Verdicts | Planned |
+| VRD-06 | Phase 51.1: Claims Carry Verdicts | Planned |
+| VRD-07 | Phase 51.1: Claims Carry Verdicts | Planned |
 | HOME-01 | Phase 52: Issue — The Front Door | Planned |
 | HOME-02 | Phase 52: Issue — The Front Door | Planned |
 | HOME-03 | Phase 52: Issue — The Front Door | Planned |
@@ -935,8 +951,8 @@ Added 2026-07-31 during v5.0 roadmap creation. All 24 v5.0 requirements mapped t
 | PAST-03 | Phase 54: Archive — Past Issues | Planned |
 
 **Coverage (v5.0):**
-- v5.0 requirements: 24 total (READ:8, HOME:9, DOOR:4, PAST:3)
-- Mapped to phases: 24
+- v5.0 requirements: 31 total (READ:8, VRD:7, HOME:9, DOOR:4, PAST:3)
+- Mapped to phases: 31
 - Unmapped: 0 ✓
 - *READ-01/02/03 marked Complete on automated (Vitest + strict build) verification only — each also has a human perceptual/manual-only check (reading measure & typography, label-not-colour-alone in greyscale, popover DOM validity in DevTools) that was **not performed**: the plan 51-06 checkpoint was blocked by a pre-existing local-dev CORS gap (production Railway pipeline's `DASHBOARD_ALLOWED_ORIGINS` excludes all `localhost` origins) and the user chose to close the phase without it. See `51-06-SUMMARY.md` for the blocker, evidence, and two recorded unblock routes.
 

@@ -66,7 +66,8 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 **v4.0 complete (shipped 2026-07-17). v5.0: The Editorial App (Phases 51–54)**
 
 - [x] **Phase 51: Section — Read and Fix in Place** - `/s/[section]` full-width prose with fact/voice/unsourced-claim problems marked in the sentence and fixed inline, reusing the galley/annotations/finding-resolution system wholesale (completed 2026-08-01; automated gates green — full suite + strict build + all invariant scans — but the plan's own human read-through was NOT performed, blocked by a pre-existing local-dev CORS gap and closed on the user's explicit decision to skip; see `51-06-SUMMARY.md`)
-- [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine sections as a derived table of contents, and the three publish gates as the page footer
+- [ ] **Phase 51.1: Claims Carry Verdicts — Agents Clear Their Own Work** (INSERTED) - claims get an agent-written verdict + evidence; only contradicted/unresolvable load-bearing claims reach the editor; publish blocks on contradictions, never on unreviewed; zero-claims deadlock removed
+- [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine sections as a derived table of contents, and the three publish gates as the page footer ⚠️ SC-3/SC-4 need amending after 51.1 — they currently mandate the rejected checklist pattern
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
 
@@ -1143,7 +1144,35 @@ Plans:
 - [x] 51-06-integration-gate-strict-build-PLAN.md — full Vitest suite + mandatory pnpm --filter dispatch-control build + invariant source-scan green and independently re-verified; the human read-through checkpoint was **NOT performed** (blocked by production pipeline CORS excluding all localhost origins — see `51-06-SUMMARY.md`); user chose to close the phase without it after being offered two unblock routes (Wave 6)
 **UI hint**: yes — **human visual/UX sign-off outstanding**: SC-1 (reading measure/typography), SC-2 (label-not-colour-alone), the popover DOM-validity check, and the `ClaimProvenanceCard` shared-card raw-URL question (affects Review Desk/Voice Pass/Fact Check too) are all unverified by a human; revisit once one of the two CORS unblock routes in `51-06-SUMMARY.md` is completed.
 
+### Phase 51.1: Claims Carry Verdicts — Agents Clear Their Own Work (INSERTED)
+**Goal**: The agents fact-check and the editor edits. Every extracted claim carries an agent-written verdict and its evidence; only contradicted or unresolvable load-bearing claims reach the editor, marked in the sentence rather than listed in a ledger; publish blocks on contradicted claims and never on unreviewed ones.
+**Depends on**: Phase 51 (the in-sentence marking and finding-resolution surface these claims surface through); the existing Researcher/QA claim extraction, `claim_checks` table, and the two-sign-off publish gate (Phase 26/34/42) this phase changes the semantics of rather than replaces
+**Why inserted (urgent)**: measured live on issue 999718 / run `6f9c0ac9832343cbbd17c5654c90963b` (2026-08-06) — 117 claims for ONE issue, all 117 marked `checked` by a human, **68 of them (58%) carrying no `sourceUrl` for that human to check against**, only 24 `Load-bearing`. Extracted "claims" include `"Rare Disease Day"`, `"2015"`, `"Tameka Diaz"` — bare noun phrases and numerals, not assertions. `convex/schema.ts:471-495` gives `claim_checks` a `status` of `pending | checked | skipped` and **no verdict field at all**: there is nowhere to record whether a claim is true or false, and the schema's own comment states the purpose — *"The operator checks or skips each before the approve action is enabled."* The 117 clicks exist solely to unlock a button; no factual conclusion is captured or retained. `signoffs.py:110-127` then gates `facts-cleared` on `claimChecks:allSignedOff` — on unreviewed-ness, not on anything being wrong — and `claimChecks.ts:10-14` returns `false` when zero claims exist, so an issue with nothing to check is permanently unpublishable (confirmed on issue 2: `allSignedOff=false, signedOff=0, total=0`). This blocks Phase 52: that phase's SC-3 and SC-4 mandate "one plain-language sentence describing what needs doing" and "the three publish gates as the page footer", which is the pattern the client has explicitly rejected. Building the new front door on the current claim model would relocate the ritual, not remove it.
+**Requirements**: VRD-01, VRD-02, VRD-03, VRD-04, VRD-05, VRD-06, VRD-07
+**Success Criteria** (what must be TRUE):
+  1. Every claim the pipeline extracts carries an agent-written verdict (verified / contradicted / unverifiable) and the evidence behind it — a claim can no longer reach the editor in a state that records only that someone looked at it.
+  2. Claim extraction stops emitting bare noun phrases and numerals ("Rare Disease Day", "2015", "Tameka Diaz") as claims; what is extracted is an assertion that can be true or false.
+  3. The editor is shown only contradicted or unresolvable load-bearing claims, marked in the sentence via the Phase 51 surface — never a ledger of every extracted claim.
+  4. Publish is blocked by contradicted claims and is never blocked by unreviewed ones; an issue whose claims the agents cleared needs no per-claim human action to publish.
+  5. An issue with zero claims can publish — the `allSignedOff`-returns-false-on-empty deadlock no longer strands an issue that has nothing to check.
+  6. Legacy `claim_checks` rows written before this phase still load and resolve without error on every surface that reads them.
+**Plans**: 10 plans
+Plans:
+- [ ] 51.1-01-contract-schema-shared-gate-PLAN.md — API_CONTRACTS §51.1 first; additive verdict fields on claim_checks; ONE shared predicate `convex/lib/claimGate.ts`; `allSignedOff` re-semanticized (blocking===0, true on empty) + parity tests (Wave 1)
+- [ ] 51.1-02-sentence-level-extraction-PLAN.md — `extract_assertions_by_block`: one row per assertion sentence, no bare tokens (Wave 1)
+- [ ] 51.1-03-research-sources-verdict-module-PLAN.md — persist `research_sources`; `lib/claim_verdicts.py` one batched Haiku `fact_check` call, index-bound sources, uncited-contradiction downgrade (Wave 1)
+- [ ] 51.1-04-publisher-verdict-wiring-PLAN.md — publisher seeds sentence rows with verdicts BEFORE `end_run()`; failure degrades; CostCapExceeded propagates (Wave 2)
+- [ ] 51.1-05-server-gate-signoffs-PLAN.md — facts-cleared 409 only on open contradicted claims, with count; zero-claims passes (Wave 2)
+- [ ] 51.1-06-dashboard-derivation-projections-PLAN.md — derivedState tasks/stage flagged-only via shared predicate; one lossless `projectClaimRow` for all lean projections (Wave 2)
+- [ ] 51.1-07-gate-summary-readers-PLAN.md — Run screen, inbox, archive, Approval/Fact Check panels speak "contradicted", never "unchecked" (Wave 3)
+- [ ] 51.1-08-galley-in-sentence-verdicts-PLAN.md — galley washes only flagged claims; verdict + evidence + sources in the Phase 51 popover (Wave 3)
+- [ ] 51.1-09-ledger-demotion-decision-rail-fact-check-PLAN.md — SourceIndex out of the rail; facts button pre-check; Fact Check screen flagged-by-default + audit toggle (Wave 4)
+- [ ] 51.1-10-ops-sync-deploy-live-acceptance-PLAN.md — full gate + drift scans, Convex sync BEFORE Railway deploy, live-run measurement + zero-click acceptance (Wave 5, non-autonomous)
+**UI hint**: no — schema, pipeline, and gate semantics; the editor-facing surface is Phase 51's, reused
+
 ### Phase 52: Issue — The Front Door
+> ⚠️ **Amend before planning (added 2026-08-06):** SC-3 ("one plain-language sentence describing what needs doing") and SC-4 ("the three publish gates as the page footer") encode the dashboard-assigns-homework pattern the client rejected on 2026-08-06. Re-derive both against Phase 51.1's outcome — the editor decides what to do; the page does not hold a checklist or grant permission.
+
 **Goal**: An editor lands on the current issue's real title and subject, sees the nine sections as a table of contents with derived state, and can publish from the page footer through the unchanged gate.
 **Depends on**: Phase 51 (the Section surface the table of contents links into and whose per-section derived state it reads); the existing `runs.latest → pipelineRuns.byRunId → issueNumber` resolution and the two-sign-off publish gate (Phase 34/41) this phase composes at `/`, never re-implements
 **Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, HOME-06, HOME-07, HOME-08, HOME-09
