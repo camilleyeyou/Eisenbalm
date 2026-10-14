@@ -118,7 +118,20 @@ export interface ClaimProvenanceView {
   sectionName?: string
   confidence?: number
   changedSinceCheck?: boolean
+  /** Phase 51.1 — agent verdict; absent on legacy rows (card renders no verdict block). */
+  verdict?: 'verified' | 'contradicted' | 'unverifiable'
+  /** Phase 51.1 — agent rationale. */
+  verdictEvidence?: string
+  /** Phase 51.1 — real URLs the verdict cites. */
+  verdictSources?: string[]
 }
+
+/** Phase 51.1 — text labels for the verdict (never colour alone, D-23). */
+export const VERDICT_LABELS = {
+  contradicted: 'Contradicted by source',
+  unverifiable: 'Not verifiable from retrieved sources',
+  verified: 'Verified against source',
+} as const
 
 export interface ClaimCardActions {
   onConfirm?: () => void
@@ -169,9 +182,13 @@ export function deriveClaimChipState(claim: ClaimProvenanceView): ClaimChipState
     status: claim.status,
     importance: claim.importance,
     sourceUrl: claim.sourceUrl,
+    verdict: claim.verdict,
+    changedSinceCheck: claim.changedSinceCheck,
   }
+  // Phase 51.1 — must-fix = open contradicted claim, via the shared predicate.
   if (isMustFix(row)) return 'must-fix'
-  if (!claim.sourceUrl) return 'review-recommended'
+  if (claim.verdict === 'unverifiable' && (claim.importance ?? 'Supporting') === 'Load-bearing')
+    return 'review-recommended'
   return 'unchecked'
 }
 
@@ -224,6 +241,41 @@ export default function ClaimProvenanceCard({
       style={boxStyle}
       data-testid="claim-provenance-card"
     >
+      {claim.verdict && (
+        <Box style={boxStyle}>
+          <Txt className={FIELD_LABEL} style={boxStyle}>
+            Agent verdict
+          </Txt>
+          <Txt
+            className="mt-1 text-[14px] font-semibold text-[color:var(--color-ink)]"
+            style={boxStyle}
+            data-testid="claim-verdict"
+          >
+            {VERDICT_LABELS[claim.verdict]}
+          </Txt>
+          {claim.verdictEvidence && (
+            <Txt className="mt-1 text-[13px] text-[color:var(--color-ink)]" style={boxStyle}>
+              {claim.verdictEvidence}
+            </Txt>
+          )}
+          {claim.verdictSources && claim.verdictSources.length > 0 && (
+            <span className="mt-1 flex flex-col gap-0.5" style={phrasingSafe ? { display: 'block' } : undefined}>
+              {claim.verdictSources.map(url => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12px] underline text-[color:var(--color-ink-soft)]"
+                >
+                  {deriveSourcePublisher(url)}
+                </a>
+              ))}
+            </span>
+          )}
+        </Box>
+      )}
+
       <Box style={boxStyle}>
         <Txt className={FIELD_LABEL} style={boxStyle}>
           Claim

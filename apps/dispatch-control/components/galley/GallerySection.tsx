@@ -219,6 +219,10 @@ export default function GallerySection({
                 supportingPassage: c.context,
                 retrievedAt: c.retrievedAt,
                 sectionName: sectionId,
+                verdict: c.verdict,
+                verdictEvidence: c.verdictEvidence,
+                verdictSources: c.verdictSources,
+                changedSinceCheck: c.changedSinceCheck,
               }
             : undefined
           return (

@@ -165,13 +165,13 @@ describe('ClaimMark shared provenance card (FCT-04, Plan 42-07)', () => {
     expect(screen.getByText('Load-bearing')).toBeDefined()
   })
 
-  it('still renders a Skip control alongside the shared card (a Draft-only action outside the card\'s six-action set)', () => {
+  it('still renders a Dismiss control alongside the shared card (a Draft-only action outside the card\'s six-action set)', () => {
     renderMark(checkedValue)
     const mark = getMark()
 
     fireEvent.click(mark)
 
-    expect(screen.getByRole('button', { name: 'Skip' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined()
   })
 })
 
@@ -204,28 +204,46 @@ describe('Phase 51 — phrasing-safe popover (Pitfall 1)', () => {
     expect(popover!.querySelector('h3')).toBeNull()
   })
 
-  it('Source tag renders for an unsourced claim only when showAxisTag is set', () => {
+  it('verdict tag renders by text label only when showAxisTag is set and the claim has a flagging verdict', () => {
+    const contradicted: ClaimSpanMarkDef = { ...pendingValue, verdict: 'contradicted' }
+    const unverified: ClaimSpanMarkDef = {
+      ...pendingValue,
+      verdict: 'unverifiable',
+      importance: 'Load-bearing',
+    }
+    render(
+      <ClaimMark value={contradicted} runId="run-1" showAxisTag>
+        the claim text
+      </ClaimMark>,
+    )
+    expect(screen.getByText('Contradicted')).toBeDefined()
+    expect(getMark().getAttribute('data-verdict')).toBe('contradicted')
+    expect(getMark().getAttribute('aria-label')).toBe('contradicted claim')
+    cleanup()
+
+    render(
+      <ClaimMark value={unverified} runId="run-1" showAxisTag>
+        the claim text
+      </ClaimMark>,
+    )
+    expect(screen.getByText('Unverified')).toBeDefined()
+    expect(getMark().getAttribute('aria-label')).toBe('unverified claim')
+    cleanup()
+
     render(
       <ClaimMark value={pendingValue} runId="run-1" showAxisTag>
         the claim text
       </ClaimMark>,
     )
-    expect(screen.getByText('Source')).toBeDefined()
+    expect(screen.queryByText('Source')).toBeNull()
+    expect(screen.queryByText('Contradicted')).toBeNull()
     cleanup()
 
     render(
-      <ClaimMark value={checkedValue} runId="run-1" showAxisTag>
+      <ClaimMark value={contradicted} runId="run-1">
         the claim text
       </ClaimMark>,
     )
-    expect(screen.queryByText('Source')).toBeNull()
-    cleanup()
-
-    render(
-      <ClaimMark value={pendingValue} runId="run-1">
-        the claim text
-      </ClaimMark>,
-    )
-    expect(screen.queryByText('Source')).toBeNull()
+    expect(screen.queryByText('Contradicted')).toBeNull()
   })
 })

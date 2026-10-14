@@ -131,7 +131,13 @@ export default function ClaimMark({
     supportingPassage: value.context,
     retrievedAt: value.retrievedAt,
     sectionName: value.sectionId,
+    verdict: value.verdict,
+    verdictEvidence: value.verdictEvidence,
+    verdictSources: value.verdictSources,
+    changedSinceCheck: value.changedSinceCheck,
   }
+  const verdictTag =
+    value.verdict === 'contradicted' ? 'Contradicted' : value.verdict === 'unverifiable' ? 'Unverified' : null
 
   function toggle() {
     setOpen((prev) => !prev)
@@ -193,10 +199,11 @@ export default function ClaimMark({
         className="galley-claim"
         data-provenance={value.provenance}
         data-checked={isChecked ? 'true' : 'false'}
-        title={tooltip}
+        data-verdict={value.verdict ?? 'none'}
+        title={value.verdictEvidence ?? tooltip}
         tabIndex={0}
         role="button"
-        aria-label={`${value.provenance} claim`}
+        aria-label={verdictTag ? `${verdictTag.toLowerCase()} claim` : `${value.provenance} claim`}
         aria-expanded={open || focusOpen}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
@@ -205,9 +212,9 @@ export default function ClaimMark({
       >
         {children}
       </mark>
-      {showAxisTag && value.provenance === 'unsourced' && (
+      {showAxisTag && verdictTag && (
         <span className="galley-claim-tag" aria-hidden="false" style={axisTagStyle}>
-          Source
+          {verdictTag}
         </span>
       )}
       {(open || focusOpen) && (
@@ -219,7 +226,7 @@ export default function ClaimMark({
            * wired to the exact `claimChecks:setStatus('checked')` mutation
            * "Mark checked" always called (no forked write path). The card
            * has no "Skip" slot (a Draft-only action outside the shared
-           * six-action set), so a small Skip control is kept alongside it.
+           * six-action set), so a small Dismiss control (status 'skipped') is kept alongside it. The editor action is recorded separately; the verdict itself is never edited.
            */}
           <ClaimProvenanceCard
             claim={claimView}
@@ -234,7 +241,7 @@ export default function ClaimMark({
               disabled={busy}
               onClick={() => void handleSetStatus('skipped')}
             >
-              Skip
+              Dismiss
             </button>
           </span>
         </span>

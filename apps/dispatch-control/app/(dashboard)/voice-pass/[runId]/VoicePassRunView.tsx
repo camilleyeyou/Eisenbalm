@@ -126,6 +126,10 @@ interface ClaimCheckRow {
   blockIndexHint?: number
   importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
   context?: string
+  verdict?: 'verified' | 'contradicted' | 'unverifiable'
+  verdictEvidence?: string
+  verdictSources?: string[]
+  changedSinceCheck?: boolean
 }
 
 export default function VoicePassRunView({ params }: VoicePassRunViewProps) {
@@ -374,6 +378,10 @@ export function VoicePassScreen({ runId }: { runId: string }) {
                       supportingPassage: relatedClaim.context,
                       retrievedAt: relatedClaim.retrievedAt,
                       sectionName: relatedClaim.sectionName,
+                      verdict: relatedClaim.verdict,
+                      verdictEvidence: relatedClaim.verdictEvidence,
+                      verdictSources: relatedClaim.verdictSources,
+                      changedSinceCheck: relatedClaim.changedSinceCheck,
                     }}
                   />
                 ) : (

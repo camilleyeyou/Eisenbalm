@@ -79,15 +79,26 @@ describe('deriveClaimAgent (pure, D-10, Pattern 5 reuse)', () => {
 })
 
 describe('deriveClaimChipState (D-08 — 5-state vocabulary, reused by the Stage 3 table)', () => {
-  it('a pending Load-bearing unsourced claim is "must-fix"', () => {
-    expect(
-      deriveClaimChipState({ text: 'x', status: 'pending', importance: 'Load-bearing' }),
-    ).toBe('must-fix')
+  it('a pending contradicted claim is "must-fix" (Phase 51.1)', () => {
+    expect(deriveClaimChipState({ text: 'x', status: 'pending', verdict: 'contradicted' })).toBe(
+      'must-fix',
+    )
   })
 
-  it('a pending unsourced Supporting claim is "review-recommended"', () => {
+  it('a legacy pending Load-bearing unsourced claim (no verdict) is NOT "must-fix"', () => {
     expect(
-      deriveClaimChipState({ text: 'x', status: 'pending', importance: 'Supporting' }),
+      deriveClaimChipState({ text: 'x', status: 'pending', importance: 'Load-bearing' }),
+    ).not.toBe('must-fix')
+  })
+
+  it('a pending Load-bearing unverifiable claim is "review-recommended"', () => {
+    expect(
+      deriveClaimChipState({
+        text: 'x',
+        status: 'pending',
+        importance: 'Load-bearing',
+        verdict: 'unverifiable',
+      }),
     ).toBe('review-recommended')
   })
 
@@ -148,10 +159,42 @@ describe('ClaimProvenanceCard — never-blank field rendering', () => {
   it('renders the D-08 chip label text for a must-fix claim (never color alone)', () => {
     render(
       <ClaimProvenanceCard
-        claim={{ ...BASE_CLAIM, importance: 'Load-bearing' }}
+        claim={{ ...BASE_CLAIM, verdict: 'contradicted' }}
       />,
     )
     expect(screen.getByText(/Must fix/)).toBeDefined()
+  })
+})
+
+describe('ClaimProvenanceCard — Phase 51.1 verdict block', () => {
+  it('contradicted renders label, evidence and a publisher-host source link', () => {
+    render(
+      <ClaimProvenanceCard
+        claim={{
+          ...BASE_CLAIM,
+          verdict: 'contradicted',
+          verdictEvidence: 'The annual report gives 1999.',
+          verdictSources: ['https://example.org/report'],
+        }}
+      />,
+    )
+    expect(screen.getByText('Contradicted by source')).toBeDefined()
+    expect(screen.getByText('The annual report gives 1999.')).toBeDefined()
+    const link = screen.getByRole('link', { name: 'example.org' })
+    expect(link.getAttribute('href')).toBe('https://example.org/report')
+  })
+
+  it('unverifiable and verified render their labels; legacy renders none', () => {
+    const { unmount } = render(
+      <ClaimProvenanceCard claim={{ ...BASE_CLAIM, verdict: 'unverifiable' }} />,
+    )
+    expect(screen.getByText('Not verifiable from retrieved sources')).toBeDefined()
+    unmount()
+    const v = render(<ClaimProvenanceCard claim={{ ...BASE_CLAIM, verdict: 'verified' }} />)
+    expect(screen.getByText('Verified against source')).toBeDefined()
+    v.unmount()
+    render(<ClaimProvenanceCard claim={BASE_CLAIM} />)
+    expect(screen.queryByTestId('claim-verdict')).toBeNull()
   })
 })
 

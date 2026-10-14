@@ -85,6 +85,10 @@ interface ClaimCheckRow {
   blockIndexHint?: number
   importance?: 'Load-bearing' | 'Supporting' | 'Incidental'
   context?: string
+  verdict?: 'verified' | 'contradicted' | 'unverifiable'
+  verdictEvidence?: string
+  verdictSources?: string[]
+  changedSinceCheck?: boolean
 }
 
 /** Minimal shape needed from a live `qaCorrections` row (mirrors Galley.tsx's
@@ -519,6 +523,10 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
                 supportingPassage: relatedClaim.context,
                 retrievedAt: relatedClaim.retrievedAt,
                 sectionName: relatedClaim.sectionName,
+                verdict: relatedClaim.verdict,
+                verdictEvidence: relatedClaim.verdictEvidence,
+                verdictSources: relatedClaim.verdictSources,
+                changedSinceCheck: relatedClaim.changedSinceCheck,
               }}
             />
           ) : (
