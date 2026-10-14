@@ -4,6 +4,10 @@ Extracts every number, date, and proper-noun sequence from issue sections
 for the operator review sign-off checklist. No LLM calls — full recall is
 the acceptance bar, and deterministic extraction guarantees it.
 
+Phase 51.1: `extract_assertions_by_block` is the publisher's extractor (one row
+per assertion sentence); the token-level functions below are retained for
+back-compat only.
+
 Usage (publisher node):
     from eisenbalm_pipeline.lib.claims import extract_claims
     claims = extract_claims(state_sections)
@@ -18,7 +22,7 @@ from __future__ import annotations
 
 import re
 import string
-from typing import Any
+from typing import Any, Iterable
 
 
 # ── Compiled regex patterns (verbatim from RESEARCH Pattern 6) ───────────────
@@ -441,6 +445,123 @@ def extract_claims_by_block(sections: dict) -> list[dict]:
                         "text": c["text"],
                         "claimType": c["claimType"],
                         "context": c["context"],
+                    }
+                )
+    return rows
+
+
+# ── Public API: extract_assertions_by_block (Phase 51.1 VRD-02, API_CONTRACTS §51.1.5) ──
+
+_ABBREVIATIONS = frozenset({
+    "mr", "mrs", "ms", "dr", "st", "jr", "sr", "inc", "ltd", "co", "no", "vs",
+    "etc", "e.g", "i.e", "u.s", "mt", "ft", "prof", "gov", "sen", "rep",
+})
+_SENTENCE_END = re.compile(r'[.!?]["\'\u201d\u2019)]*(?=\s+|$)')
+_MIN_ASSERTION_WORDS = 4
+_MIN_FREE_ALPHA_WORDS = 2
+_ASSERTION_CONTEXT_CHARS = 300
+_ALPHA_WORD = re.compile(r"^[A-Za-z][A-Za-z'\u2019-]*$")
+
+
+def split_sentences(text: str) -> list[str]:
+    """Split text into sentences; each result is an exact substring of text.
+
+    Does not split after known abbreviations ("Dr.") or single-letter initials.
+    Decimals ("2.3") never split since a terminator needs trailing whitespace.
+    """
+    sentences: list[str] = []
+    seg_start = 0
+    for m in _SENTENCE_END.finditer(text):
+        tok = re.search(r"(\S+)$", text[seg_start:m.start()])
+        if tok:
+            word = tok.group(1).lower().rstrip(".")
+            if m.group(0)[0] == "." and (word in _ABBREVIATIONS or len(word.strip("\"'(")) == 1):
+                continue
+        sentence = text[seg_start:m.end()].strip()
+        if sentence:
+            sentences.append(sentence)
+        seg_start = m.end()
+    tail = text[seg_start:].strip()
+    if tail:
+        sentences.append(tail)
+    return sentences
+
+
+def _assertion_matches(sentence: str) -> list[tuple[int, int, str]]:
+    found: list[tuple[int, int, str]] = []
+    dates = [(m.start(), m.end(), "date") for m in RE_DATE.finditer(sentence)]
+    found.extend(dates)
+    for m in RE_NUMBER.finditer(sentence):
+        if any(d[0] <= m.start() and m.end() <= d[1] for d in dates):
+            continue
+        found.append((m.start(), m.end(), "number"))
+    for m in RE_PROPER_NOUN.finditer(sentence):
+        if len(m.group(0).split()) > _MAX_PROPER_NOUN_WORDS:
+            continue
+        found.append((m.start(), m.end(), "proper_noun"))
+    order = {"date": 0, "number": 1, "proper_noun": 2}
+    found.sort(key=lambda t: (t[0], order[t[2]]))
+    return found
+
+
+def extract_assertions_by_block(sections: dict, known_entities: Iterable[str] = ()) -> list[dict]:
+    """One row per assertion sentence (a sentence with >=1 number/date/proper noun).
+
+    ``text`` is an exact substring of the block, so the galley's
+    ``resolveSectionFindings`` resolves it. Rows carry no ``claimIndex`` (the
+    publisher assigns it). Writer-claimSpan containment is applied by the
+    publisher, not here. Dedupe is within a block only. No LLM calls.
+    """
+    known = {_normalise(e) for e in known_entities if e and _normalise(e)}
+    rows: list[dict] = []
+    for key in _SECTION_ORDER:
+        value = sections.get(key)
+        if not isinstance(value, dict):
+            continue
+        body = value.get("body")
+        if not isinstance(body, list):
+            continue
+        galley_id = _SECTION_TO_GALLEY_ID[key]
+        for bi, block in enumerate(body):
+            if not isinstance(block, dict) or block.get("type") in _HEADING_BLOCKQUOTE:
+                continue
+            text = block.get("text", "")
+            if not isinstance(text, str) or not text.strip():
+                continue
+            seen: set[str] = set()
+            for sentence in split_sentences(text):
+                matches = _assertion_matches(sentence)
+                if not matches:
+                    continue
+                if len(sentence.split()) < _MIN_ASSERTION_WORDS:
+                    continue
+                chars = list(sentence)
+                for st, en, _t in matches:
+                    for i in range(st, en):
+                        chars[i] = " "
+                free = [
+                    w for w in "".join(chars).split()
+                    if _ALPHA_WORD.match(w.strip(string.punctuation))
+                ]
+                if len(free) < _MIN_FREE_ALPHA_WORDS:
+                    continue
+                if known and all(t == "proper_noun" for _s, _e, t in matches):
+                    def _is_entity(span: tuple[int, int, str]) -> bool:
+                        n = f" {_normalise(sentence[span[0]:span[1]])} "
+                        return any(n == f" {k} " or f" {k} " in n or n in f" {k} " for k in known)
+                    if all(_is_entity(m) for m in matches):
+                        continue
+                nkey = _normalise(sentence)
+                if nkey in seen:
+                    continue
+                seen.add(nkey)
+                rows.append(
+                    {
+                        "sectionName": galley_id,
+                        "blockIndexHint": bi,
+                        "text": sentence,
+                        "claimType": matches[0][2],
+                        "context": sentence[:_ASSERTION_CONTEXT_CHARS],
                     }
                 )
     return rows
