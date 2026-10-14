@@ -22,11 +22,8 @@
  *      Relabeled from "Editor's memo" (D-16/SC-4 — "editor" unqualified is
  *      reserved for the human; this is explicitly the agent's judgment).
  *   5. Hook card — the run's selected pitch (D-12; Phase 37 upgrades in place)
- *   6. Verification — claims progress with an affirmative timestamp state
- *      (D-13: "checked Nm ago" / "not yet checked" / "No claims extracted
- *      yet" — never blank), plus the Phase 35 (PRV-04) source index:
- *      unsourced claims pinned on top, sourced claims grouped by galley
- *      section below — see `SourceIndex.tsx`
+ *   6. Verification — agent verdict summary (Phase 51.1); the per-claim
+ *      ledger was removed from the rail
  *   7. Actions — Publish (gated, D-14 client half + D-15 `held` term; the
  *      server 409 shipped in 33-03), Hold, Re-run section ▾, Transcript
  *   8. ResolvedFindingsList — the collapsed D-04 reopen surface (Task 2)
@@ -76,7 +73,7 @@ import { issueDraftHref } from '@/lib/issueRouteResolver'
 // Phase 44 Plan 44-08 (INS-01, §44.6) — the single shared inspector opener.
 import { useInspector } from '@/components/inspector/InspectorProvider'
 import ResolvedFindingsList from './ResolvedFindingsList'
-import SourceIndex from './SourceIndex'
+import { isOpenBlocking, isEditorFlagged } from '@/lib/derivedState'
 import PublishPreviewDialog from './PublishPreviewDialog'
 import SchedulePublishDialog from './SchedulePublishDialog'
 import { useRole } from '@/lib/role'
@@ -119,6 +116,10 @@ interface ClaimCheckRow {
   claimIndex: number
   status: string
   checkedAt?: number
+  verdict?: string
+  verdictEvidence?: string
+  importance?: string
+  changedSinceCheck?: boolean
 }
 
 /**
@@ -221,9 +222,9 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
   const claims = useQuery(api.claimChecks.listByRunId, { runId }) as
     | ClaimCheckRow[]
     | undefined
-  const done = claims?.filter(c => c.status !== 'pending') ?? []
   const totalClaims = claims?.length ?? 0
-  const lastChecked = Math.max(0, ...done.map(c => c.checkedAt ?? 0))
+  const contradictedOpen = claims?.filter(isOpenBlocking).length ?? 0
+  const unverifiedLB = claims ? claims.filter(isEditorFlagged).length - contradictedOpen : 0
 
   // Sign-offs (D-01/D-05/D-06, §34.2 live subscription) — affirmative state,
   // never blank. A kind absent from `active` = not signed (or revoked).
@@ -400,8 +401,10 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
             {claims === undefined
               ? 'Loading…'
               : totalClaims === 0
-                ? 'No claims yet'
-                : `${done.length}/${totalClaims} checked`}
+                ? 'No claims extracted'
+                : contradictedOpen > 0
+                  ? `${contradictedOpen} contradicted`
+                  : 'No contradicted claims'}
           </dd>
           <dt className="text-[color:var(--color-ink-soft)]">Voice</dt>
           <dd className={humanActive ? 'text-[color:var(--color-green,#148a52)]' : undefined}>
@@ -486,27 +489,22 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         ) : (
           <div className="mt-1 text-[13px] text-[color:var(--color-ink)]">
             <p>
-              {done.length}/{totalClaims} claims checked
+              {contradictedOpen} contradicted · {unverifiedLB} unverified load-bearing
               <span className="text-[color:var(--color-ink-soft)]">
                 {' '}
                 · {openFindings.length} open
               </span>
             </p>
-            {lastChecked > 0 ? (
+            {contradictedOpen === 0 && unverifiedLB === 0 ? (
               <p className="text-[color:var(--color-green,#148a52)]">
-                checked {formatAgo(lastChecked)}
+                Agents found no contradicted claims.
               </p>
-            ) : (
-              <p className="text-[color:var(--color-ink-soft)]">not yet checked</p>
-            )}
+            ) : null}
           </div>
         )}
-        {/* Phase 35 (PRV-04, D-12/D-13/D-14) — the source index: unsourced
-            claims pinned on top, sourced claims grouped by galley section
-            below, each with check/skip + jump link. Reads/writes the SAME
-            claim_checks table this section's summary above already reads;
-            the facts-cleared gate contract is untouched. */}
-        <SourceIndex runId={runId} issueNumber={issueNumber} />
+        {/* Phase 51.1 (§51.1.9): the per-claim ledger is no longer in the editor
+            path — flagged claims are marked in the sentence (galley) and
+            listed on the Fact Check screen. */}
       </section>
 
       {/* 6b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,
@@ -521,12 +519,23 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
           ) : (
             <button
               type="button"
-              disabled={blockers.length > 0 || signOffBusy !== null}
+              disabled={
+                claims === undefined ||
+                blockers.length > 0 ||
+                contradictedOpen > 0 ||
+                signOffBusy !== null
+              }
               onClick={() => handleSignOff('facts-cleared')}
               className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Sign: Facts cleared
             </button>
+          )}
+          {!factsActive && contradictedOpen > 0 && (
+            <p className="text-[11px] text-[color:var(--color-vermilion)]">
+              {contradictedOpen} contradicted claim{contradictedOpen === 1 ? '' : 's'} to fix or
+              dismiss before clearing facts.
+            </p>
           )}
           {humanActive ? (
             <p className="text-[13px] text-[color:var(--color-green,#148a52)]">
@@ -585,7 +594,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
                   the three (or four, with held) gating reasons. */}
               {publishDisabled && !busy && (
                 <p className="text-[11px] text-[color:var(--color-ink-soft)]">
-                  Unlocks when: Must fix = 0 · Fact Check complete · Voice approved current
+                  Unlocks when: Must fix = 0 · Facts cleared · Voice approved current
                   {held ? ' · Not held' : ''}
                 </p>
               )}

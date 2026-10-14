@@ -274,7 +274,7 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
     // WSP-06: the unlock condition is written next to the control.
     expect(screen.getByText(/unlocks when/i)).toBeDefined()
     expect(screen.getByText(/must fix = 0/i)).toBeDefined()
-    expect(screen.getByText(/fact check complete/i)).toBeDefined()
+    expect(screen.getByText(/unlocks when:.*facts cleared/i)).toBeDefined()
     expect(screen.getByText(/voice approved current/i)).toBeDefined()
   })
 
@@ -346,31 +346,34 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
 
 // ── (c) Verification block never-blank states (D-13) ────────────────────────
 
-describe('DecisionRail verification block (D-13)', () => {
-  it('shows "checked Nm ago" when a checkedAt timestamp exists', () => {
+describe('DecisionRail verification block (D-13, Phase 51.1)', () => {
+  it('summarises contradicted claims, never a checked count', () => {
     mockQueries({
       claims: [
-        { claimIndex: 0, status: 'checked', checkedAt: Date.now() - 5 * 60_000 },
-        { claimIndex: 1, status: 'pending' },
+        { claimIndex: 0, status: 'pending', verdict: 'contradicted' },
+        { claimIndex: 1, status: 'pending', verdict: 'verified' },
       ],
     })
     renderRail(<DecisionRail runId="run-1" />)
-    expect(screen.getByText(/1\/2 claims checked/i)).toBeDefined()
-    expect(screen.getByText(/checked \d+m ago/i)).toBeDefined()
+    expect(screen.getByText(/1 contradicted · 0 unverified load-bearing/i)).toBeDefined()
+    expect(screen.getAllByText(/^1 contradicted$/i).length).toBeGreaterThan(0)
+    expect(document.body.textContent).not.toMatch(/claims checked|\d+\/\d+ checked/i)
   })
 
   it('shows "No claims extracted yet" when the claims list is empty — never blank', () => {
     mockQueries({ claims: [] })
     renderRail(<DecisionRail runId="run-1" />)
     expect(screen.getByText(/no claims extracted yet/i)).toBeDefined()
+    expect(screen.getByText(/no claims extracted$/i)).toBeDefined()
   })
 
-  it('shows "not yet checked" for legacy rows without checkedAt — never blank', () => {
+  it('shows no contradicted claims for legacy/verified rows', () => {
     mockQueries({
-      claims: [{ claimIndex: 0, status: 'checked' }],
+      claims: [{ claimIndex: 0, status: 'pending' }],
     })
     renderRail(<DecisionRail runId="run-1" />)
-    expect(screen.getByText(/not yet checked/i)).toBeDefined()
+    expect(screen.getAllByText(/no contradicted claims/i).length).toBeGreaterThan(0)
+    expect(document.body.textContent).not.toMatch(/claims checked|not yet checked/i)
   })
 
   it('shows "Loading…" while claims are undefined', () => {
@@ -417,7 +420,7 @@ describe("DecisionRail agent editor's recommendation (D-16/SC-4 §33.6)", () => 
 describe('DecisionRail readiness board (WSP-05)', () => {
   it('renders Fact check / Voice / Hook & peg / Organization verification / Open decisions, each with a non-blank state', () => {
     mockQueries({
-      claims: [{ claimIndex: 0, status: 'checked', checkedAt: Date.now() }],
+      claims: [{ claimIndex: 0, status: 'pending', verdict: 'contradicted' }],
       pitch: { charityName: 'The Quiet Foundation', scoutSummary: 'Archive.' },
       signoffs: { 'sounds-human': { actorId: 'andrew', signedAt: Date.now() } },
       findings: [errorFinding],
@@ -426,7 +429,7 @@ describe('DecisionRail readiness board (WSP-05)', () => {
 
     const board = screen.getByText(/readiness board/i).closest('section')!
     expect(board.textContent).toMatch(/fact check/i)
-    expect(board.textContent).toMatch(/1\/1 checked/i)
+    expect(board.textContent).toMatch(/1 contradicted/i)
     expect(board.textContent).toMatch(/sounds human — signed/i)
     expect(board.textContent).toMatch(/hook/i)
     expect(board.textContent).toMatch(/selected/i)
@@ -441,7 +444,7 @@ describe('DecisionRail readiness board (WSP-05)', () => {
     renderRail(<DecisionRail runId="run-1" />)
 
     const board = screen.getByText(/readiness board/i).closest('section')!
-    expect(board.textContent).toMatch(/no claims yet/i)
+    expect(board.textContent).toMatch(/no claims extracted/i)
     expect(board.textContent).toMatch(/not signed yet/i)
     expect(board.textContent).toMatch(/none selected yet/i)
     expect(board.textContent).toMatch(/not tracked yet/i)
@@ -532,128 +535,55 @@ describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
   })
 })
 
-// ── Source index (Phase 35, PRV-04, D-12/D-13/D-14) ─────────────────────────
-//
-// The Verification block's plain checklist is upgraded to a source index:
-// unsourced claims (no claimId) pin on top, sourced claims (claimId present)
-// group below by galley section in reading order, each row carries a
-// check/skip control (the same claimChecks:setStatus) and a jump link.
-// Legacy rows (no claimId, no sectionName) render honestly as unsourced with
-// no jump target and never crash (D-03 additive-optional degrade).
+// ── No claim ledger in the editor path (Phase 51.1, §51.1.9) ────────────────
 
-const sourcedCaseStudy = {
-  claimIndex: 0,
-  text: 'The organization fed 12,000 families in 2019.',
-  status: 'pending',
-  claimId: 'run1-001',
-  sourceUrl: 'https://example.org/report-a',
-  retrievedAt: Date.now(),
-  sectionName: 'caseStudy',
-}
+describe('DecisionRail — no claim ledger (Phase 51.1)', () => {
+  const claims = [
+    { claimIndex: 0, text: 'Verified claim text.', status: 'pending', verdict: 'verified', sectionName: 'caseStudy' },
+    { claimIndex: 1, text: 'Legacy claim text.', status: 'pending' },
+  ]
 
-const sourcedOriginStory = {
-  claimIndex: 1,
-  text: 'Founded by two teachers in a garage in 2004.',
-  status: 'checked',
-  checkedAt: Date.now(),
-  claimId: 'run1-002',
-  sourceUrl: 'https://example.org/report-b',
-  retrievedAt: Date.now(),
-  sectionName: 'originStory',
-}
-
-const unsourcedProblem = {
-  claimIndex: 2,
-  text: 'Roughly 1 in 5 local children go hungry.',
-  status: 'pending',
-  sectionName: 'problemStatement',
-}
-
-const legacyRow = {
-  claimIndex: 3,
-  text: 'Founded in 1998.',
-  status: 'pending',
-}
-
-describe('DecisionRail source index (Phase 35, PRV-04)', () => {
-  it('renders the unsourced group ABOVE the sourced group', () => {
-    mockQueries({ claims: [sourcedCaseStudy, sourcedOriginStory, unsourcedProblem] })
+  it('does not render per-claim check/skip controls', () => {
+    mockQueries({ claims })
     renderRail(<DecisionRail runId="run-1" />)
-
-    const unsourcedHeader = screen.getByText(/^unsourced$/i)
-    const sourcedRowText = screen.getByText(sourcedCaseStudy.text)
-    // DOCUMENT_POSITION_FOLLOWING: the sourced group comes after Unsourced.
-    expect(
-      unsourcedHeader.compareDocumentPosition(sourcedRowText) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    expect(screen.queryAllByRole('button', { name: /^(check|skip)\b/i }).length).toBe(0)
+    expect(screen.queryByText(/^unsourced$/i)).toBeNull()
   })
 
-  it('groups sourced rows by section in galley reading order and shows each sourceUrl', () => {
-    // Deliberately out of reading order in the fixture array (caseStudy before
-    // originStory) to prove the component re-sorts, not just echoes input order.
-    mockQueries({ claims: [sourcedCaseStudy, sourcedOriginStory] })
+  it('renders no claim text from unflagged rows', () => {
+    mockQueries({ claims })
     renderRail(<DecisionRail runId="run-1" />)
-
-    const originText = screen.getByText(sourcedOriginStory.text)
-    const caseStudyText = screen.getByText(sourcedCaseStudy.text)
-    // originStory precedes caseStudy in D-14's fixed galley order.
-    expect(
-      originText.compareDocumentPosition(caseStudyText) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-
-    const sourceLinks = screen.getAllByRole('link', { name: /open source/i })
-    const hrefs = sourceLinks.map(a => a.getAttribute('href'))
-    expect(hrefs).toContain(sourcedCaseStudy.sourceUrl)
-    expect(hrefs).toContain(sourcedOriginStory.sourceUrl)
+    expect(screen.queryByText('Verified claim text.')).toBeNull()
+    expect(screen.queryByText('Legacy claim text.')).toBeNull()
   })
 
-  it('exposes a check control per row that calls claimChecks.setStatus with the claimIndex', async () => {
-    mockQueries({ claims: [unsourcedProblem] })
-    renderRail(<DecisionRail runId="run-1" />)
-
-    fireEvent.click(
-      screen.getByRole('button', { name: new RegExp(`check claim ${unsourcedProblem.claimIndex}`, 'i') }),
-    )
-    await waitFor(() => {
-      expect(setStatusSpy).toHaveBeenCalledWith({
-        runId: 'run-1',
-        claimIndex: unsourcedProblem.claimIndex,
-        status: 'checked',
-      })
+  it('disables Sign: Facts cleared while a contradicted claim is open', () => {
+    mockQueries({
+      claims: [{ claimIndex: 0, status: 'pending', verdict: 'contradicted' }],
+      signoffs: {},
+      findings: [],
     })
-  })
-
-  it('exposes a skip control per row that calls claimChecks.setStatus with the claimIndex', async () => {
-    mockQueries({ claims: [sourcedOriginStory] })
     renderRail(<DecisionRail runId="run-1" />)
-
-    fireEvent.click(
-      screen.getByRole('button', { name: new RegExp(`skip claim ${sourcedOriginStory.claimIndex}`, 'i') }),
-    )
-    await waitFor(() => {
-      expect(setStatusSpy).toHaveBeenCalledWith({
-        runId: 'run-1',
-        claimIndex: sourcedOriginStory.claimIndex,
-        status: 'skipped',
-      })
-    })
+    expect(
+      (screen.getByRole('button', { name: /sign: facts cleared/i }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+    expect(screen.getByText(/1 contradicted claim to fix or dismiss before clearing facts/i)).toBeDefined()
   })
 
-  it('renders a legacy row (no claimId, no sectionName) as unsourced with no jump link, and does not crash', () => {
-    mockQueries({ claims: [sourcedCaseStudy, legacyRow] })
-    expect(() => renderRail(<DecisionRail runId="run-1" />)).not.toThrow()
+  it('enables Sign: Facts cleared with zero claims', () => {
+    mockQueries({ claims: [], signoffs: {}, findings: [] })
+    renderRail(<DecisionRail runId="run-1" />)
+    expect(
+      (screen.getByRole('button', { name: /sign: facts cleared/i }) as HTMLButtonElement).disabled,
+    ).toBe(false)
+  })
 
-    // The legacy row's text still renders (never hidden).
-    expect(screen.getByText(legacyRow.text)).toBeDefined()
-    // It has a check/skip control like any other row.
+  it('enables Sign: Facts cleared when no claim is contradicted (legacy pending)', () => {
+    mockQueries({ claims, signoffs: {}, findings: [] })
+    renderRail(<DecisionRail runId="run-1" />)
     expect(
-      screen.getByRole('button', { name: new RegExp(`check claim ${legacyRow.claimIndex}`, 'i') }),
-    ).toBeDefined()
-    // But it carries no jump-to-section link (no sectionName to jump to).
-    expect(
-      screen.queryByRole('button', { name: new RegExp(`jump.*claim ${legacyRow.claimIndex}`, 'i') }),
-    ).toBeNull()
+      (screen.getByRole('button', { name: /sign: facts cleared/i }) as HTMLButtonElement).disabled,
+    ).toBe(false)
   })
 })
 

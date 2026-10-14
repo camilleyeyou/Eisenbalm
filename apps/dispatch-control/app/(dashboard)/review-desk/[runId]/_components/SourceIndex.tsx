@@ -1,5 +1,8 @@
 'use client'
 /**
+ * Phase 51.1 — NO LONGER MOUNTED (removed from DecisionRail, API_CONTRACTS §51.1.9).
+ * Retained for Phase 52's disposition; do not re-mount in the editor path.
+ *
  * Phase 35 (PRV-04, Plan 35-06) — the decision rail's source index.
  *
  * Upgrades the Verification block's plain checklist into a source-bound
