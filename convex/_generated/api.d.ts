@@ -29,6 +29,7 @@ import type * as finance from "../finance.js";
 import type * as financeActions from "../financeActions.js";
 import type * as issues from "../issues.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_claimGate from "../lib/claimGate.js";
 import type * as notificationActions from "../notificationActions.js";
 import type * as notifications from "../notifications.js";
 import type * as payouts from "../payouts.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   financeActions: typeof financeActions;
   issues: typeof issues;
   "lib/auth": typeof lib_auth;
+  "lib/claimGate": typeof lib_claimGate;
   notificationActions: typeof notificationActions;
   notifications: typeof notifications;
   payouts: typeof payouts;
