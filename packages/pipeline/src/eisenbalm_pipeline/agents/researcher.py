@@ -210,6 +210,25 @@ def _build_messages(
     ]
 
 
+RESEARCH_SOURCE_CONTENT_CHARS = 1500
+
+
+def _build_research_sources(
+    tavily_results: list[SearchResult], retrieved_at_by_index: list[int]
+) -> list[dict[str, Any]]:
+    """§51.1.7 — index-aligned with the [S{i}] labels in _build_messages and _map_claims."""
+    return [
+        {
+            "index": i,
+            "url": r.url,
+            "title": r.title,
+            "content": (r.content or "")[:RESEARCH_SOURCE_CONTENT_CHARS],
+            "retrievedAt": retrieved_at_by_index[i],
+        }
+        for i, r in enumerate(tavily_results)
+    ]
+
+
 @agent_node(name="researcher", emit_event="section-draft", max_tool_calls=12)
 async def researcher(state: DispatchState) -> DispatchState:
     charity = state.get("winning_charity") or {}
@@ -296,5 +315,6 @@ async def researcher(state: DispatchState) -> DispatchState:
     return {
         **state,
         "research": research_dict,
+        "research_sources": _build_research_sources(tavily_results, retrieved_at_by_index),
         "model_versions": model_versions,
     }

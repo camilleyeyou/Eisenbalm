@@ -282,6 +282,13 @@ class DispatchState(TypedDict):
 
     # ── Phase 2: Content (populated in parallel) ───────────────────────────────
     research: Optional[ResearchOutput]
+    # Phase 51.1 (VRD-01, API_CONTRACTS §51.1.7): the Researcher's retrieved
+    # Tavily passages, persisted for the publisher's batched fact_check verdict
+    # call. Deliberately OUTSIDE `research` — every section-writer prompt embeds
+    # `research` verbatim, so passages there would bloat seven prompts.
+    # [{index:int, url:str, title:str, content:str (<=1500 chars), retrievedAt:int}]
+    # Absent on pre-51.1 checkpoints -> consumers use `state.get("research_sources") or []`.
+    research_sources: NotRequired[list[dict]]
     origin_story: Optional[SectionContent]
     problem_statement: Optional[SectionContent]
     problem_pdf_content: Optional[str]          # structured text for PDF generator

@@ -53,6 +53,8 @@ MODEL_BY_AGENT: dict[str, str] = {
     "scout":    "anthropic/claude-haiku-4-5",
     "advocate": "anthropic/claude-haiku-4-5",
     "design":   "anthropic/claude-haiku-4-5",
+    # Phase 51.1 (VRD-01): batched claim-verdict judge, one call per run, inline prompt in lib/claim_verdicts.py (not a Prompt-Lab agent — "revision" precedent)
+    "fact_check": "anthropic/claude-haiku-4-5",
 }
 
 # D-07: temperature + top_p per agent. Voice-critical low; writers higher.
@@ -81,6 +83,8 @@ SAMPLING_BY_AGENT: dict[str, dict] = {
     # Phase 46 (SGE-01): between Researcher's fact-finding 0.3 and the
     # section writers' creative 0.7 — matches chronicler/design's 0.4.
     "signal_editor": {"temperature": 0.4, "top_p": 1.0},
+    # Phase 51.1 (VRD-01): deterministic judging.
+    "fact_check":   {"temperature": 0.0, "top_p": 1.0},
 }
 
 # RESEARCH §"OpenRouter Client Architecture": per-agent max_tokens for the
@@ -95,4 +99,6 @@ MAX_TOKENS_BY_AGENT: dict[str, int] = {
     # Phase 46 (SGE-01): between Scout's 12_000 and Researcher's 20_000 —
     # 3-5 structured leads plus tool-call transcript overhead.
     "signal_editor": 16_000,
+    # Phase 51.1 (VRD-01): up to 120 verdicts per call.
+    "fact_check": 8_000,
 }
