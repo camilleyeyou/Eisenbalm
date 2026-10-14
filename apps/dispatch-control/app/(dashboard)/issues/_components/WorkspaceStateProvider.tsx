@@ -54,6 +54,7 @@ import {
   draftSectionIdsFromDraft,
   deriveRunCostUsd,
   deriveRunCapUsd,
+  projectClaimRow,
   type DerivationInputs,
   type IssueStatus,
   type SectionStateResult,
@@ -251,25 +252,9 @@ export function WorkspaceStateProvider({
   // effects into a self-sustaining render loop (see
   // WorkspaceApprovalPanelLoop.test.tsx for the full mechanism).
   const claimRows = useMemo(
-    () =>
-      claimRowsRaw?.map(row => ({
-        _id: row._id,
-        status: row.status,
-        sourceUrl: row.sourceUrl,
-        sectionName: row.sectionName,
-        claimText: row.text,
-        // Phase 42 Plan 42-05 (FCT-02, D-16) — severity/summary fields so My
-        // Tasks + the stage badges read the SAME data as the Stage 3 screen.
-        // Deliberately NOT claimType/context — those are full-row-only, read
-        // directly by the Stage 3 screen + Approval SourceIndex (see 42-06
-        // Task 3, 42-CONTEXT SCOPE NOTE).
-        claimIndex: row.claimIndex,
-        claimId: row.claimId,
-        importance: row.importance,
-        changedSinceCheck: row.changedSinceCheck,
-        conflict: row.conflict,
-        checkedAt: row.checkedAt,
-      })),
+    // Phase 51.1 — one shared lossless projection (projectClaimRow) so no
+    // surface sees a contradicted row as legacy.
+    () => claimRowsRaw?.map(projectClaimRow),
     [claimRowsRaw],
   )
 

@@ -47,6 +47,7 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import {
   deriveTasks,
   formatTaskAge,
+  projectClaimRow,
   TASK_SEVERITY_RENDER_ORDER,
   type DerivationInputs,
   type DerivedTask,
@@ -297,15 +298,7 @@ export default function MyTasksScreen() {
     limit: 200,
   })
 
-  const claimRows = claimRowsRaw?.map(row => ({
-    _id: row._id,
-    status: row.status,
-    sourceUrl: row.sourceUrl,
-    sectionName: row.sectionName,
-    claimText: row.text,
-    // §43.5a (TSK-02) — additive passthrough for age.
-    createdAt: row._creationTime,
-  }))
+  const claimRows = claimRowsRaw?.map(projectClaimRow)
 
   const derivationInputs: DerivationInputs = {
     issueNumber,

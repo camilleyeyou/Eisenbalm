@@ -13,12 +13,14 @@
  */
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import type { ClaimGateSummary } from '@convex/lib/claimGate'
 import { DEFAULT_WORKSPACE_ID } from './workspace'
 import { resolveCurrentRun, type CurrentRunState } from './currentRun'
 import {
   deriveIssueStatus,
   deriveRunCostUsd,
   deriveRunCapUsd,
+  projectClaimRow,
   type DerivationInputs,
   type IssueStatus,
 } from './derivedState'
@@ -37,7 +39,7 @@ export interface UseCurrentRunResult {
   title: string | null | undefined
   derivationInputs: DerivationInputs
   issueStatus: IssueStatus
-  claimSummary: { total: number; signedOff: number; allSignedOff: boolean } | undefined
+  claimSummary: ClaimGateSummary | undefined
   signOffs: Record<string, { actorId: string; signedAt: number }> | undefined
   qaFindings: DerivationInputs['qaFindings']
   claimRows: DerivationInputs['claimRows']
@@ -85,13 +87,7 @@ export function useCurrentRun(): UseCurrentRunResult {
   const signOffs =
     state.kind === 'loading' ? undefined : state.kind === 'none' ? EMPTY_SIGNOFFS : signOffsRaw
 
-  const claimRows = claimRowsRaw?.map(row => ({
-    _id: row._id,
-    status: row.status,
-    sourceUrl: row.sourceUrl,
-    sectionName: row.sectionName,
-    claimText: row.text,
-  }))
+  const claimRows = claimRowsRaw?.map(projectClaimRow)
 
   const derivationInputs: DerivationInputs = {
     issueNumber,
