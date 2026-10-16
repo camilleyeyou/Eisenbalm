@@ -83,4 +83,4 @@ created: 2026-10-16
 - [x] Feedback latency < 30s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** automated gate green 2026-10-16; manual read-through pending (52-HUMAN-UAT.md)
+**Approval:** approved 2026-10-16 (automated gate green; manual read-through passed, 52-HUMAN-UAT.md)
