@@ -103,8 +103,8 @@ describe('headline', () => {
 
   it('falls back to the label when a long-read headline is empty or missing', () => {
     const d = fullDraft()
-    d.sections.originStory.headline = ''
-    delete d.sections.founderBio.headline
+    d.sections.originStory!.headline = ''
+    delete d.sections.founderBio!.headline
     const res = derive({ draft: d })
     expect(row(res, 'originStory').headline).toBe('Origin Story')
     expect(row(res, 'founderBio').headline).toBe('Founder Bio')
