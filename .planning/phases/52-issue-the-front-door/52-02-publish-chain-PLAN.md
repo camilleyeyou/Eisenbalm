@@ -20,7 +20,7 @@ must_haves:
   artifacts:
     - path: "apps/dispatch-control/lib/publishChain.ts"
       provides: "publishChain, derivePublishGate, copy constants"
-      exports: ["publishChain", "derivePublishGate", "NETWORK_FAILURE_MESSAGE", "COLLABORATOR_LOCK_LABEL", "HELD_REASON"]
+      exports: ["publishChain", "derivePublishGate", "NETWORK_FAILURE_MESSAGE", "COLLABORATOR_LOCK_LABEL", "HELD_REASON", "PUBLISH_SLOW_MS", "PUBLISH_SLOW_NOTICE"]
     - path: "apps/dispatch-control/__tests__/publishChain.test.ts"
       provides: "Chain order / skip / stop-on-failure / 409-reason table / gate parity tests"
   key_links:
@@ -60,7 +60,7 @@ export class ReviewApiError extends Error { constructor(public readonly status: 
 export async function publishIssue(token: string | null, runId: string): Promise<{ issueId: string; published: true }>
 ```
 From apps/dispatch-control/lib/role.ts: `export type Role = 'Editor-in-chief' | 'Collaborator'` (useRole returns `Role | undefined`; undefined = Clerk loading, NOT Collaborator)
-From apps/dispatch-control/lib/homeSections.ts (Plan 52-01): `export type HomeFooter = { kind: 'loading' | 'none' | 'failed' | 'gate1' | 'closed' | 'running' | 'ready' } | { kind: 'published'; ... } | { kind: 'fix'; ... }`
+From apps/dispatch-control/lib/homeSections.ts (Plan 52-01): `export type HomeFooter = { kind: 'loading' | 'none' | 'failed' | 'gate1' | 'running' | 'ready' } | { kind: 'published'; ... } | { kind: 'fix'; ... }`
 Server 409 reasons (api/signoffs.py, api/review.py): claims_not_signed_off, open_error_findings, open_voice_findings, run_not_reviewable, forbidden_role (403), missing_signoffs, wrong_status, no_sanity_issue.
 Verbatim existing copy (DecisionRail.tsx lines ~567, ~589): "Collaborators can review and comment, not publish." and "This issue is held — release the hold to publish."
 </interfaces>
@@ -84,11 +84,12 @@ Verbatim existing copy (DecisionRail.tsx lines ~567, ~589): "Collaborators can r
     - stop: facts step rejects with new SignOffApiError(409,'claims_not_signed_off','1 claim(s) contradicted by sources must be fixed or dismissed before clearing facts.') -> returns {ok:false, step:'facts-cleared', message: that exact string}; sounds-human and publishIssue NOT called.
     - table-driven over the eight reasons: claims_not_signed_off & open_error_findings (facts step, SignOffApiError), open_voice_findings & run_not_reviewable & forbidden_role (voice step, SignOffApiError; forbidden_role status 403), missing_signoffs & wrong_status & no_sanity_issue (publish step, ReviewApiError) -> each returns ok:false with the matching step and the error's message verbatim.
     - network: a plain TypeError('Failed to fetch') at any step -> message === NETWORK_FAILURE_MESSAGE.
-    - gate: derivePublishGate({footer:{kind:'ready'}, role:'Editor-in-chief', held:false, busy:false}) -> {enabled:true}; role undefined -> {enabled:false, reason:'role-unknown'}; role 'Collaborator' -> reason 'collaborator'; held true -> reason 'held'; held undefined -> reason 'loading'; busy -> reason 'busy'; every footer kind other than 'ready' (loading, none, failed, gate1, closed, running, published, fix) -> enabled false with reason 'not-ready'.
+    - gate: derivePublishGate({footer:{kind:'ready'}, role:'Editor-in-chief', held:false, busy:false}) -> {enabled:true}; role undefined -> {enabled:false, reason:'role-unknown'}; role 'Collaborator' -> reason 'collaborator'; held true -> reason 'held'; held undefined -> reason 'loading'; busy -> reason 'busy'; every footer kind other than 'ready' (loading, none, failed, gate1, running, published, fix) -> enabled false with reason 'not-ready'.
+    - slow: PUBLISH_SLOW_MS === 75_000 and PUBLISH_SLOW_NOTICE === 'Publishing is taking longer than usual — check Admin → Run Details.'
     - copy: COLLABORATOR_LOCK_LABEL === 'Collaborators can review and comment, not publish.'; HELD_REASON === 'This issue is held — release the hold to publish.'
   </behavior>
   <action>
-    Create `apps/dispatch-control/__tests__/publishChain.test.ts` (node env). Mock `@/lib/signOffClient` and `@/lib/reviewClient` with `vi.mock(..., async () => ({ ...(await vi.importActual(...)), recordSignOff: hoisted.recordSignOff }))` / `publishIssue: hoisted.publishIssue` using `vi.hoisted` (precedent: `__tests__/SectionReaderPage.test.tsx` lines 52-75) so the real `SignOffApiError`/`ReviewApiError` classes stay importable. Import `{ publishChain, derivePublishGate, NETWORK_FAILURE_MESSAGE, COLLABORATOR_LOCK_LABEL, HELD_REASON }` from `@/lib/publishChain`. Implement every spec in <behavior>; name the describe blocks 'chain', 'skip', 'stop', 'reasons', 'gate'. Confirm RED, commit `test(52-02): add failing publish-chain tests`.
+    Create `apps/dispatch-control/__tests__/publishChain.test.ts` (node env). Mock `@/lib/signOffClient` and `@/lib/reviewClient` with `vi.mock(..., async () => ({ ...(await vi.importActual(...)), recordSignOff: hoisted.recordSignOff }))` / `publishIssue: hoisted.publishIssue` using `vi.hoisted` (precedent: `__tests__/SectionReaderPage.test.tsx` lines 52-75) so the real `SignOffApiError`/`ReviewApiError` classes stay importable. Import `{ publishChain, derivePublishGate, NETWORK_FAILURE_MESSAGE, COLLABORATOR_LOCK_LABEL, HELD_REASON, PUBLISH_SLOW_MS, PUBLISH_SLOW_NOTICE }` from `@/lib/publishChain`. Implement every spec in <behavior>; name the describe blocks 'chain', 'skip', 'stop', 'reasons', 'gate', 'slow'. Confirm RED, commit `test(52-02): add failing publish-chain tests`.
   </action>
   <verify>
     <automated>cd apps/dispatch-control && pnpm exec vitest run __tests__/publishChain.test.ts 2>&1 | grep -E "FAIL|failed|Cannot find"</automated>
@@ -122,6 +123,8 @@ Verbatim existing copy (DecisionRail.tsx lines ~567, ~589): "Collaborators can r
     export const NETWORK_FAILURE_MESSAGE = 'Couldn’t reach the server. Nothing was published — try again.'
     export const COLLABORATOR_LOCK_LABEL = 'Collaborators can review and comment, not publish.'
     export const HELD_REASON = 'This issue is held — release the hold to publish.'
+    export const PUBLISH_SLOW_MS = 75_000
+    export const PUBLISH_SLOW_NOTICE = 'Publishing is taking longer than usual — check Admin → Run Details.'
     const SIGN_OFF_ORDER: readonly SignOffKind[] = ['facts-cleared', 'sounds-human']
     export type PublishChainStep = SignOffKind | 'publish'
     export type PublishChainResult = { ok: true } | { ok: false; step: PublishChainStep; message: string }

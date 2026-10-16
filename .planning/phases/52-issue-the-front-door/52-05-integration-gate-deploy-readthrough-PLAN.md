@@ -62,7 +62,7 @@ Output: green gate, pushed master, 52-HUMAN-UAT.md, VALIDATION.md signed off.
     1. Run, from the repo root, and fix any failure at its root (do not skip/weaken tests): `pnpm --filter dispatch-control test`, `pnpm --filter dispatch-control typecheck`, `pnpm --filter dispatch-control build`. If a failure is in a file no Phase 52 commit touched (`git log --oneline <first-52-01-commit>^..HEAD -- <failing test and its subject>` is empty), record it in the SUMMARY as pre-existing with that evidence instead of fixing it; anything Phase 52 touched must be fixed.
     2. Backend-unchanged check: `git diff --name-only <first-52-01-commit>^..HEAD -- convex packages/pipeline schemas` must print nothing (52-CONTEXT: backend unchanged; therefore no `pnpm --filter @eisenbalm/convex dev:once` sync is needed). If anything prints, stop and report.
     3. Grep checks over the phase's code: `grep -rn "window.confirm" "apps/dispatch-control/app/(editorial)"` -> nothing; `grep -rn "publish-manual\|publishManual" "apps/dispatch-control/app/(editorial)" apps/dispatch-control/lib/publishChain.ts apps/dispatch-control/lib/homeSections.ts` -> only the docstring warning in publishChain.ts.
-    4. Update `52-VALIDATION.md`: frontmatter `status: green`, `nyquist_compliant: true`, `wave_0_complete: true`; set every row's Status to `✅ green`, add the `__tests__/IssueHomeView.test.tsx` file to the HOME-04/06/07/08/09 rows' commands (52-03 split the pure view tests out of IssueHome.test.tsx); tick the Wave 0 and Sign-Off checkboxes; `**Approval:** automated gate green <date>; manual read-through pending (52-HUMAN-UAT.md)`.
+    4. Update `52-VALIDATION.md`: frontmatter `status: green`, `nyquist_compliant: true`, `wave_0_complete: true`; set every row's Status to `✅ green`, confirm the per-task map still matches the test files that exist (it was corrected during planning revision); tick the Wave 0 and Sign-Off checkboxes; `**Approval:** automated gate green <date>; manual read-through pending (52-HUMAN-UAT.md)`.
     5. Create `52-HUMAN-UAT.md` (frontmatter `status: pending`, `phase: 52-issue-the-front-door`, `source: [52-05-PLAN.md]`, started/updated ISO timestamps) listing the read-through checks from Task 3 as unchecked items, each with Result: pending.
     Commit only these two .planning files plus any fix files with explicit paths: `docs(52-05): integration gate green; UAT checklist`.
   </action>
@@ -124,7 +124,8 @@ Output: green gate, pushed master, 52-HUMAN-UAT.md, VALIDATION.md signed off.
     4. Click a story name inside the footer sentence: it opens that story.
     5. Click Publish (only if enabled): an inline "Publish Issue N now?" appears with Publish / Cancel. Click **Cancel** (unless you want to publish now). Confirm nothing was published.
     6. Narrow the window to ~400px (or open on a phone): rows wrap, the footer stacks, buttons stay easy to tap.
-    7. Check "Admin" opens The Run and "Past issues" opens the issues list; /issues/N/approval still loads.
+    7. Open any story, then use its back link at the top of the section page: it returns to the front door at `/` (not The Run).
+    8. Check "Admin" opens The Run and "Past issues" opens the issues list; /issues/N/approval still loads.
     Record each result in `.planning/phases/52-issue-the-front-door/52-HUMAN-UAT.md` (or tell Claude and it will record them).
   </how-to-verify>
   <resume-signal>Type "approved" or describe what looks wrong (which board/step and what you saw)</resume-signal>
