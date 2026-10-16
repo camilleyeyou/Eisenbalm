@@ -1,7 +1,8 @@
 /**
- * quick 260730-ldn (Task 4) — the `/run` route mount. The front door: root
- * redirects here (see app/(dashboard)/page.tsx) and it is the first
- * Editorial nav item (see lib/nav.ts). Supersedes quick 260730-i4j's `/desk`.
+ * quick 260730-ldn (Task 4) — the `/run` route mount. Formerly the
+ * post-login landing page; since Phase 52 `/` is the Issue front door
+ * (app/(editorial)/page.tsx) and The Run stays reachable here and as the
+ * first Editorial nav item (see lib/nav.ts). Supersedes quick 260730-i4j's `/desk`.
  *
  * A thin route entry, mirroring `my-tasks/page.tsx`'s shape — The Run is a
  * nav destination that self-resolves the current issue client-side (via
