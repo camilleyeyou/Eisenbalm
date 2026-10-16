@@ -561,3 +561,34 @@ d('inspect', () => {
     }
   })
 })
+
+// ── d('hash') — Phase 52 (HOME-05): front-door deep link scroll ─────────────
+
+d('hash', () => {
+  const original = Element.prototype.scrollIntoView
+  afterEach(() => {
+    window.location.hash = ''
+    Element.prototype.scrollIntoView = original
+  })
+
+  it('scrolls to the linked finding mark once the draft has loaded', async () => {
+    window.location.hash = '#finding-q0'
+    const spy = vi.fn()
+    Element.prototype.scrollIntoView = spy
+    ;(mockCurrentRun.derivationInputs as DerivationInputs).qaFindings = groupFindings(1) as never
+    await renderSection('originStory')
+    await waitFor(() => expect(spy).toHaveBeenCalled())
+    const target = spy.mock.contexts[0] as HTMLElement
+    expect(target.id).toBe('finding-q0')
+  })
+
+  it('does not scroll when there is no hash', async () => {
+    window.location.hash = ''
+    const spy = vi.fn()
+    Element.prototype.scrollIntoView = spy
+    ;(mockCurrentRun.derivationInputs as DerivationInputs).qaFindings = groupFindings(1) as never
+    await renderSection('originStory')
+    await screen.findByText('A Quiet Beginning')
+    expect(spy).not.toHaveBeenCalled()
+  })
+})

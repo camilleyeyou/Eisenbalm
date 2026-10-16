@@ -253,6 +253,23 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
       )
     : undefined
 
+  const pageLoading =
+    state.kind === 'loading' ||
+    loading ||
+    title === undefined ||
+    derivationInputs.qaFindings === undefined ||
+    derivationInputs.claimRows === undefined
+
+  // Phase 52 (HOME-05) — the front door links to /s/{id}#finding-{id}. The
+  // browser's native hash scroll fires before the async draft renders the
+  // mark, so scroll once loading clears.
+  useEffect(() => {
+    if (pageLoading || typeof window === 'undefined') return
+    const id = window.location.hash.slice(1)
+    if (!id) return
+    document.getElementById(id)?.scrollIntoView({ block: 'center' })
+  }, [pageLoading])
+
   // ── Section-id validation (D-03) — verbatim galley id, never guessed ────
   const meta = EDITABLE_SECTIONS.find((s) => s.id === sectionId)
   if (!meta) {
@@ -276,12 +293,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
 
   // Loading — never render "clean" until BOTH findings and claims have
   // resolved. Branch on both being defined, not merely on the draft.
-  const isLoading =
-    state.kind === 'loading' ||
-    loading ||
-    title === undefined ||
-    derivationInputs.qaFindings === undefined ||
-    derivationInputs.claimRows === undefined
+  const isLoading = pageLoading
 
   if (isLoading) {
     return <LoadingSkeleton />
