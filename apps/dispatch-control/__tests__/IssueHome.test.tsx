@@ -222,9 +222,14 @@ describe('publish', () => {
     fireEvent.click(btn)
     fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0])
     await screen.findByRole('button', { name: 'Publishing…' })
-    await act(async () => {
-      vi.advanceTimersByTime(75_000)
-    })
+    // The slow timer registers once publishChain resolves (publishOk), which
+    // can trail the 'Publishing…' label under load — keep advancing until seen.
+    for (let i = 0; i < 20 && !screen.queryByRole('status'); i++) {
+      await act(async () => {
+        await Promise.resolve()
+        vi.advanceTimersByTime(75_000)
+      })
+    }
     expect(screen.getByRole('status').textContent).toContain(
       'Publishing is taking longer than usual — check Admin → Run Details.',
     )
