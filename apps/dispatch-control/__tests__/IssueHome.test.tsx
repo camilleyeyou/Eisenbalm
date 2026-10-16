@@ -170,7 +170,7 @@ describe('publish', () => {
     fireEvent.click(btn)
     expect(screen.getByText('Publish Issue 7 now?')).toBeTruthy()
     const buttons = screen.getAllByRole('button', { name: 'Publish' })
-    fireEvent.click(buttons[0])
+    fireEvent.click(buttons[0]!)
   }
 
   it('failure shows the server sentence and re-enables Publish', async () => {
@@ -178,7 +178,7 @@ describe('publish', () => {
     hoisted.publishChain.mockResolvedValue({ ok: false, step: 'publish', message: msg })
     await clickThrough()
     expect(hoisted.publishChain).toHaveBeenCalledTimes(1)
-    const arg = hoisted.publishChain.mock.calls[0][0]
+    const arg = hoisted.publishChain.mock.calls[0]![0]
     expect(arg.runId).toBe('run_1')
     expect(arg.activeSignOffs).toEqual({})
     expect(typeof arg.getToken).toBe('function')
@@ -204,7 +204,7 @@ describe('publish', () => {
     const btn = await screen.findByRole('button', { name: 'Publish' })
     await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(btn)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0]!)
     await screen.findByRole('button', { name: 'Publishing…' })
     mockCurrentRun = currentRun({}, { runStatus: 'complete', issue: { held: false, published: false } })
     rerender(<IssueHome />)
@@ -220,7 +220,7 @@ describe('publish', () => {
     const btn = await screen.findByRole('button', { name: 'Publish' })
     await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(btn)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0]!)
     await screen.findByRole('button', { name: 'Publishing…' })
     // The slow timer registers once publishChain resolves (publishOk), which
     // can trail the 'Publishing…' label under load — keep advancing until seen.
@@ -247,7 +247,7 @@ describe('states', () => {
   })
 
   it('failed run with a rejected draft fetch: no skeleton footer, no alert', async () => {
-    hoisted.getDraft.mockRejectedValue(new ContentPatchError(409, 'no draft'))
+    hoisted.getDraft.mockRejectedValue(new ContentPatchError(409, 'no_draft', 'no draft'))
     mockCurrentRun = currentRun({}, { runStatus: 'failed' })
     render(<IssueHome />)
     expect(await screen.findByText(new RegExp(FAILED_SENTENCE))).toBeTruthy()
@@ -259,7 +259,7 @@ describe('states', () => {
   })
 
   it('Gate 1 pause with a rejected draft fetch: gate sentence and link', async () => {
-    hoisted.getDraft.mockRejectedValue(new ContentPatchError(409, 'no draft'))
+    hoisted.getDraft.mockRejectedValue(new ContentPatchError(409, 'no_draft', 'no draft'))
     mockCurrentRun = currentRun({}, { runStatus: 'awaiting-review', runCompletedAt: undefined })
     render(<IssueHome />)
     expect(await screen.findByText(new RegExp(GATE1_SENTENCE))).toBeTruthy()
