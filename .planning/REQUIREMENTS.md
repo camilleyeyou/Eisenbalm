@@ -933,15 +933,15 @@ Added 2026-07-31 during v5.0 roadmap creation. All 24 v5.0 requirements mapped t
 | VRD-05 | Phase 51.1: Claims Carry Verdicts | Planned |
 | VRD-06 | Phase 51.1: Claims Carry Verdicts | Planned |
 | VRD-07 | Phase 51.1: Claims Carry Verdicts | Planned |
-| HOME-01 | Phase 52: Issue — The Front Door | Planned |
-| HOME-02 | Phase 52: Issue — The Front Door | Planned |
-| HOME-03 | Phase 52: Issue — The Front Door | Planned |
-| HOME-04 | Phase 52: Issue — The Front Door | Planned |
-| HOME-05 | Phase 52: Issue — The Front Door | Planned |
-| HOME-06 | Phase 52: Issue — The Front Door | Planned |
-| HOME-07 | Phase 52: Issue — The Front Door | Planned |
-| HOME-08 | Phase 52: Issue — The Front Door | Planned |
-| HOME-09 | Phase 52: Issue — The Front Door | Planned |
+| HOME-01 | Phase 52: Issue — The Front Door | Complete |
+| HOME-02 | Phase 52: Issue — The Front Door | Complete |
+| HOME-03 | Phase 52: Issue — The Front Door | Complete |
+| HOME-04 | Phase 52: Issue — The Front Door | Complete |
+| HOME-05 | Phase 52: Issue — The Front Door | Complete |
+| HOME-06 | Phase 52: Issue — The Front Door | Complete |
+| HOME-07 | Phase 52: Issue — The Front Door | Complete |
+| HOME-08 | Phase 52: Issue — The Front Door | Complete |
+| HOME-09 | Phase 52: Issue — The Front Door | Complete |
 | DOOR-01 | Phase 53: Admin — The Door | Planned |
 | DOOR-02 | Phase 53: Admin — The Door | Planned |
 | DOOR-03 | Phase 53: Admin — The Door | Planned |

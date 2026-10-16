@@ -67,7 +67,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 - [x] **Phase 51: Section — Read and Fix in Place** - `/s/[section]` full-width prose with fact/voice/unsourced-claim problems marked in the sentence and fixed inline, reusing the galley/annotations/finding-resolution system wholesale (completed 2026-08-01; automated gates green — full suite + strict build + all invariant scans — but the plan's own human read-through was NOT performed, blocked by a pre-existing local-dev CORS gap and closed on the user's explicit decision to skip; see `51-06-SUMMARY.md`)
 - [ ] **Phase 51.1: Claims Carry Verdicts — Agents Clear Their Own Work** (INSERTED) - claims get an agent-written verdict + evidence; only contradicted/unresolvable load-bearing claims reach the editor; publish blocks on contradictions, never on unreviewed; zero-claims deadlock removed
-- [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine stories as a derived table of contents with per-story plain notes, and ONE Publish button in the footer (SC-3/SC-4 amended 2026-10-16 after 51.1; design: Dispatch Home mockup https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ) (completed 2026-10-16)
+- [x] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine stories as a derived table of contents with per-story plain notes, and ONE Publish button in the footer (SC-3/SC-4 amended 2026-10-16 after 51.1; design: Dispatch Home mockup https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ) (completed 2026-10-16)
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
 
@@ -477,7 +477,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 49. Roles & Permissions | 9/9 | Complete    | 2026-07-16 |
 | 50. Workbench & Nomenclature | 7/7 | Complete    | 2026-07-17 |
 | 51. Section — Read and Fix in Place | 8/8 | Complete    | 2026-08-01 |
-| 52. Issue — The Front Door | 5/5 | Executed — pending verification | - |
+| 52. Issue — The Front Door | 5/5 | Complete | - |
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 
