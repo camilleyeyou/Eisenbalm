@@ -18,10 +18,10 @@
  * loading / no-run / running / failed / (resting) run — see `RunSurfaceKind`.
  *
  * Publish path — NOT forked here. The three gates below are readouts + links
- * into the existing stages. `recordSignOff`/`publishIssue` stay exclusively
- * in `DecisionRail.tsx` (mounted by `/issues/[n]/approval`), behind its
- * unchanged client gate, role gate, preview interstitial, and the server
- * `_require_editor` dependency. No mutation, no fetch, no sign-off button
+ * into the existing stages. `recordSignOff`/`publishIssue` are called only
+ * from `DecisionRail.tsx` (`/issues/[n]/approval`) and `lib/publishChain.ts`
+ * (the Phase 52 front door at `/`), both behind the unchanged server gate
+ * (`_require_editor`). No mutation, no fetch, no sign-off button
  * lives anywhere in this file.
  */
 import { useEffect, useState } from 'react'
