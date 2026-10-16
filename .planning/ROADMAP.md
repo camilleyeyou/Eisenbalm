@@ -1184,7 +1184,7 @@ Plans:
   5. Editor sees an honest state when nothing is running, when a run is running, and when a run failed (a failed run offers no sign-off action it can't honour), and is never shown "clean" or "nothing needs you" while findings, claims, or sign-offs are still loading.
 **Plans**: 5 plans
 Plans:
-- [ ] 52-01-home-sections-selector-PLAN.md — pure selector: nine rows, server-parity "blocking", footer model (TDD)
+- [x] 52-01-home-sections-selector-PLAN.md — pure selector: nine rows, server-parity "blocking", footer model (TDD)
 - [ ] 52-02-publish-chain-PLAN.md — one-click chain facts-cleared → sounds-human → publish + client gate (TDD)
 - [ ] 52-03-issue-home-view-PLAN.md — props-only view reproducing the Dispatch Home canvas (rows, one-button footer, inline confirm)
 - [ ] 52-04-wire-front-door-route-PLAN.md — live data wrapper, `/` moves to (editorial), hash-scroll deep link
