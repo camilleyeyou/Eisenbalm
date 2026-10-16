@@ -448,7 +448,7 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 - [ ] **HOME-04**: Each story row that needs the editor carries its own plain note (e.g. "1 thing to fix →"); there is no separate task list or checklist on the page.
 - [ ] **HOME-05**: Editor can go straight from the front door into the first thing that needs them.
 - [ ] **HOME-06**: The page footer holds ONE Publish button; while it is disabled the footer says in one plain sentence why (which stories still have must-fixes, contradicted claims, or that agents are still writing), each named story linking to it.
-- [ ] **HOME-07**: Publish is enabled once no must-fix findings and no open contradicted claims remain; one click records the editor's facts-cleared and voice sign-offs and publishes, through the existing sign-off endpoints, role check and server enforcement in sequence — never a parallel path, and no per-claim or per-gate clicks.
+- [x] **HOME-07**: Publish is enabled once no must-fix findings and no open contradicted claims remain; one click records the editor's facts-cleared and voice sign-offs and publishes, through the existing sign-off endpoints, role check and server enforcement in sequence — never a parallel path, and no per-claim or per-gate clicks.
 - [ ] **HOME-08**: Editor sees an honest state when nothing is running, when a run is still running, and when a run failed — including a failed run offering no sign-off actions it cannot honour.
 - [ ] **HOME-09**: Editor is never shown "clean" or "nothing needs you" while findings, claims or sign-offs are still loading.
 
