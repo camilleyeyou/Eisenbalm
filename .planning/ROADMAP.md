@@ -70,6 +70,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [x] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine stories as a derived table of contents with per-story plain notes, and ONE Publish button in the footer (SC-3/SC-4 amended 2026-10-16 after 51.1; design: Dispatch Home mockup https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ) (completed 2026-10-16)
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
+- [ ] **Phase 55: Public Site Redesign — The Dispatch Front Page** - `apps/web` home + issue page rebuilt to Andrew's mockup (`55-public-site-redesign/MOCKUP-Main.dc.html`): fixed Dispatch brand, Jesse's voice kept, deliberation as summary cards
 
 ## Phase Details
 
@@ -480,6 +481,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 52. Issue — The Front Door | 5/5 | Complete | - |
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
+| 55. Public Site Redesign — The Dispatch Front Page | TBD | Not started | - |
 
 ## Backlog
 
@@ -1211,5 +1213,25 @@ Plans:
   1. Editor sees past issues listed by their real title, not by issue number.
   2. Editor can search past issues by subject and find the one they mean without knowing its number or date.
   3. Editor can tell published, held, and scheduled issues apart at a glance, each carrying a distinct label (never colour alone).
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 55: Public Site Redesign — The Dispatch Front Page
+**Goal**: A first-time visitor to the public site understands in seconds what the Dispatch is, which nonprofit it features this week, and that buying the balm funds it — because `apps/web` home and `/issue/[slug]` are rebuilt to Andrew's mockup (`.planning/phases/55-public-site-redesign/MOCKUP-Main.dc.html`), with Jesse's dry voice intact.
+**Depends on**: Nothing in v5.0 (public site, separate from dispatch-control). Supersedes the public-page parts of Phase 19 (oxblood/cream theme + DelibChat transcript).
+**Locked decisions (2026-10-16, user)**:
+  1. **Fixed Dispatch brand** — Manrope; palette `#00FF79` / `#005CFF` / `#FF002B` / `#EEFE34` + `#0A0A0A` / `#FFFFFF`. Per-issue DesignAgent colour/font theming is dropped on the public site; only the weekly accent rotates among the four. `lib/theme.ts` security invariants stay intact.
+  2. **Jesse's dry voice** — the mockup's copy is layout reference only. Real copy stays "dry, precise, absurdly serious"; agent prompts are not retuned toward the mockup's plain tone. Cadence is Thursday (the mockup's "Monday" is wrong).
+  3. **"Full $8.99 / 100% to them" wording is approved.**
+  4. **Deliberation = summary cards** (picked / runner-up / also considered + editor confidence bar), replacing the DelibChat transcript.
+**Scope**: (A) Visual rebuild from existing content: masthead, ticker, accent hero, "How the Dispatch works" strip, sticky in-issue nav, eight numbered colour-block sections, shop band, back-issues grid, footer. (B) New content the mockup needs: ticker lines, hero dek, fact chips, read time, pull quotes, case-study timeline, ad performance summary, live balms-sold count, hero photo, archive search, working email signup. Each is either a new schema/pipeline field, derived from existing data, or Andrew-authored.
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Home and issue pages match the mockup's structure and brand at desktop and 375px phone width, with no horizontal scroll.
+  2. All copy on a live issue reads in Jesse's voice; no mockup placeholder copy ships.
+  3. The deliberation section shows the summary cards from live Convex/Sanity data; the transcript view is gone from the public issue page.
+  4. The game still renders in its sandboxed iframe, with the game-sandbox and theme security contracts unchanged.
+  5. Every "Fund them" CTA reaches the working Stripe checkout, and the balms-sold count reflects real sales.
+  6. WCAG AA contrast, motion that respects `prefers-reduced-motion`, a single `<main>`, ≥44px touch targets; strict `pnpm --filter web build` passes.
 **Plans**: TBD
 **UI hint**: yes
