@@ -1182,7 +1182,13 @@ Plans:
   3. Each story that needs the editor shows its own plain note ("1 thing to fix →") that opens straight to the first problem in that story; there is no separate task list or checklist.
   4. The footer holds ONE Publish button. Disabled, it states in one plain sentence why (stories with must-fixes / contradicted claims, or agents still writing), naming and linking each story. Enabled once no must-fix findings and no open contradicted claims remain; one click records facts-cleared + voice sign-offs and publishes through the existing endpoints, role check and server enforcement — never a parallel path.
   5. Editor sees an honest state when nothing is running, when a run is running, and when a run failed (a failed run offers no sign-off action it can't honour), and is never shown "clean" or "nothing needs you" while findings, claims, or sign-offs are still loading.
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 52-01-home-sections-selector-PLAN.md — pure selector: nine rows, server-parity "blocking", footer model (TDD)
+- [ ] 52-02-publish-chain-PLAN.md — one-click chain facts-cleared → sounds-human → publish + client gate (TDD)
+- [ ] 52-03-issue-home-view-PLAN.md — props-only view reproducing the Dispatch Home canvas (rows, one-button footer, inline confirm)
+- [ ] 52-04-wire-front-door-route-PLAN.md — live data wrapper, `/` moves to (editorial), hash-scroll deep link
+- [ ] 52-05-integration-gate-deploy-readthrough-PLAN.md — full suite/typecheck/build, push master, deployed read-through (checkpoint)
 **UI hint**: yes
 
 ### Phase 53: Admin — The Door
