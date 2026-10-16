@@ -1186,7 +1186,7 @@ Plans:
 Plans:
 - [x] 52-01-home-sections-selector-PLAN.md — pure selector: nine rows, server-parity "blocking", footer model (TDD)
 - [x] 52-02-publish-chain-PLAN.md — one-click chain facts-cleared → sounds-human → publish + client gate (TDD)
-- [ ] 52-03-issue-home-view-PLAN.md — props-only view reproducing the Dispatch Home canvas (rows, one-button footer, inline confirm)
+- [x] 52-03-issue-home-view-PLAN.md — props-only view reproducing the Dispatch Home canvas (rows, one-button footer, inline confirm)
 - [ ] 52-04-wire-front-door-route-PLAN.md — live data wrapper, `/` moves to (editorial), hash-scroll deep link
 - [ ] 52-05-integration-gate-deploy-readthrough-PLAN.md — full suite/typecheck/build, push master, deployed read-through (checkpoint)
 **UI hint**: yes
