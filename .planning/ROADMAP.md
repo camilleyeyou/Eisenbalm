@@ -67,7 +67,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 
 - [x] **Phase 51: Section — Read and Fix in Place** - `/s/[section]` full-width prose with fact/voice/unsourced-claim problems marked in the sentence and fixed inline, reusing the galley/annotations/finding-resolution system wholesale (completed 2026-08-01; automated gates green — full suite + strict build + all invariant scans — but the plan's own human read-through was NOT performed, blocked by a pre-existing local-dev CORS gap and closed on the user's explicit decision to skip; see `51-06-SUMMARY.md`)
 - [ ] **Phase 51.1: Claims Carry Verdicts — Agents Clear Their Own Work** (INSERTED) - claims get an agent-written verdict + evidence; only contradicted/unresolvable load-bearing claims reach the editor; publish blocks on contradictions, never on unreviewed; zero-claims deadlock removed
-- [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine sections as a derived table of contents, and the three publish gates as the page footer ⚠️ SC-3/SC-4 need amending after 51.1 — they currently mandate the rejected checklist pattern
+- [ ] **Phase 52: Issue — The Front Door** - `/` shows the current issue's real title/subject, nine stories as a derived table of contents with per-story plain notes, and ONE Publish button in the footer (SC-3/SC-4 amended 2026-10-16 after 51.1; design: Dispatch Home mockup https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ)
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
 
@@ -1171,7 +1171,7 @@ Plans:
 **UI hint**: no — schema, pipeline, and gate semantics; the editor-facing surface is Phase 51's, reused
 
 ### Phase 52: Issue — The Front Door
-> ⚠️ **Amend before planning (added 2026-08-06):** SC-3 ("one plain-language sentence describing what needs doing") and SC-4 ("the three publish gates as the page footer") encode the dashboard-assigns-homework pattern the client rejected on 2026-08-06. Re-derive both against Phase 51.1's outcome — the editor decides what to do; the page does not hold a checklist or grant permission.
+> **Amended 2026-10-16 (post-51.1, user decisions):** one Publish button (it records both sign-offs and publishes in one click); problems flagged on the story rows themselves, no task list. Design contract: "Dispatch Home" canvas https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ — boards 1 Something needs you, 2 Ready to publish, 3 Agents still writing.
 
 **Goal**: An editor lands on the current issue's real title and subject, sees the nine sections as a table of contents with derived state, and can publish from the page footer through the unchanged gate.
 **Depends on**: Phase 51 (the Section surface the table of contents links into and whose per-section derived state it reads); the existing `runs.latest → pipelineRuns.byRunId → issueNumber` resolution and the two-sign-off publish gate (Phase 34/41) this phase composes at `/`, never re-implements
@@ -1179,8 +1179,8 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Editor lands on `/` and sees the current issue's real title and subject — never an invented, empty, or reserved-slot issue — resolved the locked way (`runs.latest → pipelineRuns.byRunId → issueNumber`, never `max(issueNumber)`).
   2. Editor sees all nine sections as a table of contents, each showing its actual produced headline and a state derived from its open findings — nothing to tick, nothing to maintain.
-  3. Editor sees one plain-language sentence describing what needs doing and can go straight from it into the first thing that needs them.
-  4. Editor sees the three publish gates as the page footer, each naming what's blocking it and linking to the work that unblocks it, and can publish once both sign-offs are recorded and no must-fix findings remain — through the existing gate, role check, and server enforcement, never a parallel path.
+  3. Each story that needs the editor shows its own plain note ("1 thing to fix →") that opens straight to the first problem in that story; there is no separate task list or checklist.
+  4. The footer holds ONE Publish button. Disabled, it states in one plain sentence why (stories with must-fixes / contradicted claims, or agents still writing), naming and linking each story. Enabled once no must-fix findings and no open contradicted claims remain; one click records facts-cleared + voice sign-offs and publishes through the existing endpoints, role check and server enforcement — never a parallel path.
   5. Editor sees an honest state when nothing is running, when a run is running, and when a run failed (a failed run offers no sign-off action it can't honour), and is never shown "clean" or "nothing needs you" while findings, claims, or sign-offs are still loading.
 **Plans**: TBD
 **UI hint**: yes
