@@ -32,10 +32,12 @@ describe('CMR-09: Persistent shop section on every issue page', () => {
     expect(existsSync(SHOP_CALLOUT_PATH)).toBe(true)
   })
 
-  it('issue page renders shop component (Phase 19: ShopBand replaces ShopCallout on issue page)', () => {
-    const source = readFileSync(ISSUE_PAGE_PATH, 'utf8')
-    // Phase 19: ShopBand is the issue-page shop section
-    expect(source).toMatch(/ShopBand|ShopCallout/)
+  it('issue layout renders the BuyBand shop section (Phase 55: BuyBand replaces ShopBand)', () => {
+    const layout = readFileSync(resolve(__dirname, '../components/issue/IssueLayout.tsx'), 'utf8')
+    expect(layout).toContain('<BuyBand')
+    const buy = readFileSync(resolve(__dirname, '../components/dispatch/BuyBand.tsx'), 'utf8')
+    expect(buy).toContain('data-shop-callout')
+    expect(buy).toContain('/shop')
   })
 
   it('ShopBand exists with data-shop-callout attribute (CMR-09 tripwire)', () => {

@@ -23,6 +23,10 @@ const CASESTUDY_PATH     = resolve(__dirname, '../components/issue/CaseStudySect
 const ISSUE_HERO_PATH    = resolve(__dirname, '../components/issue/IssueHero.tsx')
 const PORTABLE_TEXT_PATH = resolve(__dirname, '../components/issue/PortableTextRenderer.tsx')
 const ISSUE_PAGE_PATH    = resolve(__dirname, '../app/issue/[slug]/page.tsx')
+// Plan 26-04: the magazine rendering tree was extracted to IssueLayout so the
+// draft-preview route can share it exactly (D-09 fidelity). Source-scans that
+// check for JSX inside the page now need to check IssueLayout.tsx.
+const ISSUE_LAYOUT_PATH  = resolve(__dirname, '../components/issue/IssueLayout.tsx')
 const SHOP_CALLOUT_PATH  = resolve(__dirname, '../components/issue/ShopCallout.tsx')
 const GAME_SLOT_PATH     = resolve(__dirname, '../components/issue/GameSlot.tsx')
 
@@ -102,19 +106,23 @@ describe('DES-02: Drop cap on the first prose section (lead)', () => {
     expect(globalsSrc).toMatch(/\.drop-cap[\s\S]{0,200}var\(--font-display\)/)
   })
 
-  it('issue page applies lead to Origin Story EditorialSection exactly once (code-only)', () => {
-    // Single drop cap per issue — only the first prose section gets it.
-    // Phase 19: id="origin" (SectionRail tracks #origin, not #origin-story).
-    // Strip comments first.
-    const pageCode = codeOnly(pageSrc)
-    const leadMatches = pageCode.match(/\blead\b/g) ?? []
-    expect(leadMatches.length).toBeGreaterThanOrEqual(1)
+  it('issue layout renders the Dispatch OriginSection (Phase 55; prose via PortableTextRenderer)', () => {
+    // Phase 55: the EditorialSection lead/drop-cap composition was replaced by the
+    // Dispatch numbered sections. Plan 26-04 kept the tree in IssueLayout.
+    const layoutSrc = readFileSync(ISSUE_LAYOUT_PATH, 'utf-8')
+    expect(layoutSrc).toMatch(/<OriginSection/)
+    const originSrc = readFileSync(
+      resolve(__dirname, '../components/dispatch/sections/OriginSection.tsx'),
+      'utf-8',
+    )
+    expect(originSrc).toMatch(/PortableTextRenderer/)
   })
 
-  it('issue page Origin Story EditorialSection has the lead prop', () => {
-    // Phase 19: id="origin" (SectionRail tracks #origin). The origin EditorialSection
-    // must have the lead prop. Accepts both id="origin" (Phase 19) and id="origin-story" (pre-19).
-    expect(pageSrc).toMatch(/<EditorialSection[\s\S]*?id="origin(?:-story)?"[\s\S]*?lead[\s\S]*?\/>/)
+  it('issue layout renders ProblemSection, FounderSection and CaseSection', () => {
+    const layoutSrc = readFileSync(ISSUE_LAYOUT_PATH, 'utf-8')
+    expect(layoutSrc).toMatch(/<ProblemSection/)
+    expect(layoutSrc).toMatch(/<FounderSection/)
+    expect(layoutSrc).toMatch(/<CaseSection/)
   })
 })
 
@@ -301,8 +309,10 @@ describe('DES-06: Theme CSS variable preservation + locked artifacts', () => {
   })
 
   it('issue page still renders GameSlot with runId', () => {
-    expect(pageSrc).toMatch(/<GameSlot[\s\S]*?game=/)
-    expect(pageSrc).toMatch(/<GameSlot[\s\S]*?runId=/)
+    // Plan 26-04: rendering extracted to IssueLayout — check there.
+    const layoutSrc = readFileSync(ISSUE_LAYOUT_PATH, 'utf-8')
+    expect(layoutSrc).toMatch(/<GameSlot[\s\S]*?game=/)
+    expect(layoutSrc).toMatch(/<GameSlot[\s\S]*?runId=/)
   })
 
   it('issue page remains a Server Component (no "use client" at top)', () => {
