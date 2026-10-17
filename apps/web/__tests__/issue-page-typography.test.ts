@@ -305,7 +305,9 @@ describe('DES-06: Theme CSS variable preservation + locked artifacts', () => {
     // Phase 19 Plan 02 retires ShopCallout (standalone component) and replaces
     // it with inline ShopBand section in page.tsx. The CMR-09 data-shop-callout
     // attribute is preserved on ShopBand.
-    expect(pageSrc).toMatch(/ShopBand|ShopCallout|data-shop-callout/)
+    // Phase 55: BuyBand (in IssueLayout) replaces ShopBand; data-shop-callout preserved.
+    expect(readFileSync(ISSUE_LAYOUT_PATH, 'utf-8')).toMatch(/<BuyBand/)
+    expect(readFileSync(resolve(__dirname, '../components/dispatch/BuyBand.tsx'), 'utf-8')).toContain('data-shop-callout')
   })
 
   it('issue page still renders GameSlot with runId', () => {
