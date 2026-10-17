@@ -96,13 +96,16 @@ Output: 17 component deletions, test rewrites/deletions with a disposition table
     5. issue-page-dispatch.test.ts: delete the "Plan 02: … exist" and "Plan 03: DelibChat/useReducedMotion" describes and the Atmosphere/SectionNavigator page checks only where they read deleted files; replace with one describe "Phase 55: retired Phase 19 motion components are absent" asserting existsSync false for ScrollProgressBar, SectionRail, ScrollReveal, DelibChat, StatCountUp, ConfidenceBar. Keep the GameSlot aria-label 'Play' check, fonts, FONT_WHITELIST, BRAND_DEFAULTS, framer-motion dependency, theme.ts security, and the Phase 55 layout describe from Plan 11.
   </action>
   <verify>
-    <automated>pnpm --filter web test -- narrator-chip issue-page-shop-callout issue-page-typography issue-page-dispatch && pnpm --filter web typecheck</automated>
+    <automated>pnpm --filter web test -- narrator-chip issue-page-shop-callout issue-page-typography issue-page-dispatch game-sandbox && pnpm --filter web typecheck && grep -n 'sandbox="allow-scripts"' apps/web/__tests__/issue-page-typography.test.ts && grep -n "allow-same-origin" apps/web/__tests__/issue-page-typography.test.ts && grep -n "Security: theme.ts invariants preserved" apps/web/__tests__/issue-page-dispatch.test.ts</automated>
   </verify>
   <acceptance_criteria>
     - Command above exits 0
     - `ls apps/web/components/issue/` no longer lists DelibChat.tsx, DelibScoreboard.tsx, ConfidenceBar.tsx, DeliberationSlot.tsx, ThemeApplier.tsx, SectionRail.tsx, ScrollProgressBar.tsx
     - `grep -rln "DelibChat\|DeliberationSlot\|ConfidenceBar\|ThemeApplier" apps/web/app apps/web/components apps/web/lib` returns nothing
     - `grep -n "components/dispatch/Hero.tsx" apps/web/__tests__/narrator-chip.test.ts` matches
+    - Retained security cross-checks survive the rewrites: `grep -n 'sandbox="allow-scripts"' apps/web/__tests__/issue-page-typography.test.ts` matches AND `grep -n "not.toContain('allow-same-origin')" apps/web/__tests__/issue-page-typography.test.ts` matches
+    - `grep -n "Security: theme.ts invariants preserved" apps/web/__tests__/issue-page-dispatch.test.ts` matches and `grep -n "HEX_REGEX" apps/web/__tests__/issue-page-dispatch.test.ts` matches (theme.ts security describe block retained)
+    - `grep -c "allow-same-origin" apps/web/__tests__/game-sandbox.test.ts` >= 1 and `git diff --quiet HEAD -- apps/web/__tests__/game-sandbox.test.ts` exits 0 (GAM-03 tripwire untouched)
   </acceptance_criteria>
   <done>Replaced components deleted (or recorded as kept with reason); pinned tests guard the new tree.</done>
 </task>
@@ -141,6 +144,8 @@ Output: 17 component deletions, test rewrites/deletions with a disposition table
 - `pnpm --filter web test` full suite green; `pnpm --filter web typecheck` clean
 - `grep -rn "DelibChat\|DelibScoreboard\|ConfidenceBar\|ThemeApplier\|SectionRail" apps/web --include=*.ts --include=*.tsx | grep -v node_modules` returns only test-file absence assertions
 - `pnpm --filter web build` (network flake rule from Plan 11 applies)
+- Security cross-check retention (must all match after the test rewrites):
+  `grep -n 'sandbox="allow-scripts"' apps/web/__tests__/issue-page-typography.test.ts && grep -n "allow-same-origin" apps/web/__tests__/issue-page-typography.test.ts && grep -n "Security: theme.ts invariants preserved" apps/web/__tests__/issue-page-dispatch.test.ts && grep -n "allow-same-origin" apps/web/__tests__/game-sandbox.test.ts`
 </verification>
 
 <success_criteria>

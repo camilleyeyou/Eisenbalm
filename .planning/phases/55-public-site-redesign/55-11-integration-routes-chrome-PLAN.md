@@ -103,6 +103,29 @@ interface IssueLayoutProps {
 
 <tasks>
 
+<task type="auto">
+  <name>Task 0: Pre-swap build baseline (localise failures to Wave 2 vs this plan)</name>
+  <files>none (verification only; record results in 55-11-SUMMARY.md)</files>
+  <read_first>
+    - .planning/phases/55-public-site-redesign/55-RESEARCH.md §"Pitfall 6: Tests that pass while build fails"
+    - SUMMARY files of plans 55-06..55-10 (any build notes)
+  </read_first>
+  <action>
+    Before editing any file in this plan, on the merged Wave 2 tree run, in order: `pnpm --filter web test`, `pnpm --filter web typecheck`, `pnpm --filter web build`. Record the last ~30 lines of the build log in the SUMMARY under "Pre-swap baseline".
+    - If the build fails with a compile, type or lint error, it belongs to Wave 2 (components are not yet mounted). Fix it in the offending Wave 2 file (note the file and plan in the SUMMARY) BEFORE starting Task 1, then re-run the build.
+    - A failure only at static generation with a network error (UND_ERR_SOCKET / fetch failed to Sanity) after "Compiled successfully" and type validation is the known environment flake; record it and continue.
+  </action>
+  <verify>
+    <automated>pnpm --filter web test && pnpm --filter web typecheck && (pnpm --filter web build 2>&1 | tee /tmp/55-11-preswap-build.log | tail -30)</automated>
+  </verify>
+  <acceptance_criteria>
+    - `pnpm --filter web test` and `pnpm --filter web typecheck` exit 0 before any Task 1 edit
+    - The pre-swap build log contains "Compiled successfully" (or the build exits 0); if it failed for non-network reasons, the SUMMARY names the Wave 2 file fixed
+    - SUMMARY has a "Pre-swap baseline" section with the log tail
+  </acceptance_criteria>
+  <done>Wave 2 output is proven to compile and type-check on its own, so any later build failure is attributable to the IssueLayout swap.</done>
+</task>
+
 <task type="auto" tdd="true">
   <name>Task 1: Rewrite IssueLayout as the Dispatch composition</name>
   <files>apps/web/components/issue/IssueLayout.tsx, apps/web/__tests__/issue-front-page.test.tsx, apps/web/__tests__/issue-page-typography.test.ts, apps/web/__tests__/issue-page-shop-callout.test.ts</files>
