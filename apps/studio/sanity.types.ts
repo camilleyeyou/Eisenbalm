@@ -77,6 +77,13 @@ export type SanityFileAssetReference = {
   [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
 };
 
+export type NarratorProfileReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "narratorProfile";
+};
+
 export type WeeklyIssue = {
   _id: string;
   _type: "weeklyIssue";
@@ -254,7 +261,48 @@ export type WeeklyIssue = {
     }>;
     editorDecision?: string;
     runnerUpNotes?: string;
+    editorConfidence?: number;
+    conversation?: Array<{
+      speaker: string;
+      text: string;
+      _key: string;
+    }>;
   };
+  frontPage?: {
+    dek?: string;
+    tickerLines?: Array<string>;
+    pullQuotes?: {
+      origin?: string;
+      case?: string;
+    };
+    caseTimeline?: Array<{
+      label: string;
+      value: string;
+      _key: string;
+    }>;
+    adSummary?: {
+      title?: string;
+      rows?: Array<{
+        label: string;
+        value: string;
+        _key: string;
+      }>;
+    };
+    heroImage?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      alt?: string;
+      _type: "image";
+    };
+    impactUnit?: {
+      label?: string;
+      costMinUsd?: number;
+      costMaxUsd?: number;
+    };
+  };
+  narrator?: NarratorProfileReference;
   pipelineMetadata?: {
     runId?: string;
     startedAt?: string;
@@ -262,6 +310,20 @@ export type WeeklyIssue = {
     modelVersions?: string;
     cost?: string;
   };
+};
+
+export type NarratorProfile = {
+  _id: string;
+  _type: "narratorProfile";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  name: string;
+  slug: Slug;
+  voiceConstraints: string;
+  voiceRubric: string;
+  exampleSamples?: Array<string>;
+  active?: boolean;
 };
 
 export type WeeklyIssueReference = {
@@ -396,7 +458,9 @@ export type AllSanitySchemaTypes =
   | Slug
   | CharityReference
   | SanityFileAssetReference
+  | NarratorProfileReference
   | WeeklyIssue
+  | NarratorProfile
   | WeeklyIssueReference
   | Charity
   | SanityImagePaletteSwatch

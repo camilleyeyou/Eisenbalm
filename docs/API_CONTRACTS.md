@@ -83,7 +83,7 @@ type LatestIssueSlug = {
   },
 
   originStory { headline, body },
-  problemStatement { headline, body },
+  problemStatement { headline, body, "keyDataPoints": pdfContent.keyDataPoints[]{ stat, source } },
   "problemPdfUrl": problemPdf.asset->url,
 
   founderBio { headline, body },
@@ -125,7 +125,22 @@ type LatestIssueSlug = {
     },
     editorDecision,
     runnerUpNotes,
+    editorConfidence,                   // Phase 55: 0-1, optional
     conversation[] { speaker, text },   // Phase 13 (DEL-CONV): Chronicler dialogue turns for the chat-thread render
+  },
+  frontPage {                           // Phase 55: editor-authored, optional
+    dek,
+    tickerLines,
+    pullQuotes { origin, case },
+    caseTimeline[] { label, value },
+    adSummary { title, rows[] { label, value } },
+    "heroImage": select(defined(heroImage.asset) => {
+      "url": heroImage.asset->url,
+      "alt": heroImage.alt,
+      "width": heroImage.asset->metadata.dimensions.width,
+      "height": heroImage.asset->metadata.dimensions.height
+    }, null),
+    impactUnit { label, costMinUsd, costMaxUsd },
   },
 }
 ```
@@ -384,6 +399,7 @@ def write_issue_draft(state: DispatchState) -> str:
             ],
             'editorDecision': state['editor_decision'],
             'runnerUpNotes': state['runner_up_notes'],
+            'editorConfidence': state['editor_confidence'],  # Phase 55 — omitted when None/out of range
             'conversation': [   # Phase 13 (DEL-CONV): Chronicler turns; _key required for Sanity array items
                 {'_type': 'object', '_key': f'turn-{i:03d}', 'speaker': t['speaker'], 'text': t['text']}
                 for i, t in enumerate(state.get('deliberation_conversation') or [])
@@ -6258,3 +6274,31 @@ Zero retrieved sources => every row `unverifiable` with evidence "No retrieved s
 ### §51.1.9 — Editor surface
 
 The galley washes ONLY `isEditorFlagged` claims; the Fact Check screen defaults to flagged-only with an explicit "Show all N claims (audit)" toggle; DecisionRail no longer mounts the full SourceIndex ledger.
+
+---
+
+## Phase 55 — Public Site Redesign
+
+### §55.1 — `weeklyIssue.frontPage` (editor-authored, additive)
+
+Optional object: `dek` (text, max 280), `tickerLines` (string[], max 8), `pullQuotes { origin, case }`, `caseTimeline[] { label, value }` (max 4), `adSummary { title, rows[] { label, value } }` (rows max 4; shown only for spec ads), `heroImage` (image + required `alt` when set), `impactUnit { label, costMinUsd, costMaxUsd }`. The pipeline never generates it, but `write_issue_draft` fetches `issue-N` and `drafts.issue-N` before `createOrReplace` and carries an existing frontPage forward, draft preferred, so edits survive re-runs; a lookup failure logs a warning and writes without it. Projected by both `QUERY_ISSUE_BY_SLUG` and `QUERY_ISSUE_PREVIEW_BY_SLUG` (identical except the status filter), along with `problemStatement.keyDataPoints` (from `pdfContent.keyDataPoints`).
+
+### §55.2 — `selectionDeliberation.editorConfidence`
+
+Number 0-1, optional, pipeline-written. The web hides the confidence bar when absent or out of range (no default).
+
+### §55.3 — Convex `stripeOrders:balmsForCharity` (public query)
+
+`balmsForCharity({ charitySlug: string, sinceMs?: number }) -> { orders: number; balms: number; donationCents: number }`. Aggregates only, no PII. `balms = sum(round((donationAmount ?? amountSubtotal ?? amountTotal ?? 0) / 899))`.
+
+### §55.4 — Convex `emailSubscribers:subscribeNewsletter` (public mutation)
+
+`subscribeNewsletter({ email, unsubscribeToken, webhookSecret }) -> null`. requireWebhookSecret lane, source `'newsletter-optin'`, idempotent, preserves a prior unsubscribe.
+
+### §55.5 — `POST /api/email/subscribe`
+
+Body `{ email: string, company?: string }`. Responses: 200 `{ ok: true }` (also for honeypot hits, no enumeration) | 400 `{ ok: false, error: 'invalid-email' }` | 500 `{ ok: false, error: 'misconfigured' }` | 502 `{ ok: false, error: 'unavailable' }`.
+
+### §55.6 — Homepage
+
+`/` renders the latest issue front page (no redirect; supersedes the §1.1 "homepage redirect target" wording) with canonical `/issue/<slug>`.

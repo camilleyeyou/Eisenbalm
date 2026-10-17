@@ -379,6 +379,13 @@ export default defineType({
           rows: 3,
           description: 'Brief note on why the other candidates weren\'t selected this week',
         }),
+        defineField({
+          name: 'editorConfidence',
+          title: "Editor's Confidence (0–1)",
+          type: 'number',
+          description: 'Editor Gate 1 confidence, written by the pipeline. Leave empty on older issues: the public confidence bar is hidden when empty.',
+          validation: Rule => Rule.min(0).max(1),
+        }),
         // ── Phase 13 addition (DEL-CONV, DEL-CONV-02) ─────────────────────────
         defineField({
           name: 'conversation',
@@ -413,6 +420,97 @@ export default defineType({
                 }),
               },
             },
+          ],
+        }),
+      ],
+    }),
+
+    // ─── Front Page (editor-authored) ─────────────────────────────────────────
+    defineField({
+      name: 'frontPage',
+      title: 'Front Page (editor-authored)',
+      type: 'object',
+      description: 'Written by the editor in Studio. The pipeline never generates these fields; it carries this object forward unchanged when it re-runs this issue number, so your edits survive re-runs.',
+      options: { collapsible: true, collapsed: true },
+      fields: [
+        defineField({ name: 'dek', title: 'Dek', type: 'text', rows: 2, description: 'Hero sub-headline, at most two sentences. Overrides the mission statement.', validation: Rule => Rule.max(280) }),
+        defineField({ name: 'tickerLines', title: 'Ticker Lines', type: 'array', of: [{ type: 'string' }], description: 'Replaces the derived ticker facts. Each fact must also appear on the page.', validation: Rule => Rule.max(8) }),
+        defineField({
+          name: 'pullQuotes',
+          title: 'Pull Quotes',
+          type: 'object',
+          description: 'One line lifted verbatim from the section.',
+          fields: [
+            defineField({ name: 'origin', title: 'Origin Story Quote', type: 'text', rows: 2 }),
+            defineField({ name: 'case', title: 'Case Study Quote', type: 'text', rows: 2 }),
+          ],
+        }),
+        defineField({
+          name: 'caseTimeline',
+          title: 'Case Timeline',
+          type: 'array',
+          description: 'Up to four steps. The last step is shown as the result.',
+          of: [
+            {
+              type: 'object',
+              fields: [
+                defineField({ name: 'label', title: 'Label', type: 'string', validation: Rule => Rule.required() }),
+                defineField({ name: 'value', title: 'Value', type: 'string', validation: Rule => Rule.required() }),
+              ],
+              preview: { select: { title: 'label', subtitle: 'value' } },
+            },
+          ],
+          validation: Rule => Rule.max(4),
+        }),
+        defineField({
+          name: 'adSummary',
+          title: 'Ad Summary',
+          type: 'object',
+          description: 'Shown only when the bonus is a spec ad.',
+          fields: [
+            defineField({ name: 'title', title: 'Title', type: 'string' }),
+            defineField({
+              name: 'rows',
+              title: 'Rows',
+              type: 'array',
+              of: [
+                {
+                  type: 'object',
+                  fields: [
+                    defineField({ name: 'label', title: 'Label', type: 'string', validation: Rule => Rule.required() }),
+                    defineField({ name: 'value', title: 'Value', type: 'string', validation: Rule => Rule.required() }),
+                  ],
+                  preview: { select: { title: 'label', subtitle: 'value' } },
+                },
+              ],
+              validation: Rule => Rule.max(4),
+            }),
+          ],
+        }),
+        defineField({
+          name: 'heroImage',
+          title: 'Hero Image',
+          type: 'image',
+          description: 'Optional photo. Without it the page uses the geometric accent artwork.',
+          options: { hotspot: true },
+          fields: [
+            defineField({
+              name: 'alt',
+              title: 'Alt text',
+              type: 'string',
+              validation: Rule => Rule.custom((alt, ctx) => ((ctx.parent as { asset?: unknown } | undefined)?.asset && !alt ? 'Alt text is required when an image is set' : true)),
+            }),
+          ],
+        }),
+        defineField({
+          name: 'impactUnit',
+          title: 'Impact Unit',
+          type: 'object',
+          description: 'What one unit of help costs, e.g. "wheelchair", 120, 180. Drives "About N to M balms covers one …".',
+          fields: [
+            defineField({ name: 'label', title: 'Label', type: 'string' }),
+            defineField({ name: 'costMinUsd', title: 'Cost Min (USD)', type: 'number', validation: Rule => Rule.min(0) }),
+            defineField({ name: 'costMaxUsd', title: 'Cost Max (USD)', type: 'number', validation: Rule => Rule.min(0) }),
           ],
         }),
       ],
