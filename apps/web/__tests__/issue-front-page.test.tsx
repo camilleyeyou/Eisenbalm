@@ -70,6 +70,20 @@ describe('IssueLayout Dispatch composition', () => {
     }
   })
 
+  it('nav only links to ids that render (no dangling #bonus on a sparse issue)', () => {
+    const { container } = render(<IssueLayout issue={sparseIssue} slug="s" />)
+    const hrefs = Array.from(container.querySelectorAll('nav[aria-label="In this issue"] a[href^="#"]')).map((a) =>
+      a.getAttribute('href')!.slice(1),
+    )
+    expect(hrefs).not.toContain('bonus')
+    for (const id of hrefs) expect(container.querySelector(`#${id}`), `dangling #${id}`).not.toBeNull()
+  })
+
+  it('nav keeps the bonus link when the issue has a bonus', () => {
+    const { container } = renderFull()
+    expect(container.querySelector('nav[aria-label="In this issue"] a[href="#bonus"]')).not.toBeNull()
+  })
+
   it('renders a long charity name in the h1 without inline widths', () => {
     const { container } = render(<IssueLayout issue={longWordIssue} slug="l" />)
     const h1 = container.querySelector('h1')!

@@ -4,7 +4,17 @@ import './top.css'
 import { useEffect, useState } from 'react'
 import { FUND_CTA, SECTION_META, bonusLabel, type BonusKind, type SectionId } from '@/lib/dispatch/copy'
 
-export function IssueNav({ charityName, bonusType }: { charityName: string; bonusType: BonusKind }) {
+export function IssueNav({
+  charityName,
+  bonusType,
+  omit = [],
+}: {
+  charityName: string
+  bonusType: BonusKind
+  /** Section ids that do not render on this page; their nav links are dropped (no dangling anchors). */
+  omit?: SectionId[]
+}) {
+  const sections = SECTION_META.filter((s) => !omit.includes(s.id))
   const [active, setActive] = useState<SectionId | null>(null)
 
   useEffect(() => {
@@ -34,7 +44,7 @@ export function IssueNav({ charityName, bonusType }: { charityName: string; bonu
       <div className="d-container d-issuenav-row">
         <p className="d-label d-issuenav-name">{charityName}</p>
         <ul className="d-issuenav-links">
-          {SECTION_META.map((s) => (
+          {sections.map((s) => (
             <li key={s.id}>
               <a
                 href={`#${s.id}`}

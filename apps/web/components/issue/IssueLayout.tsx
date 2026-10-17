@@ -122,7 +122,7 @@ export function IssueLayout({
         narrator={issue.narrator ?? null}
       />
       <HowStrip />
-      <IssueNav charityName={issue.charity.name} bonusType={issue.bonusType} />
+      <IssueNav charityName={issue.charity.name} bonusType={issue.bonusType} omit={issue.bonus ? [] : ['bonus']} />
       <OriginSection
         headline={issue.originStory?.headline}
         body={issue.originStory?.body}
