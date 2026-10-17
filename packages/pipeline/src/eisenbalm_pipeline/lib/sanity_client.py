@@ -175,6 +175,29 @@ def _build_podcast_description(state: dict) -> str:
     )
 
 
+async def _fetch_existing_front_page(http: AsyncClient, issue_id: str) -> dict | None:
+    # Phase 55 (API_CONTRACTS 55.1): carry the editor-authored frontPage across
+    # pipeline re-runs. Prefers the Studio draft (drafts.<id>) over the published doc.
+    # Failure-tolerant: any error -> warning + None (never blocks the draft write).
+    try:
+        r = await http.get(
+            f"/{API_VERSION}/data/doc/{_dataset()}/{issue_id},drafts.{issue_id}",
+            headers=_auth_headers(),
+        )
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        docs = {d.get("_id"): d for d in (r.json().get("documents") or []) if isinstance(d, dict)}
+        for doc_id in (f"drafts.{issue_id}", issue_id):
+            fp = (docs.get(doc_id) or {}).get("frontPage")
+            if isinstance(fp, dict) and fp:
+                return fp
+        return None
+    except Exception as exc:  # noqa: BLE001 — must never block the draft write
+        logger.warning("frontPage carry-forward lookup failed for %s: %s", issue_id, exc)
+        return None
+
+
 async def write_issue_draft(
     http: AsyncClient,
     state: dict,
@@ -290,6 +313,10 @@ async def write_issue_draft(
     conf = _valid_confidence(state.get("editor_confidence"))
     if conf is not None:
         doc["selectionDeliberation"]["editorConfidence"] = conf
+
+    front_page = await _fetch_existing_front_page(http, issue_id)
+    if front_page is not None:
+        doc["frontPage"] = front_page
 
     r = await http.post(
         f"/{API_VERSION}/data/mutate/{_dataset()}",
