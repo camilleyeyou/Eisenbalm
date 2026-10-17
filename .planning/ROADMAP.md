@@ -481,7 +481,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 52. Issue — The Front Door | 5/5 | Complete | - |
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
-| 55. Public Site Redesign — The Dispatch Front Page | TBD | Not started | - |
+| 55. Public Site Redesign — The Dispatch Front Page | 1/13 | In progress | - |
 
 ## Backlog
 
@@ -1236,7 +1236,7 @@ Plans:
 **Plans**: 13 plans (5 waves)
 
 Plans:
-- [ ] 55-01-brand-tokens-PLAN.md — lib/brand.ts weekly accent + scoped dispatch.css + Manrope + brand/responsive/a11y guard tests (W1)
+- [x] 55-01-brand-tokens-PLAN.md — lib/brand.ts weekly accent + scoped dispatch.css + Manrope + brand/responsive/a11y guard tests (W1)
 - [ ] 55-02-copy-primitives-PLAN.md — Jesse-voice copy constants, BALM_PRICE_CENTS, NumberedSection, ChromeSwitch, voice denylist test (W1)
 - [ ] 55-03-data-contract-derive-PLAN.md — Sanity frontPage + editorConfidence, GROQ/types/API_CONTRACTS, fixtures, derive.ts (W1)
 - [ ] 55-04-convex-newsletter-backend-PLAN.md — Convex balmsForCharity + subscribeNewsletter, /api/email/subscribe, live Convex sync (W1)
