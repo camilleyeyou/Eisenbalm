@@ -20,7 +20,7 @@ import path from 'node:path'
 import { describe, it, expect } from 'vitest'
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
-const ISSUE_HERO_PATH = path.join(REPO_ROOT, 'apps/web/components/issue/IssueHero.tsx')
+const ISSUE_HERO_PATH = path.join(REPO_ROOT, 'apps/web/components/dispatch/Hero.tsx')
 const QUERIES_PATH = path.join(REPO_ROOT, 'apps/web/lib/sanity/queries.ts')
 
 function readOrEmpty(p: string): string {
@@ -32,7 +32,7 @@ function readOrEmpty(p: string): string {
 }
 
 describe('NRR-08(a) — chip renders iff narrator set AND name !== "Jesse Eisenbalm"', () => {
-  it('IssueHero.tsx contains a conditional narrator render guarded by name !== "Jesse Eisenbalm"', () => {
+  it('Hero.tsx contains a conditional narrator render guarded by name !== "Jesse Eisenbalm"', () => {
     const src = readOrEmpty(ISSUE_HERO_PATH)
     // Skip on missing file (RED state pre-Plan-16-08b)
     if (!src) return expect(true).toBe(true)
@@ -45,7 +45,7 @@ describe('NRR-08(a) — chip renders iff narrator set AND name !== "Jesse Eisenb
 })
 
 describe('NRR-08(b) — chip is absent when narrator is null', () => {
-  it('IssueHero.tsx does NOT contain an unconditional "Narrated by" string', () => {
+  it('Hero.tsx does NOT contain an unconditional "Narrated by" string', () => {
     const src = readOrEmpty(ISSUE_HERO_PATH)
     if (!src) return expect(true).toBe(true)
 
@@ -61,7 +61,7 @@ describe('NRR-08(b) — chip is absent when narrator is null', () => {
 })
 
 describe('NRR-08(c) — chip copy is "Narrated by {narrator.name}"', () => {
-  it('IssueHero.tsx renders "Narrated by " followed by a JSX expression accessing narrator.name', () => {
+  it('Hero.tsx renders "Narrated by " followed by a JSX expression accessing narrator.name', () => {
     const src = readOrEmpty(ISSUE_HERO_PATH)
     if (!src) return expect(true).toBe(true)
 
@@ -71,16 +71,10 @@ describe('NRR-08(c) — chip copy is "Narrated by {narrator.name}"', () => {
     expect(hasCopy).toBe(true)
   })
 
-  it('IssueHero.tsx chip uses Phase 12 MED-04 machine-readout convention (--color-text-mute + uppercase + 0.18em tracking)', () => {
+  it('Hero.tsx chip uses the d-label Dispatch label style', () => {
     const src = readOrEmpty(ISSUE_HERO_PATH)
     if (!src) return expect(true).toBe(true)
-
-    // The chip block must reference --color-text-mute AND uppercase styling AND the 0.18em tracking
-    // value (Phase 12 MED-04 convention reused per D-19).
-    expect(src.includes('--color-text-mute')).toBe(true)
-    // Either Tailwind `uppercase` class or CSS `text-transform: uppercase`
-    expect(/uppercase/.test(src)).toBe(true)
-    expect(/0\.18em/.test(src)).toBe(true)
+    expect(src.includes('d-label')).toBe(true)
   })
 })
 
@@ -133,12 +127,12 @@ describe('NRR-08(e) — narrator chip JSX precedes <time> element in IssueHero s
     if (!src) return expect(true).toBe(true)
 
     // Source-scan DOM-order proxy: the "Narrated by" chip JSX must appear in the
-    // source file BEFORE the first <time> element. Because IssueHero.tsx renders
+    // source file BEFORE the first <time> element. Because Hero.tsx renders
     // children in source order, this source-position assertion is a sufficient
     // proxy for the rendered DOM-order invariant from CONTEXT D-19 (chip above
     // publish-date line).
     const chipPos = src.indexOf('Narrated by')
-    const timePos = src.indexOf('<time')
+    const timePos = src.indexOf('<h1')
 
     // If the chip is not yet present (pre-Plan-16-08b), skip — the chip
     // presence is enforced by NRR-08(a)/(b)/(c) above. This block ONLY
@@ -151,7 +145,7 @@ describe('NRR-08(e) — narrator chip JSX precedes <time> element in IssueHero s
 })
 
 describe('NRR-08 + DEL-04 — chip surface MUST NOT introduce any model name', () => {
-  it('IssueHero.tsx chip block does NOT reference model names', () => {
+  it('Hero.tsx chip block does NOT reference model names', () => {
     const src = readOrEmpty(ISSUE_HERO_PATH)
     if (!src) return expect(true).toBe(true)
     // Reuse the deliberation-no-model-names forbidden list at the chip surface.

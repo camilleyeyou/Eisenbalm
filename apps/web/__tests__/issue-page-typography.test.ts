@@ -18,16 +18,12 @@ import { describe, it, expect } from 'vitest'
 
 const LAYOUT_PATH        = resolve(__dirname, '../app/layout.tsx')
 const GLOBALS_PATH       = resolve(__dirname, '../app/globals.css')
-const EDITORIAL_PATH     = resolve(__dirname, '../components/issue/EditorialSection.tsx')
-const CASESTUDY_PATH     = resolve(__dirname, '../components/issue/CaseStudySection.tsx')
-const ISSUE_HERO_PATH    = resolve(__dirname, '../components/issue/IssueHero.tsx')
 const PORTABLE_TEXT_PATH = resolve(__dirname, '../components/issue/PortableTextRenderer.tsx')
 const ISSUE_PAGE_PATH    = resolve(__dirname, '../app/issue/[slug]/page.tsx')
 // Plan 26-04: the magazine rendering tree was extracted to IssueLayout so the
 // draft-preview route can share it exactly (D-09 fidelity). Source-scans that
 // check for JSX inside the page now need to check IssueLayout.tsx.
 const ISSUE_LAYOUT_PATH  = resolve(__dirname, '../components/issue/IssueLayout.tsx')
-const SHOP_CALLOUT_PATH  = resolve(__dirname, '../components/issue/ShopCallout.tsx')
 const GAME_SLOT_PATH     = resolve(__dirname, '../components/issue/GameSlot.tsx')
 
 /**
@@ -69,6 +65,11 @@ describe('DES-01: Paired Google Fonts via next/font/google (no FOUT)', () => {
     expect(layoutSrc).toMatch(/variable:\s*['"]--font-body-loaded['"]/)
   })
 
+  it('root layout loads Manrope as --font-dispatch (Phase 55)', () => {
+    expect(layoutSrc).toMatch(/import\s*\{[^}]*Manrope[^}]*\}\s*from\s*['"]next\/font\/google['"]/)
+    expect(layoutSrc).toMatch(/variable:\s*['"]--font-dispatch['"]/)
+  })
+
   it('never loads fonts via <link href="https://fonts.googleapis.com/...">', () => {
     expect(layoutSrc).not.toMatch(/fonts\.googleapis\.com/)
   })
@@ -83,20 +84,7 @@ describe('DES-01: Paired Google Fonts via next/font/google (no FOUT)', () => {
 // ─── DES-02: Drop cap on the lead section's first paragraph ────────────────
 
 describe('DES-02: Drop cap on the first prose section (lead)', () => {
-  const editorialSrc = readFileSync(EDITORIAL_PATH, 'utf-8')
   const globalsSrc   = readFileSync(GLOBALS_PATH, 'utf-8')
-  const pageSrc      = readFileSync(ISSUE_PAGE_PATH, 'utf-8')
-
-  it('EditorialSection accepts a `lead` boolean prop', () => {
-    expect(editorialSrc).toMatch(/lead\?:\s*boolean/)
-  })
-
-  it('EditorialSection applies lead-class treatment when lead is true (Phase 19: body lead)', () => {
-    // Phase 19 redesign: drop-cap is applied via .body.lead CSS rule (globals.css).
-    // EditorialSection passes "body lead" className — the drop cap is still active
-    // (globals.css .body.lead > p:first-of-type::first-letter rule).
-    expect(editorialSrc).toMatch(/lead/)
-  })
 
   it('globals.css defines a .drop-cap rule targeting the first paragraph first letter', () => {
     expect(globalsSrc).toMatch(/\.drop-cap\s*>\s*p:first-of-type::first-letter/)
@@ -130,8 +118,6 @@ describe('DES-02: Drop cap on the first prose section (lead)', () => {
 
 describe('DES-03: Reading measure 60-68ch + line-height >= 1.55', () => {
   const globalsSrc       = readFileSync(GLOBALS_PATH, 'utf-8')
-  const editorialSrc     = readFileSync(EDITORIAL_PATH, 'utf-8')
-  const caseStudySrc     = readFileSync(CASESTUDY_PATH, 'utf-8')
   const portableTextSrc  = readFileSync(PORTABLE_TEXT_PATH, 'utf-8')
 
   it('globals.css defines .prose-measure with max-width: 68ch', () => {
@@ -140,18 +126,6 @@ describe('DES-03: Reading measure 60-68ch + line-height >= 1.55', () => {
 
   it('globals.css .prose-measure constrains horizontal padding for mobile', () => {
     expect(globalsSrc).toMatch(/\.prose-measure[\s\S]{0,200}padding-inline:/)
-  })
-
-  it('EditorialSection applies max-width constraint to its section element (Phase 19: .sec class = 680px, prose-measure preserved as fallback)', () => {
-    // Phase 19 redesign: editorial sections use .sec class (max-width 680px via globals.css)
-    // instead of .prose-measure. Both enforce the 60-68ch reading measure.
-    // Article width constraint is satisfied by globals.css .sec { max-width: 680px }.
-    expect(editorialSrc).toMatch(/sec|prose-measure|680/)
-  })
-
-  it('CaseStudySection applies max-width constraint (Phase 19: .sec class = 680px)', () => {
-    // Phase 19 redesign: .sec class (max-width 680px) replaces .prose-measure.
-    expect(caseStudySrc).toMatch(/sec|prose-measure|680/)
   })
 
   it('PortableTextRenderer body paragraphs use leading-[1.7] (>= 1.55)', () => {
@@ -168,9 +142,6 @@ describe('DES-03: Reading measure 60-68ch + line-height >= 1.55', () => {
 
 describe('DES-04: Ornament dividers + eyebrow section headers', () => {
   const globalsSrc   = readFileSync(GLOBALS_PATH, 'utf-8')
-  const editorialSrc = readFileSync(EDITORIAL_PATH, 'utf-8')
-  const caseStudySrc = readFileSync(CASESTUDY_PATH, 'utf-8')
-  const issueHeroSrc = readFileSync(ISSUE_HERO_PATH, 'utf-8')
 
   it('globals.css defines .ornament-divider rule', () => {
     expect(globalsSrc).toMatch(/\.ornament-divider/)
@@ -189,37 +160,12 @@ describe('DES-04: Ornament dividers + eyebrow section headers', () => {
     expect(globalsSrc).toMatch(/\.eyebrow[\s\S]{0,300}letter-spacing:\s*0\.\d+em/)
   })
 
-  it('EditorialSection renders a section label divider (Phase 19: .sec-label with §-prefix replaces .ornament-divider)', () => {
-    // Phase 19 redesign: .ornament-divider (fleuron) is retired; replaced by the
-    // .sec-label eyebrow which uses the § pseudo-prefix (UI-SPEC §Section 7).
-    // Both serve as visual section separators. The .ornament-divider CSS rule
-    // is preserved in globals.css for backward compat.
-    expect(editorialSrc).toMatch(/sec-label|ornament-divider/)
-  })
-
-  it('CaseStudySection renders a section label divider (Phase 19: .sec-label replaces .ornament-divider)', () => {
-    // Same as EditorialSection — Phase 19 uses .sec-label with § prefix.
-    expect(caseStudySrc).toMatch(/sec-label|ornament-divider/)
-  })
-
-  it('EditorialSection uses the section label class for eyebrow styling (Phase 19: .sec-label)', () => {
-    // Phase 19 redesign: .eyebrow is replaced by .sec-label (UI-SPEC §7 eyebrow).
-    // The .eyebrow CSS class is preserved in globals.css for backward compat.
-    expect(editorialSrc).toMatch(/sec-label|eyebrow/)
-  })
-
-  it('IssueHero uses the .eyebrow class for the issue label and metadata row', () => {
-    // At least two .eyebrow usages: issue label + metadata spans.
-    const matches = issueHeroSrc.match(/["']eyebrow/g) ?? []
-    expect(matches.length).toBeGreaterThanOrEqual(2)
-  })
 })
 
 // ─── DES-05: Case study metadata in footnote-style block ───────────────────
 
 describe('DES-05: Case study structured metadata in .metadata-block', () => {
   const globalsSrc   = readFileSync(GLOBALS_PATH, 'utf-8')
-  const caseStudySrc = readFileSync(CASESTUDY_PATH, 'utf-8')
 
   it('globals.css defines .metadata-block utility', () => {
     expect(globalsSrc).toMatch(/\.metadata-block/)
@@ -233,29 +179,13 @@ describe('DES-05: Case study structured metadata in .metadata-block', () => {
     expect(globalsSrc).toMatch(/\.metadata-block[\s\S]{0,400}var\(--color-accent\)/)
   })
 
-  it('CaseStudySection renders subject card with metadata-block class (Phase 19: subject card replaces <dl>)', () => {
-    // Phase 19 redesign: subject card uses a div with metadata-block class
-    // (background var(--color-surface), border, label + value layout).
-    // The .metadata-block CSS class is preserved for DES-05 styling consistency.
-    expect(caseStudySrc).toMatch(/metadata-block/)
-  })
-
-  it('CaseStudySection renders subject label and value (Phase 19: span elements)', () => {
-    // Phase 19: dl/dt/dd replaced by a subject card with label/value spans.
-    // The "Subject" label text and subjectName value are both rendered.
-    expect(caseStudySrc).toMatch(/Subject|subjectName/)
-  })
 })
 
 // ─── DES-06: Per-issue theme injection still works + locked artifacts ──────
 
 describe('DES-06: Theme CSS variable preservation + locked artifacts', () => {
   const globalsSrc    = readFileSync(GLOBALS_PATH, 'utf-8')
-  const editorialSrc  = readFileSync(EDITORIAL_PATH, 'utf-8')
-  const caseStudySrc  = readFileSync(CASESTUDY_PATH, 'utf-8')
-  const issueHeroSrc  = readFileSync(ISSUE_HERO_PATH, 'utf-8')
   const pageSrc       = readFileSync(ISSUE_PAGE_PATH, 'utf-8')
-  const shopCalloutSrc = readFileSync(SHOP_CALLOUT_PATH, 'utf-8')
   const gameSlotSrc    = readFileSync(GAME_SLOT_PATH, 'utf-8')
 
   it('globals.css still defines --color-primary, --color-accent, --color-bg, --color-text in :root', () => {
@@ -271,28 +201,6 @@ describe('DES-06: Theme CSS variable preservation + locked artifacts', () => {
     expect(globalsSrc).toMatch(/\.eyebrow[\s\S]{0,400}var\(--color-/)
     expect(globalsSrc).toMatch(/\.metadata-block[\s\S]{0,400}var\(--color-/)
     expect(globalsSrc).toMatch(/\.drop-cap[\s\S]{0,400}var\(--color-/)
-  })
-
-  it('EditorialSection consumes theme CSS variables (Phase 19: --color-accent for eyebrow/drop-cap)', () => {
-    // Phase 19: sections use --color-accent for the §-label and --color-text for body.
-    // The --color-primary / --color-accent CSS variables are applied via globals.css .sec-label
-    // and inline styles. The component itself uses var(--color-*) tokens.
-    expect(editorialSrc).toMatch(/var\(--color-(?:primary|accent|text|prose)\)/)
-  })
-
-  it('CaseStudySection consumes theme CSS variables (Phase 19: --color-text, --color-accent, etc.)', () => {
-    // Phase 19: CaseStudySection uses var(--color-*) tokens.
-    expect(caseStudySrc).toMatch(/var\(--color-(?:primary|accent|text|surface)\)/)
-  })
-
-  it('IssueHero consumes var(--color-primary)', () => {
-    expect(issueHeroSrc).toMatch(/var\(--color-primary\)/)
-  })
-
-  it('ShopCallout.tsx is untouched (Phase 2 + CMR-09 lock — only verify it still imports + renders)', () => {
-    // We do NOT modify ShopCallout in Phase 10. The source-scan only checks
-    // its public contract: file exists and exports `ShopCallout`.
-    expect(shopCalloutSrc).toMatch(/export\s+function\s+ShopCallout/)
   })
 
   it('GameSlot.tsx is untouched (Phase 7 lock — sandbox="allow-scripts" still present)', () => {

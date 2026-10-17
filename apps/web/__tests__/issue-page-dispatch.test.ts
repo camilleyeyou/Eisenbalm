@@ -6,8 +6,7 @@
  *   - FONT_WHITELIST: 9 entries (original 6 + 3 new)
  *   - BRAND_DEFAULTS: oxblood/cream palette
  *   - framer-motion: present in package.json
- *   - Plan 02: Atmosphere/SectionNavigator retired, new motion components exist
- *   - Plan 03: DelibChat role=log/aria-live, useReducedMotion in motion components
+ *   - Phase 55: retired Phase 19 motion components are absent
  *
  * Pattern: readFileSync + regex assertions. NO DOM, NO React render, NO mocks.
  * Same pattern as game-sandbox.test.ts (Phase 7 GAM-03).
@@ -26,7 +25,6 @@ import { describe, it, expect } from 'vitest'
 const LAYOUT_PATH      = resolve(__dirname, '../app/layout.tsx')
 const THEME_PATH       = resolve(__dirname, '../lib/theme.ts')
 const PACKAGE_JSON_PATH = resolve(__dirname, '../package.json')
-const PAGE_PATH        = resolve(__dirname, '../app/issue/[slug]/page.tsx')
 const COMPONENTS_DIR   = resolve(__dirname, '../components/issue')
 
 // ─── DES-01: Fraunces/Newsreader/IBM Plex Mono in layout.tsx ────────────────
@@ -179,46 +177,23 @@ describe('Security: theme.ts invariants preserved through Phase 19 extension', (
   })
 })
 
-// ─── Plan 02: Atmosphere + SectionNavigator retired ──────────────────────────
+// ─── Phase 55: retired Phase 19 motion components are absent ─────────────────
 
-describe('Plan 02: Atmosphere.tsx deleted and SectionNavigator.tsx deleted', () => {
-  it('Atmosphere.tsx is deleted (not present in components/issue/)', () => {
-    expect(existsSync(resolve(COMPONENTS_DIR, 'Atmosphere.tsx'))).toBe(false)
-  })
-
-  it('SectionNavigator.tsx is deleted (not present in components/issue/)', () => {
-    expect(existsSync(resolve(COMPONENTS_DIR, 'SectionNavigator.tsx'))).toBe(false)
-  })
-
-  it('Atmosphere is not imported in page.tsx', () => {
-    const pageSrc = readFileSync(PAGE_PATH, 'utf-8')
-    expect(pageSrc).not.toContain('Atmosphere')
-  })
-
-  it('SectionNavigator is not imported in page.tsx', () => {
-    const pageSrc = readFileSync(PAGE_PATH, 'utf-8')
-    expect(pageSrc).not.toContain('SectionNavigator')
-  })
-})
-
-// ─── Plan 02: New motion components exist ────────────────────────────────────
-
-describe('Plan 02: ScrollProgressBar, SectionRail, ScrollReveal exist', () => {
-  it('ScrollProgressBar.tsx exists with framer-motion useScroll', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'ScrollProgressBar.tsx'), 'utf-8')
-    expect(src).toContain('useScroll')
-  })
-
-  it('SectionRail.tsx exists with role="navigation" and aria-label', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'SectionRail.tsx'), 'utf-8')
-    expect(src).toContain('role="navigation"')
-    expect(src).toMatch(/aria-label/)
-  })
-
-  it('ScrollReveal.tsx exists with useReducedMotion guard', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'ScrollReveal.tsx'), 'utf-8')
-    expect(src).toContain('useReducedMotion')
-  })
+describe('Phase 55: retired Phase 19 motion components are absent', () => {
+  for (const name of [
+    'Atmosphere',
+    'SectionNavigator',
+    'ScrollProgressBar',
+    'SectionRail',
+    'ScrollReveal',
+    'DelibChat',
+    'StatCountUp',
+    'ConfidenceBar',
+  ]) {
+    it(`${name}.tsx is not present in components/issue/`, () => {
+      expect(existsSync(resolve(COMPONENTS_DIR, `${name}.tsx`))).toBe(false)
+    })
+  }
 })
 
 // ─── Plan 02: GameSlot play button aria-label ─────────────────────────────────
@@ -227,49 +202,6 @@ describe('Plan 02: GameSlot play button has aria-label containing "Play"', () =>
   it('GameSlot.tsx contains aria-label with Play', () => {
     const src = readFileSync(resolve(COMPONENTS_DIR, 'GameSlot.tsx'), 'utf-8')
     expect(src).toMatch(/aria-label[^>]*[Pp]lay/)
-  })
-})
-
-// ─── Plan 03: DelibChat accessibility + reduced-motion ───────────────────────
-
-describe('Plan 03: DelibChat has role="log", aria-live="polite", useReducedMotion', () => {
-  it('DelibChat.tsx has role="log"', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
-    expect(src).toContain('role="log"')
-  })
-
-  it('DelibChat.tsx has aria-live="polite"', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
-    expect(src).toContain('aria-live="polite"')
-  })
-
-  it('DelibChat.tsx uses useReducedMotion for reduced-motion guard', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
-    expect(src).toContain('useReducedMotion')
-  })
-})
-
-// ─── Plan 03: framer-motion motion components contain useReducedMotion ────────
-
-describe('Plan 03: useReducedMotion present in motion components', () => {
-  it('DelibChat.tsx contains useReducedMotion', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'DelibChat.tsx'), 'utf-8')
-    expect(src).toContain('useReducedMotion')
-  })
-
-  it('ScrollReveal.tsx contains useReducedMotion', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'ScrollReveal.tsx'), 'utf-8')
-    expect(src).toContain('useReducedMotion')
-  })
-
-  it('StatCountUp.tsx contains useReducedMotion', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'StatCountUp.tsx'), 'utf-8')
-    expect(src).toContain('useReducedMotion')
-  })
-
-  it('ConfidenceBar.tsx contains useReducedMotion', () => {
-    const src = readFileSync(resolve(COMPONENTS_DIR, 'ConfidenceBar.tsx'), 'utf-8')
-    expect(src).toContain('useReducedMotion')
   })
 })
 
