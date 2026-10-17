@@ -27,7 +27,7 @@ import { IssueLayout } from '@/components/issue/IssueLayout'
 
 function PreviewUnauthorized() {
   return (
-    <main
+    <section
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -49,7 +49,7 @@ function PreviewUnauthorized() {
           The preview token is missing, expired, or invalid. Preview tokens expire after 5 minutes.
         </p>
       </div>
-    </main>
+    </section>
   )
 }
 
@@ -57,7 +57,7 @@ function PreviewUnauthorized() {
 
 function PreviewUnavailable() {
   return (
-    <main
+    <section
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -76,7 +76,7 @@ function PreviewUnavailable() {
           Preview unavailable. The draft issue may not be ready yet.
         </p>
       </div>
-    </main>
+    </section>
   )
 }
 

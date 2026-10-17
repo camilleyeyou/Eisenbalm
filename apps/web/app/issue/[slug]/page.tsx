@@ -1,33 +1,14 @@
 /**
- * Full issue page — Phase 19 Stage B: Live Data Wiring.
- * UI-SPEC §/issue/[slug] + §Delivery Stages (Stage B).
+ * Full issue page — Phase 55 Dispatch front page.
  *
- * Requirements: WEB-02, WEB-06, WEB-07, WEB-08, WEB-09, WEB-10, WEB-11,
- *               WEB-14, WEB-15, WEB-16.
+ * Fetches the live issue, the archive and the latest slug from Sanity, plus the
+ * initial balms count from Convex (tolerant of failure). Rendering is delegated
+ * to IssueLayout (shared with home and preview) so they can never drift.
  *
- * STAGE B: Fetches the live issue from Sanity via QUERY_ISSUE_BY_SLUG.
- * The component tree, section ids, and framer-motion wrappers are byte-identical
- * to Stage A — only the data source changed (P19-05).
- *
- * Rendering is delegated to IssueLayout (shared with preview/page.tsx) so that
- * the draft-preview can never drift from the published layout (D-09 fidelity,
- * Plan 26-04).
- *
- * Section order (LOCKED — Phase 19 UI-SPEC):
- *   1. ScrollProgressBar  (fixed top progress bar)
- *   2. SectionRail        (fixed left scroll-spy nav)
- *   3. IssueMasthead      (dateline / h1 / tagline)
- *   4. IssueBriefing      (why / at-a-glance stats / what's inside)
- *   5. MissionBand        (sitewide constant copy)
- *   6. EditorialSection   origin story   (id="origin", lead)
- *   7. EditorialSection   problem        (id="problem", lead)
- *   8. EditorialSection   founder bio    (id="founder", lead)
- *   9. CaseStudySection   case study     (id="case", lead)
- *  10. GameSlot                          (id="game")
- *  11. BonusSection                      (id="bonus")
- *  12. DeliberationSlot   dark-band      (id="delib")
- *  13. PodcastSlot                       (id="pod")
- *  14. ShopBand           shop section   (data-shop-callout)
+ * Section order (LOCKED — Phase 55 UI-SPEC):
+ *   masthead, ticker, hero, how strip, sticky nav, sections 01-08
+ *   (origin, problem, founder, case, game, bonus, delib, pod), buy band,
+ *   back issues. Footer is supplied by the root layout outside <main>.
  *
  * JSON-LD (WEB-10): schema.org/Article with charity-level data.
  * generateMetadata (WEB-11): per-issue OG + Twitter card.
@@ -39,8 +20,9 @@ import type { Metadata } from 'next'
 import { groq } from 'next-sanity'
 
 import { sanityClient } from '@/lib/sanity/client'
-import { QUERY_ISSUE_BY_SLUG } from '@/lib/sanity/queries'
-import type { Issue } from '@/lib/sanity/types'
+import { QUERY_ISSUE_BY_SLUG, QUERY_ARCHIVE, QUERY_LATEST_ISSUE_SLUG } from '@/lib/sanity/queries'
+import type { Issue, ArchiveIssue, LatestIssueSlug } from '@/lib/sanity/types'
+import { fetchBalms } from '@/lib/dispatch/balms-server'
 import { SITE_NAME, getSiteUrl } from '@/lib/site'
 
 import { IssueLayout } from '@/components/issue/IssueLayout'
@@ -123,12 +105,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function IssuePage({ params }: PageProps) {
   const { slug } = await params
 
-  // Stage B: live fetch from Sanity (QUERY_ISSUE_BY_SLUG already projects
-  // all required fields including selectionDeliberation.conversation[]).
-  const issue = await sanityClient.fetch<Issue>(QUERY_ISSUE_BY_SLUG, { slug })
+  const [issue, archive, latest] = await Promise.all([
+    sanityClient.fetch<Issue>(QUERY_ISSUE_BY_SLUG, { slug }),
+    sanityClient.fetch<ArchiveIssue[]>(QUERY_ARCHIVE).catch(() => [] as ArchiveIssue[]),
+    sanityClient.fetch<LatestIssueSlug>(QUERY_LATEST_ISSUE_SLUG).catch(() => null),
+  ])
   if (!issue) {
     notFound()
   }
 
-  return <IssueLayout issue={issue} slug={slug} />
+  const isCurrent = latest?.slug === slug
+  const sinceMs = Date.parse(`${issue.publishDate}T00:00:00Z`)
+  const initialBalms = await fetchBalms(
+    issue.charity.slug,
+    isCurrent && Number.isFinite(sinceMs) ? sinceMs : undefined,
+  )
+
+  return (
+    <IssueLayout
+      issue={issue}
+      slug={slug}
+      archive={archive ?? []}
+      isCurrent={isCurrent}
+      initialBalms={initialBalms}
+    />
+  )
 }
