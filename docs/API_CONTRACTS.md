@@ -126,7 +126,6 @@ type LatestIssueSlug = {
     editorDecision,
     runnerUpNotes,
     editorConfidence,                   // Phase 55: 0-1, optional
-    conversation[] { speaker, text },   // Phase 13 (DEL-CONV): Chronicler dialogue turns for the chat-thread render
   },
   frontPage {                           // Phase 55: editor-authored, optional
     dek,
@@ -6302,3 +6301,7 @@ Body `{ email: string, company?: string }`. Responses: 200 `{ ok: true }` (also 
 ### §55.6 — Homepage
 
 `/` renders the latest issue front page (no redirect; supersedes the §1.1 "homepage redirect target" wording) with canonical `/issue/<slug>`.
+
+### §55.7 — Public queries no longer project the deliberation transcript
+
+Public queries no longer project `selectionDeliberation.conversation` (Phase 55); the field is retained in the schema and is still written by the pipeline for the podcast/dispatch-control.

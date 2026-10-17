@@ -16,12 +16,12 @@ Requirements for initial release. Each maps to roadmap phases (see Traceability)
 
 ### Web Shell (reads from Sanity, themed per issue)
 
-- [x] **WEB-01**: Reader landing on `/` is routed to the latest published issue
+- [x] **WEB-01**: Reader landing on `/` is routed to the latest published issue (superseded Phase 55: `/` renders the latest issue front page)
 - [x] **WEB-02**: Reader can view a full issue at `/issue/[slug]` with sections in correct order: charity header → origin story → problem → founder bio → case study → game → bonus → deliberation → podcast → shop callout
 - [x] **WEB-03**: Reader can browse the archive at `/archive`, sortable by issue number and searchable by charity name / focus area
 - [x] **WEB-04**: Reader can browse the charity database at `/charities` and view individual charities at `/charities/[slug]`
 - [x] **WEB-05**: Reader can view a static `/about` page with Jesse's about copy
-- [x] **WEB-06**: Each issue page injects `theme.{primary,accent,background,text}Color` and `theme.{fontDisplay,fontBody}` as CSS variables so typography and color change per issue while grid stays constant
+- [x] **WEB-06**: Each issue page injects `theme.{primary,accent,background,text}Color` and `theme.{fontDisplay,fontBody}` as CSS variables so typography and color change per issue while grid stays constant (superseded on public pages Phase 55: fixed Dispatch brand + weekly accent; theme.ts invariants unchanged)
 - [x] **WEB-07**: Theme color values are validated as 6-digit hex strings before injection (CSS injection prevention)
 - [x] **WEB-08**: Theme injection uses `element.style.setProperty(...)` (not template-literal CSS strings)
 - [x] **WEB-09**: Theme color combinations are checked for WCAG AA contrast at render time; degraded fallback applied if contrast fails

@@ -112,7 +112,6 @@ export const fullIssue: FullIssue = {
     editorDecision: 'Acme was selected. The others were also good.',
     runnerUpNotes: 'Second Street Pantry came close. It will be reconsidered.',
     editorConfidence: 0.8,
-    conversation: null,
   },
   frontPage: {
     dek: 'Wheelchairs wait. Acme does not.',
@@ -183,7 +182,6 @@ export const oneCandidateIssue: FullIssue = {
     candidates: [candidates[0]!],
     editorDecision: 'Acme was selected.',
     runnerUpNotes: null,
-    conversation: null,
   },
 }
 

@@ -102,7 +102,6 @@ export const QUERY_ISSUE_BY_SLUG = groq`
       editorDecision,
       runnerUpNotes,
       editorConfidence,
-      conversation[] { speaker, text },
     },
 
     frontPage {
@@ -278,7 +277,6 @@ export const QUERY_ISSUE_PREVIEW_BY_SLUG = groq`
       editorDecision,
       runnerUpNotes,
       editorConfidence,
-      conversation[] { speaker, text },
     },
 
     frontPage {
