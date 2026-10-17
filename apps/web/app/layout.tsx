@@ -8,7 +8,7 @@
  * by Plan 02-06's <AnchorCopyButton>) work without per-component providers.
  */
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, Newsreader, IBM_Plex_Mono } from 'next/font/google'
+import { Fraunces, Newsreader, IBM_Plex_Mono, Manrope } from 'next/font/google'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -16,6 +16,7 @@ import { ConvexClientProvider } from '@/components/providers/ConvexClientProvide
 import { serializeThemeCss } from '@/lib/theme'
 import { SITE_NAME, SITE_DESCRIPTION, getSiteUrl } from '@/lib/site'
 import './globals.css'
+import './dispatch.css'
 
 // ─── Fonts (next/font/google → CSS variables) ─────────────────────────────
 
@@ -44,6 +45,12 @@ const fontUi = IBM_Plex_Mono({
   variable: '--font-ui-loaded',
   weight: ['400', '500'],
   // No axes — IBM Plex Mono is not a variable font
+})
+
+const fontDispatch = Manrope({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-dispatch',
 })
 
 // ─── Site-level metadata ──────────────────────────────────────────────────
@@ -97,7 +104,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fontDisplay.variable} ${fontBody.variable} ${fontUi.variable}`}
+      className={`${fontDisplay.variable} ${fontBody.variable} ${fontUi.variable} ${fontDispatch.variable}`}
     >
       <head>
         {/*

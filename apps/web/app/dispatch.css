@@ -1,0 +1,132 @@
+/*
+ * Dispatch brand layer (Phase 55). Unlayered on purpose so it beats Tailwind
+ * v4 @layer utilities. Hex literals live ONLY in the first .dispatch block;
+ * everything else references the --d-* variables.
+ */
+.dispatch {
+  --d-green:#00FF79;
+  --d-blue:#005CFF;
+  --d-red:#FF002B;
+  --d-yellow:#EEFE34;
+  --d-ink:#0A0A0A;
+  --d-paper:#FFFFFF;
+  --d-muted:#4A4A4A;
+  --d-rule:#D6D6D6;
+  --d-rule-on-blue:rgba(255,255,255,0.4);
+  --d-dark-lead:#E4E4E4;
+  --d-dark-caption:#BDBDBD;
+  --d-track:#EFEFEF;
+  --d-track-dark:#3A3A3A;
+  --d-panel:#1C1C1C;
+  --d-accent:var(--d-green);
+  --d-accent-ink:var(--d-ink);
+  --d-second:var(--d-blue);
+  --d-third:var(--d-red);
+  --d-fourth:var(--d-yellow);
+  --d-fourth-ink:var(--d-ink);
+  --d-size-label:14px;
+  --d-size-body:18px;
+  --d-size-heading:clamp(28px, 3.6vw, 48px);
+  --d-size-display:clamp(40px, 6.2vw, 92px);
+  --color-text:currentColor;
+  --color-text-dim:currentColor;
+  --color-text-muted:currentColor;
+  --color-primary:currentColor;
+  --color-accent:currentColor;
+  --font-display:var(--font-dispatch);
+  --font-body:var(--font-dispatch);
+  --font-ui:var(--font-dispatch);
+  font-family:var(--font-dispatch), system-ui, sans-serif;
+  background:var(--d-paper);
+  color:var(--d-ink);
+  font-size:18px;
+  font-weight:400;
+  line-height:1.6;
+}
+
+.d-container { max-width:1280px; margin-inline:auto; padding-inline:clamp(16px, 5vw, 32px); }
+
+/* Type roles */
+.d-label { font-size:14px; font-weight:800; line-height:1.35; }
+.d-eyebrow { font-size:14px; font-weight:800; line-height:1.35; text-transform:uppercase; letter-spacing:0.08em; margin:0; }
+.d-body { font-size:18px; font-weight:400; line-height:1.6; }
+.d-heading { font-size:var(--d-size-heading); font-weight:800; line-height:1.0; letter-spacing:-0.05em; overflow-wrap:anywhere; hyphens:auto; min-width:0; margin:0; }
+.d-display { font-size:var(--d-size-display); font-weight:800; line-height:0.95; letter-spacing:-0.055em; overflow-wrap:anywhere; hyphens:auto; min-width:0; margin:0; }
+.d-muted { color:var(--d-muted); }
+
+/* Targets and links */
+.d-tap { min-height:44px; display:inline-flex; align-items:center; }
+.d-link { color:inherit; text-decoration:none; }
+.d-link:hover { text-decoration:underline; }
+
+/* Pills */
+.d-pill { min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 24px; border-radius:999px; border:2px solid var(--d-ink); font:inherit; font-size:18px; font-weight:800; line-height:1.2; text-decoration:none; cursor:pointer; }
+.d-pill--ink { background:var(--d-ink); color:var(--d-paper); }
+.d-pill--ink:hover { background:var(--d-paper); color:var(--d-ink); }
+.d-pill--paper { background:var(--d-paper); color:var(--d-ink); }
+.d-pill--paper:hover { background:var(--d-ink); color:var(--d-paper); }
+.d-pill--accent { background:var(--d-accent); color:var(--d-accent-ink); }
+.d-pill--accent:hover { background:var(--d-ink); color:var(--d-paper); }
+.d-pill--compact { font-size:14px; padding:0 16px; }
+.d-pill:disabled, .d-pill[aria-disabled="true"] { background:var(--d-muted); border-color:var(--d-muted); color:var(--d-paper); cursor:not-allowed; }
+
+/* Focus */
+.dispatch :focus-visible { outline:3px solid var(--d-ink); outline-offset:2px; }
+.dispatch .d-on-dark :focus-visible, .dispatch .d-sec--problem :focus-visible, .dispatch .d-sec--game :focus-visible { outline-color:var(--d-paper); }
+
+/* Sections */
+.d-sec { padding-block:64px; scroll-margin-top:64px; }
+.d-sec-head { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.d-disc { flex:0 0 auto; width:72px; height:72px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; }
+@media (max-width:639px) { .d-disc { width:56px; height:56px; } }
+
+/* Fixed section colour map */
+.d-sec--origin { background:var(--d-paper); color:var(--d-ink); }
+.d-sec--origin .d-disc { background:var(--d-green); color:var(--d-ink); }
+.d-sec--problem { background:var(--d-blue); color:var(--d-paper); }
+.d-sec--problem .d-disc { background:var(--d-paper); color:var(--d-blue); }
+.d-sec--founder { background:var(--d-yellow); color:var(--d-ink); }
+.d-sec--founder .d-disc { background:var(--d-ink); color:var(--d-yellow); }
+.d-sec--case { background:var(--d-paper); color:var(--d-ink); }
+.d-sec--case .d-disc { background:var(--d-red); color:var(--d-ink); }
+.d-sec--game { background:var(--d-ink); color:var(--d-paper); }
+.d-sec--game .d-disc { background:var(--d-green); color:var(--d-ink); }
+.d-sec--bonus { background:var(--d-red); color:var(--d-ink); }
+.d-sec--bonus .d-disc { background:var(--d-ink); color:var(--d-red); }
+.d-sec--delib { background:var(--d-paper); color:var(--d-ink); }
+.d-sec--delib .d-disc { background:var(--d-blue); color:var(--d-paper); }
+.d-sec--pod { background:var(--d-green); color:var(--d-ink); padding-block:48px; }
+.d-sec--pod .d-disc { background:var(--d-ink); color:var(--d-green); }
+
+/* Prose */
+.d-prose { column-width:340px; column-gap:48px; column-rule:1px solid var(--d-rule); }
+.d-sec--problem .d-prose { column-rule-color:var(--d-rule-on-blue); }
+.d-prose p, .d-prose ul, .d-prose ol { font-size:18px; font-weight:400; line-height:1.6; margin:0 0 16px; color:inherit; }
+.d-prose h2, .d-prose h3 { font-size:18px; font-weight:800; line-height:1.35; margin:24px 0 8px; color:inherit; break-after:avoid; }
+.d-prose blockquote { border-left:3px solid currentColor; padding-left:16px; margin:24px 0; font-size:18px; font-style:normal; font-weight:400; color:inherit; }
+.d-prose a { color:inherit; text-decoration:underline; }
+.d-prose strong { font-weight:800; color:inherit; }
+
+/* Tones */
+.d-tone-green { background:var(--d-green); color:var(--d-ink); }
+.d-tone-blue { background:var(--d-blue); color:var(--d-paper); }
+.d-tone-red { background:var(--d-red); color:var(--d-ink); }
+.d-tone-yellow { background:var(--d-yellow); color:var(--d-ink); }
+
+/* Dots */
+.d-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+.d-dot--green { background:var(--d-green); box-shadow:0 0 0 1px var(--d-ink); }
+.d-dot--blue { background:var(--d-blue); }
+.d-dot--red { background:var(--d-red); }
+.d-dot--yellow { background:var(--d-yellow); box-shadow:0 0 0 1px var(--d-ink); }
+
+.d-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Motion */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.dispatch) { scroll-behavior:smooth; }
+  .d-pill { transition:background-color 0.15s, color 0.15s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dispatch *, .dispatch *::before, .dispatch *::after { animation:none !important; transition:none !important; }
+}
