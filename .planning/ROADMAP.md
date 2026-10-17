@@ -1233,5 +1233,20 @@ Plans:
   4. The game still renders in its sandboxed iframe, with the game-sandbox and theme security contracts unchanged.
   5. Every "Fund them" CTA reaches the working Stripe checkout, and the balms-sold count reflects real sales.
   6. WCAG AA contrast, motion that respects `prefers-reduced-motion`, a single `<main>`, ≥44px touch targets; strict `pnpm --filter web build` passes.
-**Plans**: TBD
+**Plans**: 13 plans (5 waves)
+
+Plans:
+- [ ] 55-01-brand-tokens-PLAN.md — lib/brand.ts weekly accent + scoped dispatch.css + Manrope + brand/responsive/a11y guard tests (W1)
+- [ ] 55-02-copy-primitives-PLAN.md — Jesse-voice copy constants, BALM_PRICE_CENTS, NumberedSection, ChromeSwitch, voice denylist test (W1)
+- [ ] 55-03-data-contract-derive-PLAN.md — Sanity frontPage + editorConfidence, GROQ/types/API_CONTRACTS, fixtures, derive.ts (W1)
+- [ ] 55-04-convex-newsletter-backend-PLAN.md — Convex balmsForCharity + subscribeNewsletter, /api/email/subscribe, live Convex sync (W1)
+- [ ] 55-05-pipeline-confidence-editor-guide-PLAN.md — pipeline writes editorConfidence; EDITOR_GUIDE Front Page section (W1)
+- [ ] 55-06-masthead-hero-nav-PLAN.md — top bar, masthead, ticker, accent hero, How strip, sticky in-issue nav (W2)
+- [ ] 55-07-commerce-buy-band-PLAN.md — shared checkout client, FundButton, live BalmCounter, #buy band (W2)
+- [ ] 55-08-back-issues-newsletter-footer-PLAN.md — back-issues grid + search, newsletter form, DispatchFooter (W2)
+- [ ] 55-09-prose-sections-PLAN.md — sections 01-04 with stat tiles, timeline, pull quotes (W2)
+- [ ] 55-10-game-bonus-delib-pod-PLAN.md — deliberation summary cards + restyled game/bonus/podcast bands (W2)
+- [ ] 55-11-integration-routes-chrome-PLAN.md — compose IssueLayout, / renders front page, drop per-issue theme, chrome switch (W3)
+- [ ] 55-12-phase19-retirement-PLAN.md — delete Phase 19 transcript/theme components + pinned tests, drop conversation projection (W4)
+- [ ] 55-13-deploy-verify-PLAN.md — gates, Stripe price check, deploys, live human verification of SC-1..SC-6 (W5)
 **UI hint**: yes
