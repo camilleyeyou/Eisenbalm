@@ -1247,6 +1247,6 @@ Plans:
 - [x] 55-09-prose-sections-PLAN.md — sections 01-04 with stat tiles, timeline, pull quotes (W2)
 - [x] 55-10-game-bonus-delib-pod-PLAN.md — deliberation summary cards + restyled game/bonus/podcast bands (W2)
 - [x] 55-11-integration-routes-chrome-PLAN.md — compose IssueLayout, / renders front page, drop per-issue theme, chrome switch (W3)
-- [ ] 55-12-phase19-retirement-PLAN.md — delete Phase 19 transcript/theme components + pinned tests, drop conversation projection (W4)
+- [x] 55-12-phase19-retirement-PLAN.md — delete Phase 19 transcript/theme components + pinned tests, drop conversation projection (W4)
 - [ ] 55-13-deploy-verify-PLAN.md — gates, Stripe price check, deploys, live human verification of SC-1..SC-6 (W5)
 **UI hint**: yes
