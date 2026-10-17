@@ -12,3 +12,31 @@
 .d-confidence-track{flex:1 1 auto;height:24px;background:var(--d-track)}
 .d-confidence-fill{display:block;height:100%;background:var(--d-blue)}
 .d-confidence-value{margin:0;flex:0 0 auto}
+.d-game-grid{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
+.d-game-copy{flex:1 1 min(100%, 360px);min-width:0}
+.d-game-desc{color:var(--d-dark-lead);margin:0 0 24px}
+.d-game-play{min-height:52px;background:var(--d-green);color:var(--d-ink);border-color:var(--d-green)}
+.d-game-play:hover{background:var(--d-paper);color:var(--d-ink)}
+.d-game-frame{flex:1 1 min(100%, 560px);min-height:420px;border:2px solid var(--d-green);border-radius:20px;background:var(--d-panel);overflow:hidden;display:flex;align-items:stretch;justify-content:center}
+.d-game-frame iframe{width:100%;min-height:420px;border:0;background:var(--d-paper)}
+.d-game-idle{flex:1}
+.d-wave{display:flex;align-items:center;gap:4px;height:48px;margin:16px 0}
+.d-wave-bar{width:6px;height:60%;background:var(--d-ink);border-radius:3px}
+.d-wave-bar:nth-child(3n){height:90%}
+.d-wave-bar:nth-child(4n+1){height:35%}
+.d-pod-desc{margin:0}
+.d-pod-player{display:flex;flex-wrap:wrap;align-items:center;gap:24px}
+.d-pod-track-wrap{flex:1 1 min(100%, 240px)}
+.d-pod-track{height:12px;background:var(--d-ink);border-radius:6px;overflow:hidden;cursor:pointer}
+.d-pod-fill{display:block;height:100%;background:var(--d-paper)}
+.d-pod-time{margin:8px 0 0}
+.d-adsummary{margin-top:48px;background:var(--d-paper);color:var(--d-ink);border:3px solid var(--d-ink);border-radius:20px;padding:24px;max-width:720px}
+.d-adsummary-title{font-size:18px;font-weight:800;margin:0 0 16px}
+.d-adsummary-rows{display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 200px), 1fr));gap:16px 24px;margin:0}
+.d-adsummary-row dd{margin:0;font-size:18px;font-weight:800}
+.d-sec--bonus .d-prose{column-rule-color:var(--d-ink)}
+.d-bonus-ad{max-width:760px}
+.d-bonus-marker{margin:0 0 16px}
+.d-bonus-lyrics{white-space:pre-wrap;font:inherit;font-size:18px;line-height:1.65;margin:0;padding:24px;background:var(--d-paper);color:var(--d-ink);border:2px solid var(--d-ink);border-radius:20px}
+.d-bonus-storyboards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit, minmax(min(100%, 240px), 1fr))}
+.d-bonus-audio{width:100%;margin:0 0 24px}
