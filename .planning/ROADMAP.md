@@ -1242,7 +1242,7 @@ Plans:
 - [x] 55-04-convex-newsletter-backend-PLAN.md — Convex balmsForCharity + subscribeNewsletter, /api/email/subscribe, live Convex sync (W1)
 - [x] 55-05-pipeline-confidence-editor-guide-PLAN.md — pipeline writes editorConfidence; EDITOR_GUIDE Front Page section (W1)
 - [x] 55-06-masthead-hero-nav-PLAN.md — top bar, masthead, ticker, accent hero, How strip, sticky in-issue nav (W2)
-- [ ] 55-07-commerce-buy-band-PLAN.md — shared checkout client, FundButton, live BalmCounter, #buy band (W2)
+- [x] 55-07-commerce-buy-band-PLAN.md — shared checkout client, FundButton, live BalmCounter, #buy band (W2)
 - [ ] 55-08-back-issues-newsletter-footer-PLAN.md — back-issues grid + search, newsletter form, DispatchFooter (W2)
 - [ ] 55-09-prose-sections-PLAN.md — sections 01-04 with stat tiles, timeline, pull quotes (W2)
 - [ ] 55-10-game-bonus-delib-pod-PLAN.md — deliberation summary cards + restyled game/bonus/podcast bands (W2)
