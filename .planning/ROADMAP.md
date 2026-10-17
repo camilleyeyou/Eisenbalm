@@ -1239,7 +1239,7 @@ Plans:
 - [x] 55-01-brand-tokens-PLAN.md — lib/brand.ts weekly accent + scoped dispatch.css + Manrope + brand/responsive/a11y guard tests (W1)
 - [x] 55-02-copy-primitives-PLAN.md — Jesse-voice copy constants, BALM_PRICE_CENTS, NumberedSection, ChromeSwitch, voice denylist test (W1)
 - [x] 55-03-data-contract-derive-PLAN.md — Sanity frontPage + editorConfidence, GROQ/types/API_CONTRACTS, fixtures, derive.ts (W1)
-- [ ] 55-04-convex-newsletter-backend-PLAN.md — Convex balmsForCharity + subscribeNewsletter, /api/email/subscribe, live Convex sync (W1)
+- [x] 55-04-convex-newsletter-backend-PLAN.md — Convex balmsForCharity + subscribeNewsletter, /api/email/subscribe, live Convex sync (W1)
 - [ ] 55-05-pipeline-confidence-editor-guide-PLAN.md — pipeline writes editorConfidence; EDITOR_GUIDE Front Page section (W1)
 - [ ] 55-06-masthead-hero-nav-PLAN.md — top bar, masthead, ticker, accent hero, How strip, sticky in-issue nav (W2)
 - [ ] 55-07-commerce-buy-band-PLAN.md — shared checkout client, FundButton, live BalmCounter, #buy band (W2)
