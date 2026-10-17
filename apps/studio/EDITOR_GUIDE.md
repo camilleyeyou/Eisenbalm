@@ -64,3 +64,31 @@ Studio remains open for **editing** as a read-only-publish fallback even
 after the flag flips — only the publish action is removed. Full Studio
 retirement (content moved elsewhere, Studio deleted) is a separate,
 later milestone.
+
+## Front Page (Phase 55)
+
+The public front page reads a small set of fields from the **Front Page** group on each weekly issue. Fill in what you have. Everything is optional, and every empty field degrades as shown below.
+
+| Field | Where it shows | What happens if empty |
+|---|---|---|
+| Dek | Hero sub-headline | Falls back to the first two sentences of the charity mission statement |
+| Ticker lines | Black ticker under the masthead | Falls back to facts from the charity record. Every line must also be true elsewhere on the page |
+| Pull quote: origin | Large quote in section 01 | Omitted |
+| Pull quote: case | Large quote in section 04 | Omitted |
+| Case timeline | Up to 4 steps in section 04; the last step is shown as the result | Omitted |
+| Ad summary | Section 06, spec-ad issues only | Omitted |
+| Hero image + alt text | Hero right column. Alt text is required whenever an image is set | Geometric artwork is shown instead |
+| Impact unit label, min USD, max USD | Shop band ("About N to M balms covers one ...") and progress bar | Omitted; the balm count is shown alone |
+| Editor's confidence | Bar in "Why we selected them". Written by the pipeline | Older issues show no bar. You may type a value from 0 to 1 if you know it |
+
+### Voice
+
+Every field is reader-facing copy in Jesse's voice: dry, precise, no exclamation marks. Pull quotes must be lifted verbatim from the section text.
+
+### Pipeline re-runs
+
+Re-running the pipeline for the same issue number regenerates the pipeline-written sections, but Front Page fields are carried forward automatically (an unpublished Studio draft is preferred over the published copy). Other manual Studio edits to pipeline-written sections are still replaced by a re-run.
+
+### Weekly accent
+
+The accent colour rotates green, blue, red, yellow by issue number (Issue 2 = green). It is not chosen per issue.
