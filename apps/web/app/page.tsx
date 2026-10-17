@@ -1,6 +1,6 @@
 /**
  * Home — Phase 55: renders the latest published issue's Dispatch front page
- * (no redirect). Canonical points at /issue/<slug> so the two URLs do not
+ * directly. Canonical points at /issue/<slug> so the two URLs do not
  * compete in search. With no published issue, shows the dry empty state.
  */
 import type { Metadata } from 'next'
