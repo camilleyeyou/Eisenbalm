@@ -1,0 +1,14 @@
+.d-delib-intro{max-width:720px;margin:0 0 24px}
+.d-delib-cards{display:flex;flex-wrap:wrap;gap:24px;list-style:none;margin:0;padding:0}
+.d-delib-cards > li{flex:1 1 min(100%, 300px);display:flex}
+.d-delib-card{flex:1;border:2px solid var(--d-ink);border-radius:20px;padding:24px;background:var(--d-paper);color:var(--d-ink)}
+.d-delib-card p{margin:0}
+.d-delib-card--picked{background:var(--d-green)}
+.d-delib-card--runner-up .d-label, .d-delib-card--runner-up .d-delib-blurb, .d-delib-card--also .d-label, .d-delib-card--also .d-delib-blurb{color:var(--d-muted)}
+.d-delib-title{font-size:18px;font-weight:800;line-height:1.35;margin:8px 0;overflow-wrap:anywhere}
+.d-delib-blurb{line-height:1.45;margin-top:8px}
+.d-confidence{margin-top:48px}
+.d-confidence-row{display:flex;align-items:center;gap:24px}
+.d-confidence-track{flex:1 1 auto;height:24px;background:var(--d-track)}
+.d-confidence-fill{display:block;height:100%;background:var(--d-blue)}
+.d-confidence-value{margin:0;flex:0 0 auto}
