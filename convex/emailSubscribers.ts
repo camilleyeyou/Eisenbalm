@@ -19,6 +19,7 @@
 import { internalMutation, internalQuery, mutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
+import { requireWebhookSecret } from './lib/auth'
 
 // NOTE: We do NOT import from '@eisenbalm/emails' here because the barrel re-exports
 // token.ts (which uses node:crypto) and this file runs in the Convex (non-Node) runtime.
@@ -161,5 +162,18 @@ export const unsubscribeByTokenPublic = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }): Promise<{ ok: boolean }> => {
     return ctx.runMutation(internal.emailSubscribers.unsubscribeByToken, { token })
+  },
+})
+
+/** Phase 55 (API_CONTRACTS §55.4). Called only by apps/web /api/email/subscribe (server). Webhook-secret lane: no Clerk identity exists for anonymous readers. */
+export const subscribeNewsletter = mutation({
+  args: { email: v.string(), unsubscribeToken: v.string(), webhookSecret: v.string() },
+  handler: async (ctx, args): Promise<null> => {
+    requireWebhookSecret(args.webhookSecret)
+    const email = args.email.trim().toLowerCase()
+    if (email.length < 3 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('invalid email')
+    if (!/^[0-9a-f]{64}$/.test(args.unsubscribeToken)) throw new Error('invalid token')
+    await ctx.runMutation(internal.emailSubscribers.upsertSubscriber, { email, unsubscribeToken: args.unsubscribeToken, source: 'newsletter-optin' })
+    return null
   },
 })

@@ -14,7 +14,7 @@
  * An enqueue failure MUST NOT fail the order write — wrapped in try/catch.
  * Public return type is PRESERVED as null (API_CONTRACTS §6).
  */
-import { mutation } from './_generated/server'
+import { mutation, query } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import { requireWebhookSecret } from './lib/auth'
@@ -80,5 +80,29 @@ export const insert = mutation({
       )
     }
     return null // PRESERVED — public return shape unchanged (API_CONTRACTS §6)
+  },
+})
+
+/** Phase 55 (API_CONTRACTS §55.3). Public, aggregate-only: never returns emails, names or addresses. Mirrors apps/web/lib/site.ts BALM_PRICE_CENTS. */
+const BALM_PRICE_CENTS = 899
+export const balmsForCharity = query({
+  args: { charitySlug: v.string(), sinceMs: v.optional(v.number()) },
+  handler: async (ctx, { charitySlug, sinceMs }) => {
+    const rows = await ctx.db
+      .query('stripeOrders')
+      .withIndex('by_charitySlug_createdAt', (q) =>
+        sinceMs === undefined
+          ? q.eq('charitySlug', charitySlug)
+          : q.eq('charitySlug', charitySlug).gte('createdAt', sinceMs),
+      )
+      .collect()
+    let balms = 0
+    let donationCents = 0
+    for (const r of rows) {
+      const c = r.donationAmount ?? r.amountSubtotal ?? r.amountTotal ?? 0
+      donationCents += c
+      balms += Math.max(0, Math.round(c / BALM_PRICE_CENTS))
+    }
+    return { orders: rows.length, balms, donationCents }
   },
 })
