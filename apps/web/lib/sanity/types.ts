@@ -70,6 +70,26 @@ export type IssueSection = {
   body: PortableTextBlock[]
 } | null
 
+export type IssueKeyDataPoint = { stat: string; source: string | null }
+
+export type IssueProblem = {
+  headline: string
+  body: PortableTextBlock[]
+  keyDataPoints: IssueKeyDataPoint[] | null
+} | null
+
+export type FrontPageRow = { label: string; value: string }
+
+export type IssueFrontPage = {
+  dek: string | null
+  tickerLines: string[] | null
+  pullQuotes: { origin: string | null; case: string | null } | null
+  caseTimeline: FrontPageRow[] | null
+  adSummary: { title: string | null; rows: FrontPageRow[] | null } | null
+  heroImage: { url: string; alt: string | null; width: number | null; height: number | null } | null
+  impactUnit: { label: string | null; costMinUsd: number | null; costMaxUsd: number | null } | null
+} | null
+
 export type IssueCaseStudy = {
   subjectName: string | null
   headline: string
@@ -114,6 +134,7 @@ export type IssueDeliberation = {
   candidates: IssueDeliberationCandidate[] | null
   editorDecision: string | null
   runnerUpNotes: string | null
+  editorConfidence?: number | null
   conversation: IssueDeliberationTurn[] | null
 } | null
 
@@ -142,7 +163,7 @@ export type Issue = {
   narrator?: IssueNarrator | null
   theme: IssueTheme
   originStory: IssueSection
-  problemStatement: IssueSection
+  problemStatement: IssueProblem
   problemPdfUrl: string | null
   founderBio: IssueSection
   caseStudy: IssueCaseStudy
@@ -150,6 +171,7 @@ export type Issue = {
   bonus: IssueBonus
   podcast: IssuePodcast
   selectionDeliberation: IssueDeliberation
+  frontPage?: IssueFrontPage
 } | null
 
 // ─── §1.3 — Archive ────────────────────────────────────────────────────────

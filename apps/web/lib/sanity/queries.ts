@@ -59,7 +59,7 @@ export const QUERY_ISSUE_BY_SLUG = groq`
     },
 
     originStory { headline, body },
-    problemStatement { headline, body },
+    problemStatement { headline, body, "keyDataPoints": pdfContent.keyDataPoints[]{ stat, source } },
     "problemPdfUrl": problemPdf.asset->url,
 
     founderBio { headline, body },
@@ -101,7 +101,23 @@ export const QUERY_ISSUE_BY_SLUG = groq`
       },
       editorDecision,
       runnerUpNotes,
+      editorConfidence,
       conversation[] { speaker, text },
+    },
+
+    frontPage {
+      dek,
+      tickerLines,
+      pullQuotes { origin, case },
+      caseTimeline[] { label, value },
+      adSummary { title, rows[] { label, value } },
+      "heroImage": select(defined(heroImage.asset) => {
+        "url": heroImage.asset->url,
+        "alt": heroImage.alt,
+        "width": heroImage.asset->metadata.dimensions.width,
+        "height": heroImage.asset->metadata.dimensions.height
+      }, null),
+      impactUnit { label, costMinUsd, costMaxUsd },
     },
   }
 `
@@ -219,7 +235,7 @@ export const QUERY_ISSUE_PREVIEW_BY_SLUG = groq`
     },
 
     originStory { headline, body },
-    problemStatement { headline, body },
+    problemStatement { headline, body, "keyDataPoints": pdfContent.keyDataPoints[]{ stat, source } },
     "problemPdfUrl": problemPdf.asset->url,
 
     founderBio { headline, body },
@@ -261,7 +277,23 @@ export const QUERY_ISSUE_PREVIEW_BY_SLUG = groq`
       },
       editorDecision,
       runnerUpNotes,
+      editorConfidence,
       conversation[] { speaker, text },
+    },
+
+    frontPage {
+      dek,
+      tickerLines,
+      pullQuotes { origin, case },
+      caseTimeline[] { label, value },
+      adSummary { title, rows[] { label, value } },
+      "heroImage": select(defined(heroImage.asset) => {
+        "url": heroImage.asset->url,
+        "alt": heroImage.alt,
+        "width": heroImage.asset->metadata.dimensions.width,
+        "height": heroImage.asset->metadata.dimensions.height
+      }, null),
+      impactUnit { label, costMinUsd, costMaxUsd },
     },
   }
 `
