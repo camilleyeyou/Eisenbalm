@@ -180,7 +180,7 @@ export const longWordIssue: FullIssue = {
 export const oneCandidateIssue: FullIssue = {
   ...fullIssue,
   selectionDeliberation: {
-    candidates: [candidates[0]],
+    candidates: [candidates[0]!],
     editorDecision: 'Acme was selected.',
     runnerUpNotes: null,
     conversation: null,
@@ -196,12 +196,12 @@ export const archiveIssues: ArchiveIssue[] = Array.from({ length: 10 }, (_, i) =
     issueNumber: n,
     publishDate: `2026-${String(Math.min(n + 1, 12)).padStart(2, '0')}-15`,
     slug: `issue-${n}`,
-    bonusType: (['bigBudget', 'jingle', 'specAd'] as const)[n % 3],
+    bonusType: (['bigBudget', 'jingle', 'specAd'] as const)[n % 3]!,
     charity: {
       name: `Charity Number ${n}`,
       slug: `charity-number-${n}`,
-      location: places[n % places.length],
-      focusArea: focus[n % focus.length],
+      location: places[n % places.length]!,
+      focusArea: focus[n % focus.length]!,
       assetRange: '$100K–$500K',
     },
   }
