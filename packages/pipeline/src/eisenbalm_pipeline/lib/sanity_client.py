@@ -10,6 +10,8 @@ Source: docs/API_CONTRACTS.md §2 + 04-RESEARCH.md §5.
 from __future__ import annotations
 
 import json
+import logging
+import math
 import os
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -25,6 +27,18 @@ from eisenbalm_pipeline.lib.portable_text import (
 )
 
 API_VERSION = "v2024-01-01"
+
+logger = logging.getLogger(__name__)
+
+
+def _valid_confidence(value: object) -> float | None:
+    """Phase 55 (API_CONTRACTS §55.2): only a finite number in [0, 1] is written; anything else is omitted so the public bar is hidden."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    f = float(value)
+    if not math.isfinite(f) or f < 0.0 or f > 1.0:
+        return None
+    return f
 
 
 def _dataset() -> str:
@@ -272,6 +286,10 @@ async def write_issue_draft(
             "cost": json.dumps(cost_payload or {"total": 0.0, "agents": {}}),
         },
     }
+
+    conf = _valid_confidence(state.get("editor_confidence"))
+    if conf is not None:
+        doc["selectionDeliberation"]["editorConfidence"] = conf
 
     r = await http.post(
         f"/{API_VERSION}/data/mutate/{_dataset()}",
