@@ -2,8 +2,8 @@
 phase: 55
 slug: public-site-redesign
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-10-16
 ---
 
@@ -95,3 +95,13 @@ Filled in by the planner per task. Requirement → test mapping:
 - [ ] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
+
+## Task 1 Gate Evidence (2026-10-17)
+
+- `pnpm --filter web test`: 61 files / 634 tests pass
+- `pnpm --filter web typecheck`, `pnpm --filter @eisenbalm/convex typecheck`: clean (studio has no typecheck script)
+- `uv run pytest tests -k sanity`: 46 passed, 10 skipped
+- `pnpm --filter web build`: exit 0 (strict, compiled successfully)
+- theme.ts / game-validator.ts unchanged since phase start; GameSlot sandbox="allow-scripts" count 1; allow-same-origin 0; voice denylist empty
+- Stripe price (read-only GET): unit_amount 2100, usd, livemode false. BLOCKER for SC-5: must be 899.
+- Manual rows (layout, axe, live count, voice, live purchase) remain for Task 3.
