@@ -23,8 +23,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useShopQty } from '@/components/marketing/ShopQtyProvider'
 
-/** Dry, on-voice checkout-failure message. No exclamation, no pop-up ornament. */
-export const CHECKOUT_FAILURE_MESSAGE = 'Checkout is unavailable right now. Try again in a moment.'
+import { startCheckout, CHECKOUT_FAILURE_MESSAGE } from '@/lib/checkout-client'
+
+export { CHECKOUT_FAILURE_MESSAGE } from '@/lib/checkout-client'
 
 interface BuyButtonProps {
   /** Explicit quantity to pass to checkout. If omitted, reads from ShopQtyProvider context. */
@@ -45,26 +46,12 @@ export function BuyButton({ quantity: quantityProp, label, className }: BuyButto
     if (loading) return
     setLoading(true)
     setErrorMessage(null)
-    try {
-      const res = await fetch('/api/checkout/create-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity }),
-      })
-      const body = (await res.json()) as { url?: string; error?: string }
-      if (body.url) {
-        window.location.href = body.url
-        return
-      }
-      throw new Error(body.error ?? 'Checkout failed')
-    } catch (err) {
-      // No pop-up ornament per voice rules — a dry inline message near the
-      // button, and re-enable so the reader can retry.
-      // eslint-disable-next-line no-console
-      console.error('[BuyButton] checkout failed:', err)
-      setErrorMessage(CHECKOUT_FAILURE_MESSAGE)
-      setLoading(false)
-    }
+    const result = await startCheckout(quantity)
+    if (result.ok) return
+    // No pop-up ornament per voice rules — a dry inline message near the
+    // button, and re-enable so the reader can retry.
+    setErrorMessage(CHECKOUT_FAILURE_MESSAGE)
+    setLoading(false)
   }
 
   return (

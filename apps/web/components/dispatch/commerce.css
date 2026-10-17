@@ -1,0 +1,19 @@
+.d-buy{background:var(--d-ink);color:var(--d-paper);padding-block:64px}
+.d-buy-grid{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
+.d-buy-copy{flex:1 1 min(100%, 560px);min-width:0}
+.d-buy-eyebrow{color:var(--d-dark-caption)}
+.d-buy-lead{color:var(--d-dark-lead);margin:24px 0 16px}
+.d-buy-balm{color:var(--d-dark-lead);margin:0 0 24px}
+.d-buy-note{color:var(--d-dark-caption);margin:16px 0 0}
+.d-buy-more{color:var(--d-paper)}
+.d-buy-side{flex:0 1 min(100%, 320px);display:flex;flex-direction:column;gap:24px}
+.d-fund{display:flex;flex-direction:column;gap:8px}
+.d-fund-status{color:var(--d-paper);min-height:1.35em;margin:0;border-bottom:2px solid transparent}
+.d-fund-status:not(:empty){border-bottom-color:var(--d-red)}
+.d-count{border:2px solid var(--d-paper);border-radius:20px;padding:24px}
+.d-count-label{color:var(--d-dark-caption);margin:0}
+.d-count-value{margin:8px 0 0}
+.d-impact{margin-top:24px}
+.d-impact-track{height:24px;background:var(--d-track-dark);margin-top:8px}
+.d-impact-fill{display:block;height:100%;background:var(--d-green)}
+.d-balm-glyph{display:block;width:72px;height:120px;border:3px solid var(--d-paper);border-radius:16px 16px 8px 8px;background:var(--d-accent)}
