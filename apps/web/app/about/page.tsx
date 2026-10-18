@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { SITE_NAME, getSiteUrl } from '@/lib/site'
+import { SitePage } from '@/components/dispatch/SitePage'
 
 export const metadata: Metadata = {
   title: 'About',
@@ -27,31 +28,29 @@ export const metadata: Metadata = {
  */
 export default function AboutPage() {
   return (
-    <article className="mx-auto max-w-[680px] px-4 md:px-6 lg:px-8 py-16">
-      <h1 className="font-display text-[28px] md:text-[36px] font-semibold leading-[1.15] text-[color:var(--color-text)]">
-        About
-      </h1>
+    <SitePage title="About" tone="red" narrow>
+      <article className="d-page-copy">
+        {/* TODO(Andrew): Replace the interim paragraphs below with your approved /about copy. Voice: Jesse — dry, precise, no irony signaling, no exclamation marks. Max 3-4 paragraphs. */}
 
-      {/* TODO(Andrew): Replace the interim paragraphs below with your approved /about copy. Voice: Jesse — dry, precise, no irony signaling, no exclamation marks. Max 3-4 paragraphs. */}
+        <p className="d-body">
+          The Eisenbalm Dispatch is a weekly editorial publication. Each issue selects one
+          overlooked charitable organization, produces an eight-section editorial examination
+          of it, and donates one hundred percent of Jesse A. Eisenbalm lip balm proceeds to
+          that organization for the duration of the issue.
+        </p>
 
-      <p className="mt-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
-        The Eisenbalm Dispatch is a weekly editorial publication. Each issue selects one
-        overlooked charitable organization, produces an eight-section editorial examination
-        of it, and donates one hundred percent of Jesse A. Eisenbalm lip balm proceeds to
-        that organization for the duration of the issue.
-      </p>
+        <p className="d-body">
+          The editorial posture is fixed. Every featured organization is treated with the
+          gravity ordinarily reserved for a Fortune 500 company. The central question each
+          issue answers is why the organization deserves to exist. The answer is given without
+          sentiment.
+        </p>
 
-      <p className="mt-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
-        The editorial posture is fixed. Every featured organization is treated with the
-        gravity ordinarily reserved for a Fortune 500 company. The central question each
-        issue answers is why the organization deserves to exist. The answer is given without
-        sentiment.
-      </p>
-
-      <p className="mt-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
-        A new issue ships every Thursday, following editorial review. The shop carries one
-        product. The proceeds go entirely to the charity on the cover.
-      </p>
-    </article>
+        <p className="d-body">
+          A new issue ships every Thursday, following editorial review. The shop carries one
+          product. The proceeds go entirely to the charity on the cover.
+        </p>
+      </article>
+    </SitePage>
   )
 }

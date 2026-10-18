@@ -2,16 +2,16 @@
  * Root layout. UI-SPEC Typography + Color System.
  *
  * Loads the three default fonts via next/font/google as CSS variables.
- * Renders SiteHeader + SiteFooter via ChromeSwitch (Phase 55: swapped for
- * DispatchFooter on / and /issue/*; the Dispatch masthead lives in IssueLayout). Inlines default theme via
+ * Renders the Dispatch SiteTopBar via ChromeSwitch (skipped on / and /issue/*,
+ * where the Dispatch masthead lives in IssueLayout) and DispatchFooter on every
+ * route, outside the single <main>. Inlines default theme via
  * serializeThemeCss(null) — issue pages override with their own theme.
  * Wraps children in <TooltipProvider> so shadcn Tooltip primitives (used
  * by Plan 02-06's <AnchorCopyButton>) work without per-component providers.
  */
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Newsreader, IBM_Plex_Mono, Manrope } from 'next/font/google'
-import { SiteHeader } from '@/components/SiteHeader'
-import { SiteFooter } from '@/components/SiteFooter'
+import { SiteTopBar } from '@/components/dispatch/SiteTopBar'
 import { ChromeSwitch } from '@/components/dispatch/ChromeSwitch'
 import { DispatchFooter } from '@/components/dispatch/DispatchFooter'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -134,11 +134,11 @@ export default function RootLayout({
         </a>
         <ConvexClientProvider>
           <TooltipProvider delayDuration={0}>
-            <ChromeSwitch site={<SiteHeader />} />
+            <ChromeSwitch site={<SiteTopBar />} />
             <main className="flex-1" id="main">
               {children}
             </main>
-            <ChromeSwitch site={<SiteFooter />} dispatch={<DispatchFooter />} />
+            <DispatchFooter />
           </TooltipProvider>
         </ConvexClientProvider>
       </body>

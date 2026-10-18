@@ -35,6 +35,16 @@ export const TOPBAR_LINKS = [
   { label: 'About', href: '#about' },
 ] as const
 
+/** Site-wide top bar links for non-dispatch routes (/shop, /archive, /about ...). */
+export const SITE_TOPBAR_LINKS = [
+  { label: "This week's nonprofit", href: '/' },
+  { label: 'Past nonprofits', href: '/archive' },
+  { label: 'Charities', href: '/charities' },
+  { label: 'How it works', href: '/#how' },
+  { label: 'About', href: '/about' },
+  { label: 'Shop', href: '/shop' },
+] as const
+
 export const HERO_EYEBROW = "This week's nonprofit"
 export const HOW_EYEBROW = 'How the Dispatch works'
 export const HOW_STEPS = [

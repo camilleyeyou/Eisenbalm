@@ -1,0 +1,21 @@
+/* Quick 261018-20a site-wide top bar + page shell. Colours via var(--d-*) only.
+   Every selector is scoped to .d-sitebar* / .d-page* so / and /issue/* are untouched. */
+.d-sitebar{border-bottom:4px solid var(--d-ink)}
+.d-sitebar-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding-block:12px}
+.d-sitebar-mark{font-size:clamp(20px, 2.4vw, 28px);font-weight:800;letter-spacing:-0.04em;line-height:1;display:inline-flex;align-items:center;gap:12px;min-height:44px;color:inherit;text-decoration:none}
+.d-sitebar-nav{flex:1 1 100%}
+.d-sitebar .d-topbar-links a[aria-current="page"]{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+@media (min-width: 60em){
+  .d-sitebar-nav{flex:0 1 auto}
+}
+
+main:has(> .d-page){display:flex;flex-direction:column}
+.d-page{flex:1 0 auto}
+.d-page-head{padding-block:48px;border-bottom:4px solid var(--d-ink)}
+.d-page-head .d-eyebrow{margin-bottom:16px}
+.d-page-lead{max-width:720px;margin:24px 0 0}
+.d-page-body{padding-block:48px 64px}
+.d-page-narrow{max-width:min(100%, 720px)}
+.d-page-copy p{font-size:18px;line-height:1.6;margin:0 0 16px}
+.d-page-copy a{color:inherit;text-decoration:underline}
+.d-page-actions{display:flex;flex-wrap:wrap;gap:16px;margin-top:32px}

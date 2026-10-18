@@ -14,13 +14,13 @@ function walk(dir: string): string[] {
 const files = walk(resolve(root, 'components/dispatch'))
 
 describe('Fund CTA wiring', () => {
-  it('every {FUND_CTA} sits inside an anchor to #buy', () => {
+  it('every {FUND_CTA} sits inside an anchor to #buy or /shop', () => {
     let total = 0
     let anchored = 0
     for (const f of files) {
       const src = readFileSync(f, 'utf-8')
       total += (src.match(/\{FUND_CTA\}/g) ?? []).length
-      anchored += (src.match(/<a\b[^>]*href="#buy"[^>]*>\s*\{FUND_CTA\}/g) ?? []).length
+      anchored += (src.match(/<(?:a|Link)\b[^>]*href="(?:#buy|\/shop)"[^>]*>\s*\{FUND_CTA\}/g) ?? []).length
     }
     expect(total).toBeGreaterThan(0)
     expect(anchored).toBe(total)
@@ -31,6 +31,7 @@ describe('Fund CTA wiring', () => {
       const src = readFileSync(f, 'utf-8')
       expect(src).not.toContain('/api/checkout/create-session')
       if (!f.endsWith('FundButton.tsx')) expect(src).not.toContain('startCheckout')
+      if (f.endsWith('SiteTopBar.tsx')) expect(src).not.toContain('/api/checkout')
     }
     expect(read('components/dispatch/FundButton.tsx')).toContain('startCheckout')
   })
@@ -50,7 +51,7 @@ describe('Fund CTA wiring', () => {
     const layout = read('app/layout.tsx').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
     expect(layout).toContain('<ChromeSwitch')
     expect((layout.match(/<main/g) ?? []).length).toBe(1)
-    expect(layout).toContain('dispatch={<DispatchFooter')
+    expect((layout.match(/<DispatchFooter/g) ?? []).length).toBe(1)
     expect(layout.indexOf('<DispatchFooter')).toBeGreaterThan(layout.indexOf('</main>'))
   })
 })
