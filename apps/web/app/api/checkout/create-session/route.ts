@@ -88,7 +88,9 @@ export async function POST(req: Request) {
     )
   }
 
-  const session = await stripe.checkout.sessions.create({
+  let session
+  try {
+    session = await stripe.checkout.sessions.create({
     mode: 'payment',
     line_items: [{ price: priceId, quantity }],
     shipping_address_collection: {
@@ -106,6 +108,19 @@ export async function POST(req: Request) {
       charitySlug,  // Open Question 1 lock; empty string if Sanity unavailable
     },
   })
+  } catch (err) {
+    // A Stripe rejection (e.g. price/shipping-rate ids from a different account
+    // or mode than STRIPE_SECRET_KEY) must still return JSON, not an empty 500.
+    // Full message goes to the server log; the client gets only Stripe's
+    // non-secret error code and the offending param, which name the cause.
+    const e = err as { type?: string; code?: string; param?: string; message?: string }
+    // eslint-disable-next-line no-console
+    console.error('[checkout] Stripe session create failed:', e?.type, e?.code, e?.param, e?.message)
+    return NextResponse.json(
+      { error: 'Checkout session could not be created.', code: e?.code ?? null, param: e?.param ?? null },
+      { status: 502 },
+    )
+  }
 
   if (!session.url) {
     // Defensive: Stripe should always return a url for hosted Checkout.

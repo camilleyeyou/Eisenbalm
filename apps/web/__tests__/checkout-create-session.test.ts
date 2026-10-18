@@ -117,6 +117,29 @@ describe('CMR-02 + CMR-10: POST /api/checkout/create-session', () => {
     expect(args.cancel_url).toMatch(/\/shop$/)
   })
 
+  it('returns 502 JSON with Stripe code/param (not an empty 500) when Stripe rejects the session', async () => {
+    sessionCreate.mockRejectedValue(
+      Object.assign(new Error("No such price: 'price_x'"), {
+        type: 'StripeInvalidRequestError',
+        code: 'resource_missing',
+        param: 'line_items[0][price]',
+      }),
+    )
+    const { POST } = await import('@/app/api/checkout/create-session/route')
+    const res = await POST(
+      new Request('http://localhost/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      }),
+    )
+    expect(res.status).toBe(502)
+    const body = await res.json()
+    expect(body.code).toBe('resource_missing')
+    expect(body.param).toBe('line_items[0][price]')
+    expect(JSON.stringify(body)).not.toContain('No such price')
+  })
+
   it('returns 500 when STRIPE_PRICE_ID is unset', async () => {
     delete process.env.STRIPE_PRICE_ID
     const { POST } = await import('@/app/api/checkout/create-session/route')
