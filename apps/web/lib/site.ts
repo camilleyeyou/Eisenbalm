@@ -22,7 +22,7 @@ export function getSiteUrl(): string {
  * Single source for the balm price in cents (Phase 55; approved wording).
  * The Convex balms query mirrors this value.
  */
-export const BALM_PRICE_CENTS = 899
+export const BALM_PRICE_CENTS = 2100
 
 export function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`

@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { groq } from 'next-sanity'
 
 import { sanityClient } from '@/lib/sanity/client'
-import { SITE_NAME, getSiteUrl } from '@/lib/site'
+import { SITE_NAME, getSiteUrl, BALM_PRICE_CENTS, formatUsd } from '@/lib/site'
 import { BuyButton } from '@/components/marketing/BuyButton'
 import { ShopQtyProvider, QtyStepper } from '@/components/marketing/ShopQtyProvider'
 import { ShopStickyBar } from '@/components/marketing/ShopStickyBar'
@@ -156,7 +156,7 @@ export default async function ShopPage() {
             </p>
 
             {/* TODO(Andrew): confirm final price before launch */}
-            <p className="sb-price rv">$8.99</p>
+            <p className="sb-price rv">{formatUsd(BALM_PRICE_CENTS)}</p>
 
             {/* Quantity stepper + running total */}
             <div className="rv" style={{ marginTop: '1.5rem' }}>
@@ -282,8 +282,8 @@ export default async function ShopPage() {
           <p className="sb-cause-eyebrow rv">This week.</p>
           <h2 className="sb-cause-heading rv">
             {charityName
-              ? `$8.99 → ${charityName}.`
-              : "$8.99 → this week's charity."}
+              ? `${formatUsd(BALM_PRICE_CENTS)} → ${charityName}.`
+              : `${formatUsd(BALM_PRICE_CENTS)} → this week's charity.`}
           </h2>
           <p className="sb-cause-body rv">
             One product. One weekly charity. One hundred percent of proceeds.

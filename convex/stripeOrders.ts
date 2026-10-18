@@ -84,7 +84,7 @@ export const insert = mutation({
 })
 
 /** Phase 55 (API_CONTRACTS §55.3). Public, aggregate-only: never returns emails, names or addresses. Mirrors apps/web/lib/site.ts BALM_PRICE_CENTS. */
-const BALM_PRICE_CENTS = 899
+const BALM_PRICE_CENTS = 2100
 export const balmsForCharity = query({
   args: { charitySlug: v.string(), sinceMs: v.optional(v.number()) },
   handler: async (ctx, { charitySlug, sinceMs }) => {

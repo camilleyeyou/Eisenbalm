@@ -9,10 +9,11 @@
  *   - QtyStepper: labelled −/+ stepper + live running-total line
  *
  * Quantity is clamped to integer 1–20.
- * unitPriceCents = 899 ($8.99). TODO(Andrew): confirm final price before launch.
+ * unitPriceCents = BALM_PRICE_CENTS from lib/site.ts (single price source).
  */
 
 import { createContext, useContext, useState, useCallback } from 'react'
+import { BALM_PRICE_CENTS } from '@/lib/site'
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ const ShopQtyContext = createContext<ShopQtyCtx | null>(null)
 
 export function ShopQtyProvider({ children }: { children: React.ReactNode }) {
   const [quantity, setRaw] = useState(1)
-  const unitPriceCents = 899 // TODO(Andrew): confirm final price; mirrors $8.99
+  const unitPriceCents = BALM_PRICE_CENTS
 
   const setQuantity = useCallback((n: number) => {
     setRaw(Math.min(20, Math.max(1, Math.round(n) || 1)))

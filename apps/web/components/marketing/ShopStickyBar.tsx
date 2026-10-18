@@ -4,7 +4,7 @@
  * ShopStickyBar — sticky buy bar that appears after the hero scrolls past.
  *
  * - Reads quantity from ShopQtyProvider context via useShopQty().
- * - Shows the product name, $8.99, and "100% → {charityName}" cause line.
+ * - Shows the product name, the price, and "100% → {charityName}" cause line.
  * - Visibility toggled via .visible class (CSS transition) once window.scrollY
  *   passes ~600px (approximately the end of the hero on most viewports).
  * - Fixed bottom, z-index 100 (below the SiteHeader's z-[150]).
@@ -16,6 +16,7 @@
 import { useEffect, useRef } from 'react'
 import { BuyButton } from '@/components/marketing/BuyButton'
 import { useShopQty } from '@/components/marketing/ShopQtyProvider'
+import { BALM_PRICE_CENTS, formatUsd } from '@/lib/site'
 
 interface ShopStickyBarProps {
   charityName: string | null
@@ -46,7 +47,7 @@ export function ShopStickyBar({ charityName }: ShopStickyBarProps) {
     <div ref={barRef} className="sb-sticky" role="complementary" aria-label="Quick buy">
       <div className="sb-sticky-info">
         <span className="sb-sticky-product">Jesse A. Eisenbalm</span>
-        <span className="sb-sticky-price">$8.99 · qty {quantity}</span>
+        <span className="sb-sticky-price">{formatUsd(BALM_PRICE_CENTS)} · qty {quantity}</span>
         {charityName ? (
           <span className="sb-sticky-cause">100% → {charityName}</span>
         ) : (

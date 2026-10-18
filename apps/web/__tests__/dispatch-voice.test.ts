@@ -18,11 +18,11 @@ function walk(dir: string): string[] {
 describe('dispatch copy behaviour', () => {
   it('derives price', () => {
     expect(formatUsd(899)).toBe('$8.99')
-    expect(copy.PRICE_LABEL).toBe('$8.99')
-    expect(copy.FUND_CTA).toBe('Fund them · $8.99')
+    expect(copy.PRICE_LABEL).toBe('$21.00')
+    expect(copy.FUND_CTA).toBe('Fund them · $21.00')
   })
   it('fundButtonLabel', () => {
-    expect(copy.fundButtonLabel('Acme Wheels')).toBe('Fund Acme Wheels · $8.99')
+    expect(copy.fundButtonLabel('Acme Wheels')).toBe('Fund Acme Wheels · $21.00')
     expect(copy.fundButtonLabel('x'.repeat(29))).toBe(copy.FUND_CTA)
     expect(copy.fundButtonLabel(null)).toBe(copy.FUND_CTA)
   })
@@ -30,7 +30,7 @@ describe('dispatch copy behaviour', () => {
     expect(copy.HOW_STEPS.map((s) => s.lead + s.rest)).toEqual([
       'Each Thursday we select one small nonprofit most people have not heard of.',
       'We tell its story, start to finish, on this page.',
-      'Every lip balm sold that week funds it. The full $8.99. 100% to them.',
+      'Every lip balm sold that week funds it. The full $21.00. 100% to them.',
     ])
   })
   it('SECTION_META order', () => {
@@ -43,9 +43,9 @@ describe('dispatch copy behaviour', () => {
     expect(copy.bonusLabel('bigBudget')).toBe('The production we made them')
   })
   it('buyLead', () => {
-    expect(copy.buyLead('Acme', null)).toBe('Every lip balm sold this week sends its full $8.99 to Acme.')
+    expect(copy.buyLead('Acme', null)).toBe('Every lip balm sold this week sends its full $21.00 to Acme.')
     expect(copy.buyLead('Acme', { min: 12, max: 20, unit: 'wheelchair' })).toBe(
-      'Every lip balm sold this week sends its full $8.99 to Acme. About 12 to 20 balms covers one wheelchair.',
+      'Every lip balm sold this week sends its full $21.00 to Acme. About 12 to 20 balms covers one wheelchair.',
     )
   })
   it('searchStatus', () => {
