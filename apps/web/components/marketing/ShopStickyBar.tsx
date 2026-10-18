@@ -7,8 +7,8 @@
  * - Shows the product name, the price, and "100% → {charityName}" cause line.
  * - Visibility toggled via .visible class (CSS transition) once window.scrollY
  *   passes ~600px (approximately the end of the hero on most viewports).
- * - Fixed bottom, z-index 100 (below the SiteHeader's z-[150]).
- * - Min 44px touch target on the Add-to-cart button (via BuyButton lg size).
+ * - Fixed bottom, z-index 100 (Dispatch ink bar; the top bar is not sticky).
+ * - Min 44px touch target on the Add-to-cart button (the .d-pill class).
  * - Under prefers-reduced-motion: transition is suppressed in CSS; JS still
  *   toggles the .visible class (just instant show/hide, no animation).
  */
@@ -44,21 +44,22 @@ export function ShopStickyBar({ charityName }: ShopStickyBarProps) {
   }, [])
 
   return (
-    <div ref={barRef} className="sb-sticky" role="complementary" aria-label="Quick buy">
-      <div className="sb-sticky-info">
-        <span className="sb-sticky-product">Jesse A. Eisenbalm</span>
-        <span className="sb-sticky-price">{formatUsd(BALM_PRICE_CENTS)} · qty {quantity}</span>
+    <div ref={barRef} className="d-shop-sticky d-on-dark" role="complementary" aria-label="Quick buy">
+      <div className="d-shop-sticky-info">
+        <span className="d-label">Jesse A. Eisenbalm</span>
+        <span className="d-label">{formatUsd(BALM_PRICE_CENTS)} · qty {quantity}</span>
         {charityName ? (
-          <span className="sb-sticky-cause">100% → {charityName}</span>
+          <span className="d-label d-shop-sticky-cause">100% → {charityName}</span>
         ) : (
-          <span className="sb-sticky-cause">100% to this week&apos;s charity</span>
+          <span className="d-label d-shop-sticky-cause">100% to this week&apos;s charity</span>
         )}
       </div>
       <div className="shrink-0">
         <BuyButton
           quantity={quantity}
           label="Add to cart"
-          className="mt-0"
+          tone="accent"
+          className="d-pill--compact"
         />
       </div>
     </div>

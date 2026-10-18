@@ -54,30 +54,25 @@ export function useShopQty(): ShopQtyCtx {
 
 /**
  * Accessible quantity stepper with live running-total display.
- * Renders inside .shop-brand wrapper so scoped --accent / --ink vars resolve.
+ * Styled by the .d-qty* rules in components/dispatch/shop.css.
  */
 export function QtyStepper() {
   const { quantity, setQuantity, unitPriceCents } = useShopQty()
   const totalFormatted = ((quantity * unitPriceCents) / 100).toFixed(2)
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-0">
+    <div className="d-qty">
+      <div className="d-qty-row">
         <button
           type="button"
           aria-label="Decrease quantity"
           disabled={quantity <= 1}
           onClick={() => setQuantity(quantity - 1)}
-          className="flex h-11 w-11 items-center justify-center border border-[color:var(--rule)] bg-[color:var(--paper2)] text-[color:var(--ink)] text-lg font-medium transition-opacity disabled:opacity-40"
+          className="d-qty-btn"
         >
           −
         </button>
-        <span
-          aria-live="polite"
-          aria-atomic="true"
-          className="flex h-11 min-w-[3rem] items-center justify-center border-y border-[color:var(--rule)] bg-[color:var(--paper)] px-3 text-[color:var(--ink)] tabular-nums"
-          style={{ fontFamily: 'var(--sb-mono)' }}
-        >
+        <span aria-live="polite" aria-atomic="true" className="d-qty-value">
           {quantity}
         </span>
         <button
@@ -85,14 +80,12 @@ export function QtyStepper() {
           aria-label="Increase quantity"
           disabled={quantity >= 20}
           onClick={() => setQuantity(quantity + 1)}
-          className="flex h-11 w-11 items-center justify-center border border-[color:var(--rule)] bg-[color:var(--paper2)] text-[color:var(--ink)] text-lg font-medium transition-opacity disabled:opacity-40"
+          className="d-qty-btn"
         >
           +
         </button>
       </div>
-      <p className="text-sm text-[color:var(--ink-2)]" style={{ fontFamily: 'var(--sb-mono)' }}>
-        Total: ${totalFormatted}
-      </p>
+      <p className="d-qty-total">Total: ${totalFormatted}</p>
     </div>
   )
 }

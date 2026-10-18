@@ -102,4 +102,21 @@ describe('D-9: BuyButton checkout-failure UX', () => {
       value: original,
     })
   })
+
+  it('renders as a Dispatch pill with the requested tone', () => {
+    const { rerender } = render(
+      <ShopQtyProvider>
+        <BuyButton />
+      </ShopQtyProvider>,
+    )
+    const btn = screen.getByRole('button', { name: /buy the lip balm/i })
+    expect(btn.classList.contains('d-pill')).toBe(true)
+    expect(btn.classList.contains('d-pill--ink')).toBe(true)
+    rerender(
+      <ShopQtyProvider>
+        <BuyButton tone="paper" />
+      </ShopQtyProvider>,
+    )
+    expect(screen.getByRole('button', { name: /buy the lip balm/i }).classList.contains('d-pill--paper')).toBe(true)
+  })
 })

@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 
 /**
  * ShopCallout — rendered at the bottom of /issue/[slug] (Plan 02-06).
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button'
  * UI-SPEC rules (non-negotiable):
  *   - One sentence. One button. NEVER a banner. NEVER a modal.
  *   - No urgency language. No exclamation marks.
- *   - Button uses shadcn <Button asChild size="lg"> wrapping <Link>.
+ *   - The CTA is a Dispatch .d-pill link.
  *   - Print stylesheet hides this component (@media print).
  *
  * Copy is locked by the UI-SPEC Copywriting Contract. Do not rephrase.
@@ -29,12 +28,12 @@ export function ShopCallout({ charityName }: ShopCalloutProps) {
       className="mt-16 border-t border-[color:var(--color-border)] pt-8 print:hidden"
       aria-label="Shop callout"
     >
-      <p className="font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
+      <p className="d-body">
         {sentence}
       </p>
-      <Button asChild size="lg" className="mt-4">
-        <Link href="/shop">Buy the lip balm</Link>
-      </Button>
+      <Link href="/shop" className="d-pill d-pill--ink mt-4">
+        Buy the lip balm
+      </Link>
     </aside>
   )
 }

@@ -20,7 +20,6 @@
  * subtree), matching ShopStickyBar's static-import usage of the same hook.
  */
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { useShopQty } from '@/components/marketing/ShopQtyProvider'
 
 import { startCheckout, CHECKOUT_FAILURE_MESSAGE } from '@/lib/checkout-client'
@@ -32,11 +31,13 @@ interface BuyButtonProps {
   quantity?: number
   /** Button label. Defaults to "Buy the lip balm". */
   label?: string
-  /** Additional className for the Button element. */
+  /** Additional className for the button element. */
   className?: string
+  /** Dispatch pill tone. Defaults to ink. */
+  tone?: 'ink' | 'paper' | 'accent'
 }
 
-export function BuyButton({ quantity: quantityProp, label, className }: BuyButtonProps = {}) {
+export function BuyButton({ quantity: quantityProp, label, className, tone = 'ink' }: BuyButtonProps = {}) {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { quantity: contextQty } = useShopQty()
@@ -56,25 +57,16 @@ export function BuyButton({ quantity: quantityProp, label, className }: BuyButto
 
   return (
     <div>
-      <Button
+      <button
         type="button"
-        size="lg"
         disabled={loading}
         onClick={onClick}
-        className={className ?? 'mt-8'}
+        className={['d-pill', `d-pill--${tone}`, className].filter(Boolean).join(' ')}
       >
         {loading ? 'Redirecting…' : (label ?? 'Buy the lip balm')}
-      </Button>
+      </button>
       {errorMessage && (
-        <p
-          role="alert"
-          style={{
-            fontFamily: 'var(--font-ui, inherit)',
-            fontSize: '13px',
-            color: 'var(--color-text-dim, #6b6b6b)',
-            marginTop: '10px',
-          }}
-        >
+        <p role="alert" className="d-buy-error">
           {errorMessage}
         </p>
       )}

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { groq } from 'next-sanity'
 
 import { sanityClient } from '@/lib/sanity/client'
+import { SitePage } from '@/components/dispatch/SitePage'
 
 /**
  * /shop/thank-you — post-purchase confirmation page.
@@ -51,30 +52,21 @@ export default async function ThankYouPage() {
   }
 
   return (
-    <section className="mx-auto max-w-[860px] px-4 md:px-6 lg:px-8 py-16">
-      <p className="font-ui text-[14px] uppercase tracking-[0.1em] text-[color:var(--color-text-muted)]">
-        Order received
-      </p>
-      <h1 className="mt-3 font-display text-[28px] md:text-[36px] font-semibold leading-[1.15] text-[color:var(--color-text)]">
-        Your lip balm is on its way.
-      </h1>
-      <p className="mt-6 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]">
-        This week, every dollar of proceeds goes to{' '}
-        {charityName ?? "this week's featured charity"} — not the margin, the
-        proceeds, in full. A small purchase pointed at a serious end. Thank you
-        for pointing it there.
-      </p>
-      <p className="mt-4 font-body text-[14px] leading-[1.6] text-[color:var(--color-text-muted)]">
-        A receipt will follow by email.
-      </p>
-      <p className="mt-8 font-body text-[16px] leading-[1.65]">
-        <Link
-          href="/"
-          className="text-[color:var(--color-accent)] underline-offset-4 hover:underline"
-        >
-          Return to the latest issue.
-        </Link>
-      </p>
-    </section>
+    <SitePage eyebrow="Order received" title="Your lip balm is on its way." tone="green" narrow>
+      <div className="d-page-copy">
+        <p className="d-body">
+          This week, every dollar of proceeds goes to{' '}
+          {charityName ?? "this week's featured charity"} — not the margin, the
+          proceeds, in full. A small purchase pointed at a serious end. Thank you
+          for pointing it there.
+        </p>
+        <p className="d-label d-muted">
+          A receipt will follow by email.
+        </p>
+        <p className="d-body">
+          <Link href="/">Return to the latest issue.</Link>
+        </p>
+      </div>
+    </SitePage>
   )
 }

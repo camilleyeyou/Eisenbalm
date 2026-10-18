@@ -125,3 +125,32 @@ describe('Phase 15: /shop long-scroll structure', () => {
     expect(source).toMatch(/<summary/)
   })
 })
+
+describe('quick 261018-20a: /shop in the Dispatch system', () => {
+  const src = readFileSync(SHOP_PAGE_PATH, 'utf8')
+
+  it('renders inside .dispatch d-page d-shop and imports shop.css, not shop-brand.css', () => {
+    expect(src).toContain('dispatch d-page d-shop')
+    expect(src).toContain("@/components/dispatch/shop.css")
+    expect(src).not.toMatch(/shop-brand\.css/)
+    expect(existsSync(resolve(__dirname, '../app/shop/shop-brand.css'))).toBe(false)
+  })
+
+  it('has no legacy sub-brand vars or inline style objects', () => {
+    expect(src).not.toContain('--sb-')
+    expect(src).not.toContain('var(--ink')
+    expect(src).not.toContain('var(--paper')
+    expect(src).not.toContain('style={{')
+  })
+
+  it('ShopMotion targets .d-shop .rv and respects reduced motion', () => {
+    const motion = readFileSync(resolve(__dirname, '../components/marketing/ShopMotion.tsx'), 'utf8')
+    expect(motion).toContain('.d-shop .rv')
+    expect(motion).toContain('prefers-reduced-motion')
+  })
+
+  it('QtyStepper no longer references shop-brand vars', () => {
+    const qty = readFileSync(resolve(__dirname, '../components/marketing/ShopQtyProvider.tsx'), 'utf8')
+    expect(qty).not.toMatch(/--paper2|--rule\)|--sb-/)
+  })
+})

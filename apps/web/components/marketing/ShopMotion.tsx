@@ -3,13 +3,13 @@
 /**
  * ShopMotion — IntersectionObserver island for scroll-reveal animations.
  *
- * Adds `.in` to every `.rv` element inside `.shop-brand` when it enters
+ * Adds `.in` to every `.rv` element inside `.d-shop` when it enters
  * the viewport (one-shot, no reverse). Renders nothing (returns null).
  *
  * Respects prefers-reduced-motion: if the user prefers reduced motion,
- * returns immediately and leaves all .rv elements fully visible (the CSS
- * forces opacity:1 / transform:none on .shop-brand .rv under the media
- * query, so no JS intervention is needed beyond early-return).
+ * returns immediately and leaves all .rv elements fully visible (the CSS only hides
+ * .rv inside a prefers-reduced-motion: no-preference block, so no JS
+ * intervention is needed beyond early-return).
  *
  * Cleans up the observer on unmount.
  */
@@ -22,7 +22,7 @@ export function ShopMotion() {
     if (typeof window === 'undefined') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const elements = document.querySelectorAll<HTMLElement>('.shop-brand .rv')
+    const elements = document.querySelectorAll<HTMLElement>('.d-shop .rv')
     if (!elements.length) return
 
     const observer = new IntersectionObserver(
