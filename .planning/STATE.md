@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Phase Details — Mission Control Dashboard
-status: Phase 52 complete — next: Phase 53 (Admin — The Door)
-stopped_at: Completed 52-05-PLAN.md
-last_updated: "2026-10-16T11:35:53.417Z"
+status: "Phase 52 complete — next: Phase 53 (Admin — The Door)"
+stopped_at: Phase 55 UI-SPEC approved
+last_updated: "2026-10-16T12:42:57.195Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -1049,6 +1049,7 @@ None yet.
 | 261014-kf8 | Stop runs failing on Anthropic `Grammar compilation rate limit exceeded` (OpenRouter non-BYOK shares Anthropic's 50 compilations/min org limit). `acomplete` structured path now falls back to `with_structured_output(method="function_calling")` (no strict grammar) on that error, and backs off with jittered delay (cap 10s) on 429/rate-limit errors; max 2 rate-limit retries. 6 new tests; full pipeline suite 802 passed, 38 skipped. | 2026-10-14 | ee9ab56 | [261014-kf8-back-off-and-fall-back-to-function-calli](./quick/261014-kf8-back-off-and-fall-back-to-function-calli/) |
 | 261014-kor | Fix run 1614184a interrupting at editor_gate_1 with `all-candidates-killed` / candidates [] — verify_candidates never ran on anything: Scout's registry dedup split featured key `through evely's eyes|guidestar.org` into a bare `guidestar.org` key, so every candidate sourced from Scout's guidestar profile queries was deduped out (also a junk `.` key). Dedup now ignores aggregator/directory/social and degenerate domains on both registry and candidate side; logs every dedup removal + WARNING when all removed; verify_candidates logs counts; interrupt prompt now says "No candidates survived Scout dedup and verification" (reason/payload unchanged). Convex registry rows left as-is (now harmless). 18 new tests; full suite 820 passed, 38 skipped. | 2026-10-14 | 303bcad | [261014-kor-stop-scout-registry-dedup-from-emptying-](./quick/261014-kor-stop-scout-registry-dedup-from-emptying-/) |
 | 261014-lbr | Make story findings fixable by a non-technical editor (game story 'The Filtration Layer' showed 2 identical MUST FIX cards whose 'Jump to it' silently did nothing — game text lives in embedCode HTML, no in-prose mark). Rail now merges cards with the same quote (reasons bulleted, 'from N findings'), Jump falls back to the section editor which focuses+selects the field containing the quote, cards get 'Apply fix'/'Dismiss' via the existing acceptFinding/dismissFinding helpers (not offered on game/theme/non-specAd bonus where server returns accept_unavailable), duplicate 'QA finding' box removed. Tab badge counts still per-finding. dispatch-control 1298 tests pass + strict build. | 2026-10-14 | dcba542 | [261014-lbr-make-story-findings-fixable-jump-fallbac](./quick/261014-lbr-make-story-findings-fixable-jump-fallbac/) |
+| 261018-20a | Sitewide Dispatch rebrand of non-front-page routes (shop, thank-you, archive, charities, about, agents, legal, 404/error): new SiteTopBar + SitePage shell, DispatchFooter everywhere, SiteHeader/SiteFooter and shop-brand.css retired, copy verbatim. web 664 tests + typecheck + build pass. | 2026-10-18 | dccffaca | Verified (code) / visual spot-check desktop | [261018-20a-sitewide-dispatch-rebrand-of-shop-and-no](./quick/261018-20a-sitewide-dispatch-rebrand-of-shop-and-no/) |
 
 ## Phase 5 First-Real-Run Cost Baseline (2026-05-18)
 
@@ -1092,6 +1093,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-16T11:35:53.400Z
-Stopped at: Completed 52-05-PLAN.md
-Resume file: None
+Last session: 2026-10-16T12:42:57.176Z
+Stopped at: Phase 55 UI-SPEC approved
+Resume file: .planning/phases/55-public-site-redesign/55-UI-SPEC.md
