@@ -12,7 +12,7 @@ requirements: [P55-SC1, P55-SC2, P55-SC3, P55-SC4, P55-SC5, P55-SC6, PUB-09, PUB
 must_haves:
   truths:
     - "Strict `pnpm --filter web build` passes on a networked machine, with full test suite and typecheck green"
-    - "The live checkout charges exactly $8.99 per balm, so 'Full $8.99 / 100% to them' is true and the balms math is right"
+    - "The live checkout charges exactly $21.00 per balm, so 'Full $21.00 / 100% to them' is true and the balms math is right"
     - "Studio shows the new fields, the pipeline on Railway writes editorConfidence, and the public site is deployed"
     - "At 375px and desktop, / and /issue/<slug> match the mockup's structure with no horizontal scroll; keyboard and axe pass with zero serious issues"
     - "A live issue reads entirely in Jesse's voice with no mockup placeholder copy; a test-mode purchase increments the balms count; a newsletter signup is recorded"
@@ -21,13 +21,13 @@ must_haves:
       provides: "Per-task map statuses + sign-off (nyquist_compliant: true)"
   key_links:
     - from: "Stripe STRIPE_PRICE_ID"
-      to: "BALM_PRICE_CENTS = 899"
+      to: "BALM_PRICE_CENTS = 2100"
       via: "unit_amount check"
       pattern: "unit_amount"
 ---
 
 <objective>
-Close the phase: run every automated gate, prove the Stripe price matches the approved $8.99 wording, get the four deploys done (Studio schema, Railway pipeline, Convex already synced in Plan 04, Vercel web), and have the user verify the live pages against the six success criteria.
+Close the phase: run every automated gate, prove the Stripe price matches the approved $21.00 wording, get the four deploys done (Studio schema, Railway pipeline, Convex already synced in Plan 04, Vercel web), and have the user verify the live pages against the six success criteria.
 
 Purpose: SC-1..SC-6 end-to-end evidence; the deploy steps are human/deploy checkpoints by project rule.
 Output: verification evidence in SUMMARY, VALIDATION.md signed off.
@@ -58,7 +58,7 @@ Output: verification evidence in SUMMARY, VALIDATION.md signed off.
   <action>
     1. Run and record outputs: `pnpm --filter web test`, `pnpm --filter web typecheck`, `pnpm --filter @eisenbalm/convex typecheck`, `cd packages/pipeline && uv run pytest tests -k sanity -q`, `pnpm --filter web build` (Plan 11 network-flake rule; a code/type error is a failure to fix before continuing).
     2. Grep gates (record results): `git diff --quiet <phase-start-commit> -- apps/web/lib/theme.ts apps/web/lib/game-validator.ts` (find phase start with `git log --oneline -- .planning/phases/55-public-site-redesign | tail -1`); `grep -c 'sandbox="allow-scripts"' apps/web/components/issue/GameSlot.tsx` == 1; `grep -rc "allow-same-origin" apps/web/components` == 0; `grep -rniE "Monday|\\[LIVE COUNT\\]|panel of AIs|goes here" apps/web/components/dispatch apps/web/lib/dispatch` empty.
-    3. Stripe price check without printing secrets: load apps/web/.env.local in a subshell and run `curl -s https://api.stripe.com/v1/prices/$STRIPE_PRICE_ID -u "$STRIPE_SECRET_KEY:" | node -e "const p=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(JSON.stringify({unit_amount:p.unit_amount,currency:p.currency,livemode:p.livemode}))"`. Expected `unit_amount: 899, currency: 'usd'`. If the env file or vars are absent, or the amount differs (memory notes a $21 test price), record it and raise it in the Task 2 checkpoint as a blocker for SC-5 — do not change the price yourself.
+    3. Stripe price check without printing secrets: load apps/web/.env.local in a subshell and run `curl -s https://api.stripe.com/v1/prices/$STRIPE_PRICE_ID -u "$STRIPE_SECRET_KEY:" | node -e "const p=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(JSON.stringify({unit_amount:p.unit_amount,currency:p.currency,livemode:p.livemode}))"`. Expected `unit_amount: 2100, currency: 'usd'`. If the env file or vars are absent, or the amount differs (memory notes a $21 test price), record it and raise it in the Task 2 checkpoint as a blocker for SC-5 — do not change the price yourself.
     4. Update 55-VALIDATION.md: fill the per-task map statuses (✅/❌) with the commands that actually ran, set `nyquist_compliant: true` and `wave_0_complete: true` only if every automated row is green.
   </action>
   <verify>
@@ -83,7 +83,7 @@ Output: verification evidence in SUMMARY, VALIDATION.md signed off.
   <action>Claude cannot deploy without the user's go-ahead and credentials; present the steps below and wait.</action>
   <instructions>
     Automated work is complete (Task 1). Convex functions were synced in Plan 04. Please:
-    1. Confirm the Stripe price: Task 1 printed `unit_amount` for STRIPE_PRICE_ID. It must be 899 (usd) in the mode that ships. If not, fix the price/ID in Stripe + Vercel env before continuing.
+    1. Confirm the Stripe price: Task 1 printed `unit_amount` for STRIPE_PRICE_ID. It must be 2100 (usd) in the mode that ships. If not, fix the price/ID in Stripe + Vercel env before continuing.
     2. Deploy Sanity Studio so Andrew sees Front Page + Editor's Confidence: `pnpm --filter studio deploy` (or your usual Studio deploy).
     3. Deploy the pipeline to Railway (sanity_client.py now writes editorConfidence) — push/redeploy the pipeline service as you normally do.
     4. Confirm Vercel env has `STRIPE_TO_CONVEX_SECRET` and `NEXT_PUBLIC_CONVEX_URL` for the web project, then deploy apps/web (push to master or `vercel --prod`).
@@ -93,7 +93,7 @@ Output: verification evidence in SUMMARY, VALIDATION.md signed off.
   <resume-signal>Type "deployed" with the Vercel URL, or describe what failed</resume-signal>
   <acceptance_criteria>
     - User reports Studio, Railway and Vercel deployed (or which step is deferred and why)
-    - Stripe unit_amount confirmed as 899
+    - Stripe unit_amount confirmed as 2100
   </acceptance_criteria>
   <done>All four surfaces deployed (or deferrals recorded) and price confirmed.</done>
 </task>
@@ -114,7 +114,7 @@ Output: verification evidence in SUMMARY, VALIDATION.md signed off.
     2. SC-2: Read the whole live issue. Every line should sound like Jesse (dry, precise, no exclamation marks); "Thursday" cadence; no "Monday", "[LIVE COUNT]", "panel of AIs", dog illustration or "goes here".
     3. SC-3: Section 07 shows Picked / Runner-up / Also considered cards and (if the issue has editorConfidence) a confidence bar; no chat transcript anywhere.
     4. SC-4: Click "▶ Play …" — the game loads; in DevTools the iframe has `sandbox="allow-scripts"` only.
-    5. SC-5: Click "Fund them · $8.99" in the hero and sticky nav (both jump to the buy band), then the buy-band button → Stripe Checkout shows $8.99. Complete a TEST-mode purchase; return to the page and confirm "Balms sold this week" increased by 1 (or run `cd convex && npx convex run stripeOrders:balmsForCharity '{"charitySlug":"<slug>"}'`).
+    5. SC-5: Click "Fund them · $21.00" in the hero and sticky nav (both jump to the buy band), then the buy-band button → Stripe Checkout shows $21.00. Complete a TEST-mode purchase; return to the page and confirm "Balms sold this week" increased by 1 (or run `cd convex && npx convex run stripeOrders:balmsForCharity '{"charitySlug":"<slug>"}'`).
     6. Newsletter: submit an email in the footer → "Recorded. You are on the list."; confirm a `newsletter-optin` row in the Convex dashboard emailSubscribers table.
     7. SC-6: Tab through the page — visible 3px focus ring everywhere, skip link works, sticky nav reachable; run the axe DevTools extension → zero serious/critical issues; enable "Emulate prefers-reduced-motion: reduce" → ticker stops and wraps.
     8. Open an issue in dispatch-control's preview pane — it should render the same Dispatch layout.

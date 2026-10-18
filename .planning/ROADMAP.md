@@ -1222,7 +1222,7 @@ Plans:
 **Locked decisions (2026-10-16, user)**:
   1. **Fixed Dispatch brand** — Manrope; palette `#00FF79` / `#005CFF` / `#FF002B` / `#EEFE34` + `#0A0A0A` / `#FFFFFF`. Per-issue DesignAgent colour/font theming is dropped on the public site; only the weekly accent rotates among the four. `lib/theme.ts` security invariants stay intact.
   2. **Jesse's dry voice** — the mockup's copy is layout reference only. Real copy stays "dry, precise, absurdly serious"; agent prompts are not retuned toward the mockup's plain tone. Cadence is Thursday (the mockup's "Monday" is wrong).
-  3. **"Full $8.99 / 100% to them" wording is approved.**
+  3. **"Full {price} / 100% to them" wording is approved.** Price changed 2026-10-18 from the mockup's $8.99 to the real Stripe price $21.00 (user decision); `BALM_PRICE_CENTS` = 2100.
   4. **Deliberation = summary cards** (picked / runner-up / also considered + editor confidence bar), replacing the DelibChat transcript.
 **Scope**: (A) Visual rebuild from existing content: masthead, ticker, accent hero, "How the Dispatch works" strip, sticky in-issue nav, eight numbered colour-block sections, shop band, back-issues grid, footer. (B) New content the mockup needs: ticker lines, hero dek, fact chips, read time, pull quotes, case-study timeline, ad performance summary, live balms-sold count, hero photo, archive search, working email signup. Each is either a new schema/pipeline field, derived from existing data, or Andrew-authored.
 **Requirements**: TBD

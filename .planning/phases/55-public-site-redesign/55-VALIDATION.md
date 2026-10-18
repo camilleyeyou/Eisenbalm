@@ -103,5 +103,5 @@ Filled in by the planner per task. Requirement → test mapping:
 - `uv run pytest tests -k sanity`: 46 passed, 10 skipped
 - `pnpm --filter web build`: exit 0 (strict, compiled successfully)
 - theme.ts / game-validator.ts unchanged since phase start; GameSlot sandbox="allow-scripts" count 1; allow-same-origin 0; voice denylist empty
-- Stripe price (read-only GET): unit_amount 2100, usd, livemode false. BLOCKER for SC-5: must be 899.
+- Stripe price (read-only GET): unit_amount 2100, usd, livemode false. Resolved 2026-10-18: user approved $21.00 as the real price; BALM_PRICE_CENTS (web + Convex) changed to 2100 to match.
 - Manual rows (layout, axe, live count, voice, live purchase) remain for Task 3.

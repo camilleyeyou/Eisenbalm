@@ -17,7 +17,7 @@ created: 2026-10-16
 
 | Source | Used for |
 |--------|----------|
-| ROADMAP Phase 55 locked decisions (2026-10-16) + memory `front-page-redesign-andrew-mockup` | Fixed brand (Manrope, 4 neon + ink/white), weekly accent only, Jesse dry voice, Thursday cadence, "$8.99 / 100% to them" wording approved (not re-flagged), deliberation = summary cards |
+| ROADMAP Phase 55 locked decisions (2026-10-16) + memory `front-page-redesign-andrew-mockup` | Fixed brand (Manrope, 4 neon + ink/white), weekly accent only, Jesse dry voice, Thursday cadence, "$21.00 / 100% to them" wording approved (not re-flagged), deliberation = summary cards |
 | `55-RESEARCH.md` | Scoped `.dispatch` stylesheet (`app/dispatch.css`), `lib/brand.ts`, section ids, fallbacks, contrast math, a11y/responsive risks |
 | `MOCKUP-Main.dc.html` | Layout, colours, type, spacing, accent-rotation logic (`second/third/fourth = palette[idx+1..3]`) |
 | Codebase scan | Tailwind v4 (`@tailwindcss/postcss`, no tailwind.config), `app/globals.css` (Phase 19 oxblood/cream tokens, stays for non-rebranded routes), `app/shop/shop-brand.css` (precedent for scoped sub-brand CSS, hex only in the CSS file), shadcn `components/ui/{button,tooltip}`, `lucide-react` installed |
@@ -103,7 +103,7 @@ Muted text: `#4A4A4A` (8.86:1 on white, 7.96:1 on yellow). **Only** on white or 
 
 ### Accent reserved for (exhaustive)
 1. Hero section background (`#story`) and its ink (`inkFor(accent)`)
-2. Sticky in-issue nav "Fund them · $8.99" pill background
+2. Sticky in-issue nav "Fund them · $21.00" pill background
 3. Buy band primary CTA ("Fund them" button) background
 4. Hero sticker disc uses the **fourth** colour (see rotation), not the accent itself
 5. Hero art circle uses the **second** colour; hero art accents use the **third** colour (no photo)
@@ -146,10 +146,10 @@ Section ids are exactly `origin problem founder case game bonus delib pod` (+ `b
 
 Order top to bottom (all inside the single root `<main id="main">`; footer rendered outside it by the root layout switch):
 
-1. **Top bar** (`<header>`): `1px` bottom border ink. Left: `Issue {n} · {Weekday, Month D, YYYY}` (Label, 14px/800). Centre: `nav[aria-label="Main"]` links "This week's nonprofit" (#story), "Past nonprofits" (/archive), "How it works" (#how), "About" (#about). Right: ink pill "Fund them · $8.99" -> `#buy`. Wraps on narrow widths; all items `.d-tap`.
+1. **Top bar** (`<header>`): `1px` bottom border ink. Left: `Issue {n} · {Weekday, Month D, YYYY}` (Label, 14px/800). Centre: `nav[aria-label="Main"]` links "This week's nonprofit" (#story), "Past nonprofits" (/archive), "How it works" (#how), "About" (#about). Right: ink pill "Fund them · $21.00" -> `#buy`. Wraps on narrow widths; all items `.d-tap`.
 2. **Masthead**: wordmark `p` "The Eisenbalm Dispatch" (Display tier, exact clamp, `-0.055em`), 4px bottom border ink; right side tagline row with the four palette dots (decorative) + one line of Jesse-voice tagline (Body 18px/800; max-width 470px).
 3. **Ticker** (`aria-hidden`, ink bar, 44px): uppercase Label text, 24px gaps, colour-cycled text/dots among the four palette colours (each colour on `#0A0A0A` is >= 14:1 except blue `#005CFF` on ink = 3.75:1: blue is used for the **dot glyph only**, never for ticker words). CSS marquee 45s linear, two identical sets, `translateX(0 -> -50%)`. Under `prefers-reduced-motion: reduce`: animation off, second set hidden, first set wraps (`white-space: normal; height: auto; flex-wrap: wrap; padding-block: 8px`). Facts in the ticker must also exist elsewhere (fact chips / body).
-4. **Hero** (`#story`, accent field): eyebrow row (ink pill "This week's nonprofit" + `Issue {n} · {N}-minute read`), charity name (Body 18px/800), **`h1`** hero headline (Display tier; text = the issue/section headline the pipeline supplies; fallback charity name), dek (Body 18px, max-width 720px; <=2 sentences), fact chips `dl` (white bg, `2px solid` ink, radius 14px, padding 8px 16px; dt Label 14px, dd Body 18px/800; chips omitted when their field is null), CTA row: primary ink pill "Read their story ↓" (-> #origin), secondary white pill with 2px ink border "Fund them · $8.99" (-> #buy). Right column: hero art block `width: min(100%, 380px); aspect-ratio: 1`; if `frontPage.heroImage` exists render it with `next/image` (explicit aspect box, `sizes` set, required alt); otherwise the geometric composition (second-colour circle + third-colour shapes + fourth-colour rotated sticker 10deg). **Not** the mockup's dog illustration, and no "Illustration · a real photo goes here" caption. Sticker text: "Your $8.99" / "100% to them" (generic).
+4. **Hero** (`#story`, accent field): eyebrow row (ink pill "This week's nonprofit" + `Issue {n} · {N}-minute read`), charity name (Body 18px/800), **`h1`** hero headline (Display tier; text = the issue/section headline the pipeline supplies; fallback charity name), dek (Body 18px, max-width 720px; <=2 sentences), fact chips `dl` (white bg, `2px solid` ink, radius 14px, padding 8px 16px; dt Label 14px, dd Body 18px/800; chips omitted when their field is null), CTA row: primary ink pill "Read their story ↓" (-> #origin), secondary white pill with 2px ink border "Fund them · $21.00" (-> #buy). Right column: hero art block `width: min(100%, 380px); aspect-ratio: 1`; if `frontPage.heroImage` exists render it with `next/image` (explicit aspect box, `sizes` set, required alt); otherwise the geometric composition (second-colour circle + third-colour shapes + fourth-colour rotated sticker 10deg). **Not** the mockup's dog illustration, and no "Illustration · a real photo goes here" caption. Sticker text: "Your $21.00" / "100% to them" (generic).
 5. **How the Dispatch works** (`#how`): Label eyebrow "How the Dispatch works" + three steps (44px numbered discs: 1 `#00FF79`/ink, 2 `#005CFF`/white, 3 `#FF002B`/ink) with Body 18px text; first clause 800. `1px` bottom border ink.
 6. **Sticky in-issue nav** (`nav[aria-label="In this issue"]`, `position: sticky; top: 0; z-index: 10`; white, `1px` bottom border): charity-name label (hidden < 640px), horizontally scrollable link list (contained scroller, `overflow-x: auto`, never page overflow), 8 links with 10px fixed-colour dots, Fund pill (accent bg, ink text, `2px` ink border, compact). Scroll-spy sets `aria-current="true"` plus an underline (`3px solid ink`) on the active link; no animation. Anchor targets carry `scroll-margin-top: 64px`.
 7. **Sections 01-08** per the colour map. Each: number disc + Label eyebrow, then content. Section header pattern: `display: flex; align-items: center; gap: 16px; margin-bottom: 24px`.
@@ -188,7 +188,7 @@ Order top to bottom (all inside the single root `<main id="main">`; footer rende
 | FundButton | idle -> loading (label "Opening checkout", `aria-busy`, button disabled) -> redirect via `window.location.href`; on failure re-enable and show the existing `CHECKOUT_FAILURE_MESSAGE` inline under the button in an `aria-live="polite"` region (no modal, no toast). Uses shared `startCheckout(1)` |
 | All other "Fund them" CTAs | Anchors to `#buy`; only the `FundButton` creates a Stripe session. A "More than one? Choose a quantity" link goes to `/shop` |
 | Balm count tile | Server passes initial value; client upgrades via Convex `useQuery`. Value `0` renders "0". Count `undefined` (query not deployed / URL unset) hides the whole tile. No countdown, no scarcity or "only N left", no pulsing |
-| Impact bar ("Progress toward the next cart") | Only when `frontPage.impactUnit` exists; fill = `min(balms / ceil(costMin / 8.99), 1)`; ink track `#3A3A3A`, fill `#00FF79`; informational only |
+| Impact bar ("Progress toward the next cart") | Only when `frontPage.impactUnit` exists; fill = `min(balms / ceil(costMin / 21.00), 1)`; ink track `#3A3A3A`, fill `#00FF79`; informational only |
 | Back-issues search | Controlled input, case-insensitive trimmed match on name, focusArea, location, `No. {n}`; results announced in an `aria-live="polite"` status line ("{n} nonprofits"); empty-result message shown inside the grid area |
 | Newsletter form | Real `<form>` with visible `<label>`, `type="email"` `required`, hidden honeypot field; idle -> submitting (button disabled, label "Sending") -> success or error text in `aria-live="polite"`; always the same generic success text regardless of prior subscription (no enumeration) |
 | Game | Click-to-load gate unchanged; `GameFallback` shown when validator rejects |
@@ -215,21 +215,21 @@ Voice: "dry, precise, absurdly serious". No exclamation marks, no winking, no mo
 
 | Element | Copy |
 |---------|------|
-| Primary CTA (all "Fund" entry points) | `Fund them · $8.99` (anchor pills); `FundButton` in the buy band: `Fund {charity short name} · $8.99` falls back to `Fund them · $8.99` when the name exceeds 28 characters |
+| Primary CTA (all "Fund" entry points) | `Fund them · $21.00` (anchor pills); `FundButton` in the buy band: `Fund {charity short name} · $21.00` falls back to `Fund them · $21.00` when the name exceeds 28 characters |
 | Hero secondary CTA | `Read their story ↓` |
 | Masthead tagline | `One overlooked nonprofit on the front page each week. Funded in full.` |
 | How strip step 1 | `Each Thursday we select one small nonprofit most people have not heard of.` |
 | How strip step 2 | `We tell its story, start to finish, on this page.` |
-| How strip step 3 | `Every lip balm sold that week funds it. The full $8.99. 100% to them.` |
+| How strip step 3 | `Every lip balm sold that week funds it. The full $21.00. 100% to them.` |
 | Ticker constant line | `Every balm sold this week goes to them` |
-| Sticker | `Your $8.99` / `100% to them` |
+| Sticker | `Your $21.00` / `100% to them` |
 | Section labels (nav + eyebrow) | `How it started` · `The problem` · `The founder` · `The case` · `The game` · bonus: `The ad we made them` (specAd) / `The jingle we made them` (jingle) / `The production we made them` (bigBudget) · `Why we selected them` (nav: `Why them`) · `The Dispatch podcast` (nav: `Podcast`) |
 | Delib intro | `Each week a scout, an advocate and an editor argue over the shortlist. The result is published here.` |
 | Delib card labels | `Picked` / `Runner-up` / `Also considered` (locked decision #4) |
 | Confidence label | `Editor's confidence` |
 | Buy band eyebrow | `How you can help {charity}` |
 | Buy band headline | `Buy a lip balm. Fund the work.` |
-| Buy band lead | `Every lip balm sold this week sends its full $8.99 to {charity}.` + (only if `impactUnit`) ` About {min} to {max} balms covers one {unit}.` |
+| Buy band lead | `Every lip balm sold this week sends its full $21.00 to {charity}.` + (only if `impactUnit`) ` About {min} to {max} balms covers one {unit}.` |
 | Balm line | `The balm: Jesse A. Eisenbalm. Beeswax and shea butter, no petrolatum. Stop. Breathe. Balm.` |
 | Shipping note | `Flat-rate shipping, continental US` |
 | Count tile label | `Balms sold this week` (current issue) / `Balms sold` (back issue lifetime) |
@@ -250,7 +250,7 @@ Voice: "dry, precise, absurdly serious". No exclamation marks, no winking, no mo
 | Podcast without audio | Existing PodcastSlot copy, verbatim |
 | Destructive confirmation | None: no destructive actions exist in this phase |
 
-Rules: omit any block whose data is absent (never show a placeholder); do not promise newsletter cadence or delivery until a sender exists; "100% to them" and "$8.99" wording is approved and must come from a single `BALM_PRICE_CENTS = 899` constant, not scattered literals.
+Rules: omit any block whose data is absent (never show a placeholder); do not promise newsletter cadence or delivery until a sender exists; "100% to them" and "$21.00" wording is approved and must come from a single `BALM_PRICE_CENTS = 899` constant, not scattered literals.
 
 ---
 
