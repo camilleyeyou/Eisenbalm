@@ -4,8 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ArchiveIssue } from '@/lib/sanity/types'
 import { formatMonthYear } from '@/lib/format'
+import '@/components/dispatch/pages.css'
 
 type Props = { issues: ArchiveIssue[] }
+
+const TONES = ['green', 'blue', 'red', 'yellow'] as const
 
 type CSSProperties = React.CSSProperties & {
   position?: string
@@ -98,20 +101,11 @@ export function CardSwap({ issues }: Props) {
     <section
       aria-label="Archive preview"
       data-print-hide="true"
-      className="relative mb-10 mt-6"
+      className="d-swap"
     >
       {/* Badge — issue count */}
-      <div className="mb-4 flex justify-end">
-        <span
-          className="rounded-sm px-2 py-1 font-ui text-[9px] font-medium uppercase tracking-[0.1em]"
-          style={{
-            color: 'var(--color-primary)',
-            background: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
-            border: '1px solid var(--color-line-strong)',
-          }}
-        >
-          {issues.length} ISSUES
-        </span>
+      <div className="d-swap-badge">
+        <span className="d-eyebrow d-muted">{issues.length} ISSUES</span>
       </div>
 
       {/* 3D Scene */}
@@ -124,52 +118,36 @@ export function CardSwap({ issues }: Props) {
         {issues.map((issue, i) => {
           const relativeIndex = (i - activeIndex + issues.length) % issues.length
           const isFront = relativeIndex === 0
+          const tone = TONES[i % TONES.length]
           const cardStyle: React.CSSProperties = {
             position: 'absolute',
             width: '100%',
             height: '100%',
             transformStyle: 'preserve-3d',
-            borderRadius: '2px',
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            background: 'var(--color-card)',
-            border: `1px solid ${isFront ? 'var(--color-primary)' : 'var(--color-line)'}`,
             ...getCardStyle(relativeIndex, !reducedMotion),
           }
 
           const cardInner = (
             <>
               {/* Eyebrow */}
-              <span
-                className="font-ui text-[11px] uppercase tracking-[0.1em]"
-                style={{ color: 'var(--color-text-mute)' }}
-              >
+              <span className={`d-swap-strip d-eyebrow d-tone-${tone}`}>
                 ISSUE {issue.issueNumber} &middot;{' '}
                 {formatMonthYear(issue.publishDate).toUpperCase()}
               </span>
+              <span className="d-swap-body">
+                {/* Charity name */}
+                <span className="d-swap-name">{issue.charity.name}</span>
 
-              {/* Charity name */}
-              <span
-                className="font-display text-[22px] font-normal leading-[1.2]"
-                style={{ color: 'var(--color-text)' }}
-              >
-                {issue.charity.name}
+                {/* Meta lines — only when non-null */}
+                <span className="d-swap-meta">
+                  {issue.charity.focusArea ? (
+                    <span>{issue.charity.focusArea}</span>
+                  ) : null}
+                  {issue.charity.assetRange ? (
+                    <span>{issue.charity.assetRange}</span>
+                  ) : null}
+                </span>
               </span>
-
-              {/* Meta lines — only when non-null */}
-              <div
-                className="mt-auto flex flex-col gap-1 font-ui text-[11px]"
-                style={{ color: 'var(--color-text-mute)' }}
-              >
-                {issue.charity.focusArea ? (
-                  <span>{issue.charity.focusArea}</span>
-                ) : null}
-                {issue.charity.assetRange ? (
-                  <span>{issue.charity.assetRange}</span>
-                ) : null}
-              </div>
             </>
           )
 
@@ -180,11 +158,8 @@ export function CardSwap({ issues }: Props) {
                 key={issue.slug}
                 href={`/issue/${issue.slug}`}
                 aria-label={`Issue ${issue.issueNumber}: ${issue.charity.name}`}
-                className="cardswap-card block"
-                style={{
-                  ...cardStyle,
-                  textDecoration: 'none',
-                }}
+                className="cardswap-card d-swap-card"
+                style={cardStyle}
               >
                 {cardInner}
               </a>
@@ -194,7 +169,7 @@ export function CardSwap({ issues }: Props) {
             <div
               key={issue.slug}
               aria-hidden="true"
-              className="cardswap-card"
+              className="cardswap-card d-swap-card"
               style={{ ...cardStyle, pointerEvents: 'none' }}
             >
               {cardInner}
@@ -204,15 +179,14 @@ export function CardSwap({ issues }: Props) {
       </div>
 
       {/* Prev / Next chevron controls — siblings of scene */}
-      <div className="mt-4 flex justify-between">
+      <div className="d-swap-controls">
         <button
           type="button"
           aria-label="Previous issue"
           onClick={() =>
             setActiveIndex((i) => (i - 1 + issues.length) % issues.length)
           }
-          className="flex min-h-11 min-w-11 items-center justify-center rounded"
-          style={{ color: 'var(--color-text-mute)' }}
+          className="d-swap-ctl"
         >
           <ChevronLeft aria-hidden="true" size={20} />
         </button>
@@ -220,18 +194,14 @@ export function CardSwap({ issues }: Props) {
           type="button"
           aria-label="Next issue"
           onClick={() => setActiveIndex((i) => (i + 1) % issues.length)}
-          className="flex min-h-11 min-w-11 items-center justify-center rounded"
-          style={{ color: 'var(--color-text-mute)' }}
+          className="d-swap-ctl"
         >
           <ChevronRight aria-hidden="true" size={20} />
         </button>
       </div>
 
       {/* Indicator dots */}
-      <div
-        className="mt-2 flex items-center justify-center gap-1"
-        role="tablist"
-      >
+      <div className="d-swap-dots" role="tablist">
         {issues.map((issue, i) => (
           <button
             key={issue.slug}
@@ -239,22 +209,9 @@ export function CardSwap({ issues }: Props) {
             aria-label={`Issue ${issue.issueNumber}`}
             aria-current={i === activeIndex ? 'true' : undefined}
             onClick={() => setActiveIndex(i)}
-            className="flex min-h-11 min-w-11 items-center justify-center"
+            className="d-swap-dot"
           >
-            <span
-              style={{
-                display: 'block',
-                width: i === activeIndex ? 8 : 3,
-                height: i === activeIndex ? 8 : 3,
-                borderRadius: '9999px',
-                backgroundColor:
-                  i === activeIndex
-                    ? 'var(--color-primary)'
-                    : 'var(--color-text-mute)',
-                opacity: i === activeIndex ? 1 : 0.5,
-                transition: reducedMotion ? 'none' : 'width 200ms ease, height 200ms ease',
-              }}
-            />
+            <span />
           </button>
         ))}
       </div>

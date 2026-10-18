@@ -15,6 +15,8 @@ import { QUERY_ALL_CHARITIES } from '@/lib/sanity/queries'
 import type { CharityListItem } from '@/lib/sanity/types'
 import { CharityCard } from '@/components/charities/CharityCard'
 import { SITE_NAME, getSiteUrl } from '@/lib/site'
+import { SitePage } from '@/components/dispatch/SitePage'
+import '@/components/dispatch/pages.css'
 
 export const revalidate = 60
 
@@ -45,27 +47,19 @@ export default async function CharitiesPage() {
   // Single-main-landmark pattern: layout.tsx owns the one <main id="main">;
   // route pages use <div> so the landmark is never nested (WCAG 1.3.1).
   return (
-    <div className="mx-auto max-w-[1100px] px-4 md:px-6 lg:px-8 py-12">
-      {/* Page title — Display 36px/28px semibold (UI-SPEC list container 1100px) */}
-      <h1 className="font-display text-[28px] md:text-[36px] font-semibold leading-[1.15] text-[color:var(--color-text)]">
-        Charities
-      </h1>
-      <p className="mt-2 font-ui text-[14px] text-[color:var(--color-text-muted)]">
-        Every charity featured by The Eisenbalm Dispatch.
-      </p>
-
+    <SitePage title="Charities" lead="Every charity featured by The Eisenbalm Dispatch." tone="yellow">
       {!charities || charities.length === 0 ? (
         /* Empty state — Jesse voice, dry, no exclamation */
-        <p className="mt-8 font-ui text-[14px] text-[color:var(--color-text-muted)]">
+        <p className="d-body d-muted">
           No charities indexed yet.
         </p>
       ) : (
-        <ul className="mt-8">
+        <ul className="d-rows">
           {charities.map((charity) => (
             <CharityCard key={charity.slug} charity={charity} />
           ))}
         </ul>
       )}
-    </div>
+    </SitePage>
   )
 }

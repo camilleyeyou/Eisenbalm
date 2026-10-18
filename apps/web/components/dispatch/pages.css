@@ -1,0 +1,68 @@
+/* Quick 261018-20a archive / charities / agents / skeleton styles.
+   Colours via var(--d-*) only. Scoped to .d-row*, .d-toolbar, .d-swap*, .d-meta-chip, .d-detail*, .d-skel*. */
+
+/* List rows */
+.d-rows{list-style:none;margin:0;padding:0;border-bottom:2px solid var(--d-ink)}
+.d-row{border-top:2px solid var(--d-ink);padding-block:24px;display:flex;flex-direction:column;gap:8px}
+.d-row-title{font-size:clamp(22px, 2.4vw, 32px);font-weight:800;letter-spacing:-0.04em;line-height:1.05;margin:0}
+.d-row-link{color:inherit;text-decoration:none}
+.d-row-link:hover{text-decoration:underline}
+.d-row-meta{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:14px;font-weight:800;color:var(--d-muted)}
+.d-row-excerpt{margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.d-row-note{font-size:14px;font-weight:800;margin:0}
+.d-row-note a{color:inherit;text-decoration:underline}
+
+/* Toolbar */
+.d-toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-bottom:24px}
+.d-toolbar-toggles{display:flex;flex-wrap:wrap;gap:8px}
+.d-status{margin:24px 0 0}
+.d-empty{margin:32px 0 0;text-align:center}
+.d-loadmore{margin-top:24px}
+
+/* Archive preview (card swap) */
+.d-swap{position:relative;margin:0 0 40px}
+.d-swap-badge{display:flex;justify-content:flex-end;margin-bottom:16px}
+.d-swap-card{display:flex;flex-direction:column;overflow:hidden;background:var(--d-paper);color:var(--d-ink);border:3px solid var(--d-ink);border-radius:24px;text-decoration:none}
+.d-swap-strip{padding:12px 16px;border-bottom:3px solid var(--d-ink)}
+.d-swap-body{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1 1 auto}
+.d-swap-name{font-size:clamp(22px, 3vw, 32px);font-weight:800;letter-spacing:-0.04em;line-height:1.05}
+.d-swap-meta{margin-top:auto;display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:800;color:var(--d-muted)}
+.d-swap-controls{margin-top:16px;display:flex;justify-content:space-between}
+.d-swap-ctl{width:44px;height:44px;border-radius:50%;border:2px solid var(--d-ink);background:var(--d-paper);color:var(--d-ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.d-swap-ctl:hover{background:var(--d-ink);color:var(--d-paper)}
+.d-swap-dots{margin-top:8px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0}
+.d-swap-dot{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:0;cursor:pointer;padding:0}
+.d-swap-dot > span{display:block;border-radius:50%;border:2px solid var(--d-ink);background:var(--d-paper);width:10px;height:10px}
+.d-swap-dot[aria-current="true"] > span{background:var(--d-ink);width:16px;height:16px}
+
+/* Detail pages */
+.d-meta-chips{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 0;padding:0;list-style:none}
+.d-meta-chip{background:var(--d-paper);color:var(--d-ink);border:2px solid var(--d-ink);border-radius:14px;padding:8px 16px;font-size:16px;font-weight:800}
+.d-detail-section{margin-top:48px}
+.d-detail-section .d-eyebrow{margin-bottom:12px}
+.d-detail-links{list-style:none;margin:24px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.d-detail-links a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:inherit;font-weight:800;text-decoration:underline}
+.d-detail-back{margin-top:48px;font-weight:800}
+.d-detail-back a{color:inherit;text-decoration:underline}
+.d-avatar{width:80px;height:80px;border-radius:50%;border:3px solid var(--d-ink);object-fit:cover;display:block;margin-bottom:24px}
+.d-crumb{margin:0 0 32px}
+
+/* Skeletons */
+.d-skel{background:var(--d-track);border-radius:12px}
+.d-skel--title{height:48px;width:min(100%, 320px)}
+.d-skel--line{height:16px;width:100%}
+.d-skel--row{height:64px;width:100%}
+.d-skel--block{height:192px;width:100%}
+.d-skel--card{height:128px;width:100%}
+.d-skel-stack{display:flex;flex-direction:column;gap:16px;margin-top:32px}
+.d-skel-grid{display:flex;flex-wrap:wrap;gap:16px;margin-top:32px}
+.d-skel-grid > .d-skel{flex:1 1 min(100%, 280px)}
+@media (prefers-reduced-motion: no-preference){
+  .d-skel-pulse .d-skel{animation:d-skel-pulse 1.6s ease-in-out infinite}
+}
+@keyframes d-skel-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion: reduce){
+  .d-skel-pulse .d-skel{animation:none}
+}
+.d-detail-head{margin-inline:calc(-1 * clamp(16px, 5vw, 32px));padding-inline:clamp(16px, 5vw, 32px);margin-top:-48px}
+.d-detail-body{margin-top:0}

@@ -21,6 +21,8 @@ import { groq } from 'next-sanity'
 
 import { sanityClient } from '@/lib/sanity/client'
 import type { AgentProfile } from '@/lib/sanity/types'
+import { SitePage } from '@/components/dispatch/SitePage'
+import '@/components/dispatch/pages.css'
 
 // ─── Query ─────────────────────────────────────────────────────────────────────
 
@@ -76,69 +78,41 @@ export default async function AgentProfilePage({ params }: PageProps) {
   if (!profile) notFound()
 
   return (
-    <section
-      className="mx-auto w-full max-w-[740px] px-4 py-16 sm:px-6 lg:px-8"
-      aria-label="Agent profile"
-    >
-      {/* Back link */}
-      <nav className="mb-10" aria-label="Breadcrumb">
-        <a
-          href="/"
-          className="font-ui text-[11px] uppercase tracking-[0.1em]"
-          style={{ color: 'var(--color-text-dim)' }}
-        >
-          ← The Eisenbalm Dispatch
-        </a>
-      </nav>
+    <SitePage tone="paper" narrow>
+      <section aria-label="Agent profile">
+        {/* Back link */}
+        <nav className="d-crumb" aria-label="Breadcrumb">
+          <a href="/" className="d-tap d-label d-link">
+            ← The Eisenbalm Dispatch
+          </a>
+        </nav>
 
-      <article>
-        {/* Avatar */}
-        {profile.avatarUrl && (
-          <div className="mb-8">
+        <article>
+          {/* Avatar */}
+          {profile.avatarUrl && (
             <img
               src={profile.avatarUrl}
               alt={`${profile.displayName} avatar`}
               width={80}
               height={80}
-              className="rounded-full"
-              style={{ border: '2px solid var(--color-line)' }}
+              className="d-avatar"
             />
-          </div>
-        )}
+          )}
 
-        {/* Eyebrow: role */}
-        <p
-          className="eyebrow mb-3"
-          style={{ color: 'var(--color-text-dim)' }}
-        >
-          {profile.role}
-        </p>
+          {/* Eyebrow: role */}
+          <p className="d-eyebrow d-muted">{profile.role}</p>
 
-        {/* Display name */}
-        <h1
-          className="mb-6 font-display text-[clamp(38px,5vw,64px)] font-[400] leading-[1.05]"
-          style={{ color: 'var(--color-text)' }}
-        >
-          {profile.displayName}
-        </h1>
+          {/* Display name */}
+          <h1 className="d-display">{profile.displayName}</h1>
 
-        {/* Divider */}
-        <div
-          className="mb-8 h-px"
-          style={{ background: 'var(--color-line)' }}
-          aria-hidden="true"
-        />
-
-        {/* Personality / bio */}
-        {profile.personality && (
-          <div
-            className="prose-measure font-body text-[19px] leading-[1.85]"
-            style={{ color: 'var(--color-text-dim)' }}
-          >
-            <p>{profile.personality}</p>
-          </div>
-        )}
-      </article>
-    </section>
+          {/* Personality / bio */}
+          {profile.personality && (
+            <div className="d-prose d-detail-section">
+              <p>{profile.personality}</p>
+            </div>
+          )}
+        </article>
+      </section>
+    </SitePage>
   )
 }

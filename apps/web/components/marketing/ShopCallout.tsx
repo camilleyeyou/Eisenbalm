@@ -25,7 +25,7 @@ export function ShopCallout({ charityName }: ShopCalloutProps) {
 
   return (
     <aside
-      className="mt-16 border-t border-[color:var(--color-border)] pt-8 print:hidden"
+      className="mt-16 border-t-2 border-current pt-8 print:hidden"
       aria-label="Shop callout"
     >
       <p className="d-body">

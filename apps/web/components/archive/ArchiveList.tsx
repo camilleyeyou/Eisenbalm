@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ArchiveIssue } from '@/lib/sanity/types'
 import { ArchiveItem } from './ArchiveItem'
+import '@/components/dispatch/pages.css'
 
 type SortOrder = 'newest' | 'oldest'
 
@@ -40,54 +41,42 @@ export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
 
   return (
     <div>
-      <div className="flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="d-toolbar">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by charity or focus area"
           aria-label="Search the archive"
-          className="h-11 w-full rounded border border-[color:var(--color-border)] bg-transparent px-3 font-ui text-[14px] text-[color:var(--color-text)] placeholder:text-[color:var(--color-text-muted)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-accent)] focus-visible:outline-offset-2 md:w-80"
+          className="d-input d-input--wide"
         />
-        <div className="flex gap-4 font-ui text-[14px]">
+        <div className="d-toolbar-toggles">
           <button
             type="button"
             onClick={() => setOrder('newest')}
-            className={
-              order === 'newest'
-                ? 'inline-flex items-center min-h-11 underline underline-offset-4 text-[color:var(--color-text)]'
-                : 'inline-flex items-center min-h-11 text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]'
-            }
+            className={`d-pill d-pill--compact ${order === 'newest' ? 'd-pill--ink' : 'd-pill--paper'}`}
           >
             Newest first
           </button>
           <button
             type="button"
             onClick={() => setOrder('oldest')}
-            className={
-              order === 'oldest'
-                ? 'inline-flex items-center min-h-11 underline underline-offset-4 text-[color:var(--color-text)]'
-                : 'inline-flex items-center min-h-11 text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]'
-            }
+            className={`d-pill d-pill--compact ${order === 'oldest' ? 'd-pill--ink' : 'd-pill--paper'}`}
           >
             Oldest first
           </button>
         </div>
       </div>
-      <p
-        role="status"
-        aria-live="polite"
-        className="mt-6 font-ui text-[14px] text-[color:var(--color-text-muted)]"
-      >
+      <p role="status" aria-live="polite" className="d-label d-muted d-status">
         Showing {visible.length} of {filtered.length} {filtered.length === 1 ? 'issue' : 'issues'}
       </p>
       {filtered.length === 0 ? (
-        <p className="mt-8 text-center font-ui text-[14px] text-[color:var(--color-text-muted)]">
+        <p className="d-label d-muted d-empty">
           No issues match that search.
         </p>
       ) : (
         <>
-          <ul className="mt-4">
+          <ul className="d-rows">
             {visible.map((issue) => (
               <ArchiveItem key={issue.slug} issue={issue} />
             ))}
@@ -96,7 +85,7 @@ export function ArchiveList({ issues }: { issues: ArchiveIssue[] }) {
             <button
               type="button"
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-              className="mt-6 inline-flex items-center justify-center min-h-11 rounded border border-[color:var(--color-border)] px-4 font-ui text-[14px] text-[color:var(--color-text)] hover:text-[color:var(--color-text)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-accent)] focus-visible:outline-offset-2"
+              className="d-pill d-pill--ink min-h-11 d-loadmore"
             >
               Load {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
             </button>

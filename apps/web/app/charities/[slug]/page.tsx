@@ -22,6 +22,7 @@ import type {
 } from '@/lib/sanity/types'
 import { CharityDetail } from '@/components/charities/CharityDetail'
 import { JsonLd } from '@/components/JsonLd'
+import { SitePage } from '@/components/dispatch/SitePage'
 import { SITE_NAME, getSiteUrl } from '@/lib/site'
 
 export const revalidate = 60
@@ -121,7 +122,9 @@ export default async function CharityDetailPage({
     <>
       {/* JSON-LD injected into <head> via dangerouslySetInnerHTML (see JsonLd.tsx) */}
       <JsonLd data={ngoLd} />
-      <CharityDetail charity={charity} />
+      <SitePage tone="paper">
+        <CharityDetail charity={charity} />
+      </SitePage>
     </>
   )
 }

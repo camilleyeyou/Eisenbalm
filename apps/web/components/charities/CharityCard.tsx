@@ -9,39 +9,27 @@
  */
 import Link from 'next/link'
 import type { CharityListItem } from '@/lib/sanity/types'
+import '@/components/dispatch/pages.css'
 
 export function CharityCard({ charity }: { charity: CharityListItem }) {
   return (
-    <li className="border-b border-[color:var(--color-border)] py-6">
-      {/* Charity name — Heading 22px semibold, links to /charities/[slug] */}
-      <h2 className="font-display text-[22px] font-semibold leading-[1.25]">
-        <Link
-          href={`/charities/${charity.slug}`}
-          className="text-[color:var(--color-primary)] underline-offset-4 hover:text-[color:var(--color-accent)] hover:underline"
-        >
+    <li className="d-row">
+      {/* Charity name — links to /charities/[slug] */}
+      <h2 className="d-row-title">
+        <Link href={`/charities/${charity.slug}`} className="d-row-link">
           {charity.name}
         </Link>
       </h2>
 
-      {/* Location + focus area metadata — UI 14px muted */}
-      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-ui text-[14px] text-[color:var(--color-text-muted)]">
+      {/* Location + focus area metadata */}
+      <div className="d-row-meta">
         {charity.location ? <span>{charity.location}</span> : null}
         {charity.focusArea ? <span>{charity.focusArea}</span> : null}
       </div>
 
-      {/* Mission statement — Body 18px, 2-line clamp per UI-SPEC §12 */}
+      {/* Mission statement — 2-line clamp */}
       {charity.missionStatement ? (
-        <p
-          className="mt-3 font-body text-[18px] leading-[1.65] text-[color:var(--color-text)]"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {charity.missionStatement}
-        </p>
+        <p className="d-body d-row-excerpt">{charity.missionStatement}</p>
       ) : null}
 
       {/*
@@ -50,11 +38,8 @@ export function CharityCard({ charity }: { charity: CharityListItem }) {
        * Omit gracefully when null.
        */}
       {charity.featuredIn ? (
-        <p className="mt-3 font-ui text-[14px]">
-          <Link
-            href={`/issue/${charity.featuredIn.slug}`}
-            className="text-[color:var(--color-text-muted)] underline underline-offset-4 hover:text-[color:var(--color-accent)]"
-          >
+        <p className="d-row-note">
+          <Link href={`/issue/${charity.featuredIn.slug}`} className="d-tap">
             Featured in Issue {charity.featuredIn.issueNumber}
           </Link>
         </p>
