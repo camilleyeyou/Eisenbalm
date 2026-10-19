@@ -4,8 +4,6 @@
 .d-pullquote-mark{box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 8px}
 .d-pullquote-mark--green{background:var(--d-green);color:var(--d-ink)}
 .d-pullquote-mark--red{background:var(--d-red);color:var(--d-ink)}
-.d-founder-cols{display:flex;flex-wrap:wrap;gap:48px}
-.d-founder-cols > *{flex:1 1 min(100%, 220px);min-width:0}
 .d-sec-title{margin-bottom:24px}
 .d-stats{display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 240px), 1fr));gap:24px;margin-bottom:48px}
 .d-stat{border-top:3px solid currentColor;padding-top:16px}

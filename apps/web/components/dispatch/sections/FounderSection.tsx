@@ -12,16 +12,9 @@ export function FounderSection({
   body: PortableTextBlock[] | null | undefined
 }) {
   const m = sectionMeta('founder')
-  const hasHeadline = typeof headline === 'string' && headline.trim().length > 0
-  const hasBody = !!body && body.length > 0
   return (
-    <NumberedSection id="founder" number={m.number} label={m.label}>
-      {hasHeadline || hasBody ? (
-        <div className="d-founder-cols">
-          {hasHeadline ? <p className="d-heading d-founder-title">{headline}</p> : <div />}
-          {hasBody ? <PortableTextRenderer value={body} className="d-founder-body d-prose" /> : null}
-        </div>
-      ) : null}
+    <NumberedSection id="founder" number={m.number} label={m.label} title={headline}>
+      {body && body.length > 0 ? <PortableTextRenderer value={body} className="d-prose" /> : null}
     </NumberedSection>
   )
 }

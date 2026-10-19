@@ -45,16 +45,19 @@ describe('OriginSection', () => {
 })
 
 describe('FounderSection', () => {
-  it('two-column wrapper, one h2', () => {
+  it('headline as section title, full-width prose, one h2', () => {
     const { container } = render(<FounderSection headline={f.founderBio!.headline} body={f.founderBio!.body} />)
     const s = container.querySelector('section#founder.d-sec--founder')!
     expect(s.querySelector('.d-disc')?.textContent).toBe('03')
     expect(s.querySelectorAll('h2').length).toBe(1)
-    expect(s.querySelector('.d-founder-cols')?.children.length).toBe(2)
+    expect(s.querySelector('h2.d-sec-title')?.textContent).toBe(f.founderBio!.headline)
+    expect(s.querySelector('.d-container > .d-prose')).not.toBeNull()
+    expect(s.querySelector('.d-founder-cols')).toBeNull()
   })
   it('empty renders section only', () => {
     const { container } = render(<FounderSection headline={null} body={null} />)
     expect(container.querySelector('section#founder')).not.toBeNull()
+    expect(container.querySelector('.d-prose')).toBeNull()
     expect(container.querySelector('.d-founder-cols')).toBeNull()
   })
 })
