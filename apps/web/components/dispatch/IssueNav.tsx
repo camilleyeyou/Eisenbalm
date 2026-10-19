@@ -3,6 +3,7 @@
 import './top.css'
 import { useEffect, useState } from 'react'
 import { FUND_CTA, SECTION_META, bonusLabel, type BonusKind, type SectionId } from '@/lib/dispatch/copy'
+import Link from 'next/link'
 
 export function IssueNav({
   charityName,
@@ -57,9 +58,9 @@ export function IssueNav({
             </li>
           ))}
         </ul>
-        <a href="#buy" className="d-pill d-pill--accent d-pill--compact d-issuenav-fund">
+        <Link href="/shop" className="d-pill d-pill--accent d-pill--compact d-issuenav-fund">
           {FUND_CTA}
-        </a>
+        </Link>
       </div>
     </nav>
   )

@@ -8,8 +8,6 @@
 .d-buy-more{color:var(--d-paper)}
 .d-buy-side{flex:0 1 min(100%, 320px);display:flex;flex-direction:column;gap:24px}
 .d-fund{display:flex;flex-direction:column;gap:8px}
-.d-fund-status{color:var(--d-paper);min-height:1.35em;margin:0;border-bottom:2px solid transparent}
-.d-fund-status:not(:empty){border-bottom-color:var(--d-red)}
 .d-count{border:2px solid var(--d-paper);border-radius:20px;padding:24px}
 .d-count-label{color:var(--d-dark-caption);margin:0}
 .d-count-value{margin:8px 0 0}

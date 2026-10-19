@@ -1,4 +1,4 @@
-/** Phase 55 SC-5: every Fund CTA reaches checkout. Source-scan. */
+/** Phase 55 SC-5: every Fund CTA reaches /shop. Source-scan. */
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { describe, it, expect } from 'vitest'
@@ -14,26 +14,25 @@ function walk(dir: string): string[] {
 const files = walk(resolve(root, 'components/dispatch'))
 
 describe('Fund CTA wiring', () => {
-  it('every {FUND_CTA} sits inside an anchor to #buy or /shop', () => {
+  it('every {FUND_CTA} sits inside a link to /shop', () => {
     let total = 0
     let anchored = 0
     for (const f of files) {
       const src = readFileSync(f, 'utf-8')
       total += (src.match(/\{FUND_CTA\}/g) ?? []).length
-      anchored += (src.match(/<(?:a|Link)\b[^>]*href="(?:#buy|\/shop)"[^>]*>\s*\{FUND_CTA\}/g) ?? []).length
+      anchored += (src.match(/<(?:a|Link)\b[^>]*href="\/shop"[^>]*>\s*\{FUND_CTA\}/g) ?? []).length
     }
     expect(total).toBeGreaterThan(0)
     expect(anchored).toBe(total)
   })
 
-  it('only FundButton starts checkout', () => {
+  it('no dispatch component starts checkout', () => {
     for (const f of files) {
       const src = readFileSync(f, 'utf-8')
-      expect(src).not.toContain('/api/checkout/create-session')
-      if (!f.endsWith('FundButton.tsx')) expect(src).not.toContain('startCheckout')
-      if (f.endsWith('SiteTopBar.tsx')) expect(src).not.toContain('/api/checkout')
+      expect(src).not.toContain('startCheckout')
+      expect(src).not.toContain('/api/checkout')
     }
-    expect(read('components/dispatch/FundButton.tsx')).toContain('startCheckout')
+    expect(read('components/dispatch/FundButton.tsx')).toContain('href="/shop"')
   })
 
   it('BuyBand hosts #buy and FundButton; IssueLayout renders BuyBand', () => {

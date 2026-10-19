@@ -39,7 +39,7 @@ describe('DispatchMasthead', () => {
       '#about',
     ])
     const fund = [...header.querySelectorAll('a')].find((a) => a.textContent === FUND_CTA)!
-    expect(fund.getAttribute('href')).toBe('#buy')
+    expect(fund.getAttribute('href')).toBe('/shop')
     expect(container.querySelector('h1,h2')).toBeNull()
     expect(container.querySelector('p.d-wordmark')!.textContent).toBe('The Eisenbalm Dispatch')
     const dots = container.querySelector('.d-dots')!
@@ -108,7 +108,7 @@ describe('Hero', () => {
     expect(root.querySelectorAll('dl dd')).toHaveLength(1)
     const links = [...root.querySelectorAll('a')]
     expect(links.find((a) => a.textContent === READ_STORY_CTA)!.getAttribute('href')).toBe('#origin')
-    expect(links.find((a) => a.textContent === FUND_CTA)!.getAttribute('href')).toBe('#buy')
+    expect(links.find((a) => a.textContent === FUND_CTA)!.getAttribute('href')).toBe('/shop')
     const art = root.querySelector('.d-hero-art--shapes')!
     expect(art.getAttribute('aria-hidden')).toBe('true')
     expect(root.querySelector('img')).toBeNull()
@@ -163,6 +163,6 @@ describe('IssueNav', () => {
       expect(a.hasAttribute('aria-current')).toBe(false)
     }
     const fund = [...nav.querySelectorAll('a')].find((a) => a.textContent === FUND_CTA)!
-    expect(fund.getAttribute('href')).toBe('#buy')
+    expect(fund.getAttribute('href')).toBe('/shop')
   })
 })

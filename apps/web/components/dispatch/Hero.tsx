@@ -3,6 +3,7 @@ import Image from 'next/image'
 import type { FactChip } from '@/lib/dispatch/derive'
 import type { IssueNarrator } from '@/lib/sanity/types'
 import { FUND_CTA, HERO_EYEBROW, READ_STORY_CTA, STICKER_LINES } from '@/lib/dispatch/copy'
+import Link from 'next/link'
 
 export function Hero({
   issueNumber,
@@ -55,9 +56,9 @@ export function Hero({
             <a href="#origin" className="d-pill d-pill--ink">
               {READ_STORY_CTA}
             </a>
-            <a href="#buy" className="d-pill d-pill--paper">
+            <Link href="/shop" className="d-pill d-pill--paper">
               {FUND_CTA}
-            </a>
+            </Link>
           </div>
         </div>
         <div className="d-hero-art-wrap">

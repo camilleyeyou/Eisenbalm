@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 
 vi.mock('convex/react', () => ({ useQuery: vi.fn() }))
 vi.mock('@convex/_generated/api', () => ({ api: { stripeOrders: { balmsForCharity: 'balmsForCharity' } } }))
@@ -41,28 +41,15 @@ describe('startCheckout', () => {
 })
 
 describe('FundButton', () => {
-  it('shows loading, calls fetch once on double click', async () => {
-    fetchMock.mockReturnValue(new Promise(() => {}))
+  it('is a link to /shop, not a checkout button', () => {
     render(<FundButton label="Fund them" />)
-    const btn = screen.getByRole('button')
-    fireEvent.click(btn)
-    fireEvent.click(btn)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(btn.textContent).toBe('Opening checkout')
-    expect(btn.getAttribute('aria-busy')).toBe('true')
-    expect((btn as HTMLButtonElement).disabled).toBe(true)
-  })
-  it('shows failure inline and re-enables', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
-    fetchMock.mockRejectedValue(new Error('net'))
-    const { container } = render(<FundButton label="Fund them" />)
-    fireEvent.click(screen.getByRole('button'))
-    await waitFor(() =>
-      expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(CHECKOUT_FAILURE_MESSAGE),
-    )
-    const btn = screen.getByRole('button') as HTMLButtonElement
-    expect(btn.disabled).toBe(false)
-    expect(btn.textContent).toBe('Fund them')
+    const link = screen.getByRole('link')
+    expect(link.getAttribute('href')).toBe('/shop')
+    expect(link.textContent).toBe('Fund them')
+    expect(link.classList.contains('d-fund-btn')).toBe(true)
+    expect(screen.queryByRole('button')).toBeNull()
+    fireEvent.click(link)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
 
@@ -74,7 +61,9 @@ describe('BuyBand', () => {
     const sec = container.querySelector('section#buy')!
     expect(sec.hasAttribute('data-shop-callout')).toBe(true)
     expect(container.querySelectorAll('h2').length).toBe(1)
-    expect(screen.getByRole('button').textContent).toBe(fundButtonLabel('Test Charity'))
+    const fund = container.querySelector('a.d-fund-btn')!
+    expect(fund.textContent).toBe(fundButtonLabel('Test Charity'))
+    expect(fund.getAttribute('href')).toBe('/shop')
     expect(container.querySelector('a[href="/shop"]')).not.toBeNull()
     expect(container.querySelector('.d-count')).toBeNull()
   })

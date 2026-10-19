@@ -1,5 +1,6 @@
 import './top.css'
 import { FUND_CTA, MASTHEAD_TAGLINE, MASTHEAD_WORDMARK, TOPBAR_LINKS } from '@/lib/dispatch/copy'
+import Link from 'next/link'
 
 export function DispatchMasthead({
   issueNumber,
@@ -32,9 +33,9 @@ export function DispatchMasthead({
             </nav>
           )}
           {!compact && (
-            <a href="#buy" className="d-pill d-pill--ink d-pill--compact">
+            <Link href="/shop" className="d-pill d-pill--ink d-pill--compact">
               {FUND_CTA}
-            </a>
+            </Link>
           )}
         </div>
       </header>
