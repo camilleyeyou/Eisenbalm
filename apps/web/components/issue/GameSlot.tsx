@@ -11,6 +11,9 @@
  * ACCESSIBILITY (GAM-A11Y):
  *   Play button: aria-label="Play {game.headline}" (icon-only button)
  *
+ * The iframe is mounted on load as a live preview. Play restarts it (remount
+ * via key) and focuses it.
+ *
  * runId prop preserved for Stage B GAM-05.
  *
  * Phase 9 security path preserved:
@@ -37,7 +40,13 @@ interface GameSlotProps {
 export function GameSlot({ game, runId }: GameSlotProps) {
   const insertQaCorrection = useMutation(api.qaCorrections.insert)
   const reportedRef = useRef(false)
-  const [started, setStarted] = useState(false)
+  const [runKey, setRunKey] = useState(0)
+  const frameRef = useRef<HTMLIFrameElement>(null)
+
+  // After a restart, move focus into the game.
+  useEffect(() => {
+    if (runKey > 0) frameRef.current?.focus()
+  }, [runKey])
 
   // Run the validator once per render. Pure function — no I/O.
   const validation = game?.embedCode
@@ -78,12 +87,12 @@ export function GameSlot({ game, runId }: GameSlotProps) {
       <div className="d-game-grid">
         <div className="d-game-copy">
           {game?.description && <p className="d-body d-game-desc">{game.description}</p>}
-          {srcdoc && !started && (
+          {srcdoc && (
             <button
               type="button"
               className="d-pill d-game-play"
               aria-label={`Play ${game?.headline ?? 'the game'}`}
-              onClick={() => setStarted(true)}
+              onClick={() => setRunKey((k) => k + 1)}
             >
               ▶ Play {game?.headline}
             </button>
@@ -91,18 +100,17 @@ export function GameSlot({ game, runId }: GameSlotProps) {
         </div>
         <div className="d-game-frame">
           {srcdoc ? (
-            started ? (
-              // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
-              // game-sandbox.test.ts is the source-scan tripwire.
-              // Do NOT add any other sandbox tokens here.
-              <iframe
-                sandbox="allow-scripts"
-                srcDoc={srcdoc}
-                title={game?.headline ?? 'Game'}
-              />
-            ) : (
-              <div className="d-game-idle" aria-hidden="true" />
-            )
+            // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
+            // game-sandbox.test.ts is the source-scan tripwire.
+            // Do NOT add any other sandbox tokens here.
+            <iframe
+              key={runKey}
+              ref={frameRef}
+              sandbox="allow-scripts"
+              srcDoc={srcdoc}
+              title={game?.headline ?? 'Game'}
+              loading="lazy"
+            />
           ) : game?.embedCode ? (
             // Validator rejected embedCode: show fallback
             <GameFallback />

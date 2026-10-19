@@ -16,13 +16,17 @@ import { fullIssue } from './fixtures/issue'
 afterEach(cleanup)
 
 describe('GameSlot band', () => {
-  it('gates the sandboxed iframe behind Play', () => {
+  it('mounts the sandboxed iframe immediately; Play restarts it', () => {
     const { container, getByRole } = render(<GameSlot game={fullIssue.game!} runId={null} />)
     expect(container.querySelector('section#game.d-sec--game')).not.toBeNull()
-    expect(container.querySelector('iframe')).toBeNull()
+    const before = container.querySelector('iframe')!
+    expect(before.getAttribute('sandbox')).toBe('allow-scripts')
+    expect(before.getAttribute('loading')).toBe('lazy')
     fireEvent.click(getByRole('button', { name: 'Play Wheel Fix' }))
-    const frame = container.querySelector('iframe')!
-    expect(frame.getAttribute('sandbox')).toBe('allow-scripts')
+    const after = container.querySelector('iframe')!
+    expect(after).not.toBe(before)
+    expect(after.getAttribute('sandbox')).toBe('allow-scripts')
+    expect(getByRole('button', { name: 'Play Wheel Fix' })).not.toBeNull()
   })
 
   it('falls back (no iframe) when the validator rejects', () => {

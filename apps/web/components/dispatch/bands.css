@@ -19,7 +19,6 @@
 .d-game-play:hover{background:var(--d-paper);color:var(--d-ink)}
 .d-game-frame{flex:1 1 min(100%, 560px);min-height:420px;border:2px solid var(--d-green);border-radius:20px;background:var(--d-panel);overflow:hidden;display:flex;align-items:stretch;justify-content:center}
 .d-game-frame iframe{width:100%;min-height:420px;border:0;background:var(--d-paper)}
-.d-game-idle{flex:1}
 .d-wave{display:flex;align-items:center;gap:4px;height:48px;margin:16px 0}
 .d-wave-bar{width:6px;height:60%;background:var(--d-ink);border-radius:3px}
 .d-wave-bar:nth-child(3n){height:90%}
