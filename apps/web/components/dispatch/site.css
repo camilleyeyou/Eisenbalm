@@ -1,6 +1,8 @@
 /* Quick 261018-20a site-wide top bar + page shell. Colours via var(--d-*) only.
    Every selector is scoped to .d-sitebar* / .d-page* so / and /issue/* are untouched. */
 .d-sitebar{border-bottom:4px solid var(--d-ink)}
+/* Backstop: never show the site bar on a page that carries the issue masthead. */
+body:has(.d-masthead) .d-sitebar{display:none}
 .d-sitebar-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding-block:12px}
 .d-sitebar-mark{font-size:clamp(20px, 2.4vw, 28px);font-weight:800;letter-spacing:-0.04em;line-height:1;display:inline-flex;align-items:center;gap:12px;min-height:44px;color:inherit;text-decoration:none}
 .d-sitebar-nav{flex:1 1 100%}

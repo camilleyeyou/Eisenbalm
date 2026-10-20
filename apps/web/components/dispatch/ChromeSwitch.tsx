@@ -3,8 +3,9 @@
 import type { ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 
+// '/index' is how Next reports the root path when Vercel ISR regenerates '/'.
 export function isDispatchRoute(pathname: string | null | undefined): boolean {
-  return !!pathname && (pathname === '/' || pathname.startsWith('/issue/'))
+  return !!pathname && (pathname === '/' || pathname === '/index' || pathname.startsWith('/issue/'))
 }
 
 /**
