@@ -202,7 +202,7 @@ describe('Masthead', () => {
 
     renderMasthead()
 
-    const issueStatusLabel = screen.getByText('Needs review')
+    const issueStatusLabel = screen.getByText('Draft')
     expect(issueStatusLabel.parentElement?.querySelector('svg')).not.toBeNull()
 
     const systemActivityLabel = screen.getByText('Running')

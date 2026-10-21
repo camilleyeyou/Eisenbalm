@@ -42,6 +42,7 @@ vi.mock('@/lib/role', () => ({ useRole: () => 'Collaborator' }))
 vi.mock('@convex/_generated/api', () => ({
   api: {
     qaCorrections: { byRunId: 'qaCorrections:byRunId' },
+    pipelineRuns: { byRunId: 'pipelineRuns:byRunId' },
     deliberationEvents: { byRunIdAndType: 'deliberationEvents:byRunIdAndType' },
     pitchLog: { selectedByRunId: 'pitchLog:selectedByRunId' },
     claimChecks: { listByRunId: 'claimChecks:listByRunId', setStatus: 'claimChecks:setStatus' },
@@ -126,6 +127,8 @@ beforeEach(() => {
   // for an editor.
   ;(useQuery as unknown as Mock).mockImplementation((query: unknown) => {
     switch (query) {
+      case 'pipelineRuns:byRunId':
+        return { status: 'awaiting-review' }
       case 'qaCorrections:byRunId':
         return [warningFinding]
       case 'deliberationEvents:byRunIdAndType':

@@ -128,7 +128,7 @@ export function MyTasksList({
           Nothing needs you.
         </p>
         <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">
-          Every open claim, finding, and sign-off for the current issue is clear.
+          Nothing is waiting on you. The agents have checked and fixed the issue.
         </p>
         <Link
           href={approvalHref}
@@ -214,13 +214,12 @@ export function MyTasksList({
               Inspect context
             </button>
           ) : (
-            // Sign-off tasks (signoff-facts/signoff-voice) have no
-            // single natural artifact — the button stays reserved for
-            // just those two rows (44-RESEARCH Open Question 1).
+            // Tasks with no single natural artifact keep the button reserved
+            // (44-RESEARCH Open Question 1).
             <button
               type="button"
               disabled
-              title="No single artifact anchors this sign-off — the inspector is reserved for this row."
+              title="No single artifact anchors this task — the inspector is reserved for this row."
               className="min-h-[44px] rounded-[2px] border border-[color:var(--color-faint)] bg-white px-3 py-1.5 font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Inspect context
@@ -263,9 +262,7 @@ export function MyTasksList({
 // Every finding/claim task's `where` already carries the section name in a
 // form `computeSessionStates` can bridge (snake_case for QA findings,
 // camelCase for claims — see lib/taskSupersession.ts's qaSectionToGalleyId
-// fallback). Sign-off tasks' `where` ("Approval") never matches an agentKey,
-// so they are structurally never superseded — correct, since a reroll never
-// touches a sign-off.
+// fallback).
 function taskSection(t: DerivedTask): string | undefined {
   return t.where
 }
@@ -314,8 +311,9 @@ export default function MyTasksScreen() {
     qaFindings,
     pitchRows,
     runStatus: latest?.status,
-    // §43.5a (TSK-02) — "since run start" anchor for missing-sign-off tasks.
     runStartedAt: latest?.startedAt,
+    // quick 261021-ind — without this every finished run reads as paused at Gate 1.
+    runCompletedAt: latest?.completedAt,
   }
 
   const tasks = deriveTasks(derivationInputs)
@@ -355,8 +353,8 @@ export default function MyTasksScreen() {
       <div>
         <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">My Tasks</h1>
         <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">
-          Every open claim, finding, and sign-off for the current issue — regardless of where it
-          came from.
+          Open notes for the current issue — regardless of where they came from. None of them
+          block Publish.
         </p>
       </div>
       <MyTasksList tasks={display} approvalHref={approvalHref} openInspector={openInspector} />

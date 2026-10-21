@@ -31,7 +31,8 @@ function baseInputs(overrides: Partial<DerivationInputs> = {}): DerivationInputs
     claimRows: [],
     qaFindings: [],
     pitchRows: [],
-    runStatus: 'complete',
+    runStatus: 'awaiting-review',
+    runCompletedAt: 1700000009000,
     ...overrides,
   } as DerivationInputs
 }
@@ -48,11 +49,11 @@ describe('projectClaimRow', () => {
     expect(out.createdAt).toBe(contradictedDoc._creationTime)
   })
 
-  it('a contradicted row projected then derived is a must-fix task (no legacy fallthrough)', () => {
+  it('a contradicted row projected then derived is a task (no legacy fallthrough; never must-fix since quick 261021-ind)', () => {
     const tasks = deriveTasks(baseInputs({ claimRows: [projectClaimRow(contradictedDoc)] }))
     const claimTasks = tasks.filter((t: DerivedTask) => t.id.startsWith('claim-'))
     expect(claimTasks).toHaveLength(1)
-    expect(claimTasks[0].sev).toBe('must-fix')
+    expect(claimTasks[0].sev).toBe('review-recommended')
   })
 
   it('every lean projection call site uses projectClaimRow', () => {

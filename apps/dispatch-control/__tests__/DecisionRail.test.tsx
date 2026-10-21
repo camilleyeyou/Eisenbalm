@@ -67,6 +67,7 @@ vi.mock('@/lib/role', () => ({ useRole: () => 'Editor-in-chief' }))
 vi.mock('@convex/_generated/api', () => ({
   api: {
     qaCorrections: { byRunId: 'qaCorrections:byRunId' },
+    pipelineRuns: { byRunId: 'pipelineRuns:byRunId' },
     deliberationEvents: { byRunIdAndType: 'deliberationEvents:byRunIdAndType' },
     pitchLog: { selectedByRunId: 'pitchLog:selectedByRunId' },
     claimChecks: { listByRunId: 'claimChecks:listByRunId', setStatus: 'claimChecks:setStatus' },
@@ -188,11 +189,14 @@ interface QueryState {
   pitch?: unknown
   claims?: unknown
   signoffs?: unknown
+  runRow?: unknown
 }
 
 function mockQueries(state: QueryState = {}) {
   ;(useQuery as unknown as Mock).mockImplementation((query: unknown) => {
     switch (query) {
+      case 'pipelineRuns:byRunId':
+        return state.runRow ?? { status: 'awaiting-review' }
       case 'qaCorrections:byRunId':
         return state.findings ?? []
       case 'deliberationEvents:byRunIdAndType':
@@ -248,7 +252,7 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
   it('leads with a blocker/warning count summary line', () => {
     mockQueries({ findings: [errorFinding, warningFinding] })
     renderRail(<DecisionRail runId="run-1" />)
-    expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/1 open note/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/1 warning/i)).toBeDefined()
   })
 
@@ -310,6 +314,37 @@ describe('DecisionRail publish gate (D-14/D-15)', () => {
     await waitFor(() => {
       expect(publishIssue).toHaveBeenCalledWith('tok-clerk', 'run-1')
     })
+  })
+
+  it('quick 261021-ind: there is no fake Hold button (the real hold lives in the issue header)', () => {
+    mockQueries({ findings: [warningFinding] })
+    renderRail(<DecisionRail runId="run-1" />)
+    expect(screen.queryByRole('button', { name: /^hold$/i })).toBeNull()
+  })
+
+  it('quick 261021-ind: Publish and Schedule stay disabled after a successful publish (no double-publish)', async () => {
+    mockQueries({ findings: [warningFinding] })
+    renderRail(<DecisionRail runId="run-1" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /^publish$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /publish now/i }))
+    await waitFor(() => {
+      expect(publishIssue).toHaveBeenCalledTimes(1)
+    })
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement).disabled).toBe(true)
+    })
+    expect(
+      (screen.getByRole('button', { name: /schedule for later/i }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+  })
+
+  it('quick 261021-ind: a complete run shows "Published." and no Publish/Schedule buttons', () => {
+    mockQueries({ findings: [warningFinding], runRow: { status: 'complete' } })
+    renderRail(<DecisionRail runId="run-1" />)
+    expect(screen.getByText('Published.')).toBeDefined()
+    expect(screen.queryByRole('button', { name: /^publish$/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /schedule for later/i })).toBeNull()
   })
 
   it('Cancel in the preview dialog closes it without publishing', () => {
@@ -609,7 +644,7 @@ describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
     mockQueries({ findings: [machineTellError, precisionError] })
     renderRail(<DecisionRail runId="run-1" />)
 
-    expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/1 open note/i).length).toBeGreaterThan(0)
     // The voice finding's own reason never appears in the blocking-items list.
     expect(screen.queryByText(/reads like ai-generated prose/i)).toBeNull()
     expect(screen.getByText(/vague causal claim/i)).toBeDefined()
@@ -645,7 +680,7 @@ describe('DecisionRail axis scoping (Phase 36, §36.3/§36.7)', () => {
     mockQueries({ findings: [legacyNoAxis] })
     renderRail(<DecisionRail runId="run-1" />)
 
-    expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/1 open note/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/pre-phase-36 row with no axis field/i)).toBeDefined()
   })
 

@@ -1,15 +1,9 @@
 /**
  * Phase 30 (CHR-04, Plan 30-06) — AwaitingYouInbox component tests.
- *
- * Covers:
- *   - Awaiting-review runs render + route to /run-monitor/runs/{runId}/review
- *   - Unresolved error-severity qaCorrections render as blockers, ordered
- *     ABOVE awaiting-review items
- *   - Open claim-check sign-offs render as an item
- *   - The current-cycle failed run renders + routes to /run-monitor/runs/{runId}
- *   - Empty state renders when nothing needs the operator
- *   - Source-scan: AwaitingYouInbox.tsx contains no `mutation(` call (D-09
- *     pure-derivation guarantee)
+ * Rewritten by quick 261021-ind: agents close every finding, so QA findings and
+ * contradicted claims never appear; the inbox lists only the run awaiting
+ * review ("ready to publish" / legacy Gate 1 "choose the charity") and the
+ * failed run, with issue numbers instead of raw run ids.
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx → jsdom).
  */
@@ -30,6 +24,9 @@ vi.mock('@convex/_generated/api', () => ({
       listForWorkspace: 'runs:listForWorkspace',
       latest: 'runs:latest',
     },
+    pipelineRuns: {
+      byRunId: 'pipelineRuns:byRunId',
+    },
     qaCorrections: {
       byRunId: 'qaCorrections:byRunId',
     },
@@ -47,8 +44,7 @@ import AwaitingYouInbox from '../components/AwaitingYouInbox'
 interface MockState {
   runsList?: unknown[]
   latestRun?: unknown
-  qaFindings?: unknown[]
-  claimStatus?: unknown
+  pipelineRuns?: Record<string, { issueNumber: number }>
 }
 
 function mockQueries(state: MockState) {
@@ -59,10 +55,10 @@ function mockQueries(state: MockState) {
           return state.runsList ?? []
         case 'runs:latest':
           return state.latestRun ?? null
-        case 'qaCorrections:byRunId':
-          return args === 'skip' ? undefined : (state.qaFindings ?? [])
-        case 'claimChecks:allSignedOff':
-          return args === 'skip' ? undefined : state.claimStatus
+        case 'pipelineRuns:byRunId':
+          return args === 'skip'
+            ? undefined
+            : (state.pipelineRuns?.[(args as { runId: string }).runId] ?? undefined)
         default:
           return undefined
       }
@@ -84,81 +80,59 @@ describe('AwaitingYouInbox', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('lists an Awaiting review item linking to /review-desk/r1 (Phase 31 re-point)', () => {
+  it('a finished awaiting-review run reads "Issue N is ready to publish" and links to /', () => {
     mockQueries({
-      runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
-      latestRun: { runId: 'r1', status: 'awaiting-review' },
-      qaFindings: [],
-      claimStatus: { total: 0, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
-    })
-    render(<AwaitingYouInbox open onClose={vi.fn()} />)
-
-    const link = screen.getByText(/awaiting review/i).closest('a')
-    expect(link).not.toBeNull()
-    expect(link?.getAttribute('href')).toBe('/review-desk/r1')
-  })
-
-  it('lists an error-blocker item ordered above the awaiting-review item', () => {
-    mockQueries({
-      runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
-      latestRun: { runId: 'r1', status: 'awaiting-review' },
-      qaFindings: [
-        {
-          _id: 'qa1',
-          runId: 'r1',
-          sectionName: 'originStory',
-          severity: 'error',
-          accepted: false,
-        },
+      runsList: [
+        { runId: 'r1', status: 'awaiting-review', startedAt: Date.now(), completedAt: Date.now() },
       ],
-      claimStatus: { total: 0, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
+      latestRun: { runId: 'r1', status: 'awaiting-review' },
+      pipelineRuns: { r1: { issueNumber: 7 } },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
-    const items = screen.getAllByRole('listitem')
-    expect(items.length).toBe(2)
-    expect(items[0].textContent).toMatch(/qa blocker/i)
-    expect(items[1].textContent).toMatch(/awaiting review/i)
-
-    const qaLink = items[0].querySelector('a')
-    expect(qaLink?.getAttribute('href')).toBe('/run-monitor/runs/r1/review')
+    const link = screen.getByText('Issue 7 is ready to publish').closest('a')
+    expect(link?.getAttribute('href')).toBe('/')
+    expect(screen.queryByText(/r1/)).toBeNull()
   })
 
-  it('lists a contradicted-claims item only when blocking > 0', () => {
+  it('a legacy run paused at Gate 1 (no completedAt) reads "choose the charity"', () => {
     mockQueries({
       runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
-      qaFindings: [],
-      claimStatus: { total: 3, signedOff: 0, blocking: 2, flagged: 2, allSignedOff: false },
+      pipelineRuns: { r1: { issueNumber: 7 } },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
-    expect(screen.getByText(/2 contradicted claims/i)).toBeDefined()
+    const link = screen.getByText('Issue 7: choose the charity').closest('a')
+    expect(link?.getAttribute('href')).toBe('/issues/7/story')
   })
 
-  it('pending unverdicted claims produce no inbox item', () => {
+  it('never lists QA findings or contradicted claims', () => {
     mockQueries({
-      runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
+      runsList: [
+        { runId: 'r1', status: 'awaiting-review', startedAt: Date.now(), completedAt: Date.now() },
+      ],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
-      qaFindings: [],
-      claimStatus: { total: 3, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
+      pipelineRuns: { r1: { issueNumber: 7 } },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
-    expect(screen.queryByText(/contradicted|sign-offs open/i)).toBeNull()
+    expect(screen.getAllByRole('listitem').length).toBe(1)
+    expect(screen.queryByText(/qa blocker|contradicted/i)).toBeNull()
+    const queried = (useQuery as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0])
+    expect(queried).not.toContain('qaCorrections:byRunId')
+    expect(queried).not.toContain('claimChecks:allSignedOff')
   })
 
-  it('lists a failed-run item linking to /run-monitor/runs/rf', () => {
+  it('lists a failed-run item linking to /run-monitor/runs/rf, labelled by issue number', () => {
     mockQueries({
       runsList: [],
       latestRun: { runId: 'rf', status: 'failed' },
-      qaFindings: [],
-      claimStatus: undefined,
+      pipelineRuns: { rf: { issueNumber: 9 } },
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
-    const link = screen.getByText(/run failed/i).closest('a')
-    expect(link).not.toBeNull()
+    const link = screen.getByText('Issue 9: the run failed').closest('a')
     expect(link?.getAttribute('href')).toBe('/run-monitor/runs/rf')
   })
 
@@ -166,8 +140,6 @@ describe('AwaitingYouInbox', () => {
     mockQueries({
       runsList: [],
       latestRun: { runId: 'x', status: 'complete' },
-      qaFindings: [],
-      claimStatus: undefined,
     })
     render(<AwaitingYouInbox open onClose={vi.fn()} />)
 
@@ -177,14 +149,15 @@ describe('AwaitingYouInbox', () => {
   it('calls onClose when an item is clicked', () => {
     const onClose = vi.fn()
     mockQueries({
-      runsList: [{ runId: 'r1', status: 'awaiting-review', startedAt: Date.now() }],
+      runsList: [
+        { runId: 'r1', status: 'awaiting-review', startedAt: Date.now(), completedAt: Date.now() },
+      ],
       latestRun: { runId: 'r1', status: 'awaiting-review' },
-      qaFindings: [],
-      claimStatus: { total: 0, signedOff: 0, blocking: 0, flagged: 0, allSignedOff: true },
+      pipelineRuns: { r1: { issueNumber: 7 } },
     })
     render(<AwaitingYouInbox open onClose={onClose} />)
 
-    const link = screen.getByText(/awaiting review/i).closest('a')
+    const link = screen.getByText(/ready to publish/i).closest('a')
     link?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     expect(onClose).toHaveBeenCalled()
   })

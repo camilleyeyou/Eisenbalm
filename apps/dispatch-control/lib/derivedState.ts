@@ -144,22 +144,35 @@ export interface DerivationInputs {
 
 // ── deriveIssueStatus (D-18 + ISS-06) ────────────────────────────────────────
 
+// quick 261021-ind — no sign-offs. 'ready' = the run finished (awaiting-review
+// with completedAt set) and the issue is not held; 'published' = the run is
+// complete (the pipeline never sets issues.published) or the issue says so.
+export function isPublishable(i: DerivationInputs): boolean {
+  return (
+    i.runStatus === 'awaiting-review' && i.runCompletedAt != null && !i.issue?.held
+  )
+}
+
+function isPublished(i: DerivationInputs): boolean {
+  return !!i.issue?.published || i.runStatus === 'complete'
+}
+
 export function deriveIssueStatus(i: DerivationInputs): IssueStatus {
   // NOT LOADED / FAILED — never a stale value.
-  if (i.issue === undefined || i.signOffs === undefined) return 'unknown'
+  if (i.issue === undefined) return 'unknown'
   // Loaded-and-absent — no issue row => nothing to state.
   if (i.issue === null) return 'unknown'
-  if (i.issue.published) return 'published'
+  if (isPublished(i)) return 'published'
   if (i.issue.held) return 'held'
   // quick 260718-51o (FAILED-RUN-TERMINAL-STATE) — a failed run is terminal
   // and never a reviewable 'needs-review': placed after the not-loaded
   // ('unknown') guard and after published/held (both win) so those
   // precedent terminal states are preserved.
   if (i.runStatus === 'failed') return 'failed'
-  const factDone = i.signOffs['facts-cleared'] !== undefined
-  const voiceDone = i.signOffs['sounds-human'] !== undefined
-  if (factDone && voiceDone) return 'ready'
   if (i.runId === null) return 'draft'
+  if (isPublishable(i)) return 'ready'
+  if (i.runStatus === 'running') return 'draft'
+  // Only reachable for a legacy run paused at Gate 1 or a not-yet-loaded runStatus.
   return 'needs-review'
 }
 
@@ -224,28 +237,19 @@ function deriveFactCheckStage(i: DerivationInputs): StageStateResult {
 
 function deriveVoiceStage(i: DerivationInputs): StageStateResult {
   if (i.runId === null) return { state: 'not-generated', openCount: 0 }
-  if (i.qaFindings === undefined || i.signOffs === undefined) {
-    return { state: 'in-progress', openCount: 0 }
-  }
+  if (i.qaFindings === undefined) return { state: 'in-progress', openCount: 0 }
   const v = i.qaFindings.filter((row) => isOpenFinding(row) && isVoiceAxisFinding(row)).length
   if (v > 0) return { state: 'needs-you', openCount: v }
-  if (i.signOffs['sounds-human'] !== undefined) return { state: 'clean', openCount: 0 }
-  // No open voice-axis findings, but the sounds-human sign-off itself is
-  // still outstanding: 'needs-you' with openCount 0 — there is no
-  // enumerable finding to count, only the sign-off action (§40.6 test
-  // "findings with resolution/accepted excluded from every stage count").
+  // quick 261021-ind — no sign-off: zero open voice findings is clean.
   return i.runStatus === 'running'
     ? { state: 'in-progress', openCount: 0 }
-    : { state: 'needs-you', openCount: 0 }
+    : { state: 'clean', openCount: 0 }
 }
 
 function deriveApprovalStage(i: DerivationInputs): StageStateResult {
-  if (i.issue?.published) return { state: 'clean', openCount: 0 }
+  if (isPublished(i)) return { state: 'clean', openCount: 0 }
   if (i.runId === null) return { state: 'not-generated', openCount: 0 }
-  if (i.signOffs === undefined) return { state: 'in-progress', openCount: 0 }
-  const factDone = i.signOffs['facts-cleared'] !== undefined
-  const voiceDone = i.signOffs['sounds-human'] !== undefined
-  return factDone && voiceDone
+  return isPublishable(i)
     ? { state: 'needs-you', openCount: 1 }
     : { state: 'in-progress', openCount: 0 }
 }
@@ -490,8 +494,8 @@ const SEVERITY_ORDER: Record<TaskSeverity, number> = {
 }
 
 function findingSeverityToTaskSeverity(severity: 'info' | 'warning' | 'error'): TaskSeverity {
-  if (severity === 'error') return 'must-fix'
-  if (severity === 'warning') return 'review-recommended'
+  // quick 261021-ind — agents close every finding; nothing is must-fix.
+  if (severity === 'error' || severity === 'warning') return 'review-recommended'
   return 'information'
 }
 
@@ -502,6 +506,8 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   // recovery rail). Emit no findings/claims/sign-off tasks so My Tasks and
   // the header open-count stop advertising actions that can only 409.
   if (i.runStatus === 'failed') return []
+  // quick 261021-ind — once published there is nothing left to do.
+  if (i.issue?.published || i.runStatus === 'complete') return []
 
   // quick 260719-w6o (F1) — a run paused at Gate 1 has NOT chosen a charity:
   // it has no draft/claims/findings, and its sign-off buttons can only
@@ -557,7 +563,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   for (const row of i.claimRows ?? []) {
     if (!isEditorFlagged(row)) continue
     const blocking = isOpenBlocking(row)
-    const sev: TaskSeverity = blocking ? 'must-fix' : 'review-recommended'
+    const sev: TaskSeverity = 'review-recommended'
     const text60 = (row.claimText ?? '').slice(0, 60)
     // §43.5b (Pitfall 1 fix) — claim tasks deep-link to Fact Check, not Draft.
     const href = fallbackHref ?? issueFactCheckHref(n as number)
@@ -576,39 +582,6 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
       stage: 3,
       openedAt: row.createdAt,
     })
-  }
-
-  const runningOrDone = i.runId !== null && i.runStatus !== 'running'
-  if (runningOrDone && i.signOffs !== undefined) {
-    // Quick 260724-lp1 — the facts sign-off task now deep-links to the
-    // Draft/Story Desk stage (where the work happens), not Approval.
-    // signoff-voice's href is unchanged (still issueVoiceHref, §43.5b).
-    const href = fallbackHref ?? issueDraftHref(n as number)
-    if (i.signOffs['facts-cleared'] === undefined) {
-      tasks.push({
-        id: 'signoff-facts',
-        sev: 'must-fix',
-        title: 'Clear the facts',
-        where: 'Approval',
-        why: 'Facts sign-off is required before publish',
-        primary: { label: 'Review', href },
-        stage: 5,
-        openedAt: i.runStartedAt,
-      })
-    }
-    if (i.signOffs['sounds-human'] === undefined) {
-      const voiceHref = fallbackHref ?? issueVoiceHref(n as number)
-      tasks.push({
-        id: 'signoff-voice',
-        sev: 'must-fix',
-        title: 'Approve the voice',
-        where: 'Approval',
-        why: 'Voice sign-off is required before publish',
-        primary: { label: 'Review', href: voiceHref },
-        stage: 5,
-        openedAt: i.runStartedAt,
-      })
-    }
   }
 
   tasks.sort((a, b) => {

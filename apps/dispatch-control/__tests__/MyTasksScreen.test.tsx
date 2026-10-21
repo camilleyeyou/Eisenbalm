@@ -17,6 +17,8 @@
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
 import { describe, it, expect, afterEach } from 'vitest'
+import fs from 'node:fs'
+import path from 'node:path'
 import { render, screen, cleanup } from '@testing-library/react'
 import type { DisplayTask } from '../lib/taskSupersession'
 import { MyTasksList } from '../app/(dashboard)/my-tasks/_components/MyTasksScreen'
@@ -168,5 +170,17 @@ describe('MyTasksList — severity grouping (audit item 2)', () => {
     // nested <span> that would collide with getByText('Must fix').
     const sevLabel = screen.getByText('Must fix')
     expect(sevLabel.querySelector('svg')).not.toBeNull()
+  })
+})
+
+// quick 261021-ind regression: without runCompletedAt every finished run reads as
+// "paused at Gate 1" (isPausedAtGate1) and My Tasks showed "Choose the charity".
+describe('MyTasksScreen wiring (quick 261021-ind)', () => {
+  it('passes runCompletedAt into DerivationInputs', () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, '../app/(dashboard)/my-tasks/_components/MyTasksScreen.tsx'),
+      'utf-8',
+    )
+    expect(src).toContain('runCompletedAt: latest?.completedAt')
   })
 })

@@ -41,15 +41,10 @@ import {
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import {
   issueDraftHref,
-  issueFactCheckHref,
-  issueVoiceHref,
-  issueApprovalHref,
   issueRunHref,
 } from '@/lib/issueRouteResolver'
 import { formatElapsed, type IssueStatus } from '@/lib/derivedState'
 import { DEFAULT_CADENCE, readConfigValue, formatScheduledForLabel, type Cadence } from '@/lib/scheduleLabel'
-import { isOpenFinding } from '@/lib/galley/findingState'
-import { VOICE_AXES, FACTUAL_AXES } from '@/lib/galley/axisPartition'
 import DocumentTitle from '@/components/ui/DocumentTitle'
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -65,18 +60,12 @@ export interface RunSwitcherRow {
 }
 
 export interface RunGateInputs {
-  /** false while signOffs / claimRows / qaFindings have not all loaded. */
+  /** false while the run row / issue row have not loaded. */
   loaded: boolean
-  factsSignedBy: string | null
-  factsSignedAt: number | null
-  voiceSignedBy: string | null
-  voiceSignedAt: number | null
-  /** Open agent-contradicted claims (allSignedOff.blocking) — the only claim state that gates. */
-  claimsContradicted: number
-  /** Editor-flagged claims (allSignedOff.flagged). */
-  claimsFlagged: number
-  voiceOpenCount: number
-  mustFixTotal: number
+  /** Run finished: awaiting-review with completedAt set. */
+  finished: boolean
+  /** Run status is 'complete'. */
+  published: boolean
   held: boolean
 }
 
@@ -233,127 +222,49 @@ function SwitcherPanel({ rows }: { rows: RunSwitcherRow[] }) {
 
 // ── Gates ────────────────────────────────────────────────────────────────
 
-function relativeTime(ms: number | null): string {
-  if (ms === null) return '—'
-  const diffMs = Date.now() - ms
-  if (diffMs < 60_000) return 'just now'
-  const minutes = Math.floor(diffMs / 60_000)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
-
-function publishBlockReason(gates: RunGateInputs, factsSigned: boolean, voiceSigned: boolean): string {
-  if (gates.held) return 'This issue is held.'
-  if (!factsSigned && !voiceSigned) return 'Both sign-offs are still outstanding.'
-  if (!factsSigned) return 'Facts sign-off is still outstanding.'
-  if (!voiceSigned) return 'Voice sign-off is still outstanding.'
-  return `${gates.mustFixTotal} must-fix finding${gates.mustFixTotal === 1 ? '' : 's'} remain${gates.mustFixTotal === 1 ? 's' : ''}.`
-}
-
-function GatesPanel({ gates, issueNumber }: { gates: RunGateInputs; issueNumber: number }) {
-  const factsSigned = gates.factsSignedBy !== null
-  const voiceSigned = gates.voiceSignedBy !== null
-  const canPublish = factsSigned && voiceSigned && gates.mustFixTotal === 0 && !gates.held
+function GatesPanel({
+  gates,
+  runStatus,
+}: {
+  gates: RunGateInputs
+  runStatus: string | null | undefined
+}) {
+  // quick 261021-ind — no sign-offs. Publish is gated only by role + hold.
+  let body: React.ReactNode
+  if (!gates.loaded) {
+    body = 'Checking…'
+  } else if (gates.published || runStatus === 'complete') {
+    body = 'Published.'
+  } else if (gates.held) {
+    body = 'This issue is on hold. Release the hold before publishing.'
+  } else if (gates.finished) {
+    body = (
+      <>
+        Ready to publish.{' '}
+        <Link
+          href="/"
+          className="font-[family-name:var(--font-ui)] font-semibold text-[color:var(--color-cobalt)]"
+        >
+          Publish from the issue page →
+        </Link>
+      </>
+    )
+  } else if (runStatus === 'awaiting-review') {
+    body = 'The agents are waiting for the charity choice.'
+  } else {
+    body = 'The agents are still working.'
+  }
 
   return (
     <div className="mt-8 border border-[color:var(--color-ink)] bg-[color:var(--color-card)]">
       <div className="border-b border-[color:var(--color-border)] bg-[color:var(--color-card-alt)] px-[18px] py-[13px]">
         <h2 className="font-[family-name:var(--font-mono)] text-[10.5px] font-semibold uppercase tracking-[.13em] text-[color:var(--color-ink)]">
-          Before it can publish
+          Publishing
         </h2>
       </div>
-
-      <div className="flex items-center gap-[14px] border-b border-[color:var(--color-border)] px-[18px] py-[14px]">
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-medium text-[color:var(--color-ink)]">Clear the facts</span>
-          {!gates.loaded ? (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              Checking…
-            </span>
-          ) : factsSigned ? (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-green)]">
-              Cleared by {gates.factsSignedBy} · {relativeTime(gates.factsSignedAt)}
-            </span>
-          ) : (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              {gates.claimsContradicted > 0
-                ? `${gates.claimsContradicted} claim${gates.claimsContradicted === 1 ? '' : 's'} contradicted by sources. Fix or dismiss ${gates.claimsContradicted === 1 ? 'it' : 'them'} before clearing the facts.`
-                : 'No claim is contradicted by its sources.'}
-            </span>
-          )}
-        </span>
-        {gates.loaded && !factsSigned && gates.claimsContradicted > 0 && (
-          <Link
-            href={issueFactCheckHref(issueNumber)}
-            className="whitespace-nowrap font-[family-name:var(--font-ui)] text-[12.5px] font-semibold text-[color:var(--color-cobalt)]"
-          >
-            Review contradicted claims →
-          </Link>
-        )}
-      </div>
-
-      <div className="flex items-center gap-[14px] border-b border-[color:var(--color-border)] px-[18px] py-[14px]">
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-medium text-[color:var(--color-ink)]">Sounds human</span>
-          {!gates.loaded ? (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              Checking…
-            </span>
-          ) : voiceSigned ? (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-green)]">
-              Cleared by {gates.voiceSignedBy} · {relativeTime(gates.voiceSignedAt)}
-            </span>
-          ) : (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              {gates.voiceOpenCount > 0
-                ? `${gates.voiceOpenCount} voice finding${gates.voiceOpenCount === 1 ? '' : 's'} open.`
-                : 'Voice sign-off outstanding.'}
-            </span>
-          )}
-        </span>
-        {gates.loaded && !voiceSigned && (
-          <Link
-            href={issueVoiceHref(issueNumber)}
-            className="whitespace-nowrap font-[family-name:var(--font-ui)] text-[12.5px] font-semibold text-[color:var(--color-cobalt)]"
-          >
-            Voice pass →
-          </Link>
-        )}
-      </div>
-
-      <div className="flex items-center gap-[14px] px-[18px] py-[14px]">
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-medium text-[color:var(--color-ink)]">Approve &amp; publish</span>
-          {!gates.loaded ? (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              Checking…
-            </span>
-          ) : !canPublish ? (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              {publishBlockReason(gates, factsSigned, voiceSigned)}
-            </span>
-          ) : (
-            <span className="mt-1 block font-[family-name:var(--font-body)] text-[12px] text-[color:var(--color-ink-soft)]">
-              Opens when both gates above are signed and no must-fix findings remain.
-            </span>
-          )}
-        </span>
-        {gates.loaded && canPublish ? (
-          <Link
-            href={issueApprovalHref(issueNumber)}
-            className="whitespace-nowrap font-[family-name:var(--font-ui)] text-[12.5px] font-semibold text-[color:var(--color-ink)]"
-          >
-            Approve &amp; publish →
-          </Link>
-        ) : gates.loaded ? (
-          <span className="whitespace-nowrap border border-[color:var(--color-border)] bg-[color:var(--color-card-alt)] px-[15px] py-[9px] font-[family-name:var(--font-ui)] text-[12.5px] font-semibold text-[color:var(--color-faint)]">
-            Locked
-          </span>
-        ) : null}
-      </div>
+      <p className="px-[18px] py-[14px] font-[family-name:var(--font-body)] text-[13px] text-[color:var(--color-ink-soft)]">
+        {body}
+      </p>
     </div>
   )
 }
@@ -529,11 +440,10 @@ export function RunBody(props: RunBodyProps) {
         </div>
       )}
 
-      {/* No mutation, no fetch, no sign-off button lives here — the gates are
-          readouts and links into the existing stages only. Publish stays
-          exclusively behind DecisionRail at /issues/[n]/approval. */}
+      {/* quick 261021-ind — read-only status. Publish lives on `/`; DecisionRail
+          remains a secondary path. */}
       {!isActivelyRunning && !isFailed && issueNumber !== null && (
-        <GatesPanel gates={gates} issueNumber={issueNumber} />
+        <GatesPanel gates={gates} runStatus={runStatus} />
       )}
 
       {onRefresh && (
@@ -650,29 +560,15 @@ export default function RunScreen() {
         : (STATUS_CHIP_META[run.issueStatus] ?? STATUS_CHIP_META.unknown)
 
   // ── Gates ──────────────────────────────────────────────────────────────
-  const gatesLoaded = run.signOffs !== undefined && run.claimRows !== undefined && run.qaFindings !== undefined
-  const factsSignOff = run.signOffs?.['facts-cleared']
-  const voiceSignOff = run.signOffs?.['sounds-human']
+  const gatesLoaded = run.derivationInputs.issue !== undefined
   const claimsContradicted = run.claimSummary?.blocking ?? 0
-  const claimsFlagged = run.claimSummary?.flagged ?? 0
-  const voiceOpenCount = (run.qaFindings ?? []).filter(
-    row => isOpenFinding(row) && VOICE_AXES.has(row.axis ?? ''),
-  ).length
-  const mustFixTotal = (run.qaFindings ?? []).filter(
-    row => isOpenFinding(row) && (row.axis === undefined || FACTUAL_AXES.has(row.axis)) && row.severity === 'error',
-  ).length
   const held = run.derivationInputs.issue ? run.derivationInputs.issue.held : false
-
   const gates: RunGateInputs = {
     loaded: gatesLoaded,
-    factsSignedBy: factsSignOff?.actorId ?? null,
-    factsSignedAt: factsSignOff?.signedAt ?? null,
-    voiceSignedBy: voiceSignOff?.actorId ?? null,
-    voiceSignedAt: voiceSignOff?.signedAt ?? null,
-    claimsContradicted,
-    claimsFlagged,
-    voiceOpenCount,
-    mustFixTotal,
+    finished:
+      run.derivationInputs.runStatus === 'awaiting-review' &&
+      run.derivationInputs.runCompletedAt != null,
+    published: run.derivationInputs.runStatus === 'complete',
     held,
   }
 

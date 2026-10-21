@@ -39,7 +39,9 @@ function baseInputs(overrides: Partial<DerivationInputs> = {}): DerivationInputs
     claimRows: [],
     qaFindings: [],
     pitchRows: [],
-    runStatus: 'complete',
+    // quick 261021-ind: a finished-but-unpublished run (awaiting-review + completedAt).
+    runStatus: 'awaiting-review',
+    runCompletedAt: 1700000009000,
     ...overrides,
   }
 }
@@ -52,11 +54,9 @@ describe('deriveIssueStatus (§40.6, ISS-06)', () => {
     expect(status).not.toBe('draft')
   })
 
-  it('returns "unknown" when signOffs is undefined (not loaded/failed) — never a stale value', () => {
+  it('quick 261021-ind: signOffs undefined no longer forces "unknown" — sign-offs do not drive status', () => {
     const status = deriveIssueStatus(baseInputs({ signOffs: undefined }))
-    expect(status).toBe('unknown')
-    expect(status).not.toBe('ready')
-    expect(status).not.toBe('draft')
+    expect(status).toBe('ready')
   })
 
   it('published:true returns "published" even when held is also true', () => {
@@ -85,16 +85,18 @@ describe('deriveIssueStatus (§40.6, ISS-06)', () => {
     expect(status).toBe('held')
   })
 
-  it('both sign-offs present, not held, not published returns "ready"', () => {
-    const status = deriveIssueStatus(
-      baseInputs({
-        signOffs: {
-          'facts-cleared': { actorId: 'a', signedAt: 1 },
-          'sounds-human': { actorId: 'a', signedAt: 1 },
-        },
-      }),
-    )
+  it('a finished run (awaiting-review + completedAt), not held, with NO sign-offs returns "ready"', () => {
+    const status = deriveIssueStatus(baseInputs({ signOffs: {} }))
     expect(status).toBe('ready')
+  })
+
+  it('runStatus "complete" returns "published" even though issue.published is false', () => {
+    const status = deriveIssueStatus(baseInputs({ runStatus: 'complete' }))
+    expect(status).toBe('published')
+  })
+
+  it('a running run returns "draft"', () => {
+    expect(deriveIssueStatus(baseInputs({ runStatus: 'running', runCompletedAt: undefined }))).toBe('draft')
   })
 
   it('no sign-offs and runId null returns "draft"', () => {
@@ -102,8 +104,8 @@ describe('deriveIssueStatus (§40.6, ISS-06)', () => {
     expect(status).toBe('draft')
   })
 
-  it('no sign-offs and a real runId returns "needs-review"', () => {
-    const status = deriveIssueStatus(baseInputs({ signOffs: {}, runId: 'r1' }))
+  it('a run paused at Gate 1 (awaiting-review, no completedAt) returns "needs-review"', () => {
+    const status = deriveIssueStatus(baseInputs({ runId: 'r1', runCompletedAt: undefined }))
     expect(status).toBe('needs-review')
   })
 })
@@ -149,7 +151,7 @@ describe('deriveStageStates (§40.6, D-19)', () => {
   it('completed run with open contradicted claims is needs-you (Phase 51.1: flagged claims only)', () => {
     const result = deriveStageStates(
       baseInputs({
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         claimRows: [
           { _id: 'c1', status: 'pending', verdict: 'contradicted' },
           { _id: 'c2', status: 'pending', verdict: 'contradicted' },
@@ -234,6 +236,26 @@ describe('deriveStageStates (§40.6, D-19)', () => {
     )
     expect(result[1].openCount).toBe(0)
     expect(result[3].openCount).toBe(0)
+  })
+})
+
+describe('deriveStageStates — no sign-offs (quick 261021-ind)', () => {
+  it('Voice is clean with zero open voice findings and no sign-off; Approval is needs-you when ready', () => {
+    const result = deriveStageStates(baseInputs({ signOffs: {}, claimRows: [{ _id: 'c1', status: 'checked' }] }))
+    expect(result[3]).toEqual({ state: 'clean', openCount: 0 })
+    expect(result[4]).toEqual({ state: 'needs-you', openCount: 1 })
+  })
+
+  it('Approval is clean once the run is complete, in-progress while running', () => {
+    expect(deriveStageStates(baseInputs({ runStatus: 'complete' }))[4]).toEqual({ state: 'clean', openCount: 0 })
+    expect(
+      deriveStageStates(baseInputs({ runStatus: 'running', runCompletedAt: undefined }))[4],
+    ).toEqual({ state: 'in-progress', openCount: 0 })
+  })
+
+  it('Approval is in-progress (not needs-you) when the issue is held', () => {
+    const r = deriveStageStates(baseInputs({ issue: { held: true, published: false } }))
+    expect(r[4]).toEqual({ state: 'in-progress', openCount: 0 })
   })
 })
 
@@ -529,15 +551,26 @@ describe('deriveTasks (§40.6, D-21)', () => {
     expect(tasks.find((t) => t.id === 'signoff-voice')).toBeUndefined()
   })
 
-  it('quick 260719-w6o (F1) regression guard: a genuinely reviewable run (awaiting-review WITH completedAt set) still emits the two sign-off tasks', () => {
+  it('quick 260719-w6o (F1) regression guard: a genuinely reviewable run (awaiting-review WITH completedAt set) emits NO sign-off tasks (quick 261021-ind)', () => {
     const tasks = deriveTasks(
       baseInputs({ runStatus: 'awaiting-review', runCompletedAt: 1_700_000_000_000, signOffs: {} }),
     )
-    expect(tasks.find((t) => t.id === 'signoff-facts')).toBeDefined()
-    expect(tasks.find((t) => t.id === 'signoff-voice')).toBeDefined()
+    expect(tasks.find((t) => t.id === 'signoff-facts')).toBeUndefined()
+    expect(tasks.find((t) => t.id === 'signoff-voice')).toBeUndefined()
+    expect(tasks.some((t) => t.sev === 'must-fix')).toBe(false)
   })
 
-  it('length equals open findings + pending claims + missing sign-offs on a non-running run', () => {
+  it('quick 261021-ind: a published run (runStatus complete or issue.published) has zero tasks', () => {
+    const qaFindings = [
+      { _id: 'q1', severity: 'error' as const, axis: 'precision', sectionName: 'Origin', reason: 'x' },
+    ]
+    expect(deriveTasks(baseInputs({ runStatus: 'complete', qaFindings }))).toEqual([])
+    expect(
+      deriveTasks(baseInputs({ issue: { held: false, published: true }, qaFindings })),
+    ).toEqual([])
+  })
+
+  it('length equals open findings + flagged claims on a non-running run (no sign-off tasks)', () => {
     const qaFindings = [
       {
         _id: 'q1',
@@ -568,17 +601,17 @@ describe('deriveTasks (§40.6, D-21)', () => {
     ]
     const tasks = deriveTasks(
       baseInputs({
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         qaFindings,
         claimRows,
         signOffs: {},
       }),
     )
-    // 2 open findings + 2 flagged claims (legacy pending c4 and checked c3 excluded) + 2 missing sign-offs (facts-cleared, sounds-human) = 6
-    expect(tasks).toHaveLength(6)
+    // 2 open findings + 2 flagged claims (legacy pending c4 and checked c3 excluded) = 4
+    expect(tasks).toHaveLength(4)
   })
 
-  it('Phase 51.1: a contradicted claim is must-fix; an unverifiable Load-bearing claim is review-recommended', () => {
+  it('Phase 51.1 / quick 261021-ind: a contradicted claim is review-recommended (never must-fix); an unverifiable Load-bearing claim is review-recommended', () => {
     const claimRows = [
       { _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'contradicted claim' },
       {
@@ -591,7 +624,7 @@ describe('deriveTasks (§40.6, D-21)', () => {
     ]
     const tasks = deriveTasks(
       baseInputs({
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         claimRows,
         signOffs: {
           'facts-cleared': { actorId: 'a', signedAt: 1 },
@@ -601,7 +634,7 @@ describe('deriveTasks (§40.6, D-21)', () => {
     )
     const c = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
     const u = tasks.find((t: DerivedTask) => t.id === 'claim-c2')
-    expect(c?.sev).toBe('must-fix')
+    expect(c?.sev).toBe('review-recommended')
     expect(c?.title.startsWith('Contradicted claim: ')).toBe(true)
     expect(c?.why).toBe('A source the agents retrieved contradicts this claim')
     expect(u?.sev).toBe('review-recommended')
@@ -615,9 +648,9 @@ describe('deriveTasks (§40.6, D-21)', () => {
       status: 'pending',
       claimText: 'legacy',
     }))
-    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    const tasks = deriveTasks(baseInputs({ runStatus: 'awaiting-review', claimRows, signOffs: {} }))
     expect(tasks.filter((t: DerivedTask) => t.id.startsWith('claim-'))).toHaveLength(0)
-    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-facts')).toBe(true)
+    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-facts')).toBe(false)
   })
 
   it('Phase 51.1: an unverifiable Incidental/Supporting pending claim produces no task', () => {
@@ -626,13 +659,13 @@ describe('deriveTasks (§40.6, D-21)', () => {
       { _id: 'c2', status: 'pending', verdict: 'unverifiable', claimText: 'y' },
       { _id: 'c3', status: 'pending', verdict: 'verified', importance: 'Load-bearing' as const, claimText: 'z' },
     ]
-    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    const tasks = deriveTasks(baseInputs({ runStatus: 'awaiting-review', claimRows, signOffs: {} }))
     expect(tasks.filter((t: DerivedTask) => t.id.startsWith('claim-'))).toHaveLength(0)
   })
 })
 
 describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/02/03)', () => {
-  it('TSK-01 regression: over one open finding + one pending claim + no sign-offs on a non-running run, returns exactly (open findings) + (pending claims) + (missing sign-offs) — no new source, no dropped source', () => {
+  it('TSK-01 regression: over one open finding + one pending claim on a non-running run, returns exactly (open findings) + (pending claims) — no sign-off tasks', () => {
     const qaFindings = [
       {
         _id: 'q1',
@@ -645,38 +678,28 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a claim without a source' }]
     const tasks = deriveTasks(
       baseInputs({
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         qaFindings,
         claimRows,
         signOffs: {},
       }),
     )
-    // 1 open finding + 1 pending claim + 2 missing sign-offs (facts-cleared, sounds-human) = 4
-    expect(tasks).toHaveLength(4)
+    // 1 open finding + 1 pending claim = 2
+    expect(tasks).toHaveLength(2)
     expect(tasks.some((t: DerivedTask) => t.id === 'qa-q1')).toBe(true)
     expect(tasks.some((t: DerivedTask) => t.id === 'claim-c1')).toBe(true)
-    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-facts')).toBe(true)
-    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-voice')).toBe(true)
+    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-facts')).toBe(false)
+    expect(tasks.some((t: DerivedTask) => t.id === 'signoff-voice')).toBe(false)
   })
 
   it('TSK-03 (Pitfall 1 fix): a pending-claim task deep-links to /issues/7/fact-check, not /draft', () => {
     const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a claim' }]
-    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', claimRows, signOffs: {} }))
+    const tasks = deriveTasks(baseInputs({ runStatus: 'awaiting-review', claimRows, signOffs: {} }))
     const claimTask = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
     expect(claimTask?.primary.href).toBe('/issues/7/fact-check')
   })
 
-  it('quick 260724-lp1: the signoff-facts task deep-links to /issues/7/draft (Story Desk), not /approval', () => {
-    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', signOffs: {} }))
-    const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
-    expect(factsTask?.primary.href).toBe('/issues/7/draft')
-  })
 
-  it('signoff-voice href is unchanged: still resolves via issueVoiceHref, not /draft or /approval', () => {
-    const tasks = deriveTasks(baseInputs({ runStatus: 'complete', signOffs: {} }))
-    const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')
-    expect(voiceTask?.primary.href).toBe('/issues/7/voice')
-  })
 
   it('TSK-02: a QA-finding task carries openedAt from the row timestamp', () => {
     const qaFindings = [
@@ -691,7 +714,7 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     ]
     const tasks = deriveTasks(
       baseInputs({
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         qaFindings,
         signOffs: {
           'facts-cleared': { actorId: 'a', signedAt: 1 },
@@ -707,7 +730,7 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'x', createdAt: 1700000001000 }]
     const tasks = deriveTasks(
       baseInputs({
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         claimRows,
         signOffs: {
           'facts-cleared': { actorId: 'a', signedAt: 1 },
@@ -719,15 +742,6 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     expect(task?.openedAt).toBe(1700000001000)
   })
 
-  it('TSK-02: the signoff-facts and signoff-voice tasks carry openedAt from the run-level runStartedAt', () => {
-    const tasks = deriveTasks(
-      baseInputs({ runStatus: 'complete', signOffs: {}, runStartedAt: 1700000002000 }),
-    )
-    const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
-    const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')
-    expect(factsTask?.openedAt).toBe(1700000002000)
-    expect(voiceTask?.openedAt).toBe(1700000002000)
-  })
 })
 
 describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)', () => {
@@ -744,7 +758,7 @@ describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)
     const tasks = deriveTasks(
       baseInputs({
         runId: 'run-9',
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         qaFindings,
         signOffs: {
           'facts-cleared': { actorId: 'a', signedAt: 1 },
@@ -774,7 +788,7 @@ describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)
     const tasks = deriveTasks(
       baseInputs({
         runId: 'run-9',
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         qaFindings,
         signOffs: {
           'facts-cleared': { actorId: 'a', signedAt: 1 },
@@ -795,7 +809,7 @@ describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)
     const tasks = deriveTasks(
       baseInputs({
         runId: 'run-9',
-        runStatus: 'complete',
+        runStatus: 'awaiting-review',
         claimRows,
         signOffs: {
           'facts-cleared': { actorId: 'a', signedAt: 1 },
@@ -814,7 +828,7 @@ describe('deriveTasks — Phase 44 Plan 44-08 (§44.1, INS-01, the `insp` field)
 
   it('the signoff-facts and signoff-voice tasks leave `insp` unset — no single natural artifact (Open Question 1)', () => {
     const tasks = deriveTasks(
-      baseInputs({ runId: 'run-9', runStatus: 'complete', signOffs: {} }),
+      baseInputs({ runId: 'run-9', runStatus: 'awaiting-review', signOffs: {} }),
     )
     const factsTask = tasks.find((t: DerivedTask) => t.id === 'signoff-facts')
     const voiceTask = tasks.find((t: DerivedTask) => t.id === 'signoff-voice')

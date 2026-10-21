@@ -61,7 +61,7 @@ import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { publishIssue, rejectIssue, ReviewApiError } from '@/lib/reviewClient'
+import { publishIssue, ReviewApiError } from '@/lib/reviewClient'
 import { rerollAgent } from '@/lib/pipelineControlClient'
 import { recordSignOff, SignOffApiError, type SignOffKind } from '@/lib/signOffClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
@@ -245,6 +245,11 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
   // finish-phase-34-retirement Task 2 — ported schedule-for-later dialog,
   // gated identically to Publish (same publishDisabled derivation below).
   const [showSchedule, setShowSchedule] = useState(false)
+  // quick 261021-ind (CP-16) — latch after a successful publish/schedule so
+  // the buttons cannot fire twice before the run flips to 'complete'.
+  const [publishSent, setPublishSent] = useState(false)
+  const runRow = useQuery(api.pipelineRuns.byRunId, { runId })
+  const runComplete = runRow?.status === 'complete'
 
   async function handlePublish() {
     setBusy(true)
@@ -252,7 +257,8 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
     try {
       const token = await getToken()
       await publishIssue(token, runId)
-      setActionMessage('Published.')
+      setPublishSent(true)
+      setActionMessage('Publishing — this can take a minute.')
     } catch (e) {
       setActionMessage(
         e instanceof ReviewApiError
@@ -285,20 +291,6 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
       )
     } finally {
       setSignOffBusy(null)
-    }
-  }
-
-  async function handleHold() {
-    setBusy(true)
-    setActionMessage(null)
-    try {
-      const token = await getToken()
-      await rejectIssue(token, runId)
-      setActionMessage('Run held — it stays awaiting review.')
-    } catch (e) {
-      setActionMessage(e instanceof Error ? e.message : 'Hold failed.')
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -339,7 +331,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
     }
   }
 
-  const blockerReason = `${blockers.length} blocker${blockers.length === 1 ? '' : 's'} to clear`
+  const blockerReason = `${blockers.length} open note${blockers.length === 1 ? '' : 's'}`
 
   return (
     <aside
@@ -548,7 +540,12 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
         {(() => {
           // Quick 261021-7aw: only hold / in-flight disable Publish; findings and
           // sign-offs never gate (role is handled by LockedControl).
-          const publishDisabled = !!held || busy
+          const publishDisabled = !!held || busy || publishSent || runComplete
+          if (runComplete) {
+            return (
+              <p className="text-[12px] font-semibold text-[color:var(--color-ink)]">Published.</p>
+            )
+          }
           return (
             <>
               <LockedControl
@@ -608,6 +605,7 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
                   runId={runId}
                   onScheduled={at => {
                     setShowSchedule(false)
+                    setPublishSent(true)
                     setActionMessage(`Scheduled for ${new Date(at).toLocaleString()}.`)
                   }}
                   onCancel={() => setShowSchedule(false)}
@@ -616,14 +614,6 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
             </>
           )
         })()}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={handleHold}
-          className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:opacity-40"
-        >
-          Hold
-        </button>
         <div className="flex items-stretch gap-1">
           <label className="sr-only" htmlFor={`rerun-section-${runId}`}>
             Section to re-run

@@ -133,14 +133,8 @@ function baseSections(): RunSectionRow[] {
 function baseGates(overrides: Partial<RunGateInputs> = {}): RunGateInputs {
   return {
     loaded: true,
-    factsSignedBy: null,
-    factsSignedAt: null,
-    voiceSignedBy: null,
-    voiceSignedAt: null,
-    claimsContradicted: 0,
-    claimsFlagged: 0,
-    voiceOpenCount: 1,
-    mustFixTotal: 3,
+    finished: true,
+    published: false,
     held: false,
     ...overrides,
   }
@@ -225,7 +219,7 @@ describe('RunBody — state: no run (the exact regression this task exists to fi
     expect(screen.queryByText(/Issue 999717/)).toBeNull()
     expect(screen.queryByText('Needs review')).toBeNull()
     expect(screen.queryByText('Origin Story')).toBeNull()
-    expect(screen.queryByText('Before it can publish')).toBeNull()
+    expect(screen.queryByText('Publishing')).toBeNull()
     expect(screen.queryByText(/nothing needs you/i)).toBeNull()
   })
 
@@ -261,7 +255,7 @@ describe('RunBody — state: running', () => {
     expect(screen.getByText('Running')).toBeDefined()
     expect(screen.getByText('Origin Story')).toBeDefined()
     expect(screen.getByText(/of 9 written/)).toBeDefined()
-    expect(screen.queryByText('Before it can publish')).toBeNull()
+    expect(screen.queryByText('Publishing')).toBeNull()
   })
 })
 
@@ -276,7 +270,7 @@ describe('RunBody — state: failed', () => {
       />,
     )
     expect(screen.getByText('Run failed')).toBeDefined()
-    expect(screen.queryByText('Before it can publish')).toBeNull()
+    expect(screen.queryByText('Publishing')).toBeNull()
     expect(screen.queryByText('Locked')).toBeNull()
     expect(screen.getByRole('link', { name: /re-run/i })).toBeDefined()
   })
@@ -350,97 +344,37 @@ describe('RunBody — the work', () => {
   })
 })
 
-describe('RunBody — gates', () => {
-  it('facts gate unsigned names the contradicted-claim count and links to fact-check', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ claimsContradicted: 2 }) })} />)
-    expect(
-      screen.getByText('2 claims contradicted by sources. Fix or dismiss them before clearing the facts.'),
-    ).toBeDefined()
-    const link = screen.getByRole('link', { name: /review contradicted claims/i })
-    expect(link.getAttribute('href')).toBe('/issues/999717/fact-check')
-    expect(screen.queryByText(/still unchecked/)).toBeNull()
-  })
-
-  it('facts gate singular copy for one contradicted claim', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ claimsContradicted: 1 }) })} />)
-    expect(
-      screen.getByText('1 claim contradicted by sources. Fix or dismiss it before clearing the facts.'),
-    ).toBeDefined()
-  })
-
-  it('facts gate with no contradicted claims shows no claim to-do', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ claimsContradicted: 0 }) })} />)
-    expect(screen.getByText('No claim is contradicted by its sources.')).toBeDefined()
-    expect(screen.queryByRole('link', { name: /check claims|review contradicted/i })).toBeNull()
-    expect(screen.queryByText(/still unchecked/)).toBeNull()
-  })
-
-  it('voice gate unsigned reads the open voice-finding count and links to voice', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ voiceOpenCount: 2 }) })} />)
-    expect(screen.getByText(/2 voice findings open/)).toBeDefined()
-    const link = screen.getByRole('link', { name: /voice pass/i })
-    expect(link.getAttribute('href')).toBe('/issues/999717/voice')
-  })
-
-  it('voice gate at zero open findings reads "Voice sign-off outstanding" (not "0 voice findings")', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ voiceOpenCount: 0 }) })} />)
-    expect(screen.getByText(/voice sign-off outstanding/i)).toBeDefined()
-  })
-
-  it('publish gate with both signed + zero must-fix + not held links to approval', () => {
-    render(
-      <RunBody
-        {...baseProps({
-          gates: baseGates({
-            factsSignedBy: 'andrew',
-            factsSignedAt: Date.now(),
-            voiceSignedBy: 'andrew',
-            voiceSignedAt: Date.now(),
-            mustFixTotal: 0,
-            held: false,
-          }),
-        })}
-      />,
-    )
-    const link = screen.getByRole('link', { name: /approve & publish/i })
-    expect(link.getAttribute('href')).toBe('/issues/999717/approval')
-  })
-
-  it('publish gate with either sign-off missing is a non-interactive Locked element, with a stated reason', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ factsSignedBy: null, voiceSignedBy: null }) })} />)
-    const locked = screen.getByText('Locked')
-    expect(locked.tagName).not.toBe('A')
-    expect(locked.tagName).not.toBe('BUTTON')
-    expect(screen.getByText(/outstanding/i)).toBeDefined()
-  })
-
-  it('publish gate with both signed but must-fix remaining stays locked, naming the must-fix count', () => {
-    render(
-      <RunBody
-        {...baseProps({
-          gates: baseGates({
-            factsSignedBy: 'andrew',
-            factsSignedAt: Date.now(),
-            voiceSignedBy: 'andrew',
-            voiceSignedAt: Date.now(),
-            mustFixTotal: 3,
-            held: false,
-          }),
-        })}
-      />,
-    )
-    expect(screen.getByText('Locked')).toBeDefined()
-    expect(screen.getByText(/3 must-fix findings remain/)).toBeDefined()
-  })
-
-  it('signOffsLoaded === false: every gate reads "Checking…", never Locked, never a cleared state', () => {
-    render(<RunBody {...baseProps({ gates: baseGates({ loaded: false }) })} />)
-    expect(screen.getAllByText('Checking…').length).toBe(3)
+describe('RunBody — publishing panel (quick 261021-ind: no sign-offs, no Locked)', () => {
+  it('a finished, un-held run reads "Ready to publish." with a link to /; no sign-off or must-fix rows; no Locked chip', () => {
+    render(<RunBody {...baseProps({ runStatus: 'awaiting-review' })} />)
+    expect(screen.getByText('Publishing')).toBeDefined()
+    expect(screen.getByText(/Ready to publish\./)).toBeDefined()
+    const link = screen.getByRole('link', { name: /publish from the issue page/i })
+    expect(link.getAttribute('href')).toBe('/')
     expect(screen.queryByText('Locked')).toBeNull()
-    expect(screen.queryByText(/cleared by/i)).toBeNull()
+    expect(screen.queryByText(/sign-off/i)).toBeNull()
+    expect(screen.queryByText(/must-fix/i)).toBeNull()
+    expect(screen.queryByText('Before it can publish')).toBeNull()
   })
 
-  it('no <button> anywhere fires a publish or sign-off — the gates are readouts and links only', () => {
+  it('a held issue reads the hold message', () => {
+    render(<RunBody {...baseProps({ gates: baseGates({ held: true }) })} />)
+    expect(screen.getByText(/on hold\. Release the hold before publishing/)).toBeDefined()
+    expect(screen.queryByRole('link', { name: /publish from the issue page/i })).toBeNull()
+  })
+
+  it('a complete run reads "Published."', () => {
+    render(<RunBody {...baseProps({ runStatus: 'complete', gates: baseGates({ published: true, finished: false }) })} />)
+    expect(screen.getByText('Published.')).toBeDefined()
+  })
+
+  it('loaded === false reads "Checking…" and never Locked', () => {
+    render(<RunBody {...baseProps({ gates: baseGates({ loaded: false }) })} />)
+    expect(screen.getAllByText('Checking…').length).toBe(1)
+    expect(screen.queryByText('Locked')).toBeNull()
+  })
+
+  it('no <button> anywhere fires a publish or sign-off — readouts and links only', () => {
     const { container } = render(<RunBody {...baseProps()} />)
     const buttons = Array.from(container.querySelectorAll('button'))
     for (const btn of buttons) {
