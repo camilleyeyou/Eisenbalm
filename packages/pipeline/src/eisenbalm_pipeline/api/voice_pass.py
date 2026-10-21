@@ -26,6 +26,7 @@ from eisenbalm_pipeline.agents.qa.judge import run_llm_judge
 from eisenbalm_pipeline.api.content import _resolve_sanity_id
 from eisenbalm_pipeline.api.control import _emit_audit, _require_clerk_jwt_control
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.rate_limit import llm_rate_limit
 from eisenbalm_pipeline.lib.sanity_client import get_issue_draft
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
@@ -147,7 +148,10 @@ class _Rewrite(BaseModel):
     suggestedFix: str
 
 
-@router.post("/issues/{run_id}/voice-rewrite")
+@router.post(
+    "/issues/{run_id}/voice-rewrite",
+    dependencies=[Depends(llm_rate_limit(_require_clerk_jwt_control))],
+)
 async def voice_rewrite(
     request: Request,
     run_id: str,

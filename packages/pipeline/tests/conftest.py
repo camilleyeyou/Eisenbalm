@@ -663,3 +663,13 @@ def mock_vercel_trigger():
     """
     mock = AsyncMock(return_value={"job": {"id": "test-job-id", "state": "READY", "createdAt": 1}})
     return mock
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits_between_tests():
+    """Quick 261021-5pr — in-process limiter state must not bleed across tests."""
+    from eisenbalm_pipeline.lib.rate_limit import reset_rate_limits
+
+    reset_rate_limits()
+    yield
+    reset_rate_limits()

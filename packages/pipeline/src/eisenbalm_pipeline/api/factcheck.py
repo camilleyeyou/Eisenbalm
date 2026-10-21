@@ -58,6 +58,7 @@ from eisenbalm_pipeline.api.control import (
 )
 from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.rate_limit import llm_rate_limit
 from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
 from eisenbalm_pipeline.lib.search_client import web_search
 
@@ -436,7 +437,10 @@ async def remove_claim(
 # ── POST /issues/{run_id}/claims/{claim_index}/evidence/preview — §42.4a ──
 
 
-@router.post("/issues/{run_id}/claims/{claim_index}/evidence/preview")
+@router.post(
+    "/issues/{run_id}/claims/{claim_index}/evidence/preview",
+    dependencies=[Depends(llm_rate_limit(_require_clerk_jwt_control))],
+)
 async def preview_claim_evidence(
     request: Request,
     run_id: str,

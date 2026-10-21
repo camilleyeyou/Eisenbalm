@@ -26,6 +26,7 @@ from pydantic import BaseModel
 
 from eisenbalm_pipeline.agents.scout import discover_candidates
 from eisenbalm_pipeline.api.agents import _require_operator
+from eisenbalm_pipeline.lib.rate_limit import shadow_rate_limit
 from eisenbalm_pipeline.evals.loader import list_scenarios
 
 router = APIRouter(prefix="/eval")
@@ -50,7 +51,10 @@ class ShadowRunBody(BaseModel):
     workspace_id: str
 
 
-@router.post("/shadow-run")
+@router.post(
+    "/shadow-run",
+    dependencies=[Depends(shadow_rate_limit(_require_operator))],
+)
 async def post_shadow_run(
     body: ShadowRunBody,
     _: dict = Depends(_require_operator),

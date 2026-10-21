@@ -55,6 +55,7 @@ from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.budget import would_exceed_run_cap
 from eisenbalm_pipeline.lib.config_loader import load_run_config
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.rate_limit import llm_rate_limit
 from eisenbalm_pipeline.lib.sanity_client import get_issue_draft, patch_issue_field
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
@@ -225,7 +226,10 @@ async def _fetch_brief_context(
 # ── POST /issues/{run_id}/revise/preview — §45.2/§45.3 ──────────────────────
 
 
-@router.post("/issues/{run_id}/revise/preview")
+@router.post(
+    "/issues/{run_id}/revise/preview",
+    dependencies=[Depends(llm_rate_limit(_require_clerk_jwt_control))],
+)
 async def preview_passage_revision(
     request: Request,
     run_id: str,

@@ -39,6 +39,7 @@ from eisenbalm_pipeline.agents.qa import judge as judge_module
 from eisenbalm_pipeline.api.auth import dev_mode_claims, verify_clerk_token
 from eisenbalm_pipeline.lib import convex_client
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.rate_limit import llm_rate_limit
 
 log = logging.getLogger(__name__)
 
@@ -215,7 +216,11 @@ async def _load_prior_input(
     return {k: str(v) for k, v in snapshot.items()}
 
 
-@router.post("/{agent_key}/test-run", response_model=TestRunResponse)
+@router.post(
+    "/{agent_key}/test-run",
+    response_model=TestRunResponse,
+    dependencies=[Depends(llm_rate_limit(_require_operator))],
+)
 async def test_run_agent(
     agent_key: str,
     body: TestRunRequest,
@@ -351,7 +356,11 @@ async def _resolve_rubric(workspace_id: str) -> tuple[str, str]:
     return judge_module._load_rubric(), "disk"
 
 
-@router.post("/{agent_key}/score", response_model=ScoreResponse)
+@router.post(
+    "/{agent_key}/score",
+    response_model=ScoreResponse,
+    dependencies=[Depends(llm_rate_limit(_require_operator))],
+)
 async def score_agent_output(
     agent_key: str,
     body: ScoreRequest,

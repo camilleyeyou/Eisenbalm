@@ -45,6 +45,7 @@ from eisenbalm_pipeline.lib.agent_wrapper import _truncate
 from eisenbalm_pipeline.lib.budget import would_exceed_run_cap
 from eisenbalm_pipeline.lib.config_loader import load_run_config
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
+from eisenbalm_pipeline.lib.rate_limit import llm_rate_limit
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
 
 log = logging.getLogger(__name__)
@@ -168,7 +169,10 @@ async def patch_brief(
 # ── POST /issues/{run_id}/brief/{field}/strengthen/preview — BRF-06 ────────
 
 
-@router.post("/issues/{run_id}/brief/{field}/strengthen/preview")
+@router.post(
+    "/issues/{run_id}/brief/{field}/strengthen/preview",
+    dependencies=[Depends(llm_rate_limit(_require_clerk_jwt_control))],
+)
 async def preview_brief_field_strengthen(
     request: Request,
     run_id: str,
