@@ -23,8 +23,11 @@ triggeredBy on runs rows from Phase 21 onward.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
+import threading
+import time
 from functools import lru_cache
 
 import jwt
@@ -104,21 +107,78 @@ def _get_clerk_jwks_url() -> str:
     return f"{domain.rstrip('/')}/.well-known/jwks.json"
 
 
-def _fetch_public_key(kid: str) -> object:
-    """Fetch the RSA public key for the given key ID from Clerk's JWKS endpoint.
+_JWKS_TTL_S = 3600
+# Minimum gap between kid-miss refetches so garbage-kid tokens can't hammer Clerk.
+_JWKS_MIN_REFETCH_S = 30
+_jwks_keys: dict[str, object] = {}
+_jwks_fetched_at: float = 0.0
+# threading (not asyncio) lock: _fetch_public_key runs in a worker thread.
+_jwks_lock = threading.Lock()
 
-    Makes a synchronous GET to the JWKS URL (acceptable: only called once per
-    unique kid in a process lifetime; Clerk rotates keys infrequently).
-    Returns an RSAAlgorithm key object suitable for jwt.decode().
-    Raises HTTP 401 if the kid is not found in the JWKS response.
-    """
+
+def _reset_jwks_cache() -> None:
+    """Clear the process-level JWKS cache (test helper)."""
+    global _jwks_keys, _jwks_fetched_at
+    with _jwks_lock:
+        _jwks_keys = {}
+        _jwks_fetched_at = 0.0
+
+
+def _load_jwks() -> dict[str, object]:
+    """GET Clerk's JWKS and build a kid -> key map. 503 on network/JSON failure."""
     from jwt.algorithms import RSAAlgorithm  # noqa: PLC0415 — local import
 
-    jwks_url = _get_clerk_jwks_url()
-    jwks = requests.get(jwks_url, timeout=5).json()
-    for key_data in jwks.get("keys", []):
-        if key_data.get("kid") == kid:
-            return RSAAlgorithm.from_jwk(key_data)
+    try:
+        resp = requests.get(_get_clerk_jwks_url(), timeout=5)
+        resp.raise_for_status()
+        jwks = resp.json()
+        return {
+            k["kid"]: RSAAlgorithm.from_jwk(k)
+            for k in jwks.get("keys", [])
+            if k.get("kid")
+        }
+    except (requests.RequestException, ValueError) as exc:
+        log.warning("Clerk JWKS fetch failed: %r", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Auth key service unavailable",
+        )
+
+
+def _fetch_public_key(kid: str) -> object:
+    """Return the RSA public key for ``kid`` from a cached copy of Clerk's JWKS.
+
+    Synchronous and blocking on a cache miss: async callers MUST invoke it via
+    ``await asyncio.to_thread(_fetch_public_key, kid)``.
+
+    Raises HTTP 401 if the kid is unknown (after at most one rate-limited
+    refetch) and HTTP 503 if the JWKS cannot be fetched and no stale key for
+    the kid is cached.
+    """
+    global _jwks_keys, _jwks_fetched_at
+    with _jwks_lock:
+        now = time.monotonic()
+        age = now - _jwks_fetched_at
+        fresh = _jwks_fetched_at > 0.0 and age < _JWKS_TTL_S
+        if kid in _jwks_keys and fresh:
+            return _jwks_keys[kid]
+
+        expired = not fresh
+        kid_miss = kid not in _jwks_keys and (
+            _jwks_fetched_at == 0.0 or age >= _JWKS_MIN_REFETCH_S
+        )
+        if expired or kid_miss:
+            try:
+                _jwks_keys = _load_jwks()
+                _jwks_fetched_at = now
+            except HTTPException:
+                if kid in _jwks_keys:
+                    log.warning("JWKS refresh failed; serving stale key for kid=%s", kid)
+                    return _jwks_keys[kid]
+                raise
+
+        if kid in _jwks_keys:
+            return _jwks_keys[kid]
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Unknown kid in JWT header",
@@ -159,7 +219,7 @@ async def require_clerk_jwt(
     token = credentials.credentials
     try:
         header = jwt.get_unverified_header(token)
-        public_key = _fetch_public_key(header["kid"])
+        public_key = await asyncio.to_thread(_fetch_public_key, header["kid"])
         claims = jwt.decode(
             token,
             public_key,
@@ -173,7 +233,7 @@ async def require_clerk_jwt(
             detail="Token expired",
         )
     except HTTPException:
-        raise  # re-raise 401 from _fetch_public_key (unknown kid)
+        raise  # re-raise 401 (unknown kid) / 503 (JWKS unavailable) from _fetch_public_key
     except Exception as exc:  # noqa: BLE001 — catch-all for any other JWT error
         log.warning("Clerk JWT verification failed: %r", exc)
         raise HTTPException(

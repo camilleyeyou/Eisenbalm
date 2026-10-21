@@ -116,7 +116,7 @@ async def _require_clerk_jwt_control(
     token = credentials.credentials
     try:
         header = jwt.get_unverified_header(token)
-        public_key = _fetch_public_key(header["kid"])
+        public_key = await asyncio.to_thread(_fetch_public_key, header["kid"])
         claims = jwt.decode(
             token,
             public_key,
