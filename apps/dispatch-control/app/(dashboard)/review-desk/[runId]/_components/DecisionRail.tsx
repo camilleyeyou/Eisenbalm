@@ -614,15 +614,21 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
                   action — gated identically to Publish (SAME publishDisabled
                   derivation) so the two enable/disable together. Secondary
                   control (border, not filled) so Publish stays the single
-                  primary CTA. */}
-              <button
-                type="button"
-                disabled={publishDisabled}
-                onClick={() => setShowSchedule(true)}
-                className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                  primary CTA. Role-locked like Publish: the schedule
+                  endpoint is Editor-in-chief only (quick 261021-532). */}
+              <LockedControl
+                isLocked={isLocked}
+                lockedLabel="Collaborators can review and comment, not publish."
               >
-                Schedule for later
-              </button>
+                <button
+                  type="button"
+                  disabled={publishDisabled}
+                  onClick={() => setShowSchedule(true)}
+                  className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Schedule for later
+                </button>
+              </LockedControl>
               {showSchedule && (
                 <SchedulePublishDialog
                   runId={runId}

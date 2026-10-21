@@ -155,7 +155,21 @@ describe('DecisionRail role gate (ROL-03, SC-3)', () => {
     expect(publish.getAttribute('aria-disabled')).toBe('true')
     // Present + visible, never hidden (D-09).
     expect(
-      screen.getByText('Collaborators can review and comment, not publish.'),
-    ).toBeDefined()
+      screen.getAllByText('Collaborators can review and comment, not publish.').length,
+    ).toBeGreaterThan(0)
+  })
+
+  it('a Collaborator sees Schedule for later present + disabled + labeled (schedule endpoint is Editor-in-chief only)', () => {
+    renderRail(<DecisionRail runId="run-1" />)
+
+    const schedule = screen.getByRole('button', {
+      name: /^schedule for later$/i,
+    }) as HTMLButtonElement
+    expect(schedule.disabled).toBe(true)
+    expect(schedule.getAttribute('aria-disabled')).toBe('true')
+    // One locked label per gated control: Publish + Schedule.
+    expect(
+      screen.getAllByText('Collaborators can review and comment, not publish.'),
+    ).toHaveLength(2)
   })
 })
