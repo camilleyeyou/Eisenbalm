@@ -18,7 +18,6 @@ Audit model:
 """
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import time
@@ -32,6 +31,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
+from eisenbalm_pipeline.lib.background import spawn_background
 from eisenbalm_pipeline.api.auth import dev_mode_claims, verify_clerk_token
 from eisenbalm_pipeline.api.runs import (
     ResumeSelection,
@@ -898,16 +898,16 @@ async def publish_manual(
         resource_id=run_id,
     )
 
-    task = asyncio.create_task(
+    spawn_background(
+        request.app,
         _run_publisher(
             request.app,
             issue_id=issue["_id"],
             issue_number=issue["issueNumber"],
             run_id=run_id,
-        )
+        ),
+        name=f"publisher:{issue['_id']}",
     )
-    request.app.state.background_tasks.add(task)
-    task.add_done_callback(request.app.state.background_tasks.discard)
 
     return {
         "runId": run_id,

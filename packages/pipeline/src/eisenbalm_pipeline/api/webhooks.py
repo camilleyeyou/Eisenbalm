@@ -5,7 +5,7 @@ Pipeline:
   2. WHK-03: Reject signatures older than (or future-skewed beyond) 5 minutes.
   3. Guard: only process status='published' (ignore in-review / draft transitions).
   4. WHK-04: Dedup via idempotency-key + Supabase webhook_idempotency UNIQUE.
-  5. Launch _run_publisher in background via asyncio.create_task (Pattern 4).
+  5. Launch _run_publisher in background via spawn_background (Pattern 4).
   6. Return 200 immediately (CLAUDE.md "Sanity webhook handler MUST return 200 immediately").
 
 The actual PDF + Vercel + Convex chain runs in _run_publisher
@@ -14,17 +14,21 @@ api/runs.py invokes.
 """
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import os
+import time
 
 from fastapi import APIRouter, HTTPException, Request, status
 
 import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.agents.publisher import _run_publisher
 from eisenbalm_pipeline.api.control import _emit_audit
-from eisenbalm_pipeline.lib.idempotency import claim_idempotency_key
+from eisenbalm_pipeline.lib.background import spawn_background
+from eisenbalm_pipeline.lib.idempotency import (
+    claim_idempotency_key,
+    release_idempotency_key,
+)
 from eisenbalm_pipeline.lib.sanity_publish import _revert_sanity_status
 from eisenbalm_pipeline.lib.sanity_webhook import (
     SIGNATURE_HEADER_NAME,
@@ -35,6 +39,61 @@ from eisenbalm_pipeline.lib.sanity_webhook import (
 
 log = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _publish_with_claim_cleanup(
+    app,
+    *,
+    pool,
+    claimed: bool,
+    issue_id: str,
+    issue_number: int,
+    run_id: str | None,
+) -> None:
+    """Run the publisher; on failure release the publisher-run claim and mark
+    the Convex run failed, then re-raise so spawn_background logs the traceback.
+
+    Loop safety (quick 260720-gic): releasing the claim cannot re-open the
+    webhook self-trigger loop. The only echo source is the problemPdf patch
+    (publisher step 3). A failure can only come from steps 1-3 (GROQ fetch,
+    render, upload+patch); every step after the patch is non-fatal (Vercel
+    deploy is wrapped, all Convex writes are *_safe). Steps 1-2 and the asset
+    upload never mutate the issue, so no echo exists for them. The one
+    ambiguous case is the patch call itself failing AFTER Sanity committed it
+    (5xx/timeout): the echo would then fire against a released claim, so
+    sanity_client tags that exception (problem_pdf_patch_attempted) and the
+    claim is deliberately KEPT in that case.
+    """
+    try:
+        await _run_publisher(
+            app, issue_id=issue_id, issue_number=issue_number, run_id=run_id
+        )
+    except Exception as exc:  # noqa: BLE001 — cleanup then re-raise
+        patch_attempted = bool(getattr(exc, "problem_pdf_patch_attempted", False))
+        if claimed and pool is not None and not patch_attempted:
+            try:
+                await release_idempotency_key(
+                    pool, source="publisher-run", idempotency_key=issue_id
+                )
+            except Exception:  # noqa: BLE001 — never mask the original failure
+                log.exception("failed to release publisher-run claim for %s", issue_id)
+        elif patch_attempted:
+            log.warning(
+                "publisher-run claim for %s KEPT: problemPdf patch may have "
+                "been applied (echo-loop guard)",
+                issue_id,
+            )
+        if run_id:
+            await _cc.convex_mutation_safe(
+                "pipelineRuns:updateStatus",
+                {
+                    "runId": run_id,
+                    "status": "failed",
+                    "completedAt": int(time.time() * 1000),
+                    "errorMessage": f"publisher: {exc!r}"[:500],
+                },
+            )
+        raise
 
 
 @router.post("/webhook/sanity-publish")
@@ -112,7 +171,7 @@ async def sanity_publish(request: Request) -> dict:
         )
 
     # 5. Launch _run_publisher in background (research Pattern 3 / Phase 4
-    #    Pitfall 4 — asyncio.create_task, NOT FastAPI BackgroundTasks).
+    #    Pitfall 4 — spawn_background, NOT FastAPI BackgroundTasks).
     try:
         issue_id = payload["_id"]
         issue_number = payload["issueNumber"]
@@ -177,6 +236,7 @@ async def sanity_publish(request: Request) -> dict:
     # reverted publish does NOT consume the claim (a later legit publish must pass).
     # Operator re-publish is unaffected: publish_manual (control.py) and
     # manual_publish (runs.py) call _run_publisher DIRECTLY, not via this webhook.
+    claimed = False
     if pool is not None:
         try:
             first_publish = await claim_idempotency_key(
@@ -185,6 +245,7 @@ async def sanity_publish(request: Request) -> dict:
                 idempotency_key=issue_id,
                 run_id=run_id,
             )
+            claimed = bool(first_publish)
         except Exception as exc:  # noqa: BLE001 — a DB blip must not drop a real publish
             log.exception(
                 "publisher-run claim failed for issue=%s (proceeding): %s",
@@ -199,16 +260,18 @@ async def sanity_publish(request: Request) -> dict:
             )
             return {"ok": True, "duplicate": "self-echo"}
 
-    task = asyncio.create_task(
-        _run_publisher(
+    spawn_background(
+        request.app,
+        _publish_with_claim_cleanup(
             request.app,
+            pool=pool,
+            claimed=claimed,
             issue_id=issue_id,
             issue_number=issue_number,
             run_id=run_id,
-        )
+        ),
+        name=f"publisher:{issue_id}",
     )
-    request.app.state.background_tasks.add(task)
-    task.add_done_callback(request.app.state.background_tasks.discard)
     log.info(
         "Webhook scheduled Publisher: issue_id=%s issue_number=%s run_id=%s "
         "ts_ms=%s",

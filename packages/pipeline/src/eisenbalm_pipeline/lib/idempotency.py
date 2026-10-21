@@ -53,3 +53,26 @@ async def claim_idempotency_key(
         )
         row = await cur.fetchone()
         return row is not None
+
+
+async def release_idempotency_key(
+    pool: AsyncConnectionPool,
+    *,
+    source: str,
+    idempotency_key: str,
+) -> bool:
+    """Delete a previously claimed (source, idempotency_key) row.
+
+    Used to un-claim a publisher-run whose background task FAILED, so a later
+    legitimate publish webhook is scheduled instead of dropped as a self-echo.
+    Returns True iff a row was deleted. Errors propagate (caller handles).
+    """
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            "DELETE FROM webhook_idempotency "
+            "WHERE source = %s AND idempotency_key = %s "
+            "RETURNING id",
+            (source, idempotency_key),
+        )
+        row = await cur.fetchone()
+        return row is not None

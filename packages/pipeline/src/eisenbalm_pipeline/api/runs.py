@@ -17,7 +17,7 @@ Phase 25: _start_run is the single shared trigger body used by both
 """
 from __future__ import annotations
 
-import asyncio
+import asyncio  # noqa: F401 — tests patch runs.asyncio.create_task
 import hmac
 import logging
 import os
@@ -32,6 +32,7 @@ from pydantic import BaseModel
 from eisenbalm_pipeline.api.auth import _deployed, require_clerk_jwt
 from eisenbalm_pipeline.lib.config_loader import load_run_config, snapshot_config
 import eisenbalm_pipeline.lib.convex_client as _cc
+from eisenbalm_pipeline.lib.background import spawn_background
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.cost import begin_run, set_run_cap
 from eisenbalm_pipeline.lib.errors import CostCapExceeded, RunCancelled
@@ -426,13 +427,9 @@ async def _start_run(
     # app.state.background_tasks may be absent in bare-app test scenarios
     # (the lifespan normally sets it; tests that don't use the full lifespan
     # get a graceful no-op rather than an AttributeError).
-    bg_tasks = getattr(app.state, "background_tasks", None)
-    task = asyncio.create_task(
-        _execute_run(app, run_id, initial_state, config)
+    spawn_background(
+        app, _execute_run(app, run_id, initial_state, config), name=f"run:{run_id}"
     )
-    if bg_tasks is not None:
-        bg_tasks.add(task)
-        task.add_done_callback(bg_tasks.discard)
 
     return run_id
 
@@ -555,9 +552,7 @@ async def _resume_paused_run(app: Any, run_id: str, charity_name: str) -> dict:
         except Exception:
             log.exception("Resume task for %s raised", run_id)
 
-    task = asyncio.create_task(_resume_run_task())
-    app.state.background_tasks.add(task)
-    task.add_done_callback(app.state.background_tasks.discard)
+    spawn_background(app, _resume_run_task(), name=f"resume:{run_id}")
 
     return {"runId": run_id, "resumed": True}
 
@@ -621,16 +616,16 @@ async def manual_publish(request: Request, run_id: str) -> dict:
             detail=f"No Sanity weeklyIssue found for runId={run_id}",
         )
 
-    task = asyncio.create_task(
+    spawn_background(
+        request.app,
         _run_publisher(
             request.app,
             issue_id=issue["_id"],
             issue_number=issue["issueNumber"],
             run_id=run_id,
-        )
+        ),
+        name=f"publisher:{issue['_id']}",
     )
-    request.app.state.background_tasks.add(task)
-    task.add_done_callback(request.app.state.background_tasks.discard)
 
     return {
         "runId": run_id,

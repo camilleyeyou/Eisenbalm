@@ -356,26 +356,34 @@ async def upload_pdf_to_issue(
     asset_id = r.json()["document"]["_id"]
 
     # 2) Patch the issue to reference the asset
-    r = await http.post(
-        f"/{API_VERSION}/data/mutate/{_dataset()}",
-        json={
-            "mutations": [
-                {
-                    "patch": {
-                        "id": issue_id,
-                        "set": {
-                            "problemPdf": {
-                                "_type": "file",
-                                "asset": {"_type": "reference", "_ref": asset_id},
-                            }
-                        },
+    try:
+        r = await http.post(
+            f"/{API_VERSION}/data/mutate/{_dataset()}",
+            json={
+                "mutations": [
+                    {
+                        "patch": {
+                            "id": issue_id,
+                            "set": {
+                                "problemPdf": {
+                                    "_type": "file",
+                                    "asset": {"_type": "reference", "_ref": asset_id},
+                                }
+                            },
+                        }
                     }
-                }
-            ]
-        },
-        headers=_auth_headers(),
-    )
-    r.raise_for_status()
+                ]
+            },
+            headers=_auth_headers(),
+        )
+        r.raise_for_status()
+    except Exception as exc:
+        # The problemPdf mutation may have been APPLIED even though we are
+        # raising (e.g. 5xx/timeout after commit). The publisher webhook
+        # wrapper must then NOT release its self-echo claim: the echo webhook
+        # this patch fires would re-run the publisher (quick 260720-gic).
+        exc.problem_pdf_patch_attempted = True  # type: ignore[attr-defined]
+        raise
 
 
 # ── Module-level shared client (mirrors convex_client._CLIENT pattern) ────

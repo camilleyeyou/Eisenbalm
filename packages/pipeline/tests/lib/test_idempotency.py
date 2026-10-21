@@ -48,3 +48,69 @@ async def test_different_source_independent(webhook_idempotency_clean):
     )
     assert a is True
     assert b is True  # different source → no conflict
+
+
+# ── release_idempotency_key (hermetic — fake pool/cursor) ─────────────────
+
+
+class _FakeCursor:
+    def __init__(self, row, calls):
+        self._row, self._calls = row, calls
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def execute(self, sql, params):
+        self._calls.append((sql, params))
+
+    async def fetchone(self):
+        return self._row
+
+
+class _FakeConn:
+    def __init__(self, row, calls):
+        self._row, self._calls = row, calls
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    def cursor(self):
+        return _FakeCursor(self._row, self._calls)
+
+
+class _FakePool:
+    def __init__(self, row):
+        self.calls: list = []
+        self._row = row
+
+    def connection(self):
+        return _FakeConn(self._row, self.calls)
+
+
+async def test_release_deletes_and_returns_true_when_row_deleted():
+    from eisenbalm_pipeline.lib.idempotency import release_idempotency_key
+
+    pool = _FakePool(row=(1,))
+    out = await release_idempotency_key(
+        pool, source="publisher-run", idempotency_key="issue-1"
+    )
+    assert out is True
+    sql, params = pool.calls[0]
+    assert sql.startswith("DELETE FROM webhook_idempotency")
+    assert "source = %s" in sql and "idempotency_key = %s" in sql
+    assert params == ("publisher-run", "issue-1")
+
+
+async def test_release_returns_false_when_nothing_deleted():
+    from eisenbalm_pipeline.lib.idempotency import release_idempotency_key
+
+    pool = _FakePool(row=None)
+    assert (
+        await release_idempotency_key(pool, source="s", idempotency_key="k") is False
+    )

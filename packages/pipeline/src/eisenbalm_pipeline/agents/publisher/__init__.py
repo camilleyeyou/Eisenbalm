@@ -380,7 +380,14 @@ async def _run_publisher(
         raise RuntimeError(f"Publisher: issue {issue_id} not found in Sanity")
 
     # 2. PDF-01 + PDF-02: render with theme + pdfContent.
-    pdf_bytes = render_problem_statement_pdf(
+    # Off the event loop: WeasyPrint is CPU-bound and synchronous; running it
+    # inline stalls every request (healthz included) for the render duration.
+    # WeasyPrint is not documented as thread-safe; this is safe because
+    # render_problem_statement_pdf builds a fresh FontConfiguration + HTML per
+    # call (no shared mutable state) and at most one publish runs at a time in
+    # practice. Do not parallelize renders.
+    pdf_bytes = await asyncio.to_thread(
+        render_problem_statement_pdf,
         issue_number=issue["issueNumber"],
         charity_name=issue.get("charityName") or "Untitled Charity",
         pdf_content=issue.get("pdfContent") or {},
