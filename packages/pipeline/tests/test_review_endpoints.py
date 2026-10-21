@@ -302,3 +302,82 @@ def test_reject_records_action(monkeypatch):
 # publish_issue/schedule_issue now only check that both sign-offs are
 # ACTIVE (signOffs:activeByRunId) — see test_publish_requires_both_signoffs
 # and test_schedule_requires_both_signoffs above.
+
+
+# ── Quick 261021-ind: server-enforced hold ────────────────────────────────
+
+
+def _held_query(path_held_row):
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return {**_awaiting_run("issue-42"), "issueNumber": 7}
+        if path == "issues:byIssueNumber":
+            return path_held_row
+        return None
+
+    return mock_convex_query
+
+
+def test_publish_refused_when_held(monkeypatch):
+    flips, mutations = [], []
+
+    async def mock_convex_mutation(http, path, args):
+        mutations.append(path)
+
+    async def mock_flip(http, sanity_issue_id: str):
+        flips.append(sanity_issue_id)
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", _held_query({"held": True}))
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip)
+
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 409
+    assert response.json()["detail"]["reason"] == "held"
+    assert flips == []
+    assert "reviewActions:record" not in mutations
+
+
+def test_publish_proceeds_when_not_held(monkeypatch):
+    flips = []
+
+    async def mock_convex_mutation(http, path, args):
+        return None
+
+    async def mock_flip(http, sanity_issue_id: str):
+        flips.append(sanity_issue_id)
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", _held_query({"held": False}))
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip)
+
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 200, response.text
+    assert flips == ["issue-42"]
+
+
+def test_schedule_refused_when_held(monkeypatch):
+    mutations = []
+
+    async def mock_convex_mutation(http, path, args):
+        mutations.append(path)
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", _held_query({"held": True}))
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation)
+
+    response = _client.post("/issues/run-abc/schedule", json={"scheduledAt": _future_ts()})
+    assert response.status_code == 409
+    assert response.json()["detail"]["reason"] == "held"
+    assert "runs:setScheduledPublish" not in mutations
+
+
+def test_publish_503_when_hold_lookup_fails(monkeypatch):
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return {**_awaiting_run("issue-42"), "issueNumber": 7}
+        raise RuntimeError("convex down")
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", mock_convex_query)
+    response = _client.post("/issues/run-abc/publish")
+    assert response.status_code == 503
+    assert response.json()["detail"]["reason"] == "hold_unknown"

@@ -42,6 +42,7 @@ from eisenbalm_pipeline.api.runs import (
     _start_run,
 )
 from eisenbalm_pipeline.lib.scheduler import _is_due, compute_next_run_at
+from eisenbalm_pipeline.lib.issue_hold import assert_not_held, is_issue_held
 from eisenbalm_pipeline.lib.sanity_publish import _flip_sanity_published
 from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
 
@@ -474,6 +475,24 @@ async def pipeline_tick(request: Request) -> dict:
                 pr = await _cc.convex_query(
                     http, "pipelineRuns:byRunId", {"runId": r["runId"]}
                 )
+                # Quick 261021-ind: a held issue is never auto-published. Clear
+                # the schedule so releasing the hold does not silently publish a
+                # past-due slot; the editor re-schedules.
+                if await is_issue_held(http, (pr or {}).get("issueNumber")):
+                    await _cc.convex_mutation(
+                        http,
+                        "runs:setScheduledPublish",
+                        {"runId": r["runId"], "scheduledPublishAt": None},
+                    )
+                    await _emit_audit(
+                        http,
+                        actor_id="scheduler",
+                        action="run.scheduled_publish_skipped_held",
+                        resource_type="run",
+                        resource_id=r["runId"],
+                    )
+                    log.info("tick: %s is on hold; scheduled publish skipped", r["runId"])
+                    continue
                 sanity_id = (pr or {}).get("sanityIssueId")
                 if sanity_id:
                     await _flip_sanity_published(sanity_http, sanity_id)
@@ -868,6 +887,8 @@ async def publish_manual(
 
     # Quick 261021-7aw: the Phase 34 two-sign-off gate is removed here —
     # agents review and self-fix content; sign-offs are optional.
+    # Quick 261021-ind: hold is the only remaining gate.
+    await assert_not_held(http, issue.get("issueNumber"))
 
     # Audit BEFORE scheduling the publisher task ("nothing silent").
     await _emit_audit(

@@ -29,6 +29,7 @@ from eisenbalm_pipeline.lib.idempotency import (
     claim_idempotency_key,
     release_idempotency_key,
 )
+from eisenbalm_pipeline.lib.issue_hold import is_issue_held
 from eisenbalm_pipeline.lib.sanity_publish import _revert_sanity_status
 from eisenbalm_pipeline.lib.sanity_webhook import (
     SIGNATURE_HEADER_NAME,
@@ -215,6 +216,32 @@ async def sanity_publish(request: Request) -> dict:
         except Exception:  # noqa: BLE001
             log.warning("bypass alert emit failed for run=%s (non-blocking)", run_id)
         return {"ok": True, "blocked": "no_run_id"}
+
+    # ── Hold guard (quick 261021-ind) ───────────────────────────────────────
+    # A held issue must not go live via a direct Studio flip. Never un-publishes
+    # a live issue (run already complete). Fail-open on lookup error: the
+    # dashboard/tick paths already enforced hold fail-closed, and this webhook
+    # must always return 200. Placed BEFORE the self-echo claim so a blocked
+    # publish does not consume it.
+    try:
+        _run_row = await _cc.convex_query(convex_http, "pipelineRuns:byRunId", {"runId": run_id})
+        _run_complete = isinstance(_run_row, dict) and _run_row.get("status") == "complete"
+        _held = (not _run_complete) and await is_issue_held(convex_http, issue_number)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hold check failed for issue=%s (proceeding): %r", issue_id, exc)
+        _held = False
+    if _held:
+        log.warning("Webhook publish BLOCKED — issue=%s is on hold", issue_id)
+        try:
+            await _revert_sanity_status(sanity_http, issue_id, status="in-review")
+        except Exception:  # noqa: BLE001
+            log.exception("revert failed for held issue=%s (publisher still NOT launched)", issue_id)
+        await _emit_audit(
+            convex_http, actor_id="webhook", action="run.publish_blocked_held",
+            resource_type="run", resource_id=issue_id,
+            after=json.dumps({"reason": "held"}),
+        )
+        return {"ok": True, "blocked": "held"}
 
     # ── Self-echo guard (quick 260720-gic) ──────────────────────────────────
     # Publisher step 3 patches problemPdf on the already-published doc, which

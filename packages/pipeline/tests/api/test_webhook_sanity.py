@@ -311,3 +311,75 @@ async def test_webhook_blocked_when_run_id_absent(
     assert revert_spy.call_args.args[1] == "issue-22"
     audit_spy.assert_awaited_once()
     assert audit_spy.call_args.kwargs.get("action") == "run.publish_bypass_blocked"
+
+
+# ── Quick 261021-ind: hold guard ──────────────────────────────────────────
+
+
+def _hold_setup(monkeypatch, *, held: bool, run_status: str):
+    pub_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._run_publisher", pub_spy)
+    revert_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._revert_sanity_status", revert_spy
+    )
+    audit_spy = AsyncMock(return_value=None)
+    monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._emit_audit", audit_spy)
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return {"runId": "r30", "status": run_status}
+        if path == "issues:byIssueNumber":
+            return {"held": held}
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.webhooks._cc.convex_query", mock_convex_query
+    )
+    return pub_spy, revert_spy, audit_spy
+
+
+async def _post_publish(client, encoder, key):
+    ts = int(time.time() * 1000)
+    body = json.dumps(
+        {"_id": "issue-30", "issueNumber": 30, "status": "published", "runId": "r30"}
+    ).encode()
+    return await client.post(
+        "/webhook/sanity-publish",
+        content=body,
+        headers={
+            "sanity-webhook-signature": encoder(body, ts, SECRET),
+            "idempotency-key": key,
+        },
+    )
+
+
+async def test_webhook_blocked_when_issue_held(
+    client, sanity_signature_encoder, monkeypatch
+):
+    monkeypatch.setenv("SANITY_WEBHOOK_SECRET", SECRET)
+    pub_spy, revert_spy, audit_spy = _hold_setup(
+        monkeypatch, held=True, run_status="awaiting-review"
+    )
+    r = await _post_publish(client, sanity_signature_encoder, "test-held")
+    assert r.status_code == 200, r.text
+    assert r.json() == {"ok": True, "blocked": "held"}
+    pub_spy.assert_not_called()
+    revert_spy.assert_awaited_once()
+    assert revert_spy.call_args.args[1] == "issue-30"
+    assert revert_spy.call_args.kwargs.get("status") == "in-review"
+    assert audit_spy.call_args.kwargs.get("action") == "run.publish_blocked_held"
+
+
+async def test_webhook_held_but_run_complete_not_reverted(
+    client, sanity_signature_encoder, monkeypatch
+):
+    """A hold never un-publishes an issue that is already live."""
+    monkeypatch.setenv("SANITY_WEBHOOK_SECRET", SECRET)
+    pub_spy, revert_spy, audit_spy = _hold_setup(
+        monkeypatch, held=True, run_status="complete"
+    )
+    r = await _post_publish(client, sanity_signature_encoder, "test-held-complete")
+    assert r.status_code == 200, r.text
+    assert r.json().get("blocked") is None
+    revert_spy.assert_not_called()

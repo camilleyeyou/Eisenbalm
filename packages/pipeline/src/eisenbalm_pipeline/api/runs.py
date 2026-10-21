@@ -616,6 +616,13 @@ async def manual_publish(request: Request, run_id: str) -> dict:
             detail=f"No Sanity weeklyIssue found for runId={run_id}",
         )
 
+    # Quick 261021-ind: hold is the only remaining publish gate.
+    from eisenbalm_pipeline.lib.issue_hold import assert_not_held
+
+    await assert_not_held(
+        getattr(request.app.state, "convex_http", None), issue.get("issueNumber")
+    )
+
     spawn_background(
         request.app,
         _run_publisher(

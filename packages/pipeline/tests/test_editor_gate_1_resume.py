@@ -23,13 +23,8 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    not os.environ.get("SUPABASE_POSTGRES_URL"),
-    reason=(
-        "SUPABASE_POSTGRES_URL not set — interrupt/resume requires the "
-        "AsyncPostgresSaver checkpointer; Supabase is provisioned in Plan 12 "
-        "(Andrew's manual step). Runs green in Plan 12's smoke test."
-    ),
+pytestmark = pytest.mark.skip(
+    reason="Gate 1 auto-proceeds since quick 261021-ind — no interrupt to resume"
 )
 
 

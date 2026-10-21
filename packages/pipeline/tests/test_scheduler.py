@@ -208,3 +208,72 @@ async def test_tick_fires_due_scheduled_runs(monkeypatch) -> None:
     ]
     assert clear_calls, "Expected runs:setScheduledPublish to be called to clear scheduledPublishAt"
     assert clear_calls[0]["runId"] == "run-due-01"
+
+
+async def test_tick_skips_and_clears_held_scheduled_run(monkeypatch) -> None:
+    """Quick 261021-ind: a due scheduled run whose issue is on hold is NOT
+    flipped; its schedule is cleared and an audit row is written. An un-held
+    due run in the same sweep still publishes."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from eisenbalm_pipeline.api.control import router as control_router
+
+    flip_calls: list[str] = []
+
+    async def mock_flip(http, sanity_issue_id: str) -> None:
+        flip_calls.append(sanity_issue_id)
+
+    config_data = [
+        {"key": "schedule_enabled", "value": json.dumps(True)},
+        {"key": "schedule_next_run_at", "value": json.dumps(
+            int(datetime.now(timezone.utc).timestamp() * 1000) + 3_600_000
+        )},
+    ]
+
+    async def mock_convex_query(http, path: str, args: dict):
+        if path == "pipelineConfig:getAll":
+            return config_data
+        if path == "runs:dueForPublish":
+            return [{"runId": "run-held"}, {"runId": "run-free"}]
+        if path == "pipelineRuns:byRunId":
+            if args["runId"] == "run-held":
+                return {"runId": "run-held", "sanityIssueId": "issue-h", "issueNumber": 11}
+            return {"runId": "run-free", "sanityIssueId": "issue-f", "issueNumber": 12}
+        if path == "issues:byIssueNumber":
+            return {"held": args["issueNumber"] == 11}
+        return None
+
+    mutation_calls: list[tuple] = []
+
+    async def mock_convex_mutation(http, path: str, args: dict):
+        mutation_calls.append((path, args))
+        return None
+
+    audits: list[dict] = []
+
+    async def mock_audit(http, **kwargs):
+        audits.append(kwargs)
+
+    app = FastAPI()
+    app.include_router(control_router)
+    app.state.convex_http = MagicMock()
+    app.state.sanity_http = MagicMock()
+    app.state.graph = None
+    app.state.background_tasks = set()
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.control._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr("eisenbalm_pipeline.api.control._cc.convex_mutation", mock_convex_mutation)
+    monkeypatch.setattr("eisenbalm_pipeline.api.control._flip_sanity_published", mock_flip)
+    monkeypatch.setattr("eisenbalm_pipeline.api.control._emit_audit", mock_audit)
+    monkeypatch.setenv("PIPELINE_TRIGGER_SECRET", "s")
+
+    client = TestClient(app, raise_server_exceptions=True)
+    response = client.post("/pipeline/tick", headers={"X-Pipeline-Trigger-Secret": "s"})
+    assert response.status_code == 200, response.text
+    body = response.json()
+
+    assert flip_calls == ["issue-f"]
+    assert body["scheduledPublished"] == ["run-free"]
+    cleared = [a["runId"] for p, a in mutation_calls if p == "runs:setScheduledPublish" and a["scheduledPublishAt"] is None]
+    assert "run-held" in cleared
+    assert any(a.get("action") == "run.scheduled_publish_skipped_held" for a in audits)

@@ -58,13 +58,8 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    not os.environ.get("SUPABASE_POSTGRES_URL"),
-    reason=(
-        "SUPABASE_POSTGRES_URL not set — interrupt/resume requires the "
-        "AsyncPostgresSaver checkpointer, provisioned live (mirrors "
-        "test_editor_gate_1_resume.py's skip pattern)."
-    ),
+pytestmark = pytest.mark.skip(
+    reason="Gate 1 auto-proceeds since quick 261021-ind — no interrupt to resume"
 )
 
 

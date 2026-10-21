@@ -17,8 +17,7 @@ Every decision writes:
   - an auditLog:record row via _emit_audit (non-blocking)
 
 Quick 261021-7aw: publish + schedule gate ONLY on role (Editor-in-chief),
-run existence, awaiting-review status, and sanityIssueId (plus hold where
-enforced). The Phase 34 two-sign-off gate (missing_signoffs 409) is removed —
+run existence, awaiting-review status, and sanityIssueId and hold (409 reason held). The Phase 34 two-sign-off gate (missing_signoffs 409) is removed —
 agents review and self-fix content; sign-offs are optional attestations.
 
 The publish endpoint does NOT call _run_publisher directly.  It calls
@@ -44,6 +43,7 @@ from eisenbalm_pipeline.api.control import (
     _require_clerk_jwt_control,
     _require_editor,
 )
+from eisenbalm_pipeline.lib.issue_hold import assert_not_held
 from eisenbalm_pipeline.lib.sanity_publish import _flip_sanity_published
 
 log = logging.getLogger(__name__)
@@ -78,6 +78,7 @@ async def publish_issue(
       1. run must exist → 404 if not
       2. run.status == "awaiting-review" → 409 {reason:"wrong_status"} if not
       3. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
+      4. issue must not be on hold → 409 {reason:"held"} (503 if unknowable)
 
     Action:
       - _flip_sanity_published → fires existing Sanity webhook → _run_publisher
@@ -119,6 +120,9 @@ async def publish_issue(
                 "message": "No Sanity issue ID found for this run.",
             },
         )
+
+    # Hold is the only content gate left (quick 261021-ind) — fail closed.
+    await assert_not_held(http, run.get("issueNumber"))
 
     # Action: flip Sanity status → fires webhook → _run_publisher (D-01).
     # The Sanity http client is registered at the app level; for the flip we
@@ -170,6 +174,7 @@ async def schedule_issue(
       2. run.status == "awaiting-review" → 409 if not
       3. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
       4. scheduledAt > now → 400 {reason:"schedule_in_past"} if not
+      5. issue must not be on hold → 409 {reason:"held"} (503 if unknowable)
 
     Action:
       - runs:setScheduledPublish({runId, scheduledPublishAt})
@@ -225,6 +230,8 @@ async def schedule_issue(
                 "message": "Choose a time in the future.",
             },
         )
+
+    await assert_not_held(http, run.get("issueNumber"))
 
     # Action: write scheduledPublishAt to Convex runs table.
     await _cc.convex_mutation(

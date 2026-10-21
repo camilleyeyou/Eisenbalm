@@ -15,30 +15,23 @@ gate 1 responsibilities (AGT-06, AGT-17, D-18):
      deliberationTranscript). Python OVERRIDES winnerName with the
      deterministic top-score candidate (D-18) — the LLM's pick is
      read only for confidence + requiresHumanInput signal.
-  4. If score_gap < EDITOR_INTERRUPT_THRESHOLD AND
-     confidence < EDITOR_CONFIDENCE_THRESHOLD AND requiresHumanInput=True:
-     write pipelineRuns:updateStatus 'awaiting-review' to Convex FIRST,
-     then call interrupt() (Phase 4 D-13 — idempotency-before-interrupt
-     ordering is non-negotiable).
-  5. On resume, the interrupt() return value supplies the human-chosen
-     winner; override the winner_name with that.
+  4. Low confidence / narrow gap no longer pauses: the run auto-proceeds with
+     the deterministic top score (no human pause since quick 261021-ind).
+  5. If no candidates survive, the run fails (RuntimeError) — start a new run.
   6. Format Markdown deliberation_transcript per RESEARCH §"Editor Gate 1"
      lines 484-504 (NotebookLM podcast input — V2-02 manual export).
   7. Record resolved model into state['model_versions']['editor_gate1']
      (AGT-17 observability surface).
 
 emit_event='editor-decision': the @agent_node wrapper emits one
-deliberationEvents row on the success path. On interrupt, the
-GraphInterrupt re-raises out of the wrapper BEFORE emission (Phase 4
-D-13 + _wrapper.py docstring).
+deliberationEvents row on the success path.
 """
 from __future__ import annotations
 
 import json
-import time
-from typing import Any, Optional
+import logging
+from typing import Optional
 
-from langgraph.types import interrupt
 from pydantic import BaseModel, Field
 from slugify import slugify
 
@@ -48,6 +41,8 @@ from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 from eisenbalm_pipeline.lib.prompts import load_prompt
 from eisenbalm_pipeline.lib.voice import VOICE_CONSTRAINTS
+
+log = logging.getLogger(__name__)
 
 
 # D-18 thresholds — single source of truth.
@@ -367,110 +362,14 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
     issue_number = state["issue_number"]
     candidates = state.get("candidates") or []
 
-    # Phase 46 (D-14): verify_candidates may legitimately kill EVERY
-    # candidate (SGE-03's conservative-but-real kill rule). That is a
-    # RECOVERABLE degraded/needs-human state, not a fatal crash — mirrors
-    # the low-confidence interrupt path below (idempotency-before-interrupt:
-    # the status write MUST land BEFORE interrupt() — Phase 4 D-13). There
-    # is no sorted_candidates[0] to fall back to, so a minimal synthetic
-    # winning_charity is built from the human-supplied name alone, and the
-    # deterministic-ranking / LLM path is skipped entirely.
+    # Phase 46 (D-14) / quick 261021-ind: verify_candidates or Scout dedup may
+    # kill EVERY candidate. There is no pick to proceed with and no human pause
+    # any more, so the run fails (the @agent_node wrapper marks it failed with
+    # this message) and a new run is started.
     if not candidates:
-        await convex_mutation_safe(
-            "pipelineRuns:updateStatus",
-            {
-                "runId": run_id,
-                "status": "awaiting-review",
-                "awaitingHumanAt": int(time.time() * 1000),
-            },
+        raise RuntimeError(
+            "No candidates survived Scout dedup and verification — start a new run."
         )
-        # Candidates can be emptied by Scout dedup OR verify_candidates.
-        # Suspend. interrupt() raises GraphInterrupt; the @agent_node
-        # wrapper re-raises it without writing the success-path event.
-        resume_value: Any = interrupt(
-            {
-                "prompt": (
-                    "No candidates survived Scout dedup and verification — "
-                    "supply a charity to proceed or restart."
-                ),
-                "reason": "all-candidates-killed",
-                "candidates": [],
-            }
-        )
-        # Accept the same three resume shapes the existing interrupt path
-        # handles (Phase 4 PIP-10 contract / Phase 5 plan-08 contract).
-        human_name = ""
-        if isinstance(resume_value, dict):
-            human_name = (
-                resume_value.get("editorSelection")
-                or resume_value.get("winnerName")
-                or ""
-            )
-        elif isinstance(resume_value, str) and resume_value:
-            human_name = resume_value
-
-        # After resume, write status back to 'running' (mirror the existing
-        # interrupt path below).
-        await convex_mutation_safe(
-            "pipelineRuns:updateStatus",
-            {"runId": run_id, "status": "running"},
-        )
-
-        # Minimal synthetic CharityCandidate — every key present, empty
-        # where there is no data to fill (there is no scored candidate to
-        # fall back to). Downstream Researcher/Chronicler produce a
-        # degraded-but-non-crashing result — D-14 requires "recoverable
-        # rather than fatal", not "produces a great result".
-        winning_charity: dict = {
-            "name": human_name,
-            "location": "",
-            "website": "",
-            "charityNavigatorUrl": None,
-            "guidestarUrl": None,
-            "foundingYear": None,
-            "assetRange": "",
-            "focusArea": "",
-            "missionStatement": "",
-            "scoutSummary": "",
-            "whyOverlooked": "",
-            "advocateArgument": None,
-            "advocateScore": None,
-        }
-        transcript = (
-            f"# Eisenbalm Dispatch — Issue #{issue_number} Deliberation\n\n"
-            "## Decision\n\n"
-            "No candidates survived Scout dedup and verification this run. "
-            "A human supplied a charity directly to recover the run.\n\n"
-            f"**Winner:** {human_name}\n"
-        )
-        editor_decision_text = (
-            "Degraded recovery path (D-14): no candidates survived Scout "
-            "dedup and verification, so no deterministic ranking or LLM call "
-            "was made. A human supplied a charity directly via the "
-            "all-candidates-killed interrupt."
-        )
-
-        # Phase 47 (BRF-05, §47.3): deterministic Brief assembly + persist —
-        # zero new graph node, zero new LLM call — on the D-14 synthetic-
-        # winner path too, so the writers see a Brief even on this
-        # degraded-recovery run.
-        brief = _assemble_brief(
-            state=state,
-            winning_charity=winning_charity,
-            central_claim=editor_decision_text,
-        )
-        await convex_mutation_safe("briefs:insert", {"runId": run_id, **brief})
-
-        return {
-            **state,
-            "winning_charity": winning_charity,
-            "editor_decision": editor_decision_text,
-            "runner_up_notes": "",
-            "editor_confidence": None,
-            "deliberation_transcript": transcript,
-            "model_versions": dict(state.get("model_versions") or {}),
-            "brief": brief,
-        }
 
     # Deterministic ranking (D-18).
     sorted_candidates = _sort_candidates_by_score(candidates)
@@ -512,75 +411,22 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
             deliberationTranscript="",  # overridden below
         )
 
-    # D-18: interrupt() only when ALL THREE conditions hold.
-    interrupt_triggered = (
-        score_gap < EDITOR_INTERRUPT_THRESHOLD
-        and decision.confidence < EDITOR_CONFIDENCE_THRESHOLD
-        and decision.requiresHumanInput
-    )
-
     # Default winner = deterministic top-score (D-18). LLM-supplied
     # winnerName is read for diagnostic logging only — Python overrides.
     winner_name = top.get("name", "")
 
-    if interrupt_triggered:
-        # Phase 4 D-13 (idempotency-before-interrupt): status='awaiting-review'
-        # write MUST land BEFORE interrupt() is called. The write is an
-        # upsert on runId — safe to re-run on resume (the node re-runs from
-        # the top after the human supplies a Command(resume=...) value).
-        await convex_mutation_safe(
-            "pipelineRuns:updateStatus",
-            {
-                "runId": run_id,
-                "status": "awaiting-review",
-                "awaitingHumanAt": int(time.time() * 1000),
-            },
-        )
-        # Suspend. interrupt() raises GraphInterrupt; the @agent_node
-        # wrapper re-raises it without writing the success-path event.
-        resume_value: Any = interrupt(
-            {
-                "prompt": "Select winner for this issue's deliberation gate.",
-                "candidates": [
-                    {
-                        "name": c.get("name"),
-                        "advocateScore": c.get("advocateScore"),
-                        "advocateArgument": c.get("advocateArgument"),
-                    }
-                    for c in sorted_candidates
-                ],
-                "topTwoScores": [
-                    {
-                        "name": sorted_candidates[0].get("name"),
-                        "score": sorted_candidates[0].get("advocateScore"),
-                    },
-                    {
-                        "name": sorted_candidates[1].get("name"),
-                        "score": sorted_candidates[1].get("advocateScore"),
-                    },
-                ],
-                "editorReasoning": decision.editorReasoning,
-            }
-        )
-        # On resume, override winner_name with the human-supplied value.
-        # Accept three shapes the resume protocol may pass:
-        #   - {"editorSelection": "name"}  (Phase 4 PIP-10 contract)
-        #   - {"winnerName": "name"}        (Phase 5 plan-08 contract)
-        #   - "name"                         (raw string)
-        if isinstance(resume_value, dict):
-            override = (
-                resume_value.get("editorSelection")
-                or resume_value.get("winnerName")
-            )
-            if override:
-                winner_name = override
-        elif isinstance(resume_value, str) and resume_value:
-            winner_name = resume_value
-
-        # After resume, write status back to 'running' (mirror Phase 4 stub).
-        await convex_mutation_safe(
-            "pipelineRuns:updateStatus",
-            {"runId": run_id, "status": "running"},
+    # Quick 261021-ind: Gate 1 never pauses for a human. The old D-18
+    # interrupt condition (narrow gap + low confidence + requiresHumanInput)
+    # now just logs; the deterministic top score proceeds to phase 2.
+    if (
+        score_gap < EDITOR_INTERRUPT_THRESHOLD
+        and decision.confidence < EDITOR_CONFIDENCE_THRESHOLD
+        and decision.requiresHumanInput
+    ):
+        log.info(
+            "editor_gate_1: low-confidence pick auto-proceeds (gap=%s conf=%s) — quick 261021-ind",
+            score_gap,
+            decision.confidence,
         )
 
     # Resolve the full CharityCandidate dict for the winner name. Falls
@@ -592,7 +438,7 @@ async def editor_gate_1(state: DispatchState) -> DispatchState:
 
     # Mark the winning candidate in Convex pitchLog (Phase 4 D-18 step 4
     # second write — NOT idempotent in the same way as updateStatus, so it
-    # lives AFTER any potential interrupt() pass).
+    # lives AFTER any potential pause).
     await convex_mutation_safe(
         "pitchLog:markSelected",
         {"runId": run_id, "charityName": winning_charity["name"]},

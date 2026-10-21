@@ -354,3 +354,44 @@ def test_publish_manual_never_uses_trigger_secret() -> None:
         "publish_manual must be guarded by _require_editor (Editor-in-chief "
         "Clerk claim)."
     )
+
+
+# ── Quick 261021-ind: hold ─────────────────────────────────────────────────
+
+
+async def test_publish_manual_refused_when_held(monkeypatch) -> None:
+    """Held issue -> 409 {reason:"held"}; publisher never spawned, no audit row."""
+    fake_groq, pub_spy = _wire_publisher(
+        monkeypatch, issue={"_id": "issue-99", "issueNumber": 99}
+    )
+    _set_role_claims(monkeypatch, role="Editor-in-chief", sub="user_editor")
+
+    import eisenbalm_pipeline.api.control as control_mod
+
+    audit_calls: list[dict] = []
+
+    async def fake_emit_audit(http, **kwargs):  # noqa: ARG001
+        audit_calls.append(kwargs)
+
+    monkeypatch.setattr(control_mod, "_emit_audit", fake_emit_audit)
+
+    async def mock_convex_query(http, path, args):  # noqa: ARG001
+        if path == "issues:byIssueNumber":
+            return {"held": True}
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.control._cc.convex_query", mock_convex_query
+    )
+
+    app = _build_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/issues/run-held-001/publish-manual", headers=AUTH_HEADER
+        )
+
+    assert response.status_code == 409, response.text
+    assert response.json()["detail"]["reason"] == "held"
+    pub_spy.assert_not_called()
+    assert audit_calls == []

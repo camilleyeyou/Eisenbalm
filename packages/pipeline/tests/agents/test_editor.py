@@ -358,11 +358,9 @@ def _interrupt_raises_graph_interrupt(*args, **kwargs) -> None:
 
 
 @pytest.mark.asyncio
-async def test_interrupt_threshold_triggers() -> None:
-    """AGT-06: narrow gap + low confidence + requiresHumanInput=True triggers interrupt.
-
-    Critically: pipelineRuns:updateStatus 'awaiting-review' MUST be written
-    BEFORE interrupt() is raised (Phase 4 D-13 idempotency-before-interrupt).
+async def test_low_confidence_auto_proceeds() -> None:
+    """Quick 261021-ind: narrow gap + low confidence + requiresHumanInput no
+    longer pauses. The deterministic top score proceeds; no awaiting-review write.
     """
     state = _make_state_with_scored_candidates([("OrgA", 7), ("OrgB", 7)])
     decision = EditorDecision(
@@ -389,14 +387,10 @@ async def test_interrupt_threshold_triggers() -> None:
         ),
     ), patch(
         "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
-    ), patch(
-        "eisenbalm_pipeline.agents.editor.interrupt",
-        _interrupt_raises_graph_interrupt,
     ):
-        with pytest.raises(GraphInterrupt):
-            await editor_gate_1(state)
+        result = await editor_gate_1(state)
 
-    # status='awaiting-review' MUST be written BEFORE interrupt()
+    assert result["winning_charity"]["name"] == "OrgA"
     awaiting_calls = [
         c
         for c in mock_convex.call_args_list
@@ -404,10 +398,7 @@ async def test_interrupt_threshold_triggers() -> None:
         and c.args[0] == "pipelineRuns:updateStatus"
         and c.args[1].get("status") == "awaiting-review"
     ]
-    assert len(awaiting_calls) >= 1, (
-        "pipelineRuns:updateStatus('awaiting-review') must be written "
-        "BEFORE interrupt() (Phase 4 D-13)"
-    )
+    assert awaiting_calls == []
 
 
 @pytest.mark.asyncio
@@ -455,13 +446,10 @@ async def test_interrupt_skipped_when_confident() -> None:
 
 
 @pytest.mark.asyncio
-async def test_editor_gate_1_no_candidates_triggers_recoverable_interrupt() -> None:
-    """D-14: an empty state['candidates'] (verify_candidates killed every
-    candidate) does NOT raise RuntimeError. It writes
-    pipelineRuns:updateStatus('awaiting-review') BEFORE interrupt() —
-    exactly the existing idempotency-before-interrupt ordering (Phase 4
-    D-13) — and interrupt() propagates as GraphInterrupt, not a crash.
-    """
+async def test_editor_gate_1_no_candidates_fails_run() -> None:
+    """Quick 261021-ind: with no surviving candidates there is no pick and no
+    human pause — editor_gate_1 raises RuntimeError (the wrapper fails the run)
+    and never writes awaiting-review."""
     state = {
         "run_id": "run-test-no-candidates-0001",
         "issue_number": 42,
@@ -471,12 +459,8 @@ async def test_editor_gate_1_no_candidates_triggers_recoverable_interrupt() -> N
     mock_convex = AsyncMock()
     with patch(
         "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
-    ), patch(
-        "eisenbalm_pipeline.agents.editor.interrupt",
-        _interrupt_raises_graph_interrupt,
     ):
-        # NOT RuntimeError — must be GraphInterrupt (recoverable, not fatal).
-        with pytest.raises(GraphInterrupt):
+        with pytest.raises(RuntimeError, match="No candidates survived"):
             await editor_gate_1(state)
 
     awaiting_calls = [
@@ -486,56 +470,7 @@ async def test_editor_gate_1_no_candidates_triggers_recoverable_interrupt() -> N
         and c.args[0] == "pipelineRuns:updateStatus"
         and c.args[1].get("status") == "awaiting-review"
     ]
-    assert len(awaiting_calls) >= 1, (
-        "pipelineRuns:updateStatus('awaiting-review') must be written "
-        "BEFORE interrupt() even on the all-candidates-killed path (D-13)"
-    )
-
-
-@pytest.mark.asyncio
-async def test_editor_gate_1_no_candidates_resume_builds_synthetic_winner() -> None:
-    """D-14: on resume with a human-supplied charityName, editor_gate_1
-    builds a minimal synthetic winning_charity from just that name (no
-    sorted_candidates[0] to fall back to) and returns a non-crashing
-    degraded state — no acomplete() call, no RuntimeError.
-    """
-    state = {
-        "run_id": "run-test-no-candidates-0002",
-        "issue_number": 42,
-        "candidates": [],
-        "model_versions": {"scout": "anthropic/claude-haiku-4-5"},
-    }
-    mock_convex = AsyncMock()
-    mock_acomplete = AsyncMock()
-    with patch(
-        "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
-    ), patch(
-        "eisenbalm_pipeline.agents.editor.interrupt",
-        return_value={"winnerName": "Human Picked Org"},
-    ), patch(
-        "eisenbalm_pipeline.agents.editor.acomplete", mock_acomplete,
-    ):
-        result = await editor_gate_1(state)
-
-    assert result["winning_charity"]["name"] == "Human Picked Org"
-    # Every CharityCandidate key present, empty where there's no data.
-    assert result["winning_charity"]["location"] == ""
-    assert result["winning_charity"]["advocateScore"] is None
-    assert result["editor_confidence"] is None
-    assert result["runner_up_notes"] == ""
-    assert "all-candidates-killed" in result["editor_decision"] or "Degraded" in result["editor_decision"]
-    # Existing model_versions entries preserved; no LLM call made.
-    assert result["model_versions"] == {"scout": "anthropic/claude-haiku-4-5"}
-    mock_acomplete.assert_not_awaited()
-    # status written back to 'running' after resume.
-    running_calls = [
-        c
-        for c in mock_convex.call_args_list
-        if c.args
-        and c.args[0] == "pipelineRuns:updateStatus"
-        and c.args[1].get("status") == "running"
-    ]
-    assert len(running_calls) >= 1
+    assert awaiting_calls == []
 
 
 @pytest.mark.asyncio
@@ -623,49 +558,6 @@ async def test_brief_assembled_and_persisted_on_auto_select_path() -> None:
     assert set(brief.keys()) == set(BRIEF_FIELDS)
     assert brief["centralClaim"] == "HighOrg wins on operational rigor."
     assert brief["voiceIntention"] == "Muted, dry, deadpan."
-
-    insert_calls = [
-        c
-        for c in mock_convex.call_args_list
-        if c.args and c.args[0] == "briefs:insert"
-    ]
-    assert len(insert_calls) == 1
-    insert_args = insert_calls[0].args[1]
-    assert insert_args["runId"] == state["run_id"]
-    for field in BRIEF_FIELDS:
-        assert insert_args[field] == brief[field]
-
-
-@pytest.mark.asyncio
-async def test_brief_assembled_and_persisted_on_no_candidates_resume_path() -> None:
-    """§47.3: the Phase 46 D-14 all-candidates-killed synthetic-winner path
-    ALSO assembles + persists a six-field Brief — identically to the
-    auto-select path — with graceful "" fallbacks (no leads/verification
-    exist for a synthetic winner).
-    """
-    state = {
-        "run_id": "run-test-no-candidates-brief-0001",
-        "issue_number": 42,
-        "candidates": [],
-        "model_versions": {"scout": "anthropic/claude-haiku-4-5"},
-    }
-    mock_convex = AsyncMock()
-    mock_acomplete = AsyncMock()
-    with patch(
-        "eisenbalm_pipeline.agents.editor.convex_mutation_safe", mock_convex,
-    ), patch(
-        "eisenbalm_pipeline.agents.editor.interrupt",
-        return_value={"winnerName": "Human Picked Org"},
-    ), patch(
-        "eisenbalm_pipeline.agents.editor.acomplete", mock_acomplete,
-    ):
-        result = await editor_gate_1(state)
-
-    brief = result["brief"]
-    assert set(brief.keys()) == set(BRIEF_FIELDS)
-    assert brief["premise"] == ""
-    assert brief["centralClaim"] != ""  # the degraded-recovery editor_decision text
-    mock_acomplete.assert_not_awaited()
 
     insert_calls = [
         c

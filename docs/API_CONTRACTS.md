@@ -2316,6 +2316,8 @@ These endpoints live in `packages/pipeline/src/eisenbalm_pipeline/api/review.py`
 
 #### `POST /issues/{run_id}/publish`
 
+> Amended by quick 261021-ind: publish also refuses a held issue (409 `held`); see the end of this document.
+
 ```
 Auth:    Depends(require_clerk_jwt)
 Path:    run_id — the pipeline run UUID (NOT the Sanity _id)
@@ -3044,6 +3046,8 @@ fields; the `insert` public exception and all Phase 26/31/32 shapes are unchange
 ---
 
 ## Phase 34 — Two-Sign-Off Publish Gate + Studio Bypass Retirement
+
+> Amended by quick 261021-ind: publish also refuses a held issue (409 `held`); see the end of this document.
 
 An issue cannot be published without two independent, server-enforced sign-offs —
 **"Facts cleared"** and **"Sounds human"** — recorded per run with actor + timestamp
@@ -6324,3 +6328,17 @@ Public queries no longer project `selectionDeliberation.conversation` (Phase 55)
 - **Self-fix (supersedes Phase 5 D-02):** before `write_issue_draft`, QA applies findings whose `quotedSpan` occurs exactly once in the section and that carry a `suggestedFix`; voice-axis findings (`gravity|sentiment|irony-signaling|machine-tell`) without a fix get an LLM house-voice rewrite. A failure of any kind logs and continues — it never fails the run.
 - **`qaCorrections.resolution`** gains `'agent-applied' | 'agent-skipped'` (`resolvedBy: 'pipeline-agent'`). New runs insert every row already closed; rows are a read-only change log. `qaCorrections:insert` accepts optional `resolution`, `resolutionReason`, `resolvedBy`, `resolvedAt`; `setResolution` accepts the new literals.
 - **`claimChecks:insertBatch`** claims accept optional `status` (`'removed' | 'skipped'` set by the publisher for contradicted claims; absent => `'pending'`).
+
+## Quick 261021-ind — Server-enforced hold + Gate 1 auto-proceed
+
+Hold (`issues.held`, Convex `issues:byIssueNumber`) is the only content-side gate left on Publish. One helper,
+`lib/issue_hold.py` (`is_issue_held`, `assert_not_held`), is used by every path that can make an issue live.
+
+- **Refusal shape:** `409 {"detail": {"reason": "held", "message": "This issue is on hold. Release the hold to publish."}}`.
+  If the hold state cannot be read: `503 {"detail": {"reason": "hold_unknown", ...}}` (fail closed). A missing `issues` row is not held.
+- **Paths:**
+  - `POST /issues/{run_id}/publish` and `/schedule` (`api/review.py`) -> 409 held; no Sanity flip, no schedule write, no `reviewActions` row.
+  - `POST /issues/{run_id}/publish-manual` (`api/control.py`) and `POST /run/{run_id}/publish` (`api/runs.py`) -> 409 held; publisher not spawned, no audit row.
+  - `POST /pipeline/tick` scheduled-publish sweep: a due run whose issue is held is skipped, its `scheduledPublishAt` is cleared (releasing a hold does not silently publish a past-due slot), and audit `run.scheduled_publish_skipped_held` is written. It is not listed in `scheduledPublished`.
+  - `POST /webhook/sanity-publish`: a held issue whose run is not `complete` is reverted to `in-review`, audit `run.publish_blocked_held`, response `200 {"ok": true, "blocked": "held"}`; the publisher is not scheduled and the `publisher-run` idempotency claim is not taken. A `complete` run is never reverted. A lookup error proceeds (fail-open; the webhook always returns 200 and the dashboard paths already enforced hold).
+- **Gate 1 no longer pauses.** `editor_gate_1` always proceeds with the deterministic top score; a low-confidence / narrow-gap / `requiresHumanInput` decision is logged only. If no candidate survives Scout dedup and verification, the node raises `RuntimeError` and the run is marked `failed` (start a new run). `POST /run/{id}/adjudicate` and `/resume` are retained for legacy paused runs and return 409 "not paused" for new runs.
