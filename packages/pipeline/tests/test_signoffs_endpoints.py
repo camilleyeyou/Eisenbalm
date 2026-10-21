@@ -123,19 +123,18 @@ def test_facts_cleared_success(monkeypatch):
 # ── test_facts_cleared_409_claims_not_signed_off ────────────────────────────
 
 
-def test_facts_cleared_409_claims_not_signed_off(monkeypatch):
-    """
-    POST sign-off {kind:"facts-cleared"} when claimChecks:allSignedOff is
-    false → 409 {reason:"claims_not_signed_off"}; does NOT call
-    signOffs:record.
-    """
+def test_facts_cleared_records_despite_open_claims(monkeypatch):
+    """Quick 261021-7aw: open findings / contradicted claims no longer block
+    recording a sign-off (sign-offs are optional attestations)."""
     mutation_calls = []
 
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _run()
         if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 1, "blocking": 2, "flagged": 2, "allSignedOff": False}
+            return {'total': 3, 'signedOff': 1, 'blocking': 2, 'allSignedOff': False}
+        if path == "qaCorrections:byRunId":
+            return []
         return None
 
     async def mock_convex_mutation(http, path, args):
@@ -149,20 +148,9 @@ def test_facts_cleared_409_claims_not_signed_off(monkeypatch):
         "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
     )
 
-    response = _client.post(
-        "/issues/run-abc/sign-off", json={"kind": "facts-cleared"}
-    )
-    assert response.status_code == 409, (
-        f"Expected 409, got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "claims_not_signed_off"
-    assert detail["count"] == 2
-
-    record_calls = [
-        args for path, args in mutation_calls if path == "signOffs:record"
-    ]
-    assert record_calls == [], "signOffs:record must NOT be called"
+    response = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert response.status_code == 200, response.text
+    assert any(p == "signOffs:record" for p, _ in mutation_calls)
 
 
 # ── Phase 51.1 gate: only open contradicted claims block ────────────────────
@@ -212,58 +200,18 @@ def test_facts_cleared_200_with_unreviewed_pending_claims(monkeypatch):
     assert r.status_code == 200, r.text
 
 
-def test_facts_cleared_409_contradicted_count(monkeypatch):
-    calls = _gate_client(
-        monkeypatch,
-        {"total": 12, "signedOff": 2, "blocking": 2, "flagged": 4, "allSignedOff": False},
-    )
-    r = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
-    assert r.status_code == 409, r.text
-    detail = r.json()["detail"]
-    assert detail["reason"] == "claims_not_signed_off"
-    assert detail["count"] == 2
-    assert detail["message"] == (
-        "2 claim(s) contradicted by sources must be fixed or dismissed "
-        "before clearing facts."
-    )
-    assert not any(p == "signOffs:record" for p, _ in calls)
-
-
-def test_facts_cleared_409_when_gate_unreadable(monkeypatch):
-    _gate_client(monkeypatch, None)
-    r = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
-    assert r.status_code == 409, r.text
-    detail = r.json()["detail"]
-    assert detail["reason"] == "claims_not_signed_off"
-    assert detail["count"] == 0
-    assert detail["message"] == "Claim status could not be read. Try again."
-
-
-# ── test_facts_cleared_409_open_error_findings ──────────────────────────────
-
-
-def test_facts_cleared_409_open_error_findings(monkeypatch):
-    """
-    POST sign-off {kind:"facts-cleared"} with an unresolved error-severity
-    finding (incl. an orphaned one, resolution absent) → 409
-    {reason:"open_error_findings", count:n}; does NOT record. Anchor-blind
-    (D-11b): an orphaned finding (no quotedSpan) still blocks.
-    """
+def test_facts_cleared_records_despite_contradicted_claims(monkeypatch):
+    """Quick 261021-7aw: open findings / contradicted claims no longer block
+    recording a sign-off (sign-offs are optional attestations)."""
     mutation_calls = []
 
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _run()
         if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+            return {'total': 12, 'blocking': 2, 'allSignedOff': False}
         if path == "qaCorrections:byRunId":
-            return [
-                _error_finding(_id="fnd-1"),
-                # Orphaned: no quotedSpan at all — must STILL block.
-                _error_finding(_id="fnd-2", quotedSpan=None),
-                # Open warning — must NOT count toward the gate.
-                _error_finding(_id="fnd-3", severity="warning"),
-            ]
+            return []
         return None
 
     async def mock_convex_mutation(http, path, args):
@@ -277,20 +225,72 @@ def test_facts_cleared_409_open_error_findings(monkeypatch):
         "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
     )
 
-    response = _client.post(
-        "/issues/run-abc/sign-off", json={"kind": "facts-cleared"}
-    )
-    assert response.status_code == 409, (
-        f"Expected 409, got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "open_error_findings"
-    assert detail["count"] == 2
+    response = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert response.status_code == 200, response.text
+    assert any(p == "signOffs:record" for p, _ in mutation_calls)
 
-    record_calls = [
-        args for path, args in mutation_calls if path == "signOffs:record"
-    ]
-    assert record_calls == [], "signOffs:record must NOT be called"
+
+def test_facts_cleared_records_when_claim_gate_unreadable(monkeypatch):
+    """Quick 261021-7aw: open findings / contradicted claims no longer block
+    recording a sign-off (sign-offs are optional attestations)."""
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _run()
+        if path == "claimChecks:allSignedOff":
+            return None
+        if path == "qaCorrections:byRunId":
+            return []
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
+
+    response = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert response.status_code == 200, response.text
+    assert any(p == "signOffs:record" for p, _ in mutation_calls)
+
+
+# ── test_facts_cleared_409_open_error_findings ──────────────────────────────
+
+
+def test_facts_cleared_records_despite_open_error_findings(monkeypatch):
+    """Quick 261021-7aw: open findings / contradicted claims no longer block
+    recording a sign-off (sign-offs are optional attestations)."""
+    mutation_calls = []
+
+    async def mock_convex_query(http, path, args):
+        if path == "pipelineRuns:byRunId":
+            return _run()
+        if path == "claimChecks:allSignedOff":
+            return {'allSignedOff': True}
+        if path == "qaCorrections:byRunId":
+            return [_error_finding(_id='fnd-1'), _error_finding(_id='fnd-2', quotedSpan=None)]
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
+        return None
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
+    )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
+
+    response = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert response.status_code == 200, response.text
+    assert any(p == "signOffs:record" for p, _ in mutation_calls)
 
 
 # ── test_sounds_human_ungated ───────────────────────────────────────────────
@@ -376,19 +376,18 @@ def test_nonexistent_run_404(monkeypatch):
 # ── §36.7 — Sign-off prerequisite partition (Phase 36 Plan 02) ─────────────────
 
 
-def test_sounds_human_409_open_voice_findings(monkeypatch):
-    """
-    POST sign-off {kind:"sounds-human"} with one open severity="error"
-    axis="machine-tell" finding present → 409
-    {reason:"open_voice_findings", count:1}; does NOT record.
-    """
+def test_sounds_human_records_despite_open_voice_findings(monkeypatch):
+    """Quick 261021-7aw: open findings / contradicted claims no longer block
+    recording a sign-off (sign-offs are optional attestations)."""
     mutation_calls = []
 
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _run()
+        if path == "claimChecks:allSignedOff":
+            return None
         if path == "qaCorrections:byRunId":
-            return [_error_finding(axis="machine-tell")]
+            return [_error_finding(axis='machine-tell')]
         return None
 
     async def mock_convex_mutation(http, path, args):
@@ -402,20 +401,9 @@ def test_sounds_human_409_open_voice_findings(monkeypatch):
         "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
     )
 
-    response = _client.post(
-        "/issues/run-abc/sign-off", json={"kind": "sounds-human"}
-    )
-    assert response.status_code == 409, (
-        f"Expected 409, got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "open_voice_findings"
-    assert detail["count"] == 1
-
-    record_calls = [
-        args for path, args in mutation_calls if path == "signOffs:record"
-    ]
-    assert record_calls == [], "signOffs:record must NOT be called"
+    response = _client.post("/issues/run-abc/sign-off", json={"kind": "sounds-human"})
+    assert response.status_code == 200, response.text
+    assert any(p == "signOffs:record" for p, _ in mutation_calls)
 
 
 def test_sounds_human_success_no_open_voice_findings(monkeypatch):
@@ -637,31 +625,33 @@ def test_sounds_human_409_run_not_reviewable_when_failed(monkeypatch):
     assert record_calls == [], "signOffs:record must NOT be called"
 
 
-def test_facts_cleared_409_open_factual_axis_error(monkeypatch):
-    """
-    POST sign-off {kind:"facts-cleared"} with an open axis="precision"
-    (factual) error present → still 409 {reason:"open_error_findings"}
-    (factual errors still block facts-cleared).
-    """
+def test_facts_cleared_records_despite_open_factual_axis_error(monkeypatch):
+    """Quick 261021-7aw: open findings / contradicted claims no longer block
+    recording a sign-off (sign-offs are optional attestations)."""
+    mutation_calls = []
+
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
             return _run()
         if path == "claimChecks:allSignedOff":
-            return {"total": 3, "signedOff": 3, "allSignedOff": True}
+            return None
         if path == "qaCorrections:byRunId":
-            return [_error_finding(axis="precision")]
+            return [_error_finding(axis='precision')]
+        return None
+
+    async def mock_convex_mutation(http, path, args):
+        mutation_calls.append((path, args))
         return None
 
     monkeypatch.setattr(
         "eisenbalm_pipeline.api.signoffs._cc.convex_query", mock_convex_query
     )
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.signoffs._cc.convex_mutation", mock_convex_mutation
+    )
 
-    response = _client.post(
-        "/issues/run-abc/sign-off", json={"kind": "facts-cleared"}
-    )
-    assert response.status_code == 409, (
-        f"Expected 409, got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "open_error_findings"
-    assert detail["count"] == 1
+    response = _client.post("/issues/run-abc/sign-off", json={"kind": "facts-cleared"})
+    assert response.status_code == 200, response.text
+    assert any(p == "signOffs:record" for p, _ in mutation_calls)
+
+

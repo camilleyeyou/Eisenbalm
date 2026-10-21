@@ -1,4 +1,11 @@
-"""Phase 34 (§34.3, D-01/D-05/D-06) — two-sign-off record endpoint.
+"""Phase 34 (§34.3, D-01/D-05/D-06) — sign-off record endpoint.
+
+Quick 261021-7aw: sign-offs are now OPTIONAL attestations. Nothing requires
+them — the open-findings / claims prerequisites that used to 409 here are
+removed (agents self-fix; see agents/qa/self_fix.py). Only run existence,
+no_sanity_issue, and (sounds-human) role + run_not_reviewable still apply.
+
+Historical (pre-261021-7aw) description follows.
 
 One Clerk-JWT-guarded POST route:
 
@@ -35,10 +42,9 @@ router = APIRouter()
 
 WORKSPACE_ID = "eisenbalm"
 
-# §36.3/§36.7 — voice-axis findings gate "sounds-human"; everything else
-# (including a missing/None axis, the conservative factual default) gates
-# "facts-cleared". Keep in lockstep with docs/API_CONTRACTS.md §36.3.
-VOICE_AXES = {"gravity", "sentiment", "irony-signaling", "machine-tell"}
+# Quick 261021-7aw: VOICE_AXES moved to agents/qa/self_fix.py (agents now
+# rewrite voice tells themselves); re-exported for existing importers.
+from eisenbalm_pipeline.agents.qa.self_fix import VOICE_AXES  # noqa: E402,F401
 
 
 # ── Request body model ──────────────────────────────────────────────────────
@@ -62,18 +68,10 @@ async def record_sign_off(
 
     Guards (in order):
       1. run must exist → 404 if not
-      2. `kind == "facts-cleared"` only:
-         a. claimChecks:allSignedOff (Phase 51.1: false only while an agent-contradicted
-            claim is open) → 409 {reason:"claims_not_signed_off", count:<open contradicted>}
-         b. open error-severity findings on a FACTUAL axis (not in
-            VOICE_AXES; anchor-blind, D-11b) →
-            409 {reason:"open_error_findings", count:n}
-      3. `kind == "sounds-human"` only:
+      2. `kind == "sounds-human"` only:
          a. role gate (§49.4) → 403 {reason:"forbidden_role"}
          b. quick 260723-4a6 (§37.4(c)): run paused at Gate 1 (awaiting-review
             with no completedAt) or failed → 409 {reason:"run_not_reviewable"}
-         c. (§36.7b): open error-severity findings on a VOICE axis
-            (anchor-blind) → 409 {reason:"open_voice_findings", count:n}
 
     Action:
       - signOffs:record({workspace_id, runId, kind, actorId})
@@ -111,68 +109,7 @@ async def record_sign_off(
             },
         )
 
-    if body.kind == "facts-cleared":
-        # 2a. Claims gate (Phase 51.1, API_CONTRACTS section 51.1.8). Convex owns
-        # the predicate (convex/lib/claimGate.ts via claimChecks:allSignedOff):
-        # allSignedOff is false ONLY while an agent-contradicted claim is still
-        # open. Unreviewed/pending, unverifiable, legacy (no verdict) rows and
-        # zero-claim runs never block. Do NOT re-implement the predicate here.
-        signoff = await _cc.convex_query(
-            http, "claimChecks:allSignedOff", {"runId": run_id}
-        )
-        if not signoff:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "reason": "claims_not_signed_off",
-                    "count": 0,
-                    "message": "Claim status could not be read. Try again.",
-                },
-            )
-        if not signoff.get("allSignedOff"):
-            blocking = int(signoff.get("blocking") or 0)
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "reason": "claims_not_signed_off",
-                    "count": blocking,
-                    "message": (
-                        f"{blocking} claim(s) contradicted by sources must be "
-                        "fixed or dismissed before clearing facts."
-                    ),
-                },
-            )
-
-        # 2b. Open-error-findings gate — relocated verbatim from review.py
-        # (D-04). Anchor-blind (D-11b): an orphaned error finding (whose
-        # quotedSpan no longer resolves) still has no `resolution` and still
-        # blocks — losing an anchor must never silently un-block.
-        # §36.7a: NARROWED to exclude voice-axis findings — those belong to
-        # `sounds-human` below, not `facts-cleared`. A missing/None axis is
-        # NOT in VOICE_AXES, so it still blocks facts-cleared (the safe
-        # factual default).
-        findings = await _cc.convex_query(
-            http, "qaCorrections:byRunId", {"runId": run_id}
-        ) or []
-        open_errors = [
-            f for f in findings
-            if f.get("severity") == "error"
-            and not f.get("resolution")
-            and f.get("axis") not in VOICE_AXES
-        ]
-        if open_errors:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "reason": "open_error_findings",
-                    "message": (
-                        f"{len(open_errors)} error finding(s) must be "
-                        "accepted or dismissed before clearing facts."
-                    ),
-                    "count": len(open_errors),
-                },
-            )
-    elif body.kind == "sounds-human":
+    if body.kind == "sounds-human":
         # Phase 49 (ROL-01/ROL-02, §49.4, D-06) — role gate, IN-HANDLER
         # branch (not a route Depends swap, since this route also handles
         # kind=="facts-cleared", which stays ungated — RESEARCH Open Q2).
@@ -200,33 +137,6 @@ async def record_sign_off(
                 detail={
                     "reason": "run_not_reviewable",
                     "message": "This run is not in a reviewable state to sign off.",
-                },
-            )
-
-        # §36.7b: server-enforced prerequisite (D-12/D-14) — upgrades Phase
-        # 34 D-06's interim ungated attestation now that voice IS
-        # machine-checkable. Anchor-blind exactly like facts-cleared's
-        # D-11b guard: an orphaned voice-axis error finding still has no
-        # `resolution` and still blocks.
-        findings = await _cc.convex_query(
-            http, "qaCorrections:byRunId", {"runId": run_id}
-        ) or []
-        open_voice_errors = [
-            f for f in findings
-            if f.get("severity") == "error"
-            and not f.get("resolution")
-            and f.get("axis") in VOICE_AXES
-        ]
-        if open_voice_errors:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "reason": "open_voice_findings",
-                    "message": (
-                        f"{len(open_voice_errors)} voice finding(s) must be "
-                        "accepted or dismissed before signing sounds-human."
-                    ),
-                    "count": len(open_voice_errors),
                 },
             )
 

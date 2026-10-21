@@ -224,11 +224,11 @@ async def test_webhook_proceeds_when_both_signoffs_active(
     revert_spy.assert_not_called()
 
 
-async def test_webhook_blocked_when_signoff_missing(
+async def test_webhook_proceeds_when_signoff_missing(
     client, sanity_signature_encoder, monkeypatch
 ):
-    """One sign-off missing → publisher NOT scheduled; Sanity status reverted
-    to in-review; an audit row + cost-warning alert are emitted."""
+    """Quick 261021-7aw: a missing sign-off no longer blocks — the publisher IS
+    scheduled; no revert, no block, no bypass audit."""
     monkeypatch.setenv("SANITY_WEBHOOK_SECRET", SECRET)
     pub_spy = AsyncMock(return_value=None)
     monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._run_publisher", pub_spy)
@@ -239,33 +239,16 @@ async def test_webhook_blocked_when_signoff_missing(
     audit_spy = AsyncMock(return_value=None)
     monkeypatch.setattr("eisenbalm_pipeline.api.webhooks._emit_audit", audit_spy)
 
-    mutation_calls: list[tuple[str, dict]] = []
-
     async def mock_convex_query(http, path, args):
-        if path == "signOffs:activeByRunId":
-            # sounds-human missing.
-            return {"facts-cleared": {"actorId": "user_1", "signedAt": 1}}
-        return None
-
-    async def mock_convex_mutation(http, path, args):
-        mutation_calls.append((path, args))
-        return None
+        return {}  # no sign-offs at all
 
     monkeypatch.setattr(
         "eisenbalm_pipeline.api.webhooks._cc.convex_query", mock_convex_query
     )
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.webhooks._cc.convex_mutation", mock_convex_mutation
-    )
 
     ts = int(time.time() * 1000)
     body = json.dumps(
-        {
-            "_id": "issue-21",
-            "issueNumber": 21,
-            "status": "published",
-            "runId": "r21",
-        }
+        {"_id": "issue-21", "issueNumber": 21, "status": "published", "runId": "r21"}
     ).encode()
     header = sanity_signature_encoder(body, ts, SECRET)
     r = await client.post(
@@ -277,22 +260,10 @@ async def test_webhook_blocked_when_signoff_missing(
         },
     )
     assert r.status_code == 200, r.text
-    data = r.json()
-    assert data.get("blocked") == "missing_signoffs"
-    assert data.get("missing") == ["sounds-human"]
-    pub_spy.assert_not_called()
-    revert_spy.assert_awaited_once()
-    assert revert_spy.call_args.args[1] == "issue-21"
-    assert revert_spy.call_args.kwargs.get("status") == "in-review"
-    audit_spy.assert_awaited_once()
-    assert audit_spy.call_args.kwargs.get("action") == "run.publish_bypass_blocked"
-    assert any(path == "deliberationEvents:insert" for path, _ in mutation_calls)
-    cost_warning_calls = [
-        args for path, args in mutation_calls if path == "deliberationEvents:insert"
-    ]
-    assert cost_warning_calls[0]["eventType"] == "cost-warning"
-    inner_payload = json.loads(cost_warning_calls[0]["payload"])
-    assert inner_payload["eventType"] == "publish-bypass-blocked"
+    assert r.json().get("scheduled") is True
+    assert r.json().get("blocked") is None
+    revert_spy.assert_not_called()
+    audit_spy.assert_not_called()
 
 
 async def test_webhook_blocked_when_run_id_absent(
@@ -334,7 +305,7 @@ async def test_webhook_blocked_when_run_id_absent(
     )
     assert r.status_code == 200, r.text
     data = r.json()
-    assert data.get("blocked") == "missing_signoffs"
+    assert data.get("blocked") == "no_run_id"
     pub_spy.assert_not_called()
     revert_spy.assert_awaited_once()
     assert revert_spy.call_args.args[1] == "issue-22"

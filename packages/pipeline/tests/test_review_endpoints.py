@@ -66,53 +66,52 @@ _BOTH_SIGNOFFS = ("facts-cleared", "sounds-human")
 # ── test_publish_requires_both_signoffs ────────────────────────────────────
 
 
-def test_publish_requires_both_signoffs(monkeypatch):
-    """
-    POST /issues/{run_id}/publish → 409 {reason:"missing_signoffs"} when
-    either sign-off is missing/revoked — the server refuses regardless of
-    button state (Phase 34 §34.4, PUB-01).
-    """
+def test_publish_proceeds_with_one_signoff_missing(monkeypatch):
+    """Quick 261021-7aw: a missing sign-off no longer blocks publish."""
+    flips = []
+
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
-            return _awaiting_run()
-        if path == "signOffs:activeByRunId":
-            return _active_signoffs("facts-cleared")  # sounds-human missing
+            return _awaiting_run("issue-42")
+        return None  # sign-offs, findings, claims all absent: must not matter
+
+    async def mock_convex_mutation(http, path, args):
         return None
 
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_query",
-        mock_convex_query,
-    )
+    async def mock_flip(http, sanity_issue_id: str):
+        flips.append(sanity_issue_id)
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip)
 
     response = _client.post("/issues/run-abc/publish")
-    assert response.status_code == 409, (
-        f"Expected 409 (missing signoffs), got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "missing_signoffs"
-    assert detail["missing"] == ["sounds-human"]
+    assert response.status_code == 200, response.text
+    assert flips == ['issue-42']
 
 
-def test_publish_409_when_no_signoffs_active(monkeypatch):
-    """POST /issues/{run_id}/publish → 409 missing_signoffs when NEITHER
-    sign-off is active."""
+def test_publish_proceeds_with_no_signoffs_active(monkeypatch):
+    """Quick 261021-7aw: publish with zero sign-offs / findings / claims -> 200."""
+    flips = []
+
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
-            return _awaiting_run()
-        if path == "signOffs:activeByRunId":
-            return {}
+            return _awaiting_run("issue-42")
+        return None  # sign-offs, findings, claims all absent: must not matter
+
+    async def mock_convex_mutation(http, path, args):
         return None
 
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_query",
-        mock_convex_query,
-    )
+    async def mock_flip(http, sanity_issue_id: str):
+        flips.append(sanity_issue_id)
+
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip)
 
     response = _client.post("/issues/run-abc/publish")
-    assert response.status_code == 409
-    detail = response.json()["detail"]
-    assert detail["reason"] == "missing_signoffs"
-    assert set(detail["missing"]) == {"facts-cleared", "sounds-human"}
+    assert response.status_code == 200, response.text
+    assert flips == ['issue-42']
 
 
 # ── test_publish_success ──────────────────────────────────────────────────
@@ -173,34 +172,28 @@ def test_publish_success(monkeypatch):
 # ── test_schedule_requires_both_signoffs / test_schedule_writes_scheduled_at ──
 
 
-def test_schedule_requires_both_signoffs(monkeypatch):
-    """
-    POST /issues/{run_id}/schedule → 409 {reason:"missing_signoffs"} when
-    either sign-off is missing (Phase 34 §34.4, D-09 — identical gate to
-    publish, no bypass via scheduling).
-    """
+def test_schedule_proceeds_with_no_signoffs(monkeypatch):
+    """Quick 261021-7aw: no sign-offs required to schedule."""
+    flips = []
+
     async def mock_convex_query(http, path, args):
         if path == "pipelineRuns:byRunId":
-            return _awaiting_run()
-        if path == "signOffs:activeByRunId":
-            return _active_signoffs("sounds-human")  # facts-cleared missing
+            return _awaiting_run("issue-42")
+        return None  # sign-offs, findings, claims all absent: must not matter
+
+    async def mock_convex_mutation(http, path, args):
         return None
 
-    monkeypatch.setattr(
-        "eisenbalm_pipeline.api.review._cc.convex_query",
-        mock_convex_query,
-    )
+    async def mock_flip(http, sanity_issue_id: str):
+        flips.append(sanity_issue_id)
 
-    response = _client.post(
-        "/issues/run-abc/schedule",
-        json={"scheduledAt": _future_ts()},
-    )
-    assert response.status_code == 409, (
-        f"Expected 409 (missing signoffs), got {response.status_code}: {response.text}"
-    )
-    detail = response.json()["detail"]
-    assert detail["reason"] == "missing_signoffs"
-    assert detail["missing"] == ["facts-cleared"]
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_query", mock_convex_query)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._cc.convex_mutation", mock_convex_mutation)
+    monkeypatch.setattr("eisenbalm_pipeline.api.review._flip_sanity_published", mock_flip)
+
+    response = _client.post("/issues/run-abc/schedule", json={"scheduledAt": _future_ts()})
+    assert response.status_code == 200, response.text
+    assert response.json().get('issueId') == 'issue-42'
 
 
 def test_schedule_writes_scheduled_at(monkeypatch):

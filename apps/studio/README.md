@@ -159,13 +159,13 @@ The **dispatch-control** operator console (`apps/dispatch-control`) is the
 editing and publishing surface of record. Andrew reviews, edits, and
 publishes issues entirely from the console's Review Desk.
 
-Studio is a **read-only fallback for emergencies**. Two-sign-off publish
-gate ("Facts cleared" + "Sounds human") and the webhook re-check mean a
-direct Studio publish flip for a run without both active sign-offs is
-**reverted** — the webhook flips `weeklyIssue.status` back to `in-review`,
-writes an audit row, and alerts — and the issue never deploys. A Studio
-publish click cannot bypass the gate; it can only trigger a loud, logged
-no-op.
+Studio is a **read-only fallback for emergencies**. As of quick 261021-7aw
+the pipeline agents review and self-fix every section, and the sign-offs
+("Facts cleared" + "Sounds human") are optional attestations: nothing in the
+publish path requires them. A direct Studio publish flip for a run that has a
+run id will publish; a flip with no run id is still **reverted** to
+`in-review` with an audit row and alert. Studio does not apply the dashboard
+role check, so keep access Andrew-only (or set the flag below).
 
 The `SANITY_STUDIO_DISABLE_PUBLISH` env var (default OFF/unset) removes
 Studio's `weeklyIssue` publish button entirely once set to `'true'` and the

@@ -264,15 +264,13 @@ async def test_editor_404_when_no_sanity_issue(monkeypatch) -> None:
     pub_spy.assert_not_called()
 
 
-# ── test_publish_manual_requires_both_signoffs ─────────────────────────────
+# ── test_publish_manual_proceeds_without_signoffs ─────────────────────────────
 
 
-async def test_publish_manual_requires_both_signoffs(monkeypatch) -> None:
-    """Phase 50-hardening (finish-phase-34-retirement): publish-manual must
-    enforce the SAME two-sign-off gate publish_issue does (review.py:118-133)
-    before scheduling _run_publisher. With an Editor-in-chief claim and NO
-    active sign-offs, the endpoint must 409 missing_signoffs and never
-    schedule the publisher or emit the publisher.manual_restart audit."""
+async def test_publish_manual_proceeds_without_signoffs(monkeypatch) -> None:
+    """Quick 261021-7aw: the two-sign-off gate is removed everywhere. With an
+    Editor-in-chief claim and NO active sign-offs, publish-manual proceeds:
+    it emits the manual_restart audit and schedules the publisher."""
     fake_groq, pub_spy = _wire_publisher(
         monkeypatch, issue={"_id": "issue-99", "issueNumber": 99}
     )
@@ -303,13 +301,9 @@ async def test_publish_manual_requires_both_signoffs(monkeypatch) -> None:
             "/issues/run-nosignoff-001/publish-manual", headers=AUTH_HEADER
         )
 
-    assert response.status_code == 409, response.text
-    detail = response.json()["detail"]
-    assert detail["reason"] == "missing_signoffs"
-    assert set(detail["missing"]) == {"facts-cleared", "sounds-human"}
-
-    pub_spy.assert_not_called()
-    assert audit_calls == []
+    assert response.status_code == 200, response.text
+    assert [c.get("action") for c in audit_calls] == ["publisher.manual_restart"]
+    pub_spy.assert_called_once()
 
 
 # ── test_sentinel_regression_resolves_editor ───────────────────────────────

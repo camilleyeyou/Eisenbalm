@@ -16,12 +16,10 @@ Every decision writes:
   - a reviewActions:record row (canonical action vocabulary §26.5)
   - an auditLog:record row via _emit_audit (non-blocking)
 
-Publish + schedule both enforce the two-sign-off gate server-side
-(signOffs:activeByRunId → 409 {reason:"missing_signoffs"} unless BOTH
-facts-cleared and sounds-human are active — Phase 34 §34.4, PUB-01). The
-claims-signoff + open-error-findings checks that previously gated publish
-directly have been relocated to the facts-cleared sign-off endpoint
-(api/signoffs.py, §34.3, D-04).
+Quick 261021-7aw: publish + schedule gate ONLY on role (Editor-in-chief),
+run existence, awaiting-review status, and sanityIssueId (plus hold where
+enforced). The Phase 34 two-sign-off gate (missing_signoffs 409) is removed —
+agents review and self-fix content; sign-offs are optional attestations.
 
 The publish endpoint does NOT call _run_publisher directly.  It calls
 _flip_sanity_published (lib/sanity_publish.py), which flips
@@ -79,9 +77,7 @@ async def publish_issue(
     Guards (in order):
       1. run must exist → 404 if not
       2. run.status == "awaiting-review" → 409 {reason:"wrong_status"} if not
-      3. both sign-offs active (signOffs:activeByRunId) → 409
-         {reason:"missing_signoffs"} if either is missing (Phase 34 §34.4)
-      4. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
+      3. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
 
     Action:
       - _flip_sanity_published → fires existing Sanity webhook → _run_publisher
@@ -110,27 +106,6 @@ async def publish_issue(
             detail={
                 "reason": "wrong_status",
                 "message": "This run cannot be published in its current state.",
-            },
-        )
-
-    # 3. Two-sign-off gate (Phase 34 §34.4, PUB-01) — server refuses unless
-    # BOTH attestations are active. The machine-checkable facts prerequisites
-    # (claims, open-error findings) now gate RECORDING "facts-cleared"
-    # (§34.3), not publish directly.
-    active = await _cc.convex_query(
-        http, "signOffs:activeByRunId", {"runId": run_id}
-    ) or {}
-    missing = [k for k in ("facts-cleared", "sounds-human") if k not in active]
-    if missing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "reason": "missing_signoffs",
-                "message": (
-                    "Both sign-offs (Facts cleared + Sounds human) are "
-                    "required before publishing."
-                ),
-                "missing": missing,
             },
         )
 
@@ -193,10 +168,8 @@ async def schedule_issue(
     Guards (in order):
       1. run must exist → 404 if not
       2. run.status == "awaiting-review" → 409 if not
-      3. both sign-offs active (signOffs:activeByRunId) → 409
-         {reason:"missing_signoffs"} if either is missing (Phase 34 §34.4, D-09)
-      4. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
-      5. scheduledAt > now → 400 {reason:"schedule_in_past"} if not
+      3. pipelineRuns.sanityIssueId must be set → 409 {reason:"no_sanity_issue"}
+      4. scheduledAt > now → 400 {reason:"schedule_in_past"} if not
 
     Action:
       - runs:setScheduledPublish({runId, scheduledPublishAt})
@@ -229,28 +202,6 @@ async def schedule_issue(
             detail={
                 "reason": "wrong_status",
                 "message": "This run cannot be scheduled in its current state.",
-            },
-        )
-
-    # 3. Two-sign-off gate — IDENTICAL to publish_issue's (Phase 34 §34.4,
-    # D-09): scheduled runs publish via the tick sweep and must not bypass
-    # the gate by scheduling instead of publishing. The D-07 webhook
-    # re-check covers fire-time if a sign-off is revoked between scheduling
-    # and the tick.
-    active = await _cc.convex_query(
-        http, "signOffs:activeByRunId", {"runId": run_id}
-    ) or {}
-    missing = [k for k in ("facts-cleared", "sounds-human") if k not in active]
-    if missing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "reason": "missing_signoffs",
-                "message": (
-                    "Both sign-offs (Facts cleared + Sounds human) are "
-                    "required before scheduling."
-                ),
-                "missing": missing,
             },
         )
 

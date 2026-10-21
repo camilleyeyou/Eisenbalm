@@ -2306,6 +2306,8 @@ setAutoPublish({ workspace_id, enabled: boolean, actorId: string }): Promise<voi
 
 ### §26.7 — FastAPI endpoints (review gate)
 
+> **Amended by quick 261021-7aw (2026-10-21):** publish/schedule no longer 409 `missing_signoffs` or on findings/claims; see §34.4.
+
 > **Amended by §51.1 (Phase 51.1):** The `claims_not_signed_off` 409 now fires only for open contradicted claims, with count/message per §51.1.8. The approve gate (§26.2) is §51.1.3: blocking===0, empty list => true.
 
 
@@ -3100,6 +3102,8 @@ same row (clears `revokedAt`/`revokedReason`, refreshes `actorId`/`signedAt`).
 
 ### §34.3 — Sign-off record endpoint (D-01, D-05, D-06)
 
+> **Amended by quick 261021-7aw (2026-10-21):** `missing`/`claims_not_signed_off`/`open_error_findings`/`open_voice_findings` 409s are removed. Recording a sign-off requires only: run exists, `sanityIssueId` present, and (sounds-human) Editor-in-chief + a reviewable run.
+
 One new Clerk-JWT-guarded (`_require_clerk_jwt_control`) POST route in a NEW
 `api/signoffs.py` router:
 
@@ -3130,6 +3134,8 @@ missing/ambiguous sign-off ALWAYS resolves to "not signed," never a lenient defa
 
 ### §34.4 — Publish/schedule gate restructure (D-04, D-09, PUB-01)
 
+> **Amended by quick 261021-7aw (2026-10-21):** the sign-off / findings / claims gate described here is REMOVED from every caller (publish, schedule, publish-manual, Sanity webhook). Sign-offs are optional attestations; only role (Editor-in-chief), hold, run existence, `sanityIssueId`, and awaiting-review status still gate. The webhook still reverts a publish that carries no `runId` (`blocked: "no_run_id"`).
+
 In `review.py::publish_issue` AND `review.py::schedule_issue`: REMOVE the existing
 `claims_not_signed_off` guard AND the `open_error_findings` guard (both relocate to
 §34.3's facts-cleared sign-off). ADD, in their place (after the `wrong_status` guard,
@@ -3152,6 +3158,8 @@ schedule. The existing `wrong_status`, `no_sanity_issue`, `schedule_in_past` gua
 and the `reviewActions`/`audit_log` writes are UNCHANGED.
 
 ### §34.5 — Webhook re-validation + revert (D-07, PUB-02)
+
+> **Amended by quick 261021-7aw (2026-10-21):** the sign-off / findings / claims gate described here is REMOVED from every caller (publish, schedule, publish-manual, Sanity webhook). Sign-offs are optional attestations; only role (Editor-in-chief), hold, run existence, `sanityIssueId`, and awaiting-review status still gate. The webhook still reverts a publish that carries no `runId` (`blocked: "no_run_id"`). A direct Studio flip now publishes without the dashboard role check (accepted; the §34.9 Studio flag remains the off switch).
 
 In `webhooks.py::sanity_publish`, insert ONE guard AFTER the idempotency-dedup block
 and BEFORE the `asyncio.create_task(_run_publisher(...))` call. Read `convex_http` and
@@ -3597,6 +3605,8 @@ audit emission) is UNCHANGED. This lets a rule-only tell (no stored `suggestedFi
 with zero new mutation path (Research Code Example 2).
 
 ### §36.7 — Sign-off prerequisite partition
+
+> **Amended by quick 261021-7aw (2026-10-21):** the voice-axis and factual-axis prerequisites are REMOVED; agents self-fix voice findings (`agents/qa/self_fix.py`). `VOICE_AXES` now lives in `agents/qa/self_fix.py`.
 
 `api/signoffs.py::record_sign_off` (§34.3) changes in two places:
 
@@ -6268,6 +6278,8 @@ Zero retrieved sources => every row `unverifiable` with evidence "No retrieved s
 
 ### §51.1.8 — Server gate (amends §26.7 / §34 facts-cleared)
 
+> **Amended by quick 261021-7aw (2026-10-21):** the server claims gate is REMOVED. The publisher cuts the sentence of every `contradicted` claim before the draft is written and inserts the row with `status` `removed` (cut) or `skipped` (sentence not locatable) — never `pending`.
+
 `POST /signoffs/{run_id}` kind `facts-cleared` still reads `claimChecks:allSignedOff`; 409 detail `{reason:"claims_not_signed_off", count:<blocking>, message:"<n> claim(s) contradicted by sources must be fixed or dismissed before clearing facts."}`. When the query returns nothing, 409 with `count:0` and message "Claim status could not be read. Try again." The reason string is unchanged (client branches on it). The facts-cleared human sign-off click is KEPT; it is satisfiable with zero per-claim actions. Publish endpoints still do not consult claims (single enforcement point). Pre-existing hole documented: re-opening a claim after sign-off does not revoke the sign-off.
 
 ### §51.1.9 — Editor surface
@@ -6305,3 +6317,10 @@ Body `{ email: string, company?: string }`. Responses: 200 `{ ok: true }` (also 
 ### §55.7 — Public queries no longer project the deliberation transcript
 
 Public queries no longer project `selectionDeliberation.conversation` (Phase 55); the field is retained in the schema and is still written by the pipeline for the podcast/dispatch-control.
+
+## Quick 261021-7aw — Agents review and self-fix every section
+
+- **Review coverage (9):** origin_story, problem, founder_bio, case_study, game, bonus, deliberation_conversation, podcast (`deliberation_transcript`) are QA-reviewed as text; `theme` is validated deterministically (hex / font whitelist) and invalid values are replaced with safe defaults (`SAFE_THEME` colors, `Playfair Display` / `Lora`).
+- **Self-fix (supersedes Phase 5 D-02):** before `write_issue_draft`, QA applies findings whose `quotedSpan` occurs exactly once in the section and that carry a `suggestedFix`; voice-axis findings (`gravity|sentiment|irony-signaling|machine-tell`) without a fix get an LLM house-voice rewrite. A failure of any kind logs and continues — it never fails the run.
+- **`qaCorrections.resolution`** gains `'agent-applied' | 'agent-skipped'` (`resolvedBy: 'pipeline-agent'`). New runs insert every row already closed; rows are a read-only change log. `qaCorrections:insert` accepts optional `resolution`, `resolutionReason`, `resolvedBy`, `resolvedAt`; `setResolution` accepts the new literals.
+- **`claimChecks:insertBatch`** claims accept optional `status` (`'removed' | 'skipped'` set by the publisher for contradicted claims; absent => `'pending'`).

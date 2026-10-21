@@ -306,8 +306,8 @@ def test_signoffs_sounds_human_sentinel_regression(monkeypatch):
 def test_signoffs_facts_cleared_open_for_collaborator(monkeypatch):
     """facts-cleared is NOT among the six gated actions (D-06, RESEARCH Open
     Question 2) — a Collaborator's facts-cleared sign-off must reach its
-    normal business-logic path (409 claims_not_signed_off here, since
-    all_signed_off=False), never a role-based 403."""
+    normal business-logic path (200 — quick 261021-7aw removed the claims
+    gate), never a role-based 403."""
     _wire_signoffs(monkeypatch, all_signed_off=False)
     _set_role_claims(monkeypatch, role="Collaborator", sub="user_collab")
 
@@ -315,5 +315,4 @@ def test_signoffs_facts_cleared_open_for_collaborator(monkeypatch):
         "/issues/run-abc/sign-off", json={"kind": "facts-cleared"}, headers=AUTH_HEADER
     )
 
-    assert response.status_code == 409, response.text
-    assert response.json()["detail"]["reason"] == "claims_not_signed_off"
+    assert response.status_code == 200, response.text

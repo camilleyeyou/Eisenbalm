@@ -42,13 +42,12 @@ Anything that won't publish, looks broken, or you're unsure about — ping Ghisl
 ## 7. Soak & retiring Studio publish (Phase 34)
 
 The dispatch-control console is now the editing + publishing surface of
-record for weekly issues — you review, edit, and publish from the console's
-Review Desk, using the two sign-offs there ("Facts cleared" + "Sounds
-human"). Studio remains available as a **read-only fallback** for
-emergencies: if a direct Studio publish is attempted on a run that hasn't
-been signed off in the console, the pipeline reverts it back to "In Review"
-and it never goes live — the console gate cannot be bypassed by flipping
-the Studio status dropdown.
+record for weekly issues — you review, edit, and publish from the console.
+The agents review every section and fix what they find before the draft
+reaches you; the two sign-offs ("Facts cleared" + "Sounds human") are
+optional and nothing blocks Publish. Studio remains available as a
+**read-only fallback** for emergencies; prefer the console for publishing
+(it applies the Editor-in-chief role check, Studio does not).
 
 **Soak-end criterion:** during this soak period, the console is the
 publishing surface and Studio is the tested-but-unused fallback. Once 2–3
