@@ -18,7 +18,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react'
 import { useQuery } from 'convex/react'
 import { ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import type { DerivationInputs } from '@/lib/derivedState'
@@ -217,6 +217,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
 })
 
 // A non-literal specifier + `@vite-ignore` keeps Vite's import-analysis
@@ -243,9 +244,26 @@ async function renderSection(section: string) {
   )
 }
 
-async function openFirstFinding() {
-  const marks = await screen.findAllByRole('button', { name: /qa warning finding/i })
-  fireEvent.click(marks[0])
+/**
+ * Quick 261021-7aw — finding marks are gone from this page, so hand-editing is
+ * reached through the PassageToolbar ("Edit text") on a text selection. jsdom
+ * has no selection layout, so mock window.getSelection like PassageToolbar.test.
+ */
+async function openEditorViaSelection(startsWith: string) {
+  const block = (await screen.findByText(new RegExp(startsWith))).closest('[data-block-index]') as HTMLElement
+  vi.spyOn(window, 'getSelection').mockReturnValue({
+    isCollapsed: false,
+    rangeCount: 1,
+    anchorNode: block,
+    toString: () => startsWith,
+    getRangeAt: () => ({
+      getBoundingClientRect: () => ({ top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 }),
+    }),
+  } as unknown as Selection)
+  act(() => {
+    document.dispatchEvent(new Event('selectionchange'))
+  })
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit text' }))
 }
 
 // ── d('renders') — READ-01, D-21 ────────────────────────────────────────────
@@ -350,14 +368,9 @@ d('nav', () => {
 // ── d('in-place edit') — READ-05, D-18/D-19, Pitfall 5 (patchBonus branch) ──
 
 d('in-place edit', () => {
-  it('Edit myself opens a textarea on the flagged block with Save edit / Cancel edit', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(1) },
-    }
+  it('Edit text opens a textarea with Save edit / Cancel edit (no finding needed)', async () => {
     await renderSection('originStory')
-    await openFirstFinding()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit myself' }))
+    await openEditorViaSelection('The founder started')
 
     expect(screen.getByRole('textbox')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Save edit' })).toBeDefined()
@@ -365,13 +378,8 @@ d('in-place edit', () => {
   })
 
   it('Save edit calls patchSection with the current ifRevisionID for a long-read section', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(1) },
-    }
     await renderSection('originStory')
-    await openFirstFinding()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit myself' }))
+    await openEditorViaSelection('The founder started')
     fireEvent.click(screen.getByRole('button', { name: 'Save edit' }))
 
     await waitFor(() => {
@@ -385,28 +393,8 @@ d('in-place edit', () => {
   })
 
   it('Save edit calls patchBonus, never patchSection, for the bonus section', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: {
-        ...EMPTY_DERIVATION_INPUTS,
-        qaFindings: [
-          {
-            _id: 'qb',
-            severity: 'warning',
-            axis: 'precision',
-            sectionName: 'bonus',
-            reason: 'Vague pitch.',
-            suggestedFix: 'Name the mechanism.',
-            quotedSpan: 'Imagine a world',
-            blockIndexHint: 0,
-            accepted: false,
-          },
-        ],
-      },
-    }
     await renderSection('bonus')
-    await openFirstFinding()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit myself' }))
+    await openEditorViaSelection('Imagine a world')
     fireEvent.click(screen.getByRole('button', { name: 'Save edit' }))
 
     await waitFor(() => {
@@ -419,13 +407,8 @@ d('in-place edit', () => {
     hoisted.patchSection.mockRejectedValueOnce(
       new ContentPatchError(409, 'revision_mismatch', 'Draft changed.'),
     )
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(1) },
-    }
     await renderSection('originStory')
-    await openFirstFinding()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit myself' }))
+    await openEditorViaSelection('The founder started')
     fireEvent.click(screen.getByRole('button', { name: 'Save edit' }))
 
     expect(
@@ -435,14 +418,9 @@ d('in-place edit', () => {
     ).toBeDefined()
   })
 
-  it('Cancel edit makes no network call and restores the original text', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(1) },
-    }
+  it('Cancel edit makes no network call and discards the edit', async () => {
     const { container } = await renderSection('originStory')
-    await openFirstFinding()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit myself' }))
+    await openEditorViaSelection('The founder started')
 
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
     fireEvent.change(textarea, { target: { value: 'A completely different sentence.' } })
@@ -450,93 +428,76 @@ d('in-place edit', () => {
 
     expect(hoisted.patchSection).not.toHaveBeenCalled()
     expect(hoisted.patchBonus).not.toHaveBeenCalled()
-    // The flagged span renders inside a real `<mark>` PLUS a D-07 axis tag
-    // ("Fact") immediately after it — the sentence is legitimately split
-    // across several DOM nodes (RTL's `getNodeText` only joins an element's
-    // OWN direct text-node children, never nested elements' text; see
-    // 51-04-SUMMARY.md's identical finding for the header arrow), so no
-    // single exact-string match of the full original sentence is possible
-    // here. Assert the meaningful thing instead: the edited value was
-    // discarded (never left in the document), and the untouched portions of
-    // the original sentence — both outside the marked span — are still there.
     expect(container.textContent).not.toContain('A completely different sentence.')
-    expect(container.textContent).toContain('The founder started')
-    expect(container.textContent).toContain('in 1974.')
+    expect(container.textContent).toContain('The founder started in a garage in 1974.')
   })
 })
 
-// ── d('group accept') — READ-04, D-10 – D-13 ────────────────────────────────
+// ── d('no must-fix UX') — quick 261021-7aw ──────────────────────────────────
 
-d('group accept', () => {
-  it('a finding in a group of 2+ shows the count in the accept label', async () => {
+d('no must-fix UX', () => {
+  it('open findings render no marks, no Accept/Edit myself/Dismiss, no Ask agent to revise', async () => {
     mockCurrentRun = {
       ...defaultCurrentRun(),
       derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(3) },
     }
-    await renderSection('originStory')
-    await openFirstFinding()
+    const { container } = await renderSection('originStory')
+    await screen.findByText('A Quiet Beginning')
 
-    expect(screen.getByText('Accept suggestion (applies to 3 places)')).toBeDefined()
+    expect(screen.queryAllByRole('button', { name: /qa .* finding/i })).toHaveLength(0)
+    expect(container.querySelector('mark')).toBeNull()
+    expect(screen.queryByText(/Accept suggestion/)).toBeNull()
+    expect(screen.queryByText('Edit myself')).toBeNull()
+    expect(screen.queryByText('Dismiss')).toBeNull()
+    expect(screen.queryByText(/Ask agent to revise/)).toBeNull()
+    expect(screen.queryByText(/No open findings in this section/)).toBeNull()
   })
 
-  it('a lone finding shows the plain accept label', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(1) },
-    }
+  it('the passage toolbar omits Ask agent to revise', async () => {
     await renderSection('originStory')
-    await openFirstFinding()
-
-    expect(screen.getByText('Accept suggestion')).toBeDefined()
-    expect(screen.queryByText(/\(applies to/)).toBeNull()
+    await openEditorViaSelection('The founder started')
+    expect(screen.queryByRole('button', { name: 'Ask agent to revise' })).toBeNull()
   })
 
-  it("group accept calls acceptFinding once per member, each with the previous call's revisionId", async () => {
-    hoisted.acceptFinding
-      .mockResolvedValueOnce({ revisionId: 'rev_2', findingId: 'q0', resolution: 'accepted' })
-      .mockResolvedValueOnce({ revisionId: 'rev_3', findingId: 'q1', resolution: 'accepted' })
+  it('lists what the agents changed in this section, read-only', async () => {
     mockCurrentRun = {
       ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(2) },
+      derivationInputs: {
+        ...EMPTY_DERIVATION_INPUTS,
+        qaFindings: [
+          {
+            _id: 'a1',
+            severity: 'warning',
+            axis: 'precision',
+            sectionName: 'origin_story',
+            reason: 'Vague.',
+            quotedSpan: 'in a garage',
+            suggestedFix: 'in a rented garage',
+            resolution: 'agent-applied',
+          },
+          {
+            _id: 'a2',
+            severity: 'warning',
+            sectionName: 'problem',
+            reason: 'Other section.',
+            quotedSpan: 'x',
+            suggestedFix: 'y',
+            resolution: 'agent-applied',
+          },
+          { _id: 'a3', severity: 'warning', sectionName: 'origin_story', reason: 'skipped', resolution: 'agent-skipped' },
+        ],
+      } as unknown as DerivationInputs,
     }
     await renderSection('originStory')
-    await openFirstFinding()
-    fireEvent.click(screen.getByText('Accept suggestion (applies to 2 places)'))
-
-    await waitFor(() => {
-      expect(hoisted.acceptFinding).toHaveBeenNthCalledWith(
-        1,
-        'run_1',
-        'q0',
-        expect.objectContaining({ ifRevisionID: 'rev_1' }),
-        expect.anything(),
-      )
-      expect(hoisted.acceptFinding).toHaveBeenNthCalledWith(
-        2,
-        'run_1',
-        'q1',
-        expect.objectContaining({ ifRevisionID: 'rev_2' }),
-        expect.anything(),
-      )
-    })
+    expect(await screen.findByText('What the agents changed (1)')).toBeDefined()
+    expect(screen.getByText('“in a garage” → “in a rented garage”')).toBeDefined()
+    expect(screen.queryByText('Other section.')).toBeNull()
   })
 
-  it('partial failure applies what worked and says so', async () => {
-    hoisted.acceptFinding
-      .mockResolvedValueOnce({ revisionId: 'rev_2', findingId: 'q0', resolution: 'accepted' })
-      .mockResolvedValueOnce({ revisionId: 'rev_3', findingId: 'q1', resolution: 'accepted' })
-      .mockResolvedValueOnce({ revisionId: 'rev_4', findingId: 'q2', resolution: 'accepted' })
-      .mockRejectedValueOnce(new Error('conflict'))
-      .mockRejectedValueOnce(new Error('conflict'))
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(5) },
-    }
+  it('renders nothing when the agents changed nothing', async () => {
     await renderSection('originStory')
-    await openFirstFinding()
-    fireEvent.click(screen.getByText('Accept suggestion (applies to 5 places)'))
-
-    expect(await screen.findByText('3 of 5 applied — 2 still need you.')).toBeDefined()
+    await screen.findByText('A Quiet Beginning')
+    expect(screen.queryByText(/What the agents changed/)).toBeNull()
   })
 })
 
@@ -559,36 +520,5 @@ d('inspect', () => {
       // passes).
       await expect(renderSection('originStory')).resolves.toBeDefined()
     }
-  })
-})
-
-// ── d('hash') — Phase 52 (HOME-05): front-door deep link scroll ─────────────
-
-d('hash', () => {
-  const original = Element.prototype.scrollIntoView
-  afterEach(() => {
-    window.location.hash = ''
-    Element.prototype.scrollIntoView = original
-  })
-
-  it('scrolls to the linked finding mark once the draft has loaded', async () => {
-    window.location.hash = '#finding-q0'
-    const spy = vi.fn()
-    Element.prototype.scrollIntoView = spy
-    ;(mockCurrentRun.derivationInputs as DerivationInputs).qaFindings = groupFindings(1) as never
-    await renderSection('originStory')
-    await waitFor(() => expect(spy).toHaveBeenCalled())
-    const target = spy.mock.contexts[0] as HTMLElement
-    expect(target.id).toBe('finding-q0')
-  })
-
-  it('does not scroll when there is no hash', async () => {
-    window.location.hash = ''
-    const spy = vi.fn()
-    Element.prototype.scrollIntoView = spy
-    ;(mockCurrentRun.derivationInputs as DerivationInputs).qaFindings = groupFindings(1) as never
-    await renderSection('originStory')
-    await screen.findByText('A Quiet Beginning')
-    expect(spy).not.toHaveBeenCalled()
   })
 })

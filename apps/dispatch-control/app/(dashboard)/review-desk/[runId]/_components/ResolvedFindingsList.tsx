@@ -32,6 +32,7 @@ import { api } from '@convex/_generated/api'
 import { reopenFinding, FindingsError } from '@/lib/findingsClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { FACTUAL_AXES } from '@/lib/galley/axisPartition'
+import type { FindingResolution } from '@/lib/galley/findingState'
 
 interface ResolvedFindingsListProps {
   runId: string
@@ -46,11 +47,11 @@ interface QaCorrectionRow {
   axis?: string
   reason: string
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
   resolutionReason?: string
 }
 
-function badgeFor(row: QaCorrectionRow): 'accepted' | 'dismissed' {
+function badgeFor(row: QaCorrectionRow): FindingResolution {
   return row.resolution ?? (row.accepted ? 'accepted' : 'dismissed')
 }
 

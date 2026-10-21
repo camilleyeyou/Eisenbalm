@@ -28,8 +28,7 @@ function cleanRows(): HomeSectionRow[] {
     label,
     headline: `${label} headline`,
     state: 'clean' as const,
-    blockingCount: 0,
-    firstFindingId: null,
+    agentChanges: 0,
     href: `/s/${id}`,
   }))
 }
@@ -37,12 +36,6 @@ function cleanRows(): HomeSectionRow[] {
 function sectionsOf(rows: HomeSectionRow[]): HomeSectionsResult {
   return {
     rows,
-    attributedClaims: 0,
-    unattributedClaims: 0,
-    unattributedFindings: 0,
-    unattributedFindingSections: [],
-    unknownSectionFindings: 0,
-    totalBlocking: 0,
   }
 }
 
@@ -76,18 +69,9 @@ function baseProps(over: Partial<IssueHomeViewProps> = {}): IssueHomeViewProps {
   }
 }
 
-function fixRows(): HomeSectionRow[] {
+function changedRows(): HomeSectionRow[] {
   return cleanRows().map((r) =>
-    r.id === 'game'
-      ? {
-          ...r,
-          headline: 'The Filtration Layer',
-          state: 'fix' as const,
-          blockingCount: 1,
-          firstFindingId: 'f9',
-          href: '/s/game#finding-f9',
-        }
-      : r,
+    r.id === 'game' ? { ...r, headline: 'The Filtration Layer', agentChanges: 2, href: '/s/game' } : r,
   )
 }
 
@@ -110,22 +94,17 @@ describe('IssueHomeView title', () => {
 })
 
 describe('IssueHomeView note', () => {
-  it('renders a fix row as one link with label, headline and count note', () => {
-    render(<IssueHomeView {...baseProps({ sections: sectionsOf(fixRows()), footer: { kind: 'ready' } })} />)
-    const link = screen.getByRole('link', { name: /Game.*The Filtration Layer.*1 thing to fix →/ })
-    expect(link.getAttribute('href')).toBe('/s/game#finding-f9')
+  it('renders an agent-changed row as one link with a quiet change count', () => {
+    render(<IssueHomeView {...baseProps({ sections: sectionsOf(changedRows()), footer: { kind: 'ready' } })} />)
+    const link = screen.getByRole('link', { name: /Game.*The Filtration Layer.*Written · agents made 2 changes/ })
+    expect(link.getAttribute('href')).toBe('/s/game')
+    expect(screen.queryByText(/to fix/)).toBeNull()
   })
 
-  it('pluralises the count', () => {
-    const rows = fixRows().map((r) => (r.id === 'game' ? { ...r, blockingCount: 3 } : r))
-    render(<IssueHomeView {...baseProps({ sections: sectionsOf(rows) })} />)
-    expect(screen.getByText('3 things to fix →')).toBeTruthy()
-  })
-
-  it('shows Reads clean for clean rows and Being written… for writing rows', () => {
+  it('shows Written for clean rows and Being written… for writing rows', () => {
     const rows = cleanRows().map((r) => (r.id === 'podcast' ? { ...r, state: 'writing' as const } : r))
     render(<IssueHomeView {...baseProps({ sections: sectionsOf(rows) })} />)
-    expect(screen.getAllByText('Reads clean')).toHaveLength(8)
+    expect(screen.getAllByText('Written')).toHaveLength(8)
     expect(screen.getByText('Being written…')).toBeTruthy()
   })
 
@@ -137,75 +116,6 @@ describe('IssueHomeView note', () => {
 })
 
 describe('IssueHomeView footer', () => {
-  it('names a single story with a link to its first problem', () => {
-    render(
-      <IssueHomeView
-        {...baseProps({
-          sections: sectionsOf(fixRows()),
-          footer: {
-            kind: 'fix',
-            stories: [{ id: 'game', label: 'Game', href: '/s/game#finding-f9' }],
-            notWritten: [],
-            unattributedClaims: 0,
-            unattributedFindings: 0,
-            unattributedFindingHref: null,
-          },
-        })}
-      />,
-    )
-    const section = screen.getByRole('region', { name: 'Publish' })
-    expect(section.textContent).toContain('1 story has something to fix: Game.')
-    expect(within(section).getByRole('link', { name: 'Game' }).getAttribute('href')).toBe('/s/game#finding-f9')
-  })
-
-  it('joins several stories and lists unattributed claims and findings', () => {
-    render(
-      <IssueHomeView
-        {...baseProps({
-          footer: {
-            kind: 'fix',
-            stories: [
-              { id: 'origin-story', label: 'Origin Story', href: '/s/origin-story' },
-              { id: 'game', label: 'Game', href: '/s/game' },
-            ],
-            notWritten: [],
-            unattributedClaims: 1,
-            unattributedFindings: 1,
-            unattributedFindingHref: '/s/podcast',
-          },
-        })}
-      />,
-    )
-    const section = screen.getByRole('region', { name: 'Publish' })
-    expect(section.textContent).toContain('2 stories have something to fix: Origin Story, Game.')
-    expect(
-      within(section).getByRole('link', { name: '1 fact the agents found contradicted needs checking.' }).getAttribute('href'),
-    ).toBe('/issues/7/fact-check')
-    expect(
-      within(section).getByRole('link', { name: '1 thing to fix isn’t tied to a story.' }).getAttribute('href'),
-    ).toBe('/s/podcast')
-  })
-
-  it('falls back to the approval screen when the finding section is unknown', () => {
-    render(
-      <IssueHomeView
-        {...baseProps({
-          footer: {
-            kind: 'fix',
-            stories: [],
-            notWritten: [],
-            unattributedClaims: 0,
-            unattributedFindings: 1,
-            unattributedFindingHref: null,
-          },
-        })}
-      />,
-    )
-    expect(
-      screen.getByRole('link', { name: '1 thing to fix isn’t tied to a story.' }).getAttribute('href'),
-    ).toBe('/issues/7/approval')
-  })
-
   it('shows the running and ready sentences', () => {
     const { unmount } = render(<IssueHomeView {...baseProps({ footer: { kind: 'running' } })} />)
     expect(screen.getByText(RUNNING_SENTENCE)).toBeTruthy()
@@ -217,17 +127,8 @@ describe('IssueHomeView footer', () => {
 })
 
 describe('IssueHomeView publish', () => {
-  const fixFooter = {
-    kind: 'fix' as const,
-    stories: [{ id: 'game', label: 'Game', href: '/s/game' }],
-    notWritten: [],
-    unattributedClaims: 0,
-    unattributedFindings: 0,
-    unattributedFindingHref: null,
-  }
-
-  it('has exactly one Publish button in ready, fix and running', () => {
-    for (const footer of [{ kind: 'ready' as const }, fixFooter, { kind: 'running' as const }]) {
+  it('has exactly one Publish button in ready and running', () => {
+    for (const footer of [{ kind: 'ready' as const }, { kind: 'running' as const }]) {
       const { unmount } = render(<IssueHomeView {...baseProps({ footer })} />)
       expect(publishButtons()).toHaveLength(1)
       unmount()
@@ -269,8 +170,8 @@ describe('IssueHomeView publish', () => {
     expect(confirmSpy).not.toHaveBeenCalled()
   })
 
-  it('offers Preview the issue for fix, running and ready only when a preview URL exists', () => {
-    for (const footer of [{ kind: 'ready' as const }, fixFooter, { kind: 'running' as const }]) {
+  it('offers Preview the issue for running and ready only when a preview URL exists', () => {
+    for (const footer of [{ kind: 'ready' as const }, { kind: 'running' as const }]) {
       const { unmount } = render(<IssueHomeView {...baseProps({ footer })} />)
       expect(screen.getByRole('link', { name: 'Preview the issue' }).getAttribute('href')).toBe(
         'https://web.example/issue/issue-7/preview?token=x',
@@ -360,13 +261,13 @@ describe('IssueHomeView loading', () => {
       <IssueHomeView {...baseProps({ footer: { kind: 'loading' }, sections: undefined, title: undefined, subject: undefined })} />,
     )
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(screen.queryByText(/Reads clean|Ready to publish|Nothing left to fix/)).toBeNull()
+    expect(screen.queryByText(/Written|Ready to publish|reviewed every section/)).toBeNull()
     expect(publishButtons()).toHaveLength(0)
   })
 
   it('shows a draft error as an alert without claiming clean', () => {
     render(<IssueHomeView {...baseProps({ footer: { kind: 'loading' }, sections: undefined, draftError: 'boom' })} />)
     expect(screen.getByRole('alert').textContent).toContain('boom')
-    expect(screen.queryByText(/Reads clean/)).toBeNull()
+    expect(screen.queryByText(/Written/)).toBeNull()
   })
 })

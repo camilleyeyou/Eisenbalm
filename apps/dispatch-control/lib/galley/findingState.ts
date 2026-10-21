@@ -10,9 +10,12 @@
  * A finding is open only when it has neither the legacy `accepted` flag nor
  * a §33.1 `resolution` value.
  */
+/** Quick 261021-7aw: 'agent-*' rows are the pipeline self-fix change log (always closed). */
+export type FindingResolution = 'accepted' | 'dismissed' | 'agent-applied' | 'agent-skipped'
+
 export function isOpenFinding(row: {
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed' | null
+  resolution?: FindingResolution | null
 }): boolean {
   return row.accepted !== true && row.resolution == null
 }

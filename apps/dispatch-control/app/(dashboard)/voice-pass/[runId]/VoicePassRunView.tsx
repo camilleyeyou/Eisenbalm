@@ -78,6 +78,7 @@ import { api } from '@convex/_generated/api'
 import Galley from '@/components/galley/Galley'
 import { useInspector } from '@/components/inspector/InspectorProvider'
 import VoicePassRail from './_components/VoicePassRail'
+import type { FindingResolution } from '@/lib/galley/findingState'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { isOpenFinding } from '@/lib/galley/findingState'
 import { VOICE_AXES } from '@/lib/galley/axisPartition'
@@ -106,7 +107,7 @@ interface QaCorrectionRow {
   axis?: string
   reason: string
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
 }
 
 /**

@@ -24,103 +24,38 @@ import {
   PUBLISH_SLOW_MS,
   PUBLISH_SLOW_NOTICE,
 } from '@/lib/publishChain'
-import { SignOffApiError } from '@/lib/signOffClient'
 import { ReviewApiError } from '@/lib/reviewClient'
 import type { HomeFooter } from '@/lib/homeSections'
 
-let log: string[]
 let getToken: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  log = []
   hoisted.recordSignOff.mockReset()
   hoisted.publishIssue.mockReset()
-  hoisted.recordSignOff.mockImplementation(async (_t: unknown, _r: unknown, kind: string) => {
-    log.push(kind)
-    return { runId: 'run_1', kind, signedAt: 1 }
-  })
-  hoisted.publishIssue.mockImplementation(async () => {
-    log.push('publish')
-    return { issueId: 'i', published: true }
-  })
+  hoisted.publishIssue.mockResolvedValue({ issueId: 'i', published: true })
   getToken = vi.fn(async () => 'tok')
 })
 
-const run = (activeSignOffs: Record<string, unknown> = {}) =>
-  publishChain({ getToken, runId: 'run_1', activeSignOffs })
+const run = () => publishChain({ getToken, runId: 'run_1' })
 
 describe('chain', () => {
-  it('records facts, then voice, then publishes, in order', async () => {
+  it('publishes only: no sign-off is ever recorded (quick 261021-7aw)', async () => {
     const res = await run()
     expect(res).toEqual({ ok: true })
-    expect(log).toEqual(['facts-cleared', 'sounds-human', 'publish'])
-    expect(hoisted.recordSignOff).toHaveBeenNthCalledWith(1, 'tok', 'run_1', 'facts-cleared')
-    expect(hoisted.recordSignOff).toHaveBeenNthCalledWith(2, 'tok', 'run_1', 'sounds-human')
-    expect(hoisted.publishIssue).toHaveBeenCalledWith('tok', 'run_1')
-    expect(getToken).toHaveBeenCalledTimes(3)
-  })
-})
-
-describe('skip', () => {
-  it('skips an already-active facts sign-off', async () => {
-    await run({ 'facts-cleared': { signedAt: 1 } })
-    expect(log).toEqual(['sounds-human', 'publish'])
-  })
-  it('skips both when both are active', async () => {
-    await run({ 'facts-cleared': {}, 'sounds-human': {} })
     expect(hoisted.recordSignOff).not.toHaveBeenCalled()
-    expect(hoisted.publishIssue).toHaveBeenCalledTimes(1)
+    expect(hoisted.publishIssue).toHaveBeenCalledWith('tok', 'run_1')
+    expect(getToken).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('stop', () => {
-  it('stops at the first failure with the server message', async () => {
-    const msg = '1 claim(s) contradicted by sources must be fixed or dismissed before clearing facts.'
-    hoisted.recordSignOff.mockRejectedValueOnce(new SignOffApiError(409, 'claims_not_signed_off', msg))
-    const res = await run()
-    expect(res).toEqual({ ok: false, step: 'facts-cleared', message: msg })
-    expect(hoisted.recordSignOff).toHaveBeenCalledTimes(1)
-    expect(hoisted.publishIssue).not.toHaveBeenCalled()
-  })
-  it('maps a network error to the plain message at any step', async () => {
+  it('maps a network error to the plain message', async () => {
     hoisted.publishIssue.mockRejectedValueOnce(new TypeError('Failed to fetch'))
-    const res = await run({ 'facts-cleared': {}, 'sounds-human': {} })
-    expect(res).toEqual({ ok: false, step: 'publish', message: NETWORK_FAILURE_MESSAGE })
-    hoisted.recordSignOff.mockRejectedValueOnce(new TypeError('Failed to fetch'))
-    const res2 = await run()
-    expect(res2).toEqual({ ok: false, step: 'facts-cleared', message: NETWORK_FAILURE_MESSAGE })
+    expect(await run()).toEqual({ ok: false, step: 'publish', message: NETWORK_FAILURE_MESSAGE })
   })
-})
-
-describe('reasons', () => {
-  const rows: Array<[string, number, 'facts-cleared' | 'sounds-human' | 'publish']> = [
-    ['claims_not_signed_off', 409, 'facts-cleared'],
-    ['open_error_findings', 409, 'facts-cleared'],
-    ['open_voice_findings', 409, 'sounds-human'],
-    ['run_not_reviewable', 409, 'sounds-human'],
-    ['forbidden_role', 403, 'sounds-human'],
-    ['missing_signoffs', 409, 'publish'],
-    ['wrong_status', 409, 'publish'],
-    ['no_sanity_issue', 409, 'publish'],
-  ]
-  it.each(rows)('%s (%i) surfaces at %s', async (reason, status, step) => {
-    const message = `server says ${reason}`
-    if (step === 'publish') {
-      hoisted.publishIssue.mockRejectedValueOnce(new ReviewApiError(status, reason, message))
-      const res = await run({ 'facts-cleared': {}, 'sounds-human': {} })
-      expect(res).toEqual({ ok: false, step, message })
-    } else {
-      const err = new SignOffApiError(status, reason, message)
-      if (step === 'facts-cleared') {
-        hoisted.recordSignOff.mockRejectedValueOnce(err)
-      } else {
-        hoisted.recordSignOff.mockResolvedValueOnce({ runId: 'run_1', kind: 'facts-cleared', signedAt: 1 })
-        hoisted.recordSignOff.mockRejectedValueOnce(err)
-      }
-      const res = await run()
-      expect(res).toEqual({ ok: false, step, message })
-      expect(hoisted.publishIssue).not.toHaveBeenCalled()
-    }
+  it('surfaces the server message on a publish error', async () => {
+    hoisted.publishIssue.mockRejectedValueOnce(new ReviewApiError(409, 'wrong_status', 'server says wrong_status'))
+    expect(await run()).toEqual({ ok: false, step: 'publish', message: 'server says wrong_status' })
   })
 })
 
@@ -145,7 +80,6 @@ describe('gate', () => {
       { kind: 'gate1' },
       { kind: 'running' },
       { kind: 'published' },
-      { kind: 'fix' },
     ] as unknown as HomeFooter[]
     for (const footer of footers) {
       expect(derivePublishGate({ ...base, footer })).toEqual({ enabled: false, reason: 'not-ready' })

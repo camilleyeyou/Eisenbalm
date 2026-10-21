@@ -263,32 +263,28 @@ describe('DecisionRail ordering (D-17, WSP-05)', () => {
 // ── (b) Publish gate (D-14/D-15 client, WSP-06 preview flow) ────────────────
 
 describe('DecisionRail publish gate (D-14/D-15)', () => {
-  it('disables Publish with a visible reason when an open error finding exists', () => {
+  it('keeps Publish ENABLED with an open error finding and no sign-offs (quick 261021-7aw)', () => {
     mockQueries({ findings: [errorFinding] })
     renderRail(<DecisionRail runId="run-1" />)
 
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
-    expect(publish.disabled).toBe(true)
-    // Reason text is visible near the button (also in the headline).
-    expect(screen.getAllByText(/1 blocker to clear/i).length).toBeGreaterThan(0)
-    // WSP-06: the unlock condition is written next to the control.
-    expect(screen.getByText(/unlocks when/i)).toBeDefined()
-    expect(screen.getByText(/must fix = 0/i)).toBeDefined()
-    expect(screen.getByText(/unlocks when:.*facts cleared/i)).toBeDefined()
-    expect(screen.getByText(/voice approved current/i)).toBeDefined()
+    expect(publish.disabled).toBe(false)
+    expect(screen.queryByText(/unlocks when/i)).toBeNull()
+    expect(screen.queryByText(/both sign-offs required/i)).toBeNull()
+    expect(screen.queryByText(/must fix = 0/i)).toBeNull()
   })
 
-  it('is additionally disabled when the issue is held, with "Not held" named in the unlock text (D-15)', () => {
+  it('is disabled only when the issue is held, with the release-the-hold message (D-15)', () => {
     mockQueries({ findings: [] })
     renderRail(<DecisionRail runId="run-1" held={true} />)
 
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
     expect(publish.disabled).toBe(true)
     expect(screen.getByText(/release the hold to publish/i)).toBeDefined()
-    expect(screen.getByText(/not held/i)).toBeDefined()
+    expect(screen.queryByText(/not held/i)).toBeNull()
   })
 
-  it('enables Publish when zero blockers/sign-offs/held remain, and opens the preview WITHOUT publishing yet', () => {
+  it('enables Publish when not held, and opens the preview WITHOUT publishing yet', () => {
     mockQueries({ findings: [warningFinding] })
     renderRail(<DecisionRail runId="run-1" />)
 
@@ -510,28 +506,24 @@ describe('DecisionRail sign-offs (Phase 34, D-01/D-05/D-06)', () => {
     expect(screen.getByRole('button', { name: /sign: sounds human/i })).toBeDefined()
   })
 
-  it('gates Publish until BOTH sign-offs are green even with zero blockers', () => {
+  it('does not gate Publish on sign-offs (optional attestations)', () => {
     mockQueries({
       findings: [],
       signoffs: { 'facts-cleared': { actorId: 'andrew', signedAt: Date.now() } },
     })
     renderRail(<DecisionRail runId="run-1" />)
     const publish = screen.getByRole('button', { name: /^publish$/i }) as HTMLButtonElement
-    expect(publish.disabled).toBe(true)
-    expect(screen.getByText(/both sign-offs required to publish/i)).toBeDefined()
+    expect(publish.disabled).toBe(false)
+    expect(screen.getByText(/sign-offs \(optional\)/i)).toBeDefined()
   })
 
-  it('disables the Facts-cleared control while an open error blocker exists (D-01)', () => {
+  it('keeps the Facts-cleared control enabled even with an open error blocker', () => {
     mockQueries({ findings: [errorFinding], signoffs: {} })
     renderRail(<DecisionRail runId="run-1" />)
     const facts = screen.getByRole('button', {
       name: /sign: facts cleared/i,
     }) as HTMLButtonElement
-    expect(facts.disabled).toBe(true)
-    expect(
-      (screen.getByRole('button', { name: /sign: sounds human/i }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(false)
+    expect(facts.disabled).toBe(false)
   })
 })
 
@@ -557,7 +549,7 @@ describe('DecisionRail — no claim ledger (Phase 51.1)', () => {
     expect(screen.queryByText('Legacy claim text.')).toBeNull()
   })
 
-  it('disables Sign: Facts cleared while a contradicted claim is open', () => {
+  it('keeps Sign: Facts cleared enabled while a contradicted claim is open', () => {
     mockQueries({
       claims: [{ claimIndex: 0, status: 'pending', verdict: 'contradicted' }],
       signoffs: {},
@@ -566,8 +558,8 @@ describe('DecisionRail — no claim ledger (Phase 51.1)', () => {
     renderRail(<DecisionRail runId="run-1" />)
     expect(
       (screen.getByRole('button', { name: /sign: facts cleared/i }) as HTMLButtonElement).disabled,
-    ).toBe(true)
-    expect(screen.getByText(/1 contradicted claim to fix or dismiss before clearing facts/i)).toBeDefined()
+    ).toBe(false)
+    expect(screen.queryByText(/to fix or dismiss before clearing facts/i)).toBeNull()
   })
 
   it('enables Sign: Facts cleared with zero claims', () => {

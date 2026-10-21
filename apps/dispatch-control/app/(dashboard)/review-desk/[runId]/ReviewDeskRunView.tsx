@@ -69,6 +69,7 @@ import ClaimProvenanceCard from '@/components/provenance/ClaimProvenanceCard'
 import type { PassageSelection } from '@/components/galley/PassageToolbar'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
+import type { FindingResolution } from '@/lib/galley/findingState'
 
 interface ReviewDeskRunViewProps {
   params: Promise<{ runId: string }>
@@ -88,7 +89,7 @@ interface QaCorrectionRow {
   blockIndexHint?: number
   accepted?: boolean
   /** §33.1 resolution state — filtered via the shared isOpenFinding (Pitfall 9). */
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
 }
 
 /**

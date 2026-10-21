@@ -1,3 +1,4 @@
+import type { FindingResolution } from './findingState'
 /**
  * Per-block quotedSpan resolution (GLY-02).
  *
@@ -52,7 +53,7 @@ export interface QaFinding {
   blockIndexHint?: number
   accepted?: boolean
   /** §33.1 resolution state — callers filter via `isOpenFinding` (findingState.ts). */
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
 }
 
 interface MatchCandidate {

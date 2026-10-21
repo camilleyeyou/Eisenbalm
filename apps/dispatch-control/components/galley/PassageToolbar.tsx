@@ -66,6 +66,8 @@ export interface PassageToolbarProps {
   onRelatedFacts?: (sel: PassageSelection) => void
   /** Inspect how this was made — LIVE when provided (the Phase 44 entry point). */
   onInspect?: (sectionId: string) => void
+  /** Quick 261021-7aw — omit the "Ask agent to revise" action (editor reader). */
+  hideRevise?: boolean
 }
 
 interface ResolvedSelection extends PassageSelection {
@@ -141,6 +143,7 @@ export function PassageToolbar({
   onEditText,
   onRelatedFacts,
   onInspect,
+  hideRevise = false,
 }: PassageToolbarProps) {
   const [selection, setSelection] = useState<ResolvedSelection | null>(null)
 
@@ -188,6 +191,7 @@ export function PassageToolbar({
       <button type="button" className={LIVE_CLASSES} onClick={() => onEditText?.(publicSelection)}>
         Edit text
       </button>
+      {!hideRevise && (
       <button
         type="button"
         className={LIVE_CLASSES}
@@ -201,6 +205,7 @@ export function PassageToolbar({
       >
         Ask agent to revise
       </button>
+      )}
       <button type="button" disabled title={COMPARE_TITLE} className={RESERVED_CLASSES}>
         Compare with previous
       </button>

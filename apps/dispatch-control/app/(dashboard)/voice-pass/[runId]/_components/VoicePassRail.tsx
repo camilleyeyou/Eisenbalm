@@ -35,6 +35,7 @@ import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
+import type { FindingResolution } from '@/lib/galley/findingState'
 
 interface VoicePassRailProps {
   runId: string
@@ -48,7 +49,7 @@ interface QaCorrectionRow {
   axis?: string
   reason: string
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
 }
 
 /** Mirrors DecisionRail's galleyAnchorFor — see that file for the exceptions. */

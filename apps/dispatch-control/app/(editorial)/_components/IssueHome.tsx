@@ -109,8 +109,6 @@ export default function IssueHome() {
   const footerRaw = deriveHomeFooter({
     stateKind: cr.state.kind,
     sections,
-    claimSummaryBlocking: cr.claimSummary?.blocking,
-    signOffsLoaded: cr.signOffs !== undefined,
     issue: cr.derivationInputs.issue,
     publishedAt,
     runStatus,
@@ -118,16 +116,12 @@ export default function IssueHome() {
   })
   // Terminal kinds never wait on content or title.
   const footer =
-    (footerRaw.kind === 'fix' || footerRaw.kind === 'ready') && cr.title === undefined
+    footerRaw.kind === 'ready' && cr.title === undefined
       ? ({ kind: 'loading' } as const)
       : footerRaw
 
-  // HOME-09: no row may read clean until every gate input has arrived.
-  const rowsReady =
-    cr.claimSummary !== undefined &&
-    cr.signOffs !== undefined &&
-    cr.derivationInputs.issue !== undefined &&
-    cr.title !== undefined
+  // HOME-09: no row may read written until every input has arrived.
+  const rowsReady = cr.derivationInputs.issue !== undefined && cr.title !== undefined
 
   const held = cr.derivationInputs.issue === undefined ? undefined : (cr.derivationInputs.issue?.held ?? false)
   const gate = derivePublishGate({ footer, role, held, busy: phase === 'publishing' })
@@ -156,7 +150,6 @@ export default function IssueHome() {
     const r = await publishChain({
       getToken: () => getToken(),
       runId: cr.runId,
-      activeSignOffs: cr.signOffs ?? {},
     })
     if (!r.ok) {
       setPublishError(r.message)
@@ -189,7 +182,7 @@ export default function IssueHome() {
       footer={footer}
       gate={gate}
       draftError={
-        footer.kind === 'fix' || footer.kind === 'ready' || footer.kind === 'loading' ? draftError : null
+        footer.kind === 'ready' || footer.kind === 'loading' ? draftError : null
       }
       publishing={phase === 'publishing'}
       publishError={publishError}

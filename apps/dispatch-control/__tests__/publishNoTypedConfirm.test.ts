@@ -89,11 +89,11 @@ describe('publishNoTypedConfirm: neither publish surface carries a typed-confirm
     expect(TYPED_CONFIRM_IDIOM_PATTERN.test(content)).toBe(false)
   })
 
-  it("DecisionRail.tsx's Publish button gates on the sign-off state (factsActive/humanActive), not a typed match", () => {
+  it("DecisionRail.tsx's Publish button gates on hold/busy only (quick 261021-7aw), not a typed match or sign-offs", () => {
     const content = fs.readFileSync(DECISION_RAIL, 'utf-8')
-    // The publish-disabled derivation references the two sign-off booleans.
-    expect(/publishDisabled\s*=[\s\S]{0,120}factsActive/.test(content)).toBe(true)
-    expect(/publishDisabled\s*=[\s\S]{0,160}humanActive/.test(content)).toBe(true)
+    // The publish-disabled derivation no longer references sign-offs or findings.
+    expect(/publishDisabled\s*=\s*!!held\s*\|\|\s*busy/.test(content)).toBe(true)
+    expect(/publishDisabled\s*=[^\n]*(factsActive|humanActive|blockers)/.test(content)).toBe(false)
     // The actual Publish button is wired to that derivation.
     expect(/disabled=\{publishDisabled\}/.test(content)).toBe(true)
   })

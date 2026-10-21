@@ -78,6 +78,7 @@ import { isOpenFinding } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { ensureThemeFont, applyThemeAccent } from '@/lib/galley/googleFontLoader'
 import type { ResolvedClaim } from '@/lib/galley/syntheticPortableText'
+import type { FindingResolution } from '@/lib/galley/findingState'
 import { isEditorFlagged } from '@/lib/derivedState'
 import GallerySection from './GallerySection'
 import GalleryGameSlot from './GalleryGameSlot'
@@ -95,7 +96,7 @@ interface QaCorrectionRow {
   blockIndexHint?: number
   accepted?: boolean
   /** §33.1 resolution state — filtered via the shared isOpenFinding (Pitfall 9). */
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
 }
 
 /** Minimal shape needed from a live `claim_checks` row (Phase 35 PRV-03). */
@@ -225,6 +226,13 @@ interface GalleyProps {
    * today's render byte-identical (D-24).
    */
   showClaimEvidenceInFindings?: boolean
+  /**
+   * Quick 261021-7aw — render the prose with NO finding or claim-flag
+   * markup: no AnnotationMark, UnresolvedFindingCard or claim-contradiction
+   * wash. The agents self-fix, so the editor reader (/s/[section]) is
+   * read-only prose. Default false (Review Desk / Voice Pass unchanged).
+   */
+  hideFindings?: boolean
 }
 
 // D-05 reader order for the four long-read sections.
@@ -267,6 +275,7 @@ export default function Galley({
   showAxisTag,
   findingGroup,
   showClaimEvidenceInFindings,
+  hideFindings = false,
 }: GalleyProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -291,7 +300,7 @@ export default function Galley({
   // Group scoped findings by galley section id (QA's sectionName vocabulary
   // differs from the galley's — qaSectionToGalleyId is the only bridge).
   const findingsByGalleyId = new Map<string, QaFinding[]>()
-  for (const row of scopedFindings) {
+  for (const row of hideFindings ? [] : scopedFindings) {
     const galleyId = qaSectionToGalleyId(row.sectionName)
     if (!galleyId) continue
     const list = findingsByGalleyId.get(galleyId) ?? []
@@ -350,7 +359,7 @@ export default function Galley({
     sectionId: string,
     rows: Array<{ type: string; text: string }>,
   ): ResolvedClaim[] {
-    if (!showProvenance) return []
+    if (!showProvenance || hideFindings) return []
     const rowsForSection = claimsBySection.get(sectionId) ?? []
     if (rowsForSection.length === 0) return []
     const claimFindings: QaFinding[] = rowsForSection.map((row) => ({
@@ -428,6 +437,7 @@ export default function Galley({
         onEditText={(sel) => onEditSection(sel.sectionId)}
         onRelatedFacts={onRelatedFacts}
         onInspect={onInspect}
+        hideRevise={hideFindings}
       />
 
       {LONG_READ_SECTIONS.filter(({ id }) => included(id)).map(({ id, label }) => {

@@ -22,11 +22,7 @@ export function StoryRow({ row, divided = false }: { row: HomeSectionRow; divide
         <span className="min-w-[200px] flex-1 font-[family-name:var(--font-display)] text-[21px] leading-snug text-[color:var(--color-ink)]">
           {row.headline}
         </span>
-        {row.state === 'fix' ? (
-          <span className="bg-[#c43a14] px-2 py-1 font-[family-name:var(--font-ui)] text-[13px] font-medium text-white">
-            {note}
-          </span>
-        ) : row.state === 'clean' ? (
+        {row.state === 'clean' ? (
           <span className="font-[family-name:var(--font-ui)] text-[13px] text-[#11764a]">{note}</span>
         ) : (
           <span className="font-[family-name:var(--font-ui)] text-[13px] italic text-[color:var(--color-ink-soft)]">

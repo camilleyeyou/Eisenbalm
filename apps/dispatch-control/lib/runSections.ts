@@ -35,7 +35,7 @@ import type { ContentBlock, DraftResponse } from '@/lib/contentPatchClient'
 import { EDITABLE_SECTIONS } from '@/app/(dashboard)/review-desk/[runId]/_components/SectionChipList'
 import { draftSectionIdsFromDraft } from '@/lib/derivedState'
 import { sectionWordCount, sectionExcerpt, countWords } from '@/app/(dashboard)/review-desk/[runId]/_components/storyOutline'
-import { isOpenFinding } from '@/lib/galley/findingState'
+import { isOpenFinding, type FindingResolution } from '@/lib/galley/findingState'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
 import { VOICE_AXES } from '@/lib/galley/axisPartition'
 
@@ -52,7 +52,7 @@ export interface RunSectionFindingRow {
   severity: 'info' | 'warning' | 'error'
   axis?: string
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed' | null
+  resolution?: FindingResolution | null
 }
 
 /**

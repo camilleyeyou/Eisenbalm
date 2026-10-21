@@ -89,7 +89,7 @@ function cleanDraft(): DraftResponse {
   } as unknown as DraftResponse
 }
 
-const CLEAN = /Reads clean|Ready to publish|Nothing left to fix/
+const CLEAN = /Written|Ready to publish|reviewed every section/
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -127,8 +127,6 @@ describe('loading', () => {
   const fields: Array<[string, () => void]> = [
     ['qaFindings', () => (mockCurrentRun = currentRun({ qaFindings: undefined }, { qaFindings: undefined }))],
     ['claimRows', () => (mockCurrentRun = currentRun({ claimRows: undefined }, { claimRows: undefined }))],
-    ['claimSummary', () => (mockCurrentRun = currentRun({ claimSummary: undefined }))],
-    ['signOffs', () => (mockCurrentRun = currentRun({ signOffs: undefined }, { signOffs: undefined }))],
     ['issue', () => (mockCurrentRun = currentRun({}, { issue: undefined }))],
     ['title', () => (mockCurrentRun = currentRun({ title: undefined }))],
   ]
@@ -180,7 +178,7 @@ describe('publish', () => {
     expect(hoisted.publishChain).toHaveBeenCalledTimes(1)
     const arg = hoisted.publishChain.mock.calls[0]![0]
     expect(arg.runId).toBe('run_1')
-    expect(arg.activeSignOffs).toEqual({})
+    expect(arg.activeSignOffs).toBeUndefined()
     expect(typeof arg.getToken).toBe('function')
     expect((await screen.findByRole('alert')).textContent).toContain(msg)
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(false)
@@ -278,7 +276,7 @@ describe('states', () => {
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('open voice error on game: Publish disabled and the story is named', async () => {
+  it('open voice error on game: Publish stays ENABLED and no fix copy is shown (quick 261021-7aw)', async () => {
     const finding = {
       _id: 'q0',
       sectionName: 'game',
@@ -289,7 +287,8 @@ describe('states', () => {
     }
     mockCurrentRun = currentRun({ qaFindings: [finding] }, { qaFindings: [finding] as never })
     render(<IssueHome />)
-    expect(await screen.findByText(/1 story has something to fix/)).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true)
+    const btn = await screen.findByRole('button', { name: 'Publish' })
+    await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
+    expect(screen.queryByText(/something to fix|things? to fix/)).toBeNull()
   })
 })

@@ -28,11 +28,9 @@
  *      server 409 shipped in 33-03), Hold, Re-run section ▾, Transcript
  *   8. ResolvedFindingsList — the collapsed D-04 reopen surface (Task 2)
  *
- * Publish is disabled with a visible reason while blockers remain, either
- * sign-off is missing, or the issue is held (D-15); the unlock condition is
- * also written out next to the control ("Unlocks when: ..."). If the
- * server still 409s `open_error_findings`, the message is surfaced
- * (belt-and-suspenders with the D-14 server gate).
+ * Quick 261021-7aw: Publish is disabled only while the issue is held or a
+ * publish is in flight. Findings and sign-offs never gate it (agents
+ * self-fix; sign-offs are optional) — client and server agree.
  *
  * WSP-06 (D-15): clicking Publish (when enabled) opens `PublishPreviewDialog`
  * — an exact preview (destination/title/time/consequences) + one
@@ -78,6 +76,7 @@ import PublishPreviewDialog from './PublishPreviewDialog'
 import SchedulePublishDialog from './SchedulePublishDialog'
 import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
+import type { FindingResolution } from '@/lib/galley/findingState'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 import { SkeletonLine } from '@/components/ui/Skeleton'
@@ -109,7 +108,7 @@ interface QaCorrectionRow {
   axis?: string
   reason: string
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed'
+  resolution?: FindingResolution
 }
 
 interface ClaimCheckRow {
@@ -508,9 +507,9 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
       </section>
 
       {/* 6b — Sign-offs (Phase 34, D-01/D-05/D-06): two independent greens,
-          both required to publish (PUB-01). Affirmative state, never blank. */}
+          now OPTIONAL attestations (quick 261021-7aw): nothing requires them. */}
       <section aria-label="Sign-offs">
-        <h3 className={MICRO_LABEL}>Sign-offs</h3>
+        <h3 className={MICRO_LABEL}>Sign-offs (optional)</h3>
         <div className="mt-1 flex flex-col gap-2">
           {factsActive ? (
             <p className="text-[13px] text-[color:var(--color-green,#148a52)]">
@@ -519,23 +518,12 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
           ) : (
             <button
               type="button"
-              disabled={
-                claims === undefined ||
-                blockers.length > 0 ||
-                contradictedOpen > 0 ||
-                signOffBusy !== null
-              }
+              disabled={signOffBusy !== null}
               onClick={() => handleSignOff('facts-cleared')}
               className="min-h-[44px] w-full border border-[color:var(--color-faint)] bg-white px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium uppercase tracking-[.06em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Sign: Facts cleared
             </button>
-          )}
-          {!factsActive && contradictedOpen > 0 && (
-            <p className="text-[11px] text-[color:var(--color-vermilion)]">
-              {contradictedOpen} contradicted claim{contradictedOpen === 1 ? '' : 's'} to fix or
-              dismiss before clearing facts.
-            </p>
           )}
           {humanActive ? (
             <p className="text-[13px] text-[color:var(--color-green,#148a52)]">
@@ -558,8 +546,9 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
       <section aria-label="Actions" className="flex flex-col gap-2">
         <h3 className={MICRO_LABEL}>Actions</h3>
         {(() => {
-          const publishDisabled =
-            blockers.length > 0 || !factsActive || !humanActive || !!held || busy
+          // Quick 261021-7aw: only hold / in-flight disable Publish; findings and
+          // sign-offs never gate (role is handled by LockedControl).
+          const publishDisabled = !!held || busy
           return (
             <>
               <LockedControl
@@ -578,26 +567,11 @@ export default function DecisionRail({ runId, issueNumber, held }: DecisionRailP
               <p className="mt-0.5 text-[11px] text-[color:var(--color-ink-soft)]">
                 {HELP_COPY.approval.publish}
               </p>
-              {blockers.length > 0 ? (
-                <p className="text-[11px] text-[color:var(--color-vermilion)]">{blockerReason}</p>
-              ) : (!factsActive || !humanActive) ? (
-                <p className="text-[11px] text-[color:var(--color-vermilion)]">
-                  Both sign-offs required to publish.
-                </p>
-              ) : held ? (
+              {held ? (
                 <p className="text-[11px] text-[color:var(--color-vermilion)]">
                   This issue is held — release the hold to publish.
                 </p>
               ) : null}
-              {/* WSP-06 (D-15): the unlock condition written next to the
-                  control — shown whenever Publish is disabled for any of
-                  the three (or four, with held) gating reasons. */}
-              {publishDisabled && !busy && (
-                <p className="text-[11px] text-[color:var(--color-ink-soft)]">
-                  Unlocks when: Must fix = 0 · Facts cleared · Voice approved current
-                  {held ? ' · Not held' : ''}
-                </p>
-              )}
               {showPreview && (
                 <PublishPreviewDialog
                   issueNumber={issueNumber}

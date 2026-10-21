@@ -4,10 +4,8 @@
  * the ONE Publish button, with an inline confirm (never a browser dialog).
  * Canvas: https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ
  *
- * Findings on podcast/theme/deliberation have no inline mark, so the
- * unattributed-finding link goes to that section's page when the selector
- * recovered a single known section; otherwise to the old approval screen,
- * which lists every open finding. Pure props: no data hooks.
+ * Quick 261021-7aw: no fix sentences — the footer is ready whenever the run
+ * has finished. Pure props: no data hooks.
  */
 import type { ReactNode } from 'react'
 import Link from 'next/link'
@@ -19,9 +17,6 @@ import {
   NONE_SENTENCE,
   READY_SENTENCE,
   RUNNING_SENTENCE,
-  fixSentencePrefix,
-  unattributedClaimSentence,
-  unattributedFindingSentence,
 } from '@/lib/homeSections'
 import { COLLABORATOR_LOCK_LABEL, HELD_REASON } from '@/lib/publishChain'
 import { formatPublishedDate, type IssueHomeViewProps } from './IssueHomeView'
@@ -48,27 +43,10 @@ const DISABLED =
 const LINK = 'underline underline-offset-2 text-[color:var(--color-cobalt)]'
 const SMALL = 'font-[family-name:var(--font-ui)] text-[13px]'
 
-function joinLinks(items: Array<{ key: string; label: string; href: string | null }>): ReactNode[] {
-  const out: ReactNode[] = []
-  items.forEach((s, i) => {
-    if (i > 0) out.push(', ')
-    out.push(
-      s.href ? (
-        <Link key={s.key} href={s.href} className={LINK}>
-          {s.label}
-        </Link>
-      ) : (
-        s.label
-      ),
-    )
-  })
-  return out
-}
-
 export function PublishFooter(props: Props) {
   const { footer, gate, publishing, publishError, publishNotice, confirming, links, issueNumber } = props
   const ready = footer.kind === 'ready'
-  const hasButton = footer.kind === 'fix' || footer.kind === 'running' || ready
+  const hasButton = footer.kind === 'running' || ready
 
   let sentence: ReactNode
   switch (footer.kind) {
@@ -135,43 +113,6 @@ export function PublishFooter(props: Props) {
         <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">{READY_SENTENCE}</p>
       )
       break
-    case 'fix': {
-      const n = footer.notWritten.length
-      sentence = (
-        <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">
-          {footer.stories.length > 0 ? (
-            <>
-              {fixSentencePrefix(footer.stories.length)}
-              {joinLinks(footer.stories.map((s) => ({ key: s.id, label: s.label, href: s.href })))}.
-            </>
-          ) : null}
-          {n > 0 ? (
-            <>
-              {footer.stories.length > 0 ? ' ' : ''}
-              {n === 1 ? '1 story isn’t written yet: ' : `${n} stories aren’t written yet: `}
-              {joinLinks(footer.notWritten.map((s) => ({ key: s.id, label: s.label, href: `/s/${s.id}` })))}.
-            </>
-          ) : null}
-          {footer.unattributedClaims > 0 ? (
-            <>
-              {' '}
-              <Link href={links.factCheck ?? links.admin} className={LINK}>
-                {unattributedClaimSentence(footer.unattributedClaims)}
-              </Link>
-            </>
-          ) : null}
-          {footer.unattributedFindings > 0 ? (
-            <>
-              {' '}
-              <Link href={footer.unattributedFindingHref ?? links.approval ?? links.admin} className={LINK}>
-                {unattributedFindingSentence(footer.unattributedFindings)}
-              </Link>
-            </>
-          ) : null}
-        </p>
-      )
-      break
-    }
   }
 
   const showPreview = hasButton && links.preview != null

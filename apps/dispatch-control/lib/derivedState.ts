@@ -13,7 +13,7 @@
  * the `undefined` checks at the top of that function.
  */
 import { isOpenBlocking, isEditorFlagged } from '@convex/lib/claimGate'
-import { isOpenFinding } from './galley/findingState'
+import { isOpenFinding, type FindingResolution } from './galley/findingState'
 import { VOICE_AXES } from './galley/axisPartition'
 import { qaSectionToGalleyId } from './galley/sectionIdMap'
 import {
@@ -119,7 +119,7 @@ export interface DerivationInputs {
         reason: string
         suggestedFix?: string
         accepted?: boolean
-        resolution?: 'accepted' | 'dismissed' | null
+        resolution?: FindingResolution | null
         // Phase 43 Plan 43-03 (§43.5a, TSK-02) — additive. Already the
         // finding's creation time (Phase 5's `qaCorrections.timestamp`);
         // used as the QA-finding task's `openedAt`.

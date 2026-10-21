@@ -11,12 +11,12 @@
  * floor at 0 (never negative). `flagCounts` mirrors the same open-finding
  * filter to produce the per-severity chip counts shown alongside the bar.
  */
-import { isOpenFinding } from '@/lib/galley/findingState'
+import { isOpenFinding, type FindingResolution } from '@/lib/galley/findingState'
 
 export type QaFindingRow = {
   severity: 'info' | 'warning' | 'error'
   accepted?: boolean
-  resolution?: 'accepted' | 'dismissed' | null
+  resolution?: FindingResolution | null
 }
 
 /** Severity-weighted point deduction per OPEN finding (Claude's discretion, D-05). */
