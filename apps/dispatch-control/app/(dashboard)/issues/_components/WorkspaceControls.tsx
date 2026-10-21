@@ -106,7 +106,7 @@ export default function WorkspaceControls({ issueNumber: n }: WorkspaceControlsP
               onClick={handleReopen}
               className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-cobalt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]"
             >
-              Reopen
+              Release hold
             </button>
           </div>
         ) : showHoldDialog ? (

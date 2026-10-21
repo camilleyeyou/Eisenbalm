@@ -159,3 +159,28 @@ describe('InspectorProvider / revisePassage (§45 D-18)', () => {
     )
   })
 })
+
+describe('InspectorProvider revisionEnabled (quick 261021-ind)', () => {
+  function Probe() {
+    const { revisionEnabled } = useInspector()
+    return <span data-testid="rev">{String(revisionEnabled)}</span>
+  }
+
+  it('defaults to true (dashboard unchanged)', () => {
+    render(
+      <InspectorProvider>
+        <Probe />
+      </InspectorProvider>,
+    )
+    expect(screen.getByTestId('rev').textContent).toBe('true')
+  })
+
+  it('is false when the editor path passes revisionEnabled={false}', () => {
+    render(
+      <InspectorProvider revisionEnabled={false}>
+        <Probe />
+      </InspectorProvider>,
+    )
+    expect(screen.getByTestId('rev').textContent).toBe('false')
+  })
+})

@@ -7,7 +7,7 @@
  * stays byte-unchanged.
  *
  * Provider stack (Pitfall 3, 51-RESEARCH): `useInspector()` THROWS outside
- * an <InspectorProvider>, and the (dashboard) instance is not an ancestor
+ * an <InspectorProvider revisionEnabled={false}>, and the (dashboard) instance is not an ancestor
  * of this group. A second, independent instance is mounted here so D-22's
  * "Inspect how this was made" works on /s/[section]. Inspector state
  * deliberately does not persist across a navigation between the two

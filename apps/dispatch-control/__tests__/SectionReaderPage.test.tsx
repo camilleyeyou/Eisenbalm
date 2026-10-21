@@ -294,11 +294,11 @@ d('renders', () => {
     expect(screen.queryByText('No open findings in this section.')).toBeNull()
   })
 
-  it('states plainly that an exempt section carries no inline findings', async () => {
+  it('states plainly what an exempt section is, without implying findings to review', async () => {
     await renderSection('game')
     expect(
       await screen.findByText(
-        'This section renders as an interactive game — it carries no inline findings to review here.',
+        'This section renders as an interactive game — the agents check it as a whole.',
       ),
     ).toBeDefined()
   })
@@ -330,7 +330,7 @@ d('nav', () => {
     expect(screen.queryByText('Previous')).toBeNull()
   })
 
-  it('renders the derived still-need-you sentence', async () => {
+  it('quick 261021-ind: renders no "still need you" tally (nothing blocks Publish)', async () => {
     mockCurrentRun = {
       ...defaultCurrentRun(),
       derivationInputs: {
@@ -344,24 +344,13 @@ d('nav', () => {
             reason: 'Vague causal claim.',
             accepted: false,
           },
-          {
-            _id: 'q2',
-            severity: 'info',
-            axis: 'sentiment',
-            sectionName: 'problem',
-            reason: 'Could use a stronger verb.',
-            accepted: false,
-          },
         ],
       },
     }
     await renderSection('originStory')
-    expect(await screen.findByText('2 of 9 sections still need you.')).toBeDefined()
-    cleanup()
-
-    mockCurrentRun = { ...defaultCurrentRun(), derivationInputs: EMPTY_DERIVATION_INPUTS }
-    await renderSection('originStory')
-    expect(await screen.findByText('All 9 sections are clean — nothing needs you.')).toBeDefined()
+    await screen.findByText('The founder started in a garage in 1974.')
+    expect(screen.queryByText(/still need you/)).toBeNull()
+    expect(screen.queryByText(/nothing needs you/)).toBeNull()
   })
 })
 
@@ -375,6 +364,15 @@ d('in-place edit', () => {
     expect(screen.getByRole('textbox')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Save edit' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Cancel edit' })).toBeDefined()
+  })
+
+  it('quick 261021-ind: Edit text opens the editor at the SELECTED paragraph, not the first', async () => {
+    await renderSection('originStory')
+    await openEditorViaSelection('A single donor')
+
+    const box = screen.getByRole('textbox') as HTMLTextAreaElement
+    expect(box.value).toBe('A single donor changed everything in 1978.')
+    expect(screen.queryByText(/Opened the first paragraph/)).toBeNull()
   })
 
   it('Save edit calls patchSection with the current ifRevisionID for a long-read section', async () => {

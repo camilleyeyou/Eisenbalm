@@ -8,21 +8,21 @@
  * non-prose variants (`jingle`/`bigBudget` — `specAd` is annotated exactly
  * like the four long-reads). Each states plainly what it is rather than
  * looking empty or broken (D-14) — the exact strings below are quoted
- * verbatim from 51-UI-SPEC.md's Navigation & Section States Contract; never
- * paraphrased.
+ * from 51-UI-SPEC.md's Navigation & Section States Contract; quick 261021-ind
+ * reworded the tail so it no longer implies findings to review.
  */
 
 const EXEMPT_NOTES = {
-  game: 'This section renders as an interactive game — it carries no inline findings to review here.',
-  podcast: 'This section is an audio player — it carries no inline findings to review here.',
+  game: 'This section renders as an interactive game — the agents check it as a whole.',
+  podcast: 'This section is an audio player — the agents check it as a whole.',
   theme:
-    "This section sets the issue's color and font palette — it carries no inline findings to review here.",
+    "This section sets the issue's color and font palette — the agents check it as a whole.",
   'deliberation-conversation':
-    "This section shows the agents' deliberation as a conversation — it carries no inline findings to review here.",
+    "This section shows the agents' deliberation as a conversation — the agents check it as a whole.",
   'bonus-jingle':
-    "This week's bonus is an audio jingle — it carries no inline findings to review here.",
+    "This week's bonus is an audio jingle — the agents check it as a whole.",
   'bonus-bigBudget':
-    "This week's bonus is a storyboard set — it carries no inline findings to review here.",
+    "This week's bonus is a storyboard set — the agents check it as a whole.",
 } as const
 
 export type ExemptSectionKind = keyof typeof EXEMPT_NOTES

@@ -50,8 +50,6 @@
 import AppSidebar from '@/components/AppSidebar'
 import Masthead from '@/components/Masthead'
 import MobileNavDrawer from '@/components/MobileNavDrawer'
-import AutoPublishBanner from './_components/AutoPublishBanner'
-import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { InspectorProvider } from '@/components/inspector/InspectorProvider'
 import { OnboardingProvider } from '@/components/onboarding/OnboardingProvider'
 import OnboardingTour from '@/components/onboarding/OnboardingTour'
@@ -80,10 +78,8 @@ export default function DashboardLayout({
               <div className="flex flex-1 overflow-hidden">
                 <AppSidebar />
                 <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
-                  {/* Persistent red banner when auto_publish is enabled — RVW-04 */}
-                  <div className="mb-4 shrink-0 empty:mb-0">
-                    <AutoPublishBanner workspace_id={DEFAULT_WORKSPACE_ID} />
-                  </div>
+                  {/* Hidden per quick 261021-ind (auto-publish returns later):
+                      the AutoPublishBanner (RVW-04) is not mounted. */}
                   {children}
                 </main>
               </div>

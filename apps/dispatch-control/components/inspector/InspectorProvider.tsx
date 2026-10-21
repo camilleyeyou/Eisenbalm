@@ -51,11 +51,23 @@ export interface InspectorContextValue {
   requestRevision: (passage: RevisionPassageRequest) => void
   /** Clears the shared revision-request passage (apply/discard/close). */
   clearRevisePassage: () => void
+  /**
+   * Quick 261021-ind — false on the editor path (`(editorial)`), where nothing
+   * mounts RevisionFlow, so "Ask agent to revise" would be a silent no-op.
+   * Defaults to true (dashboard behavior unchanged).
+   */
+  revisionEnabled: boolean
 }
 
 const InspectorContext = createContext<InspectorContextValue | null>(null)
 
-export function InspectorProvider({ children }: { children: ReactNode }) {
+export function InspectorProvider({
+  children,
+  revisionEnabled = true,
+}: {
+  children: ReactNode
+  revisionEnabled?: boolean
+}) {
   const [activeKey, setActiveKey] = useState<InspectorArtifactKey | null>(null)
   const [revisePassage, setRevisePassage] = useState<RevisionPassageRequest | null>(null)
 
@@ -86,8 +98,17 @@ export function InspectorProvider({ children }: { children: ReactNode }) {
       revisePassage,
       requestRevision,
       clearRevisePassage,
+      revisionEnabled,
     }),
-    [activeKey, openInspector, closeInspector, revisePassage, requestRevision, clearRevisePassage],
+    [
+      activeKey,
+      openInspector,
+      closeInspector,
+      revisePassage,
+      requestRevision,
+      clearRevisePassage,
+      revisionEnabled,
+    ],
   )
 
   return (

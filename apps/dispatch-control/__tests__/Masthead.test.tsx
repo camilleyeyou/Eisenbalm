@@ -235,32 +235,26 @@ describe('Masthead', () => {
     expect(container.textContent).toContain('$12.40 / $200')
   })
 
-  it('renders "Human approval required" when auto_publish is false (D-26 rename)', () => {
-    mockMasthead({
-      latest: { status: 'running', runId: 'run-1', startedAt: 1 },
-      pipelineRun: { issueNumber: 42 },
-      configRows: [{ key: 'auto_publish', value: 'false' }],
-    })
-
-    renderMasthead()
-    expect(screen.getByText('Human approval required')).toBeDefined()
+  it('quick 261021-ind: renders no auto-publish chip in either state (hidden until auto-publish returns)', () => {
+    for (const value of ['false', 'true']) {
+      mockMasthead({
+        latest: { status: 'running', runId: 'run-1', startedAt: 1 },
+        pipelineRun: { issueNumber: 42 },
+        configRows: [{ key: 'auto_publish', value }],
+      })
+      const { unmount } = renderMasthead()
+      expect(screen.queryByText('Human approval required')).toBeNull()
+      expect(screen.queryByText(/Publishing automatically/)).toBeNull()
+      unmount()
+    }
   })
 
-  it('renders the reframed ON alert (not switch-framed) with loud vermilion treatment, pointing at Administration (Phase 50-03 D-16)', () => {
-    mockMasthead({
-      latest: { status: 'running', runId: 'run-1', startedAt: 1 },
-      pipelineRun: { issueNumber: 42 },
-      configRows: [{ key: 'auto_publish', value: 'true' }],
-    })
-
+  it('quick 261021-ind: the DISPATCH/CONTROL wordmark links back to /', () => {
+    mockMasthead({})
     renderMasthead()
-    // The ON case never reads as a switch flipped here ("Auto-publish
-    // ON/OFF") — it names where the setting lives (D-16).
-    expect(screen.queryByText(/Auto-publish ON/)).toBeNull()
-    const chip = screen.getByText(/Publishing automatically/)
-    expect(chip).toBeDefined()
-    expect(chip.textContent).toContain('managed in Administration')
-    expect(chip.className).toContain('var(--color-vermilion)')
+    const link = screen.getByRole('link', { name: /back to this week.s issue/i })
+    expect(link.getAttribute('href')).toBe('/')
+    expect(link.textContent).toContain('DISPATCH')
   })
 
   it('renders "Issue 42" when pipelineRuns.byRunId resolves an issueNumber', () => {

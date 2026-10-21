@@ -36,7 +36,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     title: 'The weekly loop',
-    body: 'An issue moves Story → Draft → Fact Check → Voice → Approval → Publish. You make the calls; the pipeline does the legwork. Start on Issues. (Collaborators review and comment, not publish.)',
+    body: 'The agents write and check every story and fix what they find. You read and edit anything. The Editor-in-chief presses Publish. Anyone can put the issue on hold. Start on the issue page (the front page of this app). (Collaborators review and comment, not publish.)',
   },
   {
     title: 'How to use',
@@ -62,15 +62,15 @@ export const STAGE_HINTS: Record<StageSegment, StageHintCopy> = {
   },
   'fact-check': {
     label: 'FACT CHECK',
-    body: 'The agents extracted factual claims from the draft. Your job: verify or dismiss each one. Publishing is blocked until errors are cleared.',
+    body: 'The agents extracted factual claims from the draft and fixed what the sources contradict. Your job, if you want it: read the verdicts. Nothing here blocks Publish.',
   },
   voice: {
     label: 'VOICE',
-    body: 'The one thing only you can do. Your job: de-slop the machine-tells, then mark it Sounds human.',
+    body: 'The agents de-slop the machine-tells. Your job, if you want it: read the voice and edit anything that still reads wrong.',
   },
   approval: {
     label: 'APPROVAL',
-    body: 'Both Facts cleared and Sounds human are required. Your job: give the final sign-off, then publish. (Collaborators review and comment, not publish.)',
+    body: 'Nothing is required here. When the issue is ready and not on hold, the Editor-in-chief publishes. (Collaborators review and comment, not publish.)',
   },
 }
 
@@ -84,8 +84,8 @@ export interface StageSummary {
 
 export const STAGE_SUMMARIES: StageSummary[] = [
   { segment: 'story', label: 'Story', body: 'Pick or steer the lead.' },
-  { segment: 'draft', label: 'Draft', body: 'Read what the writers produced.' },
-  { segment: 'fact-check', label: 'Fact Check', body: 'Verify or dismiss every claim.' },
-  { segment: 'voice', label: 'Voice', body: 'De-slop the machine-tells, then mark it Sounds human.' },
-  { segment: 'approval', label: 'Approval', body: 'Both greens required, then publish.' },
+  { segment: 'draft', label: 'Draft', body: 'Read and edit what the writers produced.' },
+  { segment: 'fact-check', label: 'Fact Check', body: 'Read the claim verdicts.' },
+  { segment: 'voice', label: 'Voice', body: 'Read the voice; edit what reads wrong.' },
+  { segment: 'approval', label: 'Approval', body: 'Publish when ready and not on hold.' },
 ]

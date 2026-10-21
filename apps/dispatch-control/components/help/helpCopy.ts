@@ -18,9 +18,9 @@
 export const HELP_COPY = {
   issuesHome: {
     statusChip:
-      'Where this issue sits in the weekly loop. "Needs review" means a stage is waiting on you; "Ready to publish" means both sign-offs are cleared.',
+      'Where this issue sits in the weekly loop. "Ready to publish" means the agents have finished and the issue is not on hold.',
     claimCoverage:
-      'How many factual claims the fact-checkers have resolved. Publishing stays blocked until every claim is verified or dismissed.',
+      'How many factual claims the fact-checkers have checked. The agents remove or fix what the sources contradict. None of this blocks Publish.',
     scheduledSlot:
       'The next issue number, already reserved. "Start early" kicks off its pipeline run now instead of waiting for the Thursday schedule.',
   },
@@ -31,7 +31,7 @@ export const HELP_COPY = {
     stageTabs:
       'Each stage shows its own state — not started, in progress, needs you, or clean. Work them left to right.',
     // inline (Hold/Reopen area)
-    hold: 'Pause this issue so the pipeline stops advancing it. Nothing is lost — Reopen resumes where it left off.',
+    hold: 'Put this issue on hold so it cannot be published. Nothing is lost. Anyone signed in can release the hold.',
   },
   story: {
     ranking:
@@ -44,17 +44,17 @@ export const HELP_COPY = {
       "Remove this lead from consideration, with a reason. The reason is written to the decision log and the pipeline won't pick it.",
   },
   factCheck: {
-    claimMark: 'Mark each claim Verified or Dismissed. Anything left as an error blocks publishing.',
+    claimMark: 'Read each claim and its verdict. Verifying or dismissing is optional and does not affect Publish.',
   },
   voice: {
     galley:
-      "Open machine-tells jump into the draft to fix. Edit in the galley and re-check — the sign-off stays blocked until they're cleared.",
+      'The agents fix machine-tells before you see the draft. Anything left jumps into the draft so you can edit it. Nothing here blocks Publish.',
     soundsHuman:
-      'Mark it "Sounds human" once the voice reads clean — one of the two sign-offs Approval requires.',
+      'Optional. A record that you read it and it sounds human. It does not affect Publish.',
   },
   approval: {
     twoSignOff:
-      'Publishing needs both greens: Facts cleared (every claim resolved) and Sounds human (voice signed off).',
+      'The agents write and check every story and fix what they find. The Editor-in-chief presses Publish. Anyone can put the issue on hold.',
     // inline
     publish: 'Publishing pushes the issue live to the public site. Collaborators can review and comment, not publish.',
   },

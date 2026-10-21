@@ -15,7 +15,6 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AutomationPanel from './_components/AutomationPanel'
-import AutoPublishToggle from './_components/AutoPublishToggle'
 import BudgetCapsPanel from './_components/BudgetCapsPanel'
 
 // quick 260723-4a6 (Task 1e): Server Component route — static title.
@@ -31,14 +30,9 @@ export default async function ConfigPage() {
       {/* Panel 1 — Automation */}
       <AutomationPanel workspace_id={workspace_id} />
 
-      {/* Panel 1b — Advanced subsection (auto_publish). Below AutomationPanel per UI-SPEC Screen 4.
-          The border-t separator visually connects it to the automation section. */}
-      <div className="rounded-none border border-[color:var(--color-ink)]/15 bg-[color:var(--color-card)] p-5">
-        <div className="border-t border-[color:var(--color-ink)]/15 mt-4 pt-4">
-          <p className="text-xs text-[color:var(--color-faint)] uppercase tracking-wide mb-4">Advanced</p>
-          <AutoPublishToggle workspace_id={workspace_id} />
-        </div>
-      </div>
+      {/* Hidden per quick 261021-ind (auto-publish returns later): the
+          Panel 1b AutoPublishToggle is not mounted; the component and the
+          auto_publish config key remain. */}
 
       {/* Panel 2 — Budget Caps */}
       <BudgetCapsPanel workspace_id={workspace_id} />

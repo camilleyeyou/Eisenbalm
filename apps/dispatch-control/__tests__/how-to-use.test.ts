@@ -25,8 +25,8 @@ describe('How-to-use screen (source-scan)', () => {
     const steps = [
       'Steer discovery',
       'Watch the run',
-      'Clear the facts',
-      'De-slop it',
+      'Read the facts',
+      'Read the voice',
       'Improve the machine',
     ]
 

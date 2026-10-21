@@ -26,6 +26,7 @@
  * but is a real action, not a check.
  */
 import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
+import Link from 'next/link'
 import ReplayTourButton from '@/components/onboarding/ReplayTourButton'
 
 const WEEKLY_LOOP = [
@@ -61,30 +62,30 @@ const WEEKLY_LOOP = [
   },
   {
     n: 3,
-    title: 'Clear the facts',
+    title: 'Read the facts',
     screen: 'Fact Check',
     body: (
       <>
-        Read the issue as the reader will. Every error in the rail must be
-        resolved — <b>Accept fix</b>, edit inline, or dismiss with a one-line
-        reason.{' '}
+        The agents check every claim and fix or remove what the sources
+        contradict before you see the draft. Read the issue as the reader will.{' '}
         <b className="text-[color:var(--color-marigold-text)]">Marigold</b>{' '}
         underlines are sourced claims (hover for the source); a{' '}
         <b className="text-[color:var(--color-vermilion)]">rust</b> tint means
-        unsourced. Publish stays locked until the Must fix list is empty.
+        unsourced. Edit anything you disagree with. Nothing here blocks
+        Publish.
       </>
     ),
   },
   {
     n: 4,
-    title: 'De-slop it',
+    title: 'Read the voice',
     screen: 'Voice Pass',
     body: (
       <>
-        The one thing only you can do. Machine-tells are lit inline; accept a
-        rewrite, write your own, or keep it. When it reads like a person
-        wrote it, hit <b>Sounds human</b> — a sign-off <b>separate</b> from
-        the facts. Publish needs both greens.
+        The agents rewrite the machine-tells. Any that remain are lit inline;
+        edit them or leave them. <b>Sounds human</b> is an optional record that
+        you read it. When the issue is ready and not on hold, the
+        Editor-in-chief publishes.
       </>
     ),
   },
@@ -168,10 +169,18 @@ export default function HowToUsePage() {
           The weekly loop
         </h2>
         <p className="mb-5 max-w-[64ch] font-[family-name:var(--font-body)] text-[15.5px] leading-relaxed text-[color:var(--color-ink-soft)]">
-          The pipeline does the legwork; you make the calls. Five moments, in
-          order. Anything waiting on you always shows up in the{' '}
+          The agents write and check every story and fix what they find. You
+          read and edit anything. The Editor-in-chief presses Publish. Anyone
+          can put the issue on hold. Anything waiting on you shows up in the{' '}
           <b className="text-[color:var(--color-vermilion)]">Awaiting you</b>{' '}
           chip, top-right, from any screen.
+        </p>
+        <p className="mb-5 max-w-[64ch] font-[family-name:var(--font-body)] text-[15.5px] leading-relaxed text-[color:var(--color-ink-soft)]">
+          The issue page,{' '}
+          <Link href="/" className="font-semibold text-[color:var(--color-cobalt)] underline">
+            /
+          </Link>
+          , is where you read, edit and publish.
         </p>
 
         <div className="grid gap-0">

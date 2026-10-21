@@ -82,6 +82,8 @@ export interface InspectorFooterProps {
    * false-live button.
    */
   onAskToRevise?: () => void
+  /** Quick 261021-ind — do not render the "Ask agent to revise" row at all (editor path). */
+  hideRevise?: boolean
   /**
    * Phase 50 (WBN-04, D-13) — this artifact's galley/draft section id (the
    * SAME value already passed to `InspectorPanel`, e.g. "founderBio").
@@ -248,6 +250,7 @@ export function InspectorFooter({
   agentKey,
   runId,
   onAskToRevise,
+  hideRevise = false,
   sectionName,
   excerpt,
 }: InspectorFooterProps) {
@@ -291,12 +294,14 @@ export function InspectorFooter({
         disabledTitle={NOT_EXTERNALIZED_TITLE}
       />
       <FooterAction icon={Waypoints} label="Prior & downstream steps" href="/run-monitor/graph" />
-      <FooterAction
-        icon={MessageSquarePlus}
-        label="Ask agent to revise"
-        onClick={onAskToRevise}
-        disabledTitle={REVISE_NOT_AVAILABLE_TITLE}
-      />
+      {!hideRevise && (
+        <FooterAction
+          icon={MessageSquarePlus}
+          label="Ask agent to revise"
+          onClick={onAskToRevise}
+          disabledTitle={REVISE_NOT_AVAILABLE_TITLE}
+        />
+      )}
       <RestartFooterAction runId={runId} agentKey={agentKey} />
     </div>
   )

@@ -141,6 +141,8 @@ export interface InspectorPanelProps {
    * renders honestly reserved rather than a false-live dead button.
    */
   onRequestRevision?: (passage: InspectorRevisionPassage) => void
+  /** Quick 261021-ind — omit the "Ask agent to revise" footer row entirely. */
+  hideRevise?: boolean
 }
 
 const TABS = [
@@ -498,6 +500,7 @@ export function InspectorPanel({
   sectionBlocks,
   sectionName,
   onRequestRevision,
+  hideRevise,
 }: InspectorPanelProps) {
   // Seven tabs are client state; Summary is the default. Technical (raw
   // JSON) is NEVER the initial value anywhere (INS-02, D-07).
@@ -600,6 +603,7 @@ export function InspectorPanel({
         agentKey={agentKey}
         runId={runId}
         onAskToRevise={onAskToRevise}
+        hideRevise={hideRevise}
         sectionName={sectionName}
         excerpt={quotedText || undefined}
       />

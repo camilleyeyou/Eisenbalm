@@ -241,7 +241,6 @@ export default function Masthead() {
   const configRows = useQuery(api.pipelineConfig.getAll, { workspace_id: DEFAULT_WORKSPACE_ID })
 
   const cap = readConfigValue<number>(configRows, 'monthly_cap_usd')
-  const autoPublish = readConfigValue<boolean>(configRows, 'auto_publish')
 
   const { issueNumber, issueStatus, derivationInputs, title: issueTitle, state: runState } = currentRun
   const taskCount = deriveTasks(derivationInputs).length
@@ -257,9 +256,13 @@ export default function Masthead() {
     <header className="flex h-[52px] items-center gap-3 bg-[color:var(--color-ink)] pl-[52px] pr-3 text-[color:var(--color-masthead-text)] md:gap-4 md:pl-[22px] md:pr-[22px]">
       {/* Wordmark — shrink-0 bookend; compacts below md so the hamburger +
           wordmark + right cluster all fit a phone width. */}
-      <span className="shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[13px] font-bold tracking-[.03em] md:text-[15.5px]">
+      <Link
+        href="/"
+        aria-label="Back to this week's issue"
+        className="shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[13px] font-bold tracking-[.03em] text-inherit no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] md:text-[15.5px]"
+      >
         DISPATCH<span className="text-[color:var(--color-vermilion)]">/</span>CONTROL
-      </span>
+      </Link>
 
       {/* quick 260722-v01 follow-up: the middle readouts live in a min-w-0
           flex-1 strip that scrolls horizontally on narrow screens (scrollbar
@@ -331,23 +334,7 @@ export default function Masthead() {
           </span>
         )}
 
-        {/* Auto-publish chip — D-26 rename (Phase 40) + D-16 reframe (Phase
-            50-03). OFF is the safe/expected state ("Human approval required",
-            quiet reassurance). ON is an honest alert — never switch-framed as
-            something flipped here — pointing at where the setting actually
-            lives (Administration / Config); keeps the existing loud vermilion
-            treatment. */}
-        {autoPublish !== undefined && (
-          <span
-            className={
-              autoPublish
-                ? 'shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-vermilion)]'
-                : 'shrink-0 whitespace-nowrap font-[family-name:var(--font-ui)] text-[10.5px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-green)]'
-            }
-          >
-            {autoPublish ? 'Publishing automatically — managed in Administration' : 'Human approval required'}
-          </span>
-        )}
+        {/* Auto-publish chip hidden per quick 261021-ind (auto-publish returns later). */}
       </ScrollHintRow>
 
       {/* quick 260723-4a6 (Task 2c): the discoverable ⌘K chip — opens the

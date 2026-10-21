@@ -138,7 +138,7 @@ export function InspectorContainer({ artifactKey, onClose }: InspectorContainerP
   // footer both call the SAME `requestRevision`, so either entry point opens
   // the SAME `RevisionFlow` instance (mounted by whichever surface owns
   // `reloadDraft` — never mounted here, InspectorProvider's own doc-comment).
-  const { requestRevision } = useInspector()
+  const { requestRevision, revisionEnabled } = useInspector()
 
   // 1. Pure resolution (44-03) — no data dependency. `step.promptKey` is
   // already correct for every artifact type except `bonus`, whose variant
@@ -288,7 +288,8 @@ export function InspectorContainer({ artifactKey, onClose }: InspectorContainerP
       onClose={onClose}
       sectionBlocks={sectionBlocks}
       sectionName={sectionName}
-      onRequestRevision={requestRevision}
+      onRequestRevision={revisionEnabled ? requestRevision : undefined}
+      hideRevise={!revisionEnabled}
     />
   )
 }

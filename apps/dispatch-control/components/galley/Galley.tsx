@@ -133,6 +133,12 @@ interface GalleyProps {
   /** D-08 edit-inline deep-link into the section editor. */
   onEditSection: (sectionId: string, findingId?: string) => void
   /**
+   * Quick 261021-ind — optional. When provided, the PassageToolbar's "Edit
+   * text" opens the editor at the selected paragraph instead of the section
+   * fallback.
+   */
+  onEditBlock?: (sectionId: string, blockIndex: number) => void
+  /**
    * Phase 44 (INS-01) — opens the shared "Inspect how this was made" panel
    * on this section's founder artifact. Optional; forwarded unmodified to
    * every `GallerySection`. Undefined leaves today's render unaffected.
@@ -263,6 +269,7 @@ export default function Galley({
   revisionId,
   reloadDraft,
   onEditSection,
+  onEditBlock,
   onInspect,
   onRevise,
   onRelatedFacts,
@@ -434,7 +441,9 @@ export default function Galley({
       <PassageToolbar
         containerRef={containerRef}
         onRevise={onRevise}
-        onEditText={(sel) => onEditSection(sel.sectionId)}
+        onEditText={(sel) =>
+          onEditBlock ? onEditBlock(sel.sectionId, sel.blockIndex) : onEditSection(sel.sectionId)
+        }
         onRelatedFacts={onRelatedFacts}
         onInspect={onInspect}
         hideRevise={hideFindings}

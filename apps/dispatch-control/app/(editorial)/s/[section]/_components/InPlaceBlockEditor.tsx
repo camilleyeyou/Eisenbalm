@@ -134,8 +134,7 @@ export default function InPlaceBlockEditor({
           className="galley-body"
           style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--color-ink-soft)', margin: 0 }}
         >
-          Opened the first paragraph of this section — use "Edit myself" on a specific finding for a
-          precise target.
+          Opened the first paragraph of this section.
         </p>
       )}
       <span style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>

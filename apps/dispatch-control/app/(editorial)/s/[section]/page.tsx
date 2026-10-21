@@ -332,10 +332,21 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
   )
 
   // Phase 51 (READ-05, D-18/D-19) — hand-editing entry point (the
-  // PassageToolbar "Edit text" action). No finding reaches it any more, so it
-  // opens on the first block with a plain fallback note.
+  // PassageToolbar "Edit text" action). Quick 261021-ind: opens on the
+  // selected paragraph (`onEditBlock`); this section-level fallback opens the
+  // first block with a plain note.
   function openInPlaceEditor(targetSectionId: string) {
     setEditingTarget({ sectionId: targetSectionId, blockIndex: 0, isFallback: true })
+  }
+
+  function openInPlaceEditorAtBlock(targetSectionId: string, blockIndex: number) {
+    const n = blocksForSection(targetSectionId).length
+    const valid = blockIndex >= 0 && blockIndex < n
+    setEditingTarget({
+      sectionId: targetSectionId,
+      blockIndex: valid ? blockIndex : 0,
+      isFallback: !valid,
+    })
   }
 
   return (
@@ -355,6 +366,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
           showProvenance
           markSourcedClaims={false}
           onEditSection={openInPlaceEditor}
+          onEditBlock={openInPlaceEditorAtBlock}
           onInspect={(id) => openInspector({ type: 'founder', runId, locator: id })}
           onRelatedFacts={setRelatedFacts}
         />
@@ -414,7 +426,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
         </div>
       )}
 
-      <SectionEndNav sectionId={sectionId} derivationInputs={derivationInputs} draftSectionIds={draftSectionIds} />
+      <SectionEndNav sectionId={sectionId} />
     </div>
   )
 }

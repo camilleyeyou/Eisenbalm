@@ -128,3 +128,15 @@ describe('InspectorFooter (WBN-04, D-13 regression) — "Improve this agent →"
     expect(link.getAttribute('href')).toBe('/prompt-lab/game')
   })
 })
+
+describe('InspectorFooter — hideRevise (quick 261021-ind)', () => {
+  it('renders the "Ask agent to revise" row by default', () => {
+    renderFooter(<InspectorFooter promptKey="game" agentKey="game" runId="run-1" />)
+    expect(screen.getByText('Ask agent to revise')).toBeDefined()
+  })
+
+  it('omits the "Ask agent to revise" row entirely when hideRevise is set', () => {
+    renderFooter(<InspectorFooter promptKey="game" agentKey="game" runId="run-1" hideRevise />)
+    expect(screen.queryByText('Ask agent to revise')).toBeNull()
+  })
+})

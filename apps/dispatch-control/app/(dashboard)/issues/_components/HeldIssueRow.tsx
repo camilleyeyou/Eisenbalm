@@ -65,7 +65,7 @@ export default function HeldIssueRow({ issue }: HeldIssueRowProps) {
         onClick={handleReopen}
         className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-cobalt)]"
       >
-        Reopen
+        Release hold
       </button>
     </div>
   )
