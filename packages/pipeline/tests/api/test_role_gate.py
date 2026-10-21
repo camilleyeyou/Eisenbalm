@@ -1,14 +1,15 @@
 """Phase 49 (ROL-01/ROL-02, docs/API_CONTRACTS.md §49.4) — server-side role
-gate coverage for the four FastAPI-gated actions:
+gate coverage for the five FastAPI-gated actions:
 
   POST /issues/{run_id}/revise/apply                       (revision.py)
   POST /issues/{run_id}/claims/{claim_index}/evidence/apply (factcheck.py)
   POST /issues/{run_id}/sign-off  kind="sounds-human"       (signoffs.py)
   POST /issues/{run_id}/publish                             (review.py)
+  POST /issues/{run_id}/schedule                            (review.py)
 
 Proves:
   - a Collaborator-role token is rejected 403 {reason:"forbidden_role"} on
-    all four routes.
+    all five routes.
   - an Editor-in-chief-role token reaches each route's normal
     success/precondition path (never 403).
   - the local-dev sentinel ({"sub":"local-dev-operator"}, CLERK_JWT_ISSUER_
@@ -183,6 +184,13 @@ _ROUTE_CASES = [
         "eisenbalm_pipeline.api.review",
         "/issues/run-abc/publish",
         None,
+    ),
+    (
+        "schedule_issue",
+        _review_client,
+        "eisenbalm_pipeline.api.review",
+        "/issues/run-abc/schedule",
+        {"scheduledAt": 4102444800000},
     ),
 ]
 

@@ -5,10 +5,12 @@ Three Clerk-JWT-guarded POST routes for the dispatch-control dashboard:
   POST /issues/{run_id}/schedule  — approve + schedule for future publish
   POST /issues/{run_id}/reject    — reject (run stays awaiting-review)
 
-Security: schedule/reject use Depends(_require_clerk_jwt_control) — dev-mode
+Security: reject uses Depends(_require_clerk_jwt_control) — dev-mode
 sentinel when CLERK_JWT_ISSUER_DOMAIN is unset (same guard as api/control.py).
-publish additionally requires Editor-in-chief (Phase 49, ROL-02, §49.4) via
-the `_require_editor` dependency — one of the six server-gated actions.
+publish AND schedule require Editor-in-chief (Phase 49, ROL-02, §49.4) via
+the `_require_editor` dependency. Schedule is gated because the tick sweep
+(api/control.py) auto-publishes due scheduled runs via `_flip_sanity_published`,
+so scheduling is a deferred publish and must carry the same role gate.
 
 Every decision writes:
   - a reviewActions:record row (canonical action vocabulary §26.5)
@@ -184,7 +186,7 @@ async def schedule_issue(
     request: Request,
     run_id: str,
     body: _ScheduleBody,
-    claims: dict = Depends(_require_clerk_jwt_control),
+    claims: dict = Depends(_require_editor),
 ) -> dict:
     """Approve and schedule a run for future publish.
 
