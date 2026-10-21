@@ -27,17 +27,16 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Optional
 from uuid import uuid4
 
-import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from eisenbalm_pipeline.agents.qa import judge as judge_module
-from eisenbalm_pipeline.api.auth import _deployed, require_clerk_jwt
+from eisenbalm_pipeline.api.auth import dev_mode_claims, verify_clerk_token
 from eisenbalm_pipeline.lib import convex_client
 from eisenbalm_pipeline.lib.openrouter_client import acomplete
 
@@ -64,21 +63,15 @@ async def _require_operator(
     dev-mode sentinel path is reachable header-free (24-RESEARCH Pattern 5 +
     test_test_run.py: "no auth header is needed for these isolation tests").
     """
-    if not os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
-        if _deployed():
-            raise HTTPException(
-                status_code=500,
-                detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
-            )
-        # Local-dev / stub: same sentinel require_clerk_jwt returns.
-        return {"sub": "local-dev-operator"}
+    sentinel = dev_mode_claims()
+    if sentinel is not None:
+        return sentinel
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
-    # Delegate real verification to the canonical Clerk guard.
-    return await require_clerk_jwt(credentials)
+    return await verify_clerk_token(credentials.credentials)
 
 
 # ── Canned fixtures (input mode 4, D-04) ──────────────────────────────────────

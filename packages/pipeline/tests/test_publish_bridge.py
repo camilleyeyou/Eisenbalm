@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-import sys
 import types
 from unittest.mock import AsyncMock, MagicMock
 
@@ -68,7 +67,7 @@ def _make_jwt_mock(
     def get_unverified_header(token):  # noqa: ARG001
         return unverified_header
 
-    def decode(token, key, algorithms, options):  # noqa: ARG001
+    def decode(token, key, algorithms=None, options=None, **kwargs):  # noqa: ARG001
         if decode_raises is not None:
             raise decode_raises
         return decode_returns or {}
@@ -91,9 +90,8 @@ def _set_role_claims(monkeypatch, *, role: str | None, sub: str = "user_x"):
     claims = {"sub": sub}
     if role is not None:
         claims["role"] = role
-    monkeypatch.setitem(
-        sys.modules,
-        "jwt",
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.auth.jwt",
         _make_jwt_mock(
             unverified_header={"kid": "k1", "alg": "RS256"},
             decode_returns=claims,

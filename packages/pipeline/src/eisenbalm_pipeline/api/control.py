@@ -21,7 +21,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import time
 from typing import Any, Optional
 
@@ -33,7 +32,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
-from eisenbalm_pipeline.api.auth import _deployed
+from eisenbalm_pipeline.api.auth import dev_mode_claims, verify_clerk_token
 from eisenbalm_pipeline.api.runs import (
     ResumeSelection,
     RunWeeklyBody,
@@ -93,44 +92,15 @@ async def _require_clerk_jwt_control(
       - Credentials are required (missing header → 401).
       - Token is verified via the full Clerk JWKS path in api/auth.py.
     """
-    if not os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
-        if _deployed():
-            raise HTTPException(
-                status_code=500,
-                detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
-            )
-        log.warning(
-            "CLERK_JWT_ISSUER_DOMAIN unset — skipping Clerk JWT check "
-            "(local dev). Set it in any deployed environment."
-        )
-        return {"sub": "local-dev-operator"}
-
+    sentinel = dev_mode_claims()
+    if sentinel is not None:
+        return sentinel
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
-    # Delegate full verification to the canonical auth module.
-    from eisenbalm_pipeline.api.auth import _fetch_public_key  # noqa: PLC0415
-    import jwt  # noqa: PLC0415
-    token = credentials.credentials
-    try:
-        header = jwt.get_unverified_header(token)
-        public_key = await asyncio.to_thread(_fetch_public_key, header["kid"])
-        claims = jwt.decode(
-            token,
-            public_key,
-            algorithms=["RS256"],
-            options={"verify_aud": False},
-        )
-        return claims
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
-    except HTTPException:
-        raise
-    except Exception as exc:  # noqa: BLE001
-        log.warning("Clerk JWT verification failed: %r", exc)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    return await verify_clerk_token(credentials.credentials)
 
 
 # ── Role authorization dependency (Phase 49, ROL-01/ROL-02, §49.4) ────────

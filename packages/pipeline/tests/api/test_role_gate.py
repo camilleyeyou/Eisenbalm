@@ -26,19 +26,12 @@ FAIL until Task 2 wires `_require_editor` in. This is the expected RED
 state; the facts-cleared-is-open case and the sentinel-regression cases are
 expected to pass even at RED (they assert the absence of a 403).
 
-Patch-target note (49-RESEARCH "Testing the rejection (FastAPI)"): reusing
-`_make_jwt_mock` from test_clerk_auth.py's construction. Empirically verified
-(see deviation log in 49-03-SUMMARY.md) that `_require_clerk_jwt_control`
-(api/control.py) does a LOCAL `import jwt` inside its function body, not a
-module-level import — so `monkeypatch.setattr(<control module>, "jwt", ...)`
-has NO effect (the local import re-fetches straight from
-`sys.modules['jwt']` at call time, ignoring any attribute set on the module
-object). The correct, verified patch target is `sys.modules['jwt']` itself
-(via `monkeypatch.setitem`), alongside
-`eisenbalm_pipeline.api.auth._fetch_public_key` (which the local
-`from eisenbalm_pipeline.api.auth import _fetch_public_key` DOES pick up,
-since a `from X import Y` statement performs a live attribute lookup on the
-module object at call time).
+Patch-target note: Clerk verification is centralised in
+`eisenbalm_pipeline.api.auth.verify_clerk_token`, which uses the module-level
+`jwt` of auth.py. The mocked jwt is therefore installed with
+`monkeypatch.setattr("eisenbalm_pipeline.api.auth.jwt", ...)`, alongside
+`eisenbalm_pipeline.api.auth._fetch_public_key` (looked up as a module global
+at call time).
 """
 from __future__ import annotations
 
@@ -71,7 +64,7 @@ def _make_jwt_mock(
     def get_unverified_header(token):  # noqa: ARG001
         return unverified_header
 
-    def decode(token, key, algorithms, options):  # noqa: ARG001
+    def decode(token, key, algorithms=None, options=None, **kwargs):  # noqa: ARG001
         if decode_raises is not None:
             raise decode_raises
         return decode_returns or {}
@@ -97,9 +90,8 @@ def _set_role_claims(monkeypatch, *, role: str | None, sub: str = "user_x"):
     claims = {"sub": sub}
     if role is not None:
         claims["role"] = role
-    monkeypatch.setitem(
-        sys.modules,
-        "jwt",
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.api.auth.jwt",
         _make_jwt_mock(
             unverified_header={"kid": "k1", "alg": "RS256"},
             decode_returns=claims,

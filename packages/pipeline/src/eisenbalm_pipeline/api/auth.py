@@ -14,7 +14,8 @@ Design mirrors _require_trigger_secret() in api/runs.py:
     returns a sentinel dict {"sub": "local-dev-operator"} so local dev
     and the test suite work without live Clerk.
   - If the env var is set, verifies the JWT against Clerk's JWKS endpoint
-    (RS256, no aud check — Clerk tokens have no standard aud claim).
+    (RS256; issuer match, required exp/iat/sub, 30s leeway, azp vs
+    DASHBOARD_ALLOWED_ORIGINS when present; no aud check).
   - Raises HTTP 401 on ExpiredSignatureError ("Token expired") or any other
     verification failure ("Invalid token").
 
@@ -185,38 +186,51 @@ def _fetch_public_key(kid: str) -> object:
     )
 
 
-async def require_clerk_jwt(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> dict:
-    """FastAPI dependency: verify a Clerk-issued JWT, return decoded claims.
+_JWT_LEEWAY_S = 30
+DEV_SENTINEL_SUB = "local-dev-operator"
 
-    Degrades gracefully when CLERK_JWT_ISSUER_DOMAIN is unset (local dev):
-    logs a warning and returns {"sub": "local-dev-operator"} — mirrors
-    _require_trigger_secret()'s skip-with-warning degraded-boot behaviour.
 
-    On successful verification, returns the full decoded JWT claims dict.
-    claims["sub"] is the Clerk user ID — the actorId for audit_log rows and
-    triggeredBy for runs rows.
+def dashboard_allowed_origins() -> list[str]:
+    """Parse DASHBOARD_ALLOWED_ORIGINS (comma-separated); [] when unset/blank.
 
-    Raises:
-        HTTP 401 "Token expired"   — jwt.ExpiredSignatureError
-        HTTP 401 "Invalid token"   — any other verification failure
-        HTTP 403                   — no Authorization header (HTTPBearer raises
-                                     this automatically before this function runs)
+    Trailing slashes are stripped. No default is applied here (main.py adds the
+    localhost CORS default); an empty list means "skip the azp check".
     """
-    if not os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
-        if _deployed():
-            raise HTTPException(
-                status_code=500,
-                detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
-            )
-        log.warning(
-            "CLERK_JWT_ISSUER_DOMAIN unset — skipping Clerk JWT check "
-            "(local dev). Set it in any deployed environment."
-        )
-        return {"sub": "local-dev-operator"}
+    return [
+        o.strip().rstrip("/")
+        for o in os.environ.get("DASHBOARD_ALLOWED_ORIGINS", "").split(",")
+        if o.strip()
+    ]
 
-    token = credentials.credentials
+
+def dev_mode_claims() -> dict | None:
+    """Return None when CLERK_JWT_ISSUER_DOMAIN is set (verify for real).
+
+    Unset + deployed -> HTTP 500. Unset + local dev -> warn and return the
+    sentinel claims so local dev and the test suite work without live Clerk.
+    """
+    if os.environ.get("CLERK_JWT_ISSUER_DOMAIN"):
+        return None
+    if _deployed():
+        raise HTTPException(
+            status_code=500,
+            detail="CLERK_JWT_ISSUER_DOMAIN must be set in a deployed environment",
+        )
+    log.warning(
+        "CLERK_JWT_ISSUER_DOMAIN unset — skipping Clerk JWT check "
+        "(local dev). Set it in any deployed environment."
+    )
+    return {"sub": DEV_SENTINEL_SUB}
+
+
+async def verify_clerk_token(token: str) -> dict:
+    """Verify a Clerk session token. The ONLY Clerk jwt.decode call site.
+
+    Assumes CLERK_JWT_ISSUER_DOMAIN is set. Checks: RS256 signature (JWKS),
+    iss == CLERK_JWT_ISSUER_DOMAIN, required exp/iat/sub, 30s clock leeway,
+    and azp in DASHBOARD_ALLOWED_ORIGINS when both are present.
+    """
+    issuer = os.environ["CLERK_JWT_ISSUER_DOMAIN"].rstrip("/")
     try:
         header = jwt.get_unverified_header(token)
         public_key = await asyncio.to_thread(_fetch_public_key, header["kid"])
@@ -224,19 +238,51 @@ async def require_clerk_jwt(
             token,
             public_key,
             algorithms=["RS256"],
-            options={"verify_aud": False},  # Clerk tokens have no standard aud
+            issuer=issuer,
+            leeway=_JWT_LEEWAY_S,
+            # Clerk tokens have no standard aud
+            options={"verify_aud": False, "require": ["exp", "iat", "sub"]},
         )
-        return claims
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token expired",
         )
     except HTTPException:
-        raise  # re-raise 401 (unknown kid) / 503 (JWKS unavailable) from _fetch_public_key
+        raise  # 401 (unknown kid) / 503 (JWKS unavailable) from _fetch_public_key
     except Exception as exc:  # noqa: BLE001 — catch-all for any other JWT error
         log.warning("Clerk JWT verification failed: %r", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
         )
+
+    allowed = dashboard_allowed_origins()
+    azp = claims.get("azp")
+    if allowed and azp is not None and str(azp).rstrip("/") not in allowed:
+        log.warning("Clerk JWT azp %r not in DASHBOARD_ALLOWED_ORIGINS", azp)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    return claims
+
+
+async def require_clerk_jwt(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
+    """FastAPI dependency: verify a Clerk-issued JWT, return decoded claims.
+
+    Degrades gracefully when CLERK_JWT_ISSUER_DOMAIN is unset (local dev):
+    returns {"sub": "local-dev-operator"}. Otherwise delegates to
+    verify_clerk_token (issuer, required claims, leeway, azp).
+
+    Raises:
+        HTTP 401 "Token expired"   — jwt.ExpiredSignatureError
+        HTTP 401 "Invalid token"   — any other verification failure
+        HTTP 403                   — no Authorization header (HTTPBearer)
+    """
+    sentinel = dev_mode_claims()
+    if sentinel is not None:
+        return sentinel
+    return await verify_clerk_token(credentials.credentials)

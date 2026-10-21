@@ -216,7 +216,7 @@ def _make_jwt_mock(
     def get_unverified_header(token):  # noqa: ARG001
         return unverified_header
 
-    def decode(token, key, algorithms, options):  # noqa: ARG001
+    def decode(token, key, algorithms=None, options=None, **kwargs):  # noqa: ARG001
         if decode_raises is not None:
             raise decode_raises
         return decode_returns or {}

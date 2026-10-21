@@ -46,7 +46,7 @@ from eisenbalm_pipeline.api import (
     webhooks,
 )
 from eisenbalm_pipeline.api import eval as eval_api
-from eisenbalm_pipeline.api.auth import assert_deployed_secrets
+from eisenbalm_pipeline.api.auth import assert_deployed_secrets, dashboard_allowed_origins
 from eisenbalm_pipeline.api.reconcile import reconcile_orphaned_runs
 from eisenbalm_pipeline.graph.builder import build_graph
 from eisenbalm_pipeline.graph.checkpointer import (
@@ -185,13 +185,7 @@ app = FastAPI(lifespan=lifespan, title="Eisenbalm Pipeline")
 # The dashboard sends an Authorization: Bearer Clerk token, hence
 # allow_headers=["*"]. Origins are read from DASHBOARD_ALLOWED_ORIGINS
 # (comma-separated), defaulting to http://localhost:3000 when unset/blank.
-_dashboard_origins = [
-    origin.strip()
-    for origin in os.environ.get("DASHBOARD_ALLOWED_ORIGINS", "").split(",")
-    if origin.strip()
-]
-if not _dashboard_origins:
-    _dashboard_origins = ["http://localhost:3000"]
+_dashboard_origins = dashboard_allowed_origins() or ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_dashboard_origins,
