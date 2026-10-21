@@ -16,7 +16,7 @@
  * This module is NOT wired into any screen by this plan (Wave 0 scaffolding
  * only) — Wave 1 plans (50-01..50-06) consume it.
  */
-import { GATE_KEYS } from '../app/(dashboard)/run-monitor/graph/_components/pipelineTopology'
+import { GATE_KEYS } from '../app/admin/runs/graph/_components/pipelineTopology'
 
 // ── nav labels ───────────────────────────────────────────────────────────────
 

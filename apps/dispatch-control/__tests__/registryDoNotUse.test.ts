@@ -44,8 +44,8 @@ vi.mock('@convex/_generated/api', () => ({
 vi.mock('@/lib/role', () => ({ useRole: () => 'Editor-in-chief' }))
 
 import { useQuery, useMutation } from 'convex/react'
-import RegistryTable from '../app/(dashboard)/registry/_components/RegistryTable'
-import CharityStatusBadge from '../app/(dashboard)/registry/_components/CharityStatusBadge'
+import RegistryTable from '../app/admin/charities/_components/RegistryTable'
+import CharityStatusBadge from '../app/admin/charities/_components/CharityStatusBadge'
 
 afterEach(() => {
   cleanup()

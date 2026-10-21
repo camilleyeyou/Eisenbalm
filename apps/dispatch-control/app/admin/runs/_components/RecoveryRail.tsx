@@ -23,7 +23,7 @@
  * honest explanation that never claims completed work is reused (that claim
  * — "reused, not re-paid" — is rendered ONLY in the LIVE branches below).
  *
- * "Improve this agent" deep-links `/prompt-lab/{promptKey}` via the SAME
+ * "Improve this agent" deep-links `/admin/agents/{promptKey}` via the SAME
  * `runKeyToPromptKey` resolver the inspector uses (`lib/inspectorArtifact.ts`,
  * §44.3) — honest degrade to a reserved control when the failed step has no
  * externalized prompt (e.g. `qa`), never a guessed link.
@@ -43,7 +43,7 @@ import {
   PRODUCT_TERMS,
   RESTART_LIVE_WRITER_KEYS,
 } from '@/lib/nomenclature'
-import { PIPELINE_NODES } from '../../graph/_components/pipelineTopology'
+import { PIPELINE_NODES } from '../graph/_components/pipelineTopology'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
@@ -229,7 +229,7 @@ function ImproveAgentAction({ agentKey }: { agentKey: string }) {
     )
   }
   return (
-    <Link href={`/prompt-lab/${encodeURIComponent(promptKey)}`} className={LIVE_BUTTON_CLASSES}>
+    <Link href={`/admin/agents/${encodeURIComponent(promptKey)}`} className={LIVE_BUTTON_CLASSES}>
       Improve this agent
     </Link>
   )

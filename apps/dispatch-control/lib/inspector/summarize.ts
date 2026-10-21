@@ -4,7 +4,7 @@
  * Hand-Roll").
  *
  * Extracted VERBATIM from
- * `app/(dashboard)/run-monitor/graph/_components/AgentIOPanel.tsx` (Phase
+ * `app/admin/runs/graph/_components/AgentIOPanel.tsx` (Phase
  * 23/37) so the Run Details handoff inspector and the new universal 7-tab
  * InspectorPanel (Phase 44) never drift into two summarizers. Byte-identical
  * behavior to the pre-extraction inline functions — Run Details relies on

@@ -1,9 +1,9 @@
 'use client'
 /**
- * Run Monitor tab shell (Phase 30 D-05).
+ * Run tab shell (Phase 30 D-05; moved under /admin/runs by quick 261021-j83).
  *
  * Renders the "Runs" / "Graph" tab bar above whichever sub-route is active,
- * so both /run-monitor/runs and /run-monitor/graph share one nav slot.
+ * so both /admin/runs and /admin/runs/graph share one nav slot.
  * Active tab underlines in cobalt per the 1c token system. Tab mechanics are
  * intentionally minimal — Phase 37 replaces the interior of this shell.
  *
@@ -30,8 +30,8 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-  { label: 'Runs', href: '/run-monitor/runs' },
-  { label: 'Graph', href: '/run-monitor/graph' },
+  { label: 'Runs', href: '/admin/runs' },
+  { label: 'Graph', href: '/admin/runs/graph' },
 ]
 
 export default function RunMonitorLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +41,13 @@ export default function RunMonitorLayout({ children }: { children: React.ReactNo
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="sticky top-0 z-20 flex shrink-0 items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] px-1">
         {TABS.map(tab => {
-          const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
+          // Runs is the exact list or a single run (/admin/runs/<runId>), never
+          // the graph sub-route; Graph owns /admin/runs/graph.
+          const isGraph = pathname === '/admin/runs/graph' || pathname.startsWith('/admin/runs/graph/')
+          const isActive =
+            tab.href === '/admin/runs/graph'
+              ? isGraph
+              : !isGraph && (pathname === tab.href || pathname.startsWith(tab.href + '/'))
           return (
             <Link
               key={tab.href}

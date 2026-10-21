@@ -28,7 +28,7 @@ vi.mock('@convex/_generated/api', () => ({
   },
 }))
 
-import { DriftStrip } from '../app/(dashboard)/run-monitor/graph/_components/DriftStrip'
+import { DriftStrip } from '../app/admin/runs/graph/_components/DriftStrip'
 
 afterEach(() => {
   cleanup()

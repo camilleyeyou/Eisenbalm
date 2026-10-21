@@ -12,7 +12,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
-import NextRunDisplay from '../app/(dashboard)/config/_components/NextRunDisplay'
+import NextRunDisplay from '../app/admin/automation/_components/NextRunDisplay'
 
 describe('NextRunDisplay', () => {
   afterEach(() => {

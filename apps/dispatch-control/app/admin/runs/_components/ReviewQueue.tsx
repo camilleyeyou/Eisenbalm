@@ -22,7 +22,6 @@ import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
-import { issueDraftHref } from '@/lib/issueRouteResolver'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface ReviewQueueProps {
@@ -40,22 +39,17 @@ function formatRelativeTime(ms: number): string {
 }
 
 /**
- * One Awaiting Review card. Resolves its own issueNumber (runs rows have
- * none) so the "Review →" CTA can target the Draft/Story Desk stage
- * directly. While `pipelineRuns.byRunId` is loading/unresolved, the CTA
- * falls back to the legacy run-keyed URL — that route redirects to
- * Approval, so this is a safe loading fallback, never a dead end.
+ * One Awaiting Review card. "Review →" opens the front door, where the
+ * current issue is read, edited and published.
  */
 function AwaitingReviewRow({
   run,
 }: {
   run: { _id: string; runId: string; startedAt: number; cost?: string }
 }) {
-  const pRun = useQuery(api.pipelineRuns.byRunId, { runId: run.runId })
   const cost = parseCostJson(run.cost).total
-  const href = pRun?.issueNumber
-    ? issueDraftHref(pRun.issueNumber)
-    : `/run-monitor/runs/${encodeURIComponent(run.runId)}/review`
+  // Quick 261021-j83: review happens on the front door.
+  const href = '/'
 
   return (
     <li className="flex flex-col gap-3 border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-4 sm:flex-row sm:items-center sm:justify-between">

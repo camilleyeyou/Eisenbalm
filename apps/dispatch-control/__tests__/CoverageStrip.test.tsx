@@ -27,7 +27,7 @@ vi.mock('@/lib/coverageStripClient', () => ({
 }))
 
 import { fetchCoverageStrip } from '@/lib/coverageStripClient'
-import { CoverageStrip } from '../app/(dashboard)/registry/_components/CoverageStrip'
+import { CoverageStrip } from '../app/admin/charities/_components/CoverageStrip'
 
 afterEach(() => {
   cleanup()

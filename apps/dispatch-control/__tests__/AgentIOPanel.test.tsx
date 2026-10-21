@@ -30,8 +30,8 @@ vi.mock('@convex/_generated/api', () => ({
   },
 }))
 
-import { AgentIOPanel } from '../app/(dashboard)/run-monitor/graph/_components/AgentIOPanel'
-import { SECTION_WRITER_KEYS } from '../app/(dashboard)/run-monitor/graph/_components/pipelineTopology'
+import { AgentIOPanel } from '../app/admin/runs/graph/_components/AgentIOPanel'
+import { SECTION_WRITER_KEYS } from '../app/admin/runs/graph/_components/pipelineTopology'
 
 afterEach(() => {
   cleanup()

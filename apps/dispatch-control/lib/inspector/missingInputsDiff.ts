@@ -29,7 +29,7 @@
  * itself was never truncated) can support a definitive missing claim.
  */
 import { DECLARED_STATE_INPUTS } from './declaredStateInputs'
-import { VARIABLE_DESCRIPTIONS } from '@/app/(dashboard)/prompt-lab/_components/VariableRegistry'
+import { VARIABLE_DESCRIPTIONS } from '@/app/admin/agents/_components/VariableRegistry'
 
 const TRUNCATION_MARKER = '...[truncated]'
 

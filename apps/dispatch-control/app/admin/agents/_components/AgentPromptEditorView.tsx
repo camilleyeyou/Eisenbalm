@@ -80,7 +80,7 @@ export function OriginBanner({ originRef }: { originRef?: PromptOriginRef }) {
         <span className="italic">&ldquo;{originRef.excerpt}&rdquo;</span>
       </p>
       <Link
-        href={`/run-monitor/runs/${encodeURIComponent(originRef.runId)}`}
+        href={`/admin/runs/${encodeURIComponent(originRef.runId)}`}
         className="mt-1 inline-block font-semibold underline underline-offset-2"
       >
         View the motivating output →

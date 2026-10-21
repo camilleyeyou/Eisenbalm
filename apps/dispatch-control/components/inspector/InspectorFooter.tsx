@@ -46,7 +46,7 @@
  *
  * Phase 50 (WBN-04, D-13, docs/API_CONTRACTS.md §4A.2c): "Improve this
  * agent →" carries an origin back-reference — `fromRun` / `section` /
- * `excerpt` query params — into `/prompt-lab/[agentKey]`, so the editor can
+ * `excerpt` query params — into `/admin/agents/[agentKey]`, so the editor can
  * render "why this draft exists" and persist the reference on a new draft.
  * Sourced from the SAME data the panel already has (`sectionName` prop +
  * `firstProseExcerpt` over the artifact's output — no new fetch). Only
@@ -254,7 +254,7 @@ export function InspectorFooter({
   sectionName,
   excerpt,
 }: InspectorFooterProps) {
-  const promptHref = promptKey ? `/prompt-lab/${encodeURIComponent(promptKey)}` : undefined
+  const promptHref = promptKey ? `/admin/agents/${encodeURIComponent(promptKey)}` : undefined
   // Phase 50 (WBN-04, D-13) — ONLY "Improve this agent →" carries the origin
   // reference; "Compare instruction versions" below keeps the plain
   // `promptHref`. Both `sectionName` and `excerpt` must be real (non-empty)
@@ -268,7 +268,7 @@ export function InspectorFooter({
   // ScenarioCard.tsx / page.tsx as of 44-05) — the link below is still LIVE
   // (the page loads and is genuinely useful), and forward-compatible for
   // when server-side filtering ships; the query string is inert until then.
-  const evalCenterHref = promptKey ? `/eval-center?agent=${encodeURIComponent(promptKey)}` : undefined
+  const evalCenterHref = promptKey ? `/admin/tests?agent=${encodeURIComponent(promptKey)}` : undefined
 
   return (
     <div
@@ -293,7 +293,7 @@ export function InspectorFooter({
         href={evalCenterHref}
         disabledTitle={NOT_EXTERNALIZED_TITLE}
       />
-      <FooterAction icon={Waypoints} label="Prior & downstream steps" href="/run-monitor/graph" />
+      <FooterAction icon={Waypoints} label="Prior & downstream steps" href="/admin/runs/graph" />
       {!hideRevise && (
         <FooterAction
           icon={MessageSquarePlus}

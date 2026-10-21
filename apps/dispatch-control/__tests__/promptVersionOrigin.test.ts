@@ -59,8 +59,8 @@ vi.mock('@/lib/pipelineControlClient', () => ({
 
 import { useMutation, useQuery } from 'convex/react'
 import { InspectorFooter } from '../components/inspector/InspectorFooter'
-import { PromptSaveDialog } from '../app/(dashboard)/prompt-lab/_components/PromptSaveDialog'
-import { OriginBanner } from '../app/(dashboard)/prompt-lab/_components/AgentPromptEditorView'
+import { PromptSaveDialog } from '../app/admin/agents/_components/PromptSaveDialog'
+import { OriginBanner } from '../app/admin/agents/_components/AgentPromptEditorView'
 import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 
 afterEach(() => {

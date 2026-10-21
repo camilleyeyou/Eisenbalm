@@ -54,8 +54,8 @@ import { useQuery, useMutation } from 'convex/react'
 import { fetchScenarios } from '@/lib/evalScenarioClient'
 import { runAgentTest, runActiveVersionTest } from '@/lib/testRunClient'
 import { scoreOutput } from '@/lib/scoreClient'
-import EvalDrawer from '../app/(dashboard)/prompt-lab/_components/EvalDrawer'
-import VersionHistoryPanel from '../app/(dashboard)/prompt-lab/_components/VersionHistoryPanel'
+import EvalDrawer from '../app/admin/agents/_components/EvalDrawer'
+import VersionHistoryPanel from '../app/admin/agents/_components/VersionHistoryPanel'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 

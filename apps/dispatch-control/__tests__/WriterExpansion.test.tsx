@@ -37,7 +37,7 @@ import { rerollAgent } from '@/lib/pipelineControlClient'
 import {
   WriterExpansion,
   WRITER_SECTIONS,
-} from '../app/(dashboard)/run-monitor/graph/_components/WriterExpansion'
+} from '../app/admin/runs/graph/_components/WriterExpansion'
 
 afterEach(() => {
   cleanup()

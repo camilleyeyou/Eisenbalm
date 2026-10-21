@@ -196,7 +196,7 @@ export default function PromptsListClient({
                 return (
                   <li key={key}>
                     <Link
-                      href={`/prompt-lab/${encodeURIComponent(key)}`}
+                      href={`/admin/agents/${encodeURIComponent(key)}`}
                       className={`flex min-h-[44px] flex-col gap-1.5 border border-[color:var(--color-faint)] border-t-[3px] bg-[color:var(--color-card)] px-4 py-3.5 transition-colors hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] ${
                         drifted
                           ? 'border-t-[color:var(--color-marigold)]'

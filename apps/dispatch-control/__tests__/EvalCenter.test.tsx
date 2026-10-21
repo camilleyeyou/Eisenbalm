@@ -42,7 +42,7 @@ vi.mock('@/lib/shadowRunClient', () => ({
 
 import { useQuery } from 'convex/react'
 import { fetchScenarios } from '@/lib/evalScenarioClient'
-import EvalCenterPage from '../app/(dashboard)/eval-center/page'
+import EvalCenterPage from '../app/admin/tests/page'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 

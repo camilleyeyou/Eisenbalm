@@ -14,11 +14,11 @@ let VARIABLE_REGISTRY: Record<string, string[]> | undefined
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('../app/(dashboard)/prompt-lab/_components/promptDescriptions')
+  const mod = require('../app/admin/agents/_components/promptDescriptions')
   PROMPT_DESCRIPTIONS = mod.PROMPT_DESCRIPTIONS
   descriptionFor = mod.descriptionFor
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const reg = require('../app/(dashboard)/prompt-lab/_components/VariableRegistry')
+  const reg = require('../app/admin/agents/_components/VariableRegistry')
   VARIABLE_REGISTRY = reg.VARIABLE_REGISTRY
 } catch {
   PROMPT_DESCRIPTIONS = undefined

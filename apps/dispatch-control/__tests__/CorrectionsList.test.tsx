@@ -27,7 +27,7 @@ vi.mock('@convex/_generated/api', () => ({
 }))
 
 import { useQuery } from 'convex/react'
-import CorrectionsList from '../app/(dashboard)/registry/_components/CorrectionsList'
+import CorrectionsList from '../app/admin/charities/_components/CorrectionsList'
 
 afterEach(() => {
   cleanup()

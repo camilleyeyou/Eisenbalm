@@ -19,7 +19,7 @@ import * as path from 'node:path'
 import { describe, it, expect } from 'vitest'
 
 import { runStepFor, RUN_STEP_MAP } from '../lib/nomenclature'
-import { GATE_KEYS, PIPELINE_NODES } from '../app/(dashboard)/run-monitor/graph/_components/pipelineTopology'
+import { GATE_KEYS, PIPELINE_NODES } from '../app/admin/runs/graph/_components/pipelineTopology'
 
 describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
   // ── §7 verbatim action labels ────────────────────────────────────────────
@@ -118,7 +118,7 @@ describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
   it('RunDetail.tsx never renders the word "Monitor" in its idle/finished header path', () => {
     const filePath = path.resolve(
       __dirname,
-      '../app/(dashboard)/run-monitor/runs/_components/RunDetail.tsx',
+      '../app/admin/runs/_components/RunDetail.tsx',
     )
     const content = fs.readFileSync(filePath, 'utf-8')
     // Case-sensitive, word-bounded: catches the banned prose term "Monitor"
@@ -130,7 +130,7 @@ describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
   it('RunDetail.tsx states historical-record vs live-run framing plainly', () => {
     const filePath = path.resolve(
       __dirname,
-      '../app/(dashboard)/run-monitor/runs/_components/RunDetail.tsx',
+      '../app/admin/runs/_components/RunDetail.tsx',
     )
     const content = fs.readFileSync(filePath, 'utf-8')
     expect(content).toMatch(/historical record/i)
@@ -142,7 +142,7 @@ describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
   it('RunDetail.tsx groups by actionLabel so the 7 writers render as ONE top-level row', () => {
     const filePath = path.resolve(
       __dirname,
-      '../app/(dashboard)/run-monitor/runs/_components/RunDetail.tsx',
+      '../app/admin/runs/_components/RunDetail.tsx',
     )
     const content = fs.readFileSync(filePath, 'utf-8')
     // The grouping logic keys Draft-sections membership by a single fixed
@@ -156,7 +156,7 @@ describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
   it('RunDetail.tsx resolves issueNumber and renders an "Open issue" affordance', () => {
     const filePath = path.resolve(
       __dirname,
-      '../app/(dashboard)/run-monitor/runs/_components/RunDetail.tsx',
+      '../app/admin/runs/_components/RunDetail.tsx',
     )
     const content = fs.readFileSync(filePath, 'utf-8')
     expect(content).toMatch(/issueDraftHref/)

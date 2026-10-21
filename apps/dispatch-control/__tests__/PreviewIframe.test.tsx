@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent, act } from '@testing-library/react'
 
-import PreviewIframe from '../app/(dashboard)/run-monitor/runs/[runId]/review/_components/PreviewIframe'
+import PreviewIframe from '../app/admin/runs/[runId]/review/_components/PreviewIframe'
 
 beforeEach(() => {
   vi.useFakeTimers()

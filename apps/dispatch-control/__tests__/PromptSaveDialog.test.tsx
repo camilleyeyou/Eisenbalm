@@ -29,7 +29,7 @@ vi.mock('@convex/_generated/api', () => ({
 }))
 
 import { useMutation, useQuery } from 'convex/react'
-import { PromptSaveDialog } from '../app/(dashboard)/prompt-lab/_components/PromptSaveDialog'
+import { PromptSaveDialog } from '../app/admin/agents/_components/PromptSaveDialog'
 
 afterEach(() => {
   cleanup()

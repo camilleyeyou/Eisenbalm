@@ -28,7 +28,6 @@ import { useAuth } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { triggerRun } from '@/lib/pipelineControlClient'
-import { issueHref } from '@/lib/issueRouteResolver'
 
 interface RunControlBarProps {
   workspace_id: string
@@ -98,7 +97,7 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
               <>
                 Run started &middot;{' '}
                 <Link
-                  href={issueHref(startedIssueNumber)}
+                  href="/"
                   className="ml-1 font-semibold text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
                 >
                   Open Issue {startedIssueNumber} &rarr;

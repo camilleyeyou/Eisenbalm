@@ -55,7 +55,7 @@ export default function AutoPublishBanner({ workspace_id }: AutoPublishBannerPro
         Publishing is automatic. This setting is managed in Administration, not here.
       </p>
       <Link
-        href="/config"
+        href="/admin/automation"
         className="shrink-0 font-medium underline hover:text-red-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1 rounded"
       >
         Open Administration

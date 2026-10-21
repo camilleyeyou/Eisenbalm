@@ -61,7 +61,7 @@ function mockQuery(returnValue: unknown) {
 
 // ── STATUS_CLASSES export ─────────────────────────────────────────────────────
 
-import { STATUS_CLASSES } from '../app/(dashboard)/run-monitor/runs/_components/RunsTable'
+import { STATUS_CLASSES } from '../app/admin/runs/_components/RunsTable'
 
 describe('STATUS_CLASSES', () => {
   // quick 260722-v01 (audit item 9): the "neutral palette" is now expressed
@@ -86,7 +86,7 @@ describe('STATUS_CLASSES', () => {
 
 // ── RunControlBar ─────────────────────────────────────────────────────────────
 
-import RunControlBar from '../app/(dashboard)/run-monitor/runs/_components/RunControlBar'
+import RunControlBar from '../app/admin/runs/_components/RunControlBar'
 
 describe('RunControlBar', () => {
   beforeEach(() => {
@@ -161,7 +161,7 @@ describe('RunControlBar', () => {
 
 // ── BudgetAlertBanner ─────────────────────────────────────────────────────────
 
-import BudgetAlertBanner from '../app/(dashboard)/run-monitor/runs/_components/BudgetAlertBanner'
+import BudgetAlertBanner from '../app/admin/runs/_components/BudgetAlertBanner'
 
 describe('BudgetAlertBanner', () => {
   beforeEach(() => {
@@ -225,7 +225,7 @@ describe('BudgetAlertBanner', () => {
 
 // ── CancelRunButton ───────────────────────────────────────────────────────────
 
-import CancelRunButton from '../app/(dashboard)/run-monitor/runs/_components/CancelRunButton'
+import CancelRunButton from '../app/admin/runs/_components/CancelRunButton'
 
 describe('CancelRunButton', () => {
   beforeEach(() => {
@@ -276,7 +276,7 @@ describe('CancelRunButton', () => {
 // ── RerollButton ──────────────────────────────────────────────────────────────
 
 import type { ReactElement } from 'react'
-import RerollButton from '../app/(dashboard)/run-monitor/runs/_components/RerollButton'
+import RerollButton from '../app/admin/runs/_components/RerollButton'
 import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 
 // quick 260723-4a6 (Task 2): RerollButton's confirm step now calls

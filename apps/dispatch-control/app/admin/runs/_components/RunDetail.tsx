@@ -36,8 +36,7 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
 import { runStepFor } from '@/lib/nomenclature'
-import { issueHref, issueDraftHref } from '@/lib/issueRouteResolver'
-import { PIPELINE_NODES } from '../../graph/_components/pipelineTopology'
+import { PIPELINE_NODES } from '../graph/_components/pipelineTopology'
 import CancelRunButton from './CancelRunButton'
 import RerollButton from './RerollButton'
 import RecoveryRail from './RecoveryRail'
@@ -251,7 +250,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
           not found.
         </p>
         <Link
-          href="/run-monitor/runs"
+          href="/admin/runs"
           className="mt-4 inline-block font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:underline"
         >
           ← Back to Runs
@@ -286,18 +285,14 @@ export default function RunDetail({ runId }: RunDetailProps) {
       {/* Back link + Open issue link (LD-4: connects this run back to the issue workspace) */}
       <div className="flex flex-wrap items-center gap-4">
         <Link
-          href="/run-monitor/runs"
+          href="/admin/runs"
           className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline"
         >
           ← Back to all runs
         </Link>
         {issueNumber != null && (
           <Link
-            href={
-              run.status === 'awaiting-review' || run.status === 'complete'
-                ? issueDraftHref(issueNumber)
-                : issueHref(issueNumber)
-            }
+            href="/"
             className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
           >
             Open issue →

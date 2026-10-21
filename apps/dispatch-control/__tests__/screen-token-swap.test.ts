@@ -19,19 +19,19 @@ const appRoot = path.resolve(__dirname, '..')
 // The 13 files_modified from 30-03-screen-token-swap-PLAN.md — hardcoded per
 // the plan's <behavior> instruction, not dynamically globbed.
 const FILES = [
-  'app/(dashboard)/config/page.tsx',
-  'app/(dashboard)/config/_components/NextRunDisplay.tsx',
-  'app/(dashboard)/config/_components/BudgetCapsPanel.tsx',
-  'app/(dashboard)/config/_components/AutomationPanel.tsx',
-  'app/(dashboard)/config/_components/AutoPublishToggle.tsx',
-  'app/(dashboard)/finance/page.tsx',
-  'app/(dashboard)/finance/_components/PayoutRow.tsx',
-  'app/(dashboard)/finance/_components/FinanceSummaryCard.tsx',
-  'app/(dashboard)/finance/_components/ModelPricingCard.tsx',
-  'app/(dashboard)/finance/_components/IssueRevenueTable.tsx',
-  'app/(dashboard)/settings/page.tsx',
-  'app/(dashboard)/settings/_components/NotificationSettings.tsx',
-  'app/(dashboard)/settings/_components/AuditLogViewer.tsx',
+  'app/admin/automation/page.tsx',
+  'app/admin/automation/_components/NextRunDisplay.tsx',
+  'app/admin/automation/_components/BudgetCapsPanel.tsx',
+  'app/admin/automation/_components/AutomationPanel.tsx',
+  'app/admin/automation/_components/AutoPublishToggle.tsx',
+  'app/admin/finance/page.tsx',
+  'app/admin/finance/_components/PayoutRow.tsx',
+  'app/admin/finance/_components/FinanceSummaryCard.tsx',
+  'app/admin/finance/_components/ModelPricingCard.tsx',
+  'app/admin/finance/_components/IssueRevenueTable.tsx',
+  'app/admin/settings/page.tsx',
+  'app/admin/settings/_components/NotificationSettings.tsx',
+  'app/admin/settings/_components/AuditLogViewer.tsx',
 ]
 
 const TOKEN_MARKER = '[color:var(--color-'

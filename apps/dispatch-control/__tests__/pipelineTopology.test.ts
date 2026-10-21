@@ -20,7 +20,7 @@ import {
   PIPELINE_EDGES,
   SECTION_WRITER_KEYS,
   GATE_KEYS,
-} from '../app/(dashboard)/run-monitor/graph/_components/pipelineTopology'
+} from '../app/admin/runs/graph/_components/pipelineTopology'
 
 describe('pipelineTopology', () => {
   it('PIPELINE_NODES has exactly 20 entries (matches builder.py node count)', () => {

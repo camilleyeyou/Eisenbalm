@@ -40,7 +40,7 @@ vi.mock('@/lib/pipelineControlClient', () => ({
   publishManual: (...args: unknown[]) => publishManualMock(...args),
 }))
 
-import RecoveryRail from '../app/(dashboard)/run-monitor/runs/_components/RecoveryRail'
+import RecoveryRail from '../app/admin/runs/_components/RecoveryRail'
 import { restartAvailabilityFor } from '../lib/nomenclature'
 import { ConfirmProvider } from '../components/ui/ConfirmDialog'
 

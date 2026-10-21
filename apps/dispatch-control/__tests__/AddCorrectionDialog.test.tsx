@@ -27,7 +27,7 @@ vi.mock('@convex/_generated/api', () => ({
 }))
 
 import { useMutation } from 'convex/react'
-import AddCorrectionDialog from '../app/(dashboard)/registry/_components/AddCorrectionDialog'
+import AddCorrectionDialog from '../app/admin/charities/_components/AddCorrectionDialog'
 
 afterEach(() => {
   cleanup()
