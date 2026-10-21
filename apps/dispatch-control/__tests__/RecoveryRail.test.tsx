@@ -101,11 +101,11 @@ describe('RecoveryRail (WBN-03) — four §7 sections', () => {
     expect(screen.getByText(/no specific step is recorded as failed/i)).toBeTruthy()
   })
 
-  it('quick 260719-w6o (F4): a genuinely paused run (no failed agent row) mounts a reachable /signal-desk recovery, not the generic failed fallback', () => {
+  it('quick 260719-w6o (F4): a genuinely paused run (no failed agent row) says to stop it and start a new issue, with no link to a retired screen', () => {
     renderRail(<RecoveryRail runId="run-1" agentRuns={[]} isPausedAtGate1 />)
     expect(screen.getByText('Paused for your decision')).toBeTruthy()
-    const link = screen.getByRole('link', { name: 'Restart from this step' })
-    expect(link.getAttribute('href')).toBe('/signal-desk')
+    expect(screen.queryByRole('link', { name: 'Restart from this step' })).toBeNull()
+    expect(screen.getAllByText(/start a new issue from the front page/i).length).toBeGreaterThan(0)
     expect(screen.queryByText(/no specific step is recorded as failed/i)).toBeNull()
   })
 
@@ -219,18 +219,18 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('is LIVE and routes to Signal Desk for editor_gate_1 when isPausedAtGate1 is true', () => {
+  it('editor_gate_1 paused: no link to the retired Signal Desk, tells the editor to start a new issue', () => {
     renderRail(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} isPausedAtGate1 />)
-    const link = screen.getByRole('link', { name: 'Restart from this step' })
-    expect(link.getAttribute('href')).toBe('/signal-desk')
+    expect(screen.queryByRole('link', { name: 'Restart from this step' })).toBeNull()
+    expect(screen.getByText(/start a new issue from the front page/i)).toBeTruthy()
   })
 })
 
 describe('RecoveryRail (WBN-03) — "Improve this agent"', () => {
-  it('renders a live link to /prompt-lab/{agentKey} when the failed step has an externalized prompt', () => {
+  it('renders a live link to /admin/agents/{agentKey} when the failed step has an externalized prompt', () => {
     renderRail(<RecoveryRail runId="run-1" agentRuns={rows('game')} />)
     const link = screen.getByRole('link', { name: 'Improve this agent' })
-    expect(link.getAttribute('href')).toBe('/prompt-lab/game')
+    expect(link.getAttribute('href')).toBe('/admin/agents/game')
   })
 
   it('renders a reserved control when the failed step has no externalized prompt (qa)', () => {

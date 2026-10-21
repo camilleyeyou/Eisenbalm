@@ -546,7 +546,7 @@ describe('deriveTasks (§40.6, D-21)', () => {
     )
     expect(tasks).toHaveLength(1)
     expect(tasks[0].stage).toBe(1)
-    expect(tasks[0].primary.href).toContain('/story')
+    expect(tasks[0].primary.href).toBe('/')
     expect(tasks.find((t) => t.id === 'signoff-facts')).toBeUndefined()
     expect(tasks.find((t) => t.id === 'signoff-voice')).toBeUndefined()
   })
@@ -692,11 +692,11 @@ describe('deriveTasks — Phase 43 (§43.5, openedAt + href corrections, TSK-01/
     expect(tasks.some((t: DerivedTask) => t.id === 'signoff-voice')).toBe(false)
   })
 
-  it('TSK-03 (Pitfall 1 fix): a pending-claim task deep-links to /issues/7/fact-check, not /draft', () => {
+  it('TSK-03 (quick 261021-j83): a pending-claim task points at the front door, not a retired fact-check route', () => {
     const claimRows = [{ _id: 'c1', status: 'pending', verdict: 'contradicted', claimText: 'a claim' }]
     const tasks = deriveTasks(baseInputs({ runStatus: 'awaiting-review', claimRows, signOffs: {} }))
     const claimTask = tasks.find((t: DerivedTask) => t.id === 'claim-c1')
-    expect(claimTask?.primary.href).toBe('/issues/7/fact-check')
+    expect(claimTask?.primary.href).toBe('/')
   })
 
 

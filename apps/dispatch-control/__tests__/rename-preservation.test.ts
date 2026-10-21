@@ -29,13 +29,14 @@ import * as path from 'node:path'
 import { describe, it, expect } from 'vitest'
 
 const REPO_ROOT = path.resolve(__dirname, '../../..')
-const DASHBOARD_ROOT = path.join(REPO_ROOT, 'apps/dispatch-control/app/(dashboard)')
+// Quick 261021-j83: the workbench pages moved under /admin/* (display names stay).
+const DASHBOARD_ROOT = path.join(REPO_ROOT, 'apps/dispatch-control/app/admin')
 const CONVEX_DIR = path.join(REPO_ROOT, 'convex')
 
-const EXPECTED_ROUTE_FOLDERS = ['run-monitor', 'prompt-lab', 'eval-center', 'registry']
+const EXPECTED_ROUTE_FOLDERS = ['runs', 'agents', 'tests', 'charities']
 
 describe('rename-preservation: routes + stored enums are NOT renamed (D-02/D-03)', () => {
-  it('all four System Workbench route folders still exist on disk (D-02)', () => {
+  it('all four workbench route folders still exist under /admin on disk (D-02)', () => {
     for (const folder of EXPECTED_ROUTE_FOLDERS) {
       const dirPath = path.join(DASHBOARD_ROOT, folder)
       expect(fs.existsSync(dirPath), `Missing route folder: ${dirPath}`).toBe(true)
@@ -72,7 +73,7 @@ describe('rename-preservation: routes + stored enums are NOT renamed (D-02/D-03)
   it("RegistryTable.tsx's setStatus mutation still passes the unchanged status: 'blocklisted' (D-03)", () => {
     const registryTablePath = path.join(
       DASHBOARD_ROOT,
-      'registry/_components/RegistryTable.tsx',
+      'charities/_components/RegistryTable.tsx',
     )
     expect(fs.existsSync(registryTablePath)).toBe(true)
     const content = fs.readFileSync(registryTablePath, 'utf-8')

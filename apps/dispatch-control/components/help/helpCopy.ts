@@ -56,7 +56,7 @@ export const HELP_COPY = {
     twoSignOff:
       'The agents write and check every story and fix what they find. The Editor-in-chief presses Publish. Anyone can put the issue on hold.',
     // inline
-    publish: 'Publishing pushes the issue live to the public site. Collaborators can review and comment, not publish.',
+    publish: 'Publishing pushes the issue live to the public site. Collaborators can read and edit, not publish.',
   },
   runMonitor: {
     runState: "The pipeline run's live state — running, awaiting your review, complete, or failed.",

@@ -6,7 +6,7 @@
  * `SchedulePublishDialog.tsx`).
  *
  * PRESENTATIONAL ONLY — no `useMutation`, no `api.` import, no Convex call.
- * The overview page (`/issues/[issueNumber]/page.tsx`) owns the
+ * The front door (`HoldControl`) owns the
  * `issues:hold` mutation call and the separate "also stop the run" call.
  *
  * The client-side empty-reason check below is a UX affordance ONLY — the

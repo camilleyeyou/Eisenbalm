@@ -154,7 +154,7 @@ describe('RunControlBar', () => {
 
     await waitFor(() => {
       const link = screen.getByRole('link', { name: /open issue 12/i })
-      expect(link.getAttribute('href')).toBe('/issues/12')
+      expect(link.getAttribute('href')).toBe('/')
     })
   })
 })

@@ -16,12 +16,6 @@ import { isOpenBlocking, isEditorFlagged } from '@convex/lib/claimGate'
 import { isOpenFinding, type FindingResolution } from './galley/findingState'
 import { VOICE_AXES } from './galley/axisPartition'
 import { qaSectionToGalleyId } from './galley/sectionIdMap'
-import {
-  issueDraftHref,
-  issueVoiceHref,
-  issueFactCheckHref,
-  issueStoryHref,
-} from './issueRouteResolver'
 import { EDITABLE_SECTIONS } from './editableSections'
 import type { DraftResponse } from './contentPatchClient'
 // Phase 44 Plan 44-08 (INS-01, §44.1) — the string-encoded artifact-key
@@ -516,7 +510,7 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
   // screen — the audit's single most misleading signal). Emit ONE task: the
   // story decision itself, so My Tasks still says what's needed.
   if (isPausedAtGate1(i)) {
-    const href = i.issueNumber === null ? '/issues' : issueStoryHref(i.issueNumber)
+    const href = '/'
     return [
       {
         id: 'gate1-decision',
@@ -531,8 +525,8 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
     ]
   }
 
-  const n = i.issueNumber
-  const fallbackHref = n === null ? '/issues' : undefined
+  // quick 261021-j83: every task points at the front door.
+  const href = '/'
 
   const tasks: DerivedTask[] = []
 
@@ -540,7 +534,6 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
     if (!isOpenFinding(row)) continue
     const voiceAxis = isVoiceAxisFinding(row)
     const stage = voiceAxis ? 4 : 2
-    const href = fallbackHref ?? (voiceAxis ? issueVoiceHref(n as number) : issueDraftHref(n as number))
     tasks.push({
       id: `qa-${row._id}`,
       sev: findingSeverityToTaskSeverity(row.severity),
@@ -565,8 +558,6 @@ export function deriveTasks(i: DerivationInputs): DerivedTask[] {
     const blocking = isOpenBlocking(row)
     const sev: TaskSeverity = 'review-recommended'
     const text60 = (row.claimText ?? '').slice(0, 60)
-    // §43.5b (Pitfall 1 fix) — claim tasks deep-link to Fact Check, not Draft.
-    const href = fallbackHref ?? issueFactCheckHref(n as number)
     tasks.push({
       id: `claim-${row._id}`,
       sev,

@@ -24,14 +24,15 @@ describe('homeRoute', () => {
   })
 
   it.each([
-    '(dashboard)/run/page.tsx',
-    '(dashboard)/issues/page.tsx',
-    '(dashboard)/issues/[issueNumber]/approval/page.tsx',
-    '(dashboard)/my-tasks/page.tsx',
-    '(dashboard)/review-desk/page.tsx',
+    '(editorial)/archive/page.tsx',
     '(editorial)/s/[section]/page.tsx',
+    'admin/page.tsx',
   ])('%s still exists', (rel) => {
     expect(existsSync(path.join(APP, rel))).toBe(true)
+  })
+
+  it('the old (dashboard) group is gone', () => {
+    expect(existsSync(path.join(APP, '(dashboard)'))).toBe(false)
   })
 
   it('the entry is a dynamic server component', () => {

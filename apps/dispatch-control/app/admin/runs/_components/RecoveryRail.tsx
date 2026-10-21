@@ -17,8 +17,8 @@
  * `InspectorFooter.tsx` (Task 3) consumes, so the two surfaces can never
  * drift. LIVE for exactly 3 of the 11 §7 step-types (the 7 section writers
  * via `rerollAgent`/`rerun_agent`; `editor_gate_1` ONLY when the run is
- * genuinely paused at the Gate-1 interrupt, via the Signal Desk adjudication
- * surface; `publisher` via the Phase 50 `publishManual`/`publish-manual`
+ * genuinely paused at the Gate-1 interrupt (legacy runs only; quick
+ * 261021-j83 removed the Signal Desk, so the control now says to stop it); `publisher` via the Phase 50 `publishManual`/`publish-manual`
  * bridge, §50.1). The other 8 step-types render RESERVED — disabled, with an
  * honest explanation that never claims completed work is reused (that claim
  * — "reused, not re-paid" — is rendered ONLY in the LIVE branches below).
@@ -142,18 +142,18 @@ function RestartAction({
     )
   }
 
-  // LIVE — editor_gate_1's paused case routes to the Signal Desk
-  // adjudication surface (the real candidate-slate picker lives there, not
-  // here — this rail never re-implements it inline).
+  // Quick 261021-j83: the charity-choice screen is gone (Gate 1 now
+  // auto-proceeds). A run still paused there is a legacy run: stop it and
+  // start a new issue from the front page. No link, no dead end.
   if (agentKey === 'editor_gate_1') {
     return (
       <div>
-        <Link href="/signal-desk" className={LIVE_BUTTON_CLASSES}>
+        <button type="button" disabled title={RESERVED_TITLE} className={RESERVED_BUTTON_CLASSES}>
           {PRODUCT_TERMS.restartStep}
-        </Link>
+        </button>
         <p className="mt-1 text-[11px] text-[color:var(--color-ink-soft)]">
-          Completed steps are reused, not re-paid — go to Signal Desk to choose the recommended
-          story and resume.
+          This older run paused to choose a charity. Stop it, then start a new issue from the
+          front page.
         </p>
       </div>
     )
@@ -262,8 +262,8 @@ export default function RecoveryRail({
               Paused for your decision
             </h3>
             <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-              This run paused at the story decision — the agents could not confidently choose a
-              charity. Choose one to resume; completed steps are reused, not re-paid.
+              This older run paused to choose a charity. Stop it, then start a new issue from the
+              front page.
             </p>
           </section>
           <section>

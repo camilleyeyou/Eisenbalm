@@ -116,7 +116,7 @@ describe('InspectorFooter (WBN-04, D-13 regression) — "Improve this agent →"
     )
     const link = screen.getByRole('link', { name: 'Improve this agent →' })
     const href = link.getAttribute('href') ?? ''
-    expect(href).toContain('/prompt-lab/game')
+    expect(href).toContain('/admin/agents/game')
     expect(href).toContain('fromRun=run-1')
     expect(href).toContain('section=game')
     expect(href).toContain('excerpt=')
@@ -125,7 +125,7 @@ describe('InspectorFooter (WBN-04, D-13 regression) — "Improve this agent →"
   it('degrades to the plain promptHref when sectionName/excerpt are absent', () => {
     renderFooter(<InspectorFooter promptKey="game" agentKey="game" runId="run-1" />)
     const link = screen.getByRole('link', { name: 'Improve this agent →' })
-    expect(link.getAttribute('href')).toBe('/prompt-lab/game')
+    expect(link.getAttribute('href')).toBe('/admin/agents/game')
   })
 })
 

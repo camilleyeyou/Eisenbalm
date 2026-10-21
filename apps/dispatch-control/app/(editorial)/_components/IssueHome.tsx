@@ -17,6 +17,7 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { deriveHomeSections, deriveHomeFooter } from '@/lib/homeSections'
 import { publishChain, derivePublishGate, PUBLISH_SLOW_MS, PUBLISH_SLOW_NOTICE } from '@/lib/publishChain'
+import { adminRunHref } from '@/lib/issueRouteResolver'
 import { IssueHomeView, type IssueHomeLinks } from './IssueHomeView'
 import StartIssueButton from './StartIssueButton'
 import HoldControl from './HoldControl'
@@ -166,7 +167,7 @@ export default function IssueHome() {
   const links: IssueHomeLinks = {
     admin: '/admin',
     pastIssues: '/archive',
-    runDetails: cr.runId ? `/admin/runs/${encodeURIComponent(cr.runId)}` : null,
+    runDetails: cr.runId ? adminRunHref(cr.runId) : null,
     liveIssue: base && n != null ? `${base.replace(/\/$/, '')}/issue/issue-${n}` : null,
     preview: previewUrl,
   }

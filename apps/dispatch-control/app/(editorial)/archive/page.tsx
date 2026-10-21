@@ -2,7 +2,8 @@
 /**
  * Quick 261021-j83 — `/archive`: data wrapper for the editorial archive.
  * One `listWithTitles` subscription; held rows keep Release (HeldIssueRow);
- * a bounded verification disclosure lists recently published issues.
+ * the old "verification record" disclosure (facts cleared / voice approved
+ * by) was dropped: sign-offs no longer exist, so every row would read blank.
  * No start/create panels: the front door owns the single Start button.
  */
 import { useQuery } from 'convex/react'
@@ -11,39 +12,7 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { useCurrentRun } from '@/lib/useCurrentRun'
 import { relativeWeekLabel } from '@/lib/issueTitle'
 import HeldIssueRow from '../_components/HeldIssueRow'
-import RecentlyPublishedRow from '../_components/RecentlyPublishedRow'
 import { ArchiveBody, type ArchiveRow } from './_components/ArchiveBody'
-
-// ── RecentlyPublishedRowContainer — bounded per-row subscription, accepted ──
-// (pre-existing, capped at 5 rows). Narrowed prop type (not `Doc<'issues'>`)
-// since the wrapper now sources rows from `listWithTitles`, not
-// `listForWorkspace` — only `issueNumber`/`publishedAt` are ever read here.
-
-function RecentlyPublishedRowContainer({
-  issue,
-}: {
-  issue: { issueNumber: number; publishedAt?: number }
-}) {
-  const run = useQuery(api.pipelineRuns.byIssueNumber, { issueNumber: issue.issueNumber })
-  const runId = run?.runId ?? null
-
-  const signOffs = useQuery(api.signOffs.activeByRunId, runId ? { runId } : 'skip')
-  const claimSummary = useQuery(api.claimChecks.allSignedOff, runId ? { runId } : 'skip')
-
-  return (
-    <RecentlyPublishedRow
-      issue={{ issueNumber: issue.issueNumber, publishedAt: issue.publishedAt }}
-      verification={{
-        total: claimSummary?.total ?? 0,
-        contradicted: claimSummary?.blocking ?? 0,
-        factsClearedBy: signOffs?.['facts-cleared']?.actorId,
-        factsClearedAt: signOffs?.['facts-cleared']?.signedAt,
-        voiceApprovedBy: signOffs?.['sounds-human']?.actorId,
-        voiceApprovedAt: signOffs?.['sounds-human']?.signedAt,
-      }}
-    />
-  )
-}
 
 export default function ArchivePage() {
   const run = useCurrentRun()
@@ -62,10 +31,6 @@ export default function ArchivePage() {
   }))
 
   const heldIssues = (issuesList ?? []).filter(i => i.held && !i.published)
-  const publishedIssues = (issuesList ?? [])
-    .filter(i => i.published)
-    .sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0))
-    .slice(0, 5)
 
   const heldSlot =
     heldIssues.length > 0 ? (
@@ -84,26 +49,11 @@ export default function ArchivePage() {
       </div>
     ) : undefined
 
-  const verificationSlot =
-    publishedIssues.length > 0 ? (
-      <details className="border border-[color:var(--color-ink)]/[.1] bg-[color:var(--color-card)] p-4">
-        <summary className="cursor-pointer font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
-          Verification record — recently published
-        </summary>
-        <div className="mt-2 flex flex-col gap-1">
-          {publishedIssues.map(issue => (
-            <RecentlyPublishedRowContainer key={issue._id} issue={issue} />
-          ))}
-        </div>
-      </details>
-    ) : undefined
-
   return (
     <ArchiveBody
       rows={rows}
       currentIssueNumber={run.issueNumber}
       heldSlot={heldSlot}
-      verificationSlot={verificationSlot}
     />
   )
 }

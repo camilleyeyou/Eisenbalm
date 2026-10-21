@@ -287,6 +287,6 @@ describe('InspectorPanel (§44.2/§44.7/§44.9)', () => {
     )
 
     const link = screen.getByRole('link', { name: /Improve this agent/i })
-    expect(link.getAttribute('href')).toBe('/prompt-lab/editor_gate1')
+    expect(link.getAttribute('href')).toBe('/admin/agents/editor_gate1')
   })
 })

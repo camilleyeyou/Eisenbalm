@@ -55,9 +55,3 @@ export const ADMIN_ITEMS: ReadonlyArray<AdminItem> = [
     description: 'Notifications and audit log',
   },
 ]
-
-// TEMPORARY (removed with the sidebar in the next commit of quick 261021-j83).
-export interface NavItem { label: string; href: string }
-export interface NavGroup { label: string; items: NavItem[] }
-export const NAV_GROUPS: NavGroup[] = [{ label: 'Admin', items: ADMIN_ITEMS.map(i => ({ label: i.label, href: i.href })) }]
-export const NAV_PINNED: NavItem = { label: 'Admin', href: '/admin' }

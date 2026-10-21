@@ -2,21 +2,10 @@
  * Phase 40 Plan 40-01 (§40.7, ISS-02) — RED scaffold for the pure
  * issueNumber<->URL resolver. No Convex import, node env.
  *
- * RED until Plan 40-04 implements `apps/dispatch-control/lib/issueRouteResolver.ts`.
+ * Quick 261021-j83 trimmed the resolver to parseIssueNumber + adminRunHref.
  */
 import { describe, it, expect } from 'vitest'
-import {
-  parseIssueNumber,
-  issueHref,
-  issueReviewHref,
-  issueVoiceHref,
-  issueStoryHref,
-  issueDraftHref,
-  issueFactCheckHref,
-  issueApprovalHref,
-  issueRunHref,
-  legacyRedirectTarget,
-} from '../lib/issueRouteResolver'
+import { parseIssueNumber, adminRunHref } from '../lib/issueRouteResolver'
 
 describe('parseIssueNumber (§40.7)', () => {
   it('parses a plain positive integer', () => {
@@ -34,54 +23,12 @@ describe('parseIssueNumber (§40.7)', () => {
   })
 })
 
-describe('href builders (§40.7)', () => {
-  it('issueHref builds /issues/{n}', () => {
-    expect(issueHref(7)).toBe('/issues/7')
+describe('adminRunHref', () => {
+  it('builds /admin/runs/{runId}', () => {
+    expect(adminRunHref('run_1')).toBe('/admin/runs/run_1')
   })
 
-  it('issueReviewHref builds /issues/{n}/review', () => {
-    expect(issueReviewHref(7)).toBe('/issues/7/review')
-  })
-
-  it('issueVoiceHref builds /issues/{n}/voice', () => {
-    expect(issueVoiceHref(7)).toBe('/issues/7/voice')
-  })
-
-  it('issueRunHref URL-encodes the runId segment', () => {
-    expect(issueRunHref(7, 'a b/c')).toBe('/issues/7/runs/a%20b%2Fc')
-  })
-})
-
-describe('Phase 41 stage hrefs (D-05/D-06)', () => {
-  it('issueStoryHref builds /issues/{n}/story', () => {
-    expect(issueStoryHref(7)).toBe('/issues/7/story')
-  })
-
-  it('issueDraftHref builds /issues/{n}/draft', () => {
-    expect(issueDraftHref(7)).toBe('/issues/7/draft')
-  })
-
-  it('issueFactCheckHref builds /issues/{n}/fact-check', () => {
-    expect(issueFactCheckHref(7)).toBe('/issues/7/fact-check')
-  })
-
-  it('issueApprovalHref builds /issues/{n}/approval', () => {
-    expect(issueApprovalHref(7)).toBe('/issues/7/approval')
-  })
-})
-
-describe('legacyRedirectTarget (§40.7)', () => {
-  it('resolves to the issue-keyed review/voice URL when issueNumber is known', () => {
-    expect(legacyRedirectTarget('review', 7)).toBe('/issues/7/review')
-    expect(legacyRedirectTarget('voice', 7)).toBe('/issues/7/voice')
-  })
-
-  it('falls back to /issues (never a run-keyed URL) when issueNumber is null or undefined', () => {
-    const withNull = legacyRedirectTarget('review', null)
-    const withUndefined = legacyRedirectTarget('review', undefined)
-    expect(withNull).toBe('/issues')
-    expect(withUndefined).toBe('/issues')
-    expect(withNull).not.toContain('review-desk')
-    expect(withUndefined).not.toContain('review-desk')
+  it('URL-encodes the runId segment', () => {
+    expect(adminRunHref('a/b c')).toBe('/admin/runs/a%2Fb%20c')
   })
 })

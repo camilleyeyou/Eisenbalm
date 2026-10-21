@@ -1,14 +1,11 @@
 /**
- * Phase 40 Plan 40-04 (§40.7, ISS-02) — issueNumber<->URL translation.
+ * issueNumber parsing and admin run URLs.
  *
- * Pure TS, no imports. Consumed by:
- *   - derivedState.ts (task primary hrefs)
- *   - the routing-inversion plan (40-06) for the legacy-redirect Server
- *     Components at the old run-keyed URLs
- *   - the issue card / header / overview for building links
- *
- * `legacyRedirectTarget` must NEVER return a run-keyed URL (`review-desk` /
- * `voice-pass`) — that would redirect-loop the old bookmarked links.
+ * Quick 261021-j83: the console's issue-keyed stage routes
+ * (`/issues/[n]/story|draft|review|fact-check|voice|approval`) are gone; the
+ * editor area is `/`, `/s/[section]` and `/archive`, and run internals live
+ * at `/admin/runs/[runId]`. Only the strict parser and the admin run href
+ * remain.
  */
 
 /**
@@ -24,62 +21,7 @@ export function parseIssueNumber(param: string): number | null {
   return n
 }
 
-export function issueHref(issueNumber: number): string {
-  return `/issues/${issueNumber}`
-}
-
-export function issueReviewHref(issueNumber: number): string {
-  return `/issues/${issueNumber}/review`
-}
-
-export function issueVoiceHref(issueNumber: number): string {
-  return `/issues/${issueNumber}/voice`
-}
-
-/**
- * Phase 41 stage-tab hrefs (D-05/D-06). `issueReviewHref` above is KEPT for
- * back-compat — `review/page.tsx` still imports it until Plan 41-06 guts it
- * into a redirect; removing it now would break the Wave 1-2 build.
- */
-export function issueStoryHref(issueNumber: number): string {
-  return `/issues/${issueNumber}/story`
-}
-
-export function issueDraftHref(issueNumber: number): string {
-  return `/issues/${issueNumber}/draft`
-}
-
-export function issueFactCheckHref(issueNumber: number): string {
-  return `/issues/${issueNumber}/fact-check`
-}
-
-export function issueApprovalHref(issueNumber: number): string {
-  return `/issues/${issueNumber}/approval`
-}
-
-export function issueRunHref(issueNumber: number, runId: string): string {
-  return `/issues/${issueNumber}/runs/${encodeURIComponent(runId)}`
-}
-
-/**
- * The old run-keyed URLs (`/review-desk/[runId]`, `/voice-pass/[runId]`,
- * `/run-monitor/runs/[runId]/review`) redirect here once a Convex lookup
- * resolves `runId -> issueNumber` (that lookup happens at the call site —
- * this function is pure). When the issueNumber cannot be resolved (no issue
- * row / unknown runId), fall back to `/issues` — NEVER a run-keyed URL,
- * which would redirect-loop.
- *
- * `'approval'` (finish-phase-34-retirement, quick 260718-00i Task 3) maps
- * the retired `/run-monitor/runs/[runId]/review` publish/decision panel to
- * `issueApprovalHref` — the Approval stage (mounts DecisionRail) is that
- * panel's true replacement, NOT the galley `issueReviewHref` stage.
- */
-export function legacyRedirectTarget(
-  surface: 'review' | 'voice' | 'approval',
-  issueNumber: number | null | undefined,
-): string {
-  if (typeof issueNumber !== 'number') return '/issues'
-  if (surface === 'review') return issueReviewHref(issueNumber)
-  if (surface === 'voice') return issueVoiceHref(issueNumber)
-  return issueApprovalHref(issueNumber)
+/** The Admin run-detail page for a run. */
+export function adminRunHref(runId: string): string {
+  return `/admin/runs/${encodeURIComponent(runId)}`
 }

@@ -92,7 +92,7 @@ describe('InspectorFooter — "Improve this agent" carries origin (WBN-04, D-13)
       name: /improve this agent/i,
     }) as HTMLAnchorElement
     expect(improveLink.getAttribute('href')).toBe(
-      '/prompt-lab/scout?fromRun=run_abc123&section=founderBio&excerpt=' +
+      '/admin/agents/scout?fromRun=run_abc123&section=founderBio&excerpt=' +
         encodeURIComponent('The founder said the quiet part out loud.'),
     )
   })
@@ -109,7 +109,7 @@ describe('InspectorFooter — "Improve this agent" carries origin (WBN-04, D-13)
     const improveLink = screen.getByRole('link', {
       name: /improve this agent/i,
     }) as HTMLAnchorElement
-    expect(improveLink.getAttribute('href')).toBe('/prompt-lab/scout')
+    expect(improveLink.getAttribute('href')).toBe('/admin/agents/scout')
   })
 
   it('does not carry origin params on "Compare instruction versions"', () => {
@@ -126,7 +126,7 @@ describe('InspectorFooter — "Improve this agent" carries origin (WBN-04, D-13)
     const compareLink = screen.getByRole('link', {
       name: /compare instruction versions/i,
     }) as HTMLAnchorElement
-    expect(compareLink.getAttribute('href')).toBe('/prompt-lab/scout')
+    expect(compareLink.getAttribute('href')).toBe('/admin/agents/scout')
   })
 })
 
@@ -209,7 +209,7 @@ describe('prompt_versions.originRef round-trips through save + render (WBN-04, D
     const link = screen.getByRole('link', {
       name: /view the motivating output/i,
     }) as HTMLAnchorElement
-    expect(link.getAttribute('href')).toBe(`/run-monitor/runs/${ORIGIN_REF.runId}`)
+    expect(link.getAttribute('href')).toBe(`/admin/runs/${ORIGIN_REF.runId}`)
   })
 
   it('OriginBanner renders nothing when no origin is present', () => {

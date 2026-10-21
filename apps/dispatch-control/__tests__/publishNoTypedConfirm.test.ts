@@ -44,18 +44,15 @@ import * as path from 'node:path'
 import { describe, it, expect } from 'vitest'
 
 const REPO_ROOT = path.resolve(__dirname, '../../..')
-const DASHBOARD_ROOT = path.join(REPO_ROOT, 'apps/dispatch-control/app/(dashboard)')
+const EDITORIAL_ROOT = path.join(REPO_ROOT, 'apps/dispatch-control/app/(editorial)/_components')
 
-const DECISION_RAIL = path.join(
-  DASHBOARD_ROOT,
-  'review-desk/[runId]/_components/DecisionRail.tsx',
-)
-const PUBLISH_PREVIEW_DIALOG = path.join(
-  DASHBOARD_ROOT,
-  'review-desk/[runId]/_components/PublishPreviewDialog.tsx',
-)
+// Quick 261021-j83: DecisionRail and PublishPreviewDialog were deleted with
+// the review desk. The ONE publish surface is the front door's footer
+// (PublishFooter, fed by IssueHome's derivePublishGate).
+const PUBLISH_FOOTER = path.join(EDITORIAL_ROOT, 'PublishFooter.tsx')
+const ISSUE_HOME = path.join(EDITORIAL_ROOT, 'IssueHome.tsx')
 
-const PUBLISH_SURFACE_FILES = [DECISION_RAIL, PUBLISH_PREVIEW_DIALOG]
+const PUBLISH_SURFACE_FILES = [PUBLISH_FOOTER, ISSUE_HOME]
 
 // Forbidden pattern: any raw <input> control on a publish-decision surface.
 // Narrow to these two named files (see header) so it does not false-positive
@@ -70,45 +67,33 @@ const INPUT_ELEMENT_PATTERN = /<input\b/
 // should reference any such idiom.
 const TYPED_CONFIRM_IDIOM_PATTERN = /typed(Name|Title|Text|Confirm)|confirmText|type the .* to confirm/i
 
-describe('publishNoTypedConfirm: neither publish surface carries a typed-confirmation input (D-15)', () => {
-  it('both publish-decision files exist (sanity)', () => {
+describe('publishNoTypedConfirm: the publish surface carries no typed-confirmation input (D-15)', () => {
+  it('both publish-surface files exist (sanity)', () => {
     for (const file of PUBLISH_SURFACE_FILES) {
       expect(fs.existsSync(file), `Missing publish-surface file: ${file}`).toBe(true)
     }
   })
 
-  it('DecisionRail.tsx has NO <input> element and NO typed-confirm idiom', () => {
-    const content = fs.readFileSync(DECISION_RAIL, 'utf-8')
+  it.each(PUBLISH_SURFACE_FILES)('%s has NO <input> element and NO typed-confirm idiom', (file) => {
+    const content = fs.readFileSync(file, 'utf-8')
     expect(INPUT_ELEMENT_PATTERN.test(content)).toBe(false)
     expect(TYPED_CONFIRM_IDIOM_PATTERN.test(content)).toBe(false)
   })
 
-  it('PublishPreviewDialog.tsx has NO <input> element and NO typed-confirm idiom', () => {
-    const content = fs.readFileSync(PUBLISH_PREVIEW_DIALOG, 'utf-8')
-    expect(INPUT_ELEMENT_PATTERN.test(content)).toBe(false)
-    expect(TYPED_CONFIRM_IDIOM_PATTERN.test(content)).toBe(false)
-  })
-
-  it("DecisionRail.tsx's Publish button gates on hold/busy only (quick 261021-7aw), not a typed match or sign-offs", () => {
-    const content = fs.readFileSync(DECISION_RAIL, 'utf-8')
-    // The publish-disabled derivation no longer references sign-offs or findings.
-    expect(/publishDisabled\s*=\s*!!held\s*\|\|\s*busy/.test(content)).toBe(true)
-    expect(/publishDisabled\s*=[^\n]*(factsActive|humanActive|blockers)/.test(content)).toBe(false)
-    // The actual Publish button is wired to that derivation.
-    expect(/disabled=\{publishDisabled\}/.test(content)).toBe(true)
+  it("the front door's Publish gate is derivePublishGate (hold / role / busy), not a typed match or sign-offs", () => {
+    const home = fs.readFileSync(ISSUE_HOME, 'utf-8')
+    expect(/derivePublishGate\(/.test(home)).toBe(true)
+    expect(/signOff|factsActive|humanActive|typed/i.test(home)).toBe(false)
   })
 
   it('the registry Do-not-use typed-name confirm remains the ONLY typed confirmation in operator copy (cross-check)', () => {
     const registryTablePath = path.join(
-      DASHBOARD_ROOT,
-      'registry/_components/RegistryTable.tsx',
+      REPO_ROOT,
+      'apps/dispatch-control/app/admin/charities/_components/RegistryTable.tsx',
     )
     expect(fs.existsSync(registryTablePath)).toBe(true)
     const content = fs.readFileSync(registryTablePath, 'utf-8')
-    // Sanity: Task 2 really did land the typed-name gate here — if this ever
-    // regresses to false, Mark Do-not-use would have silently lost its
-    // typed-confirmation requirement (a different regression than this
-    // file's main purpose, but worth cross-checking in the same tripwire).
+    // Mark Do-not-use must keep its typed-confirmation requirement.
     expect(/typedName/.test(content)).toBe(true)
   })
 })

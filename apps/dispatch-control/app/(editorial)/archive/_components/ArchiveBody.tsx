@@ -172,7 +172,6 @@ export interface ArchiveBodyProps {
   rows: ArchiveRow[]
   heldSlot?: React.ReactNode
   scheduledSlot?: React.ReactNode
-  verificationSlot?: React.ReactNode
   /** The current issue's row opens `/` instead of a console route. */
   currentIssueNumber?: number | null
 }
@@ -181,7 +180,6 @@ export function ArchiveBody({
   rows,
   heldSlot,
   scheduledSlot,
-  verificationSlot,
   currentIssueNumber,
 }: ArchiveBodyProps) {
   const [query, setQuery] = useState('')
@@ -260,7 +258,6 @@ export function ArchiveBody({
           ) : null,
         )}
 
-        {verificationSlot}
       </div>
     </div>
   )

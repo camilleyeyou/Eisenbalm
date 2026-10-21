@@ -60,8 +60,6 @@ describe('projectClaimRow', () => {
     const root = path.resolve(__dirname, '..')
     const files = [
       'lib/useCurrentRun.ts',
-      'app/(dashboard)/issues/_components/WorkspaceStateProvider.tsx',
-      'app/(dashboard)/my-tasks/_components/MyTasksScreen.tsx',
     ]
     for (const f of files) {
       const src = fs.readFileSync(path.join(root, f), 'utf8')
