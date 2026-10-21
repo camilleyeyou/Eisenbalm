@@ -148,6 +148,9 @@ async def lifespan(app: FastAPI):
             except Exception:  # noqa: BLE001
                 pass
             pool = None
+        # Never leave the module singletons pointing at the closed clients.
+        convex_client.set_client(None)
+        sanity_client.set_client(None)
         checkpointer = None
         graph = None
 

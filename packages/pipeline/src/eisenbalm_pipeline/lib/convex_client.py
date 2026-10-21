@@ -115,8 +115,10 @@ _PIPELINE_SECRET_GUARDED_PATHS = frozenset(
 _CLIENT: Optional[AsyncClient] = None
 
 
-def set_client(client: AsyncClient) -> None:
-    """Register the shared AsyncClient (FastAPI lifespan calls this)."""
+def set_client(client: Optional[AsyncClient]) -> None:
+    """Register the shared AsyncClient (FastAPI lifespan calls this).
+
+    ``None`` clears it (degraded boot: never point at a closed client)."""
     global _CLIENT
     _CLIENT = client
 

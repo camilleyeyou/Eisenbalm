@@ -394,7 +394,7 @@ async def upload_pdf_to_issue(
 _CLIENT: Optional[AsyncClient] = None
 
 
-def set_client(client: AsyncClient) -> None:
+def set_client(client: Optional[AsyncClient]) -> None:
     """Register the shared Sanity AsyncClient. Called from FastAPI lifespan."""
     global _CLIENT
     _CLIENT = client

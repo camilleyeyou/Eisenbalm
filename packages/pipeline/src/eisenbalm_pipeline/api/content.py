@@ -20,7 +20,9 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, Literal, Optional
+import posixpath
+import re
+from typing import Any, Callable, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -930,6 +932,52 @@ async def _upload_asset_as_url(
     return {"assetUrl": asset_url, "assetId": asset_id, "revisionId": new_rev}
 
 
+# ─── Asset upload limits ────────────────────────────────────────────────────
+# NotebookLM podcast MP3s run ~1MB/min and episodes are 30-60 min.
+_MAX_AUDIO_PODCAST_BYTES = 100 * 1024 * 1024
+_MAX_AUDIO_JINGLE_BYTES = 25 * 1024 * 1024  # suno-audio
+_MAX_IMAGE_BYTES = 10 * 1024 * 1024  # storyboard-*
+# Explicitly NOT image/svg+xml — scriptable.
+_IMAGE_TYPES = frozenset({"image/png", "image/jpeg", "image/webp", "image/gif"})
+
+
+def _is_audio_type(ct: str) -> bool:
+    return ct.startswith("audio/")
+
+
+def _is_image_type(ct: str) -> bool:
+    return ct in _IMAGE_TYPES
+
+
+def _slot_limits(slot: str) -> tuple[int, Callable[[str], bool]]:
+    """(max bytes, content-type predicate) for an already-validated slot."""
+    if slot == "podcast-audio":
+        return _MAX_AUDIO_PODCAST_BYTES, _is_audio_type
+    if slot == "suno-audio":
+        return _MAX_AUDIO_JINGLE_BYTES, _is_audio_type
+    return _MAX_IMAGE_BYTES, _is_image_type
+
+
+def _normalize_content_type(raw: Optional[str]) -> str:
+    return (raw or "").split(";", 1)[0].strip().lower()
+
+
+def _sanitize_filename(raw: Optional[str]) -> str:
+    """Safe basename: no path parts, [A-Za-z0-9._-] only, <=120 chars with the
+    extension preserved, fallback 'upload.bin'."""
+    name = posixpath.basename((raw or "").replace("\\", "/"))
+    name = re.sub(r"[^A-Za-z0-9._-]", "_", name).lstrip(".")
+    if not name:
+        return "upload.bin"
+    if len(name) > 120:
+        stem, dot, ext = name.rpartition(".")
+        if dot and len(ext) < 20:
+            name = stem[: 120 - len(ext) - 1] + "." + ext
+        else:
+            name = name[:120]
+    return name
+
+
 @router.post("/issues/{run_id}/assets/{slot}")
 async def upload_content_asset(
     request: Request,
@@ -940,13 +988,35 @@ async def upload_content_asset(
     """EDT-03 — raw-binary asset upload (podcast-audio | suno-audio |
     storyboard-{i}). NEVER FastAPI's multipart form-parsing helpers —
     python-multipart is not an installed dependency (RESEARCH Pitfall 3);
-    the body is read via `await request.body()` and metadata comes from
-    custom headers."""
+    the body is STREAMED with a per-slot byte cap (413) and a content-type
+    whitelist (415), checked BEFORE any Convex/Sanity call; metadata comes
+    from custom headers and the filename is sanitized."""
     field_path, asset_kind = _resolve_asset_slot(slot)
 
-    raw = await request.body()
-    filename = request.headers.get("X-Filename") or "upload.bin"
-    content_type = request.headers.get("Content-Type") or "application/octet-stream"
+    max_bytes, type_ok = _slot_limits(slot)
+    content_type = _normalize_content_type(request.headers.get("Content-Type"))
+    if not type_ok(content_type):
+        raise HTTPException(
+            status_code=415,
+            detail={
+                "reason": "unsupported_media_type",
+                "message": f"Content-Type {content_type or '(none)'!r} not allowed for slot {slot}",
+            },
+        )
+    too_large = HTTPException(
+        status_code=413,
+        detail={"reason": "payload_too_large", "maxBytes": max_bytes},
+    )
+    declared = request.headers.get("Content-Length")
+    if declared and declared.isdigit() and int(declared) > max_bytes:
+        raise too_large
+    buf = bytearray()
+    async for chunk in request.stream():
+        buf.extend(chunk)
+        if len(buf) > max_bytes:
+            raise too_large
+    raw = bytes(buf)
+    filename = _sanitize_filename(request.headers.get("X-Filename"))
     if_revision_id = request.headers.get("X-If-Revision-Id") or ""
 
     convex_http, sanity_http, sanity_id, actor = await _resolve_sanity_id(
