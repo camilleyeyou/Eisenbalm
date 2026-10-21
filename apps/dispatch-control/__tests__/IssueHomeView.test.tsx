@@ -56,12 +56,9 @@ function baseProps(over: Partial<IssueHomeViewProps> = {}): IssueHomeViewProps {
     onConfirmPublish: vi.fn(),
     onCancelPublish: vi.fn(),
     links: {
-      admin: '/run',
-      pastIssues: '/issues',
-      runDetails: '/issues/7/runs/run_1',
-      factCheck: '/issues/7/fact-check',
-      approval: '/issues/7/approval',
-      storyChoice: '/issues/7/story',
+      admin: '/admin',
+      pastIssues: '/archive',
+      runDetails: '/admin/runs/run_1',
       liveIssue: 'https://web.example/issue/issue-7',
       preview: 'https://web.example/issue/issue-7/preview?token=x',
     },
@@ -84,8 +81,8 @@ describe('IssueHomeView title', () => {
     expect(screen.getByText('A two-person water lab in the Ozarks.')).toBeTruthy()
     expect(screen.getByText('Issue 7')).toBeTruthy()
     expect(screen.getByText('The Eisenbalm Dispatch')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Past issues' }).getAttribute('href')).toBe('/issues')
-    expect(screen.getByRole('link', { name: 'Admin' }).getAttribute('href')).toBe('/run')
+    expect(screen.getByRole('link', { name: 'Past issues' }).getAttribute('href')).toBe('/archive')
+    expect(screen.getByRole('link', { name: 'Admin' }).getAttribute('href')).toBe('/admin')
     expect(container.querySelector('aside')).toBeNull()
     expect(container.querySelector('[role="tablist"]')).toBeNull()
     expect(container.querySelector('input')).toBeNull()
@@ -139,7 +136,7 @@ describe('IssueHomeView publish', () => {
     render(<IssueHomeView {...baseProps({ gate: { enabled: false, reason: 'collaborator' } })} />)
     expect((publishButtons()[0] as HTMLButtonElement).disabled).toBe(true)
     expect(screen.getByText(COLLABORATOR_LOCK_LABEL)).toBeTruthy()
-    expect(COLLABORATOR_LOCK_LABEL).toBe('Collaborators can review and comment, not publish.')
+    expect(COLLABORATOR_LOCK_LABEL).toBe('Collaborators can read and edit. Only the Editor-in-chief can publish.')
   })
 
   it('explains a held issue', () => {
@@ -217,7 +214,7 @@ describe('IssueHomeView states', () => {
   it('failed: honest sentence, Run Details link, no Publish', () => {
     render(<IssueHomeView {...baseProps({ footer: { kind: 'failed' } })} />)
     expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(FAILED_SENTENCE)
-    expect(screen.getByRole('link', { name: 'Admin → Run Details' }).getAttribute('href')).toBe('/issues/7/runs/run_1')
+    expect(screen.getByRole('link', { name: 'See why in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
     expect(publishButtons()).toHaveLength(0)
   })
 
@@ -239,7 +236,8 @@ describe('IssueHomeView states', () => {
   it('gate1: waiting sentence and charity link, no Publish', () => {
     render(<IssueHomeView {...baseProps({ footer: { kind: 'gate1' } })} />)
     expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(GATE1_SENTENCE)
-    expect(screen.getByRole('link', { name: 'Choose the charity →' }).getAttribute('href')).toBe('/issues/7/story')
+    expect(screen.getByRole('link', { name: 'Open the run in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
+    expect(screen.queryByText(/Choose the charity/)).toBeNull()
     expect(publishButtons()).toHaveLength(0)
   })
 

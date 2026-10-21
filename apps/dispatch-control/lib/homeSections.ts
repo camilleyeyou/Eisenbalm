@@ -53,7 +53,7 @@ export const RUNNING_SENTENCE = 'Still writing — Publish turns on when the age
 export const READY_SENTENCE = 'Ready to publish. The agents reviewed every section and fixed what they found.'
 export const NONE_SENTENCE = 'There is no current issue yet.'
 export const FAILED_SENTENCE = 'This run failed before the issue was finished, so there is nothing to publish.'
-export const GATE1_SENTENCE = 'The agents are waiting for you to choose the charity.'
+export const GATE1_SENTENCE = 'This older run paused to choose a charity. Stop it in Admin, then start a new issue.'
 
 export function rowNote(row: Pick<HomeSectionRow, 'state' | 'agentChanges'>): string {
   switch (row.state) {

@@ -15,7 +15,7 @@ import type { Role } from '@/lib/role'
 import type { HomeFooter } from '@/lib/homeSections'
 
 export const NETWORK_FAILURE_MESSAGE = 'Couldn’t reach the server. Nothing was published — try again.'
-export const COLLABORATOR_LOCK_LABEL = 'Collaborators can review and comment, not publish.'
+export const COLLABORATOR_LOCK_LABEL = 'Collaborators can read and edit. Only the Editor-in-chief can publish.'
 export const HELD_REASON = 'This issue is held — release the hold to publish.'
 export const PUBLISH_SLOW_MS = 75_000
 export const PUBLISH_SLOW_NOTICE = 'Publishing is taking longer than usual — check Admin → Run Details.'

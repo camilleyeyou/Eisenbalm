@@ -40,8 +40,8 @@ import { cancelRun } from '@/lib/pipelineControlClient'
 import DecisionLog from '@/components/decision-log/DecisionLog'
 import { HELP_COPY } from '@/components/help/helpCopy'
 import { useWorkspaceState } from './WorkspaceStateProvider'
-import HoldDialog from './HoldDialog'
-import { relativeTime } from './HeldIssueRow'
+import HoldDialog from '@/app/(editorial)/_components/HoldDialog'
+import { relativeTime } from '@/app/(editorial)/_components/HeldIssueRow'
 
 interface WorkspaceControlsProps {
   issueNumber: number

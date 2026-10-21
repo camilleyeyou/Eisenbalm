@@ -7,12 +7,12 @@
  *     onCancel: () => void; busy?: boolean }
  *
  * RED until Plan 40-07 implements
- * apps/dispatch-control/app/(dashboard)/issues/_components/HoldDialog.tsx.
+ * apps/dispatch-control/app/(editorial)/_components/HoldDialog.tsx.
  * Runs in jsdom (environmentMatchGlobs `*.test.tsx` -> jsdom).
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
-import HoldDialog from '../app/(dashboard)/issues/_components/HoldDialog'
+import HoldDialog from '../app/(editorial)/_components/HoldDialog'
 
 afterEach(() => {
   cleanup()

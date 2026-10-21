@@ -17,8 +17,9 @@ import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { getDraft, ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
 import { deriveHomeSections, deriveHomeFooter } from '@/lib/homeSections'
 import { publishChain, derivePublishGate, PUBLISH_SLOW_MS, PUBLISH_SLOW_NOTICE } from '@/lib/publishChain'
-import { issueRunHref, issueFactCheckHref, issueApprovalHref, issueStoryHref } from '@/lib/issueRouteResolver'
 import { IssueHomeView, type IssueHomeLinks } from './IssueHomeView'
+import StartIssueButton from './StartIssueButton'
+import HoldControl from './HoldControl'
 
 type DraftState = { runId: string; draft: DraftResponse } | { runId: string; error: string } | undefined
 
@@ -163,12 +164,9 @@ export default function IssueHome() {
   const n = cr.issueNumber
   const base = process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE
   const links: IssueHomeLinks = {
-    admin: '/run',
-    pastIssues: '/issues',
-    runDetails: n != null && cr.runId ? issueRunHref(n, cr.runId) : null,
-    factCheck: n != null ? issueFactCheckHref(n) : null,
-    approval: n != null ? issueApprovalHref(n) : null,
-    storyChoice: n != null ? issueStoryHref(n) : null,
+    admin: '/admin',
+    pastIssues: '/archive',
+    runDetails: cr.runId ? `/admin/runs/${encodeURIComponent(cr.runId)}` : null,
     liveIssue: base && n != null ? `${base.replace(/\/$/, '')}/issue/issue-${n}` : null,
     preview: previewUrl,
   }
@@ -195,6 +193,20 @@ export default function IssueHome() {
       onConfirmPublish={() => void onConfirmPublish()}
       onCancelPublish={() => setPhase('idle')}
       links={links}
+      controls={
+        <>
+          <StartIssueButton footerKind={footer.kind} held={held} />
+          <HoldControl
+            footerKind={footer.kind}
+            issueNumber={cr.issueNumber}
+            runId={cr.runId}
+            held={held}
+            heldReason={issueRow?.heldReason ?? undefined}
+            heldBy={issueRow?.heldBy ?? undefined}
+            heldAt={issueRow?.heldAt ?? undefined}
+          />
+        </>
+      }
     />
   )
 }

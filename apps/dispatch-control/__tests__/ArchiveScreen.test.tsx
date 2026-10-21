@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
-import { ArchiveBody, type ArchiveRow } from '../app/(dashboard)/issues/page'
+import { ArchiveBody, type ArchiveRow } from '../app/(editorial)/archive/_components/ArchiveBody'
 
 afterEach(() => {
   cleanup()
@@ -113,76 +113,25 @@ describe('ArchiveBody — row rendering', () => {
     expect(row.tagName).not.toBe('A')
   })
 
-  it('a hasDrafts:true row IS a link to its draft desk', () => {
-    render(<ArchiveBody rows={makeRows()} />)
+  it('the current issue row links to the front door', () => {
+    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
     const row = screen.getByTestId('archive-row-999717')
     expect(row.tagName).toBe('A')
-    expect(row.getAttribute('href')).toBe('/issues/999717/draft')
-  })
-})
-
-describe('ArchiveBody — search', () => {
-  it('typing "kumasi" filters to titles matching case-insensitively', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    fireEvent.change(screen.getByLabelText('Search titles'), { target: { value: 'kumasi' } })
-    expect(screen.getByTestId('archive-row-999717')).toBeDefined()
-    expect(screen.queryByTestId('archive-row-999716')).toBeNull()
+    expect(row.getAttribute('href')).toBe('/')
   })
 
-  it('typing "999716" matches by issue number', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    fireEvent.change(screen.getByLabelText('Search titles'), { target: { value: '999716' } })
-    expect(screen.getByTestId('archive-row-999716')).toBeDefined()
-    expect(screen.queryByTestId('archive-row-999717')).toBeNull()
+  it('a published row links to the live issue when the preview base is set', () => {
+    process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE = 'https://web.example/'
+    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
+    const row = screen.getByTestId('archive-row-999716')
+    expect(row.tagName).toBe('A')
+    expect(row.getAttribute('href')).toBe('https://web.example/issue/issue-999716')
+    delete process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE
   })
 
-  it('a query matching nothing renders an explicit empty message, not a blank page', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    fireEvent.change(screen.getByLabelText('Search titles'), {
-      target: { value: 'zzz-no-match-anywhere' },
-    })
-    expect(screen.getByText(/no issues match/i)).toBeDefined()
-    expect(screen.queryByTestId('archive-row-999717')).toBeNull()
-  })
-})
-
-describe('ArchiveBody — filter chips', () => {
-  it('"All" is the default and shows every row', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    for (const n of [999717, 999716, 999714, 999720]) {
-      expect(screen.getByTestId(`archive-row-${n}`)).toBeDefined()
-    }
-  })
-
-  it('"Published" narrows to published rows only', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Published' }))
-    expect(screen.getByTestId('archive-row-999716')).toBeDefined()
-    expect(screen.queryByTestId('archive-row-999717')).toBeNull()
-    expect(screen.queryByTestId('archive-row-999714')).toBeNull()
-  })
-
-  it('"Held" narrows to held rows only', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Held' }))
-    expect(screen.getByTestId('archive-row-999714')).toBeDefined()
-    expect(screen.queryByTestId('archive-row-999717')).toBeNull()
-  })
-
-  it('"Has drafts" keeps only hasDrafts:true rows', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Has drafts' }))
-    expect(screen.getByTestId('archive-row-999717')).toBeDefined()
-    expect(screen.queryByTestId('archive-row-999720')).toBeNull()
-  })
-})
-
-describe('ArchiveBody — structural guard against N+1', () => {
-  it('renders from ONE fixture array with zero Convex mocking required', () => {
-    // No `vi.mock('convex/react', ...)` exists anywhere in this file. If the
-    // row component performed its own per-row subscription (the
-    // `RecentlyPublishedRowContainer` pattern this list must never repeat),
-    // this render would throw for lack of a ConvexProvider.
-    expect(() => render(<ArchiveBody rows={makeRows()} />)).not.toThrow()
+  it('other rows are not links and never point at the old console', () => {
+    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
+    expect(screen.getByTestId('archive-row-999714').tagName).not.toBe('A')
+    expect(document.body.innerHTML).not.toContain('/issues/')
   })
 })

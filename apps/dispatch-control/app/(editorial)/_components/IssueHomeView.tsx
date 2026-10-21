@@ -7,6 +7,7 @@
  * Pure props only (the RunBody/RunScreen seam): no Convex, Clerk, fetch or
  * inspector hooks. Plan 52-04 wires data in. Hard edges, flat.
  */
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 import type { HomeFooter, HomeSectionsResult } from '@/lib/homeSections'
@@ -18,9 +19,6 @@ export interface IssueHomeLinks {
   admin: string
   pastIssues: string
   runDetails: string | null
-  factCheck: string | null
-  approval: string | null
-  storyChoice: string | null
   liveIssue: string | null
   preview: string | null
 }
@@ -41,6 +39,8 @@ export interface IssueHomeViewProps {
   onConfirmPublish: () => void
   onCancelPublish: () => void
   links: IssueHomeLinks
+  /** Start issue + Hold/Release, rendered directly under the publish footer. */
+  controls?: ReactNode
 }
 
 export function formatPublishedDate(ts: number): string {
@@ -140,6 +140,7 @@ export function IssueHomeView(props: IssueHomeViewProps) {
             onCancelPublish={props.onCancelPublish}
             links={links}
           />
+          {props.controls}
         </div>
       </main>
     </div>

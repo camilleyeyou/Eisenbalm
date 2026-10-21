@@ -261,7 +261,8 @@ describe('states', () => {
     mockCurrentRun = currentRun({}, { runStatus: 'awaiting-review', runCompletedAt: undefined })
     render(<IssueHome />)
     expect(await screen.findByText(new RegExp(GATE1_SENTENCE))).toBeTruthy()
-    expect(screen.getByText('Choose the charity →')).toBeTruthy()
+    expect(screen.queryByText('Choose the charity →')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Open the run in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
     await act(async () => {})
     const footer = screen.getByRole('region', { name: 'Publish' })
     expect(footer.querySelector('[aria-busy="true"]')).toBeNull()
@@ -272,7 +273,7 @@ describe('states', () => {
   it('Collaborator: lock label and disabled Publish', async () => {
     hoisted.role.current = 'Collaborator'
     render(<IssueHome />)
-    expect(await screen.findByText('Collaborators can review and comment, not publish.')).toBeTruthy()
+    expect(await screen.findByText('Collaborators can read and edit. Only the Editor-in-chief can publish.')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true)
   })
 

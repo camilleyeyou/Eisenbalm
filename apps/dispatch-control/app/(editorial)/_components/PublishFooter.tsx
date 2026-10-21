@@ -61,10 +61,7 @@ export function PublishFooter(props: Props) {
     case 'none':
       sentence = (
         <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">
-          {NONE_SENTENCE}{' '}
-          <Link href={links.admin} className={LINK}>
-            Open Admin →
-          </Link>
+          {NONE_SENTENCE}
         </p>
       )
       break
@@ -73,7 +70,7 @@ export function PublishFooter(props: Props) {
         <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">
           {FAILED_SENTENCE}{' '}
           <Link href={links.runDetails ?? links.admin} className={LINK}>
-            Admin → Run Details
+            See why in Admin →
           </Link>
         </p>
       )
@@ -82,8 +79,8 @@ export function PublishFooter(props: Props) {
       sentence = (
         <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">
           {GATE1_SENTENCE}{' '}
-          <Link href={links.storyChoice ?? links.admin} className={LINK}>
-            Choose the charity →
+          <Link href={links.runDetails ?? links.admin} className={LINK}>
+            Open the run in Admin →
           </Link>
         </p>
       )

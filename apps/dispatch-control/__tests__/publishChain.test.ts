@@ -91,7 +91,7 @@ describe('slow', () => {
   it('exposes the slow threshold, notice and copy constants', () => {
     expect(PUBLISH_SLOW_MS).toBe(75_000)
     expect(PUBLISH_SLOW_NOTICE).toBe('Publishing is taking longer than usual — check Admin → Run Details.')
-    expect(COLLABORATOR_LOCK_LABEL).toBe('Collaborators can review and comment, not publish.')
+    expect(COLLABORATOR_LOCK_LABEL).toBe('Collaborators can read and edit. Only the Editor-in-chief can publish.')
     expect(HELD_REASON).toBe('This issue is held — release the hold to publish.')
   })
 })
