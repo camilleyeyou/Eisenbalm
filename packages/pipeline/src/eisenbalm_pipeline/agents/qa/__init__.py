@@ -1,8 +1,14 @@
 """Phase 5 QA — orchestrates Layer-1 hard rules + Layer-2 LLM-as-judge.
 
-Runs ONCE over all six section bodies (D-03). Writes one qaCorrections row
-per finding (D-01). NEVER mutates section state (D-02). NEVER blocks the
-draft (D-04) — always returns success state regardless of finding severity.
+Runs ONCE over the section bodies (D-03): the six prose sections plus
+deliberation-conversation and podcast text; theme is validated
+deterministically. Writes one qaCorrections row per finding (D-01).
+
+Quick 261021-7aw: the Phase 5 D-02 "annotation-only" contract is SUPERSEDED.
+The agents now apply their own fixes (agents/qa/self_fix.py) to section state
+BEFORE the Sanity draft is written; every row is inserted already closed
+('agent-applied' / 'agent-skipped') and serves as a read-only change log.
+NEVER blocks the draft (D-04) and a self-fix failure never fails the run.
 
 Three defense layers, listed in the order they fire:
 
@@ -33,6 +39,7 @@ import time
 from eisenbalm_pipeline.agents._wrapper import agent_node
 from eisenbalm_pipeline.agents.qa.judge import run_llm_judge
 from eisenbalm_pipeline.agents.qa.rules import QAFinding, run_all_predicates
+from eisenbalm_pipeline.agents.qa.self_fix import APPLIED, SKIPPED, apply_self_fixes, correct_theme
 from eisenbalm_pipeline.graph.state import DispatchState
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe, convex_query_safe
 
@@ -112,7 +119,7 @@ def _body_to_text(body) -> str:
 
 
 def _extract_sections(state: DispatchState) -> dict[str, str]:
-    """Pull the six section bodies into a flat ``{section_id: body}`` dict.
+    """Pull the eight text section bodies into a flat ``{section_id: body}`` dict.
 
     Section-id strings match the rubric.md ``Input Format`` example and the
     Layer-1 ``check_unverified_name`` branches (founder_bio / case_study).
@@ -132,6 +139,10 @@ def _extract_sections(state: DispatchState) -> dict[str, str]:
     case_st = state.get("case_study") or {}
     game = state.get("game") or {}
     bonus = state.get("bonus") or {}
+    turns = state.get("deliberation_conversation") or []
+    conversation = " ".join(
+        t.get("text", "") for t in turns if isinstance(t, dict) and t.get("text")
+    )
     return {
         "origin_story": _body_to_text(origin.get("body", "") or ""),
         "problem":      _body_to_text(problem.get("body", "") or ""),
@@ -139,6 +150,8 @@ def _extract_sections(state: DispatchState) -> dict[str, str]:
         "case_study":   _body_to_text(case_st.get("body", "") or ""),
         "game":         game.get("description", "") or "",
         "bonus":        _body_to_text(bonus.get("body", "") or ""),
+        "deliberation_conversation": conversation,
+        "podcast":      state.get("deliberation_transcript") or "",
     }
 
 
@@ -190,7 +203,7 @@ def _block_index_hint(state: DispatchState, section: str, quoted: str | None) ->
     return matches[0] if len(matches) == 1 else None
 
 
-def _finding_to_qa_correction(f: QAFinding) -> dict:
+def _finding_to_qa_correction(f: QAFinding, resolution: str = SKIPPED) -> dict:
     """Convert a QAFinding NamedTuple to the QACorrection dict shape
     written into ``state['qa_corrections']`` (graph/state.QACorrection).
 
@@ -205,7 +218,8 @@ def _finding_to_qa_correction(f: QAFinding) -> dict:
         "quotedSpan": f.quotedSpan,
         "reason": f.reason,
         "suggestedFix": f.suggestedFix,
-        "accepted": False,
+        "accepted": resolution == APPLIED,
+        "resolution": resolution,
         # legacy-shape fields (now optional on Convex; left empty in Phase 5)
         "fieldName": "",
         "original": "",
@@ -215,10 +229,11 @@ def _finding_to_qa_correction(f: QAFinding) -> dict:
 
 @agent_node(name="qa", emit_event="qa-correction", payload_builder=_qa_payload)
 async def qa(state: DispatchState) -> DispatchState:
-    """Two-layer QA pass. Annotation-only. Never blocks the draft.
+    """Two-layer QA pass with agent self-fix. Never blocks the draft.
 
-    D-02: NEVER mutates section content — only writes ``state['qa_corrections']``.
-    D-03: ONE holistic pass over all six sections after fan-out.
+    Quick 261021-7aw (supersedes D-02): applies fixes to section state and
+    records each finding as a closed change-log row.
+    D-03: ONE holistic pass over all sections after fan-out.
     D-04: NEVER raises on findings — only on infrastructure errors.
     """
     run_id = state["run_id"]
@@ -249,14 +264,39 @@ async def qa(state: DispatchState) -> DispatchState:
 
     all_findings = layer1 + layer2
 
-    # Write each finding to Convex (QA never blocks; always writes+continues).
-    # Canonical Phase 5 payload (post-Plan 05-01 schema patch):
-    #   - 'sectionName' (NOT 'section') — matches Convex validator field name
-    #   - 'reason' (NOT 'reasoning') — Pydantic field is `reason`
-    #   - 'accepted: False' boolean (D-02 annotation-only); Andrew flips in Phase 9
-    #   - 'axis' carries each finding's true predicate/judge axis (§36.2 —
-    #     Layer-1 no longer collapses to a single literal)
-    for f in all_findings:
+    # Quick 261021-7aw: agents fix their own findings before the draft is
+    # written. Any failure degrades to "all skipped" — never fails the run.
+    state_updates: dict = {}
+    try:
+        state_updates, resolutions = await apply_self_fixes(state, all_findings)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("QA self-fix failed (%r) — all findings skipped", exc)
+        state_updates = {}
+        resolutions = [
+            {
+                "resolution": SKIPPED,
+                "resolutionReason": "self-fix step failed",
+                "suggestedFix": f.suggestedFix,
+            }
+            for f in all_findings
+        ]
+
+    # Theme (9th reviewed section): deterministic hex/font validation.
+    corrected_theme = None
+    theme_findings: list[dict] = []
+    try:
+        if state.get("theme"):
+            corrected_theme, theme_findings = correct_theme(state.get("theme"))
+            if theme_findings:
+                state_updates = {**state_updates, "theme": corrected_theme}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("QA theme correction failed (%r) — continuing", exc)
+        theme_findings = []
+
+    # Write each finding to Convex already CLOSED (QA never blocks).
+    now_ms = int(time.time() * 1000)
+    corrections: list[dict] = []
+    for f, res in zip(all_findings, resolutions):
         hint = _block_index_hint(state, f.section, f.quotedSpan)
         payload = {
             "runId": run_id,
@@ -266,28 +306,67 @@ async def qa(state: DispatchState) -> DispatchState:
             "axis": f.axis,
             "quotedSpan": f.quotedSpan,
             "reason": f.reason,
-            "suggestedFix": f.suggestedFix,
-            "accepted": False,
+            "suggestedFix": res.get("suggestedFix") or f.suggestedFix,
+            "accepted": res["resolution"] == APPLIED,
+            "resolution": res["resolution"],
+            "resolutionReason": res["resolutionReason"],
+            "resolvedBy": "pipeline-agent",
+            "resolvedAt": now_ms,
         }
         if hint is not None:
             payload["blockIndexHint"] = hint
         await convex_mutation_safe("qaCorrections:insert", payload)
+        corrections.append(_finding_to_qa_correction(f, res["resolution"]))
+
+    for tf in theme_findings:
+        payload = {
+            "runId": run_id,
+            "agentId": "qa",
+            "sectionName": tf["section"],
+            "severity": tf["severity"],
+            "axis": tf["axis"],
+            "quotedSpan": tf["quotedSpan"],
+            "reason": tf["reason"],
+            "suggestedFix": tf["suggestedFix"],
+            "accepted": True,
+            "resolution": APPLIED,
+            "resolutionReason": "Agent replaced the invalid theme value.",
+            "resolvedBy": "pipeline-agent",
+            "resolvedAt": now_ms,
+        }
+        await convex_mutation_safe("qaCorrections:insert", payload)
+        corrections.append(
+            {
+                "sectionName": tf["section"],
+                "severity": tf["severity"],
+                "axis": tf["axis"],
+                "quotedSpan": tf["quotedSpan"],
+                "reason": tf["reason"],
+                "suggestedFix": tf["suggestedFix"],
+                "accepted": True,
+                "resolution": APPLIED,
+                "fieldName": "",
+                "original": "",
+                "corrected": "",
+            }
+        )
 
     # AGT-17: record resolved model under the llm_config key.
     model_versions = dict(state.get("model_versions") or {})
     model_versions["qa"] = resolved_model
 
     log.info(
-        "QA complete: %d findings (Layer-1=%d, Layer-2=%d) — annotation-only, "
+        "QA complete: %d findings (Layer-1=%d, Layer-2=%d) — self-fixed, "
         "draft continues to editor_final",
-        len(all_findings),
+        len(all_findings) + len(theme_findings),
         len(layer1),
         len(layer2),
     )
 
     return {
         **state,
-        "qa_corrections": [_finding_to_qa_correction(f) for f in all_findings],
+        **state_updates,
+        "qa_corrections": corrections,
         "model_versions": model_versions,
     }
 

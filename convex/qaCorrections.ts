@@ -41,6 +41,11 @@ export const insert = mutation({
     quotedSpan: v.optional(v.string()),
     suggestedFix: v.optional(v.string()),
     blockIndexHint: v.optional(v.number()),   // Phase 32 D-11: resolver hint, never authoritative
+    // Quick 261021-7aw: pipeline self-fix rows are inserted already closed.
+    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'), v.literal('agent-applied'), v.literal('agent-skipped'))),
+    resolutionReason: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+    resolvedAt: v.optional(v.number()),
     // Phase 29 D-1: NOT an auth guard. `insert` is an INTENTIONAL public
     // exception (GAM-05) — apps/web/components/issue/GameSlot.tsx (a
     // 'use client' component on every issue page, no Clerk installed) calls
@@ -61,6 +66,7 @@ export const insert = mutation({
     return await ctx.db.insert('qaCorrections', {
       ...args,
       reason: args.reason.slice(0, MAX_LEN),
+      resolutionReason: args.resolutionReason?.slice(0, MAX_LEN),
       sectionName: args.sectionName.slice(0, MAX_LEN),
       timestamp: Date.now(),
     })
@@ -90,7 +96,7 @@ export const byId = query({
 export const setResolution = mutation({
   args: {
     id: v.id('qaCorrections'),
-    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'))), // absent = reopen
+    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'), v.literal('agent-applied'), v.literal('agent-skipped'))), // absent = reopen
     resolutionReason: v.optional(v.string()),
     resolvedBy: v.optional(v.string()),
     resolvedAt: v.optional(v.number()),

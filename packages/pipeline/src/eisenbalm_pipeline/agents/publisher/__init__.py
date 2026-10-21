@@ -38,6 +38,7 @@ from eisenbalm_pipeline.lib.claims import (
     block_index_hint,
     extract_assertions_by_block,
 )
+from eisenbalm_pipeline.lib.claim_fixes import apply_claim_fixes
 from eisenbalm_pipeline.lib.claim_verdicts import attach_verdicts
 from eisenbalm_pipeline.lib.convex_client import convex_mutation_safe
 from eisenbalm_pipeline.lib.errors import CostCapExceeded
@@ -212,6 +213,17 @@ async def publisher(state: DispatchState) -> DispatchState:
             raise
         except Exception as exc:  # noqa: BLE001
             log.warning("Publisher: claim verdicts failed (%r) — inserting unverdicted rows", exc)
+
+    # Quick 261021-7aw: agents own review — cut sentences carrying
+    # agent-contradicted claims BEFORE the draft is written. Best-effort: a
+    # failure here logs and continues with the original state/rows.
+    if claim_rows:
+        try:
+            _fix_updates, fixed_rows = apply_claim_fixes(state, claim_rows)
+            state = {**state, **_fix_updates}
+            claim_rows = fixed_rows
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Publisher: claim fixes failed (%r) — continuing unfixed", exc)
 
     cost_payload, duration_ms = end_run(run_id)
 

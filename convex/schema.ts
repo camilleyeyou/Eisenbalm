@@ -96,7 +96,7 @@ export default defineSchema({
     suggestedFix: v.optional(v.string()),     // concrete alternative
     blockIndexHint: v.optional(v.number()),   // Phase 32 D-11: QA-recorded block ordinal within the section body; a resolver hint, never authoritative
     // ── Phase 33 resolution fields (D-01, additive optional — §33.1) ───────
-    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'))), // Phase 33 D-01: absent = open
+    resolution: v.optional(v.union(v.literal('accepted'), v.literal('dismissed'), v.literal('agent-applied'), v.literal('agent-skipped'))), // Phase 33 D-01: absent = open; quick 261021-7aw: 'agent-*' = pipeline self-fix log (closed rows)
     resolutionReason: v.optional(v.string()), // required-for-dismiss enforced at the ENDPOINT, not the schema
     resolvedBy: v.optional(v.string()),
     resolvedAt: v.optional(v.number()),

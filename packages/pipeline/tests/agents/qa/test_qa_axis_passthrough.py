@@ -60,6 +60,13 @@ async def _run_qa(monkeypatch, state: dict):
     )
     monkeypatch.setattr("eisenbalm_pipeline.agents.qa.run_llm_judge", _fake_judge)
 
+    async def _no_rewrite(*_a, **_k):  # quick 261021-7aw: never hit the LLM here
+        return ""
+
+    monkeypatch.setattr(
+        "eisenbalm_pipeline.agents.qa.self_fix.generate_voice_rewrite", _no_rewrite
+    )
+
     new_state = await qa(state)
     return new_state, calls
 

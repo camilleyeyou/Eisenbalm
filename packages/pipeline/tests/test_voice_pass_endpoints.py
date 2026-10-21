@@ -282,7 +282,7 @@ def _wire_rewrite(monkeypatch, *, finding: dict | None, rewrite_text: str = "gra
         }
 
     monkeypatch.setattr(f"{_V}._cc.convex_query", mock_convex_query)
-    monkeypatch.setattr(f"{_V}.acomplete", mock_acomplete)
+    monkeypatch.setattr("eisenbalm_pipeline.agents.qa.self_fix.acomplete", mock_acomplete)
     return query_calls, acomplete_calls
 
 

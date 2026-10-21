@@ -57,6 +57,8 @@ export const insertBatch = mutation({
         verdictSources: v.optional(v.array(v.string())),
         verdictAt: v.optional(v.number()),
         verdictModel: v.optional(v.string()),
+        // Quick 261021-7aw: pipeline claim fix records 'removed' | 'skipped'; absent => 'pending'
+        status: v.optional(v.string()),
       }),
     ),
     // Phase 29 D-1: pipeline-lane secret (injected centrally by
@@ -83,7 +85,7 @@ export const insertBatch = mutation({
           text: claim.text,
           claimType: claim.claimType,
           context: claim.context,
-          status: 'pending',
+          status: claim.status ?? 'pending',
           // Phase 35 provenance — pass through when present; Convex omits undefined optionals
           claimId: claim.claimId,
           sourceUrl: claim.sourceUrl,

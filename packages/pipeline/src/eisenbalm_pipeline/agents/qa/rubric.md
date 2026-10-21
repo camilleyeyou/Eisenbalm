@@ -79,9 +79,14 @@ JSON object with section bodies:
   "founder_bio": "...",
   "case_study": "...",
   "game": "...",
-  "bonus": "..."
+  "bonus": "...",
+  "deliberation_conversation": "...",
+  "podcast": "..."
 }
 ```
+
+The theme (colors and fonts) is validated deterministically outside this
+judge; do not emit findings for it.
 
 ## Output Format
 
