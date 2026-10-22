@@ -41,6 +41,8 @@ export interface IssueHomeViewProps {
   links: IssueHomeLinks
   /** Start issue + Hold/Release, rendered directly under the publish footer. */
   controls?: ReactNode
+  /** Stop control, shown in the Gate-1 (paused) footer state. */
+  stopSlot?: ReactNode
 }
 
 export function formatPublishedDate(ts: number): string {
@@ -139,6 +141,7 @@ export function IssueHomeView(props: IssueHomeViewProps) {
             onConfirmPublish={props.onConfirmPublish}
             onCancelPublish={props.onCancelPublish}
             links={links}
+            stopSlot={props.stopSlot}
           />
           {props.controls}
         </div>

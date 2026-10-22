@@ -38,6 +38,7 @@ const publishManualMock = vi.fn(async () => ({
 vi.mock('@/lib/pipelineControlClient', () => ({
   rerollAgent: (...args: unknown[]) => rerollAgentMock(...args),
   publishManual: (...args: unknown[]) => publishManualMock(...args),
+  cancelRun: vi.fn(),
 }))
 
 import RecoveryRail from '../app/admin/runs/_components/RecoveryRail'
@@ -103,7 +104,9 @@ describe('RecoveryRail (WBN-03) — four §7 sections', () => {
 
   it('quick 260719-w6o (F4): a genuinely paused run (no failed agent row) says to stop it and start a new issue, with no link to a retired screen', () => {
     renderRail(<RecoveryRail runId="run-1" agentRuns={[]} isPausedAtGate1 />)
-    expect(screen.getByText('Paused for your decision')).toBeTruthy()
+    expect(screen.getByText('Waiting for you')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Stop this issue' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Restart from this step' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Restart from this step' })).toBeNull()
     expect(screen.getAllByText(/start a new issue from the front page/i).length).toBeGreaterThan(0)
     expect(screen.queryByText(/no specific step is recorded as failed/i)).toBeNull()

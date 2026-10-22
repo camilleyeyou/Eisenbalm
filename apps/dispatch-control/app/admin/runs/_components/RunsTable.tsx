@@ -31,6 +31,8 @@ import { parseCostJson } from '@/lib/costRollup'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 import { SkeletonLine } from '@/components/ui/Skeleton'
+import { splitStaleRuns } from '@/lib/runLabels'
+import { useRunLabel } from '@/lib/useRunLabel'
 
 interface RunsTableProps {
   workspace_id: string
@@ -71,11 +73,25 @@ export const STATUS_CLASSES: Record<string, string> = {
 const CHIP_BASE =
   'inline-block border px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase whitespace-nowrap'
 
+/** Quick 261022-cr6: plain-word label for a run, linked to its detail page. */
+function RunLabelCell({ runId, startedAt }: { runId: string; startedAt: number }) {
+  const label = useRunLabel(runId, startedAt)
+  return (
+    <Link
+      href={`/admin/runs/${runId}`}
+      className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink)] hover:underline"
+    >
+      {label ?? '…'}
+    </Link>
+  )
+}
+
 export default function RunsTable({ workspace_id }: RunsTableProps) {
   const runs = useQuery(api.runs.listRecentForWorkspace, { workspace_id })
   // Called unconditionally (before the loading/empty guards below) so the
   // hook order never changes across renders of this component instance.
   const [showAll, setShowAll] = useState(false)
+  const [showOlder, setShowOlder] = useState(false)
 
   if (runs === undefined) {
     return (
@@ -100,13 +116,19 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
 
   // runs is already newest-first from the query — the first 50 are the most
   // recent.
-  const visibleRuns = showAll ? runs : runs.slice(0, 50)
+  // Quick 261022-cr6: unpublished runs older than 14 days sit behind a disclosure.
+  const { recent, older } = splitStaleRuns(runs, Date.now(), 14)
+  const base = showAll ? recent : recent.slice(0, 50)
+  const visibleRuns = showOlder ? [...base, ...older] : base
 
   return (
     <div className="overflow-x-auto border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
       <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
         <thead>
           <tr className="border-b border-[color:var(--color-faint)] text-left">
+            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
+              Issue
+            </th>
             <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
               <span className="flex items-center gap-1">
                 Status
@@ -144,6 +166,9 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
                 className={`hover:bg-[color:var(--color-card-alt)] transition-colors ${isLast ? '' : 'border-b border-[color:var(--color-faint)]'}`}
               >
                 <td className="px-4 py-3">
+                  <RunLabelCell runId={run.runId} startedAt={run.startedAt} />
+                </td>
+                <td className="px-4 py-3">
                   <span className={`${CHIP_BASE} ${statusClass}`}>{run.status}</span>
                 </td>
                 <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
@@ -174,13 +199,22 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
           })}
         </tbody>
       </table>
-      {runs.length > 50 && !showAll && (
+      {older.length > 0 && !showOlder && (
+        <button
+          type="button"
+          onClick={() => setShowOlder(true)}
+          className="w-full border-t border-[color:var(--color-faint)] px-4 py-3 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
+        >
+          Older runs ({older.length})
+        </button>
+      )}
+      {recent.length > 50 && !showAll && (
         <button
           type="button"
           onClick={() => setShowAll(true)}
           className="w-full border-t border-[color:var(--color-faint)] px-4 py-3 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
         >
-          Show all ({runs.length})
+          Show all ({recent.length})
         </button>
       )}
     </div>

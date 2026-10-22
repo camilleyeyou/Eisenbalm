@@ -37,6 +37,7 @@ export type HomeFooter =
   | { kind: 'none' }
   | { kind: 'failed' }
   | { kind: 'gate1' }
+  | { kind: 'stopped' }
   | { kind: 'running' }
   | { kind: 'published'; publishedAt: number | null }
   | { kind: 'ready' }
@@ -53,7 +54,9 @@ export const RUNNING_SENTENCE = 'Still writing — Publish turns on when the age
 export const READY_SENTENCE = 'Ready to publish. The agents reviewed every section and fixed what they found.'
 export const NONE_SENTENCE = 'There is no current issue yet.'
 export const FAILED_SENTENCE = 'This run failed before the issue was finished, so there is nothing to publish.'
-export const GATE1_SENTENCE = 'This older run paused to choose a charity. Stop it in Admin, then start a new issue.'
+export const GATE1_SENTENCE =
+  'This older issue paused to choose a charity and cannot continue. Stop it, then start a new issue.'
+export const STOPPED_SENTENCE = 'This issue was stopped. Start a new issue when you are ready.'
 
 export function rowNote(row: Pick<HomeSectionRow, 'state' | 'agentChanges'>): string {
   switch (row.state) {
@@ -137,6 +140,7 @@ export function deriveHomeFooter(args: {
   if (issue?.published === true || runStatus === 'complete') {
     return { kind: 'published', publishedAt: publishedAt ?? null }
   }
+  if (runStatus === 'cancelled') return { kind: 'stopped' }
   if (runStatus === 'failed') return { kind: 'failed' }
   if (runStatus === 'running') return { kind: 'running' }
   if (runStatus === 'awaiting-review' && runCompletedAt == null) return { kind: 'gate1' }

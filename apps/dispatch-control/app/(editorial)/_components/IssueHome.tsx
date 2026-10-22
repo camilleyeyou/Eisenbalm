@@ -21,6 +21,7 @@ import { adminRunHref } from '@/lib/issueRouteResolver'
 import { IssueHomeView, type IssueHomeLinks } from './IssueHomeView'
 import StartIssueButton from './StartIssueButton'
 import HoldControl from './HoldControl'
+import StopRunButton from '@/components/StopRunButton'
 
 type DraftState = { runId: string; draft: DraftResponse } | { runId: string; error: string } | undefined
 
@@ -194,6 +195,7 @@ export default function IssueHome() {
       onConfirmPublish={() => void onConfirmPublish()}
       onCancelPublish={() => setPhase('idle')}
       links={links}
+      stopSlot={cr.runId ? <StopRunButton runId={cr.runId} /> : null}
       controls={
         <>
           <StartIssueButton footerKind={footer.kind} held={held} />

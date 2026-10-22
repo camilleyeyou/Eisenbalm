@@ -26,7 +26,7 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('HoldControl', () => {
-  it.each(['none', 'loading', 'published'] as const)('is hidden when footer is %s', kind => {
+  it.each(['none', 'loading', 'published', 'stopped'] as const)('is hidden when footer is %s', kind => {
     const { container } = render(<HoldControl {...base} footerKind={kind} />)
     expect(container.firstChild).toBeNull()
   })

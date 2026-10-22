@@ -197,6 +197,12 @@ describe('footer', () => {
     })
   })
 
+  it('a cancelled run reads as stopped (never an endless skeleton)', () => {
+    expect(deriveHomeFooter({ ...base, sections: derive(), runStatus: 'cancelled' })).toEqual({ kind: 'stopped' })
+    const t = { ...base, sections: undefined, issue: undefined }
+    expect(deriveHomeFooter({ ...t, runStatus: 'cancelled' }).kind).toBe('stopped')
+  })
+
   it('runStatus complete reads as published even when issues.published is false', () => {
     const f = deriveHomeFooter({ ...base, sections: derive(), runStatus: 'complete', publishedAt: undefined })
     expect(f).toEqual({ kind: 'published', publishedAt: null })

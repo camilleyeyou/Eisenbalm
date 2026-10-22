@@ -8,6 +8,7 @@ import { EDITABLE_SECTIONS } from '@/lib/editableSections'
 import {
   FAILED_SENTENCE,
   GATE1_SENTENCE,
+  STOPPED_SENTENCE,
   READY_SENTENCE,
   RUNNING_SENTENCE,
   type HomeSectionRow,
@@ -236,8 +237,19 @@ describe('IssueHomeView states', () => {
   it('gate1: waiting sentence and charity link, no Publish', () => {
     render(<IssueHomeView {...baseProps({ footer: { kind: 'gate1' } })} />)
     expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(GATE1_SENTENCE)
-    expect(screen.getByRole('link', { name: 'Open the run in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
+    expect(screen.getByRole('link', { name: 'Details in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
     expect(screen.queryByText(/Choose the charity/)).toBeNull()
+    expect(publishButtons()).toHaveLength(0)
+  })
+
+  it('gate1: renders the stop slot', () => {
+    render(<IssueHomeView {...baseProps({ footer: { kind: 'gate1' }, stopSlot: <button type="button">Stop this issue</button> })} />)
+    expect(screen.getByRole('button', { name: 'Stop this issue' })).toBeTruthy()
+  })
+
+  it('stopped: says the issue was stopped, no Publish', () => {
+    render(<IssueHomeView {...baseProps({ footer: { kind: 'stopped' } })} />)
+    expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(STOPPED_SENTENCE)
     expect(publishButtons()).toHaveLength(0)
   })
 

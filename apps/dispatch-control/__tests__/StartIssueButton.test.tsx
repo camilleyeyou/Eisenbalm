@@ -14,7 +14,7 @@ beforeEach(() => hoisted.triggerRun.mockReset())
 afterEach(cleanup)
 
 describe('StartIssueButton', () => {
-  it.each(['none', 'published', 'failed'] as const)('is enabled when footer is %s', kind => {
+  it.each(['none', 'published', 'failed', 'stopped'] as const)('is enabled when footer is %s', kind => {
     render(<StartIssueButton footerKind={kind} held={false} />)
     expect((screen.getByRole('button', { name: 'Start issue' }) as HTMLButtonElement).disabled).toBe(false)
   })

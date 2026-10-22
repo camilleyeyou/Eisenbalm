@@ -44,6 +44,7 @@ import {
   RESTART_LIVE_WRITER_KEYS,
 } from '@/lib/nomenclature'
 import { PIPELINE_NODES } from '../graph/_components/pipelineTopology'
+import StopRunButton from '@/components/StopRunButton'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
@@ -256,26 +257,18 @@ export default function RecoveryRail({
     // tests — is completely unaffected.
     if (isPausedAtGate1) {
       return (
-        <div className="space-y-4 border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] p-5">
+        <div className="space-y-4 border border-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-5">
           <section>
-            <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-vermilion)]">
-              Paused for your decision
+            <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-marigold-text)]">
+              Waiting for you
             </h3>
             <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-              This older run paused to choose a charity. Stop it, then start a new issue from the
-              front page.
+              This older issue paused to choose a charity and cannot continue. Stop it, then start a
+              new issue from the front page.
             </p>
           </section>
           <section>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[.06em] text-[color:var(--color-ink-soft)]">
-                Recommended recovery
-              </h3>
-              <HelpTip text={HELP_COPY.runMonitor.recovery} label="Explain recommended recovery" />
-            </div>
-            <div className="mt-2 flex flex-wrap items-start gap-4">
-              <RestartAction runId={runId} agentKey="editor_gate_1" isPausedAtGate1={true} />
-            </div>
+            <StopRunButton runId={runId} />
           </section>
         </div>
       )

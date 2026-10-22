@@ -40,6 +40,8 @@ export interface TriggerRunResult {
 export interface CancelRunResult {
   runId: string
   cancelRequested?: boolean
+  /** Quick 261022-cr6: a run paused at Gate 1 was stopped directly. */
+  stopped?: boolean
   alreadyTerminal?: boolean
   status?: string
 }

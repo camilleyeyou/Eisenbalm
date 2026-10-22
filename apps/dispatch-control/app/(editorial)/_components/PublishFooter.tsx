@@ -15,6 +15,7 @@ import {
   FAILED_SENTENCE,
   GATE1_SENTENCE,
   NONE_SENTENCE,
+  STOPPED_SENTENCE,
   READY_SENTENCE,
   RUNNING_SENTENCE,
 } from '@/lib/homeSections'
@@ -34,6 +35,7 @@ type Props = Pick<
   | 'onConfirmPublish'
   | 'onCancelPublish'
   | 'links'
+  | 'stopSlot'
 >
 
 const ENABLED =
@@ -77,11 +79,21 @@ export function PublishFooter(props: Props) {
       break
     case 'gate1':
       sentence = (
+        <div>
+          <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">
+            {GATE1_SENTENCE}{' '}
+            <Link href={links.runDetails ?? links.admin} className={LINK}>
+              Details in Admin →
+            </Link>
+          </p>
+          {props.stopSlot ? <div className="mt-3">{props.stopSlot}</div> : null}
+        </div>
+      )
+      break
+    case 'stopped':
+      sentence = (
         <p className="font-[family-name:var(--font-body)] text-[16px] text-[color:var(--color-ink)]">
-          {GATE1_SENTENCE}{' '}
-          <Link href={links.runDetails ?? links.admin} className={LINK}>
-            Open the run in Admin →
-          </Link>
+          {STOPPED_SENTENCE}
         </p>
       )
       break

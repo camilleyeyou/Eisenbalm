@@ -24,7 +24,7 @@ const SECONDARY =
   'min-h-[44px] border border-[color:var(--color-ink)] bg-white px-5 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink)]'
 
 export function canStartIssue(kind: HomeFooter['kind'], held: boolean | undefined): boolean {
-  if (kind === 'none' || kind === 'published' || kind === 'failed') return true
+  if (kind === 'none' || kind === 'published' || kind === 'failed' || kind === 'stopped') return true
   return held === true && kind !== 'loading'
 }
 

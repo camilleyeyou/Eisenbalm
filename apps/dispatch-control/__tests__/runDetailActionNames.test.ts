@@ -159,8 +159,8 @@ describe('runDetailActionNames (WBN-02, §7 action-name map)', () => {
       '../app/admin/runs/_components/RunDetail.tsx',
     )
     const content = fs.readFileSync(filePath, 'utf-8')
-    // Quick 261021-j83: the link opens the front door.
-    expect(content).toMatch(/href="\/"/)
+    // Quick 261022-cr6: the link opens THIS run's issue (front door only when current).
+    expect(content).toMatch(/href=\{issueOpenHref\(runId, latestRunId\)\}/)
     expect(content).toMatch(/Open issue/)
   })
 })

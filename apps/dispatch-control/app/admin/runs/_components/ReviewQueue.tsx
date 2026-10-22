@@ -24,6 +24,8 @@ import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
 import { issueOpenHref } from '@/lib/issueRouteResolver'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
+import { splitStaleRuns } from '@/lib/runLabels'
+import { useRunLabel } from '@/lib/useRunLabel'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface ReviewQueueProps {
@@ -48,23 +50,25 @@ function AwaitingReviewRow({
   run,
   latestRunId,
 }: {
-  run: { _id: string; runId: string; startedAt: number; cost?: string }
+  run: { _id: string; runId: string; startedAt: number; cost?: string; completedAt?: number }
   latestRunId: string | null | undefined
 }) {
   const cost = parseCostJson(run.cost).total
   // Quick 261022-cr6: '/' only when this IS the current run; otherwise the
   // section editor pinned to this run.
   const href = issueOpenHref(run.runId, latestRunId)
+  const label = useRunLabel(run.runId, run.startedAt)
+  const chip = run.completedAt == null ? 'Paused' : 'Ready for you to read'
 
   return (
     <li className="flex flex-col gap-3 border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: run info — mockup-05 q-card idiom: chip -> Newsreader h3 -> mono meta */}
       <div className="min-w-0 flex-1">
         <span className="inline-block border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase text-[color:var(--color-marigold-text)]">
-          Awaiting Review
+          {chip}
         </span>
         <p className="mt-1.5 font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)] truncate">
-          Run {run.runId}
+          {label ?? 'Loading…'}
         </p>
         <p className="mt-1 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
           Started {formatRelativeTime(run.startedAt)}
@@ -94,12 +98,14 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   // Filter to awaiting-review only.
   const awaitingReview = runs?.filter(r => r.status === 'awaiting-review') ?? []
 
+  const { recent, older } = splitStaleRuns(awaitingReview, Date.now(), 14)
+
   // Still loading.
   if (runs === undefined) {
     return (
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
         <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
-          Awaiting Review
+          Ready for you to read
         </h2>
         <div className="mt-2 flex flex-col gap-2">
           <SkeletonLine className="h-4 w-full" />
@@ -114,14 +120,14 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
     return (
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
         <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
-          Awaiting Review
+          Ready for you to read
         </h2>
         <div className="mt-4 border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-4 py-6 text-center">
           <p className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]">
-            No runs awaiting review
+            Nothing is waiting for you
           </p>
           <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-            Finished runs will appear here for your approval before publishing.
+            Finished issues will appear here for you to read before publishing.
           </p>
         </div>
       </div>
@@ -131,13 +137,25 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   return (
     <div className="border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-5">
       <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
-        Awaiting Review
+        Ready for you to read
       </h2>
       <ul role="list" className="mt-4 space-y-3">
-        {awaitingReview.map(run => (
+        {recent.map(run => (
           <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} />
         ))}
       </ul>
+      {older.length > 0 && (
+        <details className="mt-4">
+          <summary className="cursor-pointer font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+            Older runs ({older.length})
+          </summary>
+          <ul role="list" className="mt-3 space-y-3">
+            {older.map(run => (
+              <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} />
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   )
 }

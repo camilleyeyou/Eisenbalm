@@ -38,7 +38,7 @@ export default function HoldControl(props: Props) {
   const [error, setError] = useState<string | null>(null)
 
   if (n == null || held === undefined) return null
-  if (footerKind === 'none' || footerKind === 'loading' || footerKind === 'published') return null
+  if (footerKind === 'none' || footerKind === 'loading' || footerKind === 'published' || footerKind === 'stopped') return null
 
   async function handleHold({ reason, stopRun }: { reason: string; stopRun: boolean }) {
     setBusy(true)

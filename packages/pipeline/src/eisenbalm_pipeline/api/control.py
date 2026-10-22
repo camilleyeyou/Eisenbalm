@@ -605,8 +605,16 @@ async def cancel_run(
     Idempotent: if the run is already in a terminal state (not 'running'),
     returns the current status with alreadyTerminal=True — no flag is set.
 
+    Quick 261022-cr6 (client bug 3): a run PAUSED at the Gate-1 interrupt
+    (runs.status 'awaiting-review' with no completedAt — the same predicate as
+    api/signoffs.py §37.4(c); the publisher's genuine final-review rows always
+    carry completedAt) can never observe the cooperative flag because no node
+    will run again. For that case the terminal status is written directly:
+    runs.status='cancelled' and pipelineRuns.status='failed' (frozen union).
+
     Returns:
         {"runId": ..., "cancelRequested": True} on success.
+        {"runId": ..., "status": "cancelled", "stopped": True} for a paused run.
         {"runId": ..., "status": ..., "alreadyTerminal": True} if already done.
     """
     http = getattr(request.app.state, "convex_http", None)
@@ -620,6 +628,35 @@ async def cancel_run(
         )
 
     current_status = run_row.get("status")
+    if current_status == "awaiting-review" and not run_row.get("completedAt"):
+        now = int(time.time() * 1000)
+        await _cc.convex_mutation(
+            http,
+            "runs:updateStatus",
+            {"runId": run_id, "status": "cancelled", "completedAt": now},
+        )
+        try:
+            await _cc.convex_mutation(
+                http,
+                "pipelineRuns:updateStatus",
+                {
+                    "runId": run_id,
+                    "status": "failed",
+                    "completedAt": now,
+                    "errorMessage": "Stopped by the editor while paused at charity selection.",
+                },
+            )
+        except Exception:  # noqa: BLE001 — legacy rows may lack a pipelineRuns twin
+            log.warning("cancel_run: pipelineRuns update failed for %s", run_id, exc_info=True)
+        await _emit_audit(
+            http,
+            actor_id=actor_id,
+            action="run.stopped",
+            resource_type="run",
+            resource_id=run_id,
+        )
+        return {"runId": run_id, "status": "cancelled", "stopped": True}
+
     if current_status != "running":
         # Idempotent: already terminal — return without setting the flag.
         return {"runId": run_id, "status": current_status, "alreadyTerminal": True}
