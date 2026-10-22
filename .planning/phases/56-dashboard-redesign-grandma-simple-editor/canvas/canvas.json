@@ -1,0 +1,121 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Archive.dc.html": {
+      "expand": "fill",
+      "h": 1200,
+      "is_interactive": true,
+      "title": "Past issues",
+      "w": 1280,
+      "x": 1360,
+      "y": 1680
+    },
+    "Behind-Run.dc.html": {
+      "expand": "fill",
+      "h": 1400,
+      "is_interactive": true,
+      "title": "Behind the scenes — a run that hit a problem",
+      "w": 1280,
+      "x": 1360,
+      "y": 3500
+    },
+    "Behind.dc.html": {
+      "expand": "fill",
+      "h": 1300,
+      "is_interactive": true,
+      "title": "Behind the scenes",
+      "w": 1280,
+      "x": 0,
+      "y": 3500
+    },
+    "Home-Published.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "title": "This week's issue — published",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "Home-Writing.dc.html": {
+      "expand": "fill",
+      "h": 1560,
+      "is_interactive": true,
+      "title": "This week's issue — still being written",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1560,
+      "is_interactive": true,
+      "title": "This week's issue — ready to publish",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "Section.dc.html": {
+      "expand": "fill",
+      "h": 1700,
+      "is_interactive": true,
+      "title": "Reading and editing one part",
+      "w": 1280,
+      "x": 0,
+      "y": 1680
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-22T21:55:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "row1": {
+      "kind": "title1",
+      "maxW": 4000,
+      "text": "The front page — the one page an editor needs each week, in its three states",
+      "w": 240,
+      "x": 0,
+      "y": -260
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 2640,
+      "text": "Reading and editing a part · Past issues",
+      "w": 240,
+      "x": 0,
+      "y": 1420
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 2640,
+      "text": "Behind the scenes — the machinery, behind one door",
+      "w": 240,
+      "x": 0,
+      "y": 3240
+    },
+    "rules": {
+      "fill": "orange",
+      "text": "Rules this redesign follows\n\n• One \"Your next step\" box at the top of every page: a plain sentence and at most one big button.\n\n• Six status words, used everywhere: Done · Working · Waiting for you · Not yet · Stopped · Problem.\n\n• Issues are named by number, date and charity — never by a run id.\n\n• No jargon on editor pages: no run, trigger, pipeline, re-roll, tokens or agent names. Machinery lives behind \"Behind the scenes\".\n\n• Every button does what it says. Nothing is drawn disabled or dead.\n\n• Editing is a page you click into and type on. Each part has one small \"Rewrite this part\" helper.",
+      "w": 614,
+      "x": 2720,
+      "y": 1680
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Home-Writing.dc.html",
+    "Home-Published.dc.html",
+    "Section.dc.html",
+    "Archive.dc.html",
+    "Behind.dc.html",
+    "Behind-Run.dc.html"
+  ],
+  "pages": [],
+  "title": "Eisenbalm Dashboard Redesign"
+}

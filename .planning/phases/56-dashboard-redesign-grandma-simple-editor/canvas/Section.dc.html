@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reading and editing one part</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f1f0ea;color:#17140e;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-wrap:pretty}
+a{color:#253ad4}a:hover{color:#1b2ba6}
+.nav a{color:#55514a;text-decoration:none}
+.nav a:hover{color:#17140e;text-decoration:underline;text-underline-offset:6px}
+.nav a[aria-current="page"]{color:#17140e;font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.para:hover{background:#f7f6f1}
+.para:hover .edit-hint{opacity:1}
+.btn:hover{filter:brightness(.92)}
+.ghost:hover{background:#f7f6f1}
+summary{cursor:pointer}
+:focus-visible{outline:3px solid #253ad4;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #f1f0ea; display: flex; flex-direction: column">
+
+<header style="width: 100%; max-width: 1040px; margin: 0 auto; box-sizing: border-box; padding: 22px 32px 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+  <a href="Main.dc.html" style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px; color: #17140e; text-decoration: none">The Eisenbalm Dispatch</a>
+  <nav class="nav" aria-label="Pages" style="display: flex; flex-wrap: wrap; gap: 6px 26px; font-size: 15px">
+    <a href="Main.dc.html" aria-current="page">This week’s issue</a>
+    <a href="Archive.dc.html">Past issues</a>
+    <a href="Behind.dc.html">Behind the scenes</a>
+  </nav>
+</header>
+
+<main style="width: 100%; max-width: 1040px; margin: 0 auto; box-sizing: border-box; padding: 16px 32px 72px; display: flex; flex-direction: column; gap: 32px">
+
+  <section aria-labelledby="next-step" style="background: #ffffff; border: 2px solid #17140e; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+    <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px">
+      <p id="next-step" style="margin: 0; font-size: 15px; font-weight: 600; color: #55514a">Your next step</p>
+      <p style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 22px; line-height: 1.3; color: #17140e">Read this part and change any words you like. Then go back to the issue to publish.</p>
+    </div>
+    <a class="ghost" href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; background: #ffffff; border: 1px solid #17140e; color: #17140e; font-weight: 600; font-size: 16px; text-decoration: none">Back to the issue</a>
+  </section>
+
+  <article style="background: #ffffff; border: 1px solid rgba(23, 20, 14, 0.2); padding: 56px clamp(24px, 7vw, 96px) 64px; display: flex; flex-direction: column; gap: 28px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; font-size: 15px; color: #55514a">
+      <a href="Main.dc.html" style="color: #55514a">Issue 48 · Kumasi Roofless Schools Trust</a>
+      <span>Part 3 of 9 · Founder</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 720px">
+      <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 42px; line-height: 1.06; letter-spacing: -0.01em; color: #17140e">Kwabena Owusu-Ansah Has Never Called Himself a Founder</h1>
+      <p style="margin: 0; font-family: 'Lora', Georgia, serif; font-style: italic; font-size: 21px; line-height: 1.45; color: #55514a">A retired surveyor, a four-page list, and the sale of one motorbike.</p>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding: 14px 0; border-top: 1px solid rgba(23, 20, 14, 0.14); border-bottom: 1px solid rgba(23, 20, 14, 0.14); max-width: 720px">
+      <p style="margin: 0; font-size: 15px; color: #55514a">Click any paragraph to change the words. Changes save to this issue straight away.</p>
+      <button class="ghost" type="button" style="min-height: 44px; padding: 0 16px; background: #ffffff; border: 1px solid rgba(23, 20, 14, 0.4); color: #17140e; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer">Rewrite this part</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 720px">
+
+      <div class="para" style="display: flex; gap: 16px; align-items: flex-start; padding: 10px 12px; margin: 0 -12px">
+        <p style="margin: 0; flex: 1 1 0; min-width: 0; font-family: 'Lora', Georgia, serif; font-size: 18px; line-height: 1.75; color: #17140e">Kwabena Owusu-Ansah spent thirty-one years measuring land for the Lands Commission in Kumasi. He retired in 2013 with a pension, a motorbike, and a habit of noticing roofs.</p>
+        <button class="edit-hint" type="button" aria-label="Edit this paragraph" style="opacity: 0; flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #55514a; cursor: pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        </button>
+      </div>
+
+      <div class="para" style="display: flex; gap: 16px; align-items: flex-start; padding: 10px 12px; margin: 0 -12px; background: #f7f6f1">
+        <p style="margin: 0; flex: 1 1 0; min-width: 0; font-family: 'Lora', Georgia, serif; font-size: 18px; line-height: 1.75; color: #17140e">The habit became a list. On weekend rides through the Ashanti Region he began writing down every school where the state had poured a slab, raised block walls and then stopped before the trusses. By the end of the first year the list ran to four pages.</p>
+        <button class="edit-hint" type="button" aria-label="Edit this paragraph" style="opacity: 1; flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #55514a; cursor: pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 4px 0 10px">
+        <label for="para-3" style="font-size: 15px; font-weight: 600; color: #55514a">Editing paragraph 3</label>
+        <textarea id="para-3" rows="4" style="width: 100%; box-sizing: border-box; padding: 16px 18px; border: 2px solid {{accent}}; background: #ffffff; color: #17140e; font-family: 'Lora', Georgia, serif; font-size: 18px; line-height: 1.75; resize: vertical">He did not call it a charity. He called it the list, and later the Trust, because the bank required a name for the account. The account opened with the proceeds of the motorbike.</textarea>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px">
+          <button class="btn" type="button" style="min-height: 48px; padding: 0 24px; background: {{accent}}; color: #ffffff; border: 0; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer">Save</button>
+          <button class="ghost" type="button" style="min-height: 48px; padding: 0 20px; background: #ffffff; border: 1px solid #17140e; color: #17140e; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer">Cancel</button>
+          <span style="font-size: 15px; color: #55514a">Nothing goes to readers until you press Publish on the issue page.</span>
+        </div>
+      </div>
+
+      <div class="para" style="display: flex; gap: 16px; align-items: flex-start; padding: 10px 12px; margin: 0 -12px">
+        <p style="margin: 0; flex: 1 1 0; min-width: 0; font-family: 'Lora', Georgia, serif; font-size: 18px; line-height: 1.75; color: #17140e">Mr Owusu-Ansah does not give interviews about himself. Asked why, he says the roofs are the interview, and that they are available for inspection during school hours.</p>
+        <button class="edit-hint" type="button" aria-label="Edit this paragraph" style="opacity: 0; flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #55514a; cursor: pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        </button>
+      </div>
+
+      <div class="para" style="display: flex; gap: 16px; align-items: flex-start; padding: 10px 12px; margin: 0 -12px">
+        <p style="margin: 0; flex: 1 1 0; min-width: 0; font-family: 'Lora', Georgia, serif; font-size: 18px; line-height: 1.75; color: #17140e">He is seventy-one. He still rides to every site before the first sheet goes up, and again after the last one.</p>
+        <button class="edit-hint" type="button" aria-label="Edit this paragraph" style="opacity: 0; flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #55514a; cursor: pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        </button>
+      </div>
+
+    </div>
+
+    <details style="max-width: 720px; border-top: 1px solid rgba(23, 20, 14, 0.14); padding-top: 18px; font-size: 15px; color: #55514a">
+      <summary style="font-weight: 600; color: #17140e">What the writers changed in this part (1)</summary>
+      <ul style="margin: 12px 0 0; padding-left: 20px; font-family: 'Lora', Georgia, serif; font-size: 16px; line-height: 1.6">
+        <li>“He is 71 years old.” became “He is seventy-one.” — numbers under one hundred are spelled out in this magazine.</li>
+      </ul>
+    </details>
+
+    <nav aria-label="Other parts" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding-top: 28px; border-top: 1px solid rgba(23, 20, 14, 0.14)">
+      <a class="ghost" href="Section.dc.html" style="display: inline-flex; flex-direction: column; gap: 2px; min-height: 56px; justify-content: center; padding: 8px 20px; background: #ffffff; border: 1px solid #17140e; color: #17140e; text-decoration: none; min-width: 200px">
+        <span style="font-size: 13px; color: #55514a">Previous · Part 2</span>
+        <span style="font-weight: 600; font-size: 16px">Problem</span>
+      </a>
+      <a href="Main.dc.html" style="font-size: 15px">All nine parts</a>
+      <a class="ghost" href="Section.dc.html" style="display: inline-flex; flex-direction: column; gap: 2px; min-height: 56px; justify-content: center; align-items: flex-end; text-align: right; padding: 8px 20px; background: #ffffff; border: 1px solid #17140e; color: #17140e; text-decoration: none; min-width: 200px">
+        <span style="font-size: 13px; color: #55514a">Next · Part 4</span>
+        <span style="font-weight: 600; font-size: 16px">Case study</span>
+      </a>
+    </nav>
+
+  </article>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#253ad4","options":["#253ad4","#17140e","#11764a","#9a6f04"]},"$preview":{"width":1280,"height":1700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#253ad4' };
+  }
+}
+</script>
+</body>
+</html>

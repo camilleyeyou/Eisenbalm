@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Behind the scenes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f1f0ea;color:#17140e;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-wrap:pretty}
+a{color:#253ad4}a:hover{color:#1b2ba6}
+.nav a{color:#55514a;text-decoration:none}
+.nav a:hover{color:#17140e;text-decoration:underline;text-underline-offset:6px}
+.nav a[aria-current="page"]{color:#17140e;font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.dial:hover{background:#f7f6f1}
+.ghost:hover{background:#f7f6f1}
+:focus-visible{outline:3px solid #253ad4;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #f1f0ea; display: flex; flex-direction: column">
+
+<header style="width: 100%; max-width: 1040px; margin: 0 auto; box-sizing: border-box; padding: 22px 32px 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+  <a href="Main.dc.html" style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px; color: #17140e; text-decoration: none">The Eisenbalm Dispatch</a>
+  <nav class="nav" aria-label="Pages" style="display: flex; flex-wrap: wrap; gap: 6px 26px; font-size: 15px">
+    <a href="Main.dc.html">This week’s issue</a>
+    <a href="Archive.dc.html">Past issues</a>
+    <a href="Behind.dc.html" aria-current="page">Behind the scenes</a>
+  </nav>
+</header>
+
+<main style="width: 100%; max-width: 1040px; margin: 0 auto; box-sizing: border-box; padding: 16px 32px 72px; display: flex; flex-direction: column; gap: 36px">
+
+  <section aria-labelledby="next-step" style="background: #ffffff; border: 2px solid #17140e; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+    <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px">
+      <p id="next-step" style="margin: 0; font-size: 15px; font-weight: 600; color: #55514a">Your next step</p>
+      <p style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 22px; line-height: 1.3; color: #17140e">Nothing here needs you this week. The issue is waiting for you on the front page.</p>
+    </div>
+    <a class="ghost" href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; background: #ffffff; border: 1px solid #17140e; color: #17140e; font-weight: 600; font-size: 16px; text-decoration: none">Back to the issue</a>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 8px">
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 42px; line-height: 1.05; color: #17140e">Behind the scenes</h1>
+    <p style="margin: 0; font-family: 'Lora', Georgia, serif; font-style: italic; font-size: 18px; color: #55514a; max-width: 720px">How the machine made this week’s issue, and the dials that control it. Nothing on this page is needed to publish.</p>
+  </section>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 32px; align-items: start">
+
+    <section aria-labelledby="steps-heading" style="background: #ffffff; border: 1px solid rgba(23, 20, 14, 0.2); padding: 24px 28px 20px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h2 id="steps-heading" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 26px; color: #17140e">This week’s issue, step by step</h2>
+        <p style="margin: 0; font-size: 15px; color: #55514a">Issue 48 · started Thursday 9:02 · finished 9:41</p>
+      </div>
+      <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Find story leads</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:04</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Find charities worth writing about</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:07</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Check the charities are real</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:09</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Choose this week’s charity</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:11 · Kumasi Roofless Schools Trust</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Research the charity</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:19</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Check the research against its sources</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:21</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Write the nine parts</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:33</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: #11764a"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Check the writing and fix problems</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:39 · 6 fixes</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #11764a; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+            <span style="flex: 1; width: 2px; background: rgba(23, 20, 14, 0.2)"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 20px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Final read-through</span>
+            <span style="font-size: 15px; color: #55514a">Done · 9:41</span>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 16px">
+          <div aria-hidden="true" style="display: flex; flex-direction: column; align-items: center">
+            <span style="width: 26px; height: 26px; border-radius: 50%; border: 3px solid {{accent}}; background: #ffffff; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex: none"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{accent}}"></span></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; padding: 2px 0 4px">
+            <span style="font-size: 16px; font-weight: 600; color: #17140e">Publish</span>
+            <span style="font-size: 15px; font-weight: 600; color: #9a6f04">Waiting for you</span>
+          </div>
+        </li>
+      </ol>
+      <p style="margin: 0; padding-top: 14px; border-top: 1px solid rgba(23, 20, 14, 0.14); font-size: 15px; color: #55514a">This issue cost $0.58 to write and took 39 minutes.</p>
+    </section>
+
+    <section aria-labelledby="dials-heading" style="display: flex; flex-direction: column; gap: 12px">
+      <h2 id="dials-heading" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 26px; color: #17140e">The dials</h2>
+      <ul style="list-style: none; margin: 0; padding: 0; background: #ffffff; border: 1px solid rgba(23, 20, 14, 0.2)">
+        <li>
+          <a class="dial" href="#money" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px"><span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">Money</span><span style="font-size: 14px; color: #55514a">Check weekly</span></span>
+            <span style="font-size: 15px; color: #55514a">What came in, what went to the charities, what the writing cost</span>
+          </a>
+        </li>
+        <li style="border-top: 1px solid rgba(23, 20, 14, 0.12)">
+          <a class="dial" href="#charities" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px"><span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">Charities</span><span style="font-size: 14px; color: #55514a">Check weekly</span></span>
+            <span style="font-size: 15px; color: #55514a">Every charity considered so far, and the ones never to use again</span>
+          </a>
+        </li>
+        <li style="border-top: 1px solid rgba(23, 20, 14, 0.12)">
+          <a class="dial" href="Behind-Run.dc.html" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">Past issues, step by step</span>
+            <span style="font-size: 15px; color: #55514a">What happened in each issue, and why one hit a problem</span>
+          </a>
+        </li>
+        <li style="border-top: 1px solid rgba(23, 20, 14, 0.12)">
+          <a class="dial" href="#instructions" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">What the writers are told</span>
+            <span style="font-size: 15px; color: #55514a">The instructions each writer follows, with every past version</span>
+          </a>
+        </li>
+        <li style="border-top: 1px solid rgba(23, 20, 14, 0.12)">
+          <a class="dial" href="#tests" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">Quality tests</span>
+            <span style="font-size: 15px; color: #55514a">Check the writers still sound right after a change</span>
+          </a>
+        </li>
+        <li style="border-top: 1px solid rgba(23, 20, 14, 0.12)">
+          <a class="dial" href="#schedule" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">Schedule and limits</span>
+            <span style="font-size: 15px; color: #55514a">When issues start by themselves and how much they may spend</span>
+          </a>
+        </li>
+        <li style="border-top: 1px solid rgba(23, 20, 14, 0.12)">
+          <a class="dial" href="#settings" style="display: flex; flex-direction: column; gap: 3px; padding: 16px 22px; min-height: 64px; box-sizing: border-box; text-decoration: none; color: #17140e">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 22px">Settings</span>
+            <span style="font-size: 15px; color: #55514a">Who can publish, notifications, and the record of changes</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+  </div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#253ad4","options":["#253ad4","#17140e","#11764a","#9a6f04"]},"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#253ad4' };
+  }
+}
+</script>
+</body>
+</html>
