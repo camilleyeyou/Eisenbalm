@@ -71,6 +71,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
 - [ ] **Phase 55: Public Site Redesign — The Dispatch Front Page** - `apps/web` home + issue page rebuilt to Andrew's mockup (`55-public-site-redesign/MOCKUP-Main.dc.html`): fixed Dispatch brand, Jesse's voice kept, deliberation as summary cards
+- [ ] **Phase 56: Dashboard Redesign — The Grandma-Simple Editor** - dispatch-control rebuilt to the 7-artboard Claude Design canvas (https://claude.ai/artifact/UEJYy8Cgt869d6Jsu8foZx): one "Your next step" slab per page, four-station checklist, six plain status words, in-place paragraph editing, Admin renamed "Behind the scenes"; new UI only, backend kept
 
 ## Phase Details
 
@@ -482,6 +483,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 | 55. Public Site Redesign — The Dispatch Front Page | 3/13 | In progress | - |
+| 56. Dashboard Redesign — The Grandma-Simple Editor | TBD | Not started | - |
 
 ## Backlog
 
@@ -1249,4 +1251,27 @@ Plans:
 - [x] 55-11-integration-routes-chrome-PLAN.md — compose IssueLayout, / renders front page, drop per-issue theme, chrome switch (W3)
 - [x] 55-12-phase19-retirement-PLAN.md — delete Phase 19 transcript/theme components + pinned tests, drop conversation projection (W4)
 - [ ] 55-13-deploy-verify-PLAN.md — gates, Stripe price check, deploys, live human verification of SC-1..SC-6 (W5)
+**UI hint**: yes
+
+### Phase 56: Dashboard Redesign — The Grandma-Simple Editor
+**Goal**: An editor with no technical background can run a weekly issue in dispatch-control without help, because every editor surface is rebuilt to the approved 7-artboard Claude Design canvas (https://claude.ai/artifact/UEJYy8Cgt869d6Jsu8foZx — artboards Main, Home-Writing, Home-Published, Section, Archive, Behind, Behind-Run): "a simple word processor my grandma could figure out" (client, 2026-10-22).
+**Depends on**: Phase 52 (front door + derived issue state), Phase 51 (section reader + in-place fix), quick 261022-cr6 (client bug fixes 1–9). Supersedes the visual layer of Phases 52/53/54 and the 2026-07 Review Desk mockups.
+**Source**: `.planning/ui-reviews/client-ux-feedback-261022.md` (client walkthrough + bug list); memory `dashboard-redesign-canvas-261022`.
+**Locked decisions (2026-10-22)**:
+  1. One "Your next step" slab at the top of every page (2px ink frame, Newsreader sentence, ONE cobalt button).
+  2. Four-station checklist: Pick charity → Write → Check → Publish. Charity stays auto-picked; no content gates on Publish (only role + hold).
+  3. Six status words everywhere: Done · Working · Waiting for you · Not yet · Stopped · Problem. Issues named "Issue 48 · Thursday 29 October 2026 — charity name", never run ids.
+  4. Nav is three links: This week's issue · Past issues · Behind the scenes (Admin renamed, plain-word items).
+  5. No mono-caps chips, no jargon, UI text 15–17px; keep 1c tokens (paper #f1f0ea, ink #17140e, cobalt #253ad4; Newsreader/Lora/Space Grotesk), IBM Plex Mono dropped from editor pages.
+  6. Paragraphs edited in place (hover pencil → textarea, Save/Cancel), one "Rewrite this part" helper per part.
+  7. Stopped/unfinished issues collapsed at the bottom of Past issues; failed runs explained in plain words with technical details collapsed.
+**Scope**: New UI only; backend kept. Reuse Galley, in-place editor, content-patch API, hold/start/publish chain.
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Each of the 7 artboards has a matching live screen in dispatch-control at desktop and phone width.
+  2. Replaying the client walkthrough in `client-ux-feedback-261022.md` (ecc:browser-qa) hits none of the reported confusions.
+  3. No run ids, raw errors, or jargon appear on editor-facing pages; every page has exactly one primary action.
+  4. Strict `pnpm --filter dispatch-control build` and the full test suite pass.
+**Known blocker for live QA**: `OPENROUTER_API_KEY` revoked 2026-10-22 — replace on Railway + local `.env` before any real-data run.
+**Plans**: TBD
 **UI hint**: yes
