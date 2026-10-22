@@ -120,18 +120,27 @@ describe('ArchiveBody — row rendering', () => {
     expect(row.getAttribute('href')).toBe('/')
   })
 
-  it('a published row links to the live issue when the preview base is set', () => {
+  it('a non-current row with a draft opens the section editor pinned to its run', () => {
+    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
+    const row = screen.getByTestId('archive-row-999714')
+    expect(row.tagName).toBe('A')
+    expect(row.getAttribute('href')).toBe('/s/originStory?run=run-714')
+  })
+
+  it('a published row opens its draft and has a SEPARATE View live link (not nested)', () => {
     process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE = 'https://web.example/'
     render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
     const row = screen.getByTestId('archive-row-999716')
-    expect(row.tagName).toBe('A')
-    expect(row.getAttribute('href')).toBe('https://web.example/issue/issue-999716')
+    expect(row.getAttribute('href')).toBe('/s/originStory?run=run-716')
+    const live = screen.getByText(/View live/).closest('a')
+    expect(live?.getAttribute('href')).toBe('https://web.example/issue/issue-999716')
+    expect(row.contains(live)).toBe(false)
     delete process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE
   })
 
-  it('other rows are not links and never point at the old console', () => {
+  it('a row with no run stays non-clickable and nothing points at the old console', () => {
     render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
-    expect(screen.getByTestId('archive-row-999714').tagName).not.toBe('A')
+    expect(screen.getByTestId('archive-row-999720').tagName).not.toBe('A')
     expect(document.body.innerHTML).not.toContain('/issues/')
   })
 })

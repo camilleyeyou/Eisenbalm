@@ -12,7 +12,9 @@
  * in-place block editor still works.
  *
  * Current-run resolution (D-02) is the ONE locked path — `useCurrentRun()`
- * — never a derived "highest issue number", never an `?issue=` override.
+ * — never a derived "highest issue number". The only override is an explicit
+ * `?run=<runId>` (client bug 1, 2026-10-22) so earlier issues from Past
+ * issues / Admin can be opened and edited.
  *
  * Section-id validation (D-03): `params.section` IS the internal galley id,
  * verbatim. An unknown segment 404s via `notFound()`.
@@ -42,6 +44,8 @@ import type { PassageSelection } from '@/components/galley/PassageToolbar'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 import SectionHeader from './_components/SectionHeader'
 import SectionEndNav from './_components/SectionEndNav'
+import EarlierIssueBanner from './_components/EarlierIssueBanner'
+import Link from 'next/link'
 import ExemptSectionNote, { type ExemptSectionKind } from './_components/ExemptSectionNote'
 import InPlaceBlockEditor from './_components/InPlaceBlockEditor'
 import AgentChangesNote from './_components/AgentChangesNote'
@@ -59,6 +63,12 @@ interface SectionReaderPageProps {
    * whether `use()` needs to unwrap it.
    */
   params: SectionParams | Promise<SectionParams>
+  /** Explicit `?run=<runId>` pins an earlier issue. Thenable-safe like params. */
+  searchParams?: SectionSearchParams | Promise<SectionSearchParams>
+}
+
+interface SectionSearchParams {
+  run?: string | string[]
 }
 
 /** Minimal shape needed from a live `claim_checks` row (mirrors Galley.tsx's
@@ -186,13 +196,18 @@ function LoadingSkeleton() {
   )
 }
 
-export default function SectionReaderPage({ params }: SectionReaderPageProps) {
+export default function SectionReaderPage({ params, searchParams }: SectionReaderPageProps) {
   const resolvedParams = isThenable<SectionParams>(params) ? use(params) : params
   const sectionId = resolvedParams.section
+  const resolvedSearch: SectionSearchParams = isThenable<SectionSearchParams>(searchParams)
+    ? use(searchParams)
+    : (searchParams ?? {})
+  const pinnedRunId =
+    typeof resolvedSearch.run === 'string' && resolvedSearch.run !== '' ? resolvedSearch.run : null
 
   // ── Every hook, unconditionally, before any early return ────────────────
   const { getToken } = useAuth()
-  const { state, runId, title, derivationInputs } = useCurrentRun()
+  const { state, runId, issueNumber, title, derivationInputs } = useCurrentRun({ runId: pinnedRunId })
   const { openInspector } = useInspector()
 
   const [draft, setDraft] = useState<DraftResponse | null>(null)
@@ -271,9 +286,18 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
   if (state.kind === 'none') {
     return (
       <div className="section-reader">
-        <p className="galley-body italic text-[color:var(--color-ink-soft)]">
-          There is no current issue yet.
-        </p>
+        {pinnedRunId ? (
+          <p className="galley-body italic text-[color:var(--color-ink-soft)]">
+            That issue could not be found.{' '}
+            <Link href="/archive" className="underline">
+              Past issues
+            </Link>
+          </p>
+        ) : (
+          <p className="galley-body italic text-[color:var(--color-ink-soft)]">
+            There is no current issue yet.
+          </p>
+        )}
       </div>
     )
   }
@@ -351,6 +375,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
 
   return (
     <div className="section-reader">
+      {pinnedRunId && <EarlierIssueBanner issueNumber={issueNumber} title={title} />}
       <SectionHeader title={title} />
 
       {sectionId === 'theme' ? (
@@ -426,7 +451,7 @@ export default function SectionReaderPage({ params }: SectionReaderPageProps) {
         </div>
       )}
 
-      <SectionEndNav sectionId={sectionId} />
+      <SectionEndNav sectionId={sectionId} runId={pinnedRunId} />
     </div>
   )
 }

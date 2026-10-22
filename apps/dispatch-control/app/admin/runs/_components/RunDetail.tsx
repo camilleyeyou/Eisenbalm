@@ -6,7 +6,7 @@
  *   - Run header: status, trigger source, who triggered, duration, cost
  *   - Cancel Run button (running-only, two-step inline confirm — RUN-04)
  *   - Per-step table: action name + agent, status, costUsd, durationMs,
- *     tokensIn, tokensOut, error, Re-roll (section writers only — RUN-05)
+ *     tokensIn, tokensOut, error, Edit (Edit text + Rewrite this part, section writers only — RUN-05)
  *   - Reconciliation panel: per-agent sum (from parseCostJson(run.cost).agents)
  *     vs. runs.cost.total — both rendered side-by-side for OBS-04 visibility
  *
@@ -36,6 +36,9 @@ import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
 import { runStepFor } from '@/lib/nomenclature'
+import { issueOpenHref, sectionEditHref } from '@/lib/issueRouteResolver'
+import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
+import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { PIPELINE_NODES } from '../graph/_components/pipelineTopology'
 import CancelRunButton from './CancelRunButton'
 import RerollButton from './RerollButton'
@@ -221,6 +224,34 @@ function sumTokens(members: AgentRunRow[], field: 'tokensIn' | 'tokensOut'): num
   return values.reduce((acc, v) => acc + v, 0)
 }
 
+/** Quick 261022-cr6 (bug 5) — per-section "Edit text" link + rewrite button. */
+function EditCell({
+  runId,
+  agentKey,
+  runStatus,
+  latestRunId,
+}: {
+  runId: string
+  agentKey: string
+  runStatus: string
+  latestRunId: string | undefined
+}) {
+  const galleyId = qaSectionToGalleyId(agentKey) ?? (agentKey === 'design' ? 'theme' : null)
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {galleyId && (
+        <Link
+          href={sectionEditHref(galleyId, runId, latestRunId)}
+          className="text-[11px] text-[color:var(--color-cobalt)] underline hover:text-[color:var(--color-cobalt-dark)]"
+        >
+          Edit text
+        </Link>
+      )}
+      <RerollButton runId={runId} agentKey={agentKey} runStatus={runStatus} />
+    </div>
+  )
+}
+
 export default function RunDetail({ runId }: RunDetailProps) {
   const run = useQuery(api.runs.byRunId, { runId })
   const agentRuns = useQuery(api.agentRuns.byRunId, { runId })
@@ -229,6 +260,9 @@ export default function RunDetail({ runId }: RunDetailProps) {
   // issue →" link below.
   const pipelineRun = useQuery(api.pipelineRuns.byRunId, { runId })
   const issueNumber = pipelineRun?.issueNumber
+  // Quick 261022-cr6 — links open THIS run's issue, not always the latest.
+  const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
+  const latestRunId = latest?.runId
   const [draftSectionsExpanded, setDraftSectionsExpanded] = useState(false)
 
   if (run === undefined || agentRuns === undefined) {
@@ -292,7 +326,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
         </Link>
         {issueNumber != null && (
           <Link
-            href="/"
+            href={issueOpenHref(runId, latestRunId)}
             className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
           >
             Open issue →
@@ -416,7 +450,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                 <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Tokens In</th>
                 <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Tokens Out</th>
                 <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Error</th>
-                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Re-roll</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Edit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--color-ink)]/10">
@@ -512,11 +546,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                                 {ar.error ?? '—'}
                               </td>
                               <td className="px-4 py-2">
-                                <RerollButton
-                                  runId={runId}
-                                  agentKey={ar.agentKey}
-                                  runStatus={run.status}
-                                />
+                                <EditCell runId={runId} agentKey={ar.agentKey} runStatus={run.status} latestRunId={latestRunId} />
                               </td>
                             </tr>
                           )
@@ -572,11 +602,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                       {ar.error ?? '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <RerollButton
-                        runId={runId}
-                        agentKey={ar.agentKey}
-                        runStatus={run.status}
-                      />
+                      <EditCell runId={runId} agentKey={ar.agentKey} runStatus={run.status} latestRunId={latestRunId} />
                     </td>
                   </tr>
                 )

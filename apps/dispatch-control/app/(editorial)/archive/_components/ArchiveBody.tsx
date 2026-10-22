@@ -1,12 +1,15 @@
 'use client'
 /**
  * Quick 261021-j83 — pure archive list (moved from the retired /issues page).
- * Props only; no Convex. The current issue's row opens `/`; a published row
- * opens the live issue; held rows keep Release via `heldSlot`.
+ * Props only; no Convex. The current issue's row opens `/`; any other row
+ * with a draft opens the section editor pinned to that run (quick
+ * 261022-cr6); a published row also gets a separate "View live" link; held
+ * rows keep Release via `heldSlot`.
  */
 import { useState } from 'react'
 import Link from 'next/link'
 import { issueTitleLabel } from '@/lib/issueTitle'
+import { issueOpenHref } from '@/lib/issueRouteResolver'
 import DocumentTitle from '@/components/ui/DocumentTitle'
 
 // ── ArchiveRow — flat, pre-resolved shape ArchiveBody renders ───────────────
@@ -125,22 +128,44 @@ function ArchiveRowView({ row, currentIssueNumber }: { row: ArchiveRow; currentI
   const rowClass =
     'flex items-baseline gap-4 border border-t-0 border-[color:var(--color-border)] bg-[color:var(--color-card)] px-[17px] py-[15px]'
 
+  const canOpen = row.runId !== null && row.hasDrafts
+  const testId = `archive-row-${row.issueNumber}`
+
   if (isCurrent) {
     return (
-      <Link href="/" className={rowClass} data-testid={`archive-row-${row.issueNumber}`}>
+      <Link href="/" className={rowClass} data-testid={testId}>
         {inner}
       </Link>
     )
   }
+  if (canOpen && row.runId) {
+    const editLink = (
+      <Link href={issueOpenHref(row.runId, null)} className={rowClass} data-testid={testId}>
+        {inner}
+      </Link>
+    )
+    if (!liveHref) return editLink
+    return (
+      <div className="flex flex-col">
+        {editLink}
+        <a
+          href={liveHref}
+          className="border border-t-0 border-[color:var(--color-border)] bg-[color:var(--color-card)] px-[17px] py-2 text-right font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)] underline"
+        >
+          View live ↗
+        </a>
+      </div>
+    )
+  }
   if (liveHref) {
     return (
-      <a href={liveHref} className={rowClass} data-testid={`archive-row-${row.issueNumber}`}>
+      <a href={liveHref} className={rowClass} data-testid={testId}>
         {inner}
       </a>
     )
   }
   return (
-    <div className={`${rowClass} bg-[color:var(--color-card-alt)]`} data-testid={`archive-row-${row.issueNumber}`}>
+    <div className={`${rowClass} bg-[color:var(--color-card-alt)]`} data-testid={testId}>
       {inner}
     </div>
   )

@@ -22,6 +22,8 @@ import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { parseCostJson } from '@/lib/costRollup'
+import { issueOpenHref } from '@/lib/issueRouteResolver'
+import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 
 interface ReviewQueueProps {
@@ -44,12 +46,15 @@ function formatRelativeTime(ms: number): string {
  */
 function AwaitingReviewRow({
   run,
+  latestRunId,
 }: {
   run: { _id: string; runId: string; startedAt: number; cost?: string }
+  latestRunId: string | null | undefined
 }) {
   const cost = parseCostJson(run.cost).total
-  // Quick 261021-j83: review happens on the front door.
-  const href = '/'
+  // Quick 261022-cr6: '/' only when this IS the current run; otherwise the
+  // section editor pinned to this run.
+  const href = issueOpenHref(run.runId, latestRunId)
 
   return (
     <li className="flex flex-col gap-3 border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -84,6 +89,7 @@ function AwaitingReviewRow({
 
 export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   const runs = useQuery(api.runs.listForWorkspace, { workspace_id })
+  const latest = useQuery(api.runs.latest, { workspace_id: workspace_id ?? DEFAULT_WORKSPACE_ID })
 
   // Filter to awaiting-review only.
   const awaitingReview = runs?.filter(r => r.status === 'awaiting-review') ?? []
@@ -129,7 +135,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
       </h2>
       <ul role="list" className="mt-4 space-y-3">
         {awaitingReview.map(run => (
-          <AwaitingReviewRow key={run._id} run={run} />
+          <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} />
         ))}
       </ul>
     </div>

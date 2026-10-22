@@ -1,6 +1,6 @@
 'use client'
 /**
- * Phase 25 (RUN-05) — Per-section Re-roll button for the Run detail table.
+ * Phase 25 (RUN-05) — Per-section "Rewrite this part" (was Re-roll) button for the Run detail table.
  *
  * Renders ONLY for the 7 re-rollable section writers. For all other agentKeys,
  * returns null (empty cell).
@@ -8,7 +8,7 @@
  * Disabled while run is in progress (D-04): shows grayed "Re-roll" with a
  * tooltip explaining availability.
  *
- * On success: shows "Re-rolled ✓" inline (green) for 3 seconds, then clears.
+ * On success: shows "Rewritten ✓" inline (green) for 3 seconds, then clears.
  *
  * quick 260722-v01 (audit item 9): mechanical class-token swap onto the
  * `var(--color-*)` / bracket-pixel system — no structural change.
@@ -65,9 +65,9 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
 
   async function handleReroll() {
     const confirmed = await confirm({
-      title: `Re-roll ${sectionLabel}?`,
+      title: `Rewrite ${sectionLabel}?`,
       body: 'This will regenerate just this section and rewrite the Sanity draft. All other sections are unchanged.',
-      confirmLabel: 'Re-roll',
+      confirmLabel: 'Rewrite',
       tone: 'danger',
     })
     if (!confirmed) return
@@ -88,7 +88,7 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
 
   if (success) {
     return (
-      <span className="text-[11px] text-[color:var(--color-green)]">Re-rolled ✓</span>
+      <span className="text-[11px] text-[color:var(--color-green)]">Rewritten ✓</span>
     )
   }
 
@@ -103,11 +103,11 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
       <button
         type="button"
         disabled
-        title="Re-roll is available only after the run completes (D-04)."
-        aria-label={`Re-roll ${sectionLabel}`}
+        title="Available after the run finishes."
+        aria-label={`Rewrite ${sectionLabel}`}
         className="text-[11px] text-[color:var(--color-faint)] cursor-not-allowed underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
       >
-        Re-roll
+        Rewrite this part
       </button>
     )
   }
@@ -117,10 +117,10 @@ export default function RerollButton({ runId, agentKey, runStatus }: RerollButto
       type="button"
       onClick={handleReroll}
       disabled={loading}
-      aria-label={`Re-roll ${sectionLabel}`}
+      aria-label={`Rewrite ${sectionLabel}`}
       className="text-[11px] text-[color:var(--color-ink-soft)] underline hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
     >
-      Re-roll
+      Rewrite this part
     </button>
   )
 }

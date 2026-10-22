@@ -2,10 +2,10 @@
  * Phase 40 Plan 40-01 (§40.7, ISS-02) — RED scaffold for the pure
  * issueNumber<->URL resolver. No Convex import, node env.
  *
- * Quick 261021-j83 trimmed the resolver to parseIssueNumber + adminRunHref.
+ * Quick 261021-j83 trimmed the resolver to parseIssueNumber + adminRunHref; quick 261022-cr6 adds issueOpenHref + sectionEditHref.
  */
 import { describe, it, expect } from 'vitest'
-import { parseIssueNumber, adminRunHref } from '../lib/issueRouteResolver'
+import { parseIssueNumber, adminRunHref, issueOpenHref, sectionEditHref } from '../lib/issueRouteResolver'
 
 describe('parseIssueNumber (§40.7)', () => {
   it('parses a plain positive integer', () => {
@@ -30,5 +30,20 @@ describe('adminRunHref', () => {
 
   it('URL-encodes the runId segment', () => {
     expect(adminRunHref('a/b c')).toBe('/admin/runs/a%2Fb%20c')
+  })
+})
+
+describe('issueOpenHref / sectionEditHref (quick 261022-cr6)', () => {
+  it('opens the front door for the current run', () => {
+    expect(issueOpenHref('r1', 'r1')).toBe('/')
+  })
+  it('pins an earlier run, or an unknown current run', () => {
+    expect(issueOpenHref('r1', 'r2')).toBe('/s/originStory?run=r1')
+    expect(issueOpenHref('r1', undefined)).toBe('/s/originStory?run=r1')
+  })
+  it('builds per-section edit links', () => {
+    expect(sectionEditHref('founderBio', 'r1', 'r1')).toBe('/s/founderBio')
+    expect(sectionEditHref('founderBio', 'r1', 'r2')).toBe('/s/founderBio?run=r1')
+    expect(sectionEditHref('founderBio', 'a/b', 'r2')).toBe('/s/founderBio?run=a%2Fb')
   })
 })

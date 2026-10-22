@@ -299,7 +299,7 @@ describe('RerollButton', () => {
     const { container } = renderReroll(
       <RerollButton runId="run-001" agentKey="origin_story" runStatus="done" />,
     )
-    expect(container.textContent).toContain('Re-roll')
+    expect(container.textContent).toContain('Rewrite this part')
   })
 
   it('renders null for a non-section agent (scout) on a completed run', () => {
@@ -337,18 +337,18 @@ describe('RerollButton', () => {
       const { container } = renderReroll(
         <RerollButton runId="run-001" agentKey={key} runStatus="done" />,
       )
-      expect(container.textContent).toContain('Re-roll')
+      expect(container.textContent).toContain('Rewrite this part')
     }
   })
 
-  it('disables Re-roll with D-04 tooltip when run is still running', () => {
+  it('disables Rewrite with tooltip when run is still running', () => {
     renderReroll(
       <RerollButton runId="run-001" agentKey="origin_story" runStatus="running" />,
     )
-    const btn = screen.getByRole('button', { name: /re-roll/i })
+    const btn = screen.getByRole('button', { name: /rewrite/i })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
     expect(btn.getAttribute('title')).toBe(
-      'Re-roll is available only after the run completes (D-04).',
+      'Available after the run finishes.',
     )
   })
 })

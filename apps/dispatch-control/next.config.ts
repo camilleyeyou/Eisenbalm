@@ -18,14 +18,16 @@ const REDIRECTS = [
   // ── Issue console → front door / archive ────────────────────────────────
   { source: '/issues', destination: '/archive' },
   { source: '/issues/:n/runs/:runId', destination: '/admin/runs/:runId' },
-  { source: '/issues/:n', destination: '/' },
-  { source: '/issues/:n/:path*', destination: '/' },
+  // Land on the archive, which forwards ?issue=N to that issue's draft.
+  { source: '/issues/:n', destination: '/archive?issue=:n' },
+  { source: '/issues/:n/:path*', destination: '/archive?issue=:n' },
 
   // ── Retired surfaces → front door ───────────────────────────────────────
   { source: '/run', destination: '/' },
   { source: '/my-tasks', destination: '/' },
   { source: '/how-to-use', destination: '/' },
   { source: '/review-desk', destination: '/' },
+  { source: '/review-desk/:runId', destination: '/s/originStory?run=:runId' },
   { source: '/review-desk/:path*', destination: '/' },
   { source: '/voice-pass', destination: '/' },
   { source: '/voice-pass/:path*', destination: '/' },

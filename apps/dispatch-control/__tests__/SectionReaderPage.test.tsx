@@ -60,6 +60,7 @@ const hoisted = vi.hoisted(() => ({
   acceptFinding: vi.fn(),
   dismissFinding: vi.fn(),
   routerPush: vi.fn(),
+  currentRunOpts: vi.fn(),
 }))
 
 vi.mock('@/lib/contentPatchClient', async () => {
@@ -126,7 +127,10 @@ function defaultCurrentRun() {
 let mockCurrentRun: Record<string, unknown> = defaultCurrentRun()
 
 vi.mock('@/lib/useCurrentRun', () => ({
-  useCurrentRun: () => mockCurrentRun,
+  useCurrentRun: (opts?: unknown) => {
+    hoisted.currentRunOpts(opts)
+    return mockCurrentRun
+  },
 }))
 
 // ── Draft fixture ────────────────────────────────────────────────────────
@@ -228,7 +232,7 @@ afterEach(() => {
 // never executes today either way.
 const SECTION_PAGE_SPECIFIER = '../app/(editorial)/s/[section]/page'
 
-async function renderSection(section: string) {
+async function renderSection(section: string, searchParams?: { run?: string }) {
   const { default: Page } = await import(/* @vite-ignore */ SECTION_PAGE_SPECIFIER)
   // Plan 51-04: the page calls useInspector() (the shared "Inspect how this
   // was made" entry point, Pitfall 3) — a leaf render needs the same
@@ -239,7 +243,7 @@ async function renderSection(section: string) {
   // these specs trigger.
   return render(
     <InspectorProvider>
-      <Page params={{ section }} />
+      <Page params={{ section }} searchParams={searchParams} />
     </InspectorProvider>,
   )
 }
@@ -301,6 +305,34 @@ d('renders', () => {
         'This section renders as an interactive game — the agents check it as a whole.',
       ),
     ).toBeDefined()
+  })
+})
+
+// ── d('earlier issue') — quick 261022-cr6 (client bug 1) ───────────────────
+
+d('earlier issue (?run=)', () => {
+  it('pins useCurrentRun to the run, shows the banner, and keeps ?run= on nav links', async () => {
+    hoisted.currentRunOpts.mockClear()
+    mockCurrentRun = { ...defaultCurrentRun(), runId: 'r9', pinned: true }
+    await renderSection('originStory', { run: 'r9' })
+    await screen.findByText('The founder started in a garage in 1974.')
+
+    expect(hoisted.currentRunOpts).toHaveBeenCalledWith({ runId: 'r9' })
+    expect(screen.getByText(/You're editing an earlier issue/)).toBeDefined()
+    const next = screen.getByText(/Problem/).closest('a')
+    expect(next?.getAttribute('href')).toBe('/s/problemStatement?run=r9')
+  })
+
+  it('without ?run= follows the latest run and shows no banner', async () => {
+    hoisted.currentRunOpts.mockClear()
+    mockCurrentRun = defaultCurrentRun()
+    await renderSection('originStory')
+    await screen.findByText('The founder started in a garage in 1974.')
+
+    expect(hoisted.currentRunOpts).toHaveBeenCalledWith({ runId: null })
+    expect(screen.queryByText(/earlier issue/)).toBeNull()
+    const next = screen.getByText(/Problem/).closest('a')
+    expect(next?.getAttribute('href')).toBe('/s/problemStatement')
   })
 })
 

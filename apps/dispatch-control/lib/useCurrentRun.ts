@@ -32,6 +32,8 @@ const EMPTY_SIGNOFFS: Record<string, { actorId: string; signedAt: number }> = {}
 
 export interface UseCurrentRunResult {
   state: CurrentRunState
+  /** True when pinned to an explicit run via opts.runId. */
+  pinned: boolean
   runId: string | null
   issueNumber: number | null
   /** `undefined` === still loading. Callers MUST branch on this before
@@ -50,8 +52,17 @@ export interface UseCurrentRunResult {
   configRows: { key: string; value: string }[] | undefined
 }
 
-export function useCurrentRun(): UseCurrentRunResult {
-  const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
+/**
+ * `opts.runId` pins the hook to one specific run (explicit `?run=` from Past
+ * issues / Admin — client bug 1, 2026-10-22). With no opts it follows
+ * `runs.latest`, exactly as before.
+ */
+export function useCurrentRun(opts?: { runId?: string | null }): UseCurrentRunResult {
+  const pinnedRunId = opts?.runId ?? null
+  const pinned = pinnedRunId !== null
+  const latestQ = useQuery(api.runs.latest, pinned ? 'skip' : { workspace_id: DEFAULT_WORKSPACE_ID })
+  const pinnedQ = useQuery(api.runs.byRunId, pinned ? { runId: pinnedRunId } : 'skip')
+  const latest = pinned ? pinnedQ : latestQ
   const pipelineRun = useQuery(
     api.pipelineRuns.byRunId,
     latest ? { runId: latest.runId } : 'skip',
@@ -109,6 +120,7 @@ export function useCurrentRun(): UseCurrentRunResult {
 
   return {
     state,
+    pinned,
     runId,
     issueNumber,
     title,

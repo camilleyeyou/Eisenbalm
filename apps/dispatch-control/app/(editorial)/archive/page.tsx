@@ -6,15 +6,35 @@
  * by) was dropped: sign-offs no longer exist, so every row would read blank.
  * No start/create panels: the front door owns the single Start button.
  */
+import { use, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { useCurrentRun } from '@/lib/useCurrentRun'
+import { issueOpenHref, parseIssueNumber } from '@/lib/issueRouteResolver'
 import { relativeWeekLabel } from '@/lib/issueTitle'
 import HeldIssueRow from '../_components/HeldIssueRow'
 import { ArchiveBody, type ArchiveRow } from './_components/ArchiveBody'
 
-export default function ArchivePage() {
+interface ArchiveSearchParams {
+  issue?: string | string[]
+}
+
+function isThenable<T>(value: unknown): value is Promise<T> {
+  return typeof value === 'object' && value !== null && typeof (value as { then?: unknown }).then === 'function'
+}
+
+export default function ArchivePage({
+  searchParams,
+}: {
+  searchParams?: ArchiveSearchParams | Promise<ArchiveSearchParams>
+} = {}) {
+  const resolved: ArchiveSearchParams = isThenable<ArchiveSearchParams>(searchParams)
+    ? use(searchParams)
+    : (searchParams ?? {})
+  const issueParam = typeof resolved.issue === 'string' ? parseIssueNumber(resolved.issue) : null
+  const router = useRouter()
   const run = useCurrentRun()
   const issuesList = useQuery(api.issues.listWithTitles, { workspace_id: DEFAULT_WORKSPACE_ID })
 
@@ -29,6 +49,22 @@ export default function ArchivePage() {
     held: issue.held,
     relativeWeek: relativeWeekLabel(issue.runStartedAt ?? issue.publishedAt ?? issue.createdAt, now),
   }))
+
+  // Old /issues/N links land here as ?issue=N and forward to the issue.
+  const target = issueParam != null && issuesList ? issuesList.find(i => i.issueNumber === issueParam) : undefined
+  const forwardHref = target?.runId && run.state.kind !== 'loading' ? issueOpenHref(target.runId, run.runId) : null
+  useEffect(() => {
+    if (forwardHref) router.replace(forwardHref)
+  }, [forwardHref, router])
+
+  const issueNote =
+    issueParam == null || !issuesList
+      ? null
+      : !target
+        ? `Issue ${issueParam} was not found.`
+        : !target.runId
+          ? `Issue ${issueParam} has no draft to open yet.`
+          : null
 
   const heldIssues = (issuesList ?? []).filter(i => i.held && !i.published)
 
@@ -50,10 +86,17 @@ export default function ArchivePage() {
     ) : undefined
 
   return (
-    <ArchiveBody
-      rows={rows}
-      currentIssueNumber={run.issueNumber}
-      heldSlot={heldSlot}
-    />
+    <>
+      {issueNote && (
+        <p role="status" className="mx-auto max-w-[1100px] px-6 pt-4 text-[13px] text-[color:var(--color-ink-soft)]">
+          {issueNote}
+        </p>
+      )}
+      <ArchiveBody
+        rows={rows}
+        currentIssueNumber={run.issueNumber}
+        heldSlot={heldSlot}
+      />
+    </>
   )
 }
