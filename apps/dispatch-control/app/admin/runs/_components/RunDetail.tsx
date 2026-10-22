@@ -7,11 +7,10 @@
  *   - Cancel Run button (running-only, two-step inline confirm — RUN-04)
  *   - Per-step table: action name + agent, status, costUsd, durationMs,
  *     tokensIn, tokensOut, error, Edit (Edit text + Rewrite this part, section writers only — RUN-05)
- *   - Reconciliation panel: per-agent sum (from parseCostJson(run.cost).agents)
- *     vs. runs.cost.total — both rendered side-by-side for OBS-04 visibility
+ *   - Total cost: the sum of the per-step agent_runs costs (quick 261022-cr6)
  *
  * Data sources:
- *   api.runs.byRunId       → run header + cost.total
+ *   api.runs.byRunId       → run header
  *   api.agentRuns.byRunId  → per-agent live status rows
  *
  * Phase 50 (WBN-02, D-07/D-08/D-09): the per-step table no longer shows the
@@ -34,7 +33,8 @@ import { Fragment, useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { parseCostJson } from '@/lib/costRollup'
+import { deriveRunCostUsd } from '@/lib/derivedState'
+import { isGateInterrupt } from '@/lib/gateInterrupt'
 import { runStepFor } from '@/lib/nomenclature'
 import { issueOpenHref, sectionEditHref } from '@/lib/issueRouteResolver'
 import { qaSectionToGalleyId } from '@/lib/galley/sectionIdMap'
@@ -91,6 +91,8 @@ const STATUS_CLASSES: Record<string, string> = {
   failed: 'border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/15 text-[color:var(--color-vermilion)]',
   'awaiting-review': 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
   cancelled: 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
+  // Quick 261022-cr6: a pause at Gate 1 is neutral, not a failure.
+  paused: 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]',
 }
 
 /** Uniform square-chip base classes (mono caps, hard edge, thin border). */
@@ -107,10 +109,16 @@ const STEP_STATE_LABELS: Record<string, string> = {
   running: 'Running',
   done: 'Complete',
   failed: 'Failed',
+  paused: 'Waiting for you',
 }
 
 function stepStateLabel(status: string): string {
   return STEP_STATE_LABELS[status] ?? status
+}
+
+/** Quick 261022-cr6 (bug 8): a Gate-1 Interrupt repr row is a pause, not a failure. */
+function rowStatus(r: { agentKey: string; status: string; error?: string }): string {
+  return isGateInterrupt(r) ? 'paused' : r.status
 }
 
 // ── historical-record vs live-run framing (D-09) ──────────────────────────────
@@ -196,11 +204,13 @@ function buildStepGroups(agentRuns: AgentRunRow[]): StepGroup[] {
   return Array.from(groupsByKey.values())
 }
 
-/** Worst-of aggregate: failed beats running beats waiting beats complete. */
+/** Worst-of aggregate: failed beats running beats paused beats waiting beats complete. */
 function aggregateStatus(members: AgentRunRow[]): string {
-  if (members.some(m => m.status === 'failed')) return 'failed'
-  if (members.some(m => m.status === 'running')) return 'running'
-  if (members.some(m => m.status === 'queued')) return 'queued'
+  const statuses = members.map(rowStatus)
+  if (statuses.includes('failed')) return 'failed'
+  if (statuses.includes('running')) return 'running'
+  if (statuses.includes('paused')) return 'paused'
+  if (statuses.includes('queued')) return 'queued'
   return 'done'
 }
 
@@ -293,16 +303,20 @@ export default function RunDetail({ runId }: RunDetailProps) {
     )
   }
 
-  const cost = parseCostJson(run.cost)
+  const hasInterruptRow = (agentRuns as AgentRunRow[]).some(isGateInterrupt)
+  const hasRealFailure = (agentRuns as AgentRunRow[]).some(r => r.status === 'failed' && !isGateInterrupt(r))
+  const isPausedAtGate1 =
+    (run.status === 'awaiting-review' && run.completedAt == null) ||
+    (run.status === 'failed' && hasInterruptRow && !hasRealFailure)
+  const runStatusLabel = isPausedAtGate1 ? 'Waiting for you' : run.status
   const runStatusClass =
-    STATUS_CLASSES[run.status] ?? 'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
+    STATUS_CLASSES[isPausedAtGate1 ? 'paused' : run.status] ??
+    'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
   const liveRun = isLiveRun(run.status)
 
-  // Per-agent sum: sum of agents[agentKey].usd values from runs.cost.agents
-  const perAgentSum = Object.values(cost.agents).reduce(
-    (acc, entry) => acc + (entry.usd ?? 0),
-    0,
-  )
+  // Quick 261022-cr6 (bug 6): runs.cost is never written; the durable total is
+  // the sum of the per-step agent_runs costs.
+  const totalUsd = deriveRunCostUsd(agentRuns)
 
   const stepGroups = buildStepGroups(agentRuns as AgentRunRow[])
 
@@ -312,7 +326,6 @@ export default function RunDetail({ runId }: RunDetailProps) {
   // (mirrors deriveState.ts's isPausedAtGate1 shape against a run object
   // rather than DerivationInputs — 47-RESEARCH/§scope_notes: intentional,
   // not cross-boundary duplication worth a shared helper).
-  const isPausedAtGate1 = run.status === 'awaiting-review' && run.completedAt == null
 
   return (
     <div className="space-y-6">
@@ -366,7 +379,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
             <span
               className={`${CHIP_BASE} ${runStatusClass}`}
             >
-              {run.status}
+              {runStatusLabel}
             </span>
           </div>
           <div>
@@ -393,35 +406,26 @@ export default function RunDetail({ runId }: RunDetailProps) {
             </p>
             <p className="text-[color:var(--color-ink)]">{formatDuration(run.durationMs)}</p>
           </div>
+          <div>
+            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
+              Total cost
+            </p>
+            <p className="text-[color:var(--color-ink)]">
+              {totalUsd === undefined ? '—' : `$${totalUsd.toFixed(2)}`}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Failed-run recovery rail (Phase 50, WBN-03, D-10/D-11/D-12) — the
-          plain-language what-happened / what-completed / what-didn't-happen /
-          recommended-recovery explanation, mounted whenever this run's
-          status is "failed". */}
-      {run.status === 'failed' && (
+      {/* Recovery rail (Phase 50 WBN-03; quick 261022-cr6). A run paused at the
+          Gate-1 interrupt (including legacy rows where the interrupt repr was
+          recorded as a 'failed' step) gets the neutral "Waiting for you" rail
+          with Stop; a genuinely failed run gets the failure rail. */}
+      {(run.status === 'failed' || isPausedAtGate1) && (
         <RecoveryRail
           runId={runId}
           agentRuns={agentRuns as AgentRunRow[]}
-          // §37.4(c)'s paused-at-Gate-1 predicate is status==='awaiting-review'
-          // && completedAt==null — mutually exclusive with status==='failed',
-          // so this mount is always false here. Left explicit (not omitted)
-          // so the honesty matrix's contract stays visible at the call site.
-          isPausedAtGate1={false}
-        />
-      )}
-
-      {/* quick 260719-w6o (F4) — a genuinely paused run gets its own reachable
-          recovery rail (Signal Desk adjudication link), unhardcoding the dead
-          nomenclature editor_gate_1 'live' branch for the first time in the
-          shipped app. Failed and paused are mutually exclusive, so this
-          mount never overlaps the one above. */}
-      {isPausedAtGate1 && (
-        <RecoveryRail
-          runId={runId}
-          agentRuns={agentRuns as AgentRunRow[]}
-          isPausedAtGate1={true}
+          isPausedAtGate1={isPausedAtGate1}
         />
       )}
 
@@ -477,7 +481,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                             {group.actionLabel}
                           </button>
                           <p className="ml-4 text-[11px] text-[color:var(--color-faint)]">
-                            — {group.agentLabel} ({group.members.length})
+                            — {group.members.filter(m => m.agentKey !== 'validate_sections').length} {group.agentLabel}
                           </p>
                         </td>
                         <td className="px-4 py-3">
@@ -512,7 +516,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                       {draftSectionsExpanded &&
                         group.members.map(ar => {
                           const arStatusClass =
-                            STATUS_CLASSES[ar.status] ??
+                            STATUS_CLASSES[rowStatus(ar)] ??
                             'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
                           const subLabel = WRITER_SUB_LABELS[ar.agentKey] ?? ar.agentKey
                           return (
@@ -527,7 +531,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                                 <span
                                   className={`${CHIP_BASE} ${arStatusClass}`}
                                 >
-                                  {stepStateLabel(ar.status)}
+                                  {stepStateLabel(rowStatus(ar))}
                                 </span>
                               </td>
                               <td className="px-4 py-2 text-[11px] text-[color:var(--color-ink-soft)]">
@@ -543,7 +547,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                                 {ar.tokensOut?.toLocaleString() ?? '—'}
                               </td>
                               <td className="px-4 py-2 text-[color:var(--color-vermilion)] text-[11px]">
-                                {ar.error ?? '—'}
+                                {isGateInterrupt(ar) ? '—' : (ar.error ?? '—')}
                               </td>
                               <td className="px-4 py-2">
                                 <EditCell runId={runId} agentKey={ar.agentKey} runStatus={run.status} latestRunId={latestRunId} />
@@ -559,7 +563,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                 const ar = group.members[0]
                 if (!ar) return null // unreachable — non-Draft-sections groups always have exactly 1 member
                 const arStatusClass =
-                  STATUS_CLASSES[ar.status] ??
+                  STATUS_CLASSES[rowStatus(ar)] ??
                   'bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
 
                 return (
@@ -583,7 +587,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                       <span
                         className={`${CHIP_BASE} ${arStatusClass}`}
                       >
-                        {stepStateLabel(ar.status)}
+                        {stepStateLabel(rowStatus(ar))}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[color:var(--color-ink-soft)]">
@@ -599,7 +603,7 @@ export default function RunDetail({ runId }: RunDetailProps) {
                       {ar.tokensOut?.toLocaleString() ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-[color:var(--color-vermilion)] text-[11px]">
-                      {ar.error ?? '—'}
+                      {isGateInterrupt(ar) ? '—' : (ar.error ?? '—')}
                     </td>
                     <td className="px-4 py-3">
                       <EditCell runId={runId} agentKey={ar.agentKey} runStatus={run.status} latestRunId={latestRunId} />
@@ -610,51 +614,6 @@ export default function RunDetail({ runId }: RunDetailProps) {
             </tbody>
           </table>
         )}
-      </div>
-
-      {/* Cost reconciliation panel (OBS-04) */}
-      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
-        <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)] mb-4">
-          Cost Reconciliation
-        </h3>
-        <div className="flex gap-8">
-          <div>
-            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-              Per-Agent Sum
-            </p>
-            <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)]">
-              {perAgentSum > 0 ? `$${perAgentSum.toFixed(4)}` : '$0.00'}
-            </p>
-            <p className="text-[11px] text-[color:var(--color-faint)] mt-0.5">
-              Sum of agents in runs.cost
-            </p>
-          </div>
-          <div className="w-px bg-[color:var(--color-faint)]" />
-          <div>
-            <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-              runs.cost.total
-            </p>
-            <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)]">
-              {cost.total > 0 ? `$${cost.total.toFixed(4)}` : '$0.00'}
-            </p>
-            <p className="text-[11px] text-[color:var(--color-faint)] mt-0.5">
-              Recorded by pipeline recorder
-            </p>
-          </div>
-          {Math.abs(perAgentSum - cost.total) > 0.0001 && (
-            <div>
-              <p className="text-[11px] text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-                Discrepancy
-              </p>
-              <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-vermilion)]">
-                ${Math.abs(perAgentSum - cost.total).toFixed(4)}
-              </p>
-              <p className="text-[11px] text-[color:var(--color-faint)] mt-0.5">
-                Investigate double-count
-              </p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )

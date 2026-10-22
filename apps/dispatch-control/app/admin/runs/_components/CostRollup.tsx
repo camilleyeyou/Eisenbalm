@@ -17,7 +17,7 @@
  */
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { parseCostJson, sumRunsCost } from '@/lib/costRollup'
+import { costTotalsToMap, effectiveRunCostUsd, sumEffectiveCost } from '@/lib/costRollup'
 
 interface CostRollupProps {
   workspace_id: string
@@ -27,6 +27,16 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 export default function CostRollup({ workspace_id }: CostRollupProps) {
   const runs = useQuery(api.runs.listForWorkspace, { workspace_id })
+  // Quick 261022-cr6 (bug 6): totals come from agent_runs, since runs.cost is never written.
+  const monthRunIds = (runs ?? [])
+    .filter(r => r.startedAt >= Date.now() - 30 * MS_PER_DAY)
+    .map(r => r.runId)
+    .slice(0, 100)
+  const totalsRows = useQuery(
+    api.agentRuns.costTotalsForRuns,
+    runs === undefined ? 'skip' : { runIds: monthRunIds },
+  )
+  const totals = costTotalsToMap(totalsRows)
 
   if (runs === undefined) {
     return (
@@ -43,12 +53,12 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
   const runsLastWeek = runs.filter(r => r.startedAt >= sevenDaysAgo)
   const runsLastMonth = runs.filter(r => r.startedAt >= thirtyDaysAgo)
 
-  const weekCost = sumRunsCost(runsLastWeek)
-  const monthCost = sumRunsCost(runsLastMonth)
+  const weekCost = sumEffectiveCost(runsLastWeek, totals)
+  const monthCost = sumEffectiveCost(runsLastMonth, totals)
 
   // Per-run cost for the summary: most recent 5 runs with non-zero cost
   const recentWithCost = runs
-    .filter(r => parseCostJson(r.cost).total > 0)
+    .filter(r => effectiveRunCostUsd(r.cost, totals.get(r.runId)) > 0)
     .slice(0, 5)
 
   return (
@@ -84,7 +94,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
                   {runsLastWeek.length}
                 </td>
                 <td className="py-2 font-medium text-[color:var(--color-ink)]">
-                  {weekCost > 0 ? `$${weekCost.toFixed(4)}` : '$0.00'}
+                  ${weekCost.toFixed(2)}
                 </td>
               </tr>
               <tr>
@@ -93,7 +103,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
                   {runsLastMonth.length}
                 </td>
                 <td className="py-2 font-medium text-[color:var(--color-ink)]">
-                  {monthCost > 0 ? `$${monthCost.toFixed(4)}` : '$0.00'}
+                  ${monthCost.toFixed(2)}
                 </td>
               </tr>
             </tbody>
@@ -130,7 +140,7 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
                       {run.triggerSource}
                     </td>
                     <td className="py-1.5 text-[11px] font-medium text-[color:var(--color-ink-soft)]">
-                      ${parseCostJson(run.cost).total.toFixed(4)}
+                      ${effectiveRunCostUsd(run.cost, totals.get(run.runId)).toFixed(2)}
                     </td>
                   </tr>
                 ))}

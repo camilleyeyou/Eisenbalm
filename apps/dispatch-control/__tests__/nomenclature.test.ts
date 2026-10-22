@@ -33,6 +33,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 import { describe, it, expect } from 'vitest'
+import { runStepFor } from '../lib/nomenclature'
 
 const APP_ROOT = path.resolve(__dirname, '..')
 const SEARCH_DIRS = ['app', 'components'].map(d => path.join(APP_ROOT, d))
@@ -212,5 +213,12 @@ describe('WBN-05: no legacy nomenclature term survives in operator-facing copy',
             .join('\n'),
       )
     }
+  })
+})
+
+describe('writer agentLabel (quick 261022-cr6, bug 7)', () => {
+  it('no longer hardcodes a count of writers', () => {
+    expect(runStepFor('origin_story').agentLabel).not.toMatch(/seven/i)
+    expect(runStepFor('design').agentLabel).toBe('writing agents')
   })
 })

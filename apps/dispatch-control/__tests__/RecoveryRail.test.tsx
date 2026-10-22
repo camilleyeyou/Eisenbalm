@@ -208,24 +208,24 @@ describe('RecoveryRail (WBN-03) — "Restart from this step" honesty matrix', ()
     expect(publishManualMock).toHaveBeenCalledWith('run-1', 'tok-clerk')
   })
 
-  it('is RESERVED (disabled, no reuse claim) for a failed non-primitive step (qa)', () => {
+  it('quick 261022-cr6: a failed non-primitive step (qa) shows a plain line, no disabled button, no reuse claim', () => {
     renderRail(<RecoveryRail runId="run-1" agentRuns={rows('qa', { before: ['origin_story'] })} />)
 
-    const btn = screen.getByRole('button', { name: 'Restart from this step' })
-    expect((btn as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByRole('button', { name: 'Restart from this step' })).toBeNull()
+    expect(screen.getByText(/can't be restarted on its own/i)).toBeTruthy()
     expect(screen.queryByText(/reused, not re-paid/i)).toBeNull()
+    expect(document.querySelectorAll('button[disabled]')).toHaveLength(0)
   })
 
-  it('is RESERVED for editor_gate_1 by default (a failure is not a pause)', () => {
-    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} />)
-    const btn = screen.getByRole('button', { name: 'Restart from this step' })
-    expect((btn as HTMLButtonElement).disabled).toBe(true)
-  })
-
-  it('editor_gate_1 paused: no link to the retired Signal Desk, tells the editor to start a new issue', () => {
-    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1')} isPausedAtGate1 />)
-    expect(screen.queryByRole('link', { name: 'Restart from this step' })).toBeNull()
-    expect(screen.getByText(/start a new issue from the front page/i)).toBeTruthy()
+  it('quick 261022-cr6: a Gate-1 Interrupt repr row is a pause: Waiting for you, Stop, candidates, never the repr', () => {
+    const repr = "Interrupt(value={'candidates': [{'charityName': 'Charity A'}, {'name': 'Charity B'}]}, id='x')"
+    renderRail(<RecoveryRail runId="run-1" agentRuns={rows('editor_gate_1', { error: repr })} isPausedAtGate1 />)
+    expect(screen.getByText('Waiting for you')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Stop this issue' })).toBeTruthy()
+    expect(screen.getByText(/choosing between: Charity A, Charity B/)).toBeTruthy()
+    expect(document.body.textContent).not.toContain('Interrupt(')
+    expect(screen.queryByText('What happened')).toBeNull()
+    expect(document.querySelectorAll('button[disabled]')).toHaveLength(0)
   })
 })
 
@@ -236,9 +236,9 @@ describe('RecoveryRail (WBN-03) — "Improve this agent"', () => {
     expect(link.getAttribute('href')).toBe('/admin/agents/game')
   })
 
-  it('renders a reserved control when the failed step has no externalized prompt (qa)', () => {
+  it('renders nothing (no dead button) when the failed step has no externalized prompt (qa)', () => {
     renderRail(<RecoveryRail runId="run-1" agentRuns={rows('qa')} />)
-    const btn = screen.getByRole('button', { name: 'Improve this agent' })
-    expect((btn as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByRole('button', { name: 'Improve this agent' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Improve this agent' })).toBeNull()
   })
 })

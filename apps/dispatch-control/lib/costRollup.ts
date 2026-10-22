@@ -46,3 +46,29 @@ export function parseCostJson(raw: string | undefined | null): CostPayload {
 export function sumRunsCost(runs: Array<{ cost?: string | null }>): number {
   return runs.reduce((acc, run) => acc + parseCostJson(run.cost).total, 0)
 }
+
+/**
+ * Quick 261022-cr6 (client bug 6): `runs.cost` is never written, so the
+ * durable per-step sum from `agent_runs.costUsd` wins whenever it is > 0.
+ * Falls back to the stored JSON total, then 0.
+ */
+export function effectiveRunCostUsd(
+  rawCostJson: string | undefined | null,
+  agentRunsTotal?: number,
+): number {
+  if (agentRunsTotal != null && agentRunsTotal > 0) return agentRunsTotal
+  return parseCostJson(rawCostJson).total
+}
+
+export function costTotalsToMap(
+  rows: Array<{ runId: string; costUsd: number }> | undefined,
+): Map<string, number> {
+  return new Map((rows ?? []).map(r => [r.runId, r.costUsd]))
+}
+
+export function sumEffectiveCost(
+  runs: Array<{ runId: string; cost?: string | null }>,
+  totals: Map<string, number>,
+): number {
+  return runs.reduce((acc, run) => acc + effectiveRunCostUsd(run.cost, totals.get(run.runId)), 0)
+}

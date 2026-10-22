@@ -19,9 +19,11 @@
  * via `rerollAgent`/`rerun_agent`; `editor_gate_1` ONLY when the run is
  * genuinely paused at the Gate-1 interrupt (legacy runs only; quick
  * 261021-j83 removed the Signal Desk, so the control now says to stop it); `publisher` via the Phase 50 `publishManual`/`publish-manual`
- * bridge, §50.1). The other 8 step-types render RESERVED — disabled, with an
- * honest explanation that never claims completed work is reused (that claim
- * — "reused, not re-paid" — is rendered ONLY in the LIVE branches below).
+ * bridge, §50.1). The other 8 step-types render RESERVED — a plain line, NO
+ * disabled button (quick 261022-cr6), that never claims completed work is
+ * reused (that claim — "reused, not re-paid" — is rendered ONLY in the LIVE
+ * branches below). A Gate-1 pause (even when recorded as a 'failed' Interrupt
+ * row) shows "Waiting for you" with Stop, never the raw repr.
  *
  * "Improve this agent" deep-links `/admin/agents/{promptKey}` via the SAME
  * `runKeyToPromptKey` resolver the inspector uses (`lib/inspectorArtifact.ts`,
@@ -45,6 +47,7 @@ import {
 } from '@/lib/nomenclature'
 import { PIPELINE_NODES } from '../graph/_components/pipelineTopology'
 import StopRunButton from '@/components/StopRunButton'
+import { isGateInterrupt, summarizeInterrupt } from '@/lib/gateInterrupt'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
@@ -96,25 +99,18 @@ function namedStepSequence(): NamedStep[] {
 /** First `agent_runs` row with status "failed", resolved in pipeline order
  * (deterministic even if the caller's array isn't topologically sorted). */
 function findFailedAgentKey(agentRuns: RecoveryRailAgentRun[]): string | null {
-  const failedKeys = new Set(agentRuns.filter(r => r.status === 'failed').map(r => r.agentKey))
+  // Quick 261022-cr6 (bug 8): an Interrupt(...) repr row is a pause, not a failure.
+  const failedKeys = new Set(
+    agentRuns.filter(r => r.status === 'failed' && !isGateInterrupt(r)).map(r => r.agentKey),
+  )
   for (const key of PIPELINE_NODES) {
     if (failedKeys.has(key)) return key
   }
   return null
 }
 
-// Deliberately does NOT claim "completed steps are reused, not re-paid" —
-// that copy is reserved for the 3 step-types with a real primitive (D-11/
-// D-12). This step has none: a full pipeline re-run or an agent-instruction
-// fix is the honest path forward.
-const RESERVED_TITLE =
-  'This step has no restart primitive yet — re-run the whole pipeline, or improve the agent and try again next run.'
-const NOT_EXTERNALIZED_TITLE = "This agent's instructions are code-defined, not editable here."
-
 const LIVE_BUTTON_CLASSES =
   'inline-flex min-h-[36px] items-center gap-1.5 rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.03em] text-[color:var(--color-ink)] hover:bg-[color:var(--color-card-alt)]'
-const RESERVED_BUTTON_CLASSES =
-  'inline-flex min-h-[36px] items-center gap-1.5 rounded-[2px] border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.03em] text-[color:var(--color-faint)] cursor-not-allowed opacity-60'
 
 function RestartAction({
   runId,
@@ -132,31 +128,15 @@ function RestartAction({
 
   const availability = restartAvailabilityFor(agentKey, { isPausedAtGate1 })
 
+  // Quick 261022-cr6 (bug 9): no disabled, button-styled controls. A step
+  // with no restart primitive says so in plain words; the Gate-1 pause is
+  // handled by the Stop control, so RestartAction never mounts for it.
+  if (agentKey === 'editor_gate_1') return null
   if (availability === 'reserved') {
     return (
-      <div>
-        <button type="button" disabled title={RESERVED_TITLE} className={RESERVED_BUTTON_CLASSES}>
-          {PRODUCT_TERMS.restartStep}
-        </button>
-        <p className="mt-1 text-[11px] text-[color:var(--color-faint)]">{RESERVED_TITLE}</p>
-      </div>
-    )
-  }
-
-  // Quick 261021-j83: the charity-choice screen is gone (Gate 1 now
-  // auto-proceeds). A run still paused there is a legacy run: stop it and
-  // start a new issue from the front page. No link, no dead end.
-  if (agentKey === 'editor_gate_1') {
-    return (
-      <div>
-        <button type="button" disabled title={RESERVED_TITLE} className={RESERVED_BUTTON_CLASSES}>
-          {PRODUCT_TERMS.restartStep}
-        </button>
-        <p className="mt-1 text-[11px] text-[color:var(--color-ink-soft)]">
-          This older run paused to choose a charity. Stop it, then start a new issue from the
-          front page.
-        </p>
-      </div>
+      <p className="max-w-[44ch] text-[11px] text-[color:var(--color-ink-soft)]">
+        This step can&apos;t be restarted on its own. Start a new issue from the front page.
+      </p>
     )
   }
 
@@ -217,18 +197,8 @@ function RestartAction({
 
 function ImproveAgentAction({ agentKey }: { agentKey: string }) {
   const promptKey = runKeyToPromptKey(agentKey)
-  if (!promptKey) {
-    return (
-      <button
-        type="button"
-        disabled
-        title={NOT_EXTERNALIZED_TITLE}
-        className={RESERVED_BUTTON_CLASSES}
-      >
-        Improve this agent
-      </button>
-    )
-  }
+  // Code-defined agent: nothing to link to, and no dead button either.
+  if (!promptKey) return null
   return (
     <Link href={`/admin/agents/${encodeURIComponent(promptKey)}`} className={LIVE_BUTTON_CLASSES}>
       Improve this agent
@@ -243,6 +213,8 @@ export default function RecoveryRail({
 }: RecoveryRailProps) {
   const failedAgentKey = findFailedAgentKey(agentRuns)
   const sequence = namedStepSequence()
+  const gateRow = agentRuns.find(r => r.agentKey === 'editor_gate_1' && isGateInterrupt(r))
+  const pausedCandidates = gateRow?.error ? summarizeInterrupt(gateRow.error).candidates : []
 
   if (!failedAgentKey) {
     // quick 260719-w6o (F4) — a run genuinely paused at Gate 1 (no agent row
@@ -266,6 +238,11 @@ export default function RecoveryRail({
               This older issue paused to choose a charity and cannot continue. Stop it, then start a
               new issue from the front page.
             </p>
+            {pausedCandidates.length > 0 && (
+              <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+                It was choosing between: {pausedCandidates.join(', ')}.
+              </p>
+            )}
           </section>
           <section>
             <StopRunButton runId={runId} />

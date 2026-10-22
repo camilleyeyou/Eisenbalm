@@ -231,6 +231,28 @@ export const byRunId = query({
   },
 })
 
+// ── costTotalsForRuns (public query — durable per-run spend) ────────────────
+
+/**
+ * Quick 261022-cr6 (client bug 6): `runs.cost` is never written, so run totals
+ * are summed from the durable per-step `agent_runs.costUsd` instead. Public
+ * READ query (not a mutation). Input capped at 100 run ids.
+ */
+export const costTotalsForRuns = query({
+  args: { runIds: v.array(v.string()) },
+  handler: async (ctx, { runIds }) => {
+    const out: Array<{ runId: string; costUsd: number }> = []
+    for (const runId of runIds.slice(0, 100)) {
+      const rows = await ctx.db
+        .query('agent_runs')
+        .withIndex('by_runId', q => q.eq('runId', runId))
+        .collect()
+      out.push({ runId, costUsd: rows.reduce((acc, r) => acc + (r.costUsd ?? 0), 0) })
+    }
+    return out
+  },
+})
+
 // ── payloadByRunIdAgentKey (public query — node-click on-demand fetch) ───────
 
 /**

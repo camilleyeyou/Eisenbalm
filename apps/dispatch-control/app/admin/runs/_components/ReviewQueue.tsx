@@ -21,7 +21,7 @@
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { parseCostJson } from '@/lib/costRollup'
+import { costTotalsToMap, effectiveRunCostUsd } from '@/lib/costRollup'
 import { issueOpenHref } from '@/lib/issueRouteResolver'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
 import { splitStaleRuns } from '@/lib/runLabels'
@@ -49,11 +49,13 @@ function formatRelativeTime(ms: number): string {
 function AwaitingReviewRow({
   run,
   latestRunId,
+  totals,
 }: {
   run: { _id: string; runId: string; startedAt: number; cost?: string; completedAt?: number }
   latestRunId: string | null | undefined
+  totals: Map<string, number>
 }) {
-  const cost = parseCostJson(run.cost).total
+  const cost = effectiveRunCostUsd(run.cost, totals.get(run.runId))
   // Quick 261022-cr6: '/' only when this IS the current run; otherwise the
   // section editor pinned to this run.
   const href = issueOpenHref(run.runId, latestRunId)
@@ -75,7 +77,7 @@ function AwaitingReviewRow({
         </p>
         {cost > 0 && (
           <p className="mt-0.5 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
-            Estimated run cost ${cost.toFixed(4)}
+            Estimated run cost ${cost.toFixed(2)}
           </p>
         )}
       </div>
@@ -93,6 +95,13 @@ function AwaitingReviewRow({
 
 export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   const runs = useQuery(api.runs.listForWorkspace, { workspace_id })
+  const totalsRows = useQuery(
+    api.agentRuns.costTotalsForRuns,
+    runs === undefined
+      ? 'skip'
+      : { runIds: runs.filter(r => r.status === 'awaiting-review').slice(0, 100).map(r => r.runId) },
+  )
+  const totals = costTotalsToMap(totalsRows)
   const latest = useQuery(api.runs.latest, { workspace_id: workspace_id ?? DEFAULT_WORKSPACE_ID })
 
   // Filter to awaiting-review only.
@@ -141,7 +150,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
       </h2>
       <ul role="list" className="mt-4 space-y-3">
         {recent.map(run => (
-          <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} />
+          <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} totals={totals} />
         ))}
       </ul>
       {older.length > 0 && (
@@ -151,7 +160,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
           </summary>
           <ul role="list" className="mt-3 space-y-3">
             {older.map(run => (
-              <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} />
+              <AwaitingReviewRow key={run._id} run={run} latestRunId={latest?.runId} totals={totals} />
             ))}
           </ul>
         </details>

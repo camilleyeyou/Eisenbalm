@@ -27,7 +27,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { parseCostJson } from '@/lib/costRollup'
+import { costTotalsToMap, effectiveRunCostUsd } from '@/lib/costRollup'
 import HelpTip from '@/components/ui/HelpTip'
 import { HELP_COPY } from '@/components/help/helpCopy'
 import { SkeletonLine } from '@/components/ui/Skeleton'
@@ -92,6 +92,11 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
   // hook order never changes across renders of this component instance.
   const [showAll, setShowAll] = useState(false)
   const [showOlder, setShowOlder] = useState(false)
+  const totalsRows = useQuery(
+    api.agentRuns.costTotalsForRuns,
+    runs === undefined ? 'skip' : { runIds: runs.slice(0, 100).map(r => r.runId) },
+  )
+  const totals = costTotalsToMap(totalsRows)
 
   if (runs === undefined) {
     return (
@@ -155,7 +160,7 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
         </thead>
         <tbody>
           {visibleRuns.map((run, i) => {
-            const cost = parseCostJson(run.cost).total
+            const cost = effectiveRunCostUsd(run.cost, totals.get(run.runId))
             const statusClass =
               STATUS_CLASSES[run.status] ??
               'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
@@ -184,7 +189,7 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
                   {formatDuration(run.durationMs)}
                 </td>
                 <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                  {cost > 0 ? `$${cost.toFixed(4)}` : '—'}
+                  {cost > 0 ? `$${cost.toFixed(2)}` : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <Link

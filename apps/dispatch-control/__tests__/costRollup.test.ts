@@ -95,3 +95,20 @@ describe('sumRunsCost', () => {
     expect(result).toBeCloseTo(0.082, 5)
   })
 })
+
+import { effectiveRunCostUsd, sumEffectiveCost, costTotalsToMap } from '../lib/costRollup'
+
+describe('effectiveRunCostUsd (quick 261022-cr6)', () => {
+  it('prefers the agent_runs sum when > 0', () => {
+    expect(effectiveRunCostUsd('{"total":0,"agents":{}}', 0.55)).toBe(0.55)
+    expect(effectiveRunCostUsd('{"total":1.2}', 0.55)).toBe(0.55)
+  })
+  it('falls back to the stored total, then 0', () => {
+    expect(effectiveRunCostUsd('{"total":1.2}', 0)).toBe(1.2)
+    expect(effectiveRunCostUsd(undefined, undefined)).toBe(0)
+  })
+  it('sumEffectiveCost sums per run', () => {
+    const totals = costTotalsToMap([{ runId: 'a', costUsd: 0.5 }])
+    expect(sumEffectiveCost([{ runId: 'a', cost: '{"total":0}' }, { runId: 'b', cost: '{"total":0.25}' }], totals)).toBe(0.75)
+  })
+})
