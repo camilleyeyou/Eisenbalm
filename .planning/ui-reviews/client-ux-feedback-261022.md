@@ -29,7 +29,7 @@ Suggested swaps: "Start a new issue" (Trigger Run), "Rewrite this part" (Re-roll
 ## Design direction requested by the client
 - One **"Your next step"** box at the top of every page: plain sentence + one big button.
 - If a decision is needed, show it as a simple choice (cards, one-sentence reason, AI pick marked "Suggested").
-  NOTE: conflicts with locked answer "Gate 1 auto-proceeds" (dashboard-simplification-client-answers) — CONFIRM with client.
+  RESOLVED 2026-10-22: charity stays auto-picked for now (Gate 1 auto-proceeds); pick-cards may come later. Design should not show a charity choice.
 - Front page as a **checklist** for this week's issue: Pick charity → Write → Check → Publish (✓ done, current highlighted).
 - Honest status words.
 - Every button works and goes where it says.
@@ -42,4 +42,4 @@ Suggested swaps: "Start a new issue" (Trigger Run), "Rewrite this part" (Re-roll
 1. Quick task: fix bugs 1–9 above (incl. a real Stop / clear-stuck-run path; decide 999723: stop + Start issue recommended).
 2. Design phase: `ecc:frontend-design-direction` → `gsd:ui-phase` (UI-SPEC) → Claude Design mockups → **client sign-off**
    → build (`ecc:make-interfaces-feel-better`) → `ecc:browser-qa` replaying the client's walkthrough as acceptance.
-3. Open question for client: auto-pick charity (current) vs. "Pick this week's charity" cards.
+3. ~~Open question~~ RESOLVED 2026-10-22: charity is auto-picked for now; revisit pick-cards later.
