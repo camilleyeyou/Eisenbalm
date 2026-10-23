@@ -1272,7 +1272,7 @@ Plans:
   2. Replaying the client walkthrough in `client-ux-feedback-261022.md` (ecc:browser-qa) hits none of the reported confusions.
   3. No run ids, raw errors, or jargon appear on editor-facing pages; every page has exactly one primary action.
   4. Strict `pnpm --filter dispatch-control build` and the full test suite pass.
-**Known blocker for live QA**: `OPENROUTER_API_KEY` revoked 2026-10-22 — replace on Railway + local `.env` before any real-data run.
+**Known blocker for live QA**: `OPENROUTER_API_KEY` revoked 2026-10-22 — Railway key replaced 2026-10-22; local `packages/pipeline/.env` key still returns 401.
 **Plans**: 15 plans in 5 waves
 Plans:
 - [x] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)

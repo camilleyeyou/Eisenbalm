@@ -14,11 +14,11 @@ updated: 2026-10-23T04:18:24Z
 
 ### 1. "Start a new issue" end to end
 expected: Pressing Start a new issue from Home begins writing; Home shows Working, then the parts fill in. No raw errors.
-result: [pending] (blocked: OpenRouter key revoked; replace on Railway + local .env)
+result: [pending] (Railway key replaced 2026-10-22; local packages/pipeline/.env key still 401 — test against Railway, or replace the local key)
 
 ### 2. "Rewrite this part" end to end
 expected: On a prose part, Rewrite this part produces new text; Keep keeps it; Go back restores the previous text via the content-patch API.
-result: [pending] (blocked: OpenRouter key revoked)
+result: [pending] (Railway key replaced 2026-10-22; local key still 401)
 
 ### 3. Recorded browser evidence at 1280 px and 400 px
 expected: Screenshots of the 7 artboard screens, with no horizontal scroll, exactly one [data-primary] per page, and no console errors. Walkthrough approval (2026-10-22) had no per-row notes and no captures.
@@ -35,6 +35,6 @@ passed: 0
 issues: 0
 pending: 4
 skipped: 0
-blocked: 2
+blocked: 0
 
 ## Gaps
