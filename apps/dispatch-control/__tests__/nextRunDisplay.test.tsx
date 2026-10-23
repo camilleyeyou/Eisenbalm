@@ -4,7 +4,7 @@
  * Covers:
  *   - Shows "Not scheduled yet." when nextRunAt is 0
  *   - Shows "Not scheduled yet." when nextRunAt is falsy
- *   - Shows "Next run:" prefix when nextRunAt is a valid future timestamp
+ *   - Shows "Next issue starts:" prefix when nextRunAt is a valid future timestamp
  *   - Shows "UTC" in the output for a valid timestamp
  *   - No exclamation marks in rendered output
  *
@@ -33,11 +33,11 @@ describe('NextRunDisplay', () => {
     expect(container.textContent).toContain('Not scheduled yet.')
   })
 
-  it('renders "Next run:" prefix for a valid future timestamp', () => {
+  it('renders "Next issue starts:" prefix for a valid future timestamp', () => {
     // Thu Jun 26 2025 14:00:00 UTC
     const ts = new Date('2025-06-26T14:00:00Z').getTime()
     render(<NextRunDisplay nextRunAt={ts} />)
-    const text = screen.getByText(/next run:/i)
+    const text = screen.getByText(/next issue starts:/i)
     expect(text).toBeDefined()
   })
 

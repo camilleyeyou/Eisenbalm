@@ -68,9 +68,9 @@ export default function AuditLogViewer({ workspace_id }: AuditLogViewerProps) {
             <thead>
               <tr className="border-b border-[color:var(--color-ink)]/15 bg-[color:var(--color-card-alt)] text-left">
                 <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Timestamp</th>
-                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Actor</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Who</th>
                 <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Action</th>
-                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Resource</th>
+                <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">What it was about</th>
                 <th className="px-4 py-3 font-medium text-[color:var(--color-ink-soft)]">Before / After</th>
               </tr>
             </thead>

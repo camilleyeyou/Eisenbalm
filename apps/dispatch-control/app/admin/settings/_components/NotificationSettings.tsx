@@ -43,9 +43,9 @@ interface EventFlags {
 }
 
 const EVENT_FIELDS: { key: keyof EventFlags; label: string }[] = [
-  { key: 'notify_on_complete', label: 'Run complete' },
-  { key: 'notify_on_failed', label: 'Run failed' },
-  { key: 'notify_on_awaiting_review', label: 'Awaiting review' },
+  { key: 'notify_on_complete', label: 'Issue finished' },
+  { key: 'notify_on_failed', label: 'Something went wrong' },
+  { key: 'notify_on_awaiting_review', label: 'Ready for your review' },
   { key: 'notify_on_budget', label: 'Budget threshold' },
 ]
 
@@ -176,7 +176,7 @@ export default function NotificationSettings({
       {unconfigured && (
         <p className="text-sm text-[color:var(--color-faint)]">
           No notification channels configured. Add a Slack webhook or email
-          address to receive run alerts.
+          address to receive alerts about your issues.
         </p>
       )}
 

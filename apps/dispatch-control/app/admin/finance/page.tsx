@@ -17,19 +17,22 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import { COPY } from '@/lib/editorState'
 import FinanceSummaryCard from './_components/FinanceSummaryCard'
 import IssueRevenueTable from './_components/IssueRevenueTable'
 import ModelPricingCard from './_components/ModelPricingCard'
 
 // quick 260723-4a6 (Task 1e): Server Component route — static title.
-export const metadata: Metadata = { title: 'Finance' }
+export const metadata: Metadata = { title: 'Money' }
 
 export default async function FinancePage() {
   const workspace_id = await getCurrentWorkspace()
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Finance</h1>
+      <NextStepSlab sentence={COPY.subPageSlab} ghost={{ label: COPY.backToBehind, href: '/admin' }} />
+      <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Money</h1>
       <FinanceSummaryCard workspace_id={workspace_id} />
       <IssueRevenueTable workspace_id={workspace_id} />
       <ModelPricingCard workspace_id={workspace_id} />

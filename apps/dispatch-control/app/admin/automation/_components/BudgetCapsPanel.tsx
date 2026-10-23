@@ -8,9 +8,9 @@
  *   - alert_threshold_pct: soft-warn threshold (50–100%)
  *
  * Read-only projection (below inputs):
- *   - "Projected next run cost: $X.XXXX" (4-decimal trailing average)
+ *   - "Estimated cost of the next issue: $X.XXXX" (4-decimal trailing average)
  *   - "Month-to-date: $X.XX of $Y.YY cap" with a progress bar
- *   - "No completed runs yet — projection unavailable." when no history
+ *   - "No finished issues yet — no estimate available." when no history
  *
  * Progress bar track: 1c ink-on-15%-opacity track
  * Fill: marigold when MTD/cap >= threshold, else ink-soft
@@ -112,7 +112,7 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
             htmlFor="per-run-cap"
             className="text-sm text-[color:var(--color-ink-soft)]"
           >
-            Per-run cap (USD)
+            Most one issue may cost (USD)
           </label>
           <input
             id="per-run-cap"
@@ -198,11 +198,11 @@ export default function BudgetCapsPanel({ workspace_id }: BudgetCapsPanelProps) 
       <div className="border-t border-[color:var(--color-ink)]/10 pt-4 space-y-3">
         {projectedCost !== null ? (
           <p className="text-sm text-[color:var(--color-ink-soft)]">
-            Projected next run cost: ${projectedCost.toFixed(4)}
+            Estimated cost of the next issue: ${projectedCost.toFixed(4)}
           </p>
         ) : (
           <p className="text-sm text-[color:var(--color-faint)]">
-            No completed runs yet — projection unavailable.
+            No finished issues yet — no estimate available.
           </p>
         )}
 

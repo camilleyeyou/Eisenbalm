@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import { COPY } from '@/lib/editorState'
 import AuditLogViewer from './_components/AuditLogViewer'
 import NotificationSettings from './_components/NotificationSettings'
 
@@ -22,6 +24,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-8">
+      <NextStepSlab sentence={COPY.subPageSlab} ghost={{ label: COPY.backToBehind, href: '/admin' }} />
       {/* Existing settings content (Phase 28: roles, secrets management) */}
       <div className="space-y-2">
         <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Settings</h1>

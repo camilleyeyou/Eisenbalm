@@ -12,7 +12,7 @@
  * partially visible. CTA is destructive-vermilion.
  *
  * RATE-LIMIT: if the mutation throws "rate_limited", shows the UI-SPEC error
- * copy: "Auto-publish was recently changed. Wait 24 hours before re-enabling."
+ * copy: "Publish by itself was recently changed. Wait 24 hours before re-enabling."
  *
  * The toggle button always renders in a vermilion destructive style per
  * UI-SPEC Screen 4 (never neutral — the auto_publish state is always alarming).
@@ -79,7 +79,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg.includes('rate_limited') || msg === 'rate_limited') {
-        setError('Auto-publish was recently changed. Wait 24 hours before re-enabling.')
+        setError('Publish by itself was recently changed. Wait 24 hours before re-enabling.')
       } else {
         setError(msg)
       }
@@ -95,9 +95,9 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
         <div className="flex items-center gap-4">
           {/* Toggle label + description */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[color:var(--color-ink)]">Auto-publish</p>
+            <p className="text-sm font-medium text-[color:var(--color-ink)]">Publish by itself</p>
             <p className="text-xs text-[color:var(--color-faint)] mt-0.5">
-              When enabled, finished runs publish automatically without review. Off by default.
+              When on, finished issues publish by themselves without review. Off by default.
             </p>
           </div>
 
@@ -173,11 +173,11 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
               id="enable-autopublish-heading"
               className="text-base font-semibold text-[color:var(--color-ink)]"
             >
-              Enable auto-publish?
+              Turn on publish by itself?
             </h2>
             <p className="text-sm text-[color:var(--color-ink-soft)]">
-              Auto-publish bypasses the review gate. Runs will publish immediately when
-              complete. This is audit-logged. You cannot re-enable within 24 hours of a
+              Publishing by itself skips your review. Issues will go out as soon as they are
+              finished. This is audit-logged. You cannot re-enable within 24 hours of a
               disable.
             </p>
 
@@ -193,10 +193,10 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
                   <span className="flex items-center gap-1.5">
                     <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                     <span className="sr-only">Enabling…</span>
-                    Enable Auto-publish
+                    Turn on publish by itself
                   </span>
                 ) : (
-                  'Enable Auto-publish'
+                  'Turn on publish by itself'
                 )}
               </button>
               <button

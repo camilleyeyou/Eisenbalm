@@ -18,16 +18,16 @@
 export const HELP_COPY = {
   issuesHome: {
     statusChip:
-      'Where this issue sits in the weekly loop. "Ready to publish" means the agents have finished and the issue is not on hold.',
+      'Where this issue sits in the weekly loop. "Ready to publish" means the writers have finished and the issue is not on hold.',
     claimCoverage:
-      'How many factual claims the fact-checkers have checked. The agents remove or fix what the sources contradict. None of this blocks Publish.',
+      'How many factual claims the fact-checkers have checked. The writers remove or fix what the sources contradict. None of this blocks Publish.',
     scheduledSlot:
-      'The next issue number, already reserved. "Start early" kicks off its pipeline run now instead of waiting for the Thursday schedule.',
+      'The next issue number, already reserved. "Start early" starts the issue now instead of waiting for the Thursday schedule.',
   },
   workspace: {
     statusReadout:
       "The issue's overall state. \"State unknown — refresh\" means the live data dropped — reload to re-sync.",
-    costBudget: 'Spend so far on this run versus the budget cap. Nearing the cap is a heads-up, not a hard stop.',
+    costBudget: 'Spend so far on this issue versus the most one issue may cost. Nearing the cap is a heads-up, not a hard stop.',
     stageTabs:
       'Each stage shows its own state — not started, in progress, needs you, or clean. Work them left to right.',
     // inline (Hold/Reopen area)
@@ -38,10 +38,10 @@ export const HELP_COPY = {
       'The agents ranked candidates by advocate score. These are the top two — pick one, or steer to a different lead.',
   },
   storyBrief: {
-    leadRequire: "Require this lead — force the pipeline to run it regardless of the agents' ranking.",
+    leadRequire: "Require this lead — make the writers use it whatever their ranking says.",
     // inline OR tip (executor's call)
     leadRemove:
-      "Remove this lead from consideration, with a reason. The reason is written to the decision log and the pipeline won't pick it.",
+      "Remove this lead from consideration, with a reason. The reason is written to the decision log and the writers won't pick it.",
   },
   factCheck: {
     claimMark: 'Read each claim and its verdict. Verifying or dismissing is optional and does not affect Publish.',
@@ -59,22 +59,22 @@ export const HELP_COPY = {
     publish: 'Publishing pushes the issue live to the public site. Collaborators can read and edit, not publish.',
   },
   runMonitor: {
-    runState: "The pipeline run's live state — running, awaiting your review, complete, or failed.",
+    runState: "How this issue is going — being written, ready for your review, finished, or stuck.",
     recovery:
-      'When a run fails, this rail shows where it broke and the two ways to recover: restart from the failed step, or adjudicate manually.',
+      'When an issue gets stuck, this shows where it stopped and the two ways to recover: start again from where it stopped, or adjudicate manually.',
   },
   promptLab: {
-    activate: 'Make this saved version the one the pipeline uses on the next run. "Restore" activates an older version.',
+    activate: 'Make this saved version the one the writers use for the next issue. "Restore" activates an older version.',
     evalGate:
-      "A version must pass evals before it can go active — run them here, or override with a reason if you're sure.",
+      "A version must pass evals before it can go active — check them here, or override with a reason if you're sure.",
   },
   signalDesk: {
     adjudicate:
-      'The run is paused for a Gate-1 call. Pick a candidate and give a reason — submitting resumes the run with that charity.',
+      'The issue is waiting for your pick. Pick a candidate and give a reason — submitting carries on with that charity.',
     advocateScore:
       "The advocate agent's score for how strong a story this candidate makes — higher is a stronger case, not a ranking you're bound to.",
   },
   settings: {
-    notifications: 'Choose which run events notify you, and on which channel. Applies to every issue.',
+    notifications: 'Choose which issue updates notify you, and on which channel. Applies to every issue.',
   },
 } as const

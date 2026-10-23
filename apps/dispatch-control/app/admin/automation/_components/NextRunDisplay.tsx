@@ -5,8 +5,8 @@
  * Shows the next scheduled run time in the operator's local timezone plus UTC
  * side-by-side (D-11). When nextRunAt is 0 or unset, shows "Not scheduled yet."
  *
- * Format: "Next run: {Day} {Month} {D}, {H}:{MM} {TZ} ({HH}:{MM} UTC)"
- * Example: "Next run: Thu Jun 26, 2:00 PM PDT (21:00 UTC)"
+ * Format: "Next issue starts: {Day} {Month} {D}, {H}:{MM} {TZ} ({HH}:{MM} UTC)"
+ * Example: "Next issue starts: Thu Jun 26, 2:00 PM PDT (21:00 UTC)"
  *
  * Uses Intl.DateTimeFormat for locale-aware formatting.
  */
@@ -55,7 +55,7 @@ export default function NextRunDisplay({ nextRunAt }: NextRunDisplayProps) {
 
   return (
     <p className="text-sm text-[color:var(--color-ink-soft)]">
-      Next run: {localStr} ({utcStr} UTC)
+      Next issue starts: {localStr} ({utcStr} UTC)
     </p>
   )
 }

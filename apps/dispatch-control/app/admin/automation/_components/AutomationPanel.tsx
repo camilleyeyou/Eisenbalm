@@ -138,13 +138,13 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
 
       {/* Kill switch row */}
       <div className="flex items-center gap-4">
-        <span className="text-sm text-[color:var(--color-ink-soft)]">Scheduled runs</span>
+        <span className="text-sm text-[color:var(--color-ink-soft)]">Start issues on a schedule</span>
 
         <button
           type="button"
           role="switch"
           aria-checked={scheduleEnabled}
-          aria-label={`Toggle scheduled runs ${scheduleEnabled ? 'off' : 'on'}`}
+          aria-label={`Turn the schedule ${scheduleEnabled ? 'off' : 'on'}`}
           onClick={handleToggle}
           disabled={toggleLoading}
           className={`min-h-[44px] min-w-[80px] rounded-none px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1 ${

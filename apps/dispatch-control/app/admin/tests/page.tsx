@@ -22,7 +22,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
-import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import { COPY } from '@/lib/editorState'
 import { fetchScenarios, type EvalScenario } from '@/lib/evalScenarioClient'
 import ScenarioCard from './_components/ScenarioCard'
 import DriftScoreboard from './_components/DriftScoreboard'
@@ -58,15 +59,14 @@ export default function EvalCenterPage() {
 
   return (
     <div className="space-y-6">
-      <DocumentTitle title={WORKBENCH_NAV_LABELS.eval_center} />
+      <NextStepSlab sentence={COPY.subPageSlab} ghost={{ label: COPY.backToBehind, href: '/admin' }} />
+      <DocumentTitle title="Quality tests" />
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--color-ink)]">
-          {WORKBENCH_NAV_LABELS.eval_center}
+          Quality tests
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-[color:var(--color-ink-soft)]">
-          The drift detector: standard test case cards, an append-only
-          scoreboard time-series across prompt versions, and a read-only
-          preview next run against this week&apos;s real news.
+          Standard test cards, a running record of how the writing quality changes between versions of the writers&apos; instructions, and a practice issue that uses this week&apos;s real news.
         </p>
       </div>
 

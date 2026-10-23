@@ -14,18 +14,21 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import { COPY } from '@/lib/editorState'
 import AutomationPanel from './_components/AutomationPanel'
 import BudgetCapsPanel from './_components/BudgetCapsPanel'
 
 // quick 260723-4a6 (Task 1e): Server Component route — static title.
-export const metadata: Metadata = { title: 'Configuration' }
+export const metadata: Metadata = { title: 'Schedule and limits' }
 
 export default async function ConfigPage() {
   const workspace_id = await getCurrentWorkspace()
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Config</h1>
+      <NextStepSlab sentence={COPY.subPageSlab} ghost={{ label: COPY.backToBehind, href: '/admin' }} />
+      <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">Schedule and limits</h1>
 
       {/* Panel 1 — Automation */}
       <AutomationPanel workspace_id={workspace_id} />
@@ -39,9 +42,9 @@ export default async function ConfigPage() {
 
       {/* Panel 3 — Danger Zone */}
       <div className="rounded-none border border-[color:var(--color-vermilion)]/40 bg-[color:var(--color-card)] p-5">
-        <h2 className="text-base font-semibold text-[color:var(--color-vermilion)]">Danger Zone</h2>
+        <h2 className="text-base font-semibold text-[color:var(--color-vermilion)]">Stopping an issue</h2>
         <p className="mt-2 text-sm text-[color:var(--color-ink-soft)]">
-          To force-cancel a running run, go to Runs and click Cancel on the active run.
+          To stop an issue that is being written, open it from the list of issues and choose Stop.
         </p>
       </div>
     </div>

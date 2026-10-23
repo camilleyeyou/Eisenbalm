@@ -32,11 +32,11 @@ export interface DriftScoreboardProps {
 export default function DriftScoreboard({ workspaceId, scenarios }: DriftScoreboardProps) {
   return (
     <section
-      aria-label="Drift scoreboard"
+      aria-label="Change in quality"
       className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4"
     >
       <h2 className="font-[family-name:var(--font-ui)] text-xs font-semibold uppercase tracking-[.09em] text-[color:var(--color-ink-soft)]">
-        Drift scoreboard
+        Change in quality
       </h2>
       <p className="mt-1 text-[12px] text-[color:var(--color-ink-soft)]">
         Append-only time-series across prompt versions — the full history, not
