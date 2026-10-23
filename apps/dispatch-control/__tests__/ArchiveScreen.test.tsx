@@ -1,146 +1,110 @@
 /**
- * quick 260730-ldn (Task 5) — pure tests for `ArchiveBody` (fixture rows
- * only, no Convex — the `RunBody` precedent). No Convex mocking is set up
- * anywhere in this file; if `ArchiveBody`/`ArchiveRowView` performed any
- * per-row subscription, these renders would throw (no `ConvexProvider` is
- * mounted here) — that absence IS the structural N+1 guard. Runs in jsdom
- * (environmentMatchGlobs `*.test.tsx` -> jsdom).
+ * Phase 56-07 — pure ArchiveBody over rows from the real deriveArchiveRows.
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
-import { ArchiveBody, type ArchiveRow } from '../app/(editorial)/archive/_components/ArchiveBody'
+import { ArchiveBody } from '../app/(editorial)/archive/_components/ArchiveBody'
+import { deriveArchiveRows, EDITOR_BANNED_PATTERN, RUN_ID_PATTERN } from '@/lib/editorState'
 
-afterEach(() => {
-  cleanup()
+afterEach(() => cleanup())
+
+const T = Date.UTC(2026, 9, 22, 12)
+const issue = (n: number, title: string | null, runId: string, published = false) => ({
+  issueNumber: n,
+  title,
+  published,
+  runId,
+  publishedAt: published ? T : null,
+  runStartedAt: T,
+  scheduledFor: null,
+  slug: published ? `issue-${n}` : null,
 })
+const run = (runId: string, status: string, completedAt?: number) => ({ runId, status, startedAt: T, completedAt })
 
-function makeRows(): ArchiveRow[] {
-  return [
-    {
-      issueNumber: 999717,
-      title: 'The Kumasi Roofless Schools Audit',
-      dek: 'An accountant retired, walked eleven districts, and counted the schools with no roof.',
-      hasDrafts: true,
-      runId: 'run-717',
-      published: false,
-      held: false,
-      relativeWeek: 'This week',
-    },
-    {
-      issueNumber: 999716,
-      title: 'The Bicycle Ambulance Corps of Rukungiri',
-      dek: 'Forty volunteers, twelve bicycles, and a district hospital eleven kilometres away.',
-      hasDrafts: true,
-      runId: 'run-716',
-      published: true,
-      held: false,
-      relativeWeek: 'Last week',
-    },
-    {
-      issueNumber: 999714,
-      title: 'A Library Kept in Four Suitcases',
-      dek: 'Held — the founder asked us to wait until the trial concludes.',
-      hasDrafts: true,
-      runId: 'run-714',
-      published: false,
-      held: true,
-      relativeWeek: '4 weeks ago',
-    },
-    {
-      issueNumber: 999720,
-      title: null,
-      dek: 'Discovery runs Thursday 14:00 UTC. No drafts yet.',
-      hasDrafts: false,
-      runId: null,
-      published: false,
-      held: false,
-      relativeWeek: 'Thu 14:00',
-    },
+function rowsFor(withUnfinished = true) {
+  const issues = [
+    issue(48, 'The Kumasi Roofless Schools Audit', 'aaaaaaaaaa48'),
+    issue(47, 'Seed Bank of Tamil Nadu', 'aaaaaaaaaa47', true),
+    ...(withUnfinished ? [issue(46, 'Bicycle Library', 'aaaaaaaaaa46'), issue(45, null, 'aaaaaaaaaa45')] : []),
   ]
+  const runs = [
+    run('aaaaaaaaaa48', 'awaiting-review', T),
+    run('aaaaaaaaaa47', 'complete', T),
+    ...(withUnfinished ? [run('aaaaaaaaaa46', 'failed'), run('aaaaaaaaaa45', 'cancelled')] : []),
+  ]
+  return deriveArchiveRows({ issues, runs, currentRunId: 'aaaaaaaaaa48' })
 }
 
-describe('ArchiveBody — groups', () => {
-  it('renders four group headings in order: In progress, Published, Held, Scheduled', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    const headings = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)
-    expect(headings).toEqual(['In progress', 'Published', 'Held', 'Scheduled'])
+const site = (u?: string | null) => (u ? `https://web.example${u}` : null)
+
+function renderBody(rows = rowsFor()) {
+  return render(<ArchiveBody rows={rows} currentRunId="aaaaaaaaaa48" websiteUrlFor={site} />)
+}
+
+describe('ArchiveBody', () => {
+  it('renders heading, subtitle and labelled search', () => {
+    renderBody()
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Past issues')
+    expect(screen.getByText('Every issue so far, newest first.')).toBeTruthy()
+    expect(screen.getByLabelText('Find an issue').getAttribute('placeholder')).toBe('Charity name or issue number')
   })
 
-  it('omits a heading whose group is empty', () => {
-    const rows = makeRows().filter(r => !r.held)
-    render(<ArchiveBody rows={rows} />)
-    // Scoped to the heading role — the filter-chip button also reads "Held".
-    expect(screen.queryByRole('heading', { level: 2, name: 'Held' })).toBeNull()
-  })
-})
-
-describe('ArchiveBody — row rendering', () => {
-  it('a row leads with its title in the display font, and carries the issue number as mono metadata', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    expect(screen.getByTestId('archive-row-999717-title').textContent).toBe(
-      'The Kumasi Roofless Schools Audit',
-    )
-    expect(screen.getByTestId('archive-row-999717-number').textContent).toBe('999717')
+  it('links charity names to the issue and shows the website link for published', () => {
+    renderBody()
+    expect(screen.getByRole('link', { name: 'The Kumasi Roofless Schools Audit' }).getAttribute('href')).toBe('/')
+    expect(screen.getByRole('link', { name: 'Seed Bank of Tamil Nadu' }).getAttribute('href')).toBe('/?run=aaaaaaaaaa47')
+    const web = screen.getByRole('link', { name: 'Read on the website' })
+    expect(web.getAttribute('href')).toBe('https://web.example/issue/issue-47')
+    expect(web.getAttribute('target')).toBe('_blank')
+    expect(screen.getByText('Waiting for you · this week')).toBeTruthy()
+    expect(screen.getByText('Issue 48 is waiting for you.')).toBeTruthy()
   })
 
-  it('a row whose title is null reads "Not yet chosen" — never a fabricated title, never a bare number', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    expect(screen.getByTestId('archive-row-999720-title').textContent).toBe('Not yet chosen')
+  it('tints the current row', () => {
+    const { container } = renderBody()
+    expect(container.querySelectorAll('li.bg-\\[color\\:var\\(--color-current\\)\\]').length).toBe(1)
   })
 
-  it("a row's dek renders subtitle when present; a held row's dek carries the held reason", () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    const inProgressRow = screen.getByTestId('archive-row-999717')
-    expect(inProgressRow.textContent).toContain(
-      'An accountant retired, walked eleven districts, and counted the schools with no roof.',
-    )
-    const heldRow = screen.getByTestId('archive-row-999714')
-    expect(heldRow.textContent).toContain(
-      'Held — the founder asked us to wait until the trial concludes.',
-    )
+  it('filters by name and issue number; shows empty search copy', () => {
+    renderBody()
+    const input = screen.getByLabelText('Find an issue')
+    fireEvent.change(input, { target: { value: 'kumasi' } })
+    expect(screen.queryByText('Seed Bank of Tamil Nadu')).toBeNull()
+    expect(screen.getByText('The Kumasi Roofless Schools Audit')).toBeTruthy()
+    fireEvent.change(input, { target: { value: '47' } })
+    expect(screen.getByText('Seed Bank of Tamil Nadu')).toBeTruthy()
+    expect(screen.queryByText('The Kumasi Roofless Schools Audit')).toBeNull()
+    fireEvent.change(input, { target: { value: 'zzz' } })
+    expect(screen.getByText('No issue matches "zzz". Try a charity name or an issue number.')).toBeTruthy()
   })
 
-  it('renders the relative-week label for each row', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    expect(screen.getByTestId('archive-row-999717').textContent).toContain('This week')
-    expect(screen.getByTestId('archive-row-999716').textContent).toContain('Last week')
-    expect(screen.getByTestId('archive-row-999714').textContent).toContain('4 weeks ago')
+  it('puts stopped and problem issues in a closed details with reasons', () => {
+    const { container } = renderBody()
+    const details = container.querySelector('details') as HTMLDetailsElement
+    expect(details.open).toBe(false)
+    expect(screen.getByText('Stopped or unfinished issues (2)')).toBeTruthy()
+    expect(screen.getByText('Hit a problem while it was being written')).toBeTruthy()
+    expect(screen.getByText('Stopped before a charity was chosen')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'What happened' }).getAttribute('href')).toBe('/admin/runs/aaaaaaaaaa46')
   })
 
-  it('a hasDrafts:false scheduled row is dimmed and is NOT a link', () => {
-    render(<ArchiveBody rows={makeRows()} />)
-    const row = screen.getByTestId('archive-row-999720')
-    expect(row.tagName).not.toBe('A')
+  it('omits the unfinished section when none', () => {
+    const { container } = renderBody(rowsFor(false))
+    expect(container.querySelector('details')).toBeNull()
   })
 
-  it('the current issue row links to the front door', () => {
-    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
-    const row = screen.getByTestId('archive-row-999717')
-    expect(row.tagName).toBe('A')
-    expect(row.getAttribute('href')).toBe('/')
+  it('shows empty copy when nothing exists', () => {
+    renderBody({ listed: [], unfinished: [] })
+    expect(screen.getByText('No past issues yet. Once you publish an issue it will be listed here.')).toBeTruthy()
+    expect(screen.getByText('Nothing is waiting here. Open an issue to read it or change its words.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: "This week's issue" }).getAttribute('href')).toBe('/')
   })
 
-  it('a non-current row with a draft opens the section editor pinned to its run', () => {
-    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
-    const row = screen.getByTestId('archive-row-999714')
-    expect(row.tagName).toBe('A')
-    expect(row.getAttribute('href')).toBe('/?run=run-714')
-  })
-
-  it('a published row opens its draft and has a SEPARATE View live link (not nested)', () => {
-    process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE = 'https://web.example/'
-    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
-    const row = screen.getByTestId('archive-row-999716')
-    expect(row.getAttribute('href')).toBe('/?run=run-716')
-    const live = screen.getByText(/View live/).closest('a')
-    expect(live?.getAttribute('href')).toBe('https://web.example/issue/issue-999716')
-    expect(row.contains(live)).toBe(false)
-    delete process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE
-  })
-
-  it('a row with no run stays non-clickable and nothing points at the old console', () => {
-    render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
-    expect(screen.getByTestId('archive-row-999720').tagName).not.toBe('A')
-    expect(document.body.innerHTML).not.toContain('/issues/')
+  it('has no primary button and no banned wording or run ids', () => {
+    const { container } = renderBody()
+    expect(container.querySelectorAll('[data-primary]').length).toBe(0)
+    const text = container.textContent ?? ''
+    expect(text).not.toMatch(EDITOR_BANNED_PATTERN)
+    expect(text).not.toMatch(RUN_ID_PATTERN)
   })
 })
