@@ -71,7 +71,7 @@ Nine phases take The Eisenbalm Dispatch from bare schemas to a live weekly edito
 - [ ] **Phase 53: Admin — The Door** - `/admin/*` gathers every operational surface behind one entrance with capability unchanged, never in the editor's path
 - [ ] **Phase 54: Archive — Past Issues** - `/archive` lists past issues by title, searchable by subject, published/held/scheduled distinguishable at a glance
 - [ ] **Phase 55: Public Site Redesign — The Dispatch Front Page** - `apps/web` home + issue page rebuilt to Andrew's mockup (`55-public-site-redesign/MOCKUP-Main.dc.html`): fixed Dispatch brand, Jesse's voice kept, deliberation as summary cards
-- [ ] **Phase 56: Dashboard Redesign — The Grandma-Simple Editor** - dispatch-control rebuilt to the 7-artboard Claude Design canvas (https://claude.ai/artifact/UEJYy8Cgt869d6Jsu8foZx): one "Your next step" slab per page, four-station checklist, six plain status words, in-place paragraph editing, Admin renamed "Behind the scenes"; new UI only, backend kept
+- [x] **Phase 56: Dashboard Redesign — The Grandma-Simple Editor** - dispatch-control rebuilt to the 7-artboard Claude Design canvas (https://claude.ai/artifact/UEJYy8Cgt869d6Jsu8foZx): one "Your next step" slab per page, four-station checklist, six plain status words, in-place paragraph editing, Admin renamed "Behind the scenes"; new UI only, backend kept (completed 2026-10-23)
 
 ## Phase Details
 
@@ -483,7 +483,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 | 55. Public Site Redesign — The Dispatch Front Page | 3/13 | In progress | - |
-| 56. Dashboard Redesign — The Grandma-Simple Editor | 15/15 | In Progress|  |
+| 56. Dashboard Redesign — The Grandma-Simple Editor | 15/15 | Complete    | 2026-10-23 |
 
 ## Backlog
 
