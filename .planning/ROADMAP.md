@@ -483,7 +483,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 | 55. Public Site Redesign — The Dispatch Front Page | 3/13 | In progress | - |
-| 56. Dashboard Redesign — The Grandma-Simple Editor | 14/15 | In Progress|  |
+| 56. Dashboard Redesign — The Grandma-Simple Editor | 15/15 | In Progress|  |
 
 ## Backlog
 
@@ -1289,5 +1289,5 @@ Plans:
 - [x] 56-11-dial-pages-sweep-PLAN.md — jargon sweep: What the writers are told (W3)
 - [x] 56-11b-dial-pages-rest-sweep-PLAN.md — jargon sweep: tests, schedule, money, settings, charities, help copy (W3)
 - [x] 56-12-retirement-tripwires-PLAN.md — delete leftovers, 3 tripwire tests, strict build + full suite (W4)
-- [ ] 56-13-browser-qa-uat-PLAN.md — human browser QA at 1280/400 px, client walkthrough replay → 56-UAT.md (W5, checkpoint)
+- [x] 56-13-browser-qa-uat-PLAN.md — human browser QA at 1280/400 px, client walkthrough replay → 56-UAT.md (W5, checkpoint)
 **UI hint**: yes
