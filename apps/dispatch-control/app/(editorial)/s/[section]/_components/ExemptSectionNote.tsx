@@ -1,43 +1,21 @@
 'use client'
 /**
- * Phase 51 (D-14) — the structurally-exempt-section note.
- *
- * Four of the nine editable sections carry no QA `sectionName` mapping
- * (`lib/galley/sectionIdMap.ts`'s `GALLEY_TO_QA`) and therefore no inline
- * findings to mark; the bonus section is exempt too, but only for its two
- * non-prose variants (`jingle`/`bigBudget` — `specAd` is annotated exactly
- * like the four long-reads). Each states plainly what it is rather than
- * looking empty or broken (D-14) — the exact strings below are quoted
- * from 51-UI-SPEC.md's Navigation & Section States Contract; quick 261021-ind
- * reworded the tail so it no longer implies findings to review.
+ * Phase 56 -- one plain sentence for the parts that cannot be edited here.
  */
-
-const EXEMPT_NOTES = {
-  game: 'This section renders as an interactive game — the agents check it as a whole.',
-  podcast: 'This section is an audio player — the agents check it as a whole.',
-  theme:
-    "This section sets the issue's color and font palette — the agents check it as a whole.",
-  'deliberation-conversation':
-    "This section shows the agents' deliberation as a conversation — the agents check it as a whole.",
-  'bonus-jingle':
-    "This week's bonus is an audio jingle — the agents check it as a whole.",
-  'bonus-bigBudget':
-    "This week's bonus is a storyboard set — the agents check it as a whole.",
+const NOTES = {
+  game: "This part is a small game readers play on the website. You can try it below. It can't be changed here.",
+  podcast: "This part is the week's audio. Listen below. It can't be changed here.",
+  theme: "These are the colours and fonts for this issue. They can't be changed here.",
+  deliberation: "This is how the writers chose this week's charity. It can't be changed here.",
+  'bonus-media': "This bonus is a recording or a big picture, not text. It can't be changed here.",
 } as const
 
-export type ExemptSectionKind = keyof typeof EXEMPT_NOTES
+export type ExemptSectionKind = keyof typeof NOTES
 
-interface ExemptSectionNoteProps {
-  kind: ExemptSectionKind
-}
-
-export default function ExemptSectionNote({ kind }: ExemptSectionNoteProps) {
+export default function ExemptSectionNote({ kind }: { kind: ExemptSectionKind }) {
   return (
-    <p
-      className="galley-body italic text-[color:var(--color-ink-soft)]"
-      style={{ marginTop: 16 }}
-    >
-      {EXEMPT_NOTES[kind]}
+    <p className="max-w-[720px] font-[family-name:var(--font-lora)] text-[17px] text-[color:var(--color-ink-soft)]">
+      {NOTES[kind]}
     </p>
   )
 }

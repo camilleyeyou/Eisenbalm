@@ -1,45 +1,53 @@
 'use client'
 /**
- * Phase 51 (READ-07/READ-08, D-15/D-16/D-17) — the end-of-prose prev/next
- * nav. Renders once, after the last paragraph — never in the header, never
- * duplicated (D-15).
- *
- * Quick 261021-ind: the derived per-section "needs you" tally is
- * removed — the agents fix every finding and nothing blocks Publish, so the
- * tally only told readers there was work that does not exist.
+ * Phase 56 -- Previous / All nine parts / Next at the end of a part.
  */
 import Link from 'next/link'
-import { EDITABLE_SECTIONS } from '@/lib/editableSections'
 
-interface SectionEndNavProps {
-  sectionId: string
-  /** When viewing an earlier issue, keep `?run=` on the links. */
-  runId?: string | null
+export interface NavTarget {
+  href: string
+  /** 1-based part number */
+  index: number
+  label: string
 }
 
-const NAV_LINK_CLASSES =
-  'inline-flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[11px] font-semibold uppercase tracking-[.04em] text-[color:var(--color-ink)] no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ink)] focus-visible:ring-offset-1'
+interface SectionEndNavProps {
+  prev: NavTarget | null
+  next: NavTarget | null
+  allHref: string
+}
 
-export default function SectionEndNav({ sectionId, runId }: SectionEndNavProps) {
-  const suffix = runId ? `?run=${encodeURIComponent(runId)}` : ''
-  const i = EDITABLE_SECTIONS.findIndex((s) => s.id === sectionId)
-  const prev = i > 0 ? EDITABLE_SECTIONS[i - 1] : null
-  const next = i >= 0 && i < EDITABLE_SECTIONS.length - 1 ? EDITABLE_SECTIONS[i + 1] : null
+const BLOCK =
+  'flex flex-col justify-center min-h-[56px] px-5 py-2 border border-[color:var(--color-ink)] bg-[color:var(--color-card)] editor-focus'
 
+export default function SectionEndNav({ prev, next, allHref }: SectionEndNavProps) {
   return (
-    <div style={{ marginTop: 32 }} className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        {prev && (
-          <Link href={`/s/${prev.id}${suffix}`} className={NAV_LINK_CLASSES}>
-            ← {prev.label}
-          </Link>
-        )}
-        {next && (
-          <Link href={`/s/${next.id}${suffix}`} className={`${NAV_LINK_CLASSES} ml-auto`}>
-            {next.label} →
-          </Link>
-        )}
-      </div>
-    </div>
+    <nav
+      aria-label="Other parts"
+      className="mt-12 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      {prev ? (
+        <Link href={prev.href} className={`${BLOCK} order-1 sm:order-1`}>
+          <span className="text-[17px] font-semibold">Previous · Part {prev.index}</span>
+          <span className="text-[15px] text-[color:var(--color-ink-soft)]">{prev.label}</span>
+        </Link>
+      ) : (
+        <span className="hidden sm:order-1 sm:block" aria-hidden="true" />
+      )}
+      <Link
+        href={allHref}
+        className="order-3 sm:order-2 inline-flex min-h-[56px] items-center justify-center text-[17px] font-semibold underline editor-focus"
+      >
+        All nine parts
+      </Link>
+      {next ? (
+        <Link href={next.href} className={`${BLOCK} order-2 sm:order-3 sm:text-right`}>
+          <span className="text-[17px] font-semibold">Next · Part {next.index}</span>
+          <span className="text-[15px] text-[color:var(--color-ink-soft)]">{next.label}</span>
+        </Link>
+      ) : (
+        <span className="hidden sm:order-3 sm:block" aria-hidden="true" />
+      )}
+    </nav>
   )
 }
