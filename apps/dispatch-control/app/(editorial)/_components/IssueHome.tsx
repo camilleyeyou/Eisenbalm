@@ -28,6 +28,7 @@ import { triggerRun, cancelRun, discardRun } from '@/lib/pipelineControlClient'
 import { deriveEditorHome, homeSlabCopy, COPY } from '@/lib/editorState'
 import { formatIssueLine } from '@/lib/issueTitle'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 import { IssueHomeView, type IssueHomeLinks } from './IssueHomeView'
 import HoldStopFooter from './HoldStopFooter'
 import DiscardIssueControl from './DiscardIssueControl'
@@ -40,6 +41,7 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
   const { getToken } = useAuth()
   const router = useRouter()
   const confirm = useConfirm()
+  const toast = useToast()
   const cr = useCurrentRun({ runId })
   const role = useRole()
   const latest = useQuery(api.runs.latest, runId ? { workspace_id: DEFAULT_WORKSPACE_ID } : 'skip')
@@ -67,6 +69,7 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
   const [live, setLive] = useState<string | null>(null)
   const latch = useRef(false)
   const lastWritten = useRef(0)
+  const discardToastDue = useRef(false)
 
   const runStatus = cr.derivationInputs.runStatus
 
@@ -172,6 +175,9 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
     }
   }, [runId, footer.kind, router])
 
+  const issueLabel = n != null ? `Issue ${n}` : 'this issue'
+  const withIssue = useCallback((str: string) => str.replace('{issue}', issueLabel), [issueLabel])
+
   // Release the publishing latch once the run reads published.
   useEffect(() => {
     if (footer.kind === 'published' && phase === 'publishing') {
@@ -179,8 +185,9 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
       setPublishOk(false)
       setSlow(false)
       latch.current = false
+      toast.done(withIssue(COPY.toastPublished), COPY.toastPublishedDetail)
     }
-  }, [footer.kind, phase])
+  }, [footer.kind, phase, toast, withIssue])
 
   useEffect(() => {
     if (phase === 'publishing' && publishOk) {
@@ -197,25 +204,32 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
     lastWritten.current = vm.writtenCount
   }, [vm.state, vm.writtenCount])
 
-  const issueLabel = n != null ? `Issue ${n}` : 'this issue'
-
   const stopRun = useCallback(async () => {
     if (!cr.runId) return
     setFooterError(null)
+    toast.info(withIssue(COPY.toastStopping))
     try {
       await cancelRun(cr.runId, await getToken())
+      toast.done(withIssue(COPY.toastStopped))
     } catch {
       setFooterError(TRY_AGAIN)
+      toast.problem(COPY.toastTryAgain)
     }
-  }, [cr.runId, getToken])
+  }, [cr.runId, getToken, toast, withIssue])
 
   const discardIssue = useCallback(async () => {
     if (!cr.runId) return
     setDiscardError(null)
     setDiscardBusy(true)
+    toast.info(withIssue(COPY.toastDiscarding))
     try {
       const r = await discardRun(cr.runId, await getToken())
-      if (r.discardRequested) setDiscardPending(true)
+      if (r.discardRequested) {
+        setDiscardPending(true)
+        discardToastDue.current = true
+      } else {
+        toast.done(withIssue(COPY.toastDiscarded), COPY.toastDiscardedDetail)
+      }
       if (held === true && n != null) {
         try {
           await reopenMutation({ workspace_id: DEFAULT_WORKSPACE_ID, issueNumber: n })
@@ -224,15 +238,25 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
         }
       }
     } catch (e) {
-      setDiscardError(e instanceof Error && e.message.includes('(409)') ? COPY.discardIssuePublished : COPY.discardIssueFailed)
+      const msg =
+        e instanceof Error && e.message.includes('(409)') ? COPY.discardIssuePublished : COPY.discardIssueFailed
+      discardToastDue.current = false
+      setDiscardError(msg)
+      toast.problem(msg)
     } finally {
       setDiscardBusy(false)
     }
-  }, [cr.runId, getToken, held, n, reopenMutation])
+  }, [cr.runId, getToken, held, n, reopenMutation, toast, withIssue])
 
   useEffect(() => {
-    if (vm.state === 'stopped') setDiscardPending(false)
-  }, [vm.state])
+    if (vm.state === 'stopped') {
+      setDiscardPending(false)
+      if (discardToastDue.current) {
+        discardToastDue.current = false
+        toast.done(withIssue(COPY.toastDiscarded), COPY.toastDiscardedDetail)
+      }
+    }
+  }, [vm.state, toast, withIssue])
 
   const onPrimary = async () => {
     if (latch.current) return
@@ -242,11 +266,13 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
         if (!gate.enabled || !cr.runId) return
         latch.current = true
         setPhase('publishing')
+        toast.info(withIssue(COPY.toastPublishing))
         const r = await publishChain({ getToken: () => getToken(), runId: cr.runId })
         if (!r.ok) {
           setActionError(n != null ? COPY.publishFailed.replace('{N}', String(n)) : NETWORK_FAILURE_MESSAGE)
           setPhase('idle')
           latch.current = false
+          toast.problem(COPY.toastPublishFailed, COPY.toastPublishFailedDetail)
         } else {
           setPublishOk(true)
         }
@@ -257,10 +283,13 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
       case 'start-first': {
         latch.current = true
         setBusy(true)
+        toast.info(COPY.toastStarting)
         try {
           await triggerRun({}, await getToken())
+          toast.done(COPY.toastStarted)
         } catch {
           setActionError(COPY.startFailed)
+          toast.problem(COPY.toastStartFailed)
         } finally {
           setBusy(false)
           latch.current = false
@@ -273,8 +302,10 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
         setBusy(true)
         try {
           await reopenMutation({ workspace_id: DEFAULT_WORKSPACE_ID, issueNumber: n })
+          toast.done(withIssue(COPY.toastReleased), COPY.toastReleasedDetail)
         } catch {
           setActionError(TRY_AGAIN)
+          toast.problem(COPY.toastTryAgain)
         } finally {
           setBusy(false)
           latch.current = false
@@ -292,10 +323,13 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
         if (!ok || !cr.runId) return
         latch.current = true
         setBusy(true)
+        toast.info(withIssue(COPY.toastStopping))
         try {
           await cancelRun(cr.runId, await getToken())
+          toast.done(withIssue(COPY.toastStopped))
         } catch {
           setActionError(TRY_AGAIN)
+          toast.problem(COPY.toastTryAgain)
         } finally {
           setBusy(false)
           latch.current = false
@@ -319,8 +353,10 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
     setFooterError(null)
     try {
       await holdMutation({ workspace_id: DEFAULT_WORKSPACE_ID, issueNumber: n, reason: COPY.holdReason })
+      toast.done(withIssue(COPY.toastHeld), COPY.toastHeldDetail)
     } catch {
       setFooterError(TRY_AGAIN)
+      toast.problem(COPY.toastTryAgain)
     }
   }
 

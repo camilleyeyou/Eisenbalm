@@ -18,6 +18,7 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({ useConfirm: () => h.confirm })
 
 import SectionArticle from '../app/(editorial)/s/[section]/_components/SectionArticle'
 import type { ContentBlock } from '@/lib/contentPatchClient'
+import { ToastProvider } from '@/components/ui/Toast'
 
 const blocks: ContentBlock[] = [
   { type: 'h2', text: 'Heading' },
@@ -135,5 +136,26 @@ describe('SectionArticle', () => {
     expect(screen.queryAllByLabelText('Edit this paragraph')).toHaveLength(0)
     fireEvent.click(screen.getByText('First words.'))
     expect(screen.queryByLabelText('Editing paragraph 1')).toBeNull()
+  })
+})
+
+describe('SectionArticle toasts (quick 261023-1i8)', () => {
+  it('a successful save shows the Saved. toast', async () => {
+    render(
+      <ToastProvider>
+        <SectionArticle
+          runId="r1"
+          sectionId="originStory"
+          blocks={blocks}
+          getRevisionId={() => 'rev-fresh'}
+          readOnly={false}
+          onSaved={vi.fn()}
+        />
+      </ToastProvider>,
+    )
+    fireEvent.click(screen.getByText('Second words.'))
+    fireEvent.change(screen.getByLabelText('Editing paragraph 2'), { target: { value: 'New.' } })
+    fireEvent.click(screen.getByText('Save'))
+    expect(await screen.findByText('Saved.')).toBeTruthy()
   })
 })

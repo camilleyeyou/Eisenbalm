@@ -18,6 +18,7 @@ vi.mock('@/lib/contentPatchClient', async (orig) => ({
 
 import RewriteThisPart from '../app/(editorial)/s/[section]/_components/RewriteThisPart'
 import type { ContentBlock } from '@/lib/contentPatchClient'
+import { ToastProvider } from '@/components/ui/Toast'
 
 const old: ContentBlock[] = [{ type: 'paragraph', text: 'Old text.' }]
 
@@ -111,5 +112,24 @@ describe('RewriteThisPart', () => {
   ])('renders nothing for %s %j', (sectionId, extra) => {
     const { container } = setup({ sectionId, ...extra })
     expect(container.innerHTML).toBe('')
+  })
+})
+
+describe('RewriteThisPart toasts (quick 261023-1i8)', () => {
+  it('a successful rewrite shows the new-version toast', async () => {
+    render(
+      <ToastProvider>
+        <RewriteThisPart
+          runId="r1"
+          sectionId="originStory"
+          published={false}
+          currentBlocks={old}
+          getRevisionId={() => 'rev-2'}
+          onRewritten={vi.fn()}
+        />
+      </ToastProvider>,
+    )
+    fireEvent.click(screen.getByText('Rewrite this part'))
+    expect(await screen.findByText('This part has a new version.')).toBeTruthy()
   })
 })

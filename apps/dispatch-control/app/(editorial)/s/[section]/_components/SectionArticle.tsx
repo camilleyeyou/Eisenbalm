@@ -15,6 +15,7 @@ import {
 } from '@/lib/contentPatchClient'
 import { COPY } from '@/lib/editorState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 import ParagraphRow from './ParagraphRow'
 
 interface SectionArticleProps {
@@ -38,6 +39,7 @@ export default function SectionArticle({
 }: SectionArticleProps) {
   const { getToken } = useAuth()
   const confirm = useConfirm()
+  const toast = useToast()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -96,6 +98,7 @@ export default function SectionArticle({
         await patchSection(runId, sectionId, { ifRevisionID: getRevisionId(), blocks: next }, token)
       }
       await onSaved()
+      toast.done(COPY.toastSaved, COPY.toastSavedDetail)
       setOpenIndex(null)
       setDirty(false)
       setSavedIndex(i)
@@ -104,6 +107,7 @@ export default function SectionArticle({
       focusRow(i)
     } catch (e) {
       setError(COPY.saveFailed)
+      toast.problem(COPY.saveFailed)
       if (e instanceof ContentPatchError && e.reason === 'revision_mismatch') {
         try {
           await onSaved()

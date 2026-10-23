@@ -54,6 +54,7 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({ useConfirm: () => hoisted.conf
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: hoisted.replace }) }))
 
 import IssueHome from '../app/(editorial)/_components/IssueHome'
+import { ToastProvider } from '@/components/ui/Toast'
 
 function readyInputs(over: Partial<DerivationInputs> = {}): DerivationInputs {
   return {
@@ -353,5 +354,42 @@ describe('discard this issue', () => {
     render(<IssueHome />)
     fireEvent.click(await screen.findByRole('button', { name: DISCARD }))
     expect((await screen.findByRole('status')).textContent).toContain('Discarding Issue 7')
+  })
+})
+
+describe('toasts (quick 261023-1i8)', () => {
+  function renderWithToasts() {
+    return render(
+      <ToastProvider>
+        <IssueHome />
+      </ToastProvider>,
+    )
+  }
+
+  it('Publish shows the publishing toast', async () => {
+    hoisted.publishChain.mockResolvedValue({ ok: true })
+    renderWithToasts()
+    fireEvent.click(await publishButton())
+    expect(await screen.findByText('Publishing Issue 7\u2026')).toBeTruthy()
+  })
+
+  it('a failing publishChain shows the problem toast', async () => {
+    hoisted.publishChain.mockResolvedValue({ ok: false, step: 'publish', message: 'server says no' })
+    renderWithToasts()
+    fireEvent.click(await publishButton())
+    expect(await screen.findByText("Publishing didn't go through.")).toBeTruthy()
+  })
+
+  it('Hold shows the on-hold toast', async () => {
+    renderWithToasts()
+    fireEvent.click(await screen.findByRole('button', { name: 'Hold this issue' }))
+    expect(await screen.findByText('Issue 7 is on hold.')).toBeTruthy()
+  })
+
+  it('Release shows the released toast', async () => {
+    mockCurrentRun = currentRun({}, { issue: { held: true, published: false } })
+    renderWithToasts()
+    fireEvent.click(await screen.findByRole('button', { name: 'Release this issue' }))
+    expect(await screen.findByText('Issue 7 is released.')).toBeTruthy()
   })
 })

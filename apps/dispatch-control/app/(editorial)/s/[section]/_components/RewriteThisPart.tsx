@@ -14,6 +14,7 @@ import {
   type BonusPatchPayload,
 } from '@/lib/contentPatchClient'
 import { AGENT_FOR_SECTION, COPY, canRewrite } from '@/lib/editorState'
+import { useToast } from '@/components/ui/Toast'
 
 const REWRITE_FAILED =
   "We couldn't rewrite this part just now. Wait a minute and press Rewrite this part again."
@@ -38,6 +39,7 @@ const ghost =
 export default function RewriteThisPart(props: RewriteThisPartProps) {
   const { runId, sectionId, bonusType, published, runStatus, currentBlocks, getRevisionId, onRewritten, bonusBody } = props
   const { getToken } = useAuth()
+  const toast = useToast()
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState<string | null>(null)
   const snapshot = useRef<ContentBlock[] | null>(null)
@@ -48,11 +50,13 @@ export default function RewriteThisPart(props: RewriteThisPartProps) {
     snapshot.current = currentBlocks.map((b) => ({ ...b }))
     setMessage(null)
     setPhase('rewriting')
+    toast.info(COPY.toastRewriting)
     try {
       await rerollAgent(runId, AGENT_FOR_SECTION[sectionId] ?? sectionId, await getToken())
     } catch {
       setMessage(REWRITE_FAILED)
       setPhase('error')
+      toast.problem(COPY.toastRewriteFailed)
       return
     }
     try {
@@ -61,6 +65,7 @@ export default function RewriteThisPart(props: RewriteThisPartProps) {
       /* the new text is saved; a failed reload must not hide the choice */
     }
     setPhase('choosing')
+    toast.done(COPY.toastRewritten, COPY.toastRewrittenDetail)
   }
 
   async function goBack() {
@@ -80,9 +85,11 @@ export default function RewriteThisPart(props: RewriteThisPartProps) {
       }
       await onRewritten()
       setPhase('idle')
+      toast.done(COPY.toastWentBack)
     } catch {
       setMessage(COPY.saveFailed)
       setPhase('choosing')
+      toast.problem(COPY.saveFailed)
     }
   }
 
@@ -114,6 +121,7 @@ export default function RewriteThisPart(props: RewriteThisPartProps) {
               onClick={() => {
                 setMessage(null)
                 setPhase('idle')
+                toast.done(COPY.toastKept)
               }}
             >
               {COPY.keepVersion}

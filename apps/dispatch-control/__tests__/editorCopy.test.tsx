@@ -19,6 +19,7 @@ import {
   PART_ORDER,
   EDITOR_BANNED_PATTERN,
   RUN_ID_PATTERN,
+  COPY,
 } from '@/lib/editorState'
 import type { HomeFooter, HomeSectionRow } from '@/lib/homeSections'
 import { ADMIN_ITEMS } from '../lib/nav'
@@ -271,5 +272,15 @@ describe('copy scan: Behind-Run', () => {
       />,
     )
     assertClean(container)
+  })
+})
+
+describe('COPY strings (quick 261023-1i8)', () => {
+  it('every COPY string is plain words', () => {
+    for (const v of Object.values(COPY)) {
+      if (typeof v !== 'string') continue
+      expect(v).not.toMatch(EDITOR_BANNED_PATTERN)
+      expect(v).not.toMatch(RUN_ID_PATTERN)
+    }
   })
 })
