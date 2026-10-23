@@ -483,7 +483,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 | 55. Public Site Redesign — The Dispatch Front Page | 3/13 | In progress | - |
-| 56. Dashboard Redesign — The Grandma-Simple Editor | 4/15 | In Progress|  |
+| 56. Dashboard Redesign — The Grandma-Simple Editor | 8/15 | In Progress|  |
 
 ## Backlog
 
@@ -1282,7 +1282,7 @@ Plans:
 - [x] 56-05-home-screen-PLAN.md — `/` and `/?run=`: Main / Home-Writing / Home-Published; retire PublishFooter, StoryRow, StartIssueButton, HoldDialog, HoldControl (W3)
 - [x] 56-06-section-page-PLAN.md — `/s/[section]` rebuild; retire InPlaceBlockEditor, EarlierIssueBanner (W3)
 - [x] 56-07-archive-screen-PLAN.md — Past issues with collapsed Stopped/unfinished (W3)
-- [ ] 56-08-behind-hub-PLAN.md — Behind the scenes hub: steps + dials + real cost (W3)
+- [x] 56-08-behind-hub-PLAN.md — Behind the scenes hub: steps + dials + real cost (W3)
 - [ ] 56-09-behind-run-PLAN.md — Behind-Run plain-words problem page (W3)
 - [ ] 56-10-runs-pages-sweep-PLAN.md — jargon sweep: runs list + shared runs layout (W3)
 - [ ] 56-10b-runs-graph-sweep-PLAN.md — jargon sweep: map page 'How the steps connect' (W3)
