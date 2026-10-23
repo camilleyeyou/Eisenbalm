@@ -1266,12 +1266,26 @@ Plans:
   6. Paragraphs edited in place (hover pencil → textarea, Save/Cancel), one "Rewrite this part" helper per part.
   7. Stopped/unfinished issues collapsed at the bottom of Past issues; failed runs explained in plain words with technical details collapsed.
 **Scope**: New UI only; backend kept. Reuse Galley, in-place editor, content-patch API, hold/start/publish chain.
-**Requirements**: TBD
+**Requirements**: P56-A1, P56-A2, P56-A3, P56-A4, P56-B1, P56-B2, P56-B3, P56-B4, P56-B5 (local IDs, see 56-VALIDATION.md)
 **Success Criteria** (what must be TRUE):
   1. Each of the 7 artboards has a matching live screen in dispatch-control at desktop and phone width.
   2. Replaying the client walkthrough in `client-ux-feedback-261022.md` (ecc:browser-qa) hits none of the reported confusions.
   3. No run ids, raw errors, or jargon appear on editor-facing pages; every page has exactly one primary action.
   4. Strict `pnpm --filter dispatch-control build` and the full test suite pass.
 **Known blocker for live QA**: `OPENROUTER_API_KEY` revoked 2026-10-22 — replace on Railway + local `.env` before any real-data run.
-**Plans**: TBD
+**Plans**: 13 plans in 5 waves
+Plans:
+- [ ] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)
+- [ ] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
+- [ ] 56-03-editor-primitives-PLAN.md — NextStepSlab, StatusWord, Stations, StepList, PartsList (W2)
+- [ ] 56-04-paragraph-editor-rewrite-PLAN.md — per-paragraph in-place editor + Rewrite this part keep/undo (W2)
+- [ ] 56-05-home-screen-PLAN.md — `/` and `/?run=`: Main / Home-Writing / Home-Published; retire PublishFooter, StoryRow, StartIssueButton, HoldDialog, HoldControl (W3)
+- [ ] 56-06-section-page-PLAN.md — `/s/[section]` rebuild; retire InPlaceBlockEditor, EarlierIssueBanner (W3)
+- [ ] 56-07-archive-screen-PLAN.md — Past issues with collapsed Stopped/unfinished (W3)
+- [ ] 56-08-behind-hub-PLAN.md — Behind the scenes hub: steps + dials + real cost (W3)
+- [ ] 56-09-behind-run-PLAN.md — Behind-Run plain-words problem page (W3)
+- [ ] 56-10-runs-pages-sweep-PLAN.md — jargon sweep: runs list + map pages (W3)
+- [ ] 56-11-dial-pages-sweep-PLAN.md — jargon sweep: writers' instructions, tests, schedule, money, settings, charities (W3)
+- [ ] 56-12-retirement-tripwires-PLAN.md — delete leftovers, 3 tripwire tests, strict build + full suite (W4)
+- [ ] 56-13-browser-qa-uat-PLAN.md — human browser QA at 1280/400 px, client walkthrough replay → 56-UAT.md (W5, checkpoint)
 **UI hint**: yes
