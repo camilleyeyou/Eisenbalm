@@ -124,14 +124,14 @@ describe('ArchiveBody — row rendering', () => {
     render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
     const row = screen.getByTestId('archive-row-999714')
     expect(row.tagName).toBe('A')
-    expect(row.getAttribute('href')).toBe('/s/originStory?run=run-714')
+    expect(row.getAttribute('href')).toBe('/?run=run-714')
   })
 
   it('a published row opens its draft and has a SEPARATE View live link (not nested)', () => {
     process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE = 'https://web.example/'
     render(<ArchiveBody rows={makeRows()} currentIssueNumber={999717} />)
     const row = screen.getByTestId('archive-row-999716')
-    expect(row.getAttribute('href')).toBe('/s/originStory?run=run-716')
+    expect(row.getAttribute('href')).toBe('/?run=run-716')
     const live = screen.getByText(/View live/).closest('a')
     expect(live?.getAttribute('href')).toBe('https://web.example/issue/issue-999716')
     expect(row.contains(live)).toBe(false)
