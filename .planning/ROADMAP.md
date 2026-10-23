@@ -1279,7 +1279,7 @@ Plans:
 - [x] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
 - [x] 56-03-editor-primitives-PLAN.md — NextStepSlab, StatusWord, Stations, StepList, PartsList (W2)
 - [x] 56-04-paragraph-editor-rewrite-PLAN.md — per-paragraph in-place editor + Rewrite this part keep/undo (W2)
-- [ ] 56-05-home-screen-PLAN.md — `/` and `/?run=`: Main / Home-Writing / Home-Published; retire PublishFooter, StoryRow, StartIssueButton, HoldDialog, HoldControl (W3)
+- [x] 56-05-home-screen-PLAN.md — `/` and `/?run=`: Main / Home-Writing / Home-Published; retire PublishFooter, StoryRow, StartIssueButton, HoldDialog, HoldControl (W3)
 - [ ] 56-06-section-page-PLAN.md — `/s/[section]` rebuild; retire InPlaceBlockEditor, EarlierIssueBanner (W3)
 - [ ] 56-07-archive-screen-PLAN.md — Past issues with collapsed Stopped/unfinished (W3)
 - [ ] 56-08-behind-hub-PLAN.md — Behind the scenes hub: steps + dials + real cost (W3)
