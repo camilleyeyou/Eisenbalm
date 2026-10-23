@@ -27,10 +27,10 @@ export function adminRunHref(runId: string): string {
   return `/admin/runs/${encodeURIComponent(runId)}`
 }
 
-/** Opens an issue's draft: '/' for the current run, else the section editor pinned to that run. */
+/** Opens an issue: '/' for the current run, else that issue's Home view pinned with ?run=. */
 export function issueOpenHref(runId: string, currentRunId: string | null | undefined): string {
   if (runId === currentRunId) return '/'
-  return `/s/originStory?run=${encodeURIComponent(runId)}`
+  return `/?run=${encodeURIComponent(runId)}`
 }
 
 /** Edit link for one section of a run. */

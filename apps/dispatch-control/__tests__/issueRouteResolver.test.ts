@@ -38,8 +38,8 @@ describe('issueOpenHref / sectionEditHref (quick 261022-cr6)', () => {
     expect(issueOpenHref('r1', 'r1')).toBe('/')
   })
   it('pins an earlier run, or an unknown current run', () => {
-    expect(issueOpenHref('r1', 'r2')).toBe('/s/originStory?run=r1')
-    expect(issueOpenHref('r1', undefined)).toBe('/s/originStory?run=r1')
+    expect(issueOpenHref('r1', 'r2')).toBe('/?run=r1')
+    expect(issueOpenHref('r1', undefined)).toBe('/?run=r1')
   })
   it('builds per-section edit links', () => {
     expect(sectionEditHref('founderBio', 'r1', 'r1')).toBe('/s/founderBio')

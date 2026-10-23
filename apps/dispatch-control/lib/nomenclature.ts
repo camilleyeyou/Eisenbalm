@@ -227,3 +227,16 @@ export function restartAvailabilityFor(
   if (agentKey === 'publisher') return 'live'
   return 'reserved'
 }
+
+// ─── Phase 56: the six editor status words (UI-SPEC "Status words") ───────
+export type StatusWord = 'Done' | 'Working' | 'Waiting for you' | 'Not yet' | 'Stopped' | 'Problem'
+export type StatusMarker = 'check' | 'ring' | 'hollow' | 'line' | 'exclamation'
+export const STATUS_WORDS: Record<StatusWord, { colorVar: string; bold: boolean; marker: StatusMarker }> = {
+  Done: { colorVar: '--color-done', bold: true, marker: 'check' },
+  Working: { colorVar: '--color-amber-text', bold: true, marker: 'ring' },
+  'Waiting for you': { colorVar: '--color-amber-text', bold: true, marker: 'ring' },
+  'Not yet': { colorVar: '--color-ink-soft', bold: false, marker: 'hollow' },
+  Stopped: { colorVar: '--color-ink-soft', bold: true, marker: 'line' },
+  Problem: { colorVar: '--color-problem', bold: true, marker: 'exclamation' },
+}
+export const STATUS_WORD_ORDER: readonly StatusWord[] = ['Done', 'Working', 'Waiting for you', 'Not yet', 'Stopped', 'Problem']
