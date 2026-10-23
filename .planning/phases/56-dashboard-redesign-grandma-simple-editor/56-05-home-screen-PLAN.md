@@ -258,7 +258,7 @@ export default async function IssueHomePage({ searchParams }: { searchParams: Pr
   <acceptance_criteria>
     - `ls "apps/dispatch-control/app/(editorial)/_components/"` lists exactly: HeldIssueRow.tsx, HoldStopFooter.tsx, IssueHome.tsx, IssueHomeView.tsx
     - `grep -rn "PublishFooter\|StoryRow\|StartIssueButton\|HoldDialog\|from './HoldControl'" apps/dispatch-control/app apps/dispatch-control/components apps/dispatch-control/lib apps/dispatch-control/__tests__` returns nothing
-    - strict build exits 0; full suite has no failures other than the recorded baseline failure in SectionReaderPage.test.tsx (which plan 56-06 replaces)
+    - strict build exits 0; full suite has no failures other than the recorded baseline failure in SectionReaderPage.test.tsx (which plan 56-06 replaces) (a build or suite failure caused only by a file owned by a sibling wave-3 plan is NOT this plan's failure — record it in the SUMMARY; the authoritative strict build + full suite is 56-12)
   </acceptance_criteria>
   <done>Old Home chrome is gone and nothing references it.</done>
 </task>

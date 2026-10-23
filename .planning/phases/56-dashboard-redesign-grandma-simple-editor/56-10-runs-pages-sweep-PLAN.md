@@ -14,17 +14,7 @@ files_modified:
   - apps/dispatch-control/app/admin/runs/_components/CostRollup.tsx
   - apps/dispatch-control/app/admin/runs/_components/BudgetAlertBanner.tsx
   - apps/dispatch-control/app/admin/runs/_components/CancelRunButton.tsx
-  - apps/dispatch-control/app/admin/runs/graph/page.tsx
-  - apps/dispatch-control/app/admin/runs/graph/_components/AgentIOPanel.tsx
-  - apps/dispatch-control/app/admin/runs/graph/_components/AgentNode.tsx
-  - apps/dispatch-control/app/admin/runs/graph/_components/DriftStrip.tsx
-  - apps/dispatch-control/app/admin/runs/graph/_components/PipelineGraph.tsx
-  - apps/dispatch-control/app/admin/runs/graph/_components/WriterExpansion.tsx
   - apps/dispatch-control/__tests__/runControl.test.tsx
-  - apps/dispatch-control/__tests__/AgentIOPanel.test.tsx
-  - apps/dispatch-control/__tests__/AgentNode.test.tsx
-  - apps/dispatch-control/__tests__/DriftStrip.test.tsx
-  - apps/dispatch-control/__tests__/WriterExpansion.test.tsx
   - apps/dispatch-control/__tests__/adminRunsJargon.test.ts
 autonomous: true
 requirements: [P56-A2, P56-A3]
@@ -33,7 +23,7 @@ must_haves:
   truths:
     - "'Past issues, step by step' (/admin/runs) lists issues by name and date with the six status words, never run ids or 20 identical 'Awaiting review' cards (client bug 4)"
     - "Old unfinished issues are folded under a closed 'Older unfinished issues (N)' section"
-    - "The start control reads 'Start a new issue' (not Trigger Run); the map page is named in plain words (no Pipeline Graph / DAG / Drift / tokens)"
+    - "The start control reads 'Start a new issue' (not Trigger Run)"
     - "Each page starts with the slab 'Nothing here is needed to publish this week's issue.' and a ghost 'Back to behind the scenes'"
     - "Every element styled as a button does something (bug 9)"
   artifacts:
@@ -48,10 +38,10 @@ must_haves:
 ---
 
 <objective>
-Jargon and chrome sweep over the runs list and the map ("graph") sub-pages reachable from the "Past issues, step by step" dial. Layouts are not redrawn (UI-SPEC § 8 last bullet); headings, labels, status chips and run ids are.
+Jargon and chrome sweep over the runs list ("Past issues, step by step") and its shared layout. The map ("graph") page is plan 56-10b. Layouts are not redrawn (UI-SPEC § 8 last bullet); headings, labels, status chips and run ids are.
 
 Purpose: Success criterion 3 on every page reachable from the dials; client bugs 4 and 9; jargon list (Run, Trigger Run, Pipeline Graph, DAG, Drift, Re-roll, Calibrator, Chronicler, Tokens in/out).
-Output: relabelled runs pages and components, updated tests, a source-scan tripwire.
+Output: relabelled runs list + components, updated runControl.test, a source-scan tripwire.
 </objective>
 
 <execution_context>
@@ -113,37 +103,45 @@ runControl.test.tsx currently covers STATUS_CLASSES (RunsTable), RunControlBar, 
 </task>
 
 <task type="auto" tdd="true">
-  <name>Task 2: Map page ('How the steps connect') relabel + tripwire scan</name>
-  <files>apps/dispatch-control/app/admin/runs/graph/page.tsx, apps/dispatch-control/app/admin/runs/graph/_components/AgentIOPanel.tsx, apps/dispatch-control/app/admin/runs/graph/_components/AgentNode.tsx, apps/dispatch-control/app/admin/runs/graph/_components/DriftStrip.tsx, apps/dispatch-control/app/admin/runs/graph/_components/PipelineGraph.tsx, apps/dispatch-control/app/admin/runs/graph/_components/WriterExpansion.tsx, apps/dispatch-control/__tests__/AgentIOPanel.test.tsx, apps/dispatch-control/__tests__/AgentNode.test.tsx, apps/dispatch-control/__tests__/DriftStrip.test.tsx, apps/dispatch-control/__tests__/WriterExpansion.test.tsx, apps/dispatch-control/__tests__/adminRunsJargon.test.ts</files>
+  <name>Task 2: Runs list jargon tripwire</name>
+  <files>apps/dispatch-control/__tests__/adminRunsJargon.test.ts</files>
   <read_first>
-    - each graph file and its test
-    - __tests__/helpers/jargonScan.ts (56-01)
+    - apps/dispatch-control/__tests__/helpers/jargonScan.ts (56-01)
   </read_first>
   <behavior>
-    - adminRunsJargon.test.ts: for every file in this plan's files_modified under app/admin/runs (excluding [runId] and the files plan 56-12 deletes: RunDetail.tsx, RecoveryRail.tsx, RerollButton.tsx), `jargonInSource(file)` returns []
+    - for every non-test file this plan owns, `jargonInSource(file)` returns []
   </behavior>
   <action>
-Relabel user-visible text only (component/file names stay): 'Pipeline Graph' / 'DAG' → h1 'How the steps connect'; node titles via `plainNameForKey(agentKey)` instead of raw keys or Calibrator/Chronicler; 'Drift' → 'Change in quality' (e.g. DriftStrip heading 'How the writing quality changed'); 'Tokens in' / 'Tokens out' → 'Words read' / 'Words written' (values unchanged); 'Re-roll' anywhere → 'Rewrite'; status chips → `<StatusWord word={runStatusWord({ status })} />`; 'Run' in headings → 'Issue'. Remove `font-mono`, `uppercase`, `tracking-` from visible labels (raw JSON payload viewers in AgentIOPanel may keep monospace inside a `pre` only). Update the four component tests' text expectations. Create `__tests__/adminRunsJargon.test.ts` using `jargonInSource` over the owned files (list them literally); any `allow` entry needs a comment naming why it is code, not UI text.
+Create `__tests__/adminRunsJargon.test.ts` listing these files literally and asserting `expect(jargonInSource(f)).toEqual([])` for each:
+      - apps/dispatch-control/app/admin/runs/page.tsx
+      - apps/dispatch-control/app/admin/runs/layout.tsx
+      - apps/dispatch-control/app/admin/runs/loading.tsx
+      - apps/dispatch-control/app/admin/runs/_components/RunsTable.tsx
+      - apps/dispatch-control/app/admin/runs/_components/RunControlBar.tsx
+      - apps/dispatch-control/app/admin/runs/_components/ReviewQueue.tsx
+      - apps/dispatch-control/app/admin/runs/_components/CostRollup.tsx
+      - apps/dispatch-control/app/admin/runs/_components/BudgetAlertBanner.tsx
+      - apps/dispatch-control/app/admin/runs/_components/CancelRunButton.tsx
+Any `allow` entry must carry a comment saying why it is code text, not UI. Fix flagged UI strings in the owned files instead of allow-listing them.
   </action>
   <verify>
-    <automated>cd /Users/user/Desktop/Eisenbalm && pnpm --filter dispatch-control exec vitest run __tests__/adminRunsJargon.test.ts __tests__/AgentIOPanel.test.tsx __tests__/AgentNode.test.tsx __tests__/DriftStrip.test.tsx __tests__/WriterExpansion.test.tsx __tests__/pipelineTopology.test.ts && pnpm --filter dispatch-control build</automated>
+    <automated>cd /Users/user/Desktop/Eisenbalm && pnpm --filter dispatch-control exec vitest run __tests__/adminRunsJargon.test.ts && pnpm --filter dispatch-control build</automated>
   </verify>
   <acceptance_criteria>
-    - `grep -rn ">\s*Pipeline Graph\|>\s*DAG\|Tokens in\|Tokens out\|Calibrator\|Chronicler" apps/dispatch-control/app/admin/runs/graph` returns nothing
-    - adminRunsJargon.test.ts exists and passes
-    - strict build exits 0
+    - `grep -n "jargonInSource" apps/dispatch-control/__tests__/adminRunsJargon.test.ts` matches and the test passes
+    - strict build exits 0 (a build or suite failure caused only by a file owned by a sibling wave-3 plan is NOT this plan's failure — record it in the SUMMARY; the authoritative strict build + full suite is 56-12)
   </acceptance_criteria>
-  <done>No jargon is visible on the runs and map sub-pages; a tripwire keeps it that way.</done>
+  <done>A tripwire keeps jargon off these pages.</done>
 </task>
 
 </tasks>
 
 <verification>
-Runs-area tests + tripwire + strict build green.
+Runs-list tests + tripwire + strict build green.
 </verification>
 
 <success_criteria>
-Client bug 4 closed; jargon list removed from /admin/runs and /admin/runs/graph.
+Client bug 4 closed; jargon list removed from /admin/runs.
 </success_criteria>
 
 <output>

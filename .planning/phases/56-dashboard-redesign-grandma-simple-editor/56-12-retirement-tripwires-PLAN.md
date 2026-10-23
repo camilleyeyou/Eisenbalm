@@ -3,7 +3,7 @@ phase: 56-dashboard-redesign-grandma-simple-editor
 plan: 12
 type: execute
 wave: 4
-depends_on: [56-05, 56-06, 56-07, 56-08, 56-09, 56-10, 56-11]
+depends_on: [56-05, 56-06, 56-07, 56-08, 56-09, 56-10, 56-10b, 56-11, 56-11b]
 files_modified:
   - apps/dispatch-control/app/(editorial)/_components/HeldIssueRow.tsx
   - apps/dispatch-control/components/CommandPalette.tsx
@@ -128,13 +128,14 @@ Write the three tests (`import { describe, it, expect } from 'vitest'`; .ts test
     - .planning/phases/56-dashboard-redesign-grandma-simple-editor/56-PREFLIGHT.md (baseline counts)
   </read_first>
   <action>
-Run `pnpm --filter dispatch-control build` then `pnpm --filter dispatch-control test`. Both must exit 0 with zero failing tests (the baseline SectionReaderPage failure was replaced in 56-06). Also confirm `git diff --name-only <phase-start-commit>..HEAD -- convex/ packages/pipeline/` is empty (backend kept; if not empty, run `pnpm --filter @eisenbalm/convex dev:once` and record it). Record final counts (files/tests) in the SUMMARY. If anything fails, fix it (any file) and re-run; list each fix.
+Run `pnpm --filter dispatch-control build` then `pnpm --filter dispatch-control test`. Both must exit 0 with zero failing tests (the baseline SectionReaderPage failure was replaced in 56-06). Also read the start hash: `START=$(sed -n 's/^Phase start commit: \([0-9a-f]\{40\}\)$/\1/p' .planning/phases/56-dashboard-redesign-grandma-simple-editor/56-PREFLIGHT.md)` (fail loudly if empty), then confirm `git diff --name-only "$START"..HEAD -- convex/ packages/pipeline/` is empty (backend kept; if not empty, run `pnpm --filter @eisenbalm/convex dev:once` and record it). Record final counts (files/tests) in the SUMMARY. If anything fails, fix it (any file) and re-run; list each fix.
   </action>
   <verify>
     <automated>cd /Users/user/Desktop/Eisenbalm && pnpm --filter dispatch-control build && pnpm --filter dispatch-control test</automated>
   </verify>
   <acceptance_criteria>
     - build exits 0
+    - `git diff --name-only "$START"..HEAD -- convex/ packages/pipeline/` printed nothing (or the dev:once sync is recorded)
     - vitest summary shows `0 failed` (no "failed" count above zero)
   </acceptance_criteria>
   <done>Success criterion 4 met.</done>

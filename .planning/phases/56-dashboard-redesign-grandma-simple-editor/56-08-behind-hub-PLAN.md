@@ -117,7 +117,7 @@ fixCount for step 8: sum of `agentChanges` from deriveHomeSections is not availa
     - `grep -n "deriveRunCostUsd(\|deriveBehindSteps(\|formatCostLine(" apps/dispatch-control/app/admin/_components/BehindHub.tsx | wc -l` >= 3
     - `grep -n "runs.cost\|JSON.parse" apps/dispatch-control/app/admin/_components/BehindHub.tsx` returns nothing (cost never read from runs.cost)
     - `git diff --name-only -- convex/` is empty
-    - strict build exits 0
+    - strict build exits 0 (a build or suite failure caused only by a file owned by a sibling wave-3 plan is NOT this plan's failure — record it in the SUMMARY; the authoritative strict build + full suite is 56-12)
   </acceptance_criteria>
   <done>/admin is Behind the scenes, live, with real cost.</done>
 </task>

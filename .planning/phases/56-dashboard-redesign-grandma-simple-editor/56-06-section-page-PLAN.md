@@ -143,7 +143,7 @@ Remove every import of: useInspector, ClaimProvenanceCard, PassageToolbar types,
     - `grep -n "useInspector\|ClaimProvenanceCard\|PassageToolbar\|EarlierIssueBanner\|InPlaceBlockEditor\|Inspect how this was made" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` returns nothing
     - `test ! -e "apps/dispatch-control/app/(editorial)/s/[section]/_components/InPlaceBlockEditor.tsx" && test ! -e "apps/dispatch-control/app/(editorial)/s/[section]/_components/EarlierIssueBanner.tsx"`
     - `grep -c "<SectionArticle\|<RewriteThisPart\|<NextStepSlab" "apps/dispatch-control/app/(editorial)/s/[section]/page.tsx"` >= 3
-    - SectionReaderPage.test.tsx passes with 0 failures (baseline failure gone); strict build exits 0
+    - SectionReaderPage.test.tsx passes with 0 failures (baseline failure gone); strict build exits 0 (a build or suite failure caused only by a file owned by a sibling wave-3 plan is NOT this plan's failure — record it in the SUMMARY; the authoritative strict build + full suite is 56-12)
   </acceptance_criteria>
   <done>The Section artboard is live; paragraph edit and Rewrite are wired; old edit flow is gone.</done>
 </task>

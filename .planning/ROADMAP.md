@@ -1273,7 +1273,7 @@ Plans:
   3. No run ids, raw errors, or jargon appear on editor-facing pages; every page has exactly one primary action.
   4. Strict `pnpm --filter dispatch-control build` and the full test suite pass.
 **Known blocker for live QA**: `OPENROUTER_API_KEY` revoked 2026-10-22 — replace on Railway + local `.env` before any real-data run.
-**Plans**: 13 plans in 5 waves
+**Plans**: 15 plans in 5 waves
 Plans:
 - [ ] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)
 - [ ] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
@@ -1284,8 +1284,10 @@ Plans:
 - [ ] 56-07-archive-screen-PLAN.md — Past issues with collapsed Stopped/unfinished (W3)
 - [ ] 56-08-behind-hub-PLAN.md — Behind the scenes hub: steps + dials + real cost (W3)
 - [ ] 56-09-behind-run-PLAN.md — Behind-Run plain-words problem page (W3)
-- [ ] 56-10-runs-pages-sweep-PLAN.md — jargon sweep: runs list + map pages (W3)
-- [ ] 56-11-dial-pages-sweep-PLAN.md — jargon sweep: writers' instructions, tests, schedule, money, settings, charities (W3)
+- [ ] 56-10-runs-pages-sweep-PLAN.md — jargon sweep: runs list + shared runs layout (W3)
+- [ ] 56-10b-runs-graph-sweep-PLAN.md — jargon sweep: map page 'How the steps connect' (W3)
+- [ ] 56-11-dial-pages-sweep-PLAN.md — jargon sweep: What the writers are told (W3)
+- [ ] 56-11b-dial-pages-rest-sweep-PLAN.md — jargon sweep: tests, schedule, money, settings, charities, help copy (W3)
 - [ ] 56-12-retirement-tripwires-PLAN.md — delete leftovers, 3 tripwire tests, strict build + full suite (W4)
 - [ ] 56-13-browser-qa-uat-PLAN.md — human browser QA at 1280/400 px, client walkthrough replay → 56-UAT.md (W5, checkpoint)
 **UI hint**: yes

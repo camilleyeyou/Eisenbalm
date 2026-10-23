@@ -86,6 +86,7 @@ House class style: arbitrary-value token classes, e.g. `text-[color:var(--color-
     - 56-RESEARCH.md § Pitfall 2 and § Environment Availability
   </read_first>
   <action>
+0. Record the phase start commit: `git rev-parse HEAD` — write it into 56-PREFLIGHT.md as the line `Phase start commit: <full 40-char hash>`.
 1. `grep -n "^NEXT_PUBLIC_PIPELINE_URL" apps/dispatch-control/.env.local` and `grep -n "^DASHBOARD_ALLOWED_ORIGINS" packages/pipeline/.env`.
 2. Start the pipeline in the background: `pnpm --filter pipeline dev` (port 8000). Wait until `curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health` (or `/docs` if /health is absent) returns 200, up to 60 s.
 3. CORS probe: `curl -s -i -X OPTIONS http://localhost:8000/runs -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: GET" | grep -i "access-control-allow-origin"` must print `http://localhost:3001`.
@@ -98,6 +99,7 @@ If step 3 fails, add `http://localhost:3001` to `DASHBOARD_ALLOWED_ORIGINS` in `
     <automated>grep -n "CORS: PASS" /Users/user/Desktop/Eisenbalm/.planning/phases/56-dashboard-redesign-grandma-simple-editor/56-PREFLIGHT.md</automated>
   </verify>
   <acceptance_criteria>
+    - 56-PREFLIGHT.md contains a line matching `^Phase start commit: [0-9a-f]{40}$`
     - 56-PREFLIGHT.md exists and contains the literal `CORS: PASS` and a line matching `Baseline: \d+ files pass`
     - 56-PREFLIGHT.md contains no string matching `sk-|pk_|secret` (no secrets copied)
   </acceptance_criteria>

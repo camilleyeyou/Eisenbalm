@@ -129,7 +129,7 @@ Tests in `__tests__/BehindRun.test.tsx` cover every behavior bullet.
   <acceptance_criteria>
     - `grep -n "RunDetail\|Run Detail" "apps/dispatch-control/app/admin/runs/[runId]/page.tsx"` returns nothing
     - `grep -n "isGateInterrupt\|deriveRunCostUsd(\|cancelRun(\|triggerRun(" apps/dispatch-control/app/admin/runs/_components/BehindRun.tsx | wc -l` >= 4
-    - strict build exits 0
+    - strict build exits 0 (a build or suite failure caused only by a file owned by a sibling wave-3 plan is NOT this plan's failure — record it in the SUMMARY; the authoritative strict build + full suite is 56-12)
   </acceptance_criteria>
   <done>Behind-Run is live for every run; old Run Detail no longer reachable.</done>
 </task>

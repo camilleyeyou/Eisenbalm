@@ -130,7 +130,7 @@ Rewrite page.tsx ('use client', keep its existing searchParams handling style): 
     - `grep -n "HeldIssueRow" "apps/dispatch-control/app/(editorial)/archive/page.tsx"` returns nothing
     - `grep -n "listRecentForWorkspace\|deriveArchiveRows(" "apps/dispatch-control/app/(editorial)/archive/page.tsx" | wc -l` >= 2
     - `git diff --name-only -- convex/` is empty
-    - tests pass; strict build exits 0
+    - tests pass; strict build exits 0 (a build or suite failure caused only by a file owned by a sibling wave-3 plan is NOT this plan's failure — record it in the SUMMARY; the authoritative strict build + full suite is 56-12)
   </acceptance_criteria>
   <done>Past issues is live; titles open the issue; stopped issues are collapsed with plain reasons.</done>
 </task>
