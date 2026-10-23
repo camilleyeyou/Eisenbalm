@@ -1285,7 +1285,7 @@ Plans:
 - [x] 56-08-behind-hub-PLAN.md — Behind the scenes hub: steps + dials + real cost (W3)
 - [x] 56-09-behind-run-PLAN.md — Behind-Run plain-words problem page (W3)
 - [x] 56-10-runs-pages-sweep-PLAN.md — jargon sweep: runs list + shared runs layout (W3)
-- [ ] 56-10b-runs-graph-sweep-PLAN.md — jargon sweep: map page 'How the steps connect' (W3)
+- [x] 56-10b-runs-graph-sweep-PLAN.md — jargon sweep: map page 'How the steps connect' (W3)
 - [ ] 56-11-dial-pages-sweep-PLAN.md — jargon sweep: What the writers are told (W3)
 - [ ] 56-11b-dial-pages-rest-sweep-PLAN.md — jargon sweep: tests, schedule, money, settings, charities, help copy (W3)
 - [ ] 56-12-retirement-tripwires-PLAN.md — delete leftovers, 3 tripwire tests, strict build + full suite (W4)
