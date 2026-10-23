@@ -483,7 +483,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 | 55. Public Site Redesign — The Dispatch Front Page | 3/13 | In progress | - |
-| 56. Dashboard Redesign — The Grandma-Simple Editor | TBD | Not started | - |
+| 56. Dashboard Redesign — The Grandma-Simple Editor | 1/15 | In Progress|  |
 
 ## Backlog
 
@@ -1275,7 +1275,7 @@ Plans:
 **Known blocker for live QA**: `OPENROUTER_API_KEY` revoked 2026-10-22 — replace on Railway + local `.env` before any real-data run.
 **Plans**: 15 plans in 5 waves
 Plans:
-- [ ] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)
+- [x] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)
 - [ ] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
 - [ ] 56-03-editor-primitives-PLAN.md — NextStepSlab, StatusWord, Stations, StepList, PartsList (W2)
 - [ ] 56-04-paragraph-editor-rewrite-PLAN.md — per-paragraph in-place editor + Rewrite this part keep/undo (W2)
