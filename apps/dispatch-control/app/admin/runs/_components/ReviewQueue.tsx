@@ -1,7 +1,7 @@
 'use client'
 /**
  * Phase 26 (RVW-01/RVW-02) — Awaiting-review queue panel.
- * Quick 260724-lp1: the "Review →" CTA now resolves to the Draft/Story Desk
+ * Quick 260724-lp1: the "Open the issue" CTA now resolves to the Draft/Story Desk
  * stage (`issueDraftHref`), not Approval — reviewers land where the work
  * happens instead of dead-ending at the sign-off gate. `runs.listForWorkspace`
  * rows carry NO `issueNumber` field (schema.ts), so each row resolves its own
@@ -43,7 +43,7 @@ function formatRelativeTime(ms: number): string {
 }
 
 /**
- * One Awaiting Review card. "Review →" opens the front door, where the
+ * One Awaiting Review card. "Open the issue" opens the front door, where the
  * current issue is read, edited and published.
  */
 function AwaitingReviewRow({
@@ -60,24 +60,24 @@ function AwaitingReviewRow({
   // section editor pinned to this run.
   const href = issueOpenHref(run.runId, latestRunId)
   const label = useRunLabel(run.runId, run.startedAt)
-  const chip = run.completedAt == null ? 'Paused' : 'Ready for you to read'
+  const chip = 'Waiting for you'
 
   return (
     <li className="flex flex-col gap-3 border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: run info — mockup-05 q-card idiom: chip -> Newsreader h3 -> mono meta */}
       <div className="min-w-0 flex-1">
-        <span className="inline-block border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase text-[color:var(--color-marigold-text)]">
+        <span className="inline-block border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-2 py-[3px] font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-marigold-text)]">
           {chip}
         </span>
         <p className="mt-1.5 font-[family-name:var(--font-display)] text-[18px] font-semibold text-[color:var(--color-ink)] truncate">
           {label ?? 'Loading…'}
         </p>
-        <p className="mt-1 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
+        <p className="mt-1 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-faint)]">
           Started {formatRelativeTime(run.startedAt)}
         </p>
         {cost > 0 && (
-          <p className="mt-0.5 font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
-            Estimated run cost ${cost.toFixed(2)}
+          <p className="mt-0.5 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-faint)]">
+            What this issue cost so far ${cost.toFixed(2)}
           </p>
         )}
       </div>
@@ -85,9 +85,9 @@ function AwaitingReviewRow({
       {/* Right: Review link — hard-edged ink CTA (mockup-05 .q-card .cta) */}
       <Link
         href={href}
-        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 transition-colors"
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 py-2 font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 transition-colors"
       >
-        Review →
+        Open the issue
       </Link>
     </li>
   )
@@ -113,7 +113,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   if (runs === undefined) {
     return (
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
+        <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[color:var(--color-ink)]">
           Ready for you to read
         </h2>
         <div className="mt-2 flex flex-col gap-2">
@@ -128,14 +128,14 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
   if (awaitingReview.length === 0) {
     return (
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
+        <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[color:var(--color-ink)]">
           Ready for you to read
         </h2>
         <div className="mt-4 border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] px-4 py-6 text-center">
-          <p className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]">
+          <p className="font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-ink-soft)]">
             Nothing is waiting for you
           </p>
-          <p className="mt-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+          <p className="mt-1 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)]">
             Finished issues will appear here for you to read before publishing.
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
 
   return (
     <div className="border border-[color:var(--color-faint)] border-t-[3px] border-t-[color:var(--color-marigold)] bg-[color:var(--color-card)] p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
+      <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[color:var(--color-ink)]">
         Ready for you to read
       </h2>
       <ul role="list" className="mt-4 space-y-3">
@@ -155,8 +155,8 @@ export default function ReviewQueue({ workspace_id }: ReviewQueueProps) {
       </ul>
       {older.length > 0 && (
         <details className="mt-4">
-          <summary className="cursor-pointer font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-            Older runs ({older.length})
+          <summary className="cursor-pointer font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)]">
+            Older unfinished issues ({older.length})
           </summary>
           <ul role="list" className="mt-3 space-y-3">
             {older.map(run => (

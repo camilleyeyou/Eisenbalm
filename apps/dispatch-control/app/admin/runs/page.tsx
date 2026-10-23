@@ -3,7 +3,7 @@
  *
  * Server Component: resolves workspace_id and renders:
  *   1. BudgetAlertBanner — amber warning when MTD spend crosses alert threshold
- *   2. RunControlBar     — page heading + Trigger Run button (two-step inline confirm)
+ *   2. RunControlBar     — Start a new issue button (two-step inline confirm)
  *   3. CostRollup        — weekly/monthly aggregate spend (collapsible)
  *   4. RunsTable         — full run history, newest-first, each row links to /admin/runs/{runId}
  *
@@ -18,7 +18,6 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
-import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import BudgetAlertBanner from './_components/BudgetAlertBanner'
 import RunControlBar from './_components/RunControlBar'
 import CostRollup from './_components/CostRollup'
@@ -26,13 +25,21 @@ import RunsTable from './_components/RunsTable'
 import ReviewQueue from './_components/ReviewQueue'
 
 // quick 260723-4a6 (Task 1e): Server Component route — static title.
-export const metadata: Metadata = { title: WORKBENCH_NAV_LABELS.run_monitor }
+export const metadata: Metadata = { title: 'Past issues, step by step' }
 
 export default async function RunsPage() {
   const workspace_id = await getCurrentWorkspace()
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-4">
+      <header>
+        <h1 className="font-[family-name:var(--font-display)] text-[32px] font-semibold leading-[1.15] text-[color:var(--color-ink)]">
+          Past issues, step by step
+        </h1>
+        <p className="mt-2 font-[family-name:var(--font-body)] text-[17px] leading-[1.55] text-[color:var(--color-ink-soft)]">
+          How each issue was made. Open one to see every step.
+        </p>
+      </header>
       <BudgetAlertBanner workspace_id={workspace_id} />
       <RunControlBar workspace_id={workspace_id} />
       <CostRollup workspace_id={workspace_id} />

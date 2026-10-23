@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { cancelRun } from '@/lib/pipelineControlClient'
+import { COPY } from '@/lib/editorState'
 
 interface CancelRunButtonProps {
   runId: string
@@ -56,9 +57,15 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
+      {confirming && (
+        <p className="w-full font-[family-name:var(--font-body)] text-[17px] text-[color:var(--color-ink)]">
+          <span className="font-semibold">{COPY.stopConfirmTitle}</span>{' '}
+          {COPY.stopConfirmBody.replace('{issue}', 'this issue')}
+        </p>
+      )}
       {error && (
-        <span className="text-[11px] text-[color:var(--color-vermilion)]">{error}</span>
+        <span className="text-[15px] text-[color:var(--color-vermilion)]">{error}</span>
       )}
 
       {confirming ? (
@@ -69,25 +76,25 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             onClick={handleConfirm}
             disabled={loading}
             aria-busy={loading}
-            className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+            className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
             {loading ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 <span className="sr-only">Loading…</span>
-                Confirm Cancel?
+                {COPY.stopConfirm}
               </span>
             ) : (
-              'Confirm Cancel?'
+              COPY.stopConfirm
             )}
           </button>
           <button
             type="button"
             onClick={handleKeepRunning}
             disabled={loading}
-            className="min-h-[44px] px-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+            className="min-h-[44px] px-1 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
-            Keep Running
+            {COPY.stopCancel}
           </button>
         </>
       ) : (
@@ -97,9 +104,9 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
             setError(null)
             setConfirming(true)
           }}
-          className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+          className="min-h-[44px] border border-[color:var(--color-vermilion)] bg-[color:var(--color-card)] px-4 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-vermilion)] hover:bg-[color:var(--color-vermilion)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
         >
-          Cancel Run
+          Stop this issue
         </button>
       )}
     </div>

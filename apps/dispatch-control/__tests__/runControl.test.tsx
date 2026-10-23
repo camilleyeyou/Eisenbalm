@@ -61,26 +61,20 @@ function mockQuery(returnValue: unknown) {
 
 // ── STATUS_CLASSES export ─────────────────────────────────────────────────────
 
-import { STATUS_CLASSES } from '../app/admin/runs/_components/RunsTable'
+import { STATUS_WORDS_FOR_RUN } from '../app/admin/runs/_components/RunsTable'
 
-describe('STATUS_CLASSES', () => {
-  // quick 260722-v01 (audit item 9): the "neutral palette" is now expressed
-  // via the app's `var(--color-*)` token system, not literal `neutral-*`
-  // classes — same visual intent (dim/inactive), tokened.
-  // quick 260724-lp1: rewritten to the uniform square-chip recipe (border +
-  // tinted fill) — cancelled stays the neutral/faint variant.
-  it('contains a cancelled entry with neutral (tokened) palette (RUN-04)', () => {
-    expect(STATUS_CLASSES).toHaveProperty('cancelled')
-    expect(STATUS_CLASSES.cancelled).toBe(
-      'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
-    )
+describe('STATUS_WORDS_FOR_RUN', () => {
+  // Plan 56-10: the coloured chip classes are gone; every stored status maps to
+  // one of the six editor status words.
+  it('maps cancelled to Stopped (RUN-04)', () => {
+    expect(STATUS_WORDS_FOR_RUN.cancelled).toBe('Stopped')
   })
 
-  it('contains all pre-existing status entries', () => {
-    expect(STATUS_CLASSES).toHaveProperty('running')
-    expect(STATUS_CLASSES).toHaveProperty('done')
-    expect(STATUS_CLASSES).toHaveProperty('failed')
-    expect(STATUS_CLASSES).toHaveProperty('awaiting-review')
+  it('maps every pre-existing status to a word', () => {
+    expect(STATUS_WORDS_FOR_RUN.running).toBe('Working')
+    expect(STATUS_WORDS_FOR_RUN.done).toBe('Done')
+    expect(STATUS_WORDS_FOR_RUN.failed).toBe('Problem')
+    expect(STATUS_WORDS_FOR_RUN['awaiting-review']).toBe('Waiting for you')
   })
 })
 
@@ -96,35 +90,35 @@ describe('RunControlBar', () => {
     cleanup()
   })
 
-  it('renders "Trigger Run" button when no run is active', () => {
+  it('renders "Start a new issue" button when no run is active', () => {
     mockQuery({ status: 'done', runId: 'run-001' })
     render(<RunControlBar workspace_id="eisenbalm" />)
-    const btn = screen.getByRole('button', { name: /trigger run/i })
+    const btn = screen.getByRole('button', { name: /start a new issue/i })
     expect(btn).toBeDefined()
     // Should NOT be disabled when idle
     expect((btn as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('disables the Trigger Run button when latest run is running', () => {
+  it('disables the Start a new issue button when latest run is running', () => {
     mockQuery({ status: 'running', runId: 'run-002' })
     render(<RunControlBar workspace_id="eisenbalm" />)
-    const btn = screen.getByRole('button', { name: /trigger run/i })
+    const btn = screen.getByRole('button', { name: /start a new issue/i })
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('shows the correct tooltip when a run is in progress', () => {
     mockQuery({ status: 'running', runId: 'run-002' })
     render(<RunControlBar workspace_id="eisenbalm" />)
-    const btn = screen.getByRole('button', { name: /trigger run/i })
+    const btn = screen.getByRole('button', { name: /start a new issue/i })
     expect(btn.getAttribute('title')).toBe(
-      'A run is already in progress. Wait for it to complete or cancel it first.',
+      'An issue is already being written. Wait for it to finish or stop it first.',
     )
   })
 
   it('renders no tooltip when idle', () => {
     mockQuery(null)
     render(<RunControlBar workspace_id="eisenbalm" />)
-    const btn = screen.getByRole('button', { name: /trigger run/i })
+    const btn = screen.getByRole('button', { name: /start a new issue/i })
     expect(btn.getAttribute('title')).toBeNull()
   })
 
@@ -137,10 +131,10 @@ describe('RunControlBar', () => {
   })
 
   // ── Quick 260724-x4b (Fix 4b): post-launch navigation ─────────────────────
-  it('shows an inline "Open Issue N" link after a successful launch', async () => {
+  it('shows an inline "Open issue N" link after a successful launch', async () => {
     ;(useQuery as ReturnType<typeof vi.fn>).mockImplementation(
       (queryRef: string, args: unknown) => {
-        if (queryRef === 'runs:latest') return null // idle — Trigger Run enabled
+        if (queryRef === 'runs:latest') return null // idle — Start a new issue enabled
         if (queryRef === 'pipelineRuns:byRunId') {
           return args === 'skip' ? undefined : { issueNumber: 12 }
         }
@@ -149,8 +143,8 @@ describe('RunControlBar', () => {
     )
 
     render(<RunControlBar workspace_id="eisenbalm" />)
-    fireEvent.click(screen.getByRole('button', { name: /trigger run/i }))
-    fireEvent.click(screen.getByRole('button', { name: /confirm run\?/i }))
+    fireEvent.click(screen.getByRole('button', { name: /start a new issue/i }))
+    fireEvent.click(screen.getByRole('button', { name: /yes, start it/i }))
 
     await waitFor(() => {
       const link = screen.getByRole('link', { name: /open issue 12/i })
@@ -183,7 +177,7 @@ describe('BudgetAlertBanner', () => {
     render(<BudgetAlertBanner workspace_id="eisenbalm" />)
     const alert = screen.getByRole('alert')
     expect(alert).toBeDefined()
-    expect(alert.textContent).toContain('Add capacity or pause automation')
+    expect(alert.textContent).toContain('Raise the limit or pause the automatic start')
   })
 
   it('does not render when MTD is below threshold', () => {
@@ -235,11 +229,11 @@ describe('CancelRunButton', () => {
     cleanup()
   })
 
-  it('renders the Cancel Run button for a running run', () => {
+  it('renders the Stop this issue button for a running run', () => {
     const { container } = render(
       <CancelRunButton runId="run-001" status="running" />,
     )
-    expect(container.textContent).toContain('Cancel Run')
+    expect(container.textContent).toContain('Stop this issue')
   })
 
   it('renders nothing for a cancelled run', () => {
@@ -263,13 +257,13 @@ describe('CancelRunButton', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('shows Confirm Cancel? copy for inline confirm', () => {
+  it('shows the stop confirmation after pressing the button', () => {
     const { container } = render(
       <CancelRunButton runId="run-001" status="running" />,
     )
     // The confirm step copy must be present in the component source (rendered after click)
     // We verify the button text and that the component source contains the confirm copy
-    expect(container.textContent).toContain('Cancel Run')
+    expect(container.textContent).toContain('Stop this issue')
   })
 })
 

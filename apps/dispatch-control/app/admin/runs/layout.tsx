@@ -1,70 +1,61 @@
 'use client'
 /**
- * Run tab shell (Phase 30 D-05; moved under /admin/runs by quick 261021-j83).
+ * Shared shell for the past-issues list and the map page (plan 56-10).
  *
- * Renders the "Runs" / "Graph" tab bar above whichever sub-route is active,
- * so both /admin/runs and /admin/runs/graph share one nav slot.
- * Active tab underlines in cobalt per the 1c token system. Tab mechanics are
- * intentionally minimal — Phase 37 replaces the interior of this shell.
+ * Renders the sub-page slab ("Nothing here is needed to publish this week's
+ * issue.", ghost "Back to behind the scenes") and a plain two-link row. A single
+ * issue page ([runId]) owns its own slab, so this shell adds nothing extra there.
  *
- * quick 260722-tv1: the tab bar is now `sticky top-0` (with an opaque rail
- * background) so it stays visible while a sub-route (e.g. the long Runs
- * table) scrolls underneath it.
- *
- * quick 260722-v01: the shell root is `flex min-h-0 flex-1 flex-col` (was
- * `flex h-full flex-col`) so this shell (and the graph page's `h-full` chain
- * inside it) sizes to the height REMAINING under the dashboard layout's
- * AutoPublishBanner instead of overflowing by the banner's height (audit
- * item 4 — graph × AutoPublishBanner height chain).
- *
- * quick 260722-v01 (audit item 9): tab-label typography migrated
- * `text-sm font-medium` -> `font-[family-name:var(--font-ui)] text-[13px]` —
- * the cobalt active-underline was already tokened, so it's unchanged.
- *
- * quick 260724-lp1: tab labels converted to the uniform underline-tab
- * pattern (mockup 08 `.u-tabs` / mockup 05 `.tabs`) — mono-caps, 3px cobalt
- * bottom border on the active tab. No structural/handler change.
+ * Root stays `flex min-h-0 flex-1 flex-col` so the map page's `h-full` chain
+ * sizes to the space left under the dashboard banner (quick 260722-v01).
  */
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useSelectedLayoutSegment } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { COPY } from '@/lib/editorState'
+import NextStepSlab from '@/components/editor/NextStepSlab'
 
-const TABS = [
-  { label: 'Runs', href: '/admin/runs' },
-  { label: 'Graph', href: '/admin/runs/graph' },
-]
+const LINKS = [
+  { label: 'Every issue', href: '/admin/runs', segment: null },
+  { label: 'How the steps connect', href: '/admin/runs/graph', segment: 'graph' },
+] as const
 
 export default function RunMonitorLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
+  const segment = useSelectedLayoutSegment()
+
+  // A single issue page (segment is its id) brings its own slab and navigation.
+  if (segment !== null && segment !== 'graph') {
+    return <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] px-1">
-        {TABS.map(tab => {
-          // Runs is the exact list or a single run (/admin/runs/<runId>), never
-          // the graph sub-route; Graph owns /admin/runs/graph.
-          const isGraph = pathname === '/admin/runs/graph' || pathname.startsWith('/admin/runs/graph/')
-          const isActive =
-            tab.href === '/admin/runs/graph'
-              ? isGraph
-              : !isGraph && (pathname === tab.href || pathname.startsWith(tab.href + '/'))
+      <div className="shrink-0 pb-4">
+        <NextStepSlab sentence={COPY.subPageSlab} ghost={{ label: COPY.backToBehind, href: '/admin' }} />
+      </div>
+      <nav
+        aria-label="Past issues"
+        className="sticky top-0 z-20 flex shrink-0 items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-rail)] px-1"
+      >
+        {LINKS.map(link => {
+          const isActive = segment === link.segment
           return (
             <Link
-              key={tab.href}
-              href={tab.href}
+              key={link.href}
+              href={link.href}
               className={cn(
-                'inline-flex min-h-[44px] items-center border-b-[3px] px-1 font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[.1em] transition-colors',
+                'inline-flex min-h-[48px] items-center font-[family-name:var(--font-ui)] text-[15px] transition-colors editor-focus',
                 isActive
-                  ? 'border-[color:var(--color-cobalt)] font-semibold text-[color:var(--color-ink)]'
-                  : 'border-transparent text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]',
+                  ? 'font-semibold text-[color:var(--color-ink)] underline'
+                  : 'text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]',
               )}
               aria-current={isActive ? 'page' : undefined}
             >
-              {tab.label}
+              {link.label}
             </Link>
           )
         })}
-      </div>
+      </nav>
       <div className="min-h-0 flex-1">{children}</div>
     </div>
   )

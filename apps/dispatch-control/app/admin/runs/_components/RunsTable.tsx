@@ -1,6 +1,6 @@
 'use client'
 /**
- * Phase 23 — OBS-02: Run history table.
+ * Phase 23 — OBS-02: Past issues table (relabelled for the editor by plan 56-10).
  *
  * Displays all runs for a workspace, newest-first. Each row links to the
  * run detail page at /runs/{runId}. Read-only.
@@ -28,61 +28,131 @@ import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { costTotalsToMap, effectiveRunCostUsd } from '@/lib/costRollup'
-import HelpTip from '@/components/ui/HelpTip'
-import { HELP_COPY } from '@/components/help/helpCopy'
 import { SkeletonLine } from '@/components/ui/Skeleton'
-import { splitStaleRuns } from '@/lib/runLabels'
-import { useRunLabel } from '@/lib/useRunLabel'
+import StatusWord from '@/components/editor/StatusWord'
+import { formatRunLabel, splitStaleRuns } from '@/lib/runLabels'
+import { runStatusWord } from '@/lib/editorState'
+import type { StatusWord as StatusWordName } from '@/lib/nomenclature'
+import { adminRunHref } from '@/lib/issueRouteResolver'
 
 interface RunsTableProps {
   workspace_id: string
 }
 
-function formatTimestamp(ms: number): string {
-  return new Date(ms).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+type Row = {
+  _id: string
+  runId: string
+  startedAt: number
+  status: string
+  cost?: string
+  durationMs?: number
+  triggeredBy?: string
+}
+
+/** Stored status ('done' is a legacy spelling of 'complete') to one of the six words. */
+export function statusWordForRow(status: string): StatusWordName {
+  return runStatusWord({ status: status === 'done' ? 'complete' : status })
+}
+
+/** Every stored status mapped to the six status words (replaces the old coloured chip classes). */
+export const STATUS_WORDS_FOR_RUN: Record<string, StatusWordName> = {
+  running: statusWordForRow('running'),
+  done: statusWordForRow('done'),
+  complete: statusWordForRow('complete'),
+  failed: statusWordForRow('failed'),
+  'awaiting-review': statusWordForRow('awaiting-review'),
+  cancelled: statusWordForRow('cancelled'),
 }
 
 function formatDuration(ms: number | undefined): string {
   if (ms == null) return '—'
-  if (ms < 1000) return `${ms}ms`
+  if (ms < 1000) return 'Under a second'
   const s = Math.round(ms / 1000)
-  if (s < 60) return `${s}s`
+  if (s < 60) return `${s} sec`
   const m = Math.floor(s / 60)
   const rem = s % 60
-  return rem > 0 ? `${m}m ${rem}s` : `${m}m`
+  return rem > 0 ? `${m} min ${rem} sec` : `${m} min`
 }
 
-// quick 260724-lp1 — rewritten to the uniform square-chip recipe (mockup 05
-// `.chip`): 1px matching-hue border + tinted fill, mono-caps label. Failed
-// is the only status with a solid fill (the one chip allowed a solid).
-export const STATUS_CLASSES: Record<string, string> = {
-  running: 'border-[color:var(--color-cobalt)] bg-[color:var(--color-cobalt)]/[0.06] text-[color:var(--color-cobalt)]',
-  done: 'border-[color:var(--color-green)] bg-[color:var(--color-green)]/[0.07] text-[color:var(--color-green)]',
-  failed: 'border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)] text-white',
-  'awaiting-review': 'border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] text-[color:var(--color-marigold-text)]',
-  cancelled: 'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]',
-}
-
-/** Uniform square-chip base classes (mockup 05 `.chip`). */
-const CHIP_BASE =
-  'inline-block border px-2 py-[3px] font-[family-name:var(--font-mono)] text-[9.5px] tracking-[.09em] uppercase whitespace-nowrap'
-
-/** Quick 261022-cr6: plain-word label for a run, linked to its detail page. */
+/** Plain-word label for one issue ("Issue 47 — Charity · Oct 22"), linked to its step-by-step page. */
 function RunLabelCell({ runId, startedAt }: { runId: string; startedAt: number }) {
-  const label = useRunLabel(runId, startedAt)
+  const pipelineRun = useQuery(api.pipelineRuns.byRunId, { runId })
+  const pitch = useQuery(api.pitchLog.selectedByRunId, { runId })
+  const label =
+    pipelineRun === undefined || pitch === undefined
+      ? '…'
+      : formatRunLabel({
+          issueNumber: pipelineRun?.issueNumber ?? null,
+          charityName: pitch?.charityName ?? null,
+          startedAt,
+        })
   return (
     <Link
-      href={`/admin/runs/${runId}`}
-      className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink)] hover:underline"
+      href={adminRunHref(runId)}
+      className="min-h-[48px] inline-flex items-center font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-ink)] hover:underline editor-focus"
     >
-      {label ?? '…'}
+      {label}
     </Link>
+  )
+}
+
+const TH = 'px-4 py-3 font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-ink-soft)]'
+const TD = 'px-4 py-3 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)]'
+
+function IssueRows({ rows, totals }: { rows: Row[]; totals: Map<string, number> }) {
+  return (
+    <table className="w-full font-[family-name:var(--font-ui)] text-[15px]">
+      <thead>
+        <tr className="border-b border-[color:var(--color-faint)] text-left">
+          <th className={TH}>Issue</th>
+          <th className={TH}>Where it stands</th>
+          <th className={TH}>Started by</th>
+          <th className={TH}>Started</th>
+          <th className={TH}>How long</th>
+          <th className={TH}>What it cost</th>
+          <th className="px-4 py-3" />
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((run, i) => {
+          const cost = effectiveRunCostUsd(run.cost, totals.get(run.runId))
+          const isLast = i === rows.length - 1
+          return (
+            <tr
+              key={run._id}
+              className={`hover:bg-[color:var(--color-card-alt)] transition-colors ${isLast ? '' : 'border-b border-[color:var(--color-faint)]'}`}
+            >
+              <td className="px-4 py-1">
+                <RunLabelCell runId={run.runId} startedAt={run.startedAt} />
+              </td>
+              <td className="px-4 py-3">
+                <StatusWord word={statusWordForRow(run.status)} />
+              </td>
+              <td className={TD}>{run.triggeredBy ?? '—'}</td>
+              <td className={TD}>
+                {new Date(run.startedAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </td>
+              <td className={TD}>{formatDuration(run.durationMs)}</td>
+              <td className={TD}>{cost > 0 ? `$${cost.toFixed(2)}` : '—'}</td>
+              <td className="px-4 py-1">
+                <Link
+                  href={adminRunHref(run.runId)}
+                  className="min-h-[48px] inline-flex items-center font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-cobalt)] underline editor-focus"
+                >
+                  See the steps
+                </Link>
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }
 
@@ -91,7 +161,6 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
   // Called unconditionally (before the loading/empty guards below) so the
   // hook order never changes across renders of this component instance.
   const [showAll, setShowAll] = useState(false)
-  const [showOlder, setShowOlder] = useState(false)
   const totalsRows = useQuery(
     api.agentRuns.costTotalsForRuns,
     runs === undefined ? 'skip' : { runIds: runs.slice(0, 100).map(r => r.runId) },
@@ -111,116 +180,40 @@ export default function RunsTable({ workspace_id }: RunsTableProps) {
   if (runs.length === 0) {
     return (
       <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-8 text-center">
-        <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-          No pipeline runs recorded yet. The first run will appear here once the
-          dispatch pipeline is triggered.
+        <p className="font-[family-name:var(--font-body)] text-[17px] text-[color:var(--color-ink-soft)]">
+          No issues yet. Start a new issue and it will be listed here.
         </p>
       </div>
     )
   }
 
-  // runs is already newest-first from the query — the first 50 are the most
-  // recent.
-  // Quick 261022-cr6: unpublished runs older than 14 days sit behind a disclosure.
+  // Newest first from the query. Unfinished issues older than 14 days sit behind a closed fold.
   const { recent, older } = splitStaleRuns(runs, Date.now(), 14)
-  const base = showAll ? recent : recent.slice(0, 50)
-  const visibleRuns = showOlder ? [...base, ...older] : base
+  const visible = showAll ? recent : recent.slice(0, 50)
 
   return (
-    <div className="overflow-x-auto border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
-      <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
-        <thead>
-          <tr className="border-b border-[color:var(--color-faint)] text-left">
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              Issue
-            </th>
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              <span className="flex items-center gap-1">
-                Status
-                <HelpTip text={HELP_COPY.runMonitor.runState} label="Explain run status" />
-              </span>
-            </th>
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              Trigger
-            </th>
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              Triggered By
-            </th>
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              Started
-            </th>
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              Duration
-            </th>
-            <th className="px-4 py-3 font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.12em] text-[color:var(--color-faint)]">
-              Cost
-            </th>
-            <th className="px-4 py-3" />
-          </tr>
-        </thead>
-        <tbody>
-          {visibleRuns.map((run, i) => {
-            const cost = effectiveRunCostUsd(run.cost, totals.get(run.runId))
-            const statusClass =
-              STATUS_CLASSES[run.status] ??
-              'border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]'
-            const isLast = i === visibleRuns.length - 1
-            return (
-              <tr
-                key={run._id}
-                className={`hover:bg-[color:var(--color-card-alt)] transition-colors ${isLast ? '' : 'border-b border-[color:var(--color-faint)]'}`}
-              >
-                <td className="px-4 py-3">
-                  <RunLabelCell runId={run.runId} startedAt={run.startedAt} />
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`${CHIP_BASE} ${statusClass}`}>{run.status}</span>
-                </td>
-                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                  {run.triggerSource}
-                </td>
-                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                  {run.triggeredBy ?? '—'}
-                </td>
-                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                  {formatTimestamp(run.startedAt)}
-                </td>
-                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                  {formatDuration(run.durationMs)}
-                </td>
-                <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                  {cost > 0 ? `$${cost.toFixed(2)}` : '—'}
-                </td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/admin/runs/${run.runId}`}
-                    className="text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] hover:underline text-[12px] font-semibold"
-                  >
-                    View →
-                  </Link>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      {older.length > 0 && !showOlder && (
-        <button
-          type="button"
-          onClick={() => setShowOlder(true)}
-          className="w-full border-t border-[color:var(--color-faint)] px-4 py-3 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
-        >
-          Older runs ({older.length})
-        </button>
-      )}
-      {recent.length > 50 && !showAll && (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          className="w-full border-t border-[color:var(--color-faint)] px-4 py-3 text-[11px] font-medium text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)]"
-        >
-          Show all ({recent.length})
-        </button>
+    <div className="space-y-4">
+      <div className="overflow-x-auto border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
+        <IssueRows rows={visible} totals={totals} />
+        {recent.length > 50 && !showAll && (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="min-h-[48px] w-full border-t border-[color:var(--color-faint)] px-4 py-3 font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-cobalt)] hover:bg-[color:var(--color-card-alt)] editor-focus"
+          >
+            Show every issue ({recent.length})
+          </button>
+        )}
+      </div>
+      {older.length > 0 && (
+        <details className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)]">
+          <summary className="min-h-[48px] cursor-pointer px-4 py-3 font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-ink-soft)]">
+            Older unfinished issues ({older.length})
+          </summary>
+          <div className="overflow-x-auto border-t border-[color:var(--color-faint)]">
+            <IssueRows rows={older} totals={totals} />
+          </div>
+        </details>
       )}
     </div>
   )

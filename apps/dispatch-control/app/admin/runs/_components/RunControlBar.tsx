@@ -2,13 +2,13 @@
 /**
  * Phase 25 (RUN-01) — Runs page header bar.
  *
- * Layout: flex row justify-between. Left: page heading. Right: Trigger Run
+ * Layout: flex row justify-between. Left: heading. Right: Start a new issue
  * button (two-step inline confirm, no modal).
  *
- * Trigger Run logic:
+ * Start logic:
  *   - Reads api.runs.latest to detect a running run.
  *   - When running: button is disabled with a title tooltip.
- *   - When idle: click → "Confirm Run?" + "Cancel" text link → POST /pipeline/run.
+ *   - When idle: click → "Yes, start it" + "Cancel" text link → POST /pipeline/run.
  *   - While POST in flight: Loader2 spinner + aria-busy.
  *
  * Inline confirm pattern (D-12): NO modal. The button label swaps in-place.
@@ -74,37 +74,32 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
 
   return (
     <div className="flex items-end justify-between">
-      <div>
-        <span className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.14em] text-[color:var(--color-cobalt)]">
-          System Workbench
-        </span>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[32px] font-semibold leading-none text-[color:var(--color-ink)]">
-          Runs
-        </h1>
-      </div>
+      <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold leading-tight text-[color:var(--color-ink)]">
+        Every issue
+      </h2>
 
       <div className="flex items-center gap-3">
         {error && (
-          <span className="text-[11px] text-[color:var(--color-vermilion)]">{error}</span>
+          <span className="text-[15px] text-[color:var(--color-vermilion)]">{error}</span>
         )}
 
         {/* Quick 260724-x4b (LD-4b) — post-launch navigation. Never a
             broken link: while the issueNumber is still resolving this
             renders a plain span, only becoming a Link once it's known. */}
         {startedRunId && (
-          <span className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
+          <span className="flex min-h-[44px] items-center font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)]">
             {startedIssueNumber != null ? (
               <>
-                Run started &middot;{' '}
+                Issue started &middot;{' '}
                 <Link
                   href="/"
                   className="ml-1 font-semibold text-[color:var(--color-cobalt)] hover:text-[color:var(--color-cobalt-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cobalt)]"
                 >
-                  Open Issue {startedIssueNumber} &rarr;
+                  Open issue {startedIssueNumber} &rarr;
                 </Link>
               </>
             ) : (
-              'Run started — resolving issue…'
+              'Issue started — finding its number…'
             )}
           </span>
         )}
@@ -117,25 +112,25 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
               onClick={handleConfirm}
               disabled={loading}
               aria-busy={loading}
-              className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+              className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
             >
               {loading ? (
                 <span className="flex items-center gap-1.5">
                   <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                   <span className="sr-only">Loading…</span>
-                  Confirm Run?
+                  Yes, start it
                 </span>
               ) : (
-                'Confirm Run?'
+                'Yes, start it'
               )}
             </button>
             <button
               type="button"
               onClick={handleCancel}
               disabled={loading}
-              className="min-h-[44px] px-1 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+              className="min-h-[44px] px-1 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
             >
-              Cancel
+              Not now
             </button>
           </div>
         ) : (
@@ -148,12 +143,12 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
             disabled={isRunning || loading}
             title={
               isRunning
-                ? 'A run is already in progress. Wait for it to complete or cancel it first.'
+                ? 'An issue is already being written. Wait for it to finish or stop it first.'
                 : undefined
             }
-            className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
+            className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-4 font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-masthead-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1"
           >
-            Trigger Run
+            Start a new issue
           </button>
         )}
       </div>

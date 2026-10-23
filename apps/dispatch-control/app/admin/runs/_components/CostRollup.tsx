@@ -17,10 +17,27 @@
  */
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import { formatRunLabel } from '@/lib/runLabels'
 import { costTotalsToMap, effectiveRunCostUsd, sumEffectiveCost } from '@/lib/costRollup'
 
 interface CostRollupProps {
   workspace_id: string
+}
+
+/** "Issue 47 — Charity · Oct 22" for one cost row. */
+function CostRowLabel({ runId, startedAt }: { runId: string; startedAt: number }) {
+  const pipelineRun = useQuery(api.pipelineRuns.byRunId, { runId })
+  const pitch = useQuery(api.pitchLog.selectedByRunId, { runId })
+  if (pipelineRun === undefined || pitch === undefined) return <>…</>
+  return (
+    <>
+      {formatRunLabel({
+        issueNumber: pipelineRun?.issueNumber ?? null,
+        charityName: pitch?.charityName ?? null,
+        startedAt,
+      })}
+    </>
+  )
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -40,8 +57,8 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
 
   if (runs === undefined) {
     return (
-      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)]">
-        Loading cost data…
+      <div className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-4 font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)]">
+        Loading what the writing cost…
       </div>
     )
   }
@@ -64,26 +81,26 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
   return (
     <details className="border border-[color:var(--color-faint)] bg-[color:var(--color-card)]" open>
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3 select-none">
-        <span className="font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink-soft)]">
-          Spend Summary
+        <span className="font-[family-name:var(--font-ui)] text-[15px] font-semibold text-[color:var(--color-ink-soft)]">
+          What the writing cost
         </span>
-        <span className="text-[11px] text-[color:var(--color-faint)]">click to collapse</span>
+        <span className="text-[15px] text-[color:var(--color-faint)]">press to fold</span>
       </summary>
 
       <div className="border-t border-[color:var(--color-ink)]/10 px-4 pb-4 pt-3">
         {/* Aggregate windows */}
         <div className="mb-4 overflow-x-auto">
-          <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
+          <table className="w-full font-[family-name:var(--font-ui)] text-[15px]">
             <thead>
               <tr className="border-b border-[color:var(--color-ink)]/10 text-left">
-                <th className="pb-2 pr-8 font-medium text-[color:var(--color-ink-soft)] text-[11px] uppercase tracking-wide">
-                  Window
+                <th className="pb-2 pr-8 font-medium text-[color:var(--color-ink-soft)] text-[15px]">
+                  When
                 </th>
-                <th className="pb-2 pr-8 font-medium text-[color:var(--color-ink-soft)] text-[11px] uppercase tracking-wide">
-                  Runs
+                <th className="pb-2 pr-8 font-medium text-[color:var(--color-ink-soft)] text-[15px]">
+                  Issues
                 </th>
-                <th className="pb-2 font-medium text-[color:var(--color-ink-soft)] text-[11px] uppercase tracking-wide">
-                  Total Cost
+                <th className="pb-2 font-medium text-[color:var(--color-ink-soft)] text-[15px]">
+                  What it cost
                 </th>
               </tr>
             </thead>
@@ -113,33 +130,27 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
         {/* Recent per-run costs */}
         {recentWithCost.length > 0 && (
           <div>
-            <p className="mb-2 text-[11px] font-medium text-[color:var(--color-ink-soft)] uppercase tracking-wide">
-              Recent run costs
+            <p className="mb-2 text-[15px] font-medium text-[color:var(--color-ink-soft)] ">
+              Latest issues
             </p>
-            <table className="w-full font-[family-name:var(--font-ui)] text-[13px]">
+            <table className="w-full font-[family-name:var(--font-ui)] text-[15px]">
               <thead>
                 <tr className="border-b border-[color:var(--color-ink)]/10 text-left">
-                  <th className="pb-1 pr-8 font-medium text-[color:var(--color-faint)] text-[11px]">
-                    Run ID
+                  <th className="pb-1 pr-8 font-medium text-[color:var(--color-faint)] text-[15px]">
+                    Issue
                   </th>
-                  <th className="pb-1 pr-8 font-medium text-[color:var(--color-faint)] text-[11px]">
-                    Trigger
-                  </th>
-                  <th className="pb-1 font-medium text-[color:var(--color-faint)] text-[11px]">
-                    Cost
+                  <th className="pb-1 font-medium text-[color:var(--color-faint)] text-[15px]">
+                    What it cost
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {recentWithCost.map(run => (
                   <tr key={run._id} className="border-b border-[color:var(--color-ink)]/[.06]">
-                    <td className="py-1.5 pr-8 font-[family-name:var(--font-mono)] text-[11px] text-[color:var(--color-ink-soft)]">
-                      {run.runId.slice(0, 16)}…
+                    <td className="py-1.5 pr-8 text-[15px] text-[color:var(--color-ink-soft)]">
+                      <CostRowLabel runId={run.runId} startedAt={run.startedAt} />
                     </td>
-                    <td className="py-1.5 pr-8 text-[11px] text-[color:var(--color-ink-soft)]">
-                      {run.triggerSource}
-                    </td>
-                    <td className="py-1.5 text-[11px] font-medium text-[color:var(--color-ink-soft)]">
+                    <td className="py-1.5 text-[15px] font-medium text-[color:var(--color-ink-soft)]">
                       ${effectiveRunCostUsd(run.cost, totals.get(run.runId)).toFixed(2)}
                     </td>
                   </tr>
@@ -150,8 +161,8 @@ export default function CostRollup({ workspace_id }: CostRollupProps) {
         )}
 
         {runs.length === 0 && (
-          <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-faint)]">
-            No runs yet — cost data will appear after the first pipeline run.
+          <p className="font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-faint)]">
+            No issues yet. The cost will appear after the first issue is written.
           </p>
         )}
       </div>

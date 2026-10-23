@@ -1,5 +1,5 @@
 /**
- * quick 260723-4a6 (Task 1) — Run Details skeleton. The old `/run-monitor`
+ * quick 260723-4a6 (Task 1) — Past issues skeleton. The old `/run-monitor`
  * route redirects to `/admin/runs`; this paints instantly during that
  * hop instead of a blank frame.
  */
