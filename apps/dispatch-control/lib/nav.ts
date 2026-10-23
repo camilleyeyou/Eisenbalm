@@ -1,12 +1,23 @@
 /**
- * Single source of truth for the /admin hub (quick 261021-j83).
+ * Navigation single source of truth.
  *
- * The editor area (`/`, `/s/[section]`, `/archive`) has no nav. Everything an
- * operator might need lives behind ONE `Admin` link, as a flat list of plain
- * language items. Finance and Charities are checked weekly, so they come
- * first (client decision D-7). Pages keep their existing internals; only
- * their URL moved under /admin/*.
+ * Phase 56: the editor sees a three-link nav (This week's issue, Past issues,
+ * Behind the scenes) on every page. The seven dials behind "Behind the
+ * scenes" carry plain-word labels; route paths are unchanged. Money and
+ * Charities are checked weekly, so they come first (client decision D-7).
  */
+
+export interface EditorNavItem {
+  label: string
+  href: string
+  match: (pathname: string) => boolean
+}
+
+export const EDITOR_NAV: ReadonlyArray<EditorNavItem> = [
+  { label: "This week's issue", href: '/', match: p => p === '/' || p.startsWith('/s/') },
+  { label: 'Past issues', href: '/archive', match: p => p.startsWith('/archive') },
+  { label: 'Behind the scenes', href: '/admin', match: p => p.startsWith('/admin') },
+]
 
 export interface AdminItem {
   label: string
@@ -18,40 +29,40 @@ export interface AdminItem {
 
 export const ADMIN_ITEMS: ReadonlyArray<AdminItem> = [
   {
-    label: 'Finance',
+    label: 'Money',
     href: '/admin/finance',
-    description: 'Revenue, payouts and model costs',
+    description: 'Sales, money sent to charities, and what the writing costs',
     weekly: true,
   },
   {
     label: 'Charities',
     href: '/admin/charities',
-    description: 'The charity registry and the do-not-use list',
+    description: 'Every charity we know about, and the ones never to use',
     weekly: true,
   },
   {
-    label: 'Runs',
+    label: 'Past issues, step by step',
     href: '/admin/runs',
-    description: 'Every run, why one failed, and restarting it',
+    description: "How each issue was made, and what stopped the ones that didn't finish",
   },
   {
-    label: 'Agent instructions',
+    label: 'What the writers are told',
     href: '/admin/agents',
-    description: 'What each agent is told to do, with version history',
+    description: 'The instructions each writer follows, with earlier versions',
   },
   {
     label: 'Quality tests',
     href: '/admin/tests',
-    description: 'Check that the agents still sound right after a change',
+    description: 'Check the writing still sounds right after a change',
   },
   {
-    label: 'Automation',
+    label: 'Schedule and limits',
     href: '/admin/automation',
-    description: 'Schedule and budget caps',
+    description: 'When a new issue starts and how much it may cost',
   },
   {
     label: 'Settings',
     href: '/admin/settings',
-    description: 'Notifications and audit log',
+    description: 'Emails and the record of who changed what',
   },
 ]

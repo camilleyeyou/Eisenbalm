@@ -8,15 +8,15 @@
 import { describe, it, expect } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { ADMIN_ITEMS } from '../lib/nav'
+import { ADMIN_ITEMS, EDITOR_NAV } from '../lib/nav'
 
 const EXPECTED = [
-  ['Finance', '/admin/finance'],
+  ['Money', '/admin/finance'],
   ['Charities', '/admin/charities'],
-  ['Runs', '/admin/runs'],
-  ['Agent instructions', '/admin/agents'],
+  ['Past issues, step by step', '/admin/runs'],
+  ['What the writers are told', '/admin/agents'],
   ['Quality tests', '/admin/tests'],
-  ['Automation', '/admin/automation'],
+  ['Schedule and limits', '/admin/automation'],
   ['Settings', '/admin/settings'],
 ]
 
@@ -25,12 +25,16 @@ describe('ADMIN_ITEMS', () => {
     expect(ADMIN_ITEMS.map(i => [i.label, i.href])).toEqual(EXPECTED)
   })
 
-  it('Finance and Charities are the weekly items and the only ones', () => {
-    expect(ADMIN_ITEMS.filter(i => i.weekly).map(i => i.label)).toEqual(['Finance', 'Charities'])
+  it('Money and Charities are the weekly items and the only ones', () => {
+    expect(ADMIN_ITEMS.filter(i => i.weekly).map(i => i.label)).toEqual(['Money', 'Charities'])
   })
 
   it('every item has a plain-language description', () => {
     for (const item of ADMIN_ITEMS) expect(item.description.length).toBeGreaterThan(10)
+  })
+
+  it('no description uses run/agent/pipeline/token jargon', () => {
+    for (const item of ADMIN_ITEMS) expect(item.description).not.toMatch(/\b(runs?|agents?|pipeline|tokens?)\b/i)
   })
 
   it('every href has a real page file on disk', () => {
@@ -44,5 +48,23 @@ describe('ADMIN_ITEMS', () => {
     for (const item of ADMIN_ITEMS) {
       expect(item.href).not.toMatch(/run-monitor|prompt-lab|eval-center|\/registry|\/config|\/issues|\/run$/)
     }
+  })
+})
+
+describe('EDITOR_NAV', () => {
+  it('has three links in order', () => {
+    expect(EDITOR_NAV.map(i => [i.label, i.href])).toEqual([
+      ["This week's issue", '/'],
+      ['Past issues', '/archive'],
+      ['Behind the scenes', '/admin'],
+    ])
+  })
+
+  it('match() picks the right link', () => {
+    const cur = (p: string) => EDITOR_NAV.filter(i => i.match(p)).map(i => i.href)
+    expect(cur('/')).toEqual(['/'])
+    expect(cur('/s/founderBio')).toEqual(['/'])
+    expect(cur('/archive')).toEqual(['/archive'])
+    expect(cur('/admin/runs/abc')).toEqual(['/admin'])
   })
 })

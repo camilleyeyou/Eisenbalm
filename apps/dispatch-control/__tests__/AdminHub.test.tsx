@@ -18,7 +18,7 @@ describe('AdminHubPage', () => {
   it('lists Finance and Charities first, tagged as checked weekly', () => {
     render(<AdminHubPage />)
     const links = screen.getAllByRole('link')
-    expect(links[0].textContent).toContain('Finance')
+    expect(links[0].textContent).toContain('Money')
     expect(links[1].textContent).toContain('Charities')
     expect(screen.getAllByText('Checked weekly')).toHaveLength(2)
   })

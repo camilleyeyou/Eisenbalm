@@ -29,6 +29,15 @@
   --color-green: #148a52;
   --color-masthead-text: #f4f2ec;
   --color-masthead-muted: #c9c3b5;
+
+  /* Phase 56 editor tokens (additive; never mutate the values above) */
+  --color-done: #11764a;
+  --color-amber-text: #8a6403;
+  --color-problem: #c43a14;
+  --color-wash: #f7f6f1;
+  --color-current: #fffdf6;
+  --color-line: rgba(23, 20, 14, 0.12);
+  --color-line-strong: rgba(23, 20, 14, 0.2);
 }
 
 /**
@@ -336,3 +345,9 @@ body {
 .section-reader-back-link::before {
   content: '\2190\00A0';
 }
+
+/* Phase 56: editor focus ring + working-dot pulse */
+.editor-focus:focus-visible { outline: 3px solid var(--color-cobalt); outline-offset: 2px; }
+@keyframes editor-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.editor-pulse { animation: editor-pulse 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .editor-pulse { animation: none; } }
