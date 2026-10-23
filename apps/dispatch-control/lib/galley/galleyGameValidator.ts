@@ -84,6 +84,10 @@ export const GAME_HEAD: string = [
   `  * { box-sizing: border-box; }`,
   `  html, body { margin: 0; padding: 0; overflow-x: hidden; max-width: 100%; }`,
   `  canvas, svg, img { max-width: 100% !important; height: auto; }`,
+  // Lets a game lay out to the frame height without scrolling. No
+  // overflow:hidden here - legacy games taller than the frame must still
+  // scroll inside the iframe rather than be clipped.
+  `  html, body { height: 100%; }`,
   `</style>`,
 ].join('\n')
 

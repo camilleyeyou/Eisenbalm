@@ -94,6 +94,9 @@ const draft: DraftResponse = {
   game: {
     headline: 'Play the game',
     description: 'A short interactive.',
+    goal: 'Catch every donation.',
+    howToPlay: ['Tap to catch.', 'Each catch scores.', 'Miss three and lose.'],
+    controls: 'Tap · Space',
     embedCode: '<canvas></canvas><script>let x=1</script>',
   },
   bonus: {
@@ -210,6 +213,15 @@ describe('Galley', () => {
     const iframe = container.querySelector('iframe')
     expect(iframe).not.toBeNull()
     expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts')
+  })
+
+  it('renders the game how-to-play steps from the draft', () => {
+    mockFindings()
+    const { container } = render(<Galley runId="r1" draft={draft} revisionId="rev-1" reloadDraft={noop} onEditSection={noop} />)
+
+    const steps = Array.from(container.querySelectorAll('.galley-game-howto li')).map(li => li.textContent)
+    expect(steps).toEqual(['Tap to catch.', 'Each catch scores.', 'Miss three and lose.'])
+    expect(container.querySelector('.galley-game-howto')?.textContent).toContain('Controls: Tap · Space')
   })
 
   it('renders at least one element with a data-severity attribute reflecting a resolved finding', () => {
