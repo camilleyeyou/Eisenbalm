@@ -15,16 +15,17 @@
  */
 import type { Metadata } from 'next'
 import { getCurrentWorkspace } from '@/lib/workspace'
-import { WORKBENCH_NAV_LABELS } from '@/lib/nomenclature'
 import {
   listEditableAgentKeys,
   groupForAgentKey,
   type EditableAgentGroup,
 } from './_components/agentList'
 import PromptsListClient from './_components/PromptsListClient'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import { COPY } from '@/lib/editorState'
 
 // quick 260723-4a6 (Task 1e): Server Component route — static title.
-export const metadata: Metadata = { title: WORKBENCH_NAV_LABELS.prompt_lab }
+export const metadata: Metadata = { title: 'What the writers are told' }
 
 const GROUP_ORDER: EditableAgentGroup[] = [
   'asset',
@@ -52,15 +53,16 @@ export default async function PromptsPage() {
 
   return (
     <div className="space-y-6">
+      <NextStepSlab
+        sentence={COPY.subPageSlab}
+        ghost={{ label: COPY.backToBehind, href: '/admin' }}
+      />
       <div>
-        <span className="font-[family-name:var(--font-mono)] text-[10px] font-medium uppercase tracking-[.14em] text-[color:var(--color-cobalt)]">
-          System Workbench
-        </span>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[32px] font-semibold leading-none text-[color:var(--color-ink)]">
-          {WORKBENCH_NAV_LABELS.prompt_lab}
+        <h1 className="font-[family-name:var(--font-display)] text-[32px] font-semibold leading-none text-[color:var(--color-ink)]">
+          What the writers are told
         </h1>
         <p className="mt-1.5 font-[family-name:var(--font-body)] text-[14px] italic text-[color:var(--color-ink-soft)]">
-          The standing instructions each agent works from. Edit with care; version everything.
+          The instructions each writer follows. Earlier versions are kept, so any change can be undone.
         </p>
       </div>
 

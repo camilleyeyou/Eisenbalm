@@ -207,7 +207,7 @@ describe('prompt_versions.originRef round-trips through save + render (WBN-04, D
     expect(banner.textContent).toContain(ORIGIN_REF.excerpt)
 
     const link = screen.getByRole('link', {
-      name: /view the motivating output/i,
+      name: /see the writing that led to this change/i,
     }) as HTMLAnchorElement
     expect(link.getAttribute('href')).toBe(`/admin/runs/${ORIGIN_REF.runId}`)
   })

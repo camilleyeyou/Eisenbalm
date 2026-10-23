@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
  * the pipeline. The pipeline base URL comes from NEXT_PUBLIC_PIPELINE_URL.
  *
  * Phase 50 (WBN-04, D-13): also reads the `fromRun` / `section` / `excerpt`
- * query params the inspector's "Improve this agent →" deep link carries
+ * query params the inspector's "Suggest better instructions" deep link carries
  * (`InspectorFooter.tsx`) and assembles them into a `deepLinkOrigin` object
  * for the client view to render "why this draft exists" from and, on save,
  * persist as `prompt_versions.originRef`. All three params must be present
@@ -31,6 +31,8 @@ export const dynamic = 'force-dynamic'
  */
 import { getCurrentWorkspace } from '@/lib/workspace'
 import AgentPromptEditorView from '../_components/AgentPromptEditorView'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import { COPY } from '@/lib/editorState'
 
 interface AgentPromptPageProps {
   params: Promise<{ agentKey: string }>
@@ -47,6 +49,10 @@ export default async function AgentPromptPage({ params, searchParams }: AgentPro
 
   return (
     <div className="space-y-4">
+      <NextStepSlab
+        sentence={COPY.subPageSlab}
+        ghost={{ label: COPY.backToBehind, href: '/admin' }}
+      />
       <AgentPromptEditorView
         workspaceId={workspace_id}
         agentKey={agentKey}

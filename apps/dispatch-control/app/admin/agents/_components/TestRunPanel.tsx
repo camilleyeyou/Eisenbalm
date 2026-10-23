@@ -30,6 +30,7 @@
  * house rules (small circles are the one allowed exception). Same handlers,
  * same state, same testRunClient/scoreClient calls.
  */
+import { plainNameForKey } from '@/lib/editorState'
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
@@ -55,7 +56,7 @@ const MODE_DESCRIPTORS: Record<InputMode, string> = {
   manual:
     'You supply the values — paste a real dossier or candidate list and see what the draft does with it.',
   prior:
-    'The exact input this agent received in a past run. Same input, new prompt — any difference is your edit. The gold standard.',
+    'The exact input this writer received for a past issue. Same input, new instructions — any difference is your edit. The gold standard.',
 }
 
 interface TestRunPanelProps {
@@ -204,7 +205,7 @@ export default function TestRunPanel({
           Test changes
         </h2>
         <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">
-          Tests the unsaved draft — does not run the pipeline
+          Tries the unsaved draft — nothing is published
         </span>
       </div>
 
@@ -212,13 +213,13 @@ export default function TestRunPanel({
       <div
         className="flex flex-wrap gap-2"
         role="radiogroup"
-        aria-label="Test-run input mode"
+        aria-label="How to try it"
       >
         {(
           [
             ['fixture', 'Sample week'],
             ['manual', 'Your own input'],
-            ['prior', 'Replay a real run'],
+            ['prior', 'Replay a past issue'],
           ] as [InputMode, string][]
         ).map(([m, label]) => (
           <button
@@ -245,23 +246,23 @@ export default function TestRunPanel({
       {mode === 'prior' && (
         <div className="space-y-1">
           <label className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
-            Prior run
+            Past issue
           </label>
           <select
             className="w-full border border-[color:var(--color-faint)] px-2 py-1 font-[family-name:var(--font-ui)] text-[12px]"
             value={priorRunId}
             onChange={e => setPriorRunId(e.target.value)}
-            aria-label="Prior run"
+            aria-label="Past issue"
           >
-            <option value="">Select a run…</option>
+            <option value="">Select an issue…</option>
             {(runs ?? []).map(r => (
               <option key={r._id} value={r.runId}>
-                {r.runId} · {r.status}
+                {r.runId}
               </option>
             ))}
           </select>
           <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
-            Loads this run&apos;s real inputs for {agentKey} (prior_run_id).
+            Loads what this writer was given for that issue.
           </p>
         </div>
       )}
@@ -271,7 +272,7 @@ export default function TestRunPanel({
         <div className="space-y-2">
           {allowedVariables.length === 0 ? (
             <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-faint)]">
-              This agent has no template variables — use a fixture or prior run.
+              This writer has no blanks to fill — use the sample week or a past issue.
             </p>
           ) : (
             allowedVariables.map(name => (
@@ -296,8 +297,8 @@ export default function TestRunPanel({
       {mode === 'fixture' && (
         <p className="font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-ink-soft)]">
           Uses the stored sample input for{' '}
-          <span className="font-[family-name:var(--font-mono)]">{agentKey}</span> (no variables or prior
-          run needed).
+          <span className="font-[family-name:var(--font-ui)]">{plainNameForKey(agentKey)}</span> (nothing else
+          to fill in).
         </p>
       )}
 
@@ -308,7 +309,7 @@ export default function TestRunPanel({
           disabled={!canRun}
           className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-2"
         >
-          {running ? 'Running…' : 'Run'}
+          {running ? 'Trying…' : 'Try it'}
         </button>
 
         {/* PRC-08 / D-07: on-demand active-version run (1× default preserved). */}
@@ -320,8 +321,8 @@ export default function TestRunPanel({
             active == null
               ? 'No active version to compare against'
               : result == null
-                ? 'Run the draft first, then compare'
-                : 'Run the active version and compare side-by-side'
+                ? 'Try the draft first, then compare'
+                : 'Try the current version and compare side-by-side'
           }
           className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-card)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[color:var(--color-card-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-2"
         >
@@ -329,7 +330,7 @@ export default function TestRunPanel({
         </button>
       </div>
       <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
-        Runs both on the same input, side by side. Answers: did my edit help?
+        Tries both on the same input, side by side. Answers: did my edit help?
       </p>
 
       {error && (
@@ -345,7 +346,7 @@ export default function TestRunPanel({
           role="alert"
           className="border border-[color:var(--color-vermilion)] bg-[color:var(--color-vermilion)]/[0.08] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-vermilion)]"
         >
-          Compare failed: {compareError}
+          Comparing did not work: {compareError}
         </div>
       )}
 
@@ -442,11 +443,11 @@ function ResultColumn({
           </dd>
           <dt className="text-[color:var(--color-ink-soft)]">Model</dt>
           <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">{result.model}</dd>
-          <dt className="text-[color:var(--color-ink-soft)]">Tokens in</dt>
+          <dt className="text-[color:var(--color-ink-soft)]">Words read</dt>
           <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
             {result.tokens_in.toLocaleString()}
           </dd>
-          <dt className="text-[color:var(--color-ink-soft)]">Tokens out</dt>
+          <dt className="text-[color:var(--color-ink-soft)]">Words written</dt>
           <dd className="font-[family-name:var(--font-mono)] text-[color:var(--color-ink)]">
             {result.tokens_out.toLocaleString()}
           </dd>

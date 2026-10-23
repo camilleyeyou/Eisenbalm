@@ -14,7 +14,7 @@
  *
  * Phase 50 (WBN-04, D-13, docs/API_CONTRACTS.md §4A.2c): renders "why this
  * draft exists" — a stored back-reference to the issue output that
- * motivated a draft, carried in from the inspector's "Improve this agent →"
+ * motivated a draft, carried in from the inspector's "Suggest better instructions"
  * deep link (`deepLinkOrigin`, via [agentKey]/page.tsx's `fromRun`/`section`/
  * `excerpt` query params) or already persisted on the active version
  * (`active.originRef`, once a deep-linked save has landed). The persisted
@@ -28,6 +28,7 @@
  * drift/unsaved/variable badges). Same save/test/history handlers, same
  * effects, same state.
  */
+import { plainNameForKey } from '@/lib/editorState'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from 'convex/react'
@@ -75,7 +76,7 @@ export function OriginBanner({ originRef }: { originRef?: PromptOriginRef }) {
     >
       <p className="font-semibold">why this draft exists</p>
       <p className="mt-1">
-        This draft exists because of {originRef.sectionName} in run{' '}
+        This draft exists because of {originRef.sectionName} in issue{' '}
         <span className="font-[family-name:var(--font-mono)]">{originRef.runId}</span>:{' '}
         <span className="italic">&ldquo;{originRef.excerpt}&rdquo;</span>
       </p>
@@ -83,7 +84,7 @@ export function OriginBanner({ originRef }: { originRef?: PromptOriginRef }) {
         href={`/admin/runs/${encodeURIComponent(originRef.runId)}`}
         className="mt-1 inline-block font-semibold underline underline-offset-2"
       >
-        View the motivating output →
+        See the writing that led to this change →
       </Link>
     </div>
   )
@@ -92,7 +93,7 @@ export function OriginBanner({ originRef }: { originRef?: PromptOriginRef }) {
 interface AgentPromptEditorViewProps {
   workspaceId: string
   agentKey: string
-  /** Phase 50 (WBN-04, D-13) — assembled from the "Improve this agent →" deep-link query params. */
+  /** Phase 50 (WBN-04, D-13) — assembled from the "Suggest better instructions" deep-link query params. */
   deepLinkOrigin?: PromptOriginRef
 }
 
@@ -201,12 +202,12 @@ export default function AgentPromptEditorView({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
         <div>
-          <span className="font-[family-name:var(--font-mono)] text-[9.5px] font-medium uppercase tracking-[.1em] text-[color:var(--color-cobalt)]">
-            Agent instruction
+          <span className="font-[family-name:var(--font-ui)] text-[13px] font-medium text-[color:var(--color-cobalt)]">
+            Instructions
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">
-              {agentKey}
+              {plainNameForKey(agentKey)}
             </h1>
             {allowedVariables.length > 0 ? (
               <span className="font-[family-name:var(--font-mono)] text-[10px] text-[color:var(--color-faint)]">

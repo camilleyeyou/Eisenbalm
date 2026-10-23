@@ -27,7 +27,7 @@ interface PromptSaveDialogProps {
   /**
    * Phase 50 (WBN-04, D-13) — forwarded verbatim to
    * `promptVersions.saveVersion`. Undefined for every save NOT initiated
-   * from the inspector's "Improve this agent →" deep link.
+   * from the inspector's "Suggest better instructions" deep link.
    */
   originRef?: PromptOriginRef
   /** Disable confirm (e.g. when unknown variables block the save). */

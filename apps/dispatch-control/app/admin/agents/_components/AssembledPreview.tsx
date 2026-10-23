@@ -42,13 +42,12 @@ export default function AssembledPreview({ draft, allowed }: AssembledPreviewPro
       className="border border-[color:var(--color-faint)] bg-[color:var(--color-card-alt)]"
     >
       <summary className="cursor-pointer select-none px-4 py-2 font-[family-name:var(--font-ui)] text-[12px] font-medium text-[color:var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)]">
-        What the agent sees
+        What the writer sees
       </summary>
       <div className="border-t border-[color:var(--color-faint)] px-4 py-3">
         <p className="mb-2 font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-faint)]">
-          The final assembled text — your prompt plus filled variables —
-          exactly as the model receives it. Readability aid only — not a
-          test-run.
+          The final assembled text — your instructions plus the filled-in blanks —
+          exactly as the writer receives it. For reading only — it does not try anything out.
         </p>
         <pre className="max-h-72 overflow-auto whitespace-pre-wrap border border-[color:var(--color-faint)] bg-[color:var(--color-card)] p-3 font-[family-name:var(--font-mono)] text-[12px] text-[color:var(--color-ink)]">
           {assembled}

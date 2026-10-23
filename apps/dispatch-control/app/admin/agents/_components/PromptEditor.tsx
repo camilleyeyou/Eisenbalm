@@ -42,7 +42,7 @@ interface PromptEditorProps {
   createdBy?: string
   /**
    * Phase 50 (WBN-04, D-13) — when the host's draft was opened from the
-   * inspector's "Improve this agent →" deep link, forwarded straight
+   * inspector's "Suggest better instructions" deep link, forwarded straight
    * through to `promptVersions.saveVersion` so the "why this draft exists"
    * bridge persists on the new version. Undefined for every ordinary
    * (non-deep-linked) save.
@@ -88,7 +88,7 @@ export function PromptEditor({
                   {`{${name}}`}
                 </span>{' '}
                 {
-                  "isn't supplied by the pipeline — remove it or ask your developer to wire it"
+                  "isn't supplied to the writer — remove it or ask your developer to wire it"
                 }
               </li>
             ))}
@@ -106,7 +106,7 @@ export function PromptEditor({
               className="min-h-[44px] border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] px-3 py-2 font-[family-name:var(--font-ui)] text-[13px] font-semibold text-[color:var(--color-masthead-text)] disabled:opacity-40 disabled:cursor-not-allowed"
               title={
                 hasUnknown
-                  ? `{${unknown[0]}} isn't supplied by the pipeline — remove it or ask your developer to wire it`
+                  ? `{${unknown[0]}} isn't supplied to the writer — remove it or ask your developer to wire it`
                   : 'Save the current draft as a new version'
               }
             >

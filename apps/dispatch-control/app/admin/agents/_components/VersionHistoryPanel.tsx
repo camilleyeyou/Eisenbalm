@@ -130,7 +130,7 @@ export default function VersionHistoryPanel({
         setBlockedVersion(version)
         setBlockedReason(
           result.reason ??
-            'A run is in progress — activation will be available when it finishes.',
+            'An issue is being written — switching versions will be available when it finishes.',
         )
       } else {
         // Clean pass OR a successful override — clear any blocked state.
@@ -197,7 +197,7 @@ export default function VersionHistoryPanel({
           role="status"
           className="border border-[color:var(--color-marigold)] bg-[color:var(--color-marigold)]/[0.1] px-3 py-2 font-[family-name:var(--font-ui)] text-[12px] text-[color:var(--color-marigold-text)]"
         >
-          A run is in progress — activation will be available when it finishes.
+          An issue is being written — switching versions will be available when it finishes.
         </div>
       )}
 
@@ -303,7 +303,7 @@ export default function VersionHistoryPanel({
                       disabled={runInProgress || activating !== null}
                       title={
                         runInProgress
-                          ? 'A run is in progress — activation will be available when it finishes.'
+                          ? 'An issue is being written — switching versions will be available when it finishes.'
                           : activeVersion !== null && v.version < activeVersion
                             ? `Restore v${v.version}`
                             : `Make active v${v.version}`
