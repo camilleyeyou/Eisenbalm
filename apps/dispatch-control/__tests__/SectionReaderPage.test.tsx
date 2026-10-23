@@ -1,554 +1,206 @@
 /**
- * Phase 51 (READ-01, READ-04, READ-05, READ-07, Pitfall 3) — SectionReaderPage
- * Wave 0 scaffold (51-VALIDATION.md).
- *
- * The page under test (`app/(editorial)/s/[section]/page.tsx`) does not
- * exist yet — it lands in plan 51-04. Every spec below is wrapped in a
- * `describe.skip` (the `pageExists` guard) so this file is a clean,
- * always-green no-op until the page appears, at which point these specs
- * start running for real with NO edit needed to this guard. Every `it`
- * name below is quoted so a later plan's `-t "<substring>"` filter resolves
- * to a real spec — see 51-VALIDATION.md's Per-Task Verification Map.
- *
- * Every asserted copy string is quoted verbatim from
- * `51-UI-SPEC.md § Copywriting Contract` — never paraphrased.
- *
- * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
+ * Phase 56-06 -- the rebuilt Section page: slab, breadcrumb, paragraph editing,
+ * Rewrite, read-only published state, exempt parts, prev/next, error and 404.
+ * Runs in jsdom (environmentMatchGlobs *.test.tsx).
  */
-import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react'
-import { useQuery } from 'convex/react'
-import { ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
-import type { DerivationInputs } from '@/lib/derivedState'
-import { InspectorProvider } from '@/components/inspector/InspectorProvider'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import type { DraftResponse } from '@/lib/contentPatchClient'
+import { EDITOR_BANNED_PATTERN, RUN_ID_PATTERN } from '@/lib/editorState'
 
-// Wave 0 (51-VALIDATION): these specs are written BEFORE the page exists.
-// They skip cleanly until app/(editorial)/s/[section]/page.tsx lands (plan
-// 51-04), then run for real with no edit to this guard.
-const PAGE_PATH = path.resolve(__dirname, '../app/(editorial)/s/[section]/page.tsx')
-const pageExists = existsSync(PAGE_PATH)
-const d = pageExists ? describe : describe.skip
-
-// ── Module mocks (mirrors Galley.test.tsx's convex/react harness) ──────────
-
-vi.mock('convex/react', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(() => vi.fn()),
-}))
-
-vi.mock('@clerk/nextjs', () => ({
-  useAuth: () => ({ getToken: vi.fn(async () => 'tok-clerk') }),
-}))
-
-vi.mock('@convex/_generated/api', () => ({
-  api: {
-    qaCorrections: { byRunId: 'qaCorrections:byRunId' },
-    claimChecks: { listByRunId: 'claimChecks:listByRunId', setStatus: 'claimChecks:setStatus' },
-  },
-}))
-
-// Vitest hoists `vi.mock` calls above module-scope `const`/`let`
-// declarations, so any vi.fn() the factories below reference must itself be
-// created inside `vi.hoisted` (the officially supported escape hatch) to
-// avoid a temporal-dead-zone error at collection time.
-const hoisted = vi.hoisted(() => ({
+const h = vi.hoisted(() => ({
   getDraft: vi.fn(),
   patchSection: vi.fn(),
   patchBonus: vi.fn(),
-  acceptFinding: vi.fn(),
-  dismissFinding: vi.fn(),
-  routerPush: vi.fn(),
+  notFound: vi.fn(),
   currentRunOpts: vi.fn(),
 }))
 
-vi.mock('@/lib/contentPatchClient', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/contentPatchClient')>('@/lib/contentPatchClient')
-  return {
-    ...actual,
-    getDraft: hoisted.getDraft,
-    patchSection: hoisted.patchSection,
-    patchBonus: hoisted.patchBonus,
-  }
-})
-
-vi.mock('@/lib/findingsClient', () => {
-  class FindingsError extends Error {
-    constructor(
-      public readonly status: number,
-      public readonly reason: string,
-      message: string,
-    ) {
-      super(message)
-      this.name = 'FindingsError'
-    }
-  }
-  return {
-    FindingsError,
-    acceptFinding: hoisted.acceptFinding,
-    dismissFinding: hoisted.dismissFinding,
-  }
-})
-
+vi.mock('@clerk/nextjs', () => ({ useAuth: () => ({ getToken: vi.fn(async () => 'tok') }) }))
+vi.mock('@/components/ui/ConfirmDialog', () => ({ useConfirm: () => vi.fn(async () => true) }))
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: hoisted.routerPush }),
-  notFound: vi.fn(),
+  useRouter: () => ({ push: vi.fn() }),
+  notFound: h.notFound,
+}))
+vi.mock('@/lib/contentPatchClient', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/contentPatchClient')>('@/lib/contentPatchClient')
+  return { ...actual, getDraft: h.getDraft, patchSection: h.patchSection, patchBonus: h.patchBonus }
+})
+vi.mock('@/components/galley/Galley', () => ({
+  default: ({ sections }: { sections: string[] }) => <div data-testid="galley">galley {sections.join(',')}</div>,
 }))
 
-// ── useCurrentRun mock — mutable `let`, individual tests reassign ──────────
-
-const EMPTY_DERIVATION_INPUTS: DerivationInputs = {
-  issueNumber: 7,
-  runId: 'run_1',
-  issue: null,
-  signOffs: {},
-  claimRows: [],
-  qaFindings: [],
-  pitchRows: [],
-  runStatus: 'complete',
-  runStartedAt: Date.now(),
-  runCompletedAt: Date.now(),
-}
-
-function defaultCurrentRun() {
+function runWith(over: { runStatus?: string; issuePublished?: boolean } = {}) {
+  const runStatus = over.runStatus ?? 'awaiting-review'
   return {
     state: { kind: 'run' as const },
-    runId: 'run_1',
-    issueNumber: 7,
-    title: 'The Quiet Ledger',
-    derivationInputs: EMPTY_DERIVATION_INPUTS,
-    qaFindings: [] as unknown[],
+    runId: 'run-1',
+    issueNumber: 48,
+    title: 'Kumasi Roofless Schools Trust',
+    qaFindings: [],
+    claimRows: [],
+    derivationInputs: {
+      issueNumber: 48,
+      runId: 'run-1',
+      issue: { held: false, published: over.issuePublished ?? false },
+      signOffs: {},
+      claimRows: [],
+      qaFindings: [],
+      pitchRows: [],
+      runStatus,
+      runStartedAt: 1,
+      runCompletedAt: 2,
+    },
   }
 }
 
-// eslint-disable-next-line prefer-const -- individual tests reassign this.
-let mockCurrentRun: Record<string, unknown> = defaultCurrentRun()
-
+// eslint-disable-next-line prefer-const
+let mockRun: Record<string, unknown> = runWith()
 vi.mock('@/lib/useCurrentRun', () => ({
   useCurrentRun: (opts?: unknown) => {
-    hoisted.currentRunOpts(opts)
-    return mockCurrentRun
+    h.currentRunOpts(opts)
+    return mockRun
   },
 }))
 
-// ── Draft fixture ────────────────────────────────────────────────────────
-//
-// originStory carries three paragraph blocks (per the plan's fixture spec);
-// problemStatement is also populated so the "N of 9 sections still need
-// you" nav cases below have somewhere real for their open findings to
-// attach (deriveSectionStates treats a section with no generated content as
-// 'not-generated' regardless of any findings pointed at it).
-
+const para = (text: string) => ({ type: 'paragraph' as const, text })
 const draft: DraftResponse = {
   revisionId: 'rev_1',
   sections: {
-    originStory: {
-      headline: 'A Quiet Beginning',
-      blocks: [
-        { type: 'paragraph', text: 'The founder started in a garage in 1974.' },
-        { type: 'paragraph', text: 'Funding was thin for the first three winters.' },
-        { type: 'paragraph', text: 'A single donor changed everything in 1978.' },
-      ],
+    originStory: { headline: 'A Quiet Beginning', blocks: [para('One.'), para('Two.')], lossy: false },
+    problemStatement: { headline: 'The Problem', blocks: [para('Prob.')], lossy: false },
+    founderBio: {
+      headline: 'The Founder',
+      blocks: [para('Alpha words.'), para('Beta words.'), para('Gamma words.')],
       lossy: false,
     },
-    problemStatement: {
-      headline: 'The Problem',
-      blocks: [{ type: 'paragraph', text: 'Funding dried up after the regional bank closed.' }],
-      lossy: false,
-    },
+    caseStudy: { headline: 'The Case', blocks: [para('Case.')], lossy: false },
   },
-  theme: { fontDisplay: 'Newsreader', fontBody: 'Lora', accentColor: '#9A3324' },
-  game: {
-    headline: 'Play the game',
-    description: 'A short interactive.',
-    embedCode: '<canvas></canvas>',
-  },
-  bonus: {
-    headline: 'Spec Ad',
-    body: [{ type: 'paragraph', text: 'Imagine a world where lip balm funds shelters.' }],
-  },
+  theme: { fontDisplay: 'Newsreader', fontBody: 'Lora' },
+  game: { headline: 'Play', description: 'd', embedCode: '<canvas></canvas>' },
+  bonus: { headline: 'Spec Ad', body: [para('Imagine lip balm.')] },
   bonusType: 'specAd',
-  podcast: { transcript: 'Host: Today we cover an obscure charity.' },
-  conversation: [{ speaker: 'Scout', text: 'Found a promising candidate.' }],
+  podcast: { transcript: 'Host: hello.' },
+  conversation: [{ speaker: 'Scout', text: 'Found one.' }],
 }
 
-/** A group of N QA findings sharing axis + suggestedFix (READ-04 grouping). */
-function groupFindings(n: number) {
-  return Array.from({ length: n }, (_, i) => ({
-    _id: `q${i}`,
-    severity: 'warning' as const,
-    axis: 'precision',
-    sectionName: 'origin_story',
-    reason: 'Vague causal claim.',
-    suggestedFix: 'Be precise about the mechanism.',
-    quotedSpan: i === 0 ? 'in a garage' : `winter ${i}`,
-    blockIndexHint: 0,
-    accepted: false,
-  }))
+async function renderSection(section: string, searchParams?: { run?: string }) {
+  const { default: Page } = await import('../app/(editorial)/s/[section]/page')
+  return render(<Page params={{ section }} searchParams={searchParams} />)
 }
 
 beforeEach(() => {
-  mockCurrentRun = defaultCurrentRun()
-  hoisted.getDraft.mockReset().mockResolvedValue(draft)
-  hoisted.patchSection.mockReset().mockResolvedValue({ revisionId: 'rev_2' })
-  hoisted.patchBonus.mockReset().mockResolvedValue({ revisionId: 'rev_2' })
-  hoisted.acceptFinding.mockReset()
-  hoisted.dismissFinding.mockReset()
-  hoisted.routerPush.mockReset()
-
-  // Plan 51-05 (Rule 3 fix — flagged by 51-04's own SUMMARY): `Galley`'s
-  // internal `useQuery(api.qaCorrections.byRunId)` / `useQuery(api.
-  // claimChecks.listByRunId)` subscriptions are separate from the mocked
-  // `useCurrentRun()` above, so they resolved to `undefined` -> `[]` in
-  // every spec in this file until wired here — `openFirstFinding()` could
-  // never find a mark to click regardless of what the page did. Reads the
-  // SAME `mockCurrentRun.derivationInputs` fixture each test already
-  // configures, mirroring Galley.test.tsx's own `mockImplementation`
-  // pattern (queryRef string comparison against the `@convex/_generated/api`
-  // mock's literal values).
-  ;(useQuery as ReturnType<typeof vi.fn>).mockReset().mockImplementation((queryRef: unknown) => {
-    if (queryRef === 'qaCorrections:byRunId') {
-      return (mockCurrentRun.derivationInputs as DerivationInputs).qaFindings
-    }
-    if (queryRef === 'claimChecks:listByRunId') {
-      return (mockCurrentRun.derivationInputs as DerivationInputs).claimRows
-    }
-    return undefined
-  })
+  mockRun = runWith()
+  h.getDraft.mockReset().mockResolvedValue(draft)
+  h.patchSection.mockReset().mockResolvedValue({ revisionId: 'rev_2' })
+  h.patchBonus.mockReset().mockResolvedValue({ revisionId: 'rev_2' })
+  h.notFound.mockReset()
+  h.currentRunOpts.mockReset()
 })
+afterEach(cleanup)
 
-afterEach(() => {
-  cleanup()
-  vi.restoreAllMocks()
-})
-
-// A non-literal specifier + `@vite-ignore` keeps Vite's import-analysis
-// plugin from statically resolving (and hard-failing the whole file's
-// transform) while the target module doesn't exist yet — this function is
-// only ever called from inside a `d(...)`-gated `it`, which never runs
-// until `pageExists` flips true (plan 51-04), so the actual dynamic import
-// never executes today either way.
-const SECTION_PAGE_SPECIFIER = '../app/(editorial)/s/[section]/page'
-
-async function renderSection(section: string, searchParams?: { run?: string }) {
-  const { default: Page } = await import(/* @vite-ignore */ SECTION_PAGE_SPECIFIER)
-  // Plan 51-04: the page calls useInspector() (the shared "Inspect how this
-  // was made" entry point, Pitfall 3) — a leaf render needs the same
-  // InspectorProvider ancestor the real app/(editorial)/layout.tsx mounts.
-  // ConfirmProvider/CommandPaletteProvider are NOT needed here: the
-  // Inspector panel itself (the only descendant that calls useConfirm) only
-  // mounts once openInspector sets a non-null activeKey, which none of
-  // these specs trigger.
-  return render(
-    <InspectorProvider>
-      <Page params={{ section }} searchParams={searchParams} />
-    </InspectorProvider>,
-  )
-}
-
-/**
- * Quick 261021-7aw — finding marks are gone from this page, so hand-editing is
- * reached through the PassageToolbar ("Edit text") on a text selection. jsdom
- * has no selection layout, so mock window.getSelection like PassageToolbar.test.
- */
-async function openEditorViaSelection(startsWith: string) {
-  const block = (await screen.findByText(new RegExp(startsWith))).closest('[data-block-index]') as HTMLElement
-  vi.spyOn(window, 'getSelection').mockReturnValue({
-    isCollapsed: false,
-    rangeCount: 1,
-    anchorNode: block,
-    toString: () => startsWith,
-    getRangeAt: () => ({
-      getBoundingClientRect: () => ({ top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 }),
-    }),
-  } as unknown as Selection)
-  act(() => {
-    document.dispatchEvent(new Event('selectionchange'))
-  })
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit text' }))
-}
-
-// ── d('renders') — READ-01, D-21 ────────────────────────────────────────────
-
-d('renders', () => {
-  it('renders the section as prose inside a .section-reader wrapper', async () => {
-    const { container } = await renderSection('originStory')
-    await waitFor(() => {
-      expect(container.querySelector('.section-reader')).not.toBeNull()
-    })
-    expect(screen.getByText('The founder started in a garage in 1974.')).toBeDefined()
-  })
-
-  it('renders no side rails, tabs or form fields', async () => {
-    const { container } = await renderSection('originStory')
-    await waitFor(() => {
-      expect(container.querySelector('.section-reader')).not.toBeNull()
-    })
-    expect(container.querySelector('aside')).toBeNull()
-    expect(container.querySelector('form')).toBeNull()
-    expect(container.querySelector('input')).toBeNull()
-  })
-
-  it('renders a skeleton, never a clean-looking page, while loading', async () => {
-    mockCurrentRun = { ...defaultCurrentRun(), state: { kind: 'loading' } }
-    const { container } = await renderSection('originStory')
-    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(screen.queryByText('No open findings in this section.')).toBeNull()
-  })
-
-  it('states plainly what an exempt section is, without implying findings to review', async () => {
-    await renderSection('game')
+describe('Section page', () => {
+  it('shows the slab, breadcrumb, part label and toolbar helper with no primary button', async () => {
+    const { container } = await renderSection('founderBio')
+    await screen.findByText('Alpha words.')
+    expect(screen.getByText('Read this part and change any words you like. Then go back to the issue to publish it.')).toBeTruthy()
+    const back = screen.getAllByText('Back to the issue')[0]!.closest('a')
+    expect(back?.getAttribute('href')).toBe('/')
+    expect(container.querySelectorAll('[data-primary]').length).toBe(0)
+    expect(screen.getByText('Issue 48 · Kumasi Roofless Schools Trust')).toBeTruthy()
+    expect(screen.getByText('Part 3 of 9 · Founder')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('The Founder')
     expect(
-      await screen.findByText(
-        'This section renders as an interactive game — the agents check it as a whole.',
-      ),
-    ).toBeDefined()
-  })
-})
-
-// ── d('earlier issue') — quick 261022-cr6 (client bug 1) ───────────────────
-
-d('earlier issue (?run=)', () => {
-  it('pins useCurrentRun to the run, shows the banner, and keeps ?run= on nav links', async () => {
-    hoisted.currentRunOpts.mockClear()
-    mockCurrentRun = { ...defaultCurrentRun(), runId: 'r9', pinned: true }
-    await renderSection('originStory', { run: 'r9' })
-    await screen.findByText('The founder started in a garage in 1974.')
-
-    expect(hoisted.currentRunOpts).toHaveBeenCalledWith({ runId: 'r9' })
-    expect(screen.getByText(/You're editing an earlier issue/)).toBeDefined()
-    const next = screen.getByText(/Problem/).closest('a')
-    expect(next?.getAttribute('href')).toBe('/s/problemStatement?run=r9')
+      screen.getByText('Click any paragraph to change the words. Changes save to this issue straight away.'),
+    ).toBeTruthy()
+    expect(screen.getByText('Rewrite this part')).toBeTruthy()
   })
 
-  it('without ?run= follows the latest run and shows no banner', async () => {
-    hoisted.currentRunOpts.mockClear()
-    mockCurrentRun = defaultCurrentRun()
-    await renderSection('originStory')
-    await screen.findByText('The founder started in a garage in 1974.')
-
-    expect(hoisted.currentRunOpts).toHaveBeenCalledWith({ runId: null })
-    expect(screen.queryByText(/earlier issue/)).toBeNull()
-    const next = screen.getByText(/Problem/).closest('a')
-    expect(next?.getAttribute('href')).toBe('/s/problemStatement')
-  })
-})
-
-// ── d('nav') — READ-07/READ-08, D-14/D-15/D-16 ──────────────────────────────
-
-d('nav', () => {
-  it('renders only Next on the first section', async () => {
-    await renderSection('originStory')
-    await screen.findByText('The founder started in a garage in 1974.')
-
-    expect(screen.getByText(/Problem/)).toBeDefined()
-    expect(screen.queryByText(/←/)).toBeNull()
+  it('keeps ?run= on the back link when pinned', async () => {
+    await renderSection('founderBio', { run: 'run-1' })
+    await screen.findByText('Alpha words.')
+    expect(h.currentRunOpts).toHaveBeenCalledWith({ runId: 'run-1' })
+    const back = screen.getAllByText('Back to the issue')[0]!.closest('a')
+    expect(back?.getAttribute('href')).toBe('/?run=run-1')
   })
 
-  it('renders only Previous on the last section', async () => {
-    await renderSection('theme')
-
-    expect(await screen.findByText(/←/)).toBeDefined()
-    expect(screen.queryByText(/→/)).toBeNull()
-  })
-
-  it('names the destination section, never a bare Previous/Next', async () => {
-    await renderSection('originStory')
-    await screen.findByText('The founder started in a garage in 1974.')
-
-    expect(screen.queryByText('Next')).toBeNull()
-    expect(screen.queryByText('Previous')).toBeNull()
-  })
-
-  it('quick 261021-ind: renders no "still need you" tally (nothing blocks Publish)', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: {
-        ...EMPTY_DERIVATION_INPUTS,
-        qaFindings: [
-          {
-            _id: 'q1',
-            severity: 'warning',
-            axis: 'precision',
-            sectionName: 'origin_story',
-            reason: 'Vague causal claim.',
-            accepted: false,
-          },
-        ],
+  it('saves an edited paragraph through patchSection with the draft revision', async () => {
+    await renderSection('founderBio')
+    fireEvent.click(await screen.findByText('Beta words.'))
+    fireEvent.change(screen.getByLabelText('Editing paragraph 2'), { target: { value: 'Changed.' } })
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => expect(h.patchSection).toHaveBeenCalled())
+    expect(h.patchSection).toHaveBeenCalledWith(
+      'run-1',
+      'founderBio',
+      {
+        ifRevisionID: 'rev_1',
+        blocks: [para('Alpha words.'), para('Changed.'), para('Gamma words.')],
       },
-    }
-    await renderSection('originStory')
-    await screen.findByText('The founder started in a garage in 1974.')
-    expect(screen.queryByText(/still need you/)).toBeNull()
-    expect(screen.queryByText(/nothing needs you/)).toBeNull()
-  })
-})
-
-// ── d('in-place edit') — READ-05, D-18/D-19, Pitfall 5 (patchBonus branch) ──
-
-d('in-place edit', () => {
-  it('Edit text opens a textarea with Save edit / Cancel edit (no finding needed)', async () => {
-    await renderSection('originStory')
-    await openEditorViaSelection('The founder started')
-
-    expect(screen.getByRole('textbox')).toBeDefined()
-    expect(screen.getByRole('button', { name: 'Save edit' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'Cancel edit' })).toBeDefined()
-  })
-
-  it('quick 261021-ind: Edit text opens the editor at the SELECTED paragraph, not the first', async () => {
-    await renderSection('originStory')
-    await openEditorViaSelection('A single donor')
-
-    const box = screen.getByRole('textbox') as HTMLTextAreaElement
-    expect(box.value).toBe('A single donor changed everything in 1978.')
-    expect(screen.queryByText(/Opened the first paragraph/)).toBeNull()
-  })
-
-  it('Save edit calls patchSection with the current ifRevisionID for a long-read section', async () => {
-    await renderSection('originStory')
-    await openEditorViaSelection('The founder started')
-    fireEvent.click(screen.getByRole('button', { name: 'Save edit' }))
-
-    await waitFor(() => {
-      expect(hoisted.patchSection).toHaveBeenCalledWith(
-        'run_1',
-        'originStory',
-        expect.objectContaining({ ifRevisionID: 'rev_1' }),
-        expect.anything(),
-      )
-    })
-  })
-
-  it('Save edit calls patchBonus, never patchSection, for the bonus section', async () => {
-    await renderSection('bonus')
-    await openEditorViaSelection('Imagine a world')
-    fireEvent.click(screen.getByRole('button', { name: 'Save edit' }))
-
-    await waitFor(() => {
-      expect(hoisted.patchBonus).toHaveBeenCalled()
-    })
-    expect(hoisted.patchSection).not.toHaveBeenCalled()
-  })
-
-  it('a 409 shows the reload-and-retry copy', async () => {
-    hoisted.patchSection.mockRejectedValueOnce(
-      new ContentPatchError(409, 'revision_mismatch', 'Draft changed.'),
+      'tok',
     )
+  })
+
+  it('saves the specAd bonus through patchBonus, never patchSection', async () => {
+    await renderSection('bonus')
+    fireEvent.click(await screen.findByText('Imagine lip balm.'))
+    fireEvent.change(screen.getByLabelText('Editing paragraph 1'), { target: { value: 'New ad.' } })
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => expect(h.patchBonus).toHaveBeenCalled())
+    expect(h.patchBonus.mock.calls[0]![1]).toEqual({ ifRevisionID: 'rev_1', body: [para('New ad.')] })
+    expect(h.patchSection).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['game', 'This part is a small game readers play on the website.'],
+    ['podcast', "This part is the week's audio."],
+  ])('%s has no Rewrite and no pencil, and shows its note', async (id, note) => {
+    await renderSection(id)
+    await screen.findByTestId('galley')
+    expect(screen.queryByText('Rewrite this part')).toBeNull()
+    expect(screen.queryByLabelText('Edit this paragraph')).toBeNull()
+    expect(screen.getByText(new RegExp(note))).toBeTruthy()
+  })
+
+  it('a published issue is read-only with the published helper', async () => {
+    mockRun = runWith({ runStatus: 'complete', issuePublished: true })
+    await renderSection('founderBio')
+    await screen.findByText('Alpha words.')
+    expect(screen.queryByLabelText('Edit this paragraph')).toBeNull()
+    expect(screen.queryByText('Rewrite this part')).toBeNull()
+    expect(screen.getByText('This issue is published. Changes after publishing need a new issue.')).toBeTruthy()
+  })
+
+  it('links to the neighbouring parts', async () => {
+    await renderSection('founderBio')
+    await screen.findByText('Alpha words.')
+    expect(screen.getByText('Previous · Part 2')).toBeTruthy()
+    expect(screen.getByText('Next · Part 4')).toBeTruthy()
+    expect(screen.getByText('All nine parts')).toBeTruthy()
+    cleanup()
     await renderSection('originStory')
-    await openEditorViaSelection('The founder started')
-    fireEvent.click(screen.getByRole('button', { name: 'Save edit' }))
-
-    expect(
-      await screen.findByText(
-        'This passage changed since you started editing — reload and try again.',
-      ),
-    ).toBeDefined()
+    await screen.findByText('One.')
+    expect(screen.queryByText(/^Previous/)).toBeNull()
   })
 
-  it('Cancel edit makes no network call and discards the edit', async () => {
-    const { container } = await renderSection('originStory')
-    await openEditorViaSelection('The founder started')
-
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
-    fireEvent.change(textarea, { target: { value: 'A completely different sentence.' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }))
-
-    expect(hoisted.patchSection).not.toHaveBeenCalled()
-    expect(hoisted.patchBonus).not.toHaveBeenCalled()
-    expect(container.textContent).not.toContain('A completely different sentence.')
-    expect(container.textContent).toContain('The founder started in a garage in 1974.')
-  })
-})
-
-// ── d('no must-fix UX') — quick 261021-7aw ──────────────────────────────────
-
-d('no must-fix UX', () => {
-  it('open findings render no marks, no Accept/Edit myself/Dismiss, no Ask agent to revise', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: { ...EMPTY_DERIVATION_INPUTS, qaFindings: groupFindings(3) },
-    }
-    const { container } = await renderSection('originStory')
-    await screen.findByText('A Quiet Beginning')
-
-    expect(screen.queryAllByRole('button', { name: /qa .* finding/i })).toHaveLength(0)
-    expect(container.querySelector('mark')).toBeNull()
-    expect(screen.queryByText(/Accept suggestion/)).toBeNull()
-    expect(screen.queryByText('Edit myself')).toBeNull()
-    expect(screen.queryByText('Dismiss')).toBeNull()
-    expect(screen.queryByText(/Ask agent to revise/)).toBeNull()
-    expect(screen.queryByText(/No open findings in this section/)).toBeNull()
+  it('shows the plain load error with a reload button', async () => {
+    h.getDraft.mockRejectedValue(new Error('boom'))
+    await renderSection('founderBio')
+    expect(await screen.findByText("This page didn't load. Check your connection, then press Reload this page.")).toBeTruthy()
+    expect(screen.getByText('Reload this page')).toBeTruthy()
   })
 
-  it('the passage toolbar omits Ask agent to revise', async () => {
-    await renderSection('originStory')
-    await openEditorViaSelection('The founder started')
-    expect(screen.queryByRole('button', { name: 'Ask agent to revise' })).toBeNull()
+  it('404s on an unknown part', async () => {
+    await renderSection('nonsense')
+    expect(h.notFound).toHaveBeenCalled()
   })
 
-  it('lists what the agents changed in this section, read-only', async () => {
-    mockCurrentRun = {
-      ...defaultCurrentRun(),
-      derivationInputs: {
-        ...EMPTY_DERIVATION_INPUTS,
-        qaFindings: [
-          {
-            _id: 'a1',
-            severity: 'warning',
-            axis: 'precision',
-            sectionName: 'origin_story',
-            reason: 'Vague.',
-            quotedSpan: 'in a garage',
-            suggestedFix: 'in a rented garage',
-            resolution: 'agent-applied',
-          },
-          {
-            _id: 'a2',
-            severity: 'warning',
-            sectionName: 'problem',
-            reason: 'Other section.',
-            quotedSpan: 'x',
-            suggestedFix: 'y',
-            resolution: 'agent-applied',
-          },
-          { _id: 'a3', severity: 'warning', sectionName: 'origin_story', reason: 'skipped', resolution: 'agent-skipped' },
-        ],
-      } as unknown as DerivationInputs,
-    }
-    await renderSection('originStory')
-    expect(await screen.findByText('What the agents changed (1)')).toBeDefined()
-    expect(screen.getByText('“in a garage” → “in a rented garage”')).toBeDefined()
-    expect(screen.queryByText('Other section.')).toBeNull()
-  })
-
-  it('renders nothing when the agents changed nothing', async () => {
-    await renderSection('originStory')
-    await screen.findByText('A Quiet Beginning')
-    expect(screen.queryByText(/What the agents changed/)).toBeNull()
-  })
-})
-
-// ── d('inspect') — Pitfall 3 (useInspector must run under InspectorProvider) ─
-
-d('inspect', () => {
-  it('renders without throwing useInspector must be used within an InspectorProvider', async () => {
-    // Rendering the real (editorial) layout's provider stack is impractical
-    // from a leaf page test — assert the source wires InspectorProvider
-    // instead (a source-level assertion is acceptable and is explicitly
-    // better than no coverage of a runtime-only failure `tsc` cannot catch).
-    const layoutPath = path.resolve(__dirname, '../app/(editorial)/layout.tsx')
-    if (existsSync(layoutPath)) {
-      const source = readFileSync(layoutPath, 'utf-8')
-      expect(source).toContain('InspectorProvider')
-    } else {
-      // No dedicated (editorial) layout yet — fall back to proving the page
-      // itself renders without throwing "useInspector must be used within
-      // an InspectorProvider" (fails loudly if it does, never silently
-      // passes).
-      await expect(renderSection('originStory')).resolves.toBeDefined()
-    }
+  it('has no jargon, run ids or inspector entry point', async () => {
+    const { container } = await renderSection('founderBio')
+    await screen.findByText('Alpha words.')
+    const text = container.textContent ?? ''
+    expect(text).not.toMatch(EDITOR_BANNED_PATTERN)
+    expect(text).not.toMatch(RUN_ID_PATTERN)
+    expect(text).not.toContain('Inspect how this was made')
   })
 })
