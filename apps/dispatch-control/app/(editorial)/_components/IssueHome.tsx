@@ -24,12 +24,13 @@ import {
   PUBLISH_SLOW_NOTICE,
 } from '@/lib/publishChain'
 import { adminRunHref, sectionEditHref } from '@/lib/issueRouteResolver'
-import { triggerRun, cancelRun } from '@/lib/pipelineControlClient'
+import { triggerRun, cancelRun, discardRun } from '@/lib/pipelineControlClient'
 import { deriveEditorHome, homeSlabCopy, COPY } from '@/lib/editorState'
 import { formatIssueLine } from '@/lib/issueTitle'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { IssueHomeView, type IssueHomeLinks } from './IssueHomeView'
 import HoldStopFooter from './HoldStopFooter'
+import DiscardIssueControl from './DiscardIssueControl'
 
 type DraftState = { runId: string; draft: DraftResponse } | { runId: string; error: string } | undefined
 
@@ -58,6 +59,9 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
   const [actionError, setActionError] = useState<string | null>(null)
   const [footerError, setFooterError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [discardBusy, setDiscardBusy] = useState(false)
+  const [discardPending, setDiscardPending] = useState(false)
+  const [discardError, setDiscardError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [live, setLive] = useState<string | null>(null)
@@ -205,6 +209,31 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
     }
   }, [cr.runId, getToken])
 
+  const discardIssue = useCallback(async () => {
+    if (!cr.runId) return
+    setDiscardError(null)
+    setDiscardBusy(true)
+    try {
+      const r = await discardRun(cr.runId, await getToken())
+      if (r.discardRequested) setDiscardPending(true)
+      if (held === true && n != null) {
+        try {
+          await reopenMutation({ workspace_id: DEFAULT_WORKSPACE_ID, issueNumber: n })
+        } catch {
+          // best effort: a reused number re-shows Release on Home
+        }
+      }
+    } catch (e) {
+      setDiscardError(e instanceof Error && e.message.includes('(409)') ? COPY.discardIssuePublished : COPY.discardIssueFailed)
+    } finally {
+      setDiscardBusy(false)
+    }
+  }, [cr.runId, getToken, held, n, reopenMutation])
+
+  useEffect(() => {
+    if (vm.state === 'stopped') setDiscardPending(false)
+  }, [vm.state])
+
   const onPrimary = async () => {
     if (latch.current) return
     setActionError(null)
@@ -303,6 +332,23 @@ export default function IssueHome({ runId = null }: { runId?: string | null }) {
   } else if (vm.state === 'ready' || vm.state === 'ready-collab') {
     footerEl = (
       <HoldStopFooter mode="hold" onHold={() => void onHold()} busy={false} issueLabel={issueLabel} error={footerError} />
+    )
+  }
+
+  const showDiscard =
+    ['writing', 'checking', 'stuck', 'ready', 'ready-collab', 'held'].includes(vm.state) && runId == null
+  if (showDiscard) {
+    footerEl = (
+      <>
+        {footerEl}
+        <DiscardIssueControl
+          onDiscard={() => void discardIssue()}
+          issueLabel={issueLabel}
+          busy={discardBusy}
+          pending={discardPending}
+          error={discardError}
+        />
+      </>
     )
   }
 

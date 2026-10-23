@@ -647,6 +647,17 @@ export const COPY = {
   discardBody: "Your changes to this paragraph haven't been saved.",
   discardConfirm: 'Leave without saving',
   discardCancel: 'Keep editing',
+  discardIssueButton: 'Discard this issue',
+  discardIssueExplanation:
+    "Doesn't make sense? Discarding deletes everything written for this issue. Nothing reaches readers, and the next issue you start keeps the same number.",
+  discardIssueConfirmTitle: 'Discard {issue}?',
+  discardIssueConfirmBody:
+    'Everything the writers wrote for it is deleted for good. Nothing reached readers. The next issue you start will be {issue} again.',
+  discardIssueConfirm: 'Discard it',
+  discardIssueCancel: 'Keep this issue',
+  discardIssuePending: 'Discarding {issue}. This can take a minute while the writers stop.',
+  discardIssueFailed: "That didn't go through. Press Discard this issue again.",
+  discardIssuePublished: "This issue was published, so it can't be discarded.",
   holdButton: 'Hold this issue',
   stopButton: 'Stop writing this issue',
   releaseButton: 'Release this issue',

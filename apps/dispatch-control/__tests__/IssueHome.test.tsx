@@ -12,6 +12,7 @@ const hoisted = vi.hoisted(() => ({
   publishChain: vi.fn(),
   triggerRun: vi.fn(),
   cancelRun: vi.fn(),
+  discardRun: vi.fn(),
   confirm: vi.fn(),
   replace: vi.fn(),
   hold: vi.fn(),
@@ -47,6 +48,7 @@ vi.mock('@/lib/publishChain', async () => {
 vi.mock('@/lib/pipelineControlClient', () => ({
   triggerRun: hoisted.triggerRun,
   cancelRun: hoisted.cancelRun,
+  discardRun: hoisted.discardRun,
 }))
 vi.mock('@/components/ui/ConfirmDialog', () => ({ useConfirm: () => hoisted.confirm }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: hoisted.replace }) }))
@@ -112,6 +114,7 @@ beforeEach(() => {
   hoisted.getDraft.mockResolvedValue(cleanDraft())
   hoisted.triggerRun.mockResolvedValue({ runId: 'run_2' })
   hoisted.cancelRun.mockResolvedValue({ stopped: true })
+  hoisted.discardRun.mockResolvedValue({ runId: 'run_1', discarded: true })
   hoisted.confirm.mockResolvedValue(true)
   hoisted.hold.mockResolvedValue(undefined)
   hoisted.reopen.mockResolvedValue(undefined)
@@ -284,5 +287,71 @@ describe('pinned past issues', () => {
     await screen.findByText('The nine parts')
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href') ?? '')
     expect(hrefs.some((h) => h.includes('?run=run_1'))).toBe(true)
+  })
+})
+
+describe('discard this issue', () => {
+  const DISCARD = 'Discard this issue'
+
+  it('is offered when ready, held and writing, with one primary button', async () => {
+    render(<IssueHome />)
+    expect(await screen.findByRole('button', { name: DISCARD })).toBeTruthy()
+    expect(document.querySelectorAll('[data-primary]').length).toBe(1)
+    cleanup()
+    mockCurrentRun = currentRun({}, { issue: { held: true, published: false } })
+    render(<IssueHome />)
+    expect(await screen.findByRole('button', { name: DISCARD })).toBeTruthy()
+    cleanup()
+    mockCurrentRun = currentRun({}, { runStatus: 'running' })
+    hoisted.getDraft.mockRejectedValue(new Error('no draft'))
+    render(<IssueHome />)
+    expect(await screen.findByRole('button', { name: DISCARD })).toBeTruthy()
+  })
+
+  it('is absent when published or stopped', async () => {
+    mockCurrentRun = currentRun({}, { issue: { held: false, published: true } })
+    render(<IssueHome />)
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByRole('button', { name: DISCARD })).toBeNull()
+    cleanup()
+    mockCurrentRun = currentRun({}, { runStatus: 'cancelled' })
+    render(<IssueHome />)
+    await screen.findByRole('button', { name: 'Start a new issue' })
+    expect(screen.queryByRole('button', { name: DISCARD })).toBeNull()
+  })
+
+  it('confirms, discards, and releases a hold', async () => {
+    mockCurrentRun = currentRun({}, { issue: { held: true, published: false } })
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: DISCARD }))
+    await waitFor(() => expect(hoisted.discardRun).toHaveBeenCalledTimes(1))
+    expect(hoisted.discardRun.mock.calls[0]![0]).toBe('run_1')
+    await waitFor(() => expect(hoisted.reopen).toHaveBeenCalledWith({ workspace_id: expect.anything(), issueNumber: 7 }))
+  })
+
+  it('a declined confirm does nothing', async () => {
+    hoisted.confirm.mockResolvedValue(false)
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: DISCARD }))
+    await waitFor(() => expect(hoisted.confirm).toHaveBeenCalled())
+    expect(hoisted.discardRun).not.toHaveBeenCalled()
+  })
+
+  it('409 shows the published sentence; other errors the try-again sentence', async () => {
+    hoisted.discardRun.mockRejectedValueOnce(new Error('discard-run failed (409): {"reason":"published"}'))
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: DISCARD }))
+    expect((await screen.findByRole('alert')).textContent).toBe("This issue was published, so it can't be discarded.")
+    hoisted.discardRun.mockRejectedValueOnce(new Error('discard-run failed (502): boom'))
+    fireEvent.click(screen.getByRole('button', { name: DISCARD }))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain("didn't go through"))
+    expect(screen.getByRole('alert').textContent).not.toContain('502')
+  })
+
+  it('discardRequested shows the pending line', async () => {
+    hoisted.discardRun.mockResolvedValueOnce({ runId: 'run_1', discardRequested: true })
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: DISCARD }))
+    expect((await screen.findByRole('status')).textContent).toContain('Discarding Issue 7')
   })
 })

@@ -175,6 +175,42 @@ export async function cancelRun(
   return (await res.json()) as CancelRunResult
 }
 
+export interface DiscardRunResult {
+  runId: string
+  discarded?: boolean
+  discardRequested?: boolean
+  status?: string
+}
+
+/**
+ * Discard the current unpublished issue (POST /runs/{id}/discard).
+ * 409 means the issue was published; any non-2xx throws.
+ */
+export async function discardRun(
+  runId: string,
+  token: string | null,
+): Promise<DiscardRunResult> {
+  const res = await fetch(
+    `${pipelineBaseUrl()}/runs/${encodeURIComponent(runId)}/discard`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  )
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(
+      `discard-run failed (${res.status})${detail ? `: ${detail}` : ''}`,
+    )
+  }
+
+  return (await res.json()) as DiscardRunResult
+}
+
 /**
  * Re-run a single section-writer agent for an existing run.
  *
