@@ -13,7 +13,7 @@ export default function Stations({ stations }: { stations: StationVM[] }) {
         const first = i === 0
         const last = i === stations.length - 1
         // left connector: previous station complete; right connector: this station complete
-        const leftOn = !first && stations[i - 1].complete
+        const leftOn = !first && stations[i - 1]?.complete === true
         const rightOn = !last && s.complete
         const afterCurrent = currentIdx >= 0 && i > currentIdx
         return (
