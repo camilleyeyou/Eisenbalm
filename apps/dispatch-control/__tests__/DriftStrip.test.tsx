@@ -84,7 +84,7 @@ describe('DriftStrip (MON-04)', () => {
     render(<DriftStrip currentRunId="current" workspace_id="ws-1" />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('drift-trailing-count').textContent).toBe('vs last 8')
+      expect(screen.getByTestId('drift-trailing-count').textContent).toBe('compared with the last 8 issues')
     })
 
     // Current cost $2.00 vs trailing mean $1.00 -> +100% over.
@@ -113,7 +113,7 @@ describe('DriftStrip (MON-04)', () => {
     render(<DriftStrip currentRunId="current" workspace_id="ws-1" />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('drift-trailing-count').textContent).toBe('vs last 3')
+      expect(screen.getByTestId('drift-trailing-count').textContent).toBe('compared with the last 3 issues')
     })
   })
 
@@ -134,7 +134,7 @@ describe('DriftStrip (MON-04)', () => {
     render(<DriftStrip currentRunId="current" workspace_id="ws-1" />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('drift-trailing-count').textContent).toBe('vs last 1')
+      expect(screen.getByTestId('drift-trailing-count').textContent).toBe('compared with the last 1 issue')
     })
   })
 

@@ -158,7 +158,7 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
     <div
       className="flex flex-wrap items-center gap-6 border-b border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-4 py-2 text-[11px]"
       role="region"
-      aria-label="Run drift vs trailing completed runs"
+      aria-label="How the writing quality changed compared with recent issues"
     >
       {/* Per-row data fetchers — render nothing, Research Pattern 1. */}
       {trailingRunIds.map(id => (
@@ -166,7 +166,7 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
       ))}
       <DriftBar runId={currentRunId} onData={handleCurrentData} />
 
-      <span className="font-semibold uppercase tracking-wide text-[color:var(--color-ink-soft)]">Drift</span>
+      <span className="font-semibold text-[color:var(--color-ink-soft)]">Change in quality</span>
 
       <span data-testid="drift-cost" className="text-[color:var(--color-ink-soft)]">
         Cost: {currentData?.cost != null ? `$${currentData.cost.toFixed(4)}` : '—'}
@@ -188,7 +188,7 @@ export function DriftStrip({ currentRunId, workspace_id }: DriftStripProps) {
       </span>
 
       <span data-testid="drift-trailing-count" className="text-[color:var(--color-faint)]">
-        vs last {trailingRunIds.length}
+        compared with the last {trailingRunIds.length} {trailingRunIds.length === 1 ? "issue" : "issues"}
       </span>
     </div>
   )

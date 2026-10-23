@@ -6,7 +6,7 @@
  *     the real PIPELINE_EDGES topology (not mocked — exercises the actual
  *     graph shape).
  *   - Human-readable summary renders by default; raw JSON <pre> only after
- *     the "Show raw JSON" toggle is activated.
+ *     the "Show technical details" toggle is activated.
  *   - The ~2000-char truncation note is present.
  *   - Degrades gracefully for a node with no upstream (calibrator) and a
  *     node with many downstream (verify_research fan-out) — renders what
@@ -14,6 +14,7 @@
  *
  * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
  */
+import { plainNameForKey } from '../lib/editorState'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { useQuery } from 'convex/react'
@@ -72,13 +73,13 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
       />,
     )
 
-    expect(screen.getByText(/From \(upstream output\)/i)).toBeDefined()
-    expect(screen.getByText(/This step \(input → output\)/i)).toBeDefined()
-    expect(screen.getByText(/To \(downstream input\)/i)).toBeDefined()
+    expect(screen.getByText(/What came in from before/i)).toBeDefined()
+    expect(screen.getByText(/This step \(given → wrote\)/i)).toBeDefined()
+    expect(screen.getByText(/What goes on to the next step/i)).toBeDefined()
 
     // Upstream/downstream keys resolved from the real PIPELINE_EDGES topology.
-    expect(screen.getByText('editor_gate_1', { exact: false })).toBeDefined()
-    expect(screen.getByText('researcher', { exact: false })).toBeDefined()
+    expect(screen.getAllByText("Choose this week's charity", { exact: false }).length).toBeGreaterThan(0)
+    expect(screen.getByText('Research the charity', { exact: false })).toBeDefined()
   })
 
   it('renders a human-readable summary by default and reveals raw JSON only after the toggle', () => {
@@ -102,12 +103,12 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
     // Human-readable summary (key name) is present.
     expect(screen.getByText(/uniqueInputKey/)).toBeDefined()
 
-    const toggle = screen.getByRole('button', { name: /show raw json/i })
+    const toggle = screen.getByRole('button', { name: /show technical details/i })
     fireEvent.click(toggle)
 
     // Raw JSON now visible.
     expect(screen.getByText(/"uniqueInputKey"/)).toBeDefined()
-    expect(screen.getByRole('button', { name: /hide raw json/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /hide technical details/i })).toBeDefined()
   })
 
   it('shows the ~2000-char truncation note', () => {
@@ -121,7 +122,7 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
       />,
     )
 
-    expect(screen.getByText(/truncated.*2000/i)).toBeDefined()
+    expect(screen.getByText(/cut short/i)).toBeDefined()
   })
 
   it('degrades gracefully for a node with no upstream (calibrator)', () => {
@@ -137,10 +138,10 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
       ),
     ).not.toThrow()
 
-    expect(screen.getByText(/No upstream step/i)).toBeDefined()
+    expect(screen.getByText(/Nothing comes before/i)).toBeDefined()
     // calibrator's one downstream is now signal_editor (Phase 50 D-08
     // topology reconciliation — calibrator -> signal_editor -> scout).
-    expect(screen.getByText('signal_editor', { exact: false })).toBeDefined()
+    expect(screen.getByText('Find story leads', { exact: false })).toBeDefined()
   })
 
   it('degrades gracefully for a node with many downstream (verify_research fan-out)', () => {
@@ -158,7 +159,7 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
 
     // All 7 section-writer fan-out targets render under "To".
     for (const writerKey of SECTION_WRITER_KEYS) {
-      expect(screen.getByText(writerKey, { exact: false })).toBeDefined()
+      expect(screen.getAllByText(plainNameForKey(writerKey), { exact: false }).length).toBeDefined()
     }
   })
 
@@ -173,7 +174,7 @@ describe('AgentIOPanel handoff inspector (MON-02)', () => {
       />,
     )
 
-    expect(screen.queryByText(/From \(upstream output\)/i)).toBeNull()
-    expect(screen.getByText(/No run active/i)).toBeDefined()
+    expect(screen.queryByText(/What came in from before/i)).toBeNull()
+    expect(screen.getByText(/Nothing is running/i)).toBeDefined()
   })
 })

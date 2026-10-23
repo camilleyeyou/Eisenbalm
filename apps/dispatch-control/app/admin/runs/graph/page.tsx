@@ -34,10 +34,10 @@ export default async function GraphPage() {
       {/* Page header — outside the graph canvas so it doesn't overlap nodes */}
       <div className="px-6 pt-6 pb-3 shrink-0">
         <h1 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[color:var(--color-ink)]">
-          Pipeline Graph
+          How the steps connect
         </h1>
         <p className="font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] mt-0.5">
-          Live agent DAG — click a node to inspect I/O and cost.
+          Click a step to see what it was given, what it wrote, and what it cost.
         </p>
       </div>
 

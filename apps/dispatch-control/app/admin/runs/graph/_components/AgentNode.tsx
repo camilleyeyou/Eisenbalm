@@ -42,6 +42,8 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { plainNameForKey } from '@/lib/editorState'
+import StatusWord from '@/components/editor/StatusWord'
 
 export type AgentNodeData = {
   agentKey: string
@@ -115,12 +117,12 @@ export function AgentNode({ data, selected }: NodeProps) {
           <Loader2 className="h-3 w-3 animate-spin text-[color:var(--color-cobalt)] shrink-0" />
         )}
         <span className="text-xs font-semibold text-[color:var(--color-ink)] truncate">
-          {nodeData.displayName}
+          {plainNameForKey(nodeData.agentKey)}
         </span>
         {/* Suppressed badge — only shown at rest when agent is disabled */}
         {isDisabled && !nodeData.status && (
-          <span className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]">
-            suppressed
+          <span className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium bg-[color:var(--color-card-alt)] text-[color:var(--color-ink-soft)]">
+            Switched off
           </span>
         )}
         {/* Retry chip (Phase 37, D-03) — only rendered when retryCount > 0 */}
@@ -128,7 +130,7 @@ export function AgentNode({ data, selected }: NodeProps) {
           <span
             data-testid="retry-chip"
             className="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-medium bg-[color:var(--color-marigold)]/20 text-[color:var(--color-marigold-text)]"
-            title="Retry count"
+            title="Times retried"
           >
             ↻{nodeData.retryCount}
           </span>
@@ -139,11 +141,6 @@ export function AgentNode({ data, selected }: NodeProps) {
           is primary; the agent/mechanism name renders as its own small,
           dashed caption line so it never crowds the title on the narrow
           w-44 node. */}
-      {nodeData.agentLabel && (
-        <p className="mt-0.5 text-[10px] text-[color:var(--color-faint)] truncate">
-          — {nodeData.agentLabel}
-        </p>
-      )}
 
       {/* Model chip — config-at-rest field (Research Pitfall 7), renders
           UNCONDITIONALLY so an executed node shows model alongside
@@ -171,7 +168,7 @@ export function AgentNode({ data, selected }: NodeProps) {
 
       {/* Queued label */}
       {nodeData.status === 'queued' && (
-        <p className="mt-1 text-[10px] text-[color:var(--color-faint)]">queued</p>
+        <p className="mt-1 text-[10px]"><StatusWord word="Not yet" /></p>
       )}
 
       {/* Target handle */}

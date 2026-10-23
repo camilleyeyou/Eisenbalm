@@ -91,9 +91,9 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
     try {
       const token = await getToken()
       await rerollAgent(runId, sectionName, token)
-      setMessage(`Re-run queued for ${SECTION_LABELS[sectionName] ?? sectionName}.`)
+      setMessage(`Rewrite started for ${SECTION_LABELS[sectionName] ?? sectionName}.`)
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Re-run failed.')
+      setMessage(e instanceof Error ? e.message : 'The rewrite did not start.')
     } finally {
       setBusyKey(null)
     }
@@ -103,10 +103,10 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
     <div
       className="p-3 space-y-2 bg-[color:var(--color-card)] border border-[color:var(--color-faint)] shadow-lg"
       role="region"
-      aria-label="7-writers strength expansion"
+      aria-label="How strong each part is"
     >
-      <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide">
-        Section Strength
+      <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)]">
+        How strong each part is
       </h3>
 
       {rows === undefined ? (
@@ -156,32 +156,32 @@ export function WriterExpansion({ runId, runStatus }: WriterExpansionProps) {
                 >
                   <span
                     className="rounded bg-[color:var(--color-vermilion)]/15 px-1 text-[color:var(--color-vermilion)]"
-                    title="Open errors"
+                    title="Problems to fix"
                   >
                     E:{flags.error}
                   </span>
                   <span
                     className="rounded bg-[color:var(--color-marigold)]/20 px-1 text-[color:var(--color-marigold-text)]"
-                    title="Open warnings"
+                    title="Things to check"
                   >
                     W:{flags.warning}
                   </span>
                   <span
                     className="rounded bg-[color:var(--color-card-alt)] px-1 text-[color:var(--color-ink-soft)]"
-                    title="Open info"
+                    title="Notes"
                   >
                     I:{flags.info}
                   </span>
                 </span>
 
-                {/* Re-run (D-06) — disabled while the run is still going. */}
+                {/* Rewrite (D-06) — disabled while the run is still going. */}
                 <button
                   type="button"
                   onClick={() => handleRerun(sectionName)}
                   disabled={isRunning || busyKey === sectionName}
                   className="shrink-0 rounded border border-[color:var(--color-faint)] bg-[color:var(--color-card)] px-2 py-1 text-[10px] font-medium text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-card-alt)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {busyKey === sectionName ? 'Re-running…' : 'Re-run'}
+                  {busyKey === sectionName ? 'Rewriting…' : 'Rewrite'}
                 </button>
               </li>
             )

@@ -50,7 +50,7 @@ describe('AgentNode', () => {
 
     render(<AgentNode {...props} />)
 
-    expect(screen.getByText('Scout')).toBeDefined()
+    expect(screen.getByText('Find charities worth writing about')).toBeDefined()
     expect(screen.getByText('claude-3-haiku')).toBeDefined()
   })
 
@@ -69,7 +69,7 @@ describe('AgentNode', () => {
     expect(outer.className).toContain('opacity-40')
 
     // Suppressed badge must be visible
-    expect(screen.getByText('suppressed')).toBeDefined()
+    expect(screen.getByText('Switched off')).toBeDefined()
   })
 
   it("renders cost string '$0.0420' when status='done' and costUsd=0.042", () => {

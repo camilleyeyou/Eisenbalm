@@ -34,6 +34,7 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import { plainNameForKey, runStatusWord } from '@/lib/editorState'
 import { PIPELINE_EDGES } from './pipelineTopology'
 import { summarize, prettyJson } from '@/lib/inspector/summarize'
 
@@ -74,11 +75,11 @@ function HandoffNode({
   const payload = useQuery(api.agentRuns.payloadByRunIdAgentKey, { runId, agentKey })
 
   if (payload === undefined) {
-    return <p className="text-[10px] text-[color:var(--color-faint)]">{agentKey}: loading…</p>
+    return <p className="text-[10px] text-[color:var(--color-faint)]">{plainNameForKey(agentKey)}: loading…</p>
   }
   if (payload === null) {
     return (
-      <p className="text-[10px] text-[color:var(--color-faint)]">{agentKey}: no snapshot stored</p>
+      <p className="text-[10px] text-[color:var(--color-faint)]">{plainNameForKey(agentKey)}: nothing saved</p>
     )
   }
 
@@ -88,7 +89,7 @@ function HandoffNode({
 
   return (
     <p className="text-[10px] text-[color:var(--color-ink-soft)]">
-      <span className="font-medium text-[color:var(--color-ink-soft)]">{agentKey}</span>
+      <span className="font-medium text-[color:var(--color-ink-soft)]">{plainNameForKey(agentKey)}</span>
       {': '}
       {summarize(snapshot ?? undefined)}
     </p>
@@ -125,17 +126,17 @@ export function AgentIOPanel({
     <div
       className="absolute right-0 top-0 h-full w-96 bg-[color:var(--color-card)] border-l border-[color:var(--color-faint)] shadow-lg overflow-y-auto z-10 flex flex-col"
       role="complementary"
-      aria-label={`${agentKey} details`}
+      aria-label={`${plainNameForKey(agentKey)} details`}
     >
       {/* Panel header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--color-faint)] sticky top-0 bg-[color:var(--color-card)] z-10">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[color:var(--color-ink)]">
-            {agentKey}
+            {plainNameForKey(agentKey)}
           </h2>
           {agentRun && (
             <p className="text-[11px] text-[color:var(--color-ink-soft)] mt-0.5">
-              {agentRun.status}
+              {runStatusWord({ status: agentRun.status === 'done' ? 'complete' : agentRun.status })}
               {agentRun.costUsd != null && ` · $${agentRun.costUsd.toFixed(4)}`}
               {agentRun.durationMs != null &&
                 ` · ${(agentRun.durationMs / 1000).toFixed(1)}s`}
@@ -155,8 +156,8 @@ export function AgentIOPanel({
         {/* Error block — shown when status=failed */}
         {agentRun?.status === 'failed' && agentRun.error && (
           <section>
-            <h3 className="text-[11px] font-semibold text-[color:var(--color-vermilion)] uppercase tracking-wide mb-1">
-              Error
+            <h3 className="text-[11px] font-semibold text-[color:var(--color-vermilion)] mb-1">
+              What went wrong
             </h3>
             <pre className="text-[11px] bg-[color:var(--color-vermilion)]/10 border border-[color:var(--color-vermilion)]/40 rounded p-2 whitespace-pre-wrap break-words text-[color:var(--color-vermilion)]">
               {agentRun.error}
@@ -167,8 +168,8 @@ export function AgentIOPanel({
         {/* Cost + token metrics */}
         {agentRun && (
           <section>
-            <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-              Metrics
+            <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] mb-1">
+              Numbers
             </h3>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
               <dt className="text-[color:var(--color-ink-soft)]">Cost</dt>
@@ -183,11 +184,11 @@ export function AgentIOPanel({
                   ? `${(agentRun.durationMs / 1000).toFixed(1)}s`
                   : '—'}
               </dd>
-              <dt className="text-[color:var(--color-ink-soft)]">Tokens in</dt>
+              <dt className="text-[color:var(--color-ink-soft)]">Words read</dt>
               <dd className="text-[color:var(--color-ink)]">
                 {agentRun.tokensIn?.toLocaleString() ?? '—'}
               </dd>
-              <dt className="text-[color:var(--color-ink-soft)]">Tokens out</dt>
+              <dt className="text-[color:var(--color-ink-soft)]">Words written</dt>
               <dd className="text-[color:var(--color-ink)]">
                 {agentRun.tokensOut?.toLocaleString() ?? '—'}
               </dd>
@@ -198,7 +199,7 @@ export function AgentIOPanel({
         {/* No run active */}
         {!runId && (
           <p className="text-[11px] text-[color:var(--color-faint)]">
-            No run active. Start a run to see I/O snapshots.
+            Nothing is running. Start an issue to see what each step was given.
           </p>
         )}
 
@@ -207,13 +208,13 @@ export function AgentIOPanel({
             the toggle below. */}
         {runId && (
           <section>
-            <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-              Handoff
+            <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] mb-1">
+              How it was passed on
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] uppercase tracking-wide mb-1">
-                  From (upstream output)
+                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] mb-1">
+                  What came in from before
                 </p>
                 {upstreamKeys.length > 0 ? (
                   <div className="space-y-1">
@@ -223,20 +224,20 @@ export function AgentIOPanel({
                   </div>
                 ) : (
                   <p className="text-[10px] text-[color:var(--color-faint)]">
-                    No upstream step (start of pipeline)
+                    Nothing comes before this step
                   </p>
                 )}
               </div>
 
               <div>
-                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] uppercase tracking-wide mb-1">
-                  This step (input → output)
+                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] mb-1">
+                  This step (given → wrote)
                 </p>
                 {payload === undefined ? (
                   <p className="text-[10px] text-[color:var(--color-faint)]">Loading…</p>
                 ) : payload === null ? (
                   <p className="text-[10px] text-[color:var(--color-faint)]">
-                    No I/O snapshot stored for this agent in this run.
+                    Nothing was saved for this step in this issue.
                   </p>
                 ) : (
                   <p className="text-[10px] text-[color:var(--color-ink-soft)]">
@@ -248,8 +249,8 @@ export function AgentIOPanel({
               </div>
 
               <div>
-                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] uppercase tracking-wide mb-1">
-                  To (downstream input)
+                <p className="text-[10px] font-semibold text-[color:var(--color-faint)] mb-1">
+                  What goes on to the next step
                 </p>
                 {downstreamKeys.length > 0 ? (
                   <div className="space-y-1">
@@ -259,14 +260,14 @@ export function AgentIOPanel({
                   </div>
                 ) : (
                   <p className="text-[10px] text-[color:var(--color-faint)]">
-                    No downstream step (end of pipeline)
+                    Nothing comes after this step
                   </p>
                 )}
               </div>
             </div>
 
             <p className="mt-3 text-[9px] italic text-[color:var(--color-faint)]">
-              Snapshots truncated to ~2000 characters.
+              Long text is cut short here.
             </p>
 
             <button
@@ -274,7 +275,7 @@ export function AgentIOPanel({
               onClick={() => setShowRawJson(v => !v)}
               className="mt-2 text-[10px] font-medium text-[color:var(--color-ink-soft)] underline hover:text-[color:var(--color-ink)]"
             >
-              {showRawJson ? 'Hide raw JSON' : 'Show raw JSON'}
+              {showRawJson ? 'Hide technical details' : 'Show technical details'}
             </button>
           </section>
         )}
@@ -284,8 +285,8 @@ export function AgentIOPanel({
         {showRawJson && payload !== undefined && payload !== null && (
           <>
             <section>
-              <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-                Input Snapshot (raw)
+              <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] mb-1">
+                What it was given (raw)
               </h3>
               <pre className="text-[10px] bg-[color:var(--color-card-alt)] border border-[color:var(--color-faint)] rounded p-2 whitespace-pre-wrap break-words text-[color:var(--color-ink-soft)] max-h-64 overflow-y-auto">
                 {prettyJson(payload.inputSnapshot ?? undefined)}
@@ -293,8 +294,8 @@ export function AgentIOPanel({
             </section>
 
             <section>
-              <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] uppercase tracking-wide mb-1">
-                Output Snapshot (raw)
+              <h3 className="text-[11px] font-semibold text-[color:var(--color-ink-soft)] mb-1">
+                What it wrote (raw)
               </h3>
               <pre className="text-[10px] bg-[color:var(--color-card-alt)] border border-[color:var(--color-faint)] rounded p-2 whitespace-pre-wrap break-words text-[color:var(--color-ink-soft)] max-h-64 overflow-y-auto">
                 {prettyJson(payload.outputSnapshot ?? undefined)}

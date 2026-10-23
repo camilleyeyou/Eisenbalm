@@ -59,7 +59,7 @@ describe('WriterExpansion (MON-03)', () => {
       expect(screen.getByTestId(`flag-counts-${section}`)).toBeDefined()
     }
     // 6 re-run buttons — one per section.
-    expect(screen.getAllByRole('button', { name: /re-run/i })).toHaveLength(
+    expect(screen.getAllByRole('button', { name: /^rewrite$/i })).toHaveLength(
       WRITER_SECTIONS.length,
     )
   })
@@ -94,11 +94,11 @@ describe('WriterExpansion (MON-03)', () => {
     expect(screen.getByTestId('strength-score-game').textContent).toBe('100')
   })
 
-  it('calls rerollAgent with the sectionName as agentKey when Re-run is clicked', async () => {
+  it('calls rerollAgent with the sectionName as agentKey when Rewrite is clicked', async () => {
     mockRows([])
     render(<WriterExpansion runId="run-1" runStatus="complete" />)
 
-    const buttons = screen.getAllByRole('button', { name: /re-run/i })
+    const buttons = screen.getAllByRole('button', { name: /^rewrite$/i })
     // First button corresponds to WRITER_SECTIONS[0] === 'origin_story'.
     fireEvent.click(buttons[0])
 
@@ -111,7 +111,7 @@ describe('WriterExpansion (MON-03)', () => {
     mockRows([])
     render(<WriterExpansion runId="run-1" runStatus="running" />)
 
-    const buttons = screen.getAllByRole('button', { name: /re-run/i })
+    const buttons = screen.getAllByRole('button', { name: /^rewrite$/i })
     for (const button of buttons) {
       expect(button.hasAttribute('disabled')).toBe(true)
     }
