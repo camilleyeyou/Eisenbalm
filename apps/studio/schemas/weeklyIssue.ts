@@ -240,6 +240,26 @@ export default defineType({
           description: 'One sentence explaining what the game does',
         }),
         defineField({
+          name: 'goal',
+          title: 'Goal (one sentence)',
+          type: 'string',
+          description: 'What the player does to win. Shown as the first line of "How to play".',
+        }),
+        defineField({
+          name: 'howToPlay',
+          title: 'How to play (2–3 steps)',
+          type: 'array',
+          of: [{ type: 'string' }],
+          validation: Rule => Rule.max(3),
+          description: 'Short imperative steps, one action per step. Rendered as a numbered list beside the game.',
+        }),
+        defineField({
+          name: 'controls',
+          title: 'Controls',
+          type: 'string',
+          description: 'Touch and keyboard input in a few words, e.g. "Tap · Space".',
+        }),
+        defineField({
           name: 'embedCode',
           title: 'Embed Code',
           type: 'text',

@@ -207,6 +207,9 @@ export type WeeklyIssue = {
   game?: {
     headline: string;
     description?: string;
+    goal?: string;
+    howToPlay?: Array<string>;
+    controls?: string;
     embedCode: string;
   };
   bonus?: {
