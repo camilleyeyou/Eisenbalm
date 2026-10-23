@@ -29,6 +29,30 @@ describe('GameSlot band', () => {
     expect(getByRole('button', { name: 'Play Wheel Fix' })).not.toBeNull()
   })
 
+  it('renders the How to play panel from goal / howToPlay / controls', () => {
+    const { container, getByText } = render(<GameSlot game={fullIssue.game!} runId={null} />)
+    expect(getByText('How to play')).not.toBeNull()
+    expect(getByText('Fix 10 wheels before the shop closes.')).not.toBeNull()
+    const steps = Array.from(container.querySelectorAll('.d-game-steps li')).map((li) => li.textContent)
+    expect(steps).toEqual(['Tap a wobbling wheel.', 'Hold until the bar fills.', 'Miss three and the shop closes.'])
+    const kbds = Array.from(container.querySelectorAll('kbd')).map((k) => k.textContent)
+    expect(kbds).toEqual(['Tap', 'Space'])
+  })
+
+  it('renders legacy games (no instruction fields) without a How to play block', () => {
+    const { goal: _g, howToPlay: _h, controls: _c, ...legacy } = fullIssue.game!
+    void _g; void _h; void _c
+    const { container, queryByText, getByRole } = render(<GameSlot game={legacy} runId={null} />)
+    expect(queryByText('How to play')).toBeNull()
+    expect(container.querySelector('iframe')).not.toBeNull()
+    expect(getByRole('button', { name: 'Play Wheel Fix' })).not.toBeNull()
+  })
+
+  it('nests the iframe inside .d-game-frame inside .d-game-stage', () => {
+    const { container } = render(<GameSlot game={fullIssue.game!} runId={null} />)
+    expect(container.querySelector('.d-game-stage > .d-game-frame > iframe')).not.toBeNull()
+  })
+
   it('falls back (no iframe) when the validator rejects', () => {
     const game = { ...fullIssue.game!, embedCode: '<html><script src="https://evil.example"></script></html>' }
     const { container } = render(<GameSlot game={game} runId={null} />)

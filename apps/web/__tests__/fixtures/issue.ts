@@ -90,6 +90,9 @@ export const fullIssue: FullIssue = {
   },
   game: {
     headline: 'Wheel Fix',
+    goal: 'Fix 10 wheels before the shop closes.',
+    howToPlay: ['Tap a wobbling wheel.', 'Hold until the bar fills.', 'Miss three and the shop closes.'],
+    controls: 'Tap · Space',
     description: 'Repair the wheel.',
     embedCode: '<!doctype html><html><body><canvas></canvas></body></html>',
   },

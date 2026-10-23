@@ -72,6 +72,7 @@ export const QUERY_ISSUE_BY_SLUG = groq`
 
     game {
       headline,
+      goal, howToPlay, controls,
       description,
       embedCode,
     },
@@ -247,6 +248,7 @@ export const QUERY_ISSUE_PREVIEW_BY_SLUG = groq`
 
     game {
       headline,
+      goal, howToPlay, controls,
       description,
       embedCode,
     },

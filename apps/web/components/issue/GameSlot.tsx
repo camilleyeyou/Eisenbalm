@@ -12,7 +12,11 @@
  *   Play button: aria-label="Play {game.headline}" (icon-only button)
  *
  * The iframe is mounted on load as a live preview. Play restarts it (remount
- * via key) and focuses it.
+ * via key), scrolls the stage into view and focuses it. An optional Full screen
+ * toggle fullscreens the parent-page stage div only (the iframe is untouched).
+ *
+ * How to play: goal / howToPlay / controls are additive Sanity fields; legacy
+ * issues without them render exactly as before.
  *
  * runId prop preserved for Stage B GAM-05.
  *
@@ -42,11 +46,47 @@ export function GameSlot({ game, runId }: GameSlotProps) {
   const reportedRef = useRef(false)
   const [runKey, setRunKey] = useState(0)
   const frameRef = useRef<HTMLIFrameElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const [fullscreenOk, setFullscreenOk] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // After a restart, move focus into the game.
+  const goal = game?.goal?.trim() ?? ''
+  const controls = game?.controls?.trim() ?? ''
+  const steps = (game?.howToPlay ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 3)
+  const hasInstructions = Boolean(goal) || steps.length > 0 || Boolean(controls)
+  const splitTokens = controls
+    .split(/\s*(?:·|\/|,|\bor\b)\s*/i)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const controlTokens = splitTokens.length > 0 ? splitTokens : controls ? [controls] : []
+
+  function play() {
+    setRunKey((k) => k + 1)
+  }
+
+  // After a restart, bring the stage into view and move focus into the game.
   useEffect(() => {
-    if (runKey > 0) frameRef.current?.focus()
+    if (runKey === 0) return
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    stageRef.current?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+    frameRef.current?.focus({ preventScroll: true })
   }, [runKey])
+
+  // Full screen is feature-detected (absent in jsdom and on iPhone Safari).
+  useEffect(() => {
+    setFullscreenOk(Boolean(document.fullscreenEnabled))
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.()?.catch?.(() => {})
+    } else {
+      stageRef.current?.requestFullscreen?.()?.catch?.(() => {})
+    }
+  }
 
   // Run the validator once per render. Pure function — no I/O.
   const validation = game?.embedCode
@@ -85,38 +125,69 @@ export function GameSlot({ game, runId }: GameSlotProps) {
       title={game?.headline ?? null}
     >
       <div className="d-game-grid">
-        <div className="d-game-copy">
+        <aside className="d-game-copy">
           {game?.description && <p className="d-body d-game-desc">{game.description}</p>}
+          {hasInstructions && (
+            <div className="d-game-howto" role="group" aria-labelledby="game-howto-title">
+              <p id="game-howto-title" className="d-eyebrow d-game-howto-title">How to play</p>
+              {goal && <p className="d-game-goal">{goal}</p>}
+              {steps.length > 0 && (
+                <ol className="d-game-steps">
+                  {steps.map((step, i) => <li key={i}>{step}</li>)}
+                </ol>
+              )}
+              {controls && (
+                <p className="d-game-controls">
+                  <span className="d-label">Controls</span>
+                  {controlTokens.map((t) => <kbd key={t}>{t}</kbd>)}
+                </p>
+              )}
+            </div>
+          )}
           {srcdoc && (
-            <button
-              type="button"
-              className="d-pill d-game-play"
-              aria-label={`Play ${game?.headline ?? 'the game'}`}
-              onClick={() => setRunKey((k) => k + 1)}
-            >
-              ▶ Play {game?.headline}
-            </button>
+            <div className="d-game-actions">
+              <button
+                type="button"
+                className="d-pill d-game-play"
+                aria-label={`Play ${game?.headline ?? 'the game'}`}
+                onClick={play}
+              >
+                ▶ Play {game?.headline}
+              </button>
+              {fullscreenOk && (
+                <button
+                  type="button"
+                  className="d-pill d-game-full"
+                  onClick={toggleFullscreen}
+                  aria-pressed={isFullscreen}
+                >
+                  {isFullscreen ? 'Exit full screen' : 'Full screen'}
+                </button>
+              )}
+            </div>
           )}
-        </div>
-        <div className="d-game-frame">
-          {srcdoc ? (
-            // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
-            // game-sandbox.test.ts is the source-scan tripwire.
-            // Do NOT add any other sandbox tokens here.
-            <iframe
-              key={runKey}
-              ref={frameRef}
-              sandbox="allow-scripts"
-              srcDoc={srcdoc}
-              title={game?.headline ?? 'Game'}
-              loading="lazy"
-            />
-          ) : game?.embedCode ? (
-            // Validator rejected embedCode: show fallback
-            <GameFallback />
-          ) : (
-            <p className="d-body d-game-desc">Game coming soon.</p>
-          )}
+        </aside>
+        <div className="d-game-stage" ref={stageRef}>
+          <div className="d-game-frame">
+            {srcdoc ? (
+              // SECURITY (GAM-01, GAM-03): allow-scripts ONLY.
+              // game-sandbox.test.ts is the source-scan tripwire.
+              // Do NOT add any other sandbox tokens here.
+              <iframe
+                key={runKey}
+                ref={frameRef}
+                sandbox="allow-scripts"
+                srcDoc={srcdoc}
+                title={game?.headline ?? 'Game'}
+                loading="lazy"
+              />
+            ) : game?.embedCode ? (
+              // Validator rejected embedCode: show fallback
+              <GameFallback />
+            ) : (
+              <p className="d-body d-game-desc">Game coming soon.</p>
+            )}
+          </div>
         </div>
       </div>
     </NumberedSection>

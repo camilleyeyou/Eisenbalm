@@ -98,6 +98,9 @@ export type IssueCaseStudy = {
 
 export type IssueGame = {
   headline: string
+  goal?: string | null
+  howToPlay?: string[] | null
+  controls?: string | null
   description: string | null
   embedCode: string
 } | null

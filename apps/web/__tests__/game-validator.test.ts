@@ -110,6 +110,12 @@ describe('game-validator', () => {
       expect(out).toContain('max-width: 100%')
     })
 
+    it('sizes html/body to the frame height without forcing overflow hidden', () => {
+      const out = injectGameHead(sampleDoc)
+      expect(out).toContain('height: 100%')
+      expect(out).not.toMatch(/overflow:\s*hidden/)
+    })
+
     it('prepends the head injection (Pitfall 4 — never relies on <head> match)', () => {
       // The function must put its injection BEFORE the user document
       // so the CSP applies even when LLM HTML lacks a <head>.
