@@ -1,21 +1,17 @@
 'use client'
 /**
- * Quick 261021-j83 — `/archive`: data wrapper for the editorial archive.
- * One `listWithTitles` subscription; held rows keep Release (HeldIssueRow);
- * the old "verification record" disclosure (facts cleared / voice approved
- * by) was dropped: sign-offs no longer exist, so every row would read blank.
- * No start/create panels: the front door owns the single Start button.
+ * Phase 56-07 — `/archive`: data wrapper. Joins issues.listWithTitles with
+ * runs.listRecentForWorkspace on the client (no Convex change). Old
+ * /issues/:n redirects arrive as ?issue=N and forward to that issue.
  */
 import { use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { DEFAULT_WORKSPACE_ID } from '@/lib/workspace'
-import { useCurrentRun } from '@/lib/useCurrentRun'
+import { deriveArchiveRows } from '@/lib/editorState'
 import { issueOpenHref, parseIssueNumber } from '@/lib/issueRouteResolver'
-import { relativeWeekLabel } from '@/lib/issueTitle'
-import HeldIssueRow from '../_components/HeldIssueRow'
-import { ArchiveBody, type ArchiveRow } from './_components/ArchiveBody'
+import { ArchiveBody } from './_components/ArchiveBody'
 
 interface ArchiveSearchParams {
   issue?: string | string[]
@@ -23,6 +19,12 @@ interface ArchiveSearchParams {
 
 function isThenable<T>(value: unknown): value is Promise<T> {
   return typeof value === 'object' && value !== null && typeof (value as { then?: unknown }).then === 'function'
+}
+
+function websiteUrlFor(publishedUrl: string | null | undefined): string | null {
+  const base = process.env.NEXT_PUBLIC_WEB_PREVIEW_BASE
+  if (!base || !publishedUrl) return null
+  return `${base.replace(/\/$/, '')}${publishedUrl}`
 }
 
 export default function ArchivePage({
@@ -35,68 +37,37 @@ export default function ArchivePage({
     : (searchParams ?? {})
   const issueParam = typeof resolved.issue === 'string' ? parseIssueNumber(resolved.issue) : null
   const router = useRouter()
-  const run = useCurrentRun()
-  const issuesList = useQuery(api.issues.listWithTitles, { workspace_id: DEFAULT_WORKSPACE_ID })
+  const issues = useQuery(api.issues.listWithTitles, { workspace_id: DEFAULT_WORKSPACE_ID })
+  const runs = useQuery(api.runs.listRecentForWorkspace, { workspace_id: DEFAULT_WORKSPACE_ID })
+  const latest = useQuery(api.runs.latest, { workspace_id: DEFAULT_WORKSPACE_ID })
+  const currentRunId = latest?.runId ?? null
 
-  const now = Date.now()
-  const rows: ArchiveRow[] = (issuesList ?? []).map(issue => ({
-    issueNumber: issue.issueNumber,
-    title: issue.title,
-    dek: issue.held ? (issue.heldReason ?? '') : issue.runId === null ? '' : (issue.subtitle ?? ''),
-    hasDrafts: issue.hasDrafts,
-    runId: issue.runId,
-    published: issue.published,
-    held: issue.held,
-    relativeWeek: relativeWeekLabel(issue.runStartedAt ?? issue.publishedAt ?? issue.createdAt, now),
-  }))
+  const rows =
+    issues === undefined
+      ? undefined
+      : deriveArchiveRows({
+          issues: issues.map((i) => ({
+            issueNumber: i.issueNumber,
+            title: i.title,
+            published: i.published,
+            runId: i.runId,
+            publishedAt: i.publishedAt,
+            runStartedAt: i.runStartedAt,
+            scheduledFor: i.scheduledFor,
+            slug: i.published ? `issue-${i.issueNumber}` : null,
+          })),
+          runs,
+          currentRunId,
+        })
 
-  // Old /issues/N links land here as ?issue=N and forward to the issue.
-  const target = issueParam != null && issuesList ? issuesList.find(i => i.issueNumber === issueParam) : undefined
-  const forwardHref = target?.runId && run.state.kind !== 'loading' ? issueOpenHref(target.runId, run.runId) : null
+  const target =
+    issueParam != null && rows
+      ? [...rows.listed, ...rows.unfinished].find((r) => r.issueNumber === issueParam)
+      : undefined
+  const forwardHref = target && latest !== undefined ? issueOpenHref(target.runId, currentRunId) : null
   useEffect(() => {
     if (forwardHref) router.replace(forwardHref)
   }, [forwardHref, router])
 
-  const issueNote =
-    issueParam == null || !issuesList
-      ? null
-      : !target
-        ? `Issue ${issueParam} was not found.`
-        : !target.runId
-          ? `Issue ${issueParam} has no draft to open yet.`
-          : null
-
-  const heldIssues = (issuesList ?? []).filter(i => i.held && !i.published)
-
-  const heldSlot =
-    heldIssues.length > 0 ? (
-      <div className="mt-2 flex flex-col gap-1 border-t border-[color:var(--color-ink)]/[.08] pt-2">
-        <span className="font-[family-name:var(--font-ui)] text-[10.5px] uppercase tracking-[.06em] text-[color:var(--color-faint)]">
-          Reopen
-        </span>
-        {heldIssues.slice(0, 8).map(issue => (
-          <HeldIssueRow key={issue._id} issue={issue} />
-        ))}
-        {heldIssues.length > 8 && (
-          <p className="font-[family-name:var(--font-ui)] text-[11px] text-[color:var(--color-ink-soft)]">
-            +{heldIssues.length - 8} more held
-          </p>
-        )}
-      </div>
-    ) : undefined
-
-  return (
-    <>
-      {issueNote && (
-        <p role="status" className="mx-auto max-w-[1100px] px-6 pt-4 text-[13px] text-[color:var(--color-ink-soft)]">
-          {issueNote}
-        </p>
-      )}
-      <ArchiveBody
-        rows={rows}
-        currentIssueNumber={run.issueNumber}
-        heldSlot={heldSlot}
-      />
-    </>
-  )
+  return <ArchiveBody rows={rows} currentRunId={currentRunId} websiteUrlFor={websiteUrlFor} />
 }
