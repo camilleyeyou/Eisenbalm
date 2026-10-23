@@ -50,7 +50,7 @@ export default function HoldStopFooter({ mode, onHold, onStop, busy, issueLabel,
           {mode === 'hold' ? COPY.holdButton : COPY.stopButton}
         </button>
         {error ? (
-          <p role="alert" className="font-[family-name:var(--font-ui)] text-[16px] text-[color:var(--color-ink)]">
+          <p role="alert" className="font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink)]">
             {error}
           </p>
         ) : null}

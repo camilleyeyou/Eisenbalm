@@ -6,9 +6,6 @@ import { describe, it, expect } from 'vitest'
 import {
   deriveHomeSections,
   deriveHomeFooter,
-  rowNote,
-  RUNNING_SENTENCE,
-  READY_SENTENCE,
   type HomeSectionsResult,
 } from '../lib/homeSections'
 import { EDITABLE_SECTIONS } from '../lib/editableSections'
@@ -95,7 +92,7 @@ describe('headline', () => {
 
   it('uses fixed descriptors for deliberation, podcast and theme', () => {
     const res = derive()
-    expect(row(res, 'deliberation-conversation').headline).toBe('How the agents chose this charity')
+    expect(row(res, 'deliberation-conversation').headline).toBe('How the writers chose this charity')
     expect(row(res, 'podcast').headline).toBe('This week’s episode')
     expect(row(res, 'theme').headline).toBe('Colours and fonts for this issue')
   })
@@ -143,14 +140,6 @@ describe('state', () => {
     expect(row(derive({ draft: d, runStatus: 'running' }), 'founderBio').state).toBe('writing')
     expect(row(derive({ draft: d, runStatus: 'awaiting-review' }), 'founderBio').state).toBe('not-written')
   })
-
-  it('rowNote copy', () => {
-    expect(rowNote({ state: 'clean', agentChanges: 0 })).toBe('Written')
-    expect(rowNote({ state: 'clean', agentChanges: 1 })).toBe('Written · agents made 1 change')
-    expect(rowNote({ state: 'clean', agentChanges: 3 })).toBe('Written · agents made 3 changes')
-    expect(rowNote({ state: 'writing', agentChanges: 0 })).toBe('Being written…')
-    expect(rowNote({ state: 'not-written', agentChanges: 0 })).toBe('Not written yet')
-  })
 })
 
 describe('href', () => {
@@ -169,11 +158,6 @@ describe('footer', () => {
     runStatus: 'awaiting-review' as string | undefined,
     runCompletedAt: 1000 as number | undefined,
   }
-
-  it('copy constants', () => {
-    expect(RUNNING_SENTENCE).toBe('Still writing — Publish turns on when the agents finish.')
-    expect(READY_SENTENCE).toBe('Ready to publish. The agents reviewed every section and fixed what they found.')
-  })
 
   it('is ready even with open findings and contradicted claims (nothing blocks)', () => {
     const sections = derive({ qaFindings: [finding()], claimRows: [claim()] })

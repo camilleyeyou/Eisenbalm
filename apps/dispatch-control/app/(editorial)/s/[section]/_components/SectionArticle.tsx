@@ -123,7 +123,7 @@ export default function SectionArticle({
         if (b.type === 'h2' || b.type === 'h3') {
           const H = b.type
           return (
-            <H key={i} className="max-w-[720px] text-[22px] font-semibold" style={{ fontFamily: 'var(--font-lora)' }}>
+            <H key={i} className="max-w-[720px] text-[23px] font-semibold" style={{ fontFamily: 'var(--font-lora)' }}>
               {b.text}
             </H>
           )

@@ -2,7 +2,7 @@
  * force-dynamic: BehindRun uses Convex useQuery and needs a live
  * ConvexProvider; it must not be statically prerendered.
  *
- * Phase 56-09: Behind-Run replaces the old Run Detail page.
+ * Phase 56-09: Behind-Run replaces the old run page.
  */
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'What happened' }

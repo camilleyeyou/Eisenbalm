@@ -45,30 +45,9 @@ export type HomeFooter =
 // ─── Copy ───────────────────────────────────────────────────────────────────
 
 export const SECTION_DESCRIPTORS: Record<string, string> = {
-  'deliberation-conversation': 'How the agents chose this charity',
+  'deliberation-conversation': 'How the writers chose this charity',
   podcast: 'This week’s episode',
   theme: 'Colours and fonts for this issue',
-}
-
-export const RUNNING_SENTENCE = 'Still writing — Publish turns on when the agents finish.'
-export const READY_SENTENCE = 'Ready to publish. The agents reviewed every section and fixed what they found.'
-export const NONE_SENTENCE = 'There is no current issue yet.'
-export const FAILED_SENTENCE = 'This run failed before the issue was finished, so there is nothing to publish.'
-export const GATE1_SENTENCE =
-  'This older issue paused to choose a charity and cannot continue. Stop it, then start a new issue.'
-export const STOPPED_SENTENCE = 'This issue was stopped. Start a new issue when you are ready.'
-
-export function rowNote(row: Pick<HomeSectionRow, 'state' | 'agentChanges'>): string {
-  switch (row.state) {
-    case 'clean':
-      return row.agentChanges > 0
-        ? `Written · agents made ${row.agentChanges} ${row.agentChanges === 1 ? 'change' : 'changes'}`
-        : 'Written'
-    case 'writing':
-      return 'Being written…'
-    case 'not-written':
-      return 'Not written yet'
-  }
 }
 
 // ─── Sections ───────────────────────────────────────────────────────────────
