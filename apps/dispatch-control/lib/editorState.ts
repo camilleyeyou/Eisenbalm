@@ -10,7 +10,7 @@
  *  A1  issue Thursday = publishedAt, else scheduledFor, else next Thursday (issueTitle.ts)
  *  A3a stopped copy is its own variant, not the Problem copy
  *  A3b gate1 (legacy paused run) is "stuck": Waiting for you, action = stop it
- *  A4  later steps read "Not yet", never "Not started"
+ *  A4  later steps read "Not yet", never the older wording
  *  A5  archive reasons are generic (title null vs set), not per failing step
  *  A6  hold reason is a fixed "Held by the editor"; held reason/by never shown
  *  A7  an older unpublished issue is read-only ("older")
@@ -375,13 +375,13 @@ export function homeSlabCopy(
       const day = ctx.publishedAt != null ? weekdayOf(ctx.publishedAt) : 'Thursday'
       if (ctx.pinned) {
         return {
-          sentence: `${issueLabel[0].toUpperCase()}${issueLabel.slice(1)} went out on ${day}.`,
+          sentence: `${issueLabel.charAt(0).toUpperCase()}${issueLabel.slice(1)} went out on ${day}.`,
           explanation: 'Readers can see it now. You can still open a part to read it.',
           working: false,
         }
       }
       return {
-        sentence: `${issueLabel[0].toUpperCase()}${issueLabel.slice(1)} went out on ${day}. Start the next one when you're ready.`,
+        sentence: `${issueLabel.charAt(0).toUpperCase()}${issueLabel.slice(1)} went out on ${day}. Start the next one when you're ready.`,
         explanation:
           "Readers can see it now. Starting the next issue takes one click: the writers pick a charity and write all nine parts, then this page tells you when it's your turn.",
         action: 'start-next',
@@ -662,3 +662,102 @@ export const COPY = {
   emptyArchive: 'No past issues yet. Once you publish an issue it will be listed here.',
   emptySearch: 'No issue matches "{query}". Try a charity name or an issue number.',
 } as const
+
+// ─── Behind the scenes: the ten plain steps ─────────────────────────────────
+
+export interface PlainStep {
+  key: string
+  name: string
+  agentKeys: readonly string[]
+}
+
+export const PLAIN_STEPS: readonly PlainStep[] = [
+  { key: 'leads', name: 'Find story leads', agentKeys: ['signal_editor'] },
+  { key: 'charities', name: 'Find charities worth writing about', agentKeys: ['scout', 'advocate'] },
+  { key: 'verify-charities', name: 'Check the charities are real', agentKeys: ['verify_candidates'] },
+  { key: 'choose', name: "Choose this week's charity", agentKeys: ['editor_gate_1', 'chronicler'] },
+  { key: 'research', name: 'Research the charity', agentKeys: ['researcher'] },
+  { key: 'verify-research', name: 'Check the research against its sources', agentKeys: ['verify_research'] },
+  {
+    key: 'write',
+    name: 'Write the nine parts',
+    agentKeys: ['origin_story', 'problem', 'founder_bio', 'case_study', 'game', 'bonus', 'design', 'validate_sections'],
+  },
+  { key: 'check', name: 'Check the writing and fix problems', agentKeys: ['qa'] },
+  { key: 'final', name: 'Final read-through', agentKeys: ['editor_final'] },
+  { key: 'publish', name: 'Publish', agentKeys: ['publisher'] },
+]
+
+const WRITER_NAMES: Record<string, string> = {
+  origin_story: 'Origin story writer',
+  problem: 'Problem writer',
+  founder_bio: 'Founder writer',
+  case_study: 'Case study writer',
+  game: 'Game writer',
+  bonus: 'Bonus writer',
+  design: 'Look designer',
+  calibrator: 'Weekly style note',
+}
+
+/** Plain name for any agent key; the only way an agent key may reach the screen. */
+export function plainNameForKey(agentKey: string): string {
+  if (WRITER_NAMES[agentKey]) return WRITER_NAMES[agentKey]
+  const step = PLAIN_STEPS.find((s) => s.agentKeys.includes(agentKey))
+  if (step) return step.name
+  const spaced = agentKey.replace(/_/g, ' ')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}
+
+export interface StepVM {
+  key: string
+  name: string
+  word: StatusWord
+  line: string
+  /** Raw error of the failing row: only for the collapsed Technical details block. */
+  error?: string
+}
+
+export function deriveBehindSteps(a: {
+  agentRuns:
+    | Array<{ agentKey: string; status: string; completedAt?: number; error?: string | null }>
+    | undefined
+  runStatus: string | undefined
+  fixCount?: number
+}): StepVM[] | undefined {
+  if (a.agentRuns === undefined) return undefined
+  const cancelled = a.runStatus === 'cancelled'
+  return PLAIN_STEPS.map((step) => {
+    const members = a.agentRuns!.filter((r) => step.agentKeys.includes(r.agentKey))
+    const base = { key: step.key, name: step.name }
+    const notYet = (): StepVM =>
+      cancelled
+        ? { ...base, word: 'Stopped', line: 'Stopped' }
+        : { ...base, word: 'Not yet', line: 'Not yet' }
+
+    if (members.length === 0) return notYet()
+
+    const problem = members.find((r) => r.status === 'failed' && !isGateInterrupt(r))
+    if (problem) {
+      return { ...base, word: 'Problem', line: 'Problem', error: problem.error ?? undefined }
+    }
+    if (members.some((r) => isGateInterrupt(r))) {
+      return { ...base, word: 'Waiting for you', line: 'Waiting for you' }
+    }
+    if (members.some((r) => r.status === 'running')) {
+      return cancelled
+        ? { ...base, word: 'Stopped', line: 'Stopped' }
+        : { ...base, word: 'Working', line: 'Working' }
+    }
+    if (members.every((r) => r.status === 'done')) {
+      const latest = Math.max(...members.map((r) => r.completedAt ?? 0))
+      let line = latest > 0 ? `Done · ${formatClock(latest)}` : 'Done'
+      if (step.key === 'check' && (a.fixCount ?? 0) > 0) line += ` · ${fixesText(a.fixCount!)}`
+      return { ...base, word: 'Done', line }
+    }
+    return notYet()
+  })
+}
+
+export function firstProblemStep(steps: StepVM[]): string | null {
+  return steps.find((s) => s.word === 'Problem')?.key ?? null
+}
