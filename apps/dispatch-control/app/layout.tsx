@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Newsreader, Lora, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import ConvexClientProvider from '@/components/ConvexClientProvider'
+import { ToastProvider } from '@/components/ui/Toast'
 import './globals.css'
 
 // ─── 1c fonts (next/font/google → CSS variables, CHR-01) ──────────────────
@@ -62,7 +63,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <ConvexClientProvider>
-            {children}
+            <ToastProvider>{children}</ToastProvider>
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

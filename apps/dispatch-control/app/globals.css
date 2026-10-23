@@ -351,3 +351,8 @@ body {
 @keyframes editor-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
 .editor-pulse { animation: editor-pulse 1.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .editor-pulse { animation: none; } }
+
+/* quick 261023-1i8: toast enter */
+@keyframes toast-enter { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.toast-enter { animation: toast-enter 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .toast-enter { animation: none; } }
