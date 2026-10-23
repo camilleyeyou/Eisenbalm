@@ -17,6 +17,7 @@ import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { Id } from '@convex/_generated/dataModel'
+import { useToast } from '@/components/ui/Toast'
 
 export interface PayoutRowData {
   _id: Id<'payouts'>
@@ -46,6 +47,7 @@ const FOCUS_RING =
 
 export default function PayoutRow({ payout }: PayoutRowProps) {
   const markPayoutSent = useMutation(api.payouts.markPayoutSent)
+  const toast = useToast()
   const [confirming, setConfirming] = useState(false)
   const [reference, setReference] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -93,8 +95,10 @@ export default function PayoutRow({ payout }: PayoutRowProps) {
         sentAt: Date.now(),
       })
       // Convex subscription flips the row — no local state to reset on success.
+      toast.done('Payout marked as sent.')
     } catch {
       setError('Could not mark this payout sent. Try again.')
+      toast.problem('Could not mark this payout sent. Try again.')
       setSubmitting(false)
     }
   }

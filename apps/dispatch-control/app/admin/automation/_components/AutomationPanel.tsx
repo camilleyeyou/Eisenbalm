@@ -24,6 +24,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { Loader2 } from 'lucide-react'
 import { api } from '@convex/_generated/api'
+import { useToast } from '@/components/ui/Toast'
 import NextRunDisplay from './NextRunDisplay'
 
 interface AutomationPanelProps {
@@ -46,6 +47,7 @@ const MINUTES = [0, 15, 30, 45]
 export default function AutomationPanel({ workspace_id }: AutomationPanelProps) {
   const configRows = useQuery(api.pipelineConfig.getAll, { workspace_id })
   const upsert = useMutation(api.pipelineConfig.upsert)
+  const toast = useToast()
 
   const [toggleLoading, setToggleLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
@@ -95,9 +97,11 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
         key: 'schedule_enabled',
         value: JSON.stringify(!scheduleEnabled),
       })
+      toast.done(!scheduleEnabled ? 'Schedule switched on.' : 'Schedule switched off.')
     } catch (e) {
       // Log but don't surface — toggle failure is visible via the badge state
       console.error('AutomationPanel toggle error:', e)
+      toast.problem('Could not change the schedule. Try again.')
     } finally {
       setToggleLoading(false)
     }
@@ -115,9 +119,11 @@ export default function AutomationPanel({ workspace_id }: AutomationPanelProps) 
         value: JSON.stringify(newCadence),
       })
       setSaveSuccess(true)
+      toast.done('Schedule saved.')
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e))
+      toast.problem('Could not save the schedule. Try again.')
     } finally {
       setSaveLoading(false)
     }

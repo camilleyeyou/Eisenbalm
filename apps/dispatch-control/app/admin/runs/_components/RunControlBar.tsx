@@ -28,6 +28,7 @@ import { useAuth } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { api } from '@convex/_generated/api'
 import { triggerRun } from '@/lib/pipelineControlClient'
+import { useToast } from '@/components/ui/Toast'
 
 interface RunControlBarProps {
   workspace_id: string
@@ -35,6 +36,7 @@ interface RunControlBarProps {
 
 export default function RunControlBar({ workspace_id }: RunControlBarProps) {
   const { getToken } = useAuth()
+  const toast = useToast()
   const latest = useQuery(api.runs.latest, { workspace_id })
 
   const [confirming, setConfirming] = useState(false)
@@ -55,12 +57,15 @@ export default function RunControlBar({ workspace_id }: RunControlBarProps) {
   async function handleConfirm() {
     setLoading(true)
     setError(null)
+    toast.info('Starting a new issue…')
     try {
       const token = await getToken()
       const result = await triggerRun({}, token)
       setStartedRunId(result.runId)
+      toast.done('Started a new issue.')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
+      toast.problem('Could not start a new issue. Try again.')
     } finally {
       setLoading(false)
       setConfirming(false)

@@ -14,6 +14,7 @@
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import { useToast } from '@/components/ui/Toast'
 
 interface AddCorrectionDialogProps {
   workspace_id: string
@@ -26,6 +27,7 @@ interface AddCorrectionDialogProps {
 
 export default function AddCorrectionDialog({ workspace_id, charity }: AddCorrectionDialogProps) {
   const appendCorrection = useMutation(api.charityCorrections.append)
+  const toast = useToast()
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,8 +47,10 @@ export default function AddCorrectionDialog({ workspace_id, charity }: AddCorrec
         text: text.trim(),
       })
       setText('')
+      toast.done('Correction saved.')
     } catch {
       setError('Could not save the correction. Try again.')
+      toast.problem('Could not save the correction. Try again.')
     } finally {
       setSubmitting(false)
     }

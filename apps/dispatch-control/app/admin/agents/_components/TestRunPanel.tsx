@@ -34,6 +34,7 @@ import { plainNameForKey } from '@/lib/editorState'
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
+import { useToast } from '@/components/ui/Toast'
 import { api } from '@convex/_generated/api'
 import { VARIABLE_REGISTRY } from './VariableRegistry'
 import {
@@ -75,6 +76,7 @@ export default function TestRunPanel({
   draftUserTemplate,
 }: TestRunPanelProps) {
   const { getToken } = useAuth()
+  const toast = useToast()
   const allowedVariables = VARIABLE_REGISTRY[agentKey] ?? []
 
   // Replay a real run: list runs for the workspace so the operator can pick one.
@@ -146,8 +148,10 @@ export default function TestRunPanel({
       } catch {
         setDraftScore(null)
       }
+      toast.done('Test finished.')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
+      toast.problem("The test didn't finish.")
     } finally {
       setRunning(false)
     }
@@ -177,8 +181,10 @@ export default function TestRunPanel({
       } catch {
         setActiveScore(null)
       }
+      toast.done('Comparison finished.')
     } catch (e) {
       setCompareError(e instanceof Error ? e.message : String(e))
+      toast.problem("The comparison didn't finish.")
     } finally {
       setComparing(false)
     }

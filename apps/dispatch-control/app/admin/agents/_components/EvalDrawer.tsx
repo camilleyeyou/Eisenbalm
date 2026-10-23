@@ -36,6 +36,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
+import { useToast } from '@/components/ui/Toast'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { fetchScenarios, type EvalScenario } from '@/lib/evalScenarioClient'
@@ -129,6 +130,7 @@ export default function EvalDrawer({
   targetVersion,
 }: EvalDrawerProps) {
   const { getToken } = useAuth()
+  const toast = useToast()
 
   // The active version is the "vs" side of the scoreboard AND the source of
   // the active-side eval_scores tag (promptVersion: String(active.version)).
@@ -182,6 +184,7 @@ export default function EvalDrawer({
   async function handleRunEvals() {
     if (running || scenarioCount === 0) return
     setRunning(true)
+    let anyError = false
     try {
       const token = await getToken()
       for (const scenario of scenarioList) {
@@ -259,6 +262,7 @@ export default function EvalDrawer({
           }))
         } catch (e) {
           // Partial-failure per row: keep the other scenarios running.
+          anyError = true
           setRows(prev => ({
             ...prev,
             [scenario.id]: mergeRow(prev, scenario, {
@@ -268,6 +272,8 @@ export default function EvalDrawer({
           }))
         }
       }
+      if (anyError) toast.problem("Some quality tests didn't finish.")
+      else toast.done('Quality tests finished.')
     } finally {
       setRunning(false)
     }

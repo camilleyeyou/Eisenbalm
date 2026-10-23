@@ -33,6 +33,7 @@ import AddCorrectionDialog from './AddCorrectionDialog'
 import CorrectionsList from './CorrectionsList'
 import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
+import { useToast } from '@/components/ui/Toast'
 
 interface RegistryTableProps {
   workspace_id: string
@@ -79,6 +80,7 @@ function truncateUrl(url: string | undefined, maxLen = 32): string {
 export default function RegistryTable({ workspace_id }: RegistryTableProps) {
   const charities = useQuery(api.charities.listByWorkspace, { workspace_id })
   const setStatus = useMutation(api.charities.setStatus)
+  const toast = useToast()
   // ROL-03 (D-09): presentation-only client hint — the server
   // `requireEditor` Convex helper (Plan 49-04) is the authoritative gate.
   const isLocked = useRole() !== 'Editor-in-chief'
@@ -131,20 +133,24 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
       setConfirmingBlocklistId(null)
       setBlocklistReason('')
       setTypedName('')
+      toast.done(`${charityName} marked do not use.`)
     } catch {
       setActionError('Could not update the registry. Try again.')
+      toast.problem('Could not update the registry. Try again.')
     } finally {
       setPendingAction(null)
     }
   }
 
-  async function handleUnblocklist(charityId: Id<'charities'>) {
+  async function handleUnblocklist(charityId: Id<'charities'>, charityName: string) {
     setPendingAction(charityId)
     setActionError(null)
     try {
       await setStatus({ workspace_id, charityId, status: 'candidate' })
+      toast.done(`${charityName} can be chosen again.`)
     } catch {
       setActionError('Could not update the registry. Try again.')
+      toast.problem('Could not update the registry. Try again.')
     } finally {
       setPendingAction(null)
     }
@@ -269,7 +275,7 @@ export default function RegistryTable({ workspace_id }: RegistryTableProps) {
                              unchanged (Phase 50-03 label swap only). */
                           <button
                             type="button"
-                            onClick={() => handleUnblocklist(charity._id)}
+                            onClick={() => handleUnblocklist(charity._id, charity.name)}
                             disabled={isPendingThisAction}
                             aria-busy={isPendingThisAction}
                             className="min-h-[44px] text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-vermilion)] focus-visible:ring-offset-1 px-1"

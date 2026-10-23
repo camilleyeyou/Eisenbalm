@@ -16,6 +16,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
+import { useToast } from '@/components/ui/Toast'
 import type { PromptOriginRef } from './promptOrigin'
 
 interface PromptSaveDialogProps {
@@ -47,6 +48,7 @@ export function PromptSaveDialog({
   onCancel,
 }: PromptSaveDialogProps) {
   const saveVersion = useMutation(api.promptVersions.saveVersion)
+  const toast = useToast()
   const versions = useQuery(api.promptVersions.listForAgent, {
     workspace_id: workspaceId,
     agentKey,
@@ -67,6 +69,7 @@ export function PromptSaveDialog({
     if (disabled || saving || noteEmpty) return
     setSaving(true)
     setError(null)
+    const savedLabel = nextVersion != null ? `Saved as v${nextVersion}.` : 'Saved.'
     try {
       await saveVersion({
         workspace_id: workspaceId,
@@ -77,8 +80,10 @@ export function PromptSaveDialog({
         ...(originRef ? { originRef } : {}),
       })
       setNote('')
+      toast.done(savedLabel)
       onSaved()
     } catch (e) {
+      toast.problem('Could not save. Try again.')
       setError(e instanceof Error ? e.message : 'Failed to save version')
     } finally {
       setSaving(false)

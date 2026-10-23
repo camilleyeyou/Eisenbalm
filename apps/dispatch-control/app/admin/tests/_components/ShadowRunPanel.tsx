@@ -16,11 +16,13 @@
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { runShadow, type ShadowCandidate } from '@/lib/shadowRunClient'
+import { useToast } from '@/components/ui/Toast'
 
 type ShadowStatus = 'idle' | 'running' | 'done' | 'error'
 
 export default function ShadowRunPanel() {
   const { getToken } = useAuth()
+  const toast = useToast()
   const [status, setStatus] = useState<ShadowStatus>('idle')
   const [candidates, setCandidates] = useState<ShadowCandidate[]>([])
   const [featuredKeysCount, setFeaturedKeysCount] = useState<number | null>(null)
@@ -30,15 +32,18 @@ export default function ShadowRunPanel() {
     if (status === 'running') return
     setStatus('running')
     setError(null)
+    toast.info('Starting the practice issue…')
     try {
       const token = await getToken()
       const result = await runShadow(token)
       setCandidates(result.candidates)
       setFeaturedKeysCount(result.featuredKeysCount)
       setStatus('done')
+      toast.done('Practice issue finished.')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setStatus('error')
+      toast.problem("The practice issue didn't finish.")
     }
   }
 

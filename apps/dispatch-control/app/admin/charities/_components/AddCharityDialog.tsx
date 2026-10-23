@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { X } from 'lucide-react'
 import { api } from '@convex/_generated/api'
+import { useToast } from '@/components/ui/Toast'
 
 interface AddCharityDialogProps {
   workspace_id: string
@@ -23,6 +24,7 @@ interface AddCharityDialogProps {
 
 export default function AddCharityDialog({ workspace_id, onClose }: AddCharityDialogProps) {
   const upsertCandidate = useMutation(api.charities.upsertCandidate)
+  const toast = useToast()
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -40,9 +42,11 @@ export default function AddCharityDialog({ workspace_id, onClose }: AddCharityDi
         website: website.trim() || undefined,
         runId: 'manual',
       })
+      toast.done(`${name.trim()} added to the list.`)
       onClose()
     } catch {
       setError('Could not update the registry. Try again.')
+      toast.problem('Could not update the registry. Try again.')
     } finally {
       setSubmitting(false)
     }

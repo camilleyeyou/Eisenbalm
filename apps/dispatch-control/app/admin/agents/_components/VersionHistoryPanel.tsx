@@ -58,6 +58,7 @@ import EvalDrawer from './EvalDrawer'
 import { useRole } from '@/lib/role'
 import { LockedControl } from '@/components/LockedControl'
 import HelpTip from '@/components/ui/HelpTip'
+import { useToast } from '@/components/ui/Toast'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface VersionHistoryPanelProps {
@@ -86,6 +87,7 @@ export default function VersionHistoryPanel({
 
   const { user } = useUser()
   const activateVersion = useMutation(api.promptVersions.activate)
+  const toast = useToast()
   // ROL-03 (D-09): presentation-only client hint — the server
   // `requireEditor` Convex helper (Plan 49-04) is the authoritative gate.
   const isLocked = useRole() !== 'Editor-in-chief'
@@ -128,16 +130,22 @@ export default function VersionHistoryPanel({
       })
       if (result?.blocked) {
         setBlockedVersion(version)
-        setBlockedReason(
+        const blockedMsg =
           result.reason ??
-            'An issue is being written — switching versions will be available when it finishes.',
-        )
+          'An issue is being written — switching versions will be available when it finishes.'
+        setBlockedReason(blockedMsg)
+        toast.problem(`v${version} was not switched on.`, blockedMsg)
       } else {
         // Clean pass OR a successful override — clear any blocked state.
         setBlockedReason(null)
         setBlockedVersion(null)
         setOverrideReason('')
+        toast.done(`v${version} is now in use.`)
       }
+    } catch (e) {
+      // Behaviour unchanged: the error still propagates; the toast just tells the editor.
+      toast.problem('Could not switch versions. Try again.')
+      throw e
     } finally {
       setActivating(null)
     }

@@ -14,6 +14,7 @@
  * the repo.
  */
 import { useState } from 'react'
+import { useToast } from '@/components/ui/Toast'
 
 const PROMPT_START = '<!-- PROMPT START -->'
 const PROMPT_END = '<!-- PROMPT END -->'
@@ -32,13 +33,16 @@ export function buildMarkerExport(content: string): string {
 export default function PromptMarkerExport({ content }: { content: string }) {
   const md = buildMarkerExport(content)
   const [copied, setCopied] = useState(false)
+  const toast = useToast()
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(md)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
+      toast.done('Copied.')
     } catch {
+      toast.problem("Copy didn't work. Select the text instead.")
       // Clipboard unavailable (e.g. insecure context) — fail silently; the
       // <pre> still shows the exact bytes for manual selection.
     }

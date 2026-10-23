@@ -28,6 +28,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { Switch } from '@/components/ui/switch'
 import HelpTip from '@/components/ui/HelpTip'
+import { useToast } from '@/components/ui/Toast'
 import { HELP_COPY } from '@/components/help/helpCopy'
 
 interface NotificationSettingsProps {
@@ -62,6 +63,7 @@ export default function NotificationSettings({
   workspace_id,
 }: NotificationSettingsProps) {
   const configRows = useQuery(api.pipelineConfig.getAll, { workspace_id })
+  const toast = useToast()
   const setNotificationConfig = useMutation(
     api.pipelineConfig.setNotificationConfig,
   )
@@ -148,6 +150,9 @@ export default function NotificationSettings({
         notify_slack_webhook_url: slackEnabled ? slackWebhook : '',
         ...slackEvents,
       })
+      toast.done('Notification settings saved.')
+    } catch {
+      toast.problem('Could not save notification settings. Try again.')
     } finally {
       setSlackSaving(false)
     }
@@ -161,6 +166,9 @@ export default function NotificationSettings({
         notify_email: emailEnabled ? emailAddress : '',
         ...emailEvents,
       })
+      toast.done('Notification settings saved.')
+    } catch {
+      toast.problem('Could not save notification settings. Try again.')
     } finally {
       setEmailSaving(false)
     }

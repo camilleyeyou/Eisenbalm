@@ -24,6 +24,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { api } from '@convex/_generated/api'
+import { useToast } from '@/components/ui/Toast'
 
 interface AutoPublishToggleProps {
   workspace_id: string
@@ -37,6 +38,7 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
   const [showEnableModal, setShowEnableModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const toast = useToast()
 
   if (configRows === undefined) {
     return (
@@ -62,9 +64,11 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
     setError(null)
     try {
       await setAutoPublish({ workspace_id, enabled: false, actorId })
+      toast.done('Publish by itself is off.')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setError(msg)
+      toast.problem(msg)
     } finally {
       setLoading(false)
     }
@@ -76,12 +80,16 @@ export default function AutoPublishToggle({ workspace_id }: AutoPublishTogglePro
     try {
       await setAutoPublish({ workspace_id, enabled: true, actorId })
       setShowEnableModal(false)
+      toast.done('Publish by itself is on.')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg.includes('rate_limited') || msg === 'rate_limited') {
-        setError('Publish by itself was recently changed. Wait 24 hours before re-enabling.')
+        const limited = 'Publish by itself was recently changed. Wait 24 hours before re-enabling.'
+        setError(limited)
+        toast.problem(limited)
       } else {
         setError(msg)
+        toast.problem(msg)
       }
       setShowEnableModal(false)
     } finally {

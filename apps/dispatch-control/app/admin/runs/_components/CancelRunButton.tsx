@@ -22,6 +22,7 @@ import { useAuth } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { cancelRun } from '@/lib/pipelineControlClient'
 import { COPY } from '@/lib/editorState'
+import { useToast } from '@/components/ui/Toast'
 
 interface CancelRunButtonProps {
   runId: string
@@ -30,6 +31,7 @@ interface CancelRunButtonProps {
 
 export default function CancelRunButton({ runId, status }: CancelRunButtonProps) {
   const { getToken } = useAuth()
+  const toast = useToast()
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,11 +42,14 @@ export default function CancelRunButton({ runId, status }: CancelRunButtonProps)
   async function handleConfirm() {
     setLoading(true)
     setError(null)
+    toast.info('Stopping…')
     try {
       const token = await getToken()
       await cancelRun(runId, token)
+      toast.done('Stopped this issue.')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
+      toast.problem('Could not stop this issue. Try again.')
     } finally {
       setLoading(false)
       setConfirming(false)
