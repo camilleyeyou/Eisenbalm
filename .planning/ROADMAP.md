@@ -1276,7 +1276,7 @@ Plans:
 **Plans**: 15 plans in 5 waves
 Plans:
 - [x] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)
-- [ ] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
+- [x] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
 - [ ] 56-03-editor-primitives-PLAN.md — NextStepSlab, StatusWord, Stations, StepList, PartsList (W2)
 - [ ] 56-04-paragraph-editor-rewrite-PLAN.md — per-paragraph in-place editor + Rewrite this part keep/undo (W2)
 - [ ] 56-05-home-screen-PLAN.md — `/` and `/?run=`: Main / Home-Writing / Home-Published; retire PublishFooter, StoryRow, StartIssueButton, HoldDialog, HoldControl (W3)
