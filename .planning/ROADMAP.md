@@ -483,7 +483,7 @@ Phases 1 → 2 → 3 → 4 → 5 → 6 and 7 (post-Phase 5) and 8 (parallel to 5
 | 53. Admin — The Door | TBD | Not started | - |
 | 54. Archive — Past Issues | TBD | Not started | - |
 | 55. Public Site Redesign — The Dispatch Front Page | 3/13 | In progress | - |
-| 56. Dashboard Redesign — The Grandma-Simple Editor | 3/15 | In Progress|  |
+| 56. Dashboard Redesign — The Grandma-Simple Editor | 4/15 | In Progress|  |
 
 ## Backlog
 
@@ -1278,7 +1278,7 @@ Plans:
 - [x] 56-01-editor-state-derivation-PLAN.md — pure lib/editorState.ts: six words, stations, slab copy, Behind steps, archive rows, rewrite rules, jargon-scan helper (W1)
 - [x] 56-02-shell-tokens-nav-PLAN.md — CORS pre-flight, editor tokens, EditorShell three-link nav, both layouts, plain dial labels (W1)
 - [x] 56-03-editor-primitives-PLAN.md — NextStepSlab, StatusWord, Stations, StepList, PartsList (W2)
-- [ ] 56-04-paragraph-editor-rewrite-PLAN.md — per-paragraph in-place editor + Rewrite this part keep/undo (W2)
+- [x] 56-04-paragraph-editor-rewrite-PLAN.md — per-paragraph in-place editor + Rewrite this part keep/undo (W2)
 - [ ] 56-05-home-screen-PLAN.md — `/` and `/?run=`: Main / Home-Writing / Home-Published; retire PublishFooter, StoryRow, StartIssueButton, HoldDialog, HoldControl (W3)
 - [ ] 56-06-section-page-PLAN.md — `/s/[section]` rebuild; retire InPlaceBlockEditor, EarlierIssueBanner (W3)
 - [ ] 56-07-archive-screen-PLAN.md — Past issues with collapsed Stopped/unfinished (W3)
