@@ -5,9 +5,14 @@ deny-list verbatim per D-20. Phase 7 owns the renderer-level validator;
 Phase 5 ships prompt-level defense only.
 
 Output Pydantic ``GameOutput``:
-  - headline: short title for the game
-  - description: 50-100 word plain-text summary for accessibility
+  - headline: short title for the game (2-4 words)
+  - goal: one imperative sentence (max 14 words) - what the player does to win
+  - howToPlay: 2-3 imperative steps (max 12 words each), one action per step
+  - controls: max 6 words naming the touch + keyboard input
+  - description: 1-2 sentences (max 40 words) in Jesse's voice
   - embedCode: complete self-contained HTML/JS string for iframe srcdoc
+
+``goal`` / ``howToPlay`` / ``controls`` are additive: legacy issues lack them.
 """
 from __future__ import annotations
 
@@ -45,14 +50,39 @@ class GameOutput(BaseModel):
     """AGT-12 output shape (headline + description + embedCode)."""
 
     headline: str = ""
+    goal: str = Field(default="", description="One imperative sentence (max 14 words): what the player does to win")
+    howToPlay: list[str] = Field(default_factory=list, description="2-3 imperative steps, each max 12 words, one action or observation per step")
+    controls: str = Field(default="", description="Max 6 words naming the touch + keyboard input, e.g. 'Tap · Space'")
     description: str = Field(
         default="",
-        description="50-100 word plain-text description for accessibility",
+        description="1-2 sentences (max 40 words) in Jesse's voice: what the game is about",
     )
     embedCode: str = Field(
         default="",
         description="Complete self-contained HTML/JS string for iframe srcdoc",
     )
+
+
+def _normalise_game(out: Any) -> dict:
+    """Strip text fields and coerce howToPlay to <=3 non-empty strings. Never raises."""
+    try:
+        result = dict(out) if isinstance(out, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+    for key in ("headline", "goal", "controls", "description"):
+        val = result.get(key)
+        if isinstance(val, str):
+            result[key] = val.strip()
+        elif key in result and val is None:
+            result[key] = ""
+    steps = result.get("howToPlay")
+    if isinstance(steps, str):
+        steps = [steps]
+    elif not isinstance(steps, (list, tuple)):
+        steps = []
+    cleaned = [s.strip() for s in steps if isinstance(s, str) and s.strip()]
+    result["howToPlay"] = cleaned[:3]
+    return result
 
 
 def _build_messages(state: DispatchState, charity: dict) -> list[dict[str, str]]:
@@ -98,6 +128,9 @@ def _game_payload(state: DispatchState) -> dict:
     return {
         "sectionName": "game",
         "headline": section.get("headline", ""),
+        "goal": section.get("goal", ""),
+        "controls": section.get("controls", ""),
+        "howToPlay": section.get("howToPlay", []),
         "description": section.get("description", ""),
     }
 
@@ -124,6 +157,7 @@ async def game(state: DispatchState) -> DispatchState:
         out_dict = dict(out_obj)
     else:
         out_dict = {}
+    out_dict = _normalise_game(out_dict)
 
     # AGT-17: parallel writers each contribute their OWN key to
     # model_versions; the DispatchState Annotated reducer merges across

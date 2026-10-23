@@ -265,6 +265,9 @@ async def write_issue_draft(
         },
         "game": {
             "headline": (state.get("game") or {}).get("headline", ""),
+            "goal": (state.get("game") or {}).get("goal", ""),
+            "howToPlay": (state.get("game") or {}).get("howToPlay", []) or [],
+            "controls": (state.get("game") or {}).get("controls", ""),
             "description": (state.get("game") or {}).get("description", ""),
             "embedCode": (state.get("game") or {}).get("embedCode", ""),
         },

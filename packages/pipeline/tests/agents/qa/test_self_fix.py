@@ -137,3 +137,39 @@ async def test_qa_survives_self_fix_exception(monkeypatch):
     out, inserts = await _run_qa(monkeypatch, _state(), fix_impl=boom)
     assert out["origin_story"]["body"][0]["text"] == "One bad phrase here."
     assert inserts and all(i["resolution"] == "agent-skipped" for i in inserts)
+
+
+_NOTE = "Replace with a sharper line that names the stakes, e.g., 'Miss the window.'"
+
+
+async def test_note_shaped_fix_skipped_on_non_voice_axis():
+    st = _state()
+    updates, res = await apply_self_fixes(st, [_f(fix=_NOTE)])
+    assert res[0]["resolution"] == "agent-skipped"
+    assert res[0]["resolutionReason"] == "suggested fix was an editor's note, not replacement text"
+    assert "origin_story" not in updates
+    assert st["origin_story"]["body"][0]["text"] == "One bad phrase here."
+
+
+async def test_plain_replacement_sentence_still_applied():
+    updates, res = await apply_self_fixes(_state(), [_f(fix="Miss the window and the shop closes.")])
+    assert res[0]["resolution"] == "agent-applied"
+    assert "Miss the window and the shop closes." in updates["origin_story"]["body"][0]["text"]
+
+
+async def test_voice_axis_note_falls_through_to_rewrite(monkeypatch):
+    async def fake(span, reason, run_id):
+        return "good phrase"
+    monkeypatch.setattr(self_fix, "generate_voice_rewrite", fake)
+    updates, res = await apply_self_fixes(_state(), [_f(fix=_NOTE, axis="gravity")])
+    assert res[0]["resolution"] == "agent-applied"
+    assert "good phrase" in updates["origin_story"]["body"][0]["text"]
+
+
+def test_is_replacement_text():
+    from eisenbalm_pipeline.agents.qa.self_fix import is_replacement_text
+    assert not is_replacement_text(None)
+    assert not is_replacement_text("")
+    assert not is_replacement_text("Consider a firmer verb.")
+    assert not is_replacement_text("A firmer verb, e.g. seize.")
+    assert is_replacement_text("Miss the window and the shop closes.")

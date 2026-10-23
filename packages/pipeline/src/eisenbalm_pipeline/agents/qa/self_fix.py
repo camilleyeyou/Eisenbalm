@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import re
 from typing import Any
 
 from pydantic import BaseModel
@@ -137,6 +138,32 @@ def _units(work: dict[str, Any], section: str) -> list[tuple[Any, Any]]:
     return units
 
 
+_NOTE_PREFIX = re.compile(
+    r"^\s*(replace|consider|rewrite|reword|rephrase|revise|change|cut|remove|delete|"
+    r"trim|tighten|sharpen|use|add|try|make|drop|swap|suggest|should)\b",
+    re.IGNORECASE,
+)
+_NOTE_MARKERS = re.compile(r"\be\.g\.|\bi\.e\.|\bfor example\b|\bsomething like\b", re.IGNORECASE)
+
+
+def is_replacement_text(fix: str | None) -> bool:
+    """True when ``fix`` reads as drop-in copy rather than an editor's note.
+
+    The judge is asked for a "concrete alternative", but it sometimes returns
+    an instruction ("Replace with a sharper line that names the stakes,
+    e.g., '…'"). Applying that verbatim leaks the note into published copy
+    (issue 999723's game description). Notes are rejected here; voice-axis
+    findings then fall through to ``generate_voice_rewrite``.
+    """
+    if not fix or not fix.strip():
+        return False
+    if _NOTE_PREFIX.match(fix):
+        return False
+    if _NOTE_MARKERS.search(fix):
+        return False
+    return True
+
+
 def _apply_span(
     work: dict[str, Any], section: str, span: str | None, fix: str | None
 ) -> tuple[bool, str]:
@@ -179,7 +206,10 @@ async def apply_self_fixes(
     resolutions: list[dict] = []
 
     for f in findings:
-        fix = f.suggestedFix or None
+        fix = f.suggestedFix if is_replacement_text(f.suggestedFix) else None
+        note_rejected = bool(
+            f.suggestedFix and f.suggestedFix.strip() and not fix
+        ) and f.axis not in VOICE_AXES
         try:
             if not fix and f.axis in VOICE_AXES and f.quotedSpan:
                 fix = (
@@ -189,6 +219,8 @@ async def apply_self_fixes(
         except Exception as exc:  # noqa: BLE001 — self-fix must never fail a run
             log.warning("self-fix: finding on %s skipped (%r)", f.section, exc)
             applied, reason = False, "self-fix step failed"
+        if note_rejected and not applied:
+            reason = "suggested fix was an editor's note, not replacement text"
         if applied:
             touched.add(f.section)
         resolutions.append(

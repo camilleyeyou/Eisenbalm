@@ -96,6 +96,7 @@ type LatestIssueSlug = {
 
   game {
     headline,
+    goal, howToPlay, controls,   // additive; absent on issues published before 2026-10-23
     description,
     embedCode,
   },
@@ -369,6 +370,9 @@ def write_issue_draft(state: DispatchState) -> str:
 
         'game': {
             'headline': state['game']['headline'],
+            'goal': state['game'].get('goal', ''),            # additive (2026-10-23)
+            'howToPlay': state['game'].get('howToPlay', []),  # additive, <=3 steps
+            'controls': state['game'].get('controls', ''),    # additive
             'description': state['game']['description'],
             'embedCode': state['game']['embedCode'],
         },
@@ -1894,6 +1898,9 @@ class CaseStudyContent(TypedDict):
 
 class GameContent(TypedDict):
     headline: str
+    goal: str                           # additive/optional: absent on issues published before 2026-10-23
+    howToPlay: list[str]                # additive/optional: <=3 imperative steps
+    controls: str                       # additive/optional: touch + keyboard input
     description: str
     embedCode: str                      # self-contained HTML/JS for iframe srcdoc
 

@@ -129,6 +129,9 @@ class CaseStudyContent(TypedDict):
 
 class GameContent(TypedDict):
     headline: str
+    goal: str                           # additive/optional (absent on legacy issues)
+    howToPlay: list[str]                # additive/optional: <=3 imperative steps
+    controls: str                       # additive/optional: touch + keyboard input
     description: str
     embedCode: str                      # self-contained HTML/JS for iframe srcdoc
 
