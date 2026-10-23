@@ -35,6 +35,7 @@ import eisenbalm_pipeline.lib.convex_client as _cc
 from eisenbalm_pipeline.lib.background import spawn_background
 from eisenbalm_pipeline.lib.convex_client import convex_mutation, convex_query
 from eisenbalm_pipeline.lib.cost import begin_run, set_run_cap
+from eisenbalm_pipeline.lib.discard import finish_pending_discard
 from eisenbalm_pipeline.lib.errors import CostCapExceeded, RunCancelled
 from eisenbalm_pipeline.lib.ids import new_run_id
 from eisenbalm_pipeline.graph.builder import SECTION_WRITERS
@@ -221,6 +222,8 @@ async def _execute_run(
         # The @agent_node wrapper already wrote 'failed' to Convex.
         # Let the task die quietly.
         log.exception("Run %s background task raised", run_id)
+    finally:
+        await finish_pending_discard(app, run_id)
 
 
 # ── Shared run-launch helper (Phase 25, RUN-01/RUN-02/RUN-03) ───────────────
@@ -551,6 +554,8 @@ async def _resume_paused_run(app: Any, run_id: str, charity_name: str) -> dict:
             )
         except Exception:
             log.exception("Resume task for %s raised", run_id)
+        finally:
+            await finish_pending_discard(app, run_id)
 
     spawn_background(app, _resume_run_task(), name=f"resume:{run_id}")
 

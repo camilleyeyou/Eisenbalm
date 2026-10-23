@@ -673,6 +673,48 @@ async def get_issue_draft(http: AsyncClient, issue_id: str) -> dict:
     }
 
 
+async def find_issue_docs(http: AsyncClient, issue_number: int) -> list[dict]:
+    """Return the plain and drafts. docs for ``issue-N`` (id, status, publishedAt, runId)."""
+    return await _groq(
+        http,
+        '*[_id in [$id, $draftId]]{_id, status, publishedAt, "runId": pipelineMetadata.runId}',
+        {"id": f"issue-{issue_number}", "draftId": f"drafts.issue-{issue_number}"},
+    )
+
+
+def issue_docs_published(docs: list[dict]) -> bool:
+    """True if any doc is published (status or publishedAt)."""
+    return any(d.get("status") == "published" or bool(d.get("publishedAt")) for d in docs)
+
+
+async def delete_run_issue_docs(http: AsyncClient, issue_number: int, run_id: str) -> None:
+    """Delete the unpublished issue-N / drafts.issue-N docs written by ``run_id``.
+
+    The query guard (same run, not published, no publishedAt) is belt-and-braces:
+    it keeps published content and other runs' drafts safe even if the
+    caller's pre-check races.
+    """
+    r = await http.post(
+        f"/{API_VERSION}/data/mutate/{_dataset()}",
+        json={
+            "mutations": [
+                {
+                    "delete": {
+                        "query": '*[_id in [$id, $draftId] && pipelineMetadata.runId == $runId && status != "published" && !defined(publishedAt)]',
+                        "params": {
+                            "id": f"issue-{issue_number}",
+                            "draftId": f"drafts.issue-{issue_number}",
+                            "runId": run_id,
+                        },
+                    }
+                }
+            ]
+        },
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+
+
 async def upload_asset(
     http: AsyncClient,
     *,

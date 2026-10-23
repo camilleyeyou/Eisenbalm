@@ -31,6 +31,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 import eisenbalm_pipeline.lib.convex_client as _cc
+import eisenbalm_pipeline.lib.discard as discard
+import eisenbalm_pipeline.lib.sanity_client as _sc
 from eisenbalm_pipeline.lib.background import spawn_background
 from eisenbalm_pipeline.api.auth import dev_mode_claims, verify_clerk_token
 from eisenbalm_pipeline.api.runs import (
@@ -674,6 +676,89 @@ async def cancel_run(
     return {"runId": run_id, "cancelRequested": True}
 
 
+# ── POST /runs/{run_id}/discard — quick 261022-x8y ────────────────────────────
+
+_PUBLISHED_DETAIL = {
+    "reason": "published",
+    "message": "This issue was published, so it can't be discarded.",
+}
+
+
+@router.post("/runs/{run_id}/discard")
+async def discard_run(
+    request: Request,
+    run_id: str,
+    claims: dict = Depends(_require_clerk_jwt_control),
+) -> dict:
+    """Throw away an unpublished issue: delete its Sanity docs, land the run as stopped.
+
+    Refuses (409) if the issue was ever published. For a run with a live
+    task the delete is deferred until the graph stops (finish_pending_discard),
+    so the publisher's late write cannot recreate the draft.
+    """
+    http = getattr(request.app.state, "convex_http", None)
+    actor_id = claims.get("sub") or "unknown"
+
+    run_row = await _cc.convex_query(http, "runs:byRunId", {"runId": run_id})
+    if run_row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Run not found: {run_id}")
+    n = run_row.get("issueNumber")
+    st = run_row.get("status")
+
+    if st == "cancelled":
+        if run_id in discard.pending(request.app):
+            return {"runId": run_id, "discardRequested": True}
+        try:
+            await discard.discard_issue_docs(run_id, n, check_published=False)
+        except discard.IssuePublished:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_PUBLISHED_DETAIL)
+        except Exception:  # noqa: BLE001
+            log.exception("discard_run: delete failed for %s", run_id)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail={"reason": "delete_failed", "message": "We couldn't discard this issue just now. Try again."},
+            )
+        return {"runId": run_id, "status": "cancelled", "discarded": True}
+
+    if st == "complete":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_PUBLISHED_DETAIL)
+    if n is not None:
+        issue_row = await _cc.convex_query(
+            http, "issues:byIssueNumber", {"workspace_id": WORKSPACE_ID, "issueNumber": n}
+        )
+        if isinstance(issue_row, dict) and issue_row.get("publishedAt"):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_PUBLISHED_DETAIL)
+        docs = await _sc.find_issue_docs(getattr(_sc, "_CLIENT", None), n)
+        if _sc.issue_docs_published(docs):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_PUBLISHED_DETAIL)
+
+    if st == "running" and discard.has_live_task(request.app, run_id):
+        discard.pending(request.app)[run_id] = n
+        await _cc.convex_mutation(http, "runs:requestCancel", {"runId": run_id})
+        await _emit_audit(
+            http, actor_id=actor_id, action="run.discarded", resource_type="run",
+            resource_id=run_id, issue_number=n, run_id=run_id,
+        )
+        return {"runId": run_id, "discardRequested": True}
+
+    await discard.land_discarded(http, run_id)
+    try:
+        await discard.discard_issue_docs(run_id, n)
+    except discard.IssuePublished:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_PUBLISHED_DETAIL)
+    except Exception:  # noqa: BLE001
+        log.exception("discard_run: delete failed for %s", run_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"reason": "delete_failed", "message": "We couldn't discard this issue just now. Try again."},
+        )
+    await _emit_audit(
+        http, actor_id=actor_id, action="run.discarded", resource_type="run",
+        resource_id=run_id, issue_number=n, run_id=run_id,
+    )
+    return {"runId": run_id, "status": "cancelled", "discarded": True}
+
+
 # ── POST /runs/{run_id}/agents/{agent_key}/rerun — RUN-05 ────────────────────
 
 @router.post("/runs/{run_id}/agents/{agent_key}/rerun")
@@ -719,6 +804,12 @@ async def rerun_agent(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Run not found: {run_id}",
+        )
+
+    if run_row.get("status") == "cancelled":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Run was stopped or discarded — nothing to rewrite.",
         )
 
     if run_row.get("status") == "running":
@@ -786,6 +877,12 @@ async def rerun_agent(
     # tests reaches the call (same _cc.* pattern from Plan 02 deviation fix).
     import eisenbalm_pipeline.lib.sanity_client as _sc  # noqa: PLC0415
     sanity_client = getattr(_sc, "_CLIENT", None)  # None in test mode; harmless
+    latest_row = await _cc.convex_query(http, "runs:byRunId", {"runId": run_id})
+    if latest_row and latest_row.get("status") == "cancelled":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Run was stopped or discarded — nothing to rewrite.",
+        )
     await _sc.write_issue_draft(sanity_client, merged)
 
     # ── Audit ──────────────────────────────────────────────────────────────────
