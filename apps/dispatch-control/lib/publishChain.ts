@@ -14,11 +14,12 @@ import { publishIssue, ReviewApiError } from '@/lib/reviewClient'
 import type { Role } from '@/lib/role'
 import type { HomeFooter } from '@/lib/homeSections'
 
-export const NETWORK_FAILURE_MESSAGE = 'Couldn’t reach the server. Nothing was published — try again.'
-export const COLLABORATOR_LOCK_LABEL = 'Collaborators can read and edit. Only the Editor-in-chief can publish.'
-export const HELD_REASON = 'This issue is held — release the hold to publish.'
+export const NETWORK_FAILURE_MESSAGE =
+  "Publishing didn't go through, and nothing has reached readers. Press Publish again to try again. If it keeps happening, tell Andrew."
+export const COLLABORATOR_LOCK_LABEL = 'Waiting for the editor-in-chief to publish.'
+export const HELD_REASON = 'This issue is on hold. Release it to publish.'
 export const PUBLISH_SLOW_MS = 75_000
-export const PUBLISH_SLOW_NOTICE = 'Publishing is taking longer than usual — check Admin → Run Details.'
+export const PUBLISH_SLOW_NOTICE = 'Publishing is taking longer than usual. Nothing is lost. This page will update when it is done.'
 
 export type PublishChainStep = 'publish'
 export type PublishChainResult = { ok: true } | { ok: false; step: PublishChainStep; message: string }

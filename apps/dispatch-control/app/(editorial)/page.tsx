@@ -1,18 +1,21 @@
 /**
- * Phase 52 (HOME-01) — `/` is the editor's front door: the current issue,
- * its nine stories, one Publish button. Replaces the (dashboard) redirect
- * stub to /run (deleted in the same commit — two groups owning `/` breaks
- * the build, 1430b98f). The old console stays at its own URLs (/run,
- * /issues, /issues/[n]/approval, …) as the fallback path (Phase 53 SC-4).
- * force-dynamic: Convex useQuery needs a live provider (same as run/page.tsx).
+ * Phase 56 — `/` is the editor's front door: the slab, the issue, its four
+ * stations and nine parts. `/?run=<id>` opens a past issue's Home view.
+ * force-dynamic: Convex useQuery needs a live provider.
  */
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import IssueHome from './_components/IssueHome'
 
-export const metadata: Metadata = { title: 'This issue' }
+export const metadata: Metadata = { title: "This week's issue" }
 
-export default function IssueHomePage() {
-  return <IssueHome />
+export default async function IssueHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ run?: string | string[] }>
+}) {
+  const sp = await searchParams
+  const run = Array.isArray(sp.run) ? sp.run[0] : sp.run
+  return <IssueHome runId={run ?? null} />
 }

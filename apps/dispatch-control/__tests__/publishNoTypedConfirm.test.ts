@@ -46,13 +46,12 @@ import { describe, it, expect } from 'vitest'
 const REPO_ROOT = path.resolve(__dirname, '../../..')
 const EDITORIAL_ROOT = path.join(REPO_ROOT, 'apps/dispatch-control/app/(editorial)/_components')
 
-// Quick 261021-j83: DecisionRail and PublishPreviewDialog were deleted with
-// the review desk. The ONE publish surface is the front door's footer
-// (PublishFooter, fed by IssueHome's derivePublishGate).
-const PUBLISH_FOOTER = path.join(EDITORIAL_ROOT, 'PublishFooter.tsx')
+// Phase 56: the ONE publish surface is the slab primary on the front door,
+// wired in IssueHome (derivePublishGate) and rendered by IssueHomeView.
+const ISSUE_HOME_VIEW = path.join(EDITORIAL_ROOT, 'IssueHomeView.tsx')
 const ISSUE_HOME = path.join(EDITORIAL_ROOT, 'IssueHome.tsx')
 
-const PUBLISH_SURFACE_FILES = [PUBLISH_FOOTER, ISSUE_HOME]
+const PUBLISH_SURFACE_FILES = [ISSUE_HOME_VIEW, ISSUE_HOME]
 
 // Forbidden pattern: any raw <input> control on a publish-decision surface.
 // Narrow to these two named files (see header) so it does not false-positive

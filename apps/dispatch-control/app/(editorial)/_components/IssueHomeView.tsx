@@ -1,151 +1,143 @@
 'use client'
 /**
- * Phase 52 (HOME-01, HOME-04, HOME-06..09) — the front door body.
- * Canvas: https://claude.ai/artifact/KSPqMJof6iYHnAr9NP3SbZ (boards: Something
- * needs you / Ready to publish / Agents still writing).
- *
- * Pure props only (the RunBody/RunScreen seam): no Convex, Clerk, fetch or
- * inspector hooks. Plan 52-04 wires data in. Hard edges, flat.
+ * Phase 56 — the front door body (Main / Home-Writing / Home-Published).
+ * Pure props only: no Convex, Clerk, fetch or router. IssueHome wires data.
+ * Order: next-step slab, issue header, four stations, nine parts, footer.
  */
 import type { ReactNode } from 'react'
-import Link from 'next/link'
+import NextStepSlab from '@/components/editor/NextStepSlab'
+import Stations from '@/components/editor/Stations'
+import PartsList from '@/components/editor/PartsList'
 import { SkeletonLine } from '@/components/ui/Skeleton'
-import type { HomeFooter, HomeSectionsResult } from '@/lib/homeSections'
-import type { PublishGate } from '@/lib/publishChain'
-import { PublishFooter } from './PublishFooter'
-import { StoryRow } from './StoryRow'
+import type { HomeSectionRow } from '@/lib/homeSections'
+import { COPY, partsHint, type EditorHomeVM, type SlabCopy } from '@/lib/editorState'
 
 export interface IssueHomeLinks {
-  admin: string
-  pastIssues: string
-  runDetails: string | null
-  liveIssue: string | null
   preview: string | null
+  website: string | null
+  whatHappened: string | null
 }
 
 export interface IssueHomeViewProps {
-  issueNumber: number | null
-  title: string | null | undefined
-  subject: string | null | undefined
-  sections: HomeSectionsResult | undefined
-  footer: HomeFooter
-  gate: PublishGate
-  draftError: string | null
-  publishing: boolean
-  publishError: string | null
-  publishNotice: string | null
-  confirming: boolean
-  onRequestPublish: () => void
-  onConfirmPublish: () => void
-  onCancelPublish: () => void
+  vm: EditorHomeVM
+  slab: SlabCopy
+  issueLine: string
+  /** undefined = still loading */
+  charityName: string | null | undefined
+  blurb: string | null | undefined
+  rows: HomeSectionRow[] | undefined
+  hrefFor: (row: HomeSectionRow) => string
+  onPrimary: () => void
+  primaryBusy: boolean
+  actionError: string | null
   links: IssueHomeLinks
-  /** Start issue + Hold/Release, rendered directly under the publish footer. */
-  controls?: ReactNode
-  /** Stop control, shown in the Gate-1 (paused) footer state. */
-  stopSlot?: ReactNode
+  footer: ReactNode | null
+  draftError: string | null
+  onReload: () => void
+  live: string | null
 }
-
-export function formatPublishedDate(ts: number): string {
-  return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-const NAV_LINK =
-  'inline-flex min-h-[44px] items-center px-2 font-[family-name:var(--font-ui)] text-[13px] text-[color:var(--color-ink-soft)] underline-offset-4 hover:underline'
 
 export function IssueHomeView(props: IssueHomeViewProps) {
-  const { issueNumber, title, subject, sections, footer, draftError, links } = props
-  const showStory = footer.kind !== 'none'
-  const titleLoading = title === undefined || subject === undefined
-  const noCharity = title === null || subject === null
+  const { vm, slab, links } = props
+  const loading = vm.state === 'loading'
+  const empty = vm.state === 'empty'
+
+  let link: { label: string; href: string; external?: boolean } | undefined
+  if (slab.link && slab.linkLabel) {
+    const href =
+      slab.link === 'preview' ? links.preview : slab.link === 'website' ? links.website : links.whatHappened
+    if (href) link = { label: slab.linkLabel, href, external: slab.link === 'website' }
+  }
 
   return (
-    <div className="min-h-screen bg-[color:var(--color-paper)]">
-      <main className="mx-auto w-full max-w-[880px] px-4 py-8 sm:px-6">
-        <header className="flex flex-wrap items-baseline justify-between gap-3 pb-8">
-          <span className="font-[family-name:var(--font-display)] text-[22px] text-[color:var(--color-ink)]">
-            The Eisenbalm Dispatch
-          </span>
-          <nav aria-label="Site" className="flex items-center gap-2">
-            <Link href={links.pastIssues} className={NAV_LINK}>
-              Past issues
-            </Link>
-            <Link href={links.admin} className={NAV_LINK}>
-              Admin
-            </Link>
-          </nav>
-        </header>
+    <div className="flex flex-col gap-10 sm:gap-12">
+      {loading ? (
+        <div aria-busy="true" className="flex flex-col gap-3">
+          <SkeletonLine className="h-8 w-2/3" />
+          <SkeletonLine className="w-1/2" />
+          <SkeletonLine className="w-1/3" />
+        </div>
+      ) : (
+        <NextStepSlab
+          sentence={slab.sentence}
+          explanation={slab.explanation}
+          primary={
+            slab.action && slab.actionLabel
+              ? { label: slab.actionLabel, onClick: props.onPrimary, busy: props.primaryBusy }
+              : undefined
+          }
+          working={slab.working}
+          link={link}
+          error={props.actionError}
+          live={props.live ?? undefined}
+        />
+      )}
 
-        {showStory ? (
-          <>
-            {titleLoading ? (
-              <div aria-busy="true" className="flex flex-col gap-3">
-                <SkeletonLine className="w-24" />
-                <SkeletonLine className="h-10 w-2/3" />
+      {empty ? <h1 className="sr-only">{COPY.thisWeeksIssue}</h1> : null}
+
+      {!loading && !empty ? (
+        <header>
+          <p className="font-[family-name:var(--font-ui)] text-[15px] text-[color:var(--color-ink-soft)]">
+            {props.issueLine}
+          </p>
+          {props.charityName === undefined ? (
+            <div aria-busy="true" className="mt-3 flex flex-col gap-3">
+              <SkeletonLine className="h-10 w-2/3" />
+              <SkeletonLine className="w-1/2" />
+            </div>
+          ) : (
+            <>
+              <h1
+                className="mt-2 font-[family-name:var(--font-display)] text-[32px] leading-[1.1] sm:text-[48px] sm:leading-[1.04] font-semibold text-[color:var(--color-ink)]"
+                style={{ letterSpacing: '-0.01em' }}
+              >
+                {props.charityName ?? 'Charity not chosen yet'}
+              </h1>
+              {props.blurb ? (
+                <p className="mt-3 max-w-[760px] font-[family-name:var(--font-body)] text-[17px] sm:text-[18px] leading-[1.5] text-[color:var(--color-ink-soft)]">
+                  {props.blurb}
+                </p>
+              ) : null}
+            </>
+          )}
+        </header>
+      ) : null}
+
+      {!loading && !empty ? <Stations stations={vm.stations} /> : null}
+
+      {!loading && !empty ? (
+        props.draftError ? (
+          <div role="alert" className="flex flex-col items-start gap-4">
+            <p className="font-[family-name:var(--font-body)] text-[17px] leading-[1.5] text-[color:var(--color-ink)]">
+              {COPY.loadFailed}
+            </p>
+            <button
+              type="button"
+              onClick={props.onReload}
+              className="min-h-[48px] px-6 border border-[color:var(--color-ink)] bg-[color:var(--color-card)] font-[family-name:var(--font-ui)] text-[17px] font-semibold editor-focus"
+            >
+              {COPY.reloadButton}
+            </button>
+          </div>
+        ) : props.rows === undefined ? (
+          <div aria-busy="true" className="border border-[color:var(--color-line-strong)] bg-[color:var(--color-card)]">
+            {Array.from({ length: 9 }, (_, i) => (
+              <div key={i} className="min-h-[64px] px-6 py-5">
                 <SkeletonLine className="w-1/2" />
               </div>
-            ) : (
-              <div>
-                <p className="font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-ink-soft)]">
-                  Issue {issueNumber}
-                </p>
-                <h1 className="mt-2 font-[family-name:var(--font-display)] text-[40px] leading-[1.05] text-[color:var(--color-ink)] sm:text-[52px]">
-                  {title ?? `Issue ${issueNumber}`}
-                </h1>
-                <p className="mt-3 font-[family-name:var(--font-body)] text-[18px] text-[color:var(--color-ink-soft)]">
-                  {noCharity ? 'The agents haven’t chosen this issue’s charity yet.' : subject}
-                </p>
-              </div>
-            )}
-
-            <h2 className="mb-3 mt-10 font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-ink-soft)]">
-              In this issue
-            </h2>
-            {draftError ? (
-              <p
-                role="alert"
-                className="border border-[color:var(--color-faint)] bg-white p-5 font-[family-name:var(--font-ui)] text-[14px] text-[#c43a14]"
-              >
-                Couldn’t load this issue’s stories: {draftError}
-              </p>
-            ) : sections === undefined ? (
-              <div aria-busy="true" className="border border-[color:var(--color-faint)] bg-white">
-                {Array.from({ length: 9 }, (_, i) => (
-                  <div
-                    key={i}
-                    className={`min-h-[64px] px-5 py-4 ${i > 0 ? 'border-t border-[color:var(--color-nav)]' : ''}`}
-                  >
-                    <SkeletonLine className="w-1/2" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <ol aria-label="Stories in this issue" className="border border-[color:var(--color-faint)] bg-white">
-                {sections.rows.map((row, i) => (
-                  <StoryRow key={row.id} row={row} divided={i > 0} />
-                ))}
-              </ol>
-            )}
-          </>
-        ) : null}
-
-        <div className="mt-6">
-          <PublishFooter
-            issueNumber={issueNumber}
-            footer={footer}
-            gate={props.gate}
-            publishing={props.publishing}
-            publishError={props.publishError}
-            publishNotice={props.publishNotice}
-            confirming={props.confirming}
-            onRequestPublish={props.onRequestPublish}
-            onConfirmPublish={props.onConfirmPublish}
-            onCancelPublish={props.onCancelPublish}
-            links={links}
-            stopSlot={props.stopSlot}
+            ))}
+          </div>
+        ) : (
+          <PartsList
+            rows={props.rows}
+            published={vm.state === 'published'}
+            hint={partsHint(vm.state)}
+            hrefFor={props.hrefFor}
           />
-          {props.controls}
-        </div>
-      </main>
+        )
+      ) : null}
+
+      {props.footer}
     </div>
   )
 }

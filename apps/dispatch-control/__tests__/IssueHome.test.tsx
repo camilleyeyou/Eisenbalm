@@ -1,29 +1,38 @@
 /**
- * Phase 52 Plan 04 — IssueHome data wrapper tests (mocked Convex/Clerk/clients).
- * Runs in jsdom.
+ * Phase 56 Plan 05 — IssueHome data wrapper tests (mocked Convex/Clerk/clients).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react'
 import { useQuery } from 'convex/react'
-import { ContentPatchError, type DraftResponse } from '@/lib/contentPatchClient'
+import type { DraftResponse } from '@/lib/contentPatchClient'
 import type { DerivationInputs } from '@/lib/derivedState'
-import { FAILED_SENTENCE, GATE1_SENTENCE } from '@/lib/homeSections'
 
 const hoisted = vi.hoisted(() => ({
   getDraft: vi.fn(),
   publishChain: vi.fn(),
+  triggerRun: vi.fn(),
+  cancelRun: vi.fn(),
+  confirm: vi.fn(),
+  replace: vi.fn(),
+  hold: vi.fn(),
+  reopen: vi.fn(),
   role: { current: 'Editor-in-chief' as string | undefined },
+  latest: { current: undefined as unknown },
 }))
 
-vi.mock('convex/react', () => ({ useQuery: vi.fn(), useMutation: vi.fn(() => vi.fn()) }))
+vi.mock('convex/react', () => ({
+  useQuery: vi.fn(),
+  useMutation: vi.fn((fn: string) => (fn === 'issues:hold' ? hoisted.hold : hoisted.reopen)),
+}))
 vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ getToken: vi.fn(async () => 'tok') }),
   useUser: () => ({ isLoaded: true, user: { publicMetadata: { role: hoisted.role.current } } }),
 }))
 vi.mock('@convex/_generated/api', () => ({
   api: {
+    runs: { latest: 'runs:latest' },
     pitchLog: { selectedByRunId: 'pitchLog:selectedByRunId' },
-    issues: { byIssueNumber: 'issues:byIssueNumber' },
+    issues: { byIssueNumber: 'issues:byIssueNumber', hold: 'issues:hold', reopen: 'issues:reopen' },
   },
 }))
 vi.mock('@/lib/useCurrentRun', () => ({ useCurrentRun: () => mockCurrentRun }))
@@ -35,7 +44,12 @@ vi.mock('@/lib/publishChain', async () => {
   const actual = await vi.importActual<typeof import('@/lib/publishChain')>('@/lib/publishChain')
   return { ...actual, publishChain: hoisted.publishChain }
 })
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('@/lib/pipelineControlClient', () => ({
+  triggerRun: hoisted.triggerRun,
+  cancelRun: hoisted.cancelRun,
+}))
+vi.mock('@/components/ui/ConfirmDialog', () => ({ useConfirm: () => hoisted.confirm }))
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: hoisted.replace }) }))
 
 import IssueHome from '../app/(editorial)/_components/IssueHome'
 
@@ -89,16 +103,22 @@ function cleanDraft(): DraftResponse {
   } as unknown as DraftResponse
 }
 
-const CLEAN = /Written|Ready to publish|reviewed every section/
 
 beforeEach(() => {
   vi.clearAllMocks()
   hoisted.role.current = 'Editor-in-chief'
+  hoisted.latest.current = { runId: 'run_1' }
   mockCurrentRun = currentRun()
   hoisted.getDraft.mockResolvedValue(cleanDraft())
+  hoisted.triggerRun.mockResolvedValue({ runId: 'run_2' })
+  hoisted.cancelRun.mockResolvedValue({ stopped: true })
+  hoisted.confirm.mockResolvedValue(true)
+  hoisted.hold.mockResolvedValue(undefined)
+  hoisted.reopen.mockResolvedValue(undefined)
   vi.mocked(useQuery).mockImplementation(((fn: string) => {
     if (fn === 'pitchLog:selectedByRunId')
       return { charityName: 'The Quiet Ledger', scoutSummary: 'A two-person water lab.' }
+    if (fn === 'runs:latest') return hoisted.latest.current
     return undefined
   }) as never)
   global.fetch = vi.fn(async () => ({ json: async () => ({ previewUrl: null }) })) as never
@@ -108,189 +128,161 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('title', () => {
-  it('shows the charity title and subject', async () => {
+const PUBLISH = 'Publish Issue 7'
+
+async function publishButton() {
+  return (await screen.findByRole('button', { name: PUBLISH })) as HTMLButtonElement
+}
+
+describe('ready', () => {
+  it('shows the charity, the slab and Publish for the Editor-in-chief', async () => {
     render(<IssueHome />)
     expect(await screen.findByRole('heading', { level: 1, name: 'The Quiet Ledger' })).toBeTruthy()
-    expect(screen.getByText('A two-person water lab.')).toBeTruthy()
+    expect(await publishButton()).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Hold this issue' })).toBeTruthy()
   })
 
-  it('no current issue: honest sentence, no draft fetch', () => {
-    mockCurrentRun = currentRun({ state: { kind: 'none' }, runId: null, issueNumber: null })
+  it('double click calls publishChain once; failure shows the plain sentence', async () => {
+    hoisted.publishChain.mockResolvedValue({ ok: false, step: 'publish', message: 'server says no' })
     render(<IssueHome />)
-    expect(screen.getByText(/There is no current issue yet\./)).toBeTruthy()
-    expect(hoisted.getDraft).not.toHaveBeenCalled()
-  })
-})
-
-describe('loading', () => {
-  const fields: Array<[string, () => void]> = [
-    ['qaFindings', () => (mockCurrentRun = currentRun({ qaFindings: undefined }, { qaFindings: undefined }))],
-    ['claimRows', () => (mockCurrentRun = currentRun({ claimRows: undefined }, { claimRows: undefined }))],
-    ['issue', () => (mockCurrentRun = currentRun({}, { issue: undefined }))],
-    ['title', () => (mockCurrentRun = currentRun({ title: undefined }))],
-  ]
-  for (const [name, apply] of fields) {
-    it(`${name} undefined shows a skeleton, never clean copy`, async () => {
-      apply()
-      const { container } = render(<IssueHome />)
-      await act(async () => {})
-      expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-      expect(screen.queryByText(CLEAN)).toBeNull()
-    })
-  }
-
-  it('pending draft shows a skeleton, never clean copy', async () => {
-    hoisted.getDraft.mockReturnValue(new Promise(() => {}))
-    const { container } = render(<IssueHome />)
-    await act(async () => {})
-    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(screen.queryByText(CLEAN)).toBeNull()
-  })
-
-  it('a draft for the previous runId is ignored after the run switches', async () => {
-    const { container, rerender } = render(<IssueHome />)
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Publish' })).toBeTruthy())
-    hoisted.getDraft.mockReturnValue(new Promise(() => {}))
-    mockCurrentRun = currentRun({ runId: 'run_2' }, { runId: 'run_2' })
-    rerender(<IssueHome />)
-    await act(async () => {})
-    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(screen.queryByText(CLEAN)).toBeNull()
-  })
-})
-
-describe('publish', () => {
-  async function clickThrough() {
-    render(<IssueHome />)
-    const btn = await screen.findByRole('button', { name: 'Publish' })
-    await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
+    const btn = await publishButton()
     fireEvent.click(btn)
-    expect(screen.getByText('Publish Issue 7 now?')).toBeTruthy()
-    const buttons = screen.getAllByRole('button', { name: 'Publish' })
-    fireEvent.click(buttons[0]!)
-  }
-
-  it('failure shows the server sentence and re-enables Publish', async () => {
-    const msg = 'Both sign-offs (Facts cleared + Sounds human) are required before publishing.'
-    hoisted.publishChain.mockResolvedValue({ ok: false, step: 'publish', message: msg })
-    await clickThrough()
+    fireEvent.click(btn)
     expect(hoisted.publishChain).toHaveBeenCalledTimes(1)
-    const arg = hoisted.publishChain.mock.calls[0]![0]
-    expect(arg.runId).toBe('run_1')
-    expect(arg.activeSignOffs).toBeUndefined()
-    expect(typeof arg.getToken).toBe('function')
-    expect((await screen.findByRole('alert')).textContent).toContain(msg)
-    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(hoisted.publishChain.mock.calls[0]![0].runId).toBe('run_1')
+    expect(
+      await screen.findByText(
+        "Publishing didn't go through, and nothing has reached readers. Press Publish Issue 7 to try again. If it keeps happening, tell Andrew.",
+      ),
+    ).toBeTruthy()
   })
 
-  it('success holds Publishing… until issue.published', async () => {
-    hoisted.publishChain.mockResolvedValue({ ok: true })
-    await clickThrough()
-    const hold = await screen.findByRole('button', { name: 'Publishing…' })
-    expect((hold as HTMLButtonElement).disabled).toBe(true)
-    mockCurrentRun = currentRun({}, { issue: { held: false, published: true } })
-    cleanup()
-    render(<IssueHome />)
-    expect(await screen.findByText(/Published/)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull()
-  })
-
-  it('run status complete releases the hold even when issue.published stays false', async () => {
-    hoisted.publishChain.mockResolvedValue({ ok: true })
-    const { rerender } = render(<IssueHome />)
-    const btn = await screen.findByRole('button', { name: 'Publish' })
-    await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
-    fireEvent.click(btn)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0]!)
-    await screen.findByRole('button', { name: 'Publishing…' })
-    mockCurrentRun = currentRun({}, { runStatus: 'complete', issue: { held: false, published: false } })
-    rerender(<IssueHome />)
-    expect(await screen.findByText(/Published/)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Publishing…' })).toBeNull()
-  })
-
-  it('shows the taking-longer notice after 75s, button still disabled', async () => {
+  it('shows the slow notice after 75 seconds', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     hoisted.publishChain.mockResolvedValue({ ok: true })
     render(<IssueHome />)
-    const btn = await screen.findByRole('button', { name: 'Publish' })
-    await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
+    const btn = await publishButton()
     fireEvent.click(btn)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0]!)
-    await screen.findByRole('button', { name: 'Publishing…' })
-    // The slow timer registers once publishChain resolves (publishOk), which
-    // can trail the 'Publishing…' label under load — keep advancing until seen.
     for (let i = 0; i < 20 && !screen.queryByRole('status'); i++) {
       await act(async () => {
         await Promise.resolve()
         vi.advanceTimersByTime(75_000)
       })
     }
-    expect(screen.getByRole('status').textContent).toContain(
-      'Publishing is taking longer than usual — check Admin → Run Details.',
+    expect(screen.getByRole('status').textContent).toBe(
+      'Publishing is taking longer than usual. Nothing is lost. This page will update when it is done.',
     )
-    expect((screen.getByRole('button', { name: 'Publishing…' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('Hold this issue calls the hold mutation with the fixed reason', async () => {
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Hold this issue' }))
+    await waitFor(() => expect(hoisted.hold).toHaveBeenCalled())
+    expect(hoisted.hold.mock.calls[0]![0]).toMatchObject({ issueNumber: 7, reason: 'Held by the editor' })
+  })
+
+  it('Collaborator sees the waiting sentence and no Publish button', async () => {
+    hoisted.role.current = 'Collaborator'
+    render(<IssueHome />)
+    expect(await screen.findByText('Waiting for the editor-in-chief to publish.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: PUBLISH })).toBeNull()
+  })
+
+  it('role undefined: no collaborator sentence and no Publish button', async () => {
+    hoisted.role.current = undefined
+    render(<IssueHome />)
+    await screen.findByRole('heading', { level: 1, name: 'The Quiet Ledger' })
+    expect(screen.queryByText('Waiting for the editor-in-chief to publish.')).toBeNull()
+    expect(screen.queryByRole('button', { name: PUBLISH })).toBeNull()
   })
 })
 
-describe('states', () => {
-  it('failed run: its own sentence, no Publish, no chain call', async () => {
-    mockCurrentRun = currentRun({}, { runStatus: 'failed' })
+describe('held', () => {
+  it('Release this issue calls reopen', async () => {
+    mockCurrentRun = currentRun({}, { issue: { held: true, published: false } })
     render(<IssueHome />)
-    expect(await screen.findByText(new RegExp(FAILED_SENTENCE))).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull()
-    expect(hoisted.publishChain).not.toHaveBeenCalled()
+    fireEvent.click(await screen.findByRole('button', { name: 'Release this issue' }))
+    await waitFor(() => expect(hoisted.reopen).toHaveBeenCalled())
+    expect(hoisted.reopen.mock.calls[0]![0]).toMatchObject({ issueNumber: 7 })
+  })
+})
+
+describe('start and stop', () => {
+  it("published: Start next week's issue triggers once; failure shows the plain sentence", async () => {
+    mockCurrentRun = currentRun({}, { issue: { held: false, published: true } })
+    hoisted.triggerRun.mockRejectedValueOnce(new Error('409'))
+    render(<IssueHome />)
+    const btn = await screen.findByRole('button', { name: "Start next week's issue" })
+    fireEvent.click(btn)
+    fireEvent.click(btn)
+    await waitFor(() => expect(hoisted.triggerRun).toHaveBeenCalledTimes(1))
+    expect(hoisted.triggerRun.mock.calls[0]![0]).toEqual({})
+    expect(await screen.findByText(/We couldn't start a new issue just now/)).toBeTruthy()
   })
 
-  it('failed run with a rejected draft fetch: no skeleton footer, no alert', async () => {
-    hoisted.getDraft.mockRejectedValue(new ContentPatchError(409, 'no_draft', 'no draft'))
+  it('failed run: Start a new issue', async () => {
     mockCurrentRun = currentRun({}, { runStatus: 'failed' })
     render(<IssueHome />)
-    expect(await screen.findByText(new RegExp(FAILED_SENTENCE))).toBeTruthy()
-    await act(async () => {})
-    const footer = screen.getByRole('region', { name: 'Publish' })
-    expect(footer.querySelector('[aria-busy="true"]')).toBeNull()
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a new issue' }))
+    await waitFor(() => expect(hoisted.triggerRun).toHaveBeenCalledTimes(1))
   })
 
-  it('Gate 1 pause with a rejected draft fetch: gate sentence and link', async () => {
-    hoisted.getDraft.mockRejectedValue(new ContentPatchError(409, 'no_draft', 'no draft'))
+  it('no run: Start the first issue', async () => {
+    mockCurrentRun = currentRun({ state: { kind: 'none' }, runId: null, issueNumber: null })
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start the first issue' }))
+    await waitFor(() => expect(hoisted.triggerRun).toHaveBeenCalledTimes(1))
+    expect(hoisted.getDraft).not.toHaveBeenCalled()
+  })
+
+  it('writing: Stop writing this issue confirms, then cancels', async () => {
+    mockCurrentRun = currentRun({}, { runStatus: 'running' })
+    hoisted.getDraft.mockRejectedValue(new Error('no draft'))
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop writing this issue' }))
+    await waitFor(() => expect(hoisted.cancelRun).toHaveBeenCalledTimes(1))
+    expect(hoisted.cancelRun.mock.calls[0]![0]).toBe('run_1')
+    expect(hoisted.confirm).toHaveBeenCalled()
+  })
+
+  it('writing: a declined confirm does not cancel', async () => {
+    hoisted.confirm.mockResolvedValue(false)
+    mockCurrentRun = currentRun({}, { runStatus: 'running' })
+    hoisted.getDraft.mockRejectedValue(new Error('no draft'))
+    render(<IssueHome />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop writing this issue' }))
+    await waitFor(() => expect(hoisted.confirm).toHaveBeenCalled())
+    expect(hoisted.cancelRun).not.toHaveBeenCalled()
+  })
+
+  it('stuck: Stop this issue confirms, then cancels', async () => {
     mockCurrentRun = currentRun({}, { runStatus: 'awaiting-review', runCompletedAt: undefined })
+    hoisted.getDraft.mockRejectedValue(new Error('no draft'))
     render(<IssueHome />)
-    expect(await screen.findByText(new RegExp(GATE1_SENTENCE))).toBeTruthy()
-    expect(screen.queryByText('Choose the charity →')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Stop this issue' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Details in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
-    await act(async () => {})
-    const footer = screen.getByRole('region', { name: 'Publish' })
-    expect(footer.querySelector('[aria-busy="true"]')).toBeNull()
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop this issue' }))
+    await waitFor(() => expect(hoisted.cancelRun).toHaveBeenCalledTimes(1))
+  })
+})
+
+describe('pinned past issues', () => {
+  it('a failed pinned run redirects to its Behind-the-scenes page', async () => {
+    mockCurrentRun = currentRun({}, { runStatus: 'failed' })
+    render(<IssueHome runId="run_1" />)
+    await waitFor(() => expect(hoisted.replace).toHaveBeenCalledWith('/admin/runs/run_1'))
   })
 
-  it('Collaborator: lock label and disabled Publish', async () => {
-    hoisted.role.current = 'Collaborator'
-    render(<IssueHome />)
-    expect(await screen.findByText('Collaborators can read and edit. Only the Editor-in-chief can publish.')).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true)
+  it('an unpublished pinned run that is not the latest is read-only', async () => {
+    hoisted.latest.current = { runId: 'run_9' }
+    render(<IssueHome runId="run_1" />)
+    expect(await screen.findByText('This older issue was never published.')).toBeTruthy()
+    expect(document.querySelectorAll('[data-primary]').length).toBe(0)
   })
 
-  it('open voice error on game: Publish stays ENABLED and no fix copy is shown (quick 261021-7aw)', async () => {
-    const finding = {
-      _id: 'q0',
-      sectionName: 'game',
-      severity: 'error',
-      axis: 'voice',
-      status: 'open',
-      accepted: false,
-    }
-    mockCurrentRun = currentRun({ qaFindings: [finding] }, { qaFindings: [finding] as never })
-    render(<IssueHome />)
-    const btn = await screen.findByRole('button', { name: 'Publish' })
-    await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false))
-    expect(screen.queryByText(/something to fix|things? to fix/)).toBeNull()
+  it('part links keep ?run= for a past issue', async () => {
+    hoisted.latest.current = { runId: 'run_9' }
+    render(<IssueHome runId="run_1" />)
+    await screen.findByText('The nine parts')
+    const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href') ?? '')
+    expect(hrefs.some((h) => h.includes('?run=run_1'))).toBe(true)
   })
 })

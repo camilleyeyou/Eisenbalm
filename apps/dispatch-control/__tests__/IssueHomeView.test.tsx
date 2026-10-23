@@ -1,283 +1,171 @@
 /**
- * Phase 52 Plan 03 — IssueHomeView (props-only front door) component tests.
- * Runs in jsdom (environmentMatchGlobs *.test.tsx -> jsdom).
+ * Phase 56 Plan 05 — IssueHomeView (pure) across every Home state.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, within, fireEvent, cleanup } from '@testing-library/react'
-import { EDITABLE_SECTIONS } from '@/lib/editableSections'
-import {
-  FAILED_SENTENCE,
-  GATE1_SENTENCE,
-  STOPPED_SENTENCE,
-  READY_SENTENCE,
-  RUNNING_SENTENCE,
-  type HomeSectionRow,
-  type HomeSectionsResult,
-} from '@/lib/homeSections'
-import { COLLABORATOR_LOCK_LABEL, HELD_REASON } from '@/lib/publishChain'
-import {
-  IssueHomeView,
-  formatPublishedDate,
-  type IssueHomeViewProps,
-} from '../app/(editorial)/_components/IssueHomeView'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { IssueHomeView, type IssueHomeViewProps } from '@/app/(editorial)/_components/IssueHomeView'
+import { deriveEditorHome, homeSlabCopy, EDITOR_BANNED_PATTERN, RUN_ID_PATTERN } from '@/lib/editorState'
+import type { HomeFooter, HomeSectionRow } from '@/lib/homeSections'
+import { PART_ORDER } from '@/lib/editorState'
 
-afterEach(() => cleanup())
+afterEach(cleanup)
 
-function cleanRows(): HomeSectionRow[] {
-  return EDITABLE_SECTIONS.map(({ id, label }) => ({
+const THURSDAY = Date.UTC(2026, 9, 29, 12) // Thu 29 Oct 2026
+const NOW = Date.UTC(2026, 9, 27, 12)
+
+function rows(state: 'clean' | 'writing' | 'pending' = 'clean'): HomeSectionRow[] {
+  return PART_ORDER.map((id) => ({
     id,
-    label,
-    headline: `${label} headline`,
-    state: 'clean' as const,
+    label: id,
+    headline: `Headline ${id}`,
+    state,
     agentChanges: 0,
     href: `/s/${id}`,
-  }))
+  })) as HomeSectionRow[]
 }
 
-function sectionsOf(rows: HomeSectionRow[]): HomeSectionsResult {
-  return {
-    rows,
+type Case = 'ready' | 'ready-collab' | 'writing' | 'held' | 'published' | 'empty' | 'problem' | 'stuck' | 'loading'
+
+function makeProps(c: Case, over: Partial<IssueHomeViewProps> = {}): IssueHomeViewProps {
+  const footerFor: Record<Case, HomeFooter> = {
+    ready: { kind: 'ready' },
+    'ready-collab': { kind: 'ready' },
+    writing: { kind: 'running' },
+    held: { kind: 'ready' },
+    published: { kind: 'published', publishedAt: THURSDAY },
+    empty: { kind: 'none' },
+    problem: { kind: 'failed' },
+    stuck: { kind: 'gate1' },
+    loading: { kind: 'loading' },
   }
-}
-
-function baseProps(over: Partial<IssueHomeViewProps> = {}): IssueHomeViewProps {
+  const r = c === 'writing' ? rows('writing').map((x, i) => (i < 3 ? { ...x, state: 'clean' as const } : x)) : rows()
+  const vm = deriveEditorHome({
+    footer: footerFor[c],
+    held: c === 'held' ? true : false,
+    role: c === 'ready-collab' ? 'Collaborator' : 'Editor-in-chief',
+    rows: c === 'empty' || c === 'loading' ? [] : r,
+  })
+  const number = c === 'published' ? 47 : 48
+  const slab = homeSlabCopy(vm, { issueNumber: number, startedAt: NOW, publishedAt: THURSDAY, now: NOW })
   return {
-    issueNumber: 7,
-    title: 'The Quiet Ledger',
-    subject: 'A two-person water lab in the Ozarks.',
-    sections: sectionsOf(cleanRows()),
-    footer: { kind: 'ready' },
-    gate: { enabled: true },
-    draftError: null,
-    publishing: false,
-    publishError: null,
-    publishNotice: null,
-    confirming: false,
-    onRequestPublish: vi.fn(),
-    onConfirmPublish: vi.fn(),
-    onCancelPublish: vi.fn(),
+    vm,
+    slab,
+    issueLine:
+      c === 'published' ? 'Issue 47 · Thursday 29 October 2026 · Published' : 'Issue 48 · Thursday 29 October 2026',
+    charityName: 'The Quiet Ledger',
+    blurb: 'A two-person water lab.',
+    rows: c === 'empty' || c === 'loading' ? undefined : r,
+    hrefFor: (row) => `/s/${row.id}`,
+    onPrimary: vi.fn(),
+    primaryBusy: false,
+    actionError: null,
     links: {
-      admin: '/admin',
-      pastIssues: '/archive',
-      runDetails: '/admin/runs/run_1',
-      liveIssue: 'https://web.example/issue/issue-7',
-      preview: 'https://web.example/issue/issue-7/preview?token=x',
+      preview: 'https://preview.example/issue-48',
+      website: 'https://site.example/issue/issue-47',
+      whatHappened: '/admin/runs/a1b2c3d4e5f6',
     },
+    footer: null,
+    draftError: null,
+    onReload: vi.fn(),
+    live: null,
     ...over,
   }
 }
 
-function changedRows(): HomeSectionRow[] {
-  return cleanRows().map((r) =>
-    r.id === 'game' ? { ...r, headline: 'The Filtration Layer', agentChanges: 2, href: '/s/game' } : r,
-  )
-}
-
-const publishButtons = () => screen.queryAllByRole('button', { name: 'Publish' })
-
-describe('IssueHomeView title', () => {
-  it('shows the real title, subject, eyebrow and header links with no console chrome', () => {
-    const { container } = render(<IssueHomeView {...baseProps()} />)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('The Quiet Ledger')
-    expect(screen.getByText('A two-person water lab in the Ozarks.')).toBeTruthy()
-    expect(screen.getByText('Issue 7')).toBeTruthy()
-    expect(screen.getByText('The Eisenbalm Dispatch')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Past issues' }).getAttribute('href')).toBe('/archive')
-    expect(screen.getByRole('link', { name: 'Admin' }).getAttribute('href')).toBe('/admin')
-    expect(container.querySelector('aside')).toBeNull()
-    expect(container.querySelector('[role="tablist"]')).toBeNull()
-    expect(container.querySelector('input')).toBeNull()
-    expect(container.querySelector('[role="checkbox"]')).toBeNull()
-  })
-})
-
-describe('IssueHomeView note', () => {
-  it('renders an agent-changed row as one link with a quiet change count', () => {
-    render(<IssueHomeView {...baseProps({ sections: sectionsOf(changedRows()), footer: { kind: 'ready' } })} />)
-    const link = screen.getByRole('link', { name: /Game.*The Filtration Layer.*Written · agents made 2 changes/ })
-    expect(link.getAttribute('href')).toBe('/s/game')
-    expect(screen.queryByText(/to fix/)).toBeNull()
-  })
-
-  it('shows Written for clean rows and Being written… for writing rows', () => {
-    const rows = cleanRows().map((r) => (r.id === 'podcast' ? { ...r, state: 'writing' as const } : r))
-    render(<IssueHomeView {...baseProps({ sections: sectionsOf(rows) })} />)
-    expect(screen.getAllByText('Written')).toHaveLength(8)
-    expect(screen.getByText('Being written…')).toBeTruthy()
-  })
-
-  it('renders exactly nine row links in the story list', () => {
-    render(<IssueHomeView {...baseProps()} />)
-    const list = screen.getByRole('list', { name: 'Stories in this issue' })
-    expect(within(list).getAllByRole('link')).toHaveLength(9)
-  })
-})
-
-describe('IssueHomeView footer', () => {
-  it('shows the running and ready sentences', () => {
-    const { unmount } = render(<IssueHomeView {...baseProps({ footer: { kind: 'running' } })} />)
-    expect(screen.getByText(RUNNING_SENTENCE)).toBeTruthy()
-    unmount()
-    render(<IssueHomeView {...baseProps({ footer: { kind: 'ready' } })} />)
-    expect(screen.getByText(READY_SENTENCE)).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Publish' }).getAttribute('data-ready')).toBe('true')
-  })
-})
-
-describe('IssueHomeView publish', () => {
-  it('has exactly one Publish button in ready and running', () => {
-    for (const footer of [{ kind: 'ready' as const }, { kind: 'running' as const }]) {
-      const { unmount } = render(<IssueHomeView {...baseProps({ footer })} />)
-      expect(publishButtons()).toHaveLength(1)
-      unmount()
-    }
-  })
-
-  it('disables the button when the gate is closed and explains a collaborator lock', () => {
-    render(<IssueHomeView {...baseProps({ gate: { enabled: false, reason: 'collaborator' } })} />)
-    expect((publishButtons()[0] as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText(COLLABORATOR_LOCK_LABEL)).toBeTruthy()
-    expect(COLLABORATOR_LOCK_LABEL).toBe('Collaborators can read and edit. Only the Editor-in-chief can publish.')
-  })
-
-  it('explains a held issue', () => {
-    render(<IssueHomeView {...baseProps({ gate: { enabled: false, reason: 'held' } })} />)
-    expect((publishButtons()[0] as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText(HELD_REASON)).toBeTruthy()
-    expect(HELD_REASON).toBe('This issue is held — release the hold to publish.')
-  })
-
-  it('requests publish on click and confirms inline without window.confirm', () => {
-    const confirmSpy = vi.fn()
-    ;(window as unknown as { confirm: unknown }).confirm = confirmSpy
-    const onRequestPublish = vi.fn()
-    const onConfirmPublish = vi.fn()
-    const onCancelPublish = vi.fn()
-    const { unmount } = render(<IssueHomeView {...baseProps({ onRequestPublish })} />)
-    fireEvent.click(publishButtons()[0]!)
-    expect(onRequestPublish).toHaveBeenCalledTimes(1)
-    unmount()
-
-    render(<IssueHomeView {...baseProps({ confirming: true, onConfirmPublish, onCancelPublish })} />)
-    expect(screen.getByText('Publish Issue 7 now?')).toBeTruthy()
-    expect(publishButtons()).toHaveLength(1)
-    fireEvent.click(publishButtons()[0]!)
-    expect(onConfirmPublish).toHaveBeenCalledTimes(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(onCancelPublish).toHaveBeenCalledTimes(1)
-    expect(confirmSpy).not.toHaveBeenCalled()
-  })
-
-  it('offers Preview the issue for running and ready only when a preview URL exists', () => {
-    for (const footer of [{ kind: 'ready' as const }, { kind: 'running' as const }]) {
-      const { unmount } = render(<IssueHomeView {...baseProps({ footer })} />)
-      expect(screen.getByRole('link', { name: 'Preview the issue' }).getAttribute('href')).toBe(
-        'https://web.example/issue/issue-7/preview?token=x',
-      )
-      unmount()
-    }
-    const base = baseProps()
-    const { unmount } = render(<IssueHomeView {...base} links={{ ...base.links, preview: null }} />)
-    expect(screen.queryByRole('link', { name: 'Preview the issue' })).toBeNull()
-    unmount()
-    for (const footer of [
-      { kind: 'failed' as const },
-      { kind: 'published' as const, publishedAt: 1 },
-      { kind: 'gate1' as const },
-      { kind: 'none' as const },
-    ]) {
-      const r = render(<IssueHomeView {...baseProps({ footer })} />)
-      expect(screen.queryByRole('link', { name: 'Preview the issue' })).toBeNull()
-      r.unmount()
-    }
-  })
-
-  it('shows the slow notice as status, Publishing… as disabled, and errors as alert', () => {
-    const notice = 'Publishing is taking longer than usual — check Admin → Run Details.'
-    render(
-      <IssueHomeView
-        {...baseProps({
-          publishing: true,
-          publishNotice: notice,
-          publishError: 'Both sign-offs are required.',
-          gate: { enabled: false, reason: 'busy' },
-        })}
-      />,
-    )
-    expect(screen.getByRole('status').textContent).toBe(notice)
-    expect(screen.getByRole('alert').textContent).toContain('Both sign-offs are required.')
-    const btn = screen.getByRole('button', { name: 'Publishing…' }) as HTMLButtonElement
-    expect(btn.disabled).toBe(true)
-  })
-})
+const primaries = (c: HTMLElement) => c.querySelectorAll('[data-primary]')
 
 describe('IssueHomeView states', () => {
-  it('failed: honest sentence, Run Details link, no Publish', () => {
-    render(<IssueHomeView {...baseProps({ footer: { kind: 'failed' } })} />)
-    expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(FAILED_SENTENCE)
-    expect(screen.getByRole('link', { name: 'See why in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
-    expect(publishButtons()).toHaveLength(0)
+  it('ready: one Publish button, preview link, header, nine parts', () => {
+    const { container } = render(<IssueHomeView {...makeProps('ready', { footer: <p>FOOT</p> })} />)
+    expect(screen.getByText('Read the issue, then publish it.')).toBeTruthy()
+    expect(primaries(container).length).toBe(1)
+    expect(primaries(container)[0]!.textContent).toBe('Publish Issue 48')
+    expect(screen.getByRole('link', { name: 'Preview the issue first' })).toBeTruthy()
+    expect(screen.getByText('Issue 48 · Thursday 29 October 2026')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('The Quiet Ledger')
+    expect(screen.getByRole('list', { name: 'Progress on this issue' })).toBeTruthy()
+    expect(container.querySelectorAll('ol')[1]!.querySelectorAll('li').length).toBe(9)
+    expect(screen.getByText('FOOT')).toBeTruthy()
   })
 
-  it('published: dated sentence and live link, no Publish', () => {
-    const ts = Date.UTC(2026, 9, 16, 12)
-    const { unmount } = render(<IssueHomeView {...baseProps({ footer: { kind: 'published', publishedAt: ts } })} />)
-    const region = screen.getByRole('region', { name: 'Publish' })
-    expect(region.textContent).toContain(`Published ${formatPublishedDate(ts)}`)
-    expect(screen.getByRole('link', { name: 'Read the live issue →' }).getAttribute('href')).toBe(
-      'https://web.example/issue/issue-7',
-    )
-    expect(publishButtons()).toHaveLength(0)
-    unmount()
-    const base = baseProps({ footer: { kind: 'published', publishedAt: ts } })
-    render(<IssueHomeView {...base} links={{ ...base.links, liveIssue: null }} />)
-    expect(screen.queryByRole('link', { name: 'Read the live issue →' })).toBeNull()
+  it('writing: Working in the slab, no primary, parts hint', () => {
+    const { container } = render(<IssueHomeView {...makeProps('writing')} />)
+    expect(primaries(container).length).toBe(0)
+    expect(screen.getAllByText('Working').length).toBeGreaterThan(0)
+    expect(screen.getByText("Finished parts open as soon as they're written.")).toBeTruthy()
   })
 
-  it('gate1: waiting sentence and charity link, no Publish', () => {
-    render(<IssueHomeView {...baseProps({ footer: { kind: 'gate1' } })} />)
-    expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(GATE1_SENTENCE)
-    expect(screen.getByRole('link', { name: 'Details in Admin →' }).getAttribute('href')).toBe('/admin/runs/run_1')
-    expect(screen.queryByText(/Choose the charity/)).toBeNull()
-    expect(publishButtons()).toHaveLength(0)
+  it('held: Release this issue is the primary', () => {
+    const { container } = render(<IssueHomeView {...makeProps('held')} />)
+    expect(primaries(container)[0]!.textContent).toBe('Release this issue')
+    expect(screen.getAllByRole('button', { name: 'Release this issue' }).length).toBe(1)
   })
 
-  it('gate1: renders the stop slot', () => {
-    render(<IssueHomeView {...baseProps({ footer: { kind: 'gate1' }, stopSlot: <button type="button">Stop this issue</button> })} />)
-    expect(screen.getByRole('button', { name: 'Stop this issue' })).toBeTruthy()
+  it('published: start next week, website link opens in a new tab, no footer', () => {
+    const { container } = render(<IssueHomeView {...makeProps('published')} />)
+    expect(primaries(container)[0]!.textContent).toBe("Start next week's issue")
+    const link = screen.getByRole('link', { name: 'Read Issue 47 on the website' })
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(screen.getByText(/ · Published$/)).toBeTruthy()
+    expect(screen.getAllByText('Published').length).toBeGreaterThan(0)
   })
 
-  it('stopped: says the issue was stopped, no Publish', () => {
-    render(<IssueHomeView {...baseProps({ footer: { kind: 'stopped' } })} />)
-    expect(screen.getByRole('region', { name: 'Publish' }).textContent).toContain(STOPPED_SENTENCE)
-    expect(publishButtons()).toHaveLength(0)
+  it('ready-collab: waiting sentence, no primary', () => {
+    const { container } = render(<IssueHomeView {...makeProps('ready-collab')} />)
+    expect(screen.getByText('Waiting for the editor-in-chief to publish.')).toBeTruthy()
+    expect(primaries(container).length).toBe(0)
   })
 
-  it('none: honest copy, no story list, no Publish', () => {
-    render(
-      <IssueHomeView
-        {...baseProps({ footer: { kind: 'none' }, issueNumber: null, title: null, subject: null, sections: undefined })}
-      />,
-    )
-    expect(screen.getAllByText('There is no current issue yet.')).toHaveLength(1)
-    expect(screen.queryByRole('list', { name: 'Stories in this issue' })).toBeNull()
-    expect(publishButtons()).toHaveLength(0)
+  it('empty: start the first issue, no stations or parts', () => {
+    const { container } = render(<IssueHomeView {...makeProps('empty')} />)
+    expect(screen.getByText('No issue yet this week')).toBeTruthy()
+    expect(primaries(container)[0]!.textContent).toBe('Start the first issue')
+    expect(screen.queryByRole('list', { name: 'Progress on this issue' })).toBeNull()
+    expect(screen.queryByText('The nine parts')).toBeNull()
+    expect(container.querySelectorAll('h1').length).toBe(1)
   })
-})
 
-describe('IssueHomeView loading', () => {
-  it('shows an aria-busy skeleton and never claims clean or ready', () => {
-    const { container } = render(
-      <IssueHomeView {...baseProps({ footer: { kind: 'loading' }, sections: undefined, title: undefined, subject: undefined })} />,
-    )
+  it('problem: start a new issue and a What happened link', () => {
+    const { container } = render(<IssueHomeView {...makeProps('problem')} />)
+    expect(primaries(container)[0]!.textContent).toBe('Start a new issue')
+    expect(screen.getByRole('link', { name: 'What happened' }).getAttribute('href')).toBe('/admin/runs/a1b2c3d4e5f6')
+  })
+
+  it('stuck: Stop this issue', () => {
+    const { container } = render(<IssueHomeView {...makeProps('stuck')} />)
+    expect(primaries(container)[0]!.textContent).toBe('Stop this issue')
+  })
+
+  it('loading: skeleton, no primary, no collaborator sentence', () => {
+    const { container } = render(<IssueHomeView {...makeProps('loading')} />)
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(screen.queryByText(/Written|Ready to publish|reviewed every section/)).toBeNull()
-    expect(publishButtons()).toHaveLength(0)
+    expect(primaries(container).length).toBe(0)
+    expect(screen.queryByText(/Waiting for the editor-in-chief/)).toBeNull()
   })
 
-  it('shows a draft error as an alert without claiming clean', () => {
-    render(<IssueHomeView {...baseProps({ footer: { kind: 'loading' }, sections: undefined, draftError: 'boom' })} />)
-    expect(screen.getByRole('alert').textContent).toContain('boom')
-    expect(screen.queryByText(/Written/)).toBeNull()
+  it('draft error: plain sentence and a reload button', () => {
+    const props = makeProps('ready', { draftError: 'boom' })
+    render(<IssueHomeView {...props} />)
+    expect(screen.getByText("This page didn't load. Check your connection, then press Reload this page.")).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Reload this page' }))
+    expect(props.onReload).toHaveBeenCalled()
   })
+
+  it('primary press calls onPrimary', () => {
+    const props = makeProps('ready')
+    render(<IssueHomeView {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Publish Issue 48' }))
+    expect(props.onPrimary).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['ready', 'ready-collab', 'writing', 'held', 'published', 'empty', 'problem', 'stuck', 'loading'] as Case[])(
+    '%s: no banned words and no run id',
+    (c) => {
+      const { container } = render(<IssueHomeView {...makeProps(c)} />)
+      const text = container.textContent ?? ''
+      expect(text).not.toMatch(EDITOR_BANNED_PATTERN)
+      expect(text).not.toMatch(RUN_ID_PATTERN)
+      expect(text).not.toContain('a1b2c3d4e5f6')
+    },
+  )
 })
